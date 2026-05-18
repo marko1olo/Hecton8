@@ -1,0 +1,25 @@
+{
+    "name": "Hecton8.Habitat.Deformation",
+    "rootNamespace": "Hecton8.Habitat.Deformation",
+    "references": [
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Habitat.Deformation.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.Profiling.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -2,32 +2,321 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.Audio.Synthesis
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct DepthStressGranularVoice
+    /// <summary>
+    /// Sixteen-byte audio parameter DTO copied across the game-thread to DSP-thread boundary.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public struct SynthParametersDTO
     {
-        public byte Active;
-        public byte Reserved0;
-        public ushort Reserved1;
-        public int StartSample;
-        public int LengthSamples;
-        public float Cursor;
-        public float PlaybackRate;
-        public float Gain;
-        public uint Seed;
+        /// <summary>Required byte size for ARM64-aligned audio-thread loads.</summary>
+        public const int SizeBytes = 16;
+        /// <summary>Carrier/base frequency in hertz.</summary>
+        public float BaseFrequency;
+        /// <summary>FM/granular modulation strength.</summary>
+        public float ModulationIndex;
+        /// <summary>Normalized grain size scalar.</summary>
+        public float GrainSize;
+        /// <summary>Pressure/stress scalar in normalized 0..1 range.</summary>
+        public float PressureScalar;
+
+        /// <summary>
+        /// Reinterprets unmanaged memory as a mutable parameter reference without C# property copies.
+        /// </summary>
+        /// <param name="pointer">Pointer to at least 16 bytes of writable unmanaged memory.</param>
+        /// <returns>Mutable reference to the parameter DTO.</returns>
+        public static unsafe ref SynthParametersDTO AsRef(void* pointer)
+        {
+            return ref UnsafeUtility.AsRef<SynthParametersDTO>(pointer);
+        }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    /// <summary>
+    /// Sixteen-byte grain playback state consumed by allocation-free granular DSP loops.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public struct GrainPlaybackStateDTO
+    {
+        /// <summary>Required byte size for one grain voice on ARM64.</summary>
+        public const int SizeBytes = 16;
+        /// <summary>Current playback phase in samples or normalized LUT space.</summary>
+        public float CurrentPhase;
+        /// <summary>Playback pitch multiplier.</summary>
+        public float Pitch;
+        /// <summary>Linear amplitude scalar.</summary>
+        public float Amplitude;
+        /// <summary>Start index inside the base grain buffer.</summary>
+        public uint GrainStartIndex;
+
+        /// <summary>
+        /// Reinterprets unmanaged memory as a mutable voice reference without managed wrappers.
+        /// </summary>
+        /// <param name="pointer">Pointer to at least 16 bytes of writable unmanaged memory.</param>
+        /// <returns>Mutable reference to the grain playback state.</returns>
+        public static unsafe ref GrainPlaybackStateDTO AsRef(void* pointer)
+        {
+            return ref UnsafeUtility.AsRef<GrainPlaybackStateDTO>(pointer);
+        }
+    }
+
+    /// <summary>
+    /// Local blind-dependency mock for pressure/tension/depth/speed synth validation.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public partial struct MockHullStressSignal
+    {
+        /// <summary>Oscillating structural stress scalar in normalized 0..1 range.</summary>
+        public float MockStress;
+        /// <summary>Oscillating cable or hull tension scalar in normalized 0..1 range.</summary>
+        public float MockTension;
+        /// <summary>Oscillating depth scalar in normalized 0..1 range.</summary>
+        public float MockDepth;
+        /// <summary>Mock submarine velocity scalar used for pitch wobble.</summary>
+        public float MockSubmarineVelocity;
+    }
+
+    /// <summary>
+    /// Sixteen-byte blind pressure mock for proving the synth without submarine depth systems.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public partial struct MockPressureSignal
+    {
+        /// <summary>Normalized pressure/stress scalar in 0..1 range.</summary>
+        public float PressureScalar;
+        /// <summary>Normalized depth scalar used by low-pass muffling tests.</summary>
+        public float DepthScalar;
+        /// <summary>Normalized velocity scalar used by pitch-wobble tests.</summary>
+        public float VelocityScalar;
+        /// <summary>Monotonic caller-owned sequence for deterministic validation.</summary>
+        public uint Sequence;
+    }
+
+    /// <summary>
+    /// Sixteen-byte blind tension mock for proving pressure/tension coupling in isolation.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public partial struct MockTensionSignal
+    {
+        /// <summary>Normalized cable or hull tension scalar in 0..1 range.</summary>
+        public float TensionScalar;
+        /// <summary>Absolute pressure-minus-tension delta, used as a cheap strain-rate stand-in.</summary>
+        public float StrainRateScalar;
+        /// <summary>Pressure contribution coupled into the tension fake.</summary>
+        public float PressureCouplingScalar;
+        /// <summary>Monotonic caller-owned sequence for deterministic validation.</summary>
+        public uint Sequence;
+    }
+
+    /// <summary>
+    /// Burst mock producer for validating synth response without hull-integrity dependencies.
+    /// </summary>
+    [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast, CompileSynchronously = true)]
+    public struct MockHullStressSignalJob : IJob
+    {
+        /// <summary>Single-element output signal buffer.</summary>
+        public NativeArray<MockHullStressSignal> Output;
+        /// <summary>Optional single-element pressure output buffer for literal task validation.</summary>
+        public NativeArray<MockPressureSignal> PressureOutput;
+        /// <summary>Optional single-element tension output buffer for literal task validation.</summary>
+        public NativeArray<MockTensionSignal> TensionOutput;
+        /// <summary>Elapsed time in seconds.</summary>
+        public float ElapsedSeconds;
+        /// <summary>Stress oscillator frequency in hertz.</summary>
+        public float StressFrequencyHz;
+        /// <summary>Tension oscillator frequency in hertz.</summary>
+        public float TensionFrequencyHz;
+        /// <summary>Depth oscillator frequency in hertz.</summary>
+        public float DepthFrequencyHz;
+        /// <summary>Caller-owned validation sequence copied into pressure/tension DTOs.</summary>
+        public uint Sequence;
+
+        /// <summary>Writes the current mock signal sample.</summary>
+        public void Execute()
+        {
+            bool hasHullOutput = Output.IsCreated && Output.Length > 0;
+            bool hasPressureOutput = PressureOutput.IsCreated && PressureOutput.Length > 0;
+            bool hasTensionOutput = TensionOutput.IsCreated && TensionOutput.Length > 0;
+            if (!hasHullOutput && !hasPressureOutput && !hasTensionOutput)
+                return;
+
+            float time = DepthStressGranularMath.FiniteNonNegative(ElapsedSeconds);
+            float stressHz = math.max(0.01f, DepthStressGranularMath.FiniteOrDefault(StressFrequencyHz, 0.21f));
+            float tensionHz = math.max(0.01f, DepthStressGranularMath.FiniteOrDefault(TensionFrequencyHz, 0.37f));
+            float depthHz = math.max(0.005f, DepthStressGranularMath.FiniteOrDefault(DepthFrequencyHz, 0.047f));
+            float stress = 0.5f + 0.5f * math.sin(time * stressHz * 6.28318530718f);
+            float tension = 0.5f + 0.5f * math.sin((time * tensionHz * 6.28318530718f) + 1.7f);
+            float depth = 0.5f + 0.5f * math.sin((time * depthHz * 6.28318530718f) + 0.42f);
+            float safeStress = math.saturate(stress);
+            float safeTension = math.saturate(tension);
+            float safeDepth = math.saturate(depth);
+            float safeVelocity = math.saturate(math.abs(safeStress - safeTension) * 1.35f);
+            uint safeSequence = Sequence;
+
+            if (hasHullOutput)
+            {
+                Output[0] = new MockHullStressSignal
+                {
+                    MockStress = safeStress,
+                    MockTension = safeTension,
+                    MockDepth = safeDepth,
+                    MockSubmarineVelocity = safeVelocity
+                };
+            }
+
+            if (hasPressureOutput)
+            {
+                PressureOutput[0] = new MockPressureSignal
+                {
+                    PressureScalar = safeStress,
+                    DepthScalar = safeDepth,
+                    VelocityScalar = safeVelocity,
+                    Sequence = safeSequence
+                };
+            }
+
+            if (hasTensionOutput)
+            {
+                TensionOutput[0] = new MockTensionSignal
+                {
+                    TensionScalar = safeTension,
+                    StrainRateScalar = math.saturate(math.abs(safeStress - safeTension)),
+                    PressureCouplingScalar = safeStress,
+                    Sequence = safeSequence
+                };
+            }
+        }
+    }
+
+    /// <summary>
+    /// Precomputes the 512-sample style Hanning window used by grain envelopes.
+    /// </summary>
+    [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast, CompileSynchronously = true)]
+    public struct HanningWindowBuildJob : IJobParallelFor
+    {
+        /// <summary>Destination LUT, typically 512 samples.</summary>
+        public NativeArray<float> HanningLut;
+
+        /// <summary>Writes one Hanning window sample.</summary>
+        /// <param name="index">LUT index.</param>
+        public void Execute(int index)
+        {
+            if (!HanningLut.IsCreated || HanningLut.Length <= 0)
+                return;
+
+            float denominator = math.max(1f, HanningLut.Length - 1f);
+            float t = math.saturate(index * math.rcp(denominator));
+            HanningLut[index] = 0.5f - 0.5f * math.cos(t * 6.28318530718f);
+        }
+    }
+
+    /// <summary>
+    /// Emergency zero-file grain generator used when no archived or authored grain data is available.
+    /// </summary>
+    public static class EmergencyMockGrains
+    {
+        /// <summary>
+        /// Fills a base grain buffer with deterministic metallic grit without loading WAV files.
+        /// </summary>
+        /// <param name="baseGrainBuffer">Destination sample buffer.</param>
+        /// <param name="sampleRate">Synthesis sample rate.</param>
+        /// <param name="fundamentalHertz">Base metallic frequency.</param>
+        public static void GenerateEmergencyMockGrains(
+            NativeArray<float> baseGrainBuffer,
+            int sampleRate = 48000,
+            float fundamentalHertz = 92f)
+        {
+            if (!baseGrainBuffer.IsCreated || baseGrainBuffer.Length <= 0)
+                return;
+
+            int safeSampleRate = math.max(1, sampleRate);
+            float frequency = math.max(12f, DepthStressGranularMath.FiniteOrDefault(fundamentalHertz, 92f));
+            float invSampleRate = math.rcp((float)safeSampleRate);
+            for (int i = 0; i < baseGrainBuffer.Length; i++)
+            {
+                float t = i * invSampleRate;
+                uint seed = (uint)i * 747796405u + 2891336453u;
+                float grit = HashSigned(seed) * 0.18f;
+                float ring =
+                    math.sin(t * frequency * 6.28318530718f) * 0.44f +
+                    math.sin(t * frequency * 2.71f * 6.28318530718f) * 0.25f +
+                    math.sin(t * frequency * 5.39f * 6.28318530718f) * 0.12f;
+                baseGrainBuffer[i] = math.clamp((ring + grit) * ResolveRaisedCosine(i, baseGrainBuffer.Length), -1f, 1f);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveRaisedCosine(int index, int length)
+        {
+            if (length <= 1)
+                return 1f;
+
+            float t = math.saturate(index * math.rcp(length - 1f));
+            return 0.5f - 0.5f * math.cos(t * 6.28318530718f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float HashSigned(uint seed)
+        {
+            seed ^= seed >> 16;
+            seed *= 0x7FEB352Du;
+            seed ^= seed >> 15;
+            seed *= 0x846CA68Bu;
+            seed ^= seed >> 16;
+            return ((seed & 0x00FFFFFFu) * (1f / 8388607.5f)) - 1f;
+        }
+    }
+
+    /// <summary>
+    /// Thirty-two-byte isolated granular voice state for Burst test kernels.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    public struct DepthStressGranularVoice
+    {
+        /// <summary>Current grain cursor in samples.</summary>
+        public float Cursor;
+        /// <summary>Playback pitch scalar.</summary>
+        public float PlaybackRate;
+        /// <summary>Linear grain gain.</summary>
+        public float Gain;
+        /// <summary>Start sample in the base grain bank.</summary>
+        public int StartSample;
+        /// <summary>Length of the grain in samples.</summary>
+        public int LengthSamples;
+        /// <summary>Deterministic random seed for this voice.</summary>
+        public uint Seed;
+        /// <summary>One when the voice is active.</summary>
+        public byte Active;
+#pragma warning disable 0169
+        private byte _pad0;
+        private byte _pad1;
+        private byte _pad2;
+        private byte _pad3;
+        private byte _pad4;
+        private byte _pad5;
+        private byte _pad6;
+#pragma warning restore 0169
+    }
+
+    /// <summary>
+    /// Sixteen-byte granular spawn state with natural 4-byte fields and no packed layout.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public struct DepthStressGranularSpawnState
     {
+        /// <summary>Fractional spawn accumulator.</summary>
         public float SpawnAccumulator;
+        /// <summary>Deterministic random state.</summary>
         public uint RandomState;
+        /// <summary>Round-robin voice cursor.</summary>
         public int RingCursor;
-        public int Reserved0;
+#pragma warning disable 0169
+        private int _pad0;
+#pragma warning restore 0169
     }
 
     internal static class DepthStressGranularMath
@@ -179,6 +468,7 @@ namespace Hecton8.Audio.Synthesis
     public struct DepthStressGranularSynthesisJob : IJob
     {
         [ReadOnly] public NativeArray<float> GrainBank;
+        [ReadOnly] public NativeArray<float> HanningLut;
         public NativeArray<DepthStressGranularVoice> Voices;
         public NativeArray<float> Output;
         public int VoiceLimit;
@@ -229,7 +519,7 @@ namespace Hecton8.Audio.Synthesis
                         DepthStressGranularMath.FiniteOrDefault(voice.PlaybackRate, 1f));
 
                     float age01 = math.saturate(cursor * math.rcp(length));
-                    float window = TriangleWindow(age01);
+                    float window = ResolveWindow(age01);
                     float sourceSample = SampleLinear(GrainBank, voice.StartSample + cursor);
                     mixed += sourceSample * voice.Gain * window;
 
@@ -251,6 +541,18 @@ namespace Hecton8.Audio.Synthesis
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolveWindow(float t)
+        {
+            if (!HanningLut.IsCreated || HanningLut.Length <= 1)
+                return TriangleWindow(t);
+
+            float lutCursor = math.saturate(t) * (HanningLut.Length - 1f);
+            int i0 = math.clamp((int)lutCursor, 0, HanningLut.Length - 1);
+            int i1 = math.min(i0 + 1, HanningLut.Length - 1);
+            return math.lerp(HanningLut[i0], HanningLut[i1], math.saturate(lutCursor - i0));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float SampleLinear(NativeArray<float> samples, float cursor)
         {
             int length = samples.Length;
@@ -265,13 +567,22 @@ namespace Hecton8.Audio.Synthesis
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    /// <summary>
+    /// Twenty-four-byte oscillator state with double phase first and no packed layout.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
     public struct KineticImpactSineOscillatorState
     {
+        /// <summary>Oscillator phase in normalized cycles.</summary>
         public double Phase;
+        /// <summary>One-pole low-pass state.</summary>
         public float LowPassState;
+        /// <summary>Oscillator age in seconds.</summary>
         public float AgeSeconds;
-        public float Reserved0;
+#pragma warning disable 0169
+        private float _pad0;
+        private float _pad1;
+#pragma warning restore 0169
     }
 
     [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast, CompileSynchronously = true)]

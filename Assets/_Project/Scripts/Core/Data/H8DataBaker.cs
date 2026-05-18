@@ -120,8 +120,8 @@ namespace Hecton8.Core.Data
 
             // COLD ALLOC: List<PendingRecord>[128] - validated bake records before contiguous binary write - owner: H8DataBaker
             List<PendingRecord> records = new List<PendingRecord>(128);
-            // COLD ALLOC: Dictionary<uint,string>[256] - Babel text pool for cold bake output - owner: H8DataBaker
-            Dictionary<uint, string> stringPool = new Dictionary<uint, string>(256);
+            // COLD ALLOC: List<BabelBuildEntry>[256] - flat Babel text pool for cold bake output - owner: H8DataBaker
+            List<BabelBuildEntry> stringPool = new List<BabelBuildEntry>(256);
             // COLD ALLOC: HashSet<uint>[256] - duplicate ID collision gate before runtime lookup map - owner: H8DataBaker
             HashSet<uint> recordHashes = new HashSet<uint>(256);
             for (int i = 0; i < Schemas.Length; i++)
@@ -149,6 +149,7 @@ namespace Hecton8.Core.Data
                 return staticResult;
 
             staticResult.StringCount = babelResult.StringCount;
+            staticResult.PaddingRepairCount = babelResult.PaddingRepairCount;
             staticResult.BabelCrc32 = babelResult.BabelCrc32;
             staticResult.BabelPath = babelPath;
             staticResult.Message = "Static data bake complete.";
@@ -176,7 +177,7 @@ namespace Hecton8.Core.Data
             string path,
             SheetSchema schema,
             List<PendingRecord> records,
-            Dictionary<uint, string> stringPool,
+            List<BabelBuildEntry> stringPool,
             HashSet<uint> recordHashes)
         {
             H8CsvTable table;
@@ -371,7 +372,7 @@ namespace Hecton8.Core.Data
             SheetSchema schema,
             int[] columnMap,
             int row,
-            Dictionary<uint, string> stringPool)
+            List<BabelBuildEntry> stringPool)
         {
             string id = GetByName(table, schema, columnMap, row, "Id");
             string name = GetByName(table, schema, columnMap, row, "Name");
@@ -456,22 +457,18 @@ namespace Hecton8.Core.Data
             return pending;
         }
 
-        private static H8DataBakeResult WriteBabelDictionary(string outputPath, Dictionary<uint, string> stringPool)
+        private static H8DataBakeResult WriteBabelDictionary(string outputPath, List<BabelBuildEntry> stringPool)
         {
             List<BabelBuildEntry> entries = new List<BabelBuildEntry>(stringPool.Count);
-            foreach (KeyValuePair<uint, string> pair in stringPool)
+            for (int i = 0; i < stringPool.Count; i++)
             {
-                entries.Add(new BabelBuildEntry
-                {
-                    Hash = pair.Key,
-                    Text = pair.Value
-                });
+                entries.Add(stringPool[i]);
             }
 
             entries.Sort(CompareBabelHashAscending);
 
             int indexOffset = H8StaticDataFormat.AlignUp16(BabelHeaderSizeBytes);
-            int dataOffset = H8StaticDataFormat.AlignUp16(indexOffset + (entries.Count * UnsafeUtility.SizeOf<H8BabelDictionaryEntry>()));
+            int dataOffset = H8StaticDataFormat.AlignUp16(indexOffset + (entries.Count * UnsafeUtility.SizeOf<BabelIndexDTO>()));
             int totalBytes = dataOffset;
             for (int i = 0; i < entries.Count; i++)
             {
@@ -479,6 +476,8 @@ namespace Hecton8.Core.Data
                 entries[i] = entries[i].WithOffset(totalBytes);
                 totalBytes += Encoding.UTF8.GetByteCount(entries[i].Text);
             }
+            int paddingRepairBytes = H8StaticDataFormat.AlignUp16(totalBytes) - totalBytes;
+            totalBytes = H8StaticDataFormat.AlignUp16(totalBytes);
 
             byte[] bytes = new byte[totalBytes];
             fixed (byte* basePtr = bytes)
@@ -487,13 +486,13 @@ namespace Hecton8.Core.Data
                 {
                     BabelBuildEntry buildEntry = entries[i];
                     int byteCount = Encoding.UTF8.GetBytes(buildEntry.Text, 0, buildEntry.Text.Length, bytes, buildEntry.Offset);
-                    H8BabelDictionaryEntry entry = new H8BabelDictionaryEntry
+                    BabelIndexDTO entry = new BabelIndexDTO
                     {
-                        Hash = buildEntry.Hash,
-                        Offset = (uint)buildEntry.Offset,
-                        Length = (uint)byteCount
+                        StringHash = buildEntry.Hash,
+                        ByteOffset = (uint)buildEntry.Offset,
+                        ByteLength = (uint)byteCount
                     };
-                    WriteStruct(basePtr + indexOffset + (i * UnsafeUtility.SizeOf<H8BabelDictionaryEntry>()), in entry);
+                    WriteStruct(basePtr + indexOffset + (i * UnsafeUtility.SizeOf<BabelIndexDTO>()), in entry);
                 }
 
                 uint crc = H8Crc32.Compute(basePtr + BabelHeaderSizeBytes, totalBytes - BabelHeaderSizeBytes);
@@ -515,6 +514,7 @@ namespace Hecton8.Core.Data
                 {
                     Success = true,
                     StringCount = entries.Count,
+                    PaddingRepairCount = paddingRepairBytes,
                     BabelCrc32 = crc,
                     BabelPath = outputPath
                 };
@@ -657,6 +657,10 @@ namespace Hecton8.Core.Data
                 return Fail("Babel header ABI drift: expected 32 bytes.");
             if (UnsafeUtility.SizeOf<H8BabelDictionaryEntry>() != 16)
                 return Fail("Babel entry ABI drift: expected 16 bytes.");
+            if (UnsafeUtility.SizeOf<BabelIndexDTO>() != 16)
+                return Fail("Babel index DTO ABI drift: expected 16 bytes.");
+            if (UnsafeUtility.SizeOf<BabelLookupResultDTO>() != 16)
+                return Fail("Babel lookup result ABI drift: expected 16 bytes.");
             if (UnsafeUtility.SizeOf<H8StaticDataTelemetryEntry>() != 64)
                 return Fail("Static data telemetry ABI drift: expected 64 bytes.");
             if (UnsafeUtility.SizeOf<H8StaticDataDumpHeader>() != H8StaticDataFormat.TelemetryDumpHeaderSizeBytes)
@@ -724,19 +728,26 @@ namespace Hecton8.Core.Data
             return HashByte(hash, 0);
         }
 
-        private static uint AddString(Dictionary<uint, string> stringPool, string value)
+        private static uint AddString(List<BabelBuildEntry> stringPool, string value)
         {
             uint hash = H8DataHashTool.ComputeFnv1a32Utf8(value.AsSpan());
-            if (stringPool.TryGetValue(hash, out string existing))
+            for (int i = 0; i < stringPool.Count; i++)
             {
-                if (!string.Equals(existing, value, StringComparison.Ordinal))
+                BabelBuildEntry existing = stringPool[i];
+                if (existing.Hash != hash)
+                    continue;
+
+                if (!string.Equals(existing.Text, value, StringComparison.Ordinal))
                     throw new InvalidDataException("Babel hash collision for text hash 0x" + hash.ToString("X8", CultureInfo.InvariantCulture));
-            }
-            else
-            {
-                stringPool.Add(hash, value);
+
+                return hash;
             }
 
+            stringPool.Add(new BabelBuildEntry
+            {
+                Hash = hash,
+                Text = value
+            });
             return hash;
         }
 

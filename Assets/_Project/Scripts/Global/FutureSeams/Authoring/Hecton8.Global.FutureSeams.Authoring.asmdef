@@ -1,0 +1,16 @@
+{
+    "name": "Hecton8.Global.FutureSeams.Authoring",
+    "rootNamespace": "Hecton8.Global.FutureSeams.Authoring",
+    "references": [
+        "Hecton8.Global.Contracts"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

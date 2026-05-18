@@ -1,7 +1,15 @@
-﻿# PROJECT_CONTENT_LEDGER
+# PROJECT_CONTENT_LEDGER
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Scope: content hash authority, proxy/ghost policy, and authored template integrity surface
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Persistent_Object_Registry.txt`
 
@@ -35,7 +43,7 @@ Current result:
 
 Full candidate artifact:
 
-- `CodexArtifacts/2026-05-07_ORPHANED_SCRIPT_AUDIT.csv`
+- Historical orphan-audit artifact path, currently absent in the R17 filesystem check: `CodexArtifacts/2026-05-07_ORPHANED_SCRIPT_AUDIT.csv`. Do not treat the orphan counts as artifact-backed until the CSV is restored, archived, or rerun.
 
 Folder distribution:
 

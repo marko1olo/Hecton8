@@ -5,7 +5,7 @@ using Unity.Mathematics;
 namespace Hecton8.World
 {
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct AbsoluteUniversePositionBlit
     {
         [FieldOffset(0)]

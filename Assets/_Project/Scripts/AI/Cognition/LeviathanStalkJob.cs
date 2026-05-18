@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -11,14 +10,16 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Burst tangent-orbit steering kernel for Alpha Leviathan stalking.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Strict, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct LeviathanStalkJob : IJobParallelFor
     {
+        [NoAlias]
         public NativeArray<AlphaLeviathanCognitionState> States;
-        [ReadOnly] public NativeArray<AlphaLeviathanSensoryStimulus> SensoryStimuli;
+        [ReadOnly, NoAlias]
+        public NativeArray<AlphaLeviathanSensoryStimulus> SensoryStimuli;
+        [NoAlias]
         public NativeArray<AlphaLeviathanSteeringOutput> SteeringOutputs;
-        [NativeDisableParallelForRestriction]
+        [NativeDisableParallelForRestriction, NoAlias]
         public NativeArray<AlphaLeviathanTelemetryEntry> TelemetryRing;
         public uint Frame;
 

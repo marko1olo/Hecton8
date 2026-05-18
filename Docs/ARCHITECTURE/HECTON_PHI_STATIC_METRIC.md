@@ -2,6 +2,21 @@
 
 Date: 2026-05-15
 Status: STATIC METRIC CONTRACT / RUNTIME PROOF REQUIRED
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Evidence Class: STATIC_SOURCE
 Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
@@ -218,8 +233,7 @@ renaming non-canonical payloads:
   `MacroDatabaseSectorHydrationSignal` while the contracts DLL-compatible sink
   keeps `SectorHydratedSignal`.
 
-This was source and CLI-compile verified. It is not runtime or Unity-import
-proof.
+This was source-observed and CLI-compile claimed by prior report text. Treat it as compile proof only when paired with a linked command-output artifact and timestamp. It is not runtime or Unity-import proof.
 
 Unity loop debt is also a hard zero-regression gate. The only current raw Unity
 loop declarations are the two `SystemDispatcher` shell methods that bridge
@@ -231,9 +245,9 @@ updates this contract with a bounded dispatcher-shell justification.
 
 ## 2026-05-15 Current Static Baseline
 
-Artifact: `../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json`
+Artifact: `../Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json`
 with exit summary
-`../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.exit.txt`.
+`../Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.exit.txt`.
 Result: `EXIT=0` on a full source summary JSON budget run at
 `2026-05-15 22:46:22 +04:00`.
 
@@ -269,15 +283,15 @@ This supersedes earlier same-day MemoryAlignment failure artifacts, the interim
 R47 `GlobalRegistrySurface=5076 > 5075` failure, R49, R52, R53, R54, and the
 integration CurrentDiskBudgetGate19 slice as current-disk static H-Phi status.
 Pair it with
-`../AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log`
+`../Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log`
 for CLI compile evidence. It is not Unity import proof, Play Mode proof,
 profiler proof, GC proof, player-build proof, or visual quality proof.
 
 ## 2026-05-15 DOC_HONEST_ANALYSIS R3 Core Graph Prune
 
-Artifact: `../AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json`
+Artifact: `../Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json`
 with exit summary
-`../AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.exit.txt`.
+`../Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.exit.txt`.
 
 Result: `EXIT=0` on a Core graph summary after clearing transient unused
 `Hecton8.World.GPR` Core asmdef drift; the current file/index contain no such
@@ -293,7 +307,7 @@ Current Core graph debt after the prune:
 - unused Core asmdef reference candidates: none reported by the optional scan
 
 Compile follow-up:
-`../AgentLogs/Build_DOC_HONEST_ANALYSIS_R3_20260515_AfterGprAsmdefPrune_Hecton8Core.log`
+`../Archive/Batch006/AgentLogs/Build_DOC_HONEST_ANALYSIS_R3_20260515_AfterGprAsmdefPrune_Hecton8Core.log`
 reports `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`,
 `0 Warning(s)`, and `0 Error(s)`.
 
@@ -384,6 +398,23 @@ name debt, top owner-blocked DataVault candidate files,
 `TopPrimaryManagedRuntimeRiskFiles`, `ManagedRiskByRole`,
 `DataVaultBacklogByDomain`, and `DataVaultBacklogByRole`.
 
+Historical trend audit:
+
+```powershell
+Tools/Architecture/HectonPhiTrend.ps1
+```
+
+Optional trend including SignalBus static-audit counters:
+
+```powershell
+Tools/Architecture/HectonPhiTrend.ps1 -IncludeSignalAudit
+```
+
+The trend script reads existing `HPhi*.json` artifacts from active agent logs
+and archives, flattens numeric scalar indicators, and reports first/last/delta,
+min, and max per metric. It is history analysis only; it does not replace a fresh
+`HectonPhiAudit.ps1` run.
+
 Core graph only:
 
 ```powershell
@@ -416,8 +447,8 @@ Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -Max
 
 Source-count and score-floor gates require a full source scan. `-CoreGraphOnly`
 rejects them by design so graph-only status cannot masquerade as full H-Phi
-proof. The current floors are deliberately just below the latest verified
-static values; domain owners should lower debt and then tighten these floors.
+proof. The current floors are deliberately just below the latest artifact-backed
+static values in the cited report context; domain owners should lower debt and then tighten these floors.
 Managed-runtime counters are static risk surfaces, not profiler/GC proof.
 `PrimaryManagedRuntimeRisk` excludes editor, instrumentation, persistence, and
 UI role buckets so smoke/diagnostic/save/UI debt remains visible without being

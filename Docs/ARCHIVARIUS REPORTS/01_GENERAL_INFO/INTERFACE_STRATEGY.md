@@ -1,7 +1,22 @@
-﻿# INTERFACE STRATEGY
+# INTERFACE STRATEGY
 
-Date: 2026-05-07
+Date: 2026-05-18
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Scope: ownership strategy for `GlobalRegistryContracts.cs` after source recheck
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
 
@@ -125,7 +140,7 @@ That proof was not established for `IRenderable`, `IAudioService`, or `IUIServic
 | P0 | purge ghost/fragmented claims from dependent docs | current source already disproves them |
 | P1 | keep one authoritative owner named for each registry-facing service contract | prevents drift and folklore |
 | P1 | when Unity evidence exists, add runtime occupancy notes separately from source ownership | avoids mixing static facts with live-state assumptions |
-| P2 | rerun interface audit after any `GlobalRegistryContracts.cs` expansion | current May 13 R3 source count is 51 direct public interfaces; older 19/27/31/33/34/41 snapshots are stale and coverage must be recounted before claims |
+| P2 | rerun interface audit after any `GlobalRegistryContracts.cs` expansion | May 18 R18 active-doc spot check records `63` direct public interfaces; older 19/27/31/33/34/41/51 snapshots are stale and coverage must be recounted before claims |
 
 ## 5. Regression Model
 

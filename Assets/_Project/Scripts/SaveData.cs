@@ -23,7 +23,6 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory.Layout;
-using Hecton8.Gameplay;
 using Hecton8.Narrative;
 using Hecton8.World;
 using Unity.Collections;
@@ -339,18 +338,18 @@ namespace Hecton8.SaveSystem
                 audioLogEncryptedFragmentBits = new uint[MaxEncryptedAudioLogFragments],
                 // COLD ALLOC: long[IndustrialLoreBitMask.WordCount] — packed industrial lore discovery persistence — owner: SaveData
                 industrialLoreUnlockWords = new long[IndustrialLoreBitMask.WordCount],
-                // COLD ALLOC: long[DataArchaeologyDiscoveryBitMask.WordCount] - packed archaeology discovery persistence - owner: SaveData
-                dataArchaeologyDiscoveryBitWords = new long[DataArchaeologyDiscoveryBitMask.WordCount],
+                // COLD ALLOC: long[MaxDataArchaeologyDiscoveryWords] - packed archaeology discovery persistence - owner: SaveData
+                dataArchaeologyDiscoveryBitWords = new long[MaxDataArchaeologyDiscoveryWords],
                 dataArchaeologyPartialScanCount = 0,
-                // COLD ALLOC: uint[DataArchaeologyRuntime.MaxPartialScanCount] - partial archaeology hashes - owner: SaveData
-                dataArchaeologyPartialScanHashes = new uint[DataArchaeologyRuntime.MaxPartialScanCount],
-                // COLD ALLOC: ushort[DataArchaeologyRuntime.MaxPartialScanCount] - partial archaeology progress - owner: SaveData
-                dataArchaeologyPartialScanProgressPermille = new ushort[DataArchaeologyRuntime.MaxPartialScanCount],
+                // COLD ALLOC: uint[MaxDataArchaeologyPartialScans] - partial archaeology hashes - owner: SaveData
+                dataArchaeologyPartialScanHashes = new uint[MaxDataArchaeologyPartialScans],
+                // COLD ALLOC: ushort[MaxDataArchaeologyPartialScans] - partial archaeology progress - owner: SaveData
+                dataArchaeologyPartialScanProgressPermille = new ushort[MaxDataArchaeologyPartialScans],
                 dataArchaeologyScanStateCount = 0,
-                // COLD ALLOC: int[DataArchaeologyRuntime.MaxDiscoveryCount] - data archaeology scan state keys - owner: SaveData
-                dataArchaeologyScanStateKeys = new int[DataArchaeologyRuntime.MaxDiscoveryCount],
-                // COLD ALLOC: byte[DataArchaeologyRuntime.MaxDiscoveryCount] - data archaeology scan state values - owner: SaveData
-                dataArchaeologyScanStateValues = new byte[DataArchaeologyRuntime.MaxDiscoveryCount],
+                // COLD ALLOC: int[MaxDataArchaeologyScanStates] - data archaeology scan state keys - owner: SaveData
+                dataArchaeologyScanStateKeys = new int[MaxDataArchaeologyScanStates],
+                // COLD ALLOC: byte[MaxDataArchaeologyScanStates] - data archaeology scan state values - owner: SaveData
+                dataArchaeologyScanStateValues = new byte[MaxDataArchaeologyScanStates],
                 questActiveIds = new List<string>(),
                 questCompletedIds = new List<string>(),
                 atlasSignalDetected = false,
@@ -410,10 +409,13 @@ namespace Hecton8.SaveSystem
         public const int MaxEncryptedAudioLogFragments = 32;
 
         /// <summary>Maximum persisted partial archaeology scan records. v64 DISCOVERY.</summary>
-        public const int MaxDataArchaeologyPartialScans = DataArchaeologyRuntime.MaxPartialScanCount;
+        public const int MaxDataArchaeologyPartialScans = 256;
 
         /// <summary>Maximum explicit scanner state records. v66 DISCOVERY.</summary>
-        public const int MaxDataArchaeologyScanStates = DataArchaeologyRuntime.MaxDiscoveryCount;
+        public const int MaxDataArchaeologyScanStates = 1024;
+
+        /// <summary>Persisted 1024-bit archaeology discovery mask word count. v64 DISCOVERY.</summary>
+        public const int MaxDataArchaeologyDiscoveryWords = MaxDataArchaeologyScanStates / 64;
 
         /// <summary>Maximum sparse RLE radiation payload. v68 RADIATION.</summary>
         public const int RadiationGridRleMaxBytes = 81920;
@@ -542,7 +544,7 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct PlayerKinematicStateDTO
     {
         public float posX;
@@ -592,7 +594,7 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct ExternalScavengerSiteDTO
     {
         public int chunkX;
@@ -606,7 +608,10 @@ namespace Hecton8.SaveSystem
         public uint seed;
         private long _pad0;
 
-        public bool IsValid => remainingTime > 0f;
+        public bool IsValid()
+        {
+            return remainingTime > 0f;
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -681,7 +686,7 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct InventoryShadowDTO
     {
         public const byte FlagHasPayload = 1 << 0;
@@ -745,7 +750,7 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public struct ProceduralFaunaStateDTO
     {
         public const byte FlagLargeThreatZone = 1 << 0;
@@ -756,23 +761,11 @@ namespace Hecton8.SaveSystem
         public byte flags;
         private byte _pad0;
         private ushort _pad1;
-
-        public bool isLargeThreatZone
-        {
-            get => (flags & FlagLargeThreatZone) != 0;
-            set => flags = value ? (byte)(flags | FlagLargeThreatZone) : (byte)(flags & ~FlagLargeThreatZone);
-        }
-
-        public bool blocked
-        {
-            get => (flags & FlagBlocked) != 0;
-            set => flags = value ? (byte)(flags | FlagBlocked) : (byte)(flags & ~FlagBlocked);
-        }
     }
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 112)]
+    [StructLayout(LayoutKind.Sequential, Size = 112)]
     public struct HibernatedFaunaStateDTO
     {
         public const byte FlagLargeThreat = 1 << 0;
@@ -796,17 +789,11 @@ namespace Hecton8.SaveSystem
         public byte flags;
         private byte _pad0;
         private ushort _pad1;
-
-        public bool isLargeThreat
-        {
-            get => (flags & FlagLargeThreat) != 0;
-            set => flags = value ? (byte)(flags | FlagLargeThreat) : (byte)(flags & ~FlagLargeThreat);
-        }
     }
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct ProceduralGeologySeamStateDTO
     {
         public long runtimeKey;
@@ -828,7 +815,7 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct ProceduralGeologyCaveEntranceDTO
     {
         public long runtimeKey;
@@ -928,7 +915,7 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct HabitatFloodStateDTO
     {
         public const byte FlagFlooded = 1 << 0;
@@ -969,7 +956,7 @@ namespace Hecton8.SaveSystem
     /// </summary>
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct ModuleBlitDTO
     {
         public int prefabHashId;
@@ -1264,7 +1251,10 @@ namespace Hecton8.SaveSystem
         public float aupLocalY;
         public float aupLocalZ;
 
-        internal bool HasAupPosition => positionEncodingVersion == AupPositionEncodingVersion;
+        internal bool HasAupPosition()
+        {
+            return positionEncodingVersion == AupPositionEncodingVersion;
+        }
 
         public Vector3 GetPosition() => new Vector3(posX, posY, posZ);
 
@@ -1318,7 +1308,7 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct PDAContextualAdvisoryDTO
     {
         public int issuedFlags;
@@ -1454,7 +1444,7 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public struct EnvironmentalStrainDTO
     {
         public float microplasticStrain;
@@ -1587,7 +1577,7 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public struct ModuleGraphEdgeDTO
     {
         public int sourceNodeIndex;

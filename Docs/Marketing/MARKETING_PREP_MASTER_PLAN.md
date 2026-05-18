@@ -1,0 +1,286 @@
+﻿# HECTON-8 Low-Budget Marketing Preparation Plan
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source/platform-orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current official platform rules, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, public Steam page, public demo, wishlist performance, creator outreach readiness, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters, platform rules, dates, and marketing claims inside this file are subordinate to fresh official sources and current project proof.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+Status: pre-screenshot planning
+Budget assumption: a few thousand USD
+Public feature stance: single-player-first, no co-op promise
+
+## R19 KPI / Forecast Boundary
+
+All KPI numbers in this plan are internal planning targets and kill-criteria placeholders, not market forecasts, investor language, creator promises, or proof of expected performance. Source state is `INTERNAL_ASSUMPTION / PENDING_BENCHMARK_SOURCE` until real Steam page, UTM, outreach, demo, and wishlist telemetry exists.
+
+Do not publish the targets externally. Replace them with measured baselines after the first public/private campaign data exists.
+
+## Brutal Premise
+
+Marketing cannot rescue unclear footage. If the hook cannot be understood from one image or 20 seconds of gameplay, the product surface is not ready.
+
+The money is not for "ads". The money is for proof packaging:
+
+- Steam page;
+- capsule/key art;
+- trailer/clip edit;
+- creator database;
+- press kit;
+- demo capture;
+- QA on the public slice.
+
+Paid ads before proof assets are a budget fire.
+
+## Current Work Before Screenshots
+
+Do now:
+
+1. Lock public positioning.
+2. Build creator and press lead database.
+3. Build Steam page copy variants.
+4. Build pitch templates.
+5. Build post templates.
+6. Monitor SN2 player pain and underwater/survival trends.
+7. Prepare press kit shell.
+8. Prepare capture checklists.
+9. Prepare agent workflows.
+10. Define asset gates and kill criteria.
+
+Do not do now:
+
+- broad outreach;
+- paid ads;
+- Discord hype push;
+- public feature promises;
+- Steam page launch without key art/screenshots unless forced by schedule;
+- "Subnautica killer" posts;
+- co-op teasers.
+
+## Positioning Pillars
+
+| Pillar | What It Sells | What It Must Show |
+|---|---|---|
+| Pressure | The ocean is a mechanical threat | pressure warnings, hull noise, base stress, depth penalties |
+| Machinery | Survival depends on heavy systems | pumps, ballast, power, tools, dirty interfaces |
+| Deep-Sea Noir | Tone distinct from bright alien wonder | black water, industrial light, silhouettes, grime |
+| Salvage | Progress through dangerous recovery | wrecks, tools, partial safety, evidence trails |
+| Seed Ship | Narrative hook as system corruption | radar glitches, flora/fauna aggression, instrument distortion |
+| Performance Honesty | Trust against UE5-stutter anxiety | only when real: frametime overlay, 0 GC capture, hardware label |
+
+## Phase 0 - No Screenshots Yet
+
+Objective: build the machine, not hype.
+
+Actions:
+
+- Write 20 Steam short description variants.
+- Build 300+ creator/press targets.
+- Create 10 pitch archetypes and 50 subject lines.
+- Create a weekly competitor monitoring loop.
+- Prepare press kit shell.
+- Prepare screenshot shot-list.
+- Prepare clip shot-list.
+- Prepare Steam tags and capsule brief.
+- Prepare QA form for cold viewers.
+
+KPIs:
+
+- 20 cold readers can describe the game in one sentence after reading the short description.
+- At least 100 creator leads have verified platform URLs.
+- At least 30 leads are high-fit survival/horror/indie creators, not generic gaming accounts.
+
+Kill criteria:
+
+- If copy reads as "underwater survival adventure", rewrite.
+- If leads are not segmented by audience fit, the database is not usable.
+- If any pitch mentions co-op, discard and rewrite.
+
+## Phase 1 - First Screenshots
+
+Objective: prove visual identity.
+
+Minimum screenshot set:
+
+1. Exterior abyss scale: one light source against black water.
+2. Interior pressure room: pipes, condensation, warnings, dirty glass.
+3. Machinery hero: pump/ballast/subsystems with industrial read.
+4. Salvage route: wreck, tool, resource, hazard.
+5. Base under stress: readable risk, not abstract damage.
+6. Threat silhouette: not fully revealed.
+7. Seed Ship/anomaly hint: instrument corruption, not lore dump.
+8. Low-tier proof frame: same scene readable without ultra effects.
+
+Asset rule:
+
+- One image, one hook, one Steam link.
+- No collage posts unless comparing visual identity.
+- No explanation-heavy screenshots.
+
+KPIs:
+
+- Source state: `INTERNAL_ASSUMPTION / PENDING_BENCHMARK_SOURCE`; do not present these as forecasts.
+- Steam visit-to-wishlist target: 8-12%.
+- Minimum acceptable: 5% after copy iteration.
+- Social save/share rate: >1.5%.
+- Creator reply rate from targeted outreach: >5%.
+
+Kill criteria:
+
+- If viewers say only "Subnautica clone", stop outreach and fix visual identity.
+- If screenshots need paragraphs, recapture.
+- If Steam conversion stays under 5%, fix store page before more traffic.
+
+## Phase 2 - First 20s Gameplay
+
+Objective: prove the game moves and the systems are legible.
+
+Clip structure:
+
+- 0-2s: failure/threat/hook.
+- 3-12s: player action.
+- 13-18s: consequence.
+- 19-20s: title + Steam wishlist CTA.
+
+Reusable clip formats:
+
+- "pressure leak decision"
+- "sonar saw it first"
+- "salvage run went wrong"
+- "lights failed below sane depth"
+- "base was fine five seconds ago"
+- "the machine is louder than the player"
+- "Seed Ship signal corrupted the instruments"
+
+KPIs:
+
+- Source state: `INTERNAL_ASSUMPTION / PENDING_BENCHMARK_SOURCE`; replace with platform telemetry before using as operating truth.
+- 3-second hold: >65%.
+- Completion on 20s clips: >40%.
+- Wishlist clicks per 1,000 views: >3.
+- Comments name at least one unique feature beyond "underwater".
+
+Kill criteria:
+
+- Completion under 25% across 10 clips.
+- Comments only compare to Subnautica without naming pressure/machinery/grime.
+- Viewer confusion about what happened.
+
+## Phase 3 - Demo
+
+Objective: create a streamable proof slice.
+
+Demo requirements:
+
+- starts meaningful gameplay under 60 seconds;
+- includes one pressure/machinery problem;
+- includes one salvage objective;
+- includes one tool interaction;
+- includes one readable threat;
+- ends with a reason to wishlist;
+- no long lore intro;
+- no tech-demo-only slice.
+
+KPIs:
+
+- Internal demo health thresholds only. Pending until first public/private demo telemetry exists.
+- demo completion: >35%;
+- median playtime: >18 minutes;
+- wishlist conversion from demo users: >20%;
+- bug complaint ratio: <10% of feedback.
+
+Kill criteria:
+
+- If it feels like a greybox, do not ship it publicly.
+- If streamers spend first 10 minutes confused, rewrite onboarding.
+- If bugs dominate feedback, pause marketing.
+
+## Phase 4 - Steam Next Fest
+
+Objective: concentrate attention only when demo and page are sharp.
+
+Rules:
+
+- Do not burn Next Fest with an unfinished demo.
+- Steam Next Fest is one of the few real visibility spikes available to a low-budget indie.
+- Daily reports must track wishlist delta, demo downloads, stream/video coverage, bug clusters, sentiment, and tag drift.
+
+KPIs:
+
+- Scenario targets only, not forecasts. `VERIFY_AFTER_STEAM_BASELINE`; do not use in public, investor, creator, or scheduling copy.
+- conservative wishlist gain: 3,000;
+- stretch: 10,000+;
+- demo download-to-wishlist: >15%;
+- organic creator coverage: 25+ posts/videos/streams;
+- Steam discussion useful/positive sentiment: >65%.
+
+Kill criteria:
+
+- If retention collapses on day 1, patch critical blockers only.
+- Do not chase balance noise mid-fest.
+- If tags are wrong, fix tags immediately.
+
+## Phase 5 - Early Access Launch
+
+Objective: sell current reality, not future promises.
+
+Rules:
+
+- page must describe what exists now;
+- no co-op promise;
+- no performance promise without proof;
+- no roadmap feature as purchase reason;
+- use keys in small tagged batches;
+- require sponsored/free-key disclosure where applicable.
+
+## Budget Under 2k USD
+
+| Item | Budget | Rationale |
+|---|---:|---|
+| Steam Direct | 100 | Required platform entry. |
+| Key art/capsule polish | 300 | Steam capsule is the storefront ad. |
+| Trailer/clip editing help | 300 | One good 20s clip beats 20 weak posts. |
+| Press kit/domain/tools | 250 | Basic professionalism. |
+| Creator database/outreach tooling | 300 | Time saver, not spam machine. |
+| Emergency capture/audio/edit pass | 300 | Fix proof assets fast. |
+| Reserve | 450 | Capsule redo, localization snippet, demo cut. |
+
+## Budget Under 5k USD
+
+| Item | Budget | Rationale |
+|---|---:|---|
+| Steam Direct | 100 | Required. |
+| Capsule/key art/press visuals | 900 | Largest ROI before ads. |
+| Trailer + 10 vertical cuts | 1200 | Gives multiple tests from one capture session. |
+| Press kit/site/localized one-pager | 600 | Supports creators and press. |
+| Creator outreach/admin/database | 800 | Manual verification and segmentation. |
+| Demo QA/capture support | 700 | Prevents public slice from embarrassing the project. |
+| Reserve | 700 | Fixes what metrics expose. |
+
+## Agent Use
+
+Agents are useful for labor, not final judgment.
+
+Use agents for:
+
+- lead mining;
+- lead verification;
+- pitch variations;
+- Steam copy variants;
+- Reddit/TikTok/YouTube hook variants;
+- weekly competitor reports;
+- sentiment buckets;
+- tag audits;
+- key-request fraud triage;
+- source ledgers.
+
+Do not let agents:
+
+- promise features;
+- approve final positioning;
+- approve screenshots;
+- invent metrics;
+- contact creators without human review;
+- decide paid spend.

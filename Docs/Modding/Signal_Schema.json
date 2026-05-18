@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "schemaRevision": 13,
+  "schemaRevision": 14,
   "schemaId": "hecton8.modding.signal_schema.v1",
   "status": "MOD_API_DEFINED_STATIC_SOURCE_RUNTIME_PENDING",
   "generatedBy": "MODDING_API_SCHEMA_BUILDER",
-  "generatedOn": "2026-05-14",
+  "generatedOn": "2026-05-17",
   "evidence": {
     "class": [
       "STATIC_SOURCE",
@@ -54,9 +54,9 @@
     "auditPath": "Docs/Modding/Signal_Audit_Matrix.md",
     "sourceFile": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
     "extractionCommand": "rg -o \"public struct [A-Za-z0-9_]+ : ISignal\" Assets/_Project/Scripts/Core/GlobalSignals.cs",
-    "uniqueISignalStructCount": 134,
+    "uniqueISignalStructCount": 160,
     "modProjectedISignalCount": 2,
-    "deniedByDefaultISignalCount": 132,
+    "deniedByDefaultISignalCount": 158,
     "projectedISignals": [
       "CombatDamageSignal",
       "WeatherChangedSignal"
@@ -118,6 +118,7 @@
     {
       "surface": "HectonAPI.Commands",
       "methods": [
+        "RequestFuture",
         "Request",
         "RequestAup",
         "RequestRenderInstance"
@@ -262,7 +263,7 @@
     "auditPath": "Docs/Modding/API_Surface_Audit_Matrix.md",
     "sourceFile": "Assets/_Project/Scripts/ModdingAPI/HectonAPI.cs",
     "publicNestedSurfaceCount": 16,
-    "publicStaticMethodCount": 34,
+    "publicStaticMethodCount": 35,
     "publicStaticPropertyCount": 2,
     "internalForbiddenMethodCount": 9,
     "surfaces": [
@@ -593,15 +594,17 @@
     "payloadLayoutAudit": "Docs/Modding/Payload_Layout_Audit_Matrix.md",
     "loaderSaveAudit": "Docs/Modding/Loader_Save_Audit_Matrix.md",
     "eventSubscriptionAudit": "Docs/Modding/Event_Subscription_Audit_Matrix.md",
-    "lastKnownPass": {
-      "date": "2026-05-15",
-      "sourceSignals": 134,
+    "lastStaticValidationSnapshot": {
+      "date": "2026-05-17",
+      "evidenceClass": "STATIC_SOURCE_VALIDATION",
+      "runtimeProof": "PENDING_VERIFICATION",
+      "sourceSignals": 160,
       "allowedProjectedSignals": 2,
-      "deniedByDefaultSignals": 132,
+      "deniedByDefaultSignals": 158,
       "acceptedCommandOpcodes": 8,
       "commandRejectReasons": 19,
       "publicApiSurfaces": 16,
-      "publicApiMethods": 34,
+      "publicApiMethods": 35,
       "publicApiProperties": 2,
       "internalForbiddenApiMethods": 9,
       "modEventDtoSizeBytes": 64,
@@ -805,6 +808,7 @@
   "commandApi": {
     "auditPath": "Docs/Modding/Command_Audit_Matrix.md",
     "requestApis": [
+      "HectonAPI.Commands.RequestFuture(in FutureCommandEnvelope envelope)",
       "HectonAPI.Commands.Request(in ModCommand command)",
       "HectonAPI.Commands.RequestAup(in ModAupCommand command)",
       "HectonAPI.Commands.RequestRenderInstance(in ModRenderInstanceCommand command)"

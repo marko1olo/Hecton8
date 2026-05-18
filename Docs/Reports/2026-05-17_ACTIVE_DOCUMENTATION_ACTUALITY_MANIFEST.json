@@ -10,12 +10,12 @@
     "runtimeProof":  "ABSENT",
     "scope":  "Live/reference Docs excluding Archive, _Archive, AgentLogs, Tasks, ARCHIVARIUS REPORTS, DEPRECATED, Docs/DEPRECATED, and April forensic bundle.",
     "counts":  {
-                   "liveTotal":  548,
-                   "liveMarkdown":  430,
-                   "liveText":  10,
+                   "liveTotal":  557,
+                   "liveMarkdown":  438,
+                   "liveText":  11,
                    "liveJson":  108,
-                   "stableMarkdownExcludingReports":  249,
-                   "missingHeaderMarkdownAllLive":  97,
+                   "stableMarkdownExcludingReports":  251,
+                   "missingHeaderMarkdownAllLive":  98,
                    "missingHeaderStableMarkdownExcludingReports":  0
                },
     "authority":  {
@@ -40,11 +40,11 @@
                                "oldCurrentVisualDoctrineRefsInStableDocs":  0,
                                "historicalOldActiveManifestRefsInStableDocs":  35,
                                "historicalMay11OverrideRefsInStableDocs":  35,
-                               "currentActualityLedgerRefsInStableDocs":  38,
-                               "saveV8Refs":  24,
-                               "addressablesRefs":  361,
-                               "missingMay11BuildArtifactRefs":  329,
-                               "computeRootDriftRefs":  17
+                               "currentActualityLedgerRefsInStableDocs":  184,
+                               "saveV8Refs":  25,
+                               "addressablesRefs":  378,
+                               "missingMay11BuildArtifactRefs":  330,
+                               "computeRootDriftRefs":  21
                            },
     "staleCurrentManifestStableRefs":  [
 

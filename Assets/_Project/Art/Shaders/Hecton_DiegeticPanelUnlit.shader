@@ -92,6 +92,7 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
             SAMPLER(sampler_MainTex);
             float4 _HectonPdaInventoryParallax;
             float4 _HectonUiAnalogJitter;
+            float _HectonDiegeticGlitchIntensity;
 
             float Bayer4x4(float2 pixelCoord)
             {
@@ -175,12 +176,13 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
                 float screenCenteredX = (input.positionCS.x * rcp(max(1.0, _ScaledScreenParams.x))) - 0.5;
                 panelUv.x += screenCenteredX * _HectonPdaInventoryParallax.x * inventoryMask * 0.08;
 
-                float damageGlitch = saturate(_TerminalDamageGlitch);
+                float damageGlitch = saturate(max(_TerminalDamageGlitch, _HectonDiegeticGlitchIntensity));
                 float glitchCell = floor(panelSampleUv.y * 48.0);
                 float glitchNoise = Hash21(float2(glitchCell, floor(_Time.y * 24.0)));
                 float glitchWave = (FastTrianglePulse01(_Time.y * 31.0 + glitchCell * 0.73 + glitchNoise * 6.28318) * 2.0 - 1.0);
                 float glitchGate = step(0.58, glitchNoise) * damageGlitch;
                 panelUv.x += glitchWave * glitchGate * 0.014;
+                panelUv.x += step(frac(panelSampleUv.y * 100.0 + _Time.y * 7.0), damageGlitch) * damageGlitch * 0.1;
 
                 float analogStrength = saturate(_HectonUiAnalogJitter.x) * inventoryMask;
                 float2 analogCell = floor(panelSampleUv * float2(113.0, 47.0));

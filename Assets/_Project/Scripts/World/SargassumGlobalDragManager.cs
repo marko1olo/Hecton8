@@ -84,7 +84,7 @@ namespace Hecton8.World
             public float Occlusion01;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         public struct EntanglementStrainSignal
         {
             public int SourceInstanceId;
@@ -95,7 +95,7 @@ namespace Hecton8.World
             public float Shake01;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         public struct MassiveDisplacementSignal
         {
             public Vector3 PositionWS;
@@ -2973,7 +2973,7 @@ namespace Hecton8.World
             for (int i = 0; i < restoreCount; i++)
             {
                 ExternalScavengerSiteDTO dto = snapshot[i];
-                if (!dto.IsValid)
+                if (!dto.IsValid())
                     continue;
 
                 _externalScavengerSites[writeIndex++] = DequantizeExternalSite(dto);

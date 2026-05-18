@@ -1,0 +1,129 @@
+﻿{
+    "Timestamp":  "2026-05-18 17:10:15 +04:00",
+    "Scope":  "Core dependency graph",
+    "EvidenceClass":  "STATIC_SOURCE",
+    "CoreGraph":  {
+                      "CoreAsmdef":  "Assets\\_Project\\Scripts\\Hecton8.Core.asmdef",
+                      "CoreProject":  "Hecton8.Core.csproj",
+                      "BuildGraphGate":  {
+                                             "CoreBuildProjectReferencesDisabledByDefault":  true,
+                                             "CoreBuildInParallelDisabledByDefault":  true,
+                                             "OptInProperty":  "HectonBuildProjectReferences=true"
+                                         },
+                      "Counts":  {
+                                     "CoreAsmdefReferenceCount":  43,
+                                     "CoreAsmdefDebtReferenceCount":  25,
+                                     "GeneratedProjectReferenceCount":  12,
+                                     "GeneratedProjectDebtReferenceCount":  10,
+                                     "SourceBackedBridgeReferenceCount":  26,
+                                     "SourceBackedBridgeDebtReferenceCount":  15,
+                                     "SourceBackedCompileBridgeReferenceCount":  19,
+                                     "SourceBackedCompileBridgeDebtReferenceCount":  9,
+                                     "ProjectReferenceReplacementReferenceCount":  7,
+                                     "ProjectReferenceReplacementDebtReferenceCount":  6
+                                 },
+                      "Budgets":  {
+                                      "CoreBuildGraphGate":  {
+                                                                 "Enabled":  false,
+                                                                 "Max":  true,
+                                                                 "Actual":  true,
+                                                                 "Passed":  true,
+                                                                 "EvidenceClass":  "STATIC_SOURCE_GRAPH"
+                                                             },
+                                      "CoreAsmdefDebtReferences":  {
+                                                                       "Enabled":  false,
+                                                                       "Max":  -1,
+                                                                       "Actual":  25,
+                                                                       "Passed":  true,
+                                                                       "EvidenceClass":  "STATIC_SOURCE_GRAPH"
+                                                                   },
+                                      "GeneratedProjectDebtReferences":  {
+                                                                             "Enabled":  false,
+                                                                             "Max":  -1,
+                                                                             "Actual":  10,
+                                                                             "Passed":  true,
+                                                                             "EvidenceClass":  "STATIC_SOURCE_GRAPH"
+                                                                         },
+                                      "SourceBackedBridgeDebtReferences":  {
+                                                                               "Enabled":  false,
+                                                                               "Max":  -1,
+                                                                               "Actual":  15,
+                                                                               "Passed":  true,
+                                                                               "EvidenceClass":  "STATIC_SOURCE_GRAPH"
+                                                                           },
+                                      "SourceBackedCompileBridgeDebtReferences":  {
+                                                                                      "Enabled":  false,
+                                                                                      "Max":  -1,
+                                                                                      "Actual":  9,
+                                                                                      "Passed":  true,
+                                                                                      "EvidenceClass":  "STATIC_SOURCE_GRAPH"
+                                                                                  },
+                                      "ProjectReferenceReplacementDebtReferences":  {
+                                                                                        "Enabled":  false,
+                                                                                        "Max":  -1,
+                                                                                        "Actual":  6,
+                                                                                        "Passed":  true,
+                                                                                        "EvidenceClass":  "STATIC_SOURCE_GRAPH"
+                                                                                    }
+                                  },
+                      "CoreAsmdefDebtReferences":  [
+                                                       "Hecton8.Animation.IK",
+                                                       "Hecton8.Inventory.Algorithms",
+                                                       "Hecton8.Inventory.Corrosion",
+                                                       "Hecton8.Environment.Fluids",
+                                                       "Hecton8.World.Terrain",
+                                                       "Hecton8.AI.Cognition",
+                                                       "Hecton8.AI.Ecology.Migration",
+                                                       "Hecton8.Physics.Determinism",
+                                                       "Hecton8.Physics.CCD",
+                                                       "Hecton8.Audio.Propagation",
+                                                       "Hecton8.Audio.Virtualization",
+                                                       "Hecton8.Audio.Echolocation",
+                                                       "Hecton8.Logistics",
+                                                       "Hecton8.Logistics.Grid",
+                                                       "Hecton8.Cartography",
+                                                       "Hecton8.Input",
+                                                       "Unity.InputSystem",
+                                                       "Unity.Addressables",
+                                                       "Unity.ResourceManager",
+                                                       "Unity.Profiling.Core",
+                                                       "Unity.TextMeshPro",
+                                                       "UnityEngine.UI",
+                                                       "Unity.RenderPipelines.Core.Runtime",
+                                                       "Unity.RenderPipelines.Universal.Runtime",
+                                                       "GPUInstancer"
+                                                   ],
+                      "GeneratedProjectDebtReferences":  [
+                                                             "Hecton8.Input.csproj",
+                                                             "Hecton8.Input.Generated.csproj",
+                                                             "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                             "GPUInstancer.csproj",
+                                                             "Crest.csproj",
+                                                             "WaveHarmonic.Crest.csproj",
+                                                             "WaveHarmonic.Crest.Shared.csproj",
+                                                             "ShapesRuntime.csproj",
+                                                             "EasySave3.csproj",
+                                                             "VolumetricLightBeam.csproj"
+                                                         ],
+                      "SourceBackedBridgeDebtReferences":  [
+                                                               "Hecton8.AI.Ecology.Migration",
+                                                               "Hecton8.Audio.Echolocation",
+                                                               "Hecton8.Audio.Propagation",
+                                                               "Hecton8.Environment.Fluids",
+                                                               "Hecton8.Inventory.Algorithms",
+                                                               "Hecton8.Inventory.Corrosion",
+                                                               "Hecton8.Physics.CCD",
+                                                               "Hecton8.World.Terrain",
+                                                               "Hecton8.Input.Determinism",
+                                                               "Crest",
+                                                               "GPUInstancer",
+                                                               "Hecton8.Input",
+                                                               "Unity.RenderPipelines.Universal.Runtime",
+                                                               "WaveHarmonic.Crest",
+                                                               "WaveHarmonic.Crest.Shared"
+                                                           ],
+                      "CoreAsmdefUnusedReferenceScan":  {
+                                                            "Enabled":  false
+                                                        }
+                  }
+}

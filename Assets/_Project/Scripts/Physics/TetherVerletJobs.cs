@@ -13,7 +13,7 @@ namespace Hecton8.Physics
         public const int ConstraintNonFinite = 2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     internal struct TetherVerletTelemetryEntry
     {
         public uint FrameIndex;
@@ -49,6 +49,9 @@ namespace Hecton8.Physics
         public float MaxCableVelocity;
         public float FloorY;
         public float NodeRadius;
+        public MockWorldSampler WorldSampler;
+        public float RockFriction01;
+        public int WorldSamplerEnabled;
 
         public void Execute(int index)
         {
@@ -107,20 +110,40 @@ namespace Hecton8.Physics
                 Velocities[index] = velocity;
 
             float3 acceleration = SanitizeFloat3(Acceleration, float3.zero);
+            if (WorldSamplerEnabled != 0)
+                acceleration = SanitizeFloat3(acceleration + WorldSampler.SampleFlowAcceleration(position), acceleration);
             float safeDeltaTimeSq = math.isfinite(DeltaTimeSq) && DeltaTimeSq >= 0f ? DeltaTimeSq : 0f;
             float3 next = position + velocity + (acceleration * safeDeltaTimeSq);
             float floor = FloorY + math.max(0f, NodeRadius);
             if (next.y < floor)
                 next.y = floor;
 
+            float3 previousForNextStep = position;
+            if (WorldSamplerEnabled != 0)
+            {
+                SdfSampleDTO sample = WorldSampler.Sample(next);
+                float nodeRadius = math.max(0f, NodeRadius);
+                if (sample.Distance < nodeRadius)
+                {
+                    float3 normal = MockSDFSampler.SafeNormal(sample.Normal, new float3(0f, 1f, 0f));
+                    next += normal * (nodeRadius - sample.Distance);
+                    float3 impactVelocity = next - position;
+                    float3 normalVelocity = normal * math.dot(impactVelocity, normal);
+                    float3 tangentVelocity = impactVelocity - normalVelocity;
+                    float roughness = math.saturate(RockFriction01);
+                    previousForNextStep = next - tangentVelocity * (1f - roughness);
+                }
+            }
+
             if (!math.all(math.isfinite(next)))
             {
                 next = position;
+                previousForNextStep = previous;
                 if (NodeFaultFlags.IsCreated && index < NodeFaultFlags.Length)
                     NodeFaultFlags[index] = (byte)TetherVerletFaultFlags.NonFiniteNode;
             }
 
-            PreviousPositions[index] = position;
+            PreviousPositions[index] = previousForNextStep;
             Positions[index] = next;
         }
 
@@ -304,6 +327,31 @@ namespace Hecton8.Physics
 
             faultFlags |= TetherVerletFaultFlags.ConstraintNonFinite;
             return fallback;
+        }
+    }
+
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    internal struct TetherVisualGpuSplineCopyJob : IJobParallelFor
+    {
+        [ReadOnly] public NativeArray<float3> Positions;
+        [ReadOnly] public NativeArray<float> SegmentTensions;
+        public NativeArray<GpuCableSplinePointDTO> GpuPoints;
+        public float InvSnapTension;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)Positions.Length || (uint)index >= (uint)GpuPoints.Length)
+                return;
+
+            float tension = 0f;
+            if (SegmentTensions.IsCreated && SegmentTensions.Length > 0)
+                tension = SegmentTensions[math.min(index, SegmentTensions.Length - 1)];
+
+            GpuPoints[index] = new GpuCableSplinePointDTO
+            {
+                Position = Positions[index],
+                Tension01 = math.saturate(tension * math.max(0f, InvSnapTension))
+            };
         }
     }
 

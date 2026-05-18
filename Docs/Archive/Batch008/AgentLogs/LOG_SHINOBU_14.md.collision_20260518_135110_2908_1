@@ -1,0 +1,39 @@
+# SHINOBU_14 Log
+
+## Recovery Pass - 2026-05-18
+
+What was wrong: Active SHINOBU_14 status/rationale/log files were absent in `C:\hades\Hecton8`; archived reports cannot be treated as current truth.
+
+What was done: Recreated active agent memory files and began disk-backed verification against the 20-task XML prompt.
+
+Cinematic Cheats used: Pending source audit.
+
+Exact Microseconds saved: 0 runtime microseconds; this is process recovery before code changes.
+
+## Forensic Implementation Pass - 2026-05-18
+
+What was wrong: The active SHINOBU runtime already had a vault spatial hash, but bucket collision traversal was bounded by `Count`, allowing pathological chain scans if clustering or hash collisions collapsed many fish into one bucket. `ShinobuTelemetryEntry` had implicit tail padding only, which weakened the ARM64/layout report. Mock flora used hot-path trig for a value that only needs deterministic nutritional variation.
+
+What was done: Added a 64-step spatial hash chain cap, overflow counter reporting, and solver traversal cap. Replaced hot-path sine flora sampling with a triangle-wave deterministic fake. Added explicit telemetry tail padding at byte offset 60. Re-ran static scans and built both runtime and editor assemblies.
+
+Cinematic Cheats used: Flora nutrition is a triangle-wave mathematical fake instead of a physically modeled field. Predator evasion remains a sector/radius repulsion pulse, not raycast navigation. Off-camera boids skip alignment/cohesion and advance cheaply.
+
+Exact Microseconds saved: PENDING PROFILER VERIFICATION. Static estimate only: full all-pairs 5000-fish checks are 25,000,000 candidate pairs; active solver now queries 27 local cells with 64 max chain steps and 48 accepted neighbor samples. One `math.sin` per feeding sample was removed. No device profiler run was executed.
+
+Compile Evidence: `Hecton8.Core.csproj` build completed with 0 errors / 10 warnings. `Hecton8.Editor.csproj` build completed with 0 errors / 2 warnings.
+
+Residual Risk: Runtime/Play Mode/profiler validation is still pending. Current proof is source audit, static scan, and C# compile only.
+
+## Ultra-Think Polish Pass - 2026-05-18
+
+What was wrong: Sub-agent audit found remaining rot in the active SHINOBU file: camera AUP was reconstructed from local float camera position, macro Lotka/sector maintenance still had scan-product paths, render payload could emit NaN matrices, blackbox dump v1 wrote 60B rows for a 64B struct, and debug grid construction searched existing debug cells per entity.
+
+What was done: `_cameraAup` now comes from `PlayerStateSignal.PositionAup`; `CameraPositionSignal` only supplies local forward/position. ColdTick now reuses vault-owned hash buffers as a sector hash index plus per-sector carnivore linked lists, removing the macro `EntityCount * SectorCount` lookup and starvation full-entity scans. Debug grid now walks hash buckets/chains directly. Render payload rejects invalid/NaN rows before matrix output. Blackbox dump v2 writes struct size plus full 64B telemetry rows including `Pad0` and normalizes the telemetry cursor before write. Predator pressure now also consumes the existing `FaunaStateChangedSignal` strike lane, while `MockPredatorSignal` remains the blind fallback required by the XML.
+
+Cinematic Cheats used: Flora nutrition stays a triangle-wave scalar fake. Predator evasion remains radius/sector repulsion instead of raycasting or path planning. Off-camera fish keep cheap forward motion instead of full alignment/cohesion.
+
+Exact Microseconds saved: PENDING PROFILER VERIFICATION. Static complexity removed: debug grid no longer performs `EntityCount * DebugCellCount`; macro sector lookup no longer performs `EntityCount * SectorCount`; starvation tombstoning no longer scans all entities per sector. Device microseconds cannot be claimed until Play Mode/profiler data exists.
+
+Compile Evidence: Current full compile is blocked outside this domain by 24 `Assets/_Project/Scripts/LocRegistry.cs` errors (`AbortBabelDictionaryStage` signature mismatch, missing Babel async flags/helpers, and unassigned header fields). The compiler reported no SHINOBU errors before stopping.
+
+Residual Risk: Runtime/profiler proof remains pending. `AbsoluteUniversePosition` itself is defined outside SHINOBU and was reported by audit as carrying a `Pack=1` source attribute; SHINOBU DTO offsets are asserted, but changing the global AUP type is out of this task boundary.

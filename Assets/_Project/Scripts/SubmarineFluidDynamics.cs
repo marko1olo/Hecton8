@@ -32,7 +32,6 @@ namespace Hecton8.Physics
     /// inertia blending, and delayed slosh torque.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton/Physics/Submarine Fluid Dynamics")]
     public sealed class SubmarineFluidDynamics : MonoBehaviour,
         IFixedTickable,
@@ -187,7 +186,7 @@ namespace Hecton8.Physics
         // Inspector-authored DTO. Unity serialization populates these fields outside constructor flow.
 #pragma warning disable CS0649
         [System.Serializable]
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct CompartmentDefinition
         {
             [Tooltip("Flood capacity for this compartment in cubic meters.")]
@@ -207,7 +206,7 @@ namespace Hecton8.Physics
         }
 
         [System.Serializable]
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct BulkheadDefinition
         {
             [Tooltip("Source compartment index for this transfer gate.")]
@@ -227,7 +226,7 @@ namespace Hecton8.Physics
         }
 
         // 64-byte stride keeps the gas mix and flood scalar on a 32-byte multiple without dropping partial pressures.
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct CompartmentState
         {
             [FieldOffset(0)] public float currentVolume;
@@ -746,7 +745,7 @@ namespace Hecton8.Physics
         private bool _wasBrineSubmerged;
         private float _brineSubmersionTime;
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 160)]
+        [StructLayout(LayoutKind.Explicit, Size = 160)]
         private struct HydroKinematicJobInput
         {
             [FieldOffset(0)] public float3 Velocity;
@@ -772,7 +771,7 @@ namespace Hecton8.Physics
             [FieldOffset(152)] public float MaxTorque;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct HydroKinematicJobOutput
         {
             [FieldOffset(0)] public float3 DragAcceleration;
@@ -782,7 +781,7 @@ namespace Hecton8.Physics
             [FieldOffset(32)] public float VerticalSpeed;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 128)]
+        [StructLayout(LayoutKind.Explicit, Size = 128)]
         private struct HydroBlackBoxEntry
         {
             [FieldOffset(0)] public int Frame;
@@ -806,7 +805,7 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct HydroKinematicDragJob : IJob
         {
             [ReadOnly] public NativeArray<HydroKinematicJobInput> Input;
@@ -895,7 +894,7 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct FluidTransferJob : IJob
         {
             [ReadOnly] public NativeArray<float> InputFloodVolumes;
@@ -965,7 +964,7 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct BulkheadTransferDeltaJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> FloodVolumes;
@@ -1018,7 +1017,7 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct ApplyBulkheadTransferJob : IJob
         {
             [ReadOnly] public NativeArray<int2> BulkheadPairs;
@@ -1070,7 +1069,7 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct FloodMassPropertiesResult
         {
             [FieldOffset(0)] public float FloodMassKilograms;
@@ -1082,7 +1081,7 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct FloodMassPropertiesJob : IJob
         {
             [ReadOnly] public NativeArray<float> FloodVolumes;

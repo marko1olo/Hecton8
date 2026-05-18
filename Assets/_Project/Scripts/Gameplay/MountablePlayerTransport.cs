@@ -199,6 +199,7 @@ namespace Hecton8.Gameplay
         private bool _vehicleUpgradeModuleResolved;
         private bool _submarineStructuralGridResolved;
         private bool _submarineAutoLevelControllerResolved;
+        private bool _submarineCommandSignalEnabled;
         private bool _registered;
         private bool _registeredFixedTick;
         private bool _registeredUpdate;
@@ -1495,22 +1496,19 @@ namespace Hecton8.Gameplay
             if (!TryGetComponent<SubmarineCoreDirector>(out _))
                 return;
 
+            _submarineCommandSignalEnabled = true;
             if (TryGetComponent(out _submarineAutoLevelController))
             {
                 _submarineAutoLevelControllerResolved = true;
                 return;
             }
 
-            if (Application.isPlaying)
-            {
-                _submarineAutoLevelController = gameObject.AddComponent<SubmarineAutoLevelBallastController>();
-                _submarineAutoLevelControllerResolved = _submarineAutoLevelController != null;
-            }
+            _submarineAutoLevelControllerResolved = true;
         }
 
         private void PublishVehicleCommandSignal(Vector2 moveInput, float verticalInput, float throttleOutput)
         {
-            if (_submarineAutoLevelController == null)
+            if (!_submarineCommandSignalEnabled && _submarineAutoLevelController == null)
                 return;
 
             int targetInstanceId = _vehicleCommandTargetId;

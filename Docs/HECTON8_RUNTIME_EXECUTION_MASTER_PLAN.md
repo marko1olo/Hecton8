@@ -1,8 +1,23 @@
 # HECTON-8 Runtime Execution Master Plan
 
-Status: PENDING VERIFICATION
-Verification: `PENDING VERIFICATION`
 Date: 2026-05-14
+Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+Verification: `PENDING VERIFICATION`
 
 This is the working execution plan for getting HECTON-8 to a stable, optimized, verifiable runtime state.
 
@@ -439,7 +454,7 @@ The runtime slice is only done when all of the following are true:
 - Unity compile/import is clean
 - playmode boot is stable
 - scatter owner remains singular
-- scatter hot path GC is verified
+- scatter hot path GC allocation is captured by GCMonitor or profiler evidence
 - main-thread scatter cost is measured before and after
 - total frame time is measured before and after
 - no bootstrap regression is observed

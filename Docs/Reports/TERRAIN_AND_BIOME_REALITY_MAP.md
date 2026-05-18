@@ -1,12 +1,28 @@
-﻿# TERRAIN AND BIOME REALITY MAP
+# TERRAIN AND BIOME REALITY MAP
 
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-18 R13 Report Snapshot Boundary
+
+This report file is a snapshot/provenance document. It is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/Reports/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+Historical `PASS`, `VERIFIED`, `current`, `latest`, counter, compile, runtime, 0-GC, frame-time, cost, and performance statements inside this report are not current proof unless the exact claim links a fresh artifact path, command/tool, timestamp, evidence class, and unresolved-error list. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied by this file alone.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 Date: 2026-05-07
 Scope: MapMagic terrain bridge, 108 biome matrix, scatter influence grid, biome transition runtime hooks.
 
 ## 2026-05-05 Volumetric Biome Continuation
 
 Status: PENDING VERIFICATION
+
 
 This section supersedes older verification text below for the current volumetric biome pass.
 
@@ -55,11 +71,13 @@ colorPayload.w = math.max(colorPayload.w, localWeight);
 
 ### Verification Evidence
 
+2026-05-18 R13 filesystem check did not find the `CodexArtifacts/unity-volumetric-biome-smoke-2026-05-05.log`, `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run*.log`, or `CodexArtifacts/omega-biome-autonomy-pass2-verification-2026-05-05.json` artifacts cited below. Treat those compile/smoke lines as historical report text unless the artifacts are restored or replaced.
+
 - Direct Unity Bee C# compile passed for `Hecton8.Core`:
   `dotnet exec ... csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.rsp`.
 - Direct Unity Bee C# compile passed for `Hecton8.Editor`:
   `dotnet exec ... csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.rsp`.
-- Unity batchmode compile reached `*** Tundra build success` in `CodexArtifacts/unity-volumetric-biome-smoke-2026-05-05.log`.
+- Historical report text says Unity batchmode compile reached `*** Tundra build success` in `CodexArtifacts/unity-volumetric-biome-smoke-2026-05-05.log`; the R13 filesystem check did not find that artifact.
 - `VolumetricBiomeSmokeTester.RunBatchmode` was added, but repeated external batchmode automation took the Unity project lock before a stable executeMethod run could be completed.
 - MCP console proof is unavailable in this pass: MCP HTTP transport on `127.0.0.1:8088` returned connection failure/no Unity session.
 
@@ -181,6 +199,7 @@ Smoke tester:
 
 Status: `PENDING VERIFICATION`. `OMEGA VERIFIED` is not claimed because `AGENTS.md` requires user-provided logs for final fix confirmation; local Unity smoke evidence is recorded below.
 
+
 ### Mandates Re-Checked
 
 - `AGENTS.md`: no fake verification; status remains `PENDING VERIFICATION` without user-provided production/runtime confirmation.
@@ -224,7 +243,7 @@ uint expectedPack = (uint)(
 - External Unity batch processes repeatedly occupied the project during this window:
   - `Hecton8.EditorTools.DocumentationAuthoritySmokeTester.RunMenuItem`
   - `Hecton8.Editor.HydraulicErosionSmokeTester.RunMenu` (`final`, `final2`, `final3`)
-- After the external Unity processes exited, `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run4.log` reached `VolumetricBiomeSmokeTester.RunBatchmode` and emitted:
+- Historical report text says `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run4.log` reached `VolumetricBiomeSmokeTester.RunBatchmode` and emitted:
   - `[VolumetricBiomeSmokeTester] PASS shallow=11 twilight=12 hadal=13 flags=16 stressSamples=256 stressFailures=0 packedChecksum=2952397042`
 - The same Unity log also contains non-domain service/runtime noise that prevents a "0 console errors" claim:
   - Licensing handshake/access-token errors at lines 71, 74, and 88, followed by successful license resolution.
@@ -239,6 +258,7 @@ uint expectedPack = (uint)(
 ## 2026-05-05 OMEGA-AUTONOMY HARDENING PASS 2
 
 Status: `PENDING VERIFICATION`. `OMEGA VERIFIED` is not claimed because `AGENTS.md` requires user-provided logs before a verified status, and pass-2 Unity smoke attempts did not reach a fresh PASS/FAIL assertion after the new code changes.
+
 
 ### Mandates Re-Checked
 
@@ -269,7 +289,7 @@ Status: `PENDING VERIFICATION`. `OMEGA VERIFIED` is not claimed because `AGENTS.
   - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run5.log`: reached Unity script compilation, no smoke assertion.
   - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run6.log`: exited with return code 1 before `executeMethod`.
   - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run7.log`: no smoke assertion before external Unity batch contention resumed.
-- Evidence JSON: `CodexArtifacts/omega-biome-autonomy-pass2-verification-2026-05-05.json`.
+- Evidence JSON cited by historical report text: `CodexArtifacts/omega-biome-autonomy-pass2-verification-2026-05-05.json`; absent in the R13 filesystem check.
 
 ### Residual Risk
 

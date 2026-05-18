@@ -2,7 +2,21 @@
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
-**Status:** ETA SURGERY_PREPPED
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+**Status:** HISTORICAL STATIC SURGERY MAP / PENDING REVERIFICATION
 **Target:** `AbsoluteUniversePosition` layout mutation (int64Ã—3 + float3 â†’ TBD)
 **Risk:** CRITICAL â€” breaks binary save compatibility, native container layouts, and payload prefix offsets.
 **Author:** Autonomous Crusade / Pre-Surgery Mapping
@@ -388,5 +402,5 @@ namespace Hecton8.SaveSystem
 
 ---
 
-**STATUS:** ETA SURGERY_PREPPED
+**STATUS:** HISTORICAL STATIC SURGERY MAP / PENDING REVERIFICATION
 **NEXT ACTION:** CTO approval on new AUP byte size â†’ freeze migration constants â†’ execute.

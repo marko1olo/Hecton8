@@ -1,7 +1,22 @@
 # HECTON-8 Architecture Index
 
-Date: 2026-05-17
+Date: 2026-05-19
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 Purpose: stable index for `Docs/ARCHITECTURE`. These files are long-lived system contracts. They are not dated progress reports.
@@ -19,6 +34,10 @@ Purpose: stable index for `Docs/ARCHITECTURE`. These files are long-lived system
 
 Start with `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` when touching save versions, DataMonolith, ContentAuthority, Addressables, Subnautica/Subnautica 2 comparison, modding, or co-op state contracts. Use `HECTON8_P0_FOUNDATION_PROOF_MATRIX.md`, `SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md`, and `SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md` as clean-room production pressure references, not runtime proof.
 
+Use `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` before wiring, deleting, rebaking, or packaging generated `.h8bin`, `.bin`, `.h8qdag.bin`, or binary `.bytes` payloads. Current Batch008 static truth: 47 product/generated target files, broad hygiene verifier scope 65 `.bin` / `.h8bin` files, 16 total misalignments, only `Data/Audio/Acoustic_LUT.bin` and `Data/Visuals/Water_Extinction_Matrix.bin` statically proven main-runtime wired, and `Data/Balance/Baked/Babel_Dictionary.h8bin` as the only misaligned product payload.
+
+Use `UNCLAIMED_FUTURE_SYSTEM_SEAMS.md` only for contract-only preparation in batch slots with no visible Status/LOG/Rationale trail. It does not authorize runtime edits in dirty or occupied domains.
+
 Current hard corrections:
 
 - `SAVE_V8_BINARY_SPEC.md` and `SAVE_PAGING_PROTOCOL.md` are legacy indexed-sector design snapshots for version authority. Current source writes save container `0x0009`; staged hash-v10 uses `0x000A`.
@@ -27,33 +46,39 @@ Current hard corrections:
 - Subnautica/Subnautica 2 docs are clean-room reference pressure only. Do not copy proprietary game files, assets, binaries, UI, story, cache data, Unreal internals, or decompiled code.
 - `CONTENT_SAVE_SLOT_TOPOLOGY.md`, `SUBNAUTICA2_HECTON8_IMPLEMENTATION_HANDOFF.md`, and `SUBNAUTICA2_TO_HECTON8_TACTICAL_BACKLOG.md` are current navigation aids only where they agree with the actuality ledger and current source.
 
-## Current Proof Boundary
+## Current DOC_GLOBAL Boundary
 
-2026-05-14 DOC_AUDIT override: `../../Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
+Current root/architecture correction: `../Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`.
 
-The previously cited local compile-only artifact `../../CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` is absent from the current filesystem. Treat the May 11 compile-success claim as dated report text. Current May 14 R43 evidence is external root `Hecton8*.csproj` no-restore CLI compile at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist, not Unity runtime proof.
+R23 remains the proof-language/navigation residue boundary, and R22 remains a prior explicit source-counter boundary. `Tools/AtlasCheck.py` remains red on `57` missing RealtimeCSG vendor icon/readme references.
 
-2026-05-15 continuation: latest `Hecton8.Core.csproj` CLI artifact `../AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` exits `0` with `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`. Latest H-Phi full static budget artifact `../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` exits `0` with all active budget gates passed; it supersedes earlier same-day MemoryAlignment failure artifacts, the interim R47 `GlobalRegistrySurface=5076 > 5075` failure, R49, R52, R53, and R54 for static H-Phi status only. DOC_HONEST_ANALYSIS R3 remains the historical same-day note that cleared transient `Hecton8.World.GPR` Core asmdef drift and returned the Core graph gate to `25/10/14/8/6`; CurrentDisk53/BudgetGate22 is the current top Core build/H-Phi boundary after the later 22:38 source write.
+Historical DOC_AUDIT override: `../Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
+
+The previously cited local compile-only artifact `../../CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` is absent from the current filesystem. Treat the May 11 compile-success claim as dated report text. Historical May 14/R43 evidence was external root `Hecton8*.csproj` no-restore CLI compile at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs existed; it is not current proof for the active workspace and not Unity runtime proof.
+
+2026-05-15 continuation: archived `Hecton8.Core.csproj` CLI artifact `../Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` exited `0` with `Build succeeded`, `0 Warning(s)`, and `0 Error(s)` at capture time. Archived H-Phi full static budget artifact `../Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` exited `0` with all active budget gates passed; it superseded earlier same-day MemoryAlignment failure artifacts, the interim R47 `GlobalRegistrySurface=5076 > 5075` failure, R49, R52, R53, and R54 for static H-Phi status only. DOC_HONEST_ANALYSIS R3 remains the historical same-day note that cleared transient `Hecton8.World.GPR` Core asmdef drift and returned the Core graph gate to `25/10/14/8/6`; CurrentDisk53/BudgetGate22 are archived CLI/static boundaries, not current compile proof for the active dirty workspace.
 
 Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality.
 
 ## Read Order
 
 1. `CINEMATIC_CHEATS_LEDGER.md` - visual-realistic-fake doctrine and physical-simulation rejection gate.
-2. `SYSTEM_INTERCONNECT_MATRIX.md` - cross-system ownership and AUP-sensitive edges.
-3. `HECTON_PHI_STATIC_METRIC.md` - static H-Phi definition, formulas, graph debt gate, and evidence boundary.
-4. `DISPATCH_PIPELINE.md` - runtime dispatch, tick ownership, and update boundaries.
-5. `AUP_PRECISION_STANDARDS.md` and `KINEMATICS_AUP_INTEGRATION.md` - floating-origin and movement correctness.
-6. `ZERO_GC_FABRICATION.md` and `ZERO_GC_UI_PIPELINE.md` - allocation discipline for fabrication and UI.
-7. `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, `CONTENT_SAVE_SLOT_TOPOLOGY.md`, then `SAVE_V8_BINARY_SPEC.md` and `SAVE_PAGING_PROTOCOL.md` as legacy indexed-sector references - persistence architecture.
-8. `HECTON8_P0_FOUNDATION_PROOF_MATRIX.md`, `SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md`, and `SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md` - clean-room production pressure and gap framing.
-9. Domain docs such as `FLOW_FIELD_MATH.md`, `AUDIO_DSP_PIPELINE.md`, `HABITAT_LOGISTICS_GRAPH.md`, `SUBMARINE_OS_MANUAL.md`, and `URP_SCREENSHOT_PIPELINE.md` as needed by the task.
+2. `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` - generated binary payload ownership, runtime wiring status, and dead-weight classification.
+3. `SYSTEM_INTERCONNECT_MATRIX.md` - cross-system ownership and AUP-sensitive edges.
+4. `HECTON_PHI_STATIC_METRIC.md` - static H-Phi definition, formulas, graph debt gate, and evidence boundary.
+5. `DISPATCH_PIPELINE.md` - runtime dispatch, tick ownership, and update boundaries.
+6. `AUP_PRECISION_STANDARDS.md` and `KINEMATICS_AUP_INTEGRATION.md` - floating-origin and movement correctness.
+7. `ZERO_GC_FABRICATION.md` and `ZERO_GC_UI_PIPELINE.md` - allocation discipline for fabrication and UI.
+8. `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, `CONTENT_SAVE_SLOT_TOPOLOGY.md`, then `SAVE_V8_BINARY_SPEC.md` and `SAVE_PAGING_PROTOCOL.md` as legacy indexed-sector references - persistence architecture.
+9. `HECTON8_P0_FOUNDATION_PROOF_MATRIX.md`, `SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md`, and `SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md` - clean-room production pressure and gap framing.
+10. Domain docs such as `FLOW_FIELD_MATH.md`, `AUDIO_DSP_PIPELINE.md`, `HABITAT_LOGISTICS_GRAPH.md`, `SUBMARINE_OS_MANUAL.md`, and `URP_SCREENSHOT_PIPELINE.md` as needed by the task.
 
 ## Complete Contract Inventory
 
 - [AI_POTENTIAL_FIELD_NAVIGATION.md](AI_POTENTIAL_FIELD_NAVIGATION.md)
 - [ARENA_ALLOCATOR_2_0.md](ARENA_ALLOCATOR_2_0.md)
 - [AUDIO_DSP_PIPELINE.md](AUDIO_DSP_PIPELINE.md)
+- [BINARY_PAYLOAD_INTEGRATION_LEDGER.md](BINARY_PAYLOAD_INTEGRATION_LEDGER.md)
 - [AUP_PRECISION_STANDARDS.md](AUP_PRECISION_STANDARDS.md)
 - [BOOT_SEQUENCE_TOPOLOGY.md](BOOT_SEQUENCE_TOPOLOGY.md)
 - [CINEMATIC_CHEATS_LEDGER.md](CINEMATIC_CHEATS_LEDGER.md)

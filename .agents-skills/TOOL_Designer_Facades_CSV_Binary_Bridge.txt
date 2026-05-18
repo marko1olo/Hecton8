@@ -1,0 +1,111 @@
+# HECTON-8 | Designer Facades | CSV to Binary Bridge Law
+
+Status: ENFORCED / PENDING RUNTIME VERIFICATION
+Date: 2026-05-17
+Authority: AGENTS.md + Data sovereignty + Zero-GC mandates
+Scope: editor-facing balance control, `.h8bin` authoring, CSV imports, ScriptableObject facades, EditorWindow tools, runtime table hot-reload, and human-readable bridges for unmanaged data.
+
+---
+
+## Prime Law
+
+[RULE] If designers must tune a value, the project must provide a human-readable authoring bridge.
+[RULE] Runtime truth may be binary, unmanaged, SoA, and DataVault-owned. Authoring truth must still be inspectable and editable without recompiling C#.
+[RULE] Any system that consumes `.h8bin`, binary deltas, NativeArray balance tables, LUTs, recipe graphs, damage tables, economy tables, quest graphs, flora genomes, AI weights, or hardware-tier tables must name its designer bridge in the task or rationale.
+
+[FORBID] Hardcoding balance values in runtime C# when the value is expected to change during tuning.
+[FORBID] Mutating ScriptableObject assets at runtime.
+[FORBID] Requiring designers to edit binary files directly.
+[FORBID] Runtime reflection to discover fields for tuning.
+[FORBID] File I/O, CSV parsing, string splitting, or JSON parsing in Tick, FixedTick, LateFrameTick, Burst jobs, or renderer upload paths.
+
+---
+
+## Approved Bridge Shapes
+
+Preferred order:
+
+1. CSV or TSV source file with schema hash, version, and validation report.
+2. EditorWindow or CustomEditor facade under `#if UNITY_EDITOR` or an Editor-only asmdef.
+3. ScriptableObject authoring facade that bakes to binary; runtime consumes copied unmanaged structs only.
+4. Hot-reload staging path that validates on a worker or cold editor command, then swaps DataVault handles at a safe phase boundary.
+
+[RULE] CSV import must produce deterministic binary output for identical input.
+[RULE] CSV columns are named and versioned. Reordered columns must not silently corrupt data.
+[RULE] Import errors must report row, column, field id, and numeric error code.
+[RULE] Runtime swaps use generation counters. Consumers reject stale generations.
+[RULE] Binary output uses atomic temp-write, validate, rename. Direct overwrite of active runtime binary is rejected.
+
+---
+
+## Editor Facade Requirements
+
+Every facade must expose:
+
+- source path
+- binary output path
+- schema version
+- row count or entry count
+- hash/checksum
+- last validation status
+- exact bake button
+- read-only byte layout summary for primary DTOs
+- warnings for fields that would break ARM64 runtime layout
+
+[RULE] Editor tools live in Editor folders or Editor asmdefs.
+[RULE] Editor UI may allocate. Runtime bridge code may not allocate in hot paths.
+[RULE] Editor facades may use managed reflection only in editor-only validation, never in runtime players.
+
+---
+
+## Runtime Hot-Reload Boundary
+
+[RULE] Hot-reload is a staged replacement, not live mutation of active arrays.
+[RULE] Data loads into inactive DataVault buffers or staging arenas.
+[RULE] Swap occurs only in a named dispatcher phase boundary.
+[RULE] Old buffers retire through deferred disposal or owner-controlled release.
+[RULE] SignalBus publishes a typed `DataTableChanged` or domain-specific dirty signal after the swap, not before.
+
+[FORBID] Replacing a NativeArray while another job can read it.
+[FORBID] Changing public contract field order during a batch without a legacy wrapper and rationale entry.
+[FORBID] Calling `Resources.Load`, `File.ReadAllText`, `File.ReadAllBytes`, `JsonUtility.FromJson`, or string-split parsers from gameplay runtime paths.
+
+---
+
+## Self-Audit Requirement
+
+Agents touching designer-tunable binary data must report:
+
+- authoring source path
+- generated binary path
+- schema version/hash
+- runtime DTO layout proof
+- validation command or Editor tool
+- DataVault buffer id and generation behavior
+- fallback when source data is missing or invalid
+- evidence class
+
+No proof means `PENDING VERIFICATION`.
+
+---
+
+## Scalability
+
+Low/MX350/Steam Deck: load compact binary tables and use LUTs. Editor-only authoring cost is irrelevant to runtime frame time.
+
+Middle: allow staged hot-reload for balance tables outside active combat/simulation frames.
+
+High: keep richer debug manifests and designer preview overlays in editor tools.
+
+Ultra: visual-overkill authoring data may exist, but it must stay decoupled from gameplay truth and quality-tier gated.
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Designer control | source CSV/SO/Editor facade exists | static doc/source |
+| Runtime purity | binary/NativeArray/DataVault path, no parser in Tick | static source + profiler |
+| Hot reload | staged buffer + generation swap | Play Mode test |
+| File safety | atomic write and checksum | editor import log |

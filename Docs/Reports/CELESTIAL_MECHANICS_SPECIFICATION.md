@@ -1,7 +1,22 @@
-﻿# CELESTIAL MECHANICS SPECIFICATION
+# CELESTIAL MECHANICS SPECIFICATION
 Date: 2026-05-07
 
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-18 R13 Report Snapshot Boundary
+
+This report file is a snapshot/provenance document. It is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/Reports/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+Historical `PASS`, `VERIFIED`, `current`, `latest`, counter, compile, runtime, 0-GC, frame-time, cost, and performance statements inside this report are not current proof unless the exact claim links a fresh artifact path, command/tool, timestamp, evidence class, and unresolved-error list. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied by this file alone.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Reason: this specification has static ledger, compile-contract, shader-import, and event-bus evidence, but PlayMode behavior, profiler allocation trace, and long-duration orbital drift are not proven. May 4 documentation sweep evidence supersedes the older warning-free compile line for current global build truth.
 
@@ -19,9 +34,9 @@ Reason: this specification has static ledger, compile-contract, shader-import, a
 - Project authority: `AGENTS.md`, `Docs/DOC_GOVERNANCE.md`.
 - Unity version observed through MCP: `6000.4.1f1`.
 - World scene readback source: `Assets/_Project/Scenes/02_HECTON_WORLD.unity`, captured through Unity MCP before editor reload returned to `00_BOOTSTRAP`.
-- C# verification from the original spec pass: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` completed with `0 Warning(s), 0 Error(s)`.
-- Current May 4 documentation-sweep compile truth: `Hecton8.Core.csproj` completed with `0 Warning(s), 0 Error(s)`.
-- Unity import verification: console cleared, Unity refresh completed, post-refresh console returned `0 log entries`.
+- Historical C# verification from the original spec pass: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` reportedly completed with `0 Warning(s), 0 Error(s)`; this file does not carry a fresh artifact path for current proof.
+- Historical May 4 documentation-sweep compile note: `Hecton8.Core.csproj` reportedly completed with `0 Warning(s), 0 Error(s)`; rerun before treating it as current compile proof.
+- Historical Unity import note: console cleared, Unity refresh completed, post-refresh console returned `0 log entries`; this is not current Unity Console, Play Mode, profiler, GCMonitor, or player-build proof.
 - `RenderSettings.skybox` scan result: only `HectonAtmosphereManager.AtmosphereDirector` owns the direct read/write.
 
 ## Orbital Ledger
@@ -253,7 +268,7 @@ star core = smoothstep(0.055, 0, distanceToSeededCellPoint)
 
 - Not a Keplerian simulator. The current model is visually plausible, deterministic, and scene-authored.
 - Aegir tidal lock is a presentation lock, not a full physical AUP moon-rotation proof.
-- Eclipse bus is wired and compile/import clean; PlayMode signal timing was not captured in this pass.
+- Eclipse bus is source-wired in the historical pass; current compile/import proof must be rerun before treating it as clean.
 - `Giant's Wake` is subtle by default and depends on `HectonCelestialEngine.ActiveRuntimeInstance`.
 - If `HectonWorldGenerator.ActiveRuntimeInstance` is absent, star generation uses fallback seed `99173`.
-- No profiler or GC allocation capture was run. Zero-GC compliance is based on code inspection plus compile/import verification.
+- No profiler or GC allocation capture was run. Zero-GC compliance remains source-review intent only until GCMonitor/profiler evidence exists.

@@ -739,27 +739,28 @@ namespace Hecton8.World
             _targetRenderScale = IsFinite(_targetRenderScale) && _targetRenderScale > 0f
                 ? Mathf.Clamp(_targetRenderScale, SystemOverrideMinimumRenderScale, ResolveMaxRenderScale())
                 : _currentRenderScale;
-            _urpAsset.renderScale = _currentRenderScale;
+            if (!_systemOverrideActive)
+                _urpAsset.renderScale = _currentRenderScale;
             ScalableBufferManager.ResizeBuffers(_currentRenderScale, _currentRenderScale);
             UpdateSnapshot();
         }
 
         private void UpdateSnapshot()
         {
-            _snapshot = new DynamicResolutionRuntimeSnapshot
-            {
-                CurrentRenderScale01 = IsFinite(_currentRenderScale) && _currentRenderScale > 0f
-                    ? _currentRenderScale
-                    : ResolveDefaultRenderScale(),
-                TargetRenderScale01 = IsFinite(_targetRenderScale) && _targetRenderScale > 0f
-                    ? _targetRenderScale
-                    : ResolveDefaultRenderScale(),
-                FrameTimeEwmaMs = ResolveSnapshotFrameTimeMs(),
-                PressureLevel = _systemOverrideActive ? _systemOverridePressureLevel : (byte)_pressureState,
-                Flags = _systemOverrideFlags,
-                Frame = unchecked((uint)Time.frameCount),
-                Sequence = _snapshotSequence++
-            };
+            uint sequence = _snapshotSequence++;
+            _snapshot.CurrentRenderScale01 = IsFinite(_currentRenderScale) && _currentRenderScale > 0f
+                ? _currentRenderScale
+                : ResolveDefaultRenderScale();
+            _snapshot.TargetRenderScale01 = IsFinite(_targetRenderScale) && _targetRenderScale > 0f
+                ? _targetRenderScale
+                : ResolveDefaultRenderScale();
+            _snapshot.FrameTimeEwmaMs = ResolveSnapshotFrameTimeMs();
+            _snapshot.PressureLevel = _systemOverrideActive ? _systemOverridePressureLevel : (byte)_pressureState;
+            _snapshot.Flags = _systemOverrideFlags;
+            _snapshot.Reserved0 = 0;
+            _snapshot.Reserved1 = 0;
+            _snapshot.Frame = sequence;
+            _snapshot.Sequence = sequence;
         }
 
         private static bool IsFinite(float value)

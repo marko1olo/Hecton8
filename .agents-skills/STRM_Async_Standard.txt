@@ -14,10 +14,15 @@ Target: Unity 6000.x, zero-GC runtime
 [RULE] Long-running background paging must use one persistent worker loop or an explicitly owned background Awaitable transition, with data returned through preallocated native or unmanaged queues.
 [RULE] Any async method touching UnityEngine.Object, Addressables handles, scenes, assets, GameObjects, Components, or UI must return `Awaitable` / `Awaitable<T>` unless an owner records a build-only exception.
 [RULE] Awaitable instances are single-consumer pooled objects. Await once, then discard the awaitable reference.
+[RULE] Steam Deck and MicroSD-class storage are baseline constraints. After bootstrap, the main thread may enqueue fixed-size requests only; it may not perform synchronous random-access file I/O.
+[RULE] WAL commits, save page reads, `.h8bin` page reads, and MMF paging use a persistent owned worker, staged block reads/writes, fixed unmanaged buffers, and preallocated result queues.
+[RULE] Runtime file writes use temp-write, validate/checksum, then atomic rename. The active file is never overwritten directly.
 
 [FORBID] `async Task` for Unity object orchestration.
 [FORBID] `Task.Run` as a per-request escape hatch for sector load, save page load, texture upload, UI, scene activation, or bootstrap handshakes.
 [FORBID] Awaiting the same `Awaitable` twice or storing an `Awaitable` for fan-out.
+[FORBID] `File.ReadAllText`, `File.ReadAllBytes`, `File.WriteAllBytes`, `FileStream.Read`, `FileStream.Write`, `BinaryReader`, or `BinaryWriter` on the main thread after bootstrap unless the call site is a documented cold editor/build tool.
+[FORBID] Random-access file I/O from Tick, FixedTick, SlowTick, LateFrameTick, Burst jobs, renderer upload paths, or gameplay event handlers.
 
 ## Engineering Data
 
@@ -27,6 +32,7 @@ Target: Unity 6000.x, zero-GC runtime
 | Main-thread return | `Awaitable.MainThreadAsync()` | Captured `SynchronizationContext` tricks | Explicit thread ownership |
 | Background transition | `Awaitable.BackgroundThreadAsync()` | Per-request `Task.Run` | Avoid transient task storms |
 | MMF paging loop | persistent owned worker | many short tasks | Stable queue, bounded allocations |
+| Steam Deck save/WAL | staged blocks on persistent worker | main-thread random-access I/O | Avoid MicroSD stalls |
 | Fan-out/multi-await result | owned state machine/result slot | reused `Awaitable` | Awaitable pooling forbids repeated await |
 
 ---

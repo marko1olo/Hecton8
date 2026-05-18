@@ -1,11 +1,19 @@
-﻿# 26 Legacy Docset Actuality And Update Queue
+# 26 Legacy Docset Actuality And Update Queue
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 ## 2026-05-04 Supersession Note
 
-This file is a May 1/May 2 docset actuality queue. Current global source/doc counts are superseded by `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`: `1118` first-party `.cs` files under `Assets/_Project`, `1078` under `Assets/_Project/Scripts`, `519952` static script lines, `325` scripts directly under `Assets/_Project/Scripts`, active `Docs/**/*.md` count `188`, and active/root markdown surface `214`.
+This file is a May 1/May 2 docset actuality queue. The May 4 counters are now historical; rerun current source/doc counts before use.
 
 Mandates followed:
 - `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`
@@ -20,13 +28,13 @@ Scope:
 - Targeted stale-counter scans for known project-scale counters.
 - No Unity play-mode, profiler, Frame Debugger, or build run.
 
-## 1. Current Doc Inventory
+## 1. Historical Doc Inventory Snapshot
 
 Historical snapshot date: 2026-05-01.
 
 | Surface | Count |
 |---|---:|
-| all non-meta files under `Docs` after this report | 584 |
+| all non-meta files under `Docs` after this report | Historical `584`; R18 late full-doc snapshot `4924` before final report writes |
 | markdown files | 375 |
 | text files | 64 |
 | patch files | 13 |
@@ -39,10 +47,10 @@ Archivarius active folder inventory:
 
 | Folder | Current count |
 |---|---:|
-| `01_GENERAL_INFO` physical files | 24 |
-| `01_GENERAL_INFO` markdown files | 24 |
-| `02_ACTUAL_REPORTS` physical files | 56 |
-| `02_ACTUAL_REPORTS` markdown files | 46 |
+| `01_GENERAL_INFO` physical files | Historical `24`; R18 static count `26` |
+| `01_GENERAL_INFO` markdown files | Historical `24`; R18 static count `26` |
+| `02_ACTUAL_REPORTS` physical files | Historical `56`; R18 static count `58` |
+| `02_ACTUAL_REPORTS` markdown files | Historical `46`; R18 static count `48` |
 | `02_ACTUAL_REPORTS` patch artifacts | 9 |
 | `02_ACTUAL_REPORTS` csv datasets | 1 |
 
@@ -104,7 +112,7 @@ Historical May 2 scale truth:
 | script lines under `Assets/_Project/Scripts` | 571562 |
 | scripts directly in `Assets/_Project/Scripts` root | 317 |
 
-Current May 4 scale truth is in the supersession note above.
+May 4 scale truth is historical; R18 static counts must be rerun before exact use.
 
 ## 4. Status Metadata Findings
 

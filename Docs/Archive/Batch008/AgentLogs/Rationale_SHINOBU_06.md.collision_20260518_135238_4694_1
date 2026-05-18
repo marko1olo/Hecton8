@@ -1,0 +1,89 @@
+# Rationale_SHINOBU_06
+
+Agent: SHINOBU_06
+Role: SOMATIC_KINEMATICS_ARCHITECT
+Status: CORE COMPLETE / ULTRA POLISH PASS 6 APPLIED / BUILD BLOCKED BY UNRELATED DEPENDENCIES
+
+## Prompt Identity
+
+PROMPT IDENTIFIED: SHINOBU_06 | DOMAIN: ECHELON 4 - PLAYER, KINEMATICS & TOOLS / SOMATIC KINEMATICS | TASK COUNT: 20.
+
+## Restored Context
+
+Live SHINOBU files were missing from `Docs/Tasks` and `Docs/AgentLogs`; previous pass records were found under `Docs/Archive/Batch008`. This file restores active memory for the current pass.
+
+## Decisions
+
+### D22: Direct physics facade eviction
+
+Problem: SHINOBU still imported `Hecton8.Physics` and sent KCC velocity through `PhysicsDeterminismSignals`.
+Solution: Publish finite-sanitized `KccVelocitySignal` directly to the typed unmanaged signal lane with a local sequence.
+Rejected Alternatives: Keeping the physics facade preserves a side cache but keeps SHINOBU compiled against a sibling runtime.
+Scalability potential: Low/Middle/High/Ultra consume one typed lane; visual overkill stays downstream.
+Hardware Impact: Removes one post-fixed facade hop. Real microseconds are PENDING PROFILER.
+
+### D23: Fixed-step cold I/O firewall
+
+Problem: Lazy `EnsureNativeState()` could run archive scans from fixed-step callers.
+Solution: Callers now pass `allowColdInitialization`; `FixedTick` and `GetStateRef` use `false`, while cold/slow/service paths use `true`.
+Rejected Alternatives: Lazy fixed-step archive scanning risks MicroSD stalls.
+Scalability potential: Low devices avoid fixed-cadence I/O; high-end authoring keeps cold recovery.
+Hardware Impact: Removes fixed-loop cold I/O risk. No measured microsecond claim.
+
+### D24: Signal lane uniqueness
+
+Problem: Local `AcousticEchoTap` collided with first-party audio contracts, and local haptic/acoustic lanes had no visible bootstrap or consumers.
+Solution: Removed local acoustic/haptic signal structs and publishes. SHINOBU now emits canonical `MovementAcousticSignal` and `HapticRequest`. Exertion was renamed to `ShinobuPlayerExertionSignal` and preconfigured in cold startup.
+Rejected Alternatives: Keeping duplicate/orphan lanes risks first-push allocation and split nervous-system contracts.
+Scalability potential: Low tier emits only threshold events; Ultra consumers can add effects through canonical lanes.
+Hardware Impact: Removes first-use queue allocation risk for SHINOBU exertion.
+
+### D25: Fixed-frame hand cadence
+
+Problem: The 3-frame hand ring used `Time.frameCount`; multiple fixed ticks in one rendered frame could alias one slot and corrupt stroke deltas.
+Solution: Added `_fixedFrameSequence` and indexed hand samples by fixed simulation sequence.
+Rejected Alternatives: Render-frame indexing is not deterministic under variable fixed/update ratios.
+Scalability potential: All tiers get stable stroke cadence; high-end can add visual hand overkill without changing truth.
+Hardware Impact: No saving claimed; fixes stroke correctness.
+
+### D26: NaN hand ingress
+
+Problem: Provider hand/head vectors could reach NativeArray state unsanitized and poison exertion/fatigue/scratch output.
+Solution: Sanitized frame input, hand sample writes, stroke delta lengths, and exertion accumulation before any NativeArray write.
+Rejected Alternatives: Trusting OpenXR/provider poses is invalid; one NaN poisons Burst math.
+Scalability potential: Low devices degrade to fallback hand positions; high-end tracking remains precise.
+Hardware Impact: Small scalar guard cost; prevents catastrophic NaN propagation.
+
+### D27: AUP sync fence
+
+Problem: Origin shifts did not update `ShiftFrameId` or emit an explicit sync fence.
+Solution: `OnOriginShift` writes `ShiftFrameId`, mirrors it into blackbox `Reserved`, and publishes `SyncFenceSignal`.
+Rejected Alternatives: Relying on sector origin alone hides the shift sequence from postmortem analysis.
+Scalability potential: Same deterministic origin tracking on all tiers.
+Hardware Impact: One signal on origin-shift events only.
+
+### D28: Provider DataVault sovereignty
+
+Problem: `VRSomaticProvider` owned persistent `NativeArray` buffers for head casts, root sync, hand targets, and blackbox.
+Solution: Converted those fields to `VaultNativeArray<T>` views backed by new `BufferID.ShinobuVRSomatic*` DataVault slots.
+Rejected Alternatives: Local `new NativeArray` ownership violates H-Phi even if allocation is cold.
+Scalability potential: Low/Middle/High/Ultra share DataVault ownership and generation-ready handles.
+Hardware Impact: Removes provider-owned native allocations; exact runtime gain is PENDING PROFILER.
+
+<SELF_AUDIT>
+  <TASK_CHECK>01 PASS, 02 PASS, 03 PASS, 04 PASS, 05 PASS, 06 PASS, 07 PASS, 08 PASS, 09 PASS, 10 PASS, 11 PASS, 12 PASS, 13 PASS, 14 PASS, 15 PASS, 16 PASS, 17 PASS, 18 PASS, 19 PASS, 20 PASS.</TASK_CHECK>
+  <ARM64_LAYOUT>Primary DTO `PlayerStateDTO` size 160. Offsets: AUP 0, SectorOriginAUP 24, Velocity 48, LocalPosition 60, RequestedThrust 72, SdfPushOut 84, AbyssalCurrent 96, floats 108-124, uints 128-140, padding 144/152.</ARM64_LAYOUT>
+  <ZERO_GC_CHECK>SHINOBU KCC runtime scan has no duplicate acoustic/haptic local lanes, no physics facade, no render-frame hand-ring index, no local NativeArray ownership, and no `new NativeArray` in the provider after pass 6.</ZERO_GC_CHECK>
+  <AUP_CHECK>Authority remains double3/AUP-compatible; origin shifts write `ShiftFrameId` and emit a typed `SyncFenceSignal`.</AUP_CHECK>
+  <DEAR_LIE_CHECK>Low tier uses dot-product hand strokes, 1D drag LUT, triangle current fallback, tetra SDF squeeze, algebraic buoyancy, and single-step CCD.</DEAR_LIE_CHECK>
+  <DEPENDENCY_CHECK>Cross-domain output uses DataVault, cached registry services, and typed signals. No direct physics/fluid/audio/haptic component coupling remains in fixed KCC.</DEPENDENCY_CHECK>
+  <BLACKBOX_CHECK>300-entry ring active; `.h8dump` writes set `_dumpWritten` only after successful flush.</BLACKBOX_CHECK>
+</SELF_AUDIT>
+
+### D29: Pass 6 verification result
+
+Problem: Provider DataVault conversion and signal cleanup required a real compile check.
+Solution: Ran restore and Core build with `--no-restore`, single node, shared compilation disabled, and analyzers disabled. Build failed outside SHINOBU: missing `TetherBlackBoxDumpWriter` in tether code and missing `LotkaVolterraMacroJob` fields in ecosystem code.
+Rejected Alternatives: Fixing tether/ecosystem compile walls would cross ownership and violate the SHINOBU domain boundary.
+Scalability potential: No SHINOBU runtime impact.
+Hardware Impact: No new microsecond claim. SHINOBU-owned files emitted no compiler errors in the filtered build output.

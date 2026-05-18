@@ -35,7 +35,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         #define UNITY_PASS_STEREO_INSTANCE_ID(input) UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input)
         #endif
 
-        CBUFFER_START(UnityPerMaterial)
+        CBUFFER_START(HectonScooterVolumetricShaftsGlobals)
             float _HectonShaftPassMode;
             float _HectonShaftRenderScale;
             float _HectonShaftRaymarchSteps;
@@ -62,6 +62,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float _HectonFlashlightShadowFloor;
             float _HectonNoirPower;
             float _HectonNoirFogDensity;
+            float2 _HectonNoirPadding0;
             float4 _HectonNoirLiftColor;
             float _HectonLensGhostIntensity;
             float _HectonLensGhostScale;
@@ -72,6 +73,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float _HectonThermalHazeIntensity;
             float _HectonThermalHazeScale;
             float _HectonHasExposureState;
+            float3 _HectonNoirPadding1;
         CBUFFER_END
 
         StructuredBuffer<float4> _HectonNoirExposureState;

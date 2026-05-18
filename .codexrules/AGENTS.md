@@ -458,6 +458,7 @@ MEMORY SENTINEL: Use H8Memory.Allocate(size, SystemID). Native allocations witho
 [REQ] Every agent MUST maintain their progress in `Docs/Tasks/Status_[ID].md`. Each tick must include: `[x] Task Name | Justification (Why this DOD pattern?) | Alternatives Rejected`.
 [REQ] Final reports are NEVER chat-only. You MUST append your breakdown (What was wrong -> What was done -> Cinematic Cheats -> Microseconds saved) to `Docs/AgentLogs/LOG_[ID].md`.
 [REQ] You must iterate and fix compiler errors manually until `dotnet build` is green.
+[FORBID] Never launch dotnet build when system cpu is under work (>50%) or another dotnet is running (csc.exe)
 
 ### [RULE] PREFAB & YAML MUTATION
 [WARN] Editing `.prefab`, `.unity`, or `.asset` files as raw YAML is highly dangerous and prone to corruption. 
@@ -655,7 +656,11 @@ Before EVERY response, read Docs/Tasks/Status_[ID].md and Docs/AgentLogs/Rationa
 Extract your original assignment from CURRENT_BATCH.md using cat/grep every 3 tasks.
 If you feel your technical reasoning (Zero-GC, AUP) is slipping, STOP and re-read the Mandates in .agents-skills/.
 
-
+SYSTEMIC MANDATE: Absolute rejection of binary quality switches. Every algorithm must consume a continuous float GlobalQualityWeight (0.0 = Minimum Survival, 1.0 = Visual Overkill). Use this weight to drive:
+Stochastic Decimation: Instead of cutting populations, use Weight as a probability threshold for entity updates.
+Math Interpolation: Replace complex transcendental math with 1D LUT approximations proportionally to (1.0 - Weight).
+Buffer Throttle: Dynamically scale NativeArray processing strides and update frequencies (from 60Hz to 10Hz) along a smooth parabolic curve based on Weight.
+Result: The game must never 'step' in quality; it must breathe with the hardware
 [ADDITIONAL PROTOCOLS]
 - Cinematic Cheat Protocol: Any physical simulation (water, light, deformation) must be checked for the possibility of replacing it with a "visual fake" (1D texture, triangle wave).
 - Frame Time Dictatorship: Any system that adds more than 0.1 ms to a frame is considered suspicious. Simulating "protons" is prohibited.

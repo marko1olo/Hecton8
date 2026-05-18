@@ -16,7 +16,7 @@ using UnityEngine;
 
 namespace Hecton8.AI.Sensory
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct EchoTap
     {
         public AbsoluteUniversePosition SourceAup;
@@ -29,10 +29,11 @@ namespace Hecton8.AI.Sensory
         public uint Sequence;
         public byte Flags;
         public byte QualityTier;
-        private ushort _reserved;
+        private ushort _pad0;
+        private uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct AcousticEchoHuntResult
     {
         public AbsoluteUniversePosition InvestigateAup;
@@ -46,10 +47,10 @@ namespace Hecton8.AI.Sensory
         public uint Sequence;
         public byte Flags;
         public byte QualityTier;
-        private ushort _reserved;
+        private ushort _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct AcousticEchoTrailState
     {
         public AbsoluteUniversePosition InvestigateAup;
@@ -61,24 +62,24 @@ namespace Hecton8.AI.Sensory
         public uint AcousticHuntsTriggered;
         public byte Flags;
         public byte QualityTier;
-        private ushort _reserved;
+        private ushort _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct AcousticEchoBlackBoxEntry
     {
-        public int Frame;
-        public uint AcousticHuntsTriggered;
-        public uint SourceId;
-        public uint Sequence;
-        public float Intensity01;
-        public float LastHeardTime;
-        public float SilenceSeconds;
-        public uint Flags;
         public long PortalGridX;
         public long PortalGridY;
         public long PortalGridZ;
         public float3 PortalLocal;
+        public float Intensity01;
+        public float LastHeardTime;
+        public float SilenceSeconds;
+        public int Frame;
+        public uint AcousticHuntsTriggered;
+        public uint SourceId;
+        public uint Sequence;
+        public uint Flags;
         public uint StateHash;
     }
 

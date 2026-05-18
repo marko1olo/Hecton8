@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -10,7 +9,6 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Resolved DataVault views for Alpha Leviathan cognition.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct AlphaLeviathanVaultBuffers
     {
         public NativeArray<AlphaLeviathanCognitionState> States;
@@ -22,18 +20,19 @@ namespace Hecton8.AI.Cognition
         /// <summary>
         /// True when every required DataVault buffer view was resolved.
         /// </summary>
-        public readonly bool IsCreated =>
-            States.IsCreated &&
-            SensoryStimuli.IsCreated &&
-            SteeringOutputs.IsCreated &&
-            TelemetryRing.IsCreated &&
-            TelemetryCursor.IsCreated;
+        public readonly bool IsCreated()
+        {
+            return States.IsCreated &&
+                   SensoryStimuli.IsCreated &&
+                   SteeringOutputs.IsCreated &&
+                   TelemetryRing.IsCreated &&
+                   TelemetryCursor.IsCreated;
+        }
     }
 
     /// <summary>
     /// Generation-checked DataVault handles for Alpha Leviathan cognition.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 120)]
     public struct AlphaLeviathanVaultHandles
     {
         public VaultBufferHandle<AlphaLeviathanCognitionState> States;
@@ -45,12 +44,14 @@ namespace Hecton8.AI.Cognition
         /// <summary>
         /// True when every required DataVault handle was resolved from the vault.
         /// </summary>
-        public readonly bool IsCreated =>
-            States.IsCreated &&
-            SensoryStimuli.IsCreated &&
-            SteeringOutputs.IsCreated &&
-            TelemetryRing.IsCreated &&
-            TelemetryCursor.IsCreated;
+        public readonly bool IsCreated()
+        {
+            return States.IsCreated &&
+                   SensoryStimuli.IsCreated &&
+                   SteeringOutputs.IsCreated &&
+                   TelemetryRing.IsCreated &&
+                   TelemetryCursor.IsCreated;
+        }
     }
 
     /// <summary>
@@ -104,7 +105,7 @@ namespace Hecton8.AI.Cognition
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            return buffers.IsCreated;
+            return buffers.IsCreated();
         }
 
         /// <summary>
@@ -149,7 +150,7 @@ namespace Hecton8.AI.Cognition
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            return handles.IsCreated;
+            return handles.IsCreated();
         }
 
         private static bool TryResolveExisting(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultBuffers buffers)
@@ -201,7 +202,7 @@ namespace Hecton8.AI.Cognition
 
         private static bool HasRequiredCapacity(in AlphaLeviathanVaultBuffers buffers, int requiredSlots)
         {
-            return buffers.IsCreated &&
+            return buffers.IsCreated() &&
                    buffers.States.Length >= requiredSlots &&
                    buffers.SensoryStimuli.Length >= requiredSlots &&
                    buffers.SteeringOutputs.Length >= requiredSlots &&
@@ -219,7 +220,7 @@ namespace Hecton8.AI.Cognition
         public static bool TryResolveViews(IDataVault vault, ref AlphaLeviathanVaultHandles handles, out AlphaLeviathanVaultBuffers buffers)
         {
             buffers = default;
-            if (vault == null || !handles.IsCreated)
+            if (vault == null || !handles.IsCreated())
                 return false;
 
             buffers.States = handles.States.Resolve(vault);
@@ -227,7 +228,7 @@ namespace Hecton8.AI.Cognition
             buffers.SteeringOutputs = handles.SteeringOutputs.Resolve(vault);
             buffers.TelemetryRing = handles.TelemetryRing.Resolve(vault);
             buffers.TelemetryCursor = handles.TelemetryCursor.Resolve(vault);
-            return buffers.IsCreated;
+            return buffers.IsCreated();
         }
 
         /// <summary>
@@ -237,7 +238,7 @@ namespace Hecton8.AI.Cognition
         /// <returns>Maximum safe schedule length across state, sensory, output, and telemetry views.</returns>
         public static int GetScheduleLength(in AlphaLeviathanVaultBuffers buffers)
         {
-            if (!buffers.IsCreated)
+            if (!buffers.IsCreated())
                 return 0;
 
             int telemetrySlots = buffers.TelemetryRing.Length / AlphaLeviathanStalkConstants.TelemetryFrames;

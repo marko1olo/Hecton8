@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SELF_AUDIT agent="SHINOBU_62" domain="OCEAN_SURFACE_AND_ATMOSPHERE_DIRECTOR" date="2026-05-19" status="IN_PROGRESS_COMPILE_GATED_DETERMINISM_PATCHED">
+  <PROMPT_DISAMBIGUATION status="PASS">
+    <ACTIVE_PROMPT>Second duplicate SHINOBU_62 block: OCEAN_SURFACE_AND_ATMOSPHERE_DIRECTOR, starts at CURRENT_BATCH.md line 2332.</ACTIVE_PROMPT>
+    <REJECTED_PROMPT>First duplicate SHINOBU_62 flora/fauna block is stale contamination for this user request.</REJECTED_PROMPT>
+  </PROMPT_DISAMBIGUATION>
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">Runtime probes Gerstner/weather legacy paths and falls back to GenerateEmergencyMockWeather; ledger classifies Data/Precomputed/gerstner_wave_weather.bin as previously script-tool-only.</TASK>
+    <TASK id="02" status="PASS">No flat water authority or standard Skybox path added; CPU and HLSL share WaveParametersDTO.</TASK>
+    <TASK id="03" status="PASS">WeatherStateDTO/hot DTOs use public fields; no get/set hot struct accessors.</TASK>
+    <TASK id="04" status="PASS">WaveParametersDTO is explicit 32 bytes; atmosphere/weather/lod/telemetry/waterline lanes are 64 bytes.</TASK>
+    <TASK id="05" status="PASS">MockBuoyancyQuery/MockBuoyancyResult plus hydration/query jobs cover 10000 blind AUP samples.</TASK>
+    <TASK id="06" status="PASS">Exact EvaluateWaves(double3 AUP, float time, NativeArray&lt;WaveParametersDTO&gt; waves, out float height, out float3 normal) signature exists.</TASK>
+    <TASK id="07" status="PASS">WaterlineBreachSignal is configured and pushed without trigger colliders.</TASK>
+    <TASK id="08" status="PASS">Atmospheric scattering globals and HLSL evaluate Rayleigh/Mie/gas-giant sky; no default Skybox dependency.</TASK>
+    <TASK id="09" status="PASS">Whitecaps use HLSL Gerstner Jacobian scalar and quality attenuation.</TASK>
+    <TASK id="10" status="PASS">Wind direction/speed publish _GlobalFlowVector and _H8GlobalFlow.</TASK>
+    <TASK id="11" status="PASS">Radial grid LOD DTO lerps horizon/density from GlobalQualityWeight.</TASK>
+    <TASK id="12" status="PASS">Narrative storm surge can force 15m waves and atmosphere tint through core mask/signal.</TASK>
+    <TASK id="13" status="PASS">CPU wraps projected double AUP per wavelength before float trig; shader receives camera-local projection.</TASK>
+    <TASK id="14" status="PASS">Rain disturbance is shader scalar/normal perturbation, not collision particles.</TASK>
+    <TASK id="15" status="PASS">OceanBuoyancyHeightJob and OceanBuoyancyAupJob batch exact physics height/normal queries.</TASK>
+    <TASK id="16" status="PASS">Vault buffers use NativeArrayOptions.UninitializedMemory where overwritten.</TASK>
+    <TASK id="17" status="PASS">300-frame OceanSurfaceTelemetryEntry ring and Dump_SURFACE_SURGEON.bin dump path exist.</TASK>
+    <TASK id="18" status="PASS">Atmosphere &amp; Wave Tuner UI Toolkit editor window writes wind, steepness, gas giant glow, and foam threshold into Vault DTOs without OnGUI.</TASK>
+    <TASK id="19" status="PASS">weather_profiles.csv parser consumes NativeArray&lt;byte&gt; scratch without Split/LINQ/row objects.</TASK>
+    <TASK id="20" status="PASS">SceneView OnDrawGizmos hook samples the same CPU evaluator and draws the wave height grid.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <DTO name="WaveParametersDTO" size="32" alignment="16">
+      <FIELD name="DirectionAndSteepness" offset="0" size="16" type="float4" />
+      <FIELD name="PhaseSpeed" offset="16" size="4" type="float" />
+      <FIELD name="Amplitude" offset="20" size="4" type="float" />
+      <FIELD name="Wavelength" offset="24" size="4" type="float" />
+      <FIELD name="_pad0" offset="28" size="4" type="uint" />
+      <MATH>16 + 4 + 4 + 4 + 4 = 32 bytes; 32 % 16 = 0.</MATH>
+    </DTO>
+    <DTO name="AtmosphereDTO" size="64">float4 RayleighBeta at 0, MieBeta at 16, ScatteringParams at 32, PlanetParams at 48.</DTO>
+    <DTO name="WeatherStateDTO" size="64">three float4 rows at 0/16/32 plus 16 bytes of state/quality/amplitude at 48.</DTO>
+    <DTO name="OceanSurfaceTelemetryEntry" size="64">single cache-line black-box row.</DTO>
+    <DTO name="WaterlineBreachSignal" size="64">single cache-line signal row.</DTO>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    <LOW weight="0.0-0.3">Active wave contribution collapses toward 4 waves, shared wave time cadence quantizes toward 5Hz, foam attenuates below q=0.28, radial horizon/density shrink, rain/atmosphere intensity reduce, and unchanged shader-state hashes skip global publication.</LOW>
+    <MIDDLE weight="0.3-0.7">Fractional wave contribution fades in continuously; no binary hardware branch.</MIDDLE>
+    <HIGH weight="0.7-0.95">More waves, longer grid horizon, stronger whitecap and atmosphere terms.</HIGH>
+    <ULTRA weight="0.95-1.0">16 waves, full Jacobian foam, stronger atmospheric scattering, largest radial-grid horizon.</ULTRA>
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS status="PASS">
+    <PRIVATE_ARRAY_ALLOCATIONS>Zero private persistent NativeArray, NativeList, or NativeHashMap fields in the ocean runtime.</PRIVATE_ARRAY_ALLOCATIONS>
+    <REQUESTED_BUFFER_IDS>ShinobuOceanWaveParameters, ShinobuOceanAtmosphere, ShinobuOceanWeatherState, ShinobuOceanMockBuoyancyQueries, ShinobuOceanMockBuoyancyResults, ShinobuOceanTelemetryRing, ShinobuOceanCsvScratch, ShinobuOceanDumpScratch, ShinobuOceanLodState.</REQUESTED_BUFFER_IDS>
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <JOBS>MockBuoyancyQueryHydrationJob -> MockBuoyancyQueryJob; OceanBuoyancyHeightJob/OceanBuoyancyAupJob are caller-scheduled physics broadcast jobs.</JOBS>
+    <NOALIAS>All NativeArray fields in ocean Burst jobs are tagged NoAlias; immutable inputs also ReadOnly.</NOALIAS>
+    <DEPENDENCY_OUTPUT>Jobs return JobHandle to the caller; the runtime does not arbitrarily Complete the physics/buoyancy jobs.</DEPENDENCY_OUTPUT>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD status="BLOCKED_BY_DEPENDENCY">
+    <ASSEMBLY_REFERENCES>No new asmdef or sibling runtime assembly reference added. Integration uses Core registry, SignalBus, Vault handles, and shader globals.</ASSEMBLY_REFERENCES>
+    <BUILD_STATUS>Build was skipped while CPU sampled 77.26%, 92.26%, and 97.88%. After a clean 15.23% CPU preflight, forced Core compile failed in unrelated AssetLifecycleGovernor duplicate member definitions before ocean diagnostics. Temporary generated-project include edits were removed. Latest recheck sampled CPU at 89.36% with no dotnet/csc, so AGENTS hardware gate still forbids relaunch.</BUILD_STATUS>
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    <REJECTED>FFT ocean, Navier-Stokes/fluid truth, Unity flat plane authority, standard Skybox, trigger waterline, CPU foam particles, rain collision particles, volumetric atmosphere raymarch.</REJECTED>
+    <USED>Gerstner surface, Jacobian foam scalar, AUP-local projection, shader rain normal perturbation, analytical Rayleigh/Mie/gas-giant atmosphere.</USED>
+    <COMPLEXITY>Before: heavy simulation or O(particles) CPU visual work. After: O(activeWaves * samples) with activeWaves continuously 4..16, plus O(1) shader scalar uploads on unchanged frames.</COMPLEXITY>
+  </DEAR_LIE_CONFIRMATION>
+  <ULTRA_POLISH_DELTA>
+    <BURST>All ocean Burst jobs/functions use CompileSynchronously=true, FloatMode.Fast, FloatPrecision.Standard.</BURST>
+    <RNG>Mock hydration uses deterministic Unity.Mathematics.Random, not UnityEngine.Random.</RNG>
+    <CAMERA>Runtime camera resolution uses GlobalRegistry.Player.PlayerCamera; no Camera.main poll remains.</CAMERA>
+    <GPU_UPLOAD>Wave StructuredBuffer upload is double-buffered and payload-hash gated; per-frame publish cannot cold-create GraphicsBuffers.</GPU_UPLOAD>
+    <TIME_SYNC>Runtime no longer reads Time.frameCount or Time.deltaTime for ocean truth. A fixed 60Hz simulation frame counter produces shared CPU/HLSL wave time, then GlobalQualityWeight quantizes it continuously between 5Hz and 60Hz.</TIME_SYNC>
+    <SHADER_GLOBALS>PublishShaderGlobals hashes time, quality, active waves, weather, atmosphere, and LOD before SetGlobal calls; repeated low-quality slices skip redundant global writes.</SHADER_GLOBALS>
+    <ENDIANNESS>Binary float hydration keeps a math.reversebytes path before math.asfloat for non-little-endian payloads.</ENDIANNESS>
+    <EDITOR_FACADE>Atmosphere &amp; Wave Tuner uses UI Toolkit CreateGUI with retained controls; static scan found no OnGUI, EditorGUILayout, or GUILayout in SHINOBU ocean files.</EDITOR_FACADE>
+  </ULTRA_POLISH_DELTA>
+</SELF_AUDIT>

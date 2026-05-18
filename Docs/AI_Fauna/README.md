@@ -1,27 +1,43 @@
-﻿# AI Fauna Docs
+# AI Fauna Docs
 
-Date: 2026-05-07
+Date: 2026-05-18
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Purpose: active fauna planning and coverage reference moved out of repo root.
 
-## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
+## 2026-05-18 R11 Active Evidence Boundary
 
 - Historical data boundary snapshot: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
 - Historical manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
-- Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
+- Historical actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Current documentation/source orientation: `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, and `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`.
+- R11 capture-time static counters supersede older broad source-count text in this bundle where exact values differ: `1742` project C# files, `1689` script C# files, `1725` non-test C# files, `1138660` project source lines, `1119546` script source lines, `1134363` non-test source lines, `296` project-wide interface declaration hits, `294` script interface hits, `63` direct public interfaces in `GlobalRegistryContracts.cs`, and `107` first-party asmdefs. These counts are volatile under concurrent agents; rerun `rg` before treating exact values as current.
 - Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- May 14 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat that May 11 compile-success line as stale report text. R43 rechecked the current external root `Hecton8*.csproj` no-restore CLI compile surface at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; full restore graphs still carry vendor/package warnings, and shared `Temp\obj` locks can create transient evidence noise. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
+- May 14/R43 CLI compile notes are historical `CLI_COMPILE` evidence only. They do not certify Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, scene wiring, frame-time, memory, or visual quality under the current dirty workspace.
 - May 13 DOC_AUDIT R15 fauna override: current static asset coverage is real but not runtime spawn proof. Recursive filesystem scan found `22` creature archetype assets under `Assets/_Project/Data/AI/CreatureArchetypes`, `22` fauna data templates under `Assets/_Project/Data/Fauna`, `108` fauna biome datasets, `13` fauna family profiles, and `6` generated proxy prefabs.
 - R15 wiring boundary: `GameBootstrapper` calls `EcosystemRuntimeInstaller.EnsureRuntimeSystems()`, which creates `FaunaGeneticsManager`, `EcosystemHealthDirector`, and `MigrationDirector`; it does not create `FaunaDirector` or `WorldFaunaSpawnRegistry`. If no active `FaunaDirector` registers `IFaunaSim`, bootstrap registers `DemiurgeFaunaSimulationService.Shared`, a headless data-only fallback with `ResidentSlotCapacity = 0`.
 - R15 scene/proof boundary: static script-GUID search found no serialized `FaunaDirector`, `WorldFaunaSpawnRegistry`, `FaunaRuntimeSmokeTester`, or `EcosystemRuntimeInstaller` hits in `Assets` scenes/prefabs/assets. Editor authoring code can configure a `WorldFaunaSpawnRegistry` and an existing `FaunaDirector`, but that is authoring capability, not production-scene proof.
 - R15 smoke boundary: `.codex-artifacts/fauna-omega-smoke-2026-05-05.log` is not a usable PASS artifact. It reports `.codex-artifacts is not a valid directory name` and ends with Unity return code `1`; no `FAUNA_OMEGA_SMOKE_RESULT` PASS line was visible in the current file.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
-## 2026-05-04 Current-State Boundary
+## Historical May 4 Boundary
 
-- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this bundle as current project truth.
+- Read current stable docs and the DOC_GLOBAL R16/R15/R14/R13/R11/R10/R9 reports before using May 4 / May 6 / May 11 reports as context. The older reports are historical unless current source or a fresh evidence artifact revalidates a claim.
 - This bundle is fauna concept/planning/coverage reference, not proof that all species, prefabs, biome spawns, or runtime directors are wired in current scenes.
 - `AI_CREATURE_ROSTER_ENTERPRISE.md` contains encoding-damaged prose. Use stable IDs and family links as pointers only until the prose is re-authored.
 - Runtime fauna ownership remains in source/domain maps: `FaunaBrain`, `FaunaDirector`, `EcosystemDirector`, and fauna registry assets must be reopened before surgery.

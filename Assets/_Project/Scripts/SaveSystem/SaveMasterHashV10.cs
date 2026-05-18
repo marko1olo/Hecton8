@@ -8,7 +8,7 @@ using Unity.Mathematics;
 namespace Hecton8.SaveSystem
 {
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     internal readonly struct SaveMasterHashV10Result
     {
         public readonly ulong PlainLo;
@@ -26,7 +26,7 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = SaveMasterHashV10.HeaderSizeBytes)]
+    [StructLayout(LayoutKind.Sequential, Size = SaveMasterHashV10.HeaderSizeBytes)]
     internal struct SaveFileHeaderV10
     {
         public uint MagicValue;

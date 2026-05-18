@@ -1,0 +1,61 @@
+<SELF_AUDIT agent_id="SHINOBU_28" date="2026-05-18">
+  <TASK_MATRIX>
+    <TASK id="01" status="PASS">Binary/archive scan performed; no terminal SDF binaries found; emergency 16x16 glyph UV grid implemented.</TASK>
+    <TASK id="02" status="PASS">Runtime path uses physical renderers and Texture2DArray panel shader; no Canvas/TMP runtime path added.</TASK>
+    <TASK id="03" status="PASS">TerminalStateDTO uses raw fields; runtime exposes ref mutation through UnsafeUtility.AsRef.</TASK>
+    <TASK id="04" status="PASS">ScreenCommandDTO is 16 bytes: uint, float2, float.</TASK>
+    <TASK id="05" status="PASS">Local partial mock power/damage/status signals drive isolated data binding.</TASK>
+    <TASK id="06" status="PASS">Burst text job writes ASCII digits into FixedString32Bytes via division/modulo.</TASK>
+    <TASK id="07" status="PASS">TerminalBlit.compute reads DTO buffers, glyph UVs, FixedString bytes, writes RWTexture2DArray slices; C# dispatch derives group counts from GetKernelThreadGroupSizes.</TASK>
+    <TASK id="08" status="PASS">Bar graph is the HLSL uv.x/uv.y lie with no chart objects.</TASK>
+    <TASK id="09" status="PASS">Dirty byte gates dirty-index upload and z-dispatch only for changed screens.</TASK>
+    <TASK id="10" status="PASS">Attention culling uses camera-forward dot and 20m range before GPU upload.</TASK>
+    <TASK id="11" status="PASS">Mock damage tears text UVs with sin/hash noise in compute.</TASK>
+    <TASK id="12" status="PASS">Texture2DArray allocated once per play session; panels render through one instanced Texture2DArray material and SV_InstanceID slice lookup.</TASK>
+    <TASK id="13" status="PASS">Low/Unknown/Mx350 boots 256px and 10Hz text updates; higher tiers use 512px.</TASK>
+    <TASK id="14" status="PASS">GPU path receives only UV/value floats; no double3/AUP buffer crosses to compute.</TASK>
+    <TASK id="15" status="PASS">TerminalClickSignal is 16-byte aligned, routes through typed SignalBus lanes, copies the frame snapshot into a vault-backed scratch buffer, maps UV to virtual buttons in a Burst job, and emits TerminalCommandSignal.</TASK>
+    <TASK id="16" status="PASS">Power-off bitmask clears RGB/text and redraws black.</TASK>
+    <TASK id="17" status="PASS">300-frame NativeArray black box dumps Dump_TERMINAL_OS.bin and Dump_TERMINAL_OS.h8dump on fault threshold.</TASK>
+    <TASK id="18" status="PASS">Terminal OS Designer editor facade edits unmanaged runtime layout.</TASK>
+    <TASK id="19" status="PASS">CSV monitor parses hash/x/y/scale from a preallocated byte buffer without row strings.</TASK>
+    <TASK id="20" status="PASS">Editor preview renders the selected Texture2DArray slice with Graphics.DrawTexture.</TASK>
+  </TASK_MATRIX>
+  <ARM64_CHECK>
+    <TerminalStateDTO size="48">
+      <field name="TerminalHash" offset="0" size="4" />
+      <field name="BackgroundColor" offset="4" size="4" note="low 24 bits RGB; high byte overlays IsDirty" />
+      <field name="IsDirty" offset="7" size="1" note="overlay keeps 48-byte stride" />
+      <field name="Value1" offset="8" size="4" />
+      <field name="Value2" offset="12" size="4" />
+      <field name="TextLine" offset="16" size="32" />
+    </TerminalStateDTO>
+    <ScreenCommandDTO size="16">uint FontAtlasUV_Packed at 0; float2 Position at 4; float Scale at 12.</ScreenCommandDTO>
+    <MockPowerStatusSignal size="16">uint Frame at 0; uint PoweredMask0 at 4; uint PoweredMask1 at 8; uint Reserved0 padding at 12.</MockPowerStatusSignal>
+    <TerminalClickSignal size="16">uint TerminalHash at 0; float2 LocalUv at 4; uint Reserved0 padding at 12.</TerminalClickSignal>
+    <TerminalClickScratch size="1024">64 * 16-byte TerminalClickSignal entries in GlobalDataVault buffer id 70532; stable read source for Burst click resolver.</TerminalClickScratch>
+    <TerminalCommandSignal size="16">uint TerminalHash at 0; uint CommandHash at 4; float2 LocalUv at 8.</TerminalCommandSignal>
+    <TerminalPanelInstanceDTO size="80">float4x4 LocalToWorld at 0; float4 SliceFlags at 64; no Pack=1; 80-byte stride.</TerminalPanelInstanceDTO>
+    <TerminalVirtualButtonDTO size="24">uint TerminalHash at 0; uint CommandHash at 4; float4 RectUv at 8.</TerminalVirtualButtonDTO>
+    <TerminalTelemetryEntry size="48">int/int/int/int, three float timings, uint flags/hash/reserved, two float scalars; 48-byte stride.</TerminalTelemetryEntry>
+    <PoseCaches stride="16">Terminal positions and forwards are NativeArray&lt;float4&gt;; .xyz is used only for local culling math.</PoseCaches>
+  </ARM64_CHECK>
+  <ZERO_GC_CHECK>
+    Scoped runtime/editor audit found no Canvas, TMP, ToString, string.Format, LINQ, foreach, Camera.main, runtime MaterialPropertyBlock, Resources.Get, DispatcherJobSwap, GetData, or SetData in TerminalOS files. Hot path uses FixedString32Bytes, vault-backed NativeArray buffers, typed SignalBus lanes, GraphicsBuffer.LockBufferForWrite, RenderMeshPrimitives, and compute dispatch.
+  </ZERO_GC_CHECK>
+  <AUP_CHECK>
+    Terminal rendering ignores absolute world precision. CPU attention culling uses local float positions/transforms; GPU receives no double3 and operates in 0..1 UV space only.
+  </AUP_CHECK>
+  <DEAR_LIE_CHECK>
+    Health/power chart is a two-condition UV bar. Glyph fallback is procedural SDF/hash strokes until a real atlas is assigned. Glitch is shader UV tearing, not CPU simulation.
+  </DEAR_LIE_CHECK>
+  <DEPENDENCY_CHECK>
+    No sibling Power/Damage/World dependencies. Mock partial signals isolate integration. Late-frame work routes through GlobalRegistry dispatcher. NativeArrays resolve from GlobalDataVault buffer ids 70520-70532 when the vault exists. Terminal click and command traffic routes through typed SignalBus&lt;TerminalClickSignal&gt; / SignalBus&lt;TerminalCommandSignal&gt; lanes instead of private terminal queues, and the click resolver reads a stable vault scratch copy instead of a live SignalBus frame snapshot. No sibling Power/Grid/Damage/World assembly reference was added.
+  </DEPENDENCY_CHECK>
+  <BLACKBOX>
+    TerminalTelemetryEntry ring length is 300. Fault dump paths are Docs/AgentLogs/Dump_TERMINAL_OS.bin and Docs/AgentLogs/Dump_TERMINAL_OS.h8dump.
+  </BLACKBOX>
+  <COMPILE_GUARD>
+    Hecton8.Core.csproj build is blocked by unrelated current-disk error GlobalPhysicsStateManager.cs(2608) missing FlushPhysicsTargetWakeRequests after restore; PhysicsWakeSignalContracts.cs is also included twice. No SHINOBU_28 terminal file errors were reported in the latest completed build attempt.
+  </COMPILE_GUARD>
+</SELF_AUDIT>

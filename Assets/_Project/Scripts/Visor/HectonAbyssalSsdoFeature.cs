@@ -399,6 +399,9 @@ namespace Hecton8.Visor
             if (IsUnsupportedCameraType(cameraType))
                 return;
 
+            if (HectonDrsRenderFeatureGate.ShouldCullForSurvivalScale())
+                return;
+
             _pass.Setup(settings, _occlusionMaterial, _blurHorizontalMaterial, _blurVerticalMaterial, _compositeMaterial);
             renderer.EnqueuePass(_pass);
         }

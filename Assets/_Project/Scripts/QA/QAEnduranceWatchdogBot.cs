@@ -34,7 +34,7 @@ namespace Hecton8.QA
         private const string CsvFileName = "QA_Endurance_Log.csv";
         private const string DumpFileName = "Dump_QA_WATCHDOG_BOT.bin";
         private const string ResultFileName = "QAEnduranceResult_QA_WATCHDOG_BOT.json";
-        private const string AutoRunFlagPath = "Temp/H8_QA_ENDURANCE_10KM.flag";
+        private const string AutoRunFlagPath = "Temp/H8_QA_LEGACY_ENDURANCE.flag";
         private const string SaveSlotName = "qa_endurance_10km";
         private const int BlackBoxCapacity = 300;
         private const int CsvQueueCapacity = 64;
@@ -162,14 +162,13 @@ namespace Hecton8.QA
             for (int i = 0; i < args.Length; i++)
             {
                 string arg = args[i];
-                if (string.Equals(arg, "-h8QaEndurance10km", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(arg, "-h8QaEndurance", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(arg, "-h8QaLegacyEndurance", StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
             }
 
-            if (string.Equals(System.Environment.GetEnvironmentVariable("H8_QA_ENDURANCE_10KM"), "1", StringComparison.Ordinal))
+            if (string.Equals(System.Environment.GetEnvironmentVariable("H8_QA_LEGACY_ENDURANCE"), "1", StringComparison.Ordinal))
                 return true;
 
             return File.Exists(ResolveProjectPath(AutoRunFlagPath));

@@ -1,0 +1,189 @@
+# LOG_SHINOBU_23 - Quest DAG And Event Resolver
+
+# SHINOBU_23 POLISH REPORT R5 - Spatial Hash Fence And Active Log Recovery
+
+Date: 2026-05-18
+Status: PENDING VERIFICATION
+Evidence class: STATIC_SOURCE + UNITY_BATCHMODE_IMPORT_COMPILE_BOUNDARY
+
+## What Was Wrong
+- Active SHINOBU_23 status/rationale/log files were missing after batch cleanup. Continuing from chat memory would violate the anti-amnesia protocol.
+- The spatial hash implementation needed a stricter prompt audit: the resolver must query same/adjacent player cells, while trigger insertion must stay bounded.
+- Quest namespace still contained `[StructLayout(Pack=1)]` on `QuestSaveHeader`. The actual layout was safe, but the attribute violated the ARM64 mandate.
+- The previous archived forensic report documented `QuestDagTelemetryEntry` as 40B. Current source is 48B after adding player cell, state hash, and spatial candidate counters.
+- Legacy `QuestManager/QuestStateManager` still expose managed/string compatibility paths. SHINOBU_23 hot path is clean, but full production switchover is not proven.
+
+## What Was Done
+- Recovered SHINOBU_23 prompt/status/rationale/log truth from `Docs/Archive/Batch008`.
+- Recreated active `Docs/Tasks/Status_SHINOBU_23.md`, `Docs/AgentLogs/Rationale_SHINOBU_23.md`, and this log.
+- Kept `QuestDagRuntimeConstants.SpatialHashCellsPerTriggerBudget = 27` and added/verified `SpatialHashMaxInsertedCellRadius = 1`.
+- Verified `BuildQuestDagSpatialHashJob` inserts trigger cells only inside the bounded adjacent-cell radius.
+- Verified `GraphResolverJob.EvaluateSpatialCandidates()` queries the player's 27 same/adjacent 100m AUP cells.
+- Removed `Pack=1` from `QuestSaveHeader` while preserving `Size=64`.
+- Added edit-test assertions proving `QuestSaveHeader` remains 64B and `Timestamp` remains offset 16.
+- Re-ran one Unity 6000.4.1f1 batchmode import as R5.
+
+## In-Game Result
+- New Quest DAG truth remains pure bitmask math: `ulong` state chunks, no strings, no dictionaries, no Unity trigger components in the SHINOBU_23 resolver.
+- 10,000 authored triggers are indexed into bounded 100m AUP cells and resolved from the player's local 27-cell neighborhood before exact radius checks.
+- Narrative timing remains a "Dear Lie": `ulong TargetTimestamp` controls truth; downstream presentation can play radio/hologram/visor effects after `StateChangedSignal`.
+- Low-tier health pressure still dilates the resolver to every 15 frames with hysteresis.
+
+## What Was Verified
+- Unity R5 log: `Logs/SHINOBU_23_UnityImport_20260518_R5.log`.
+- R5 Bee response includes:
+  - `Assets/_Project/Scripts/Quest/NarrativeDagInspectorWindow.cs`
+  - `Assets/_Project/Scripts/Quest/QuestDagDataLoading.cs`
+  - `Assets/_Project/Scripts/Quest/QuestDagMockSignalJobs.cs`
+  - `Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs`
+  - `Assets/_Project/Scripts/Quest/QuestDagRuntimeTypes.cs`
+  - `Assets/_Project/Scripts/Quest/QuestRuntimeTypes.cs`
+- R5 targeted error scan found no `QuestDag*`, `NarrativeDag*`, `QuestRuntimeTypes*`, or `QuestDagResolverEditTests*` errors.
+- R5 global compile still fails outside SHINOBU_23:
+  - `Assets/_Project/Scripts/Audio/Editor/SabineReverbDspTunerWindow.cs(199-204)` missing `Hecton8.Environment.NewLine`.
+  - `Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs(1261/1282)` missing `Hecton8.Graphics.RenderMeshPrimitives`.
+- Static Quest scan found no remaining `Pack=1`.
+- Static SHINOBU_23 hot-path scan found only `_scheduledHandle.Complete()` inside the explicit `CompleteScheduled()` fence.
+- `git diff --check` scoped to touched files exited 0 with CRLF normalization warnings only.
+
+## Cinematic Cheats Used
+- Timed story events are integer timestamp gates, not coroutines or timelines.
+- Trigger truth is mathematical AUP cell/radius logic, not Unity Collider trigger traffic.
+- Presentation is decoupled: bits emit `StateChangedSignal`; another system can buy visual overkill with holograms, radio harmonics, scanner oil-sheen, or HUD pulses.
+- Low-tier narrative cadence can be 4Hz under pressure; a 0.2s quest-state delay is invisible compared to physics/render stability.
+
+## Exact Microseconds Saved
+- Exact measured microseconds: NOT MEASURED. No profiler/GCMonitor/10,000-trigger benchmark artifact exists.
+- Structural boundary from this polish: trigger hash insertion is capped to adjacent cells only; worst-case ordinary trigger insertion is 27 entries per trigger, not an unbounded radius-cell expansion.
+- Static regression model: no managed quest strings/dictionaries in SHINOBU_23 resolver; no O(N) all-trigger distance loop; no coroutine delayed-event scheduler; no per-tick spatial-hash rebuild when trigger data is unchanged.
+
+## Struct Layout
+- `QuestNodeDTO` = 32B:
+  - 0 `uint NodeHash`
+  - 4 `uint RequiredStateHash`
+  - 8 `ulong PrerequisiteMask`
+  - 16 `ulong CompletionMask`
+  - 24 `uint _pad0`
+  - 28 `uint _pad1`
+- `TriggerVolumeDTO` = 40B:
+  - 0 `double3 AUP`
+  - 24 `float Radius`
+  - 28 `uint RequiredNodeHash`
+  - 32 `uint _pad0`
+  - 36 `uint _pad1`
+- `QuestNodeRuntimeDTO` = 40B:
+  - 0 `ulong TargetTimestamp`
+  - 8 `float ReputationDelta`
+  - 12 `float ReputationThreshold`
+  - 16 `int StateChunk`
+  - 20 `int TriggerIndex`
+  - 24 `int RequiredItemStart`
+  - 28 `int RequiredItemCount`
+  - 32 `ushort FactionId`
+  - 34 `ushort Flags`
+  - 36 `uint _pad0`
+- `QuestDagTelemetryEntry` = 48B:
+  - 0 `double ResolverComputeTimeMs`
+  - 8 `ulong BitsFlipped`
+  - 16 `uint Frame`
+  - 20 `int ActiveNodesEvaluated`
+  - 24 `ushort Iterations`
+  - 26 `ushort Flags`
+  - 28 `uint DeadlockNodeHash`
+  - 32 `uint PlayerCellHash`
+  - 36 `uint StateHash`
+  - 40 `int SpatialCandidateCount`
+  - 44 `uint _pad0`
+- `QuestSaveHeader` = 64B:
+  - 0 `uint Magic`
+  - 4 `uint Version`
+  - 8 `uint FlagCount`
+  - 12 `uint Checksum`
+  - 16 `double Timestamp`
+  - 24 `fixed uint Reserved[10]`
+
+## H-Phi Check
+- Persistent SHINOBU_23 arrays are in `GlobalDataVault`: masks, nodes, runtime metadata, trigger volumes, item prerequisites, player item mirrors, faction standings, telemetry, counters, trigger-node indices, no-trigger node indices, CSV monitor.
+- Private native collection is limited to transient `NativeParallelMultiHashMap<int,int>` spatial scratch. It stores no quest truth and supports deferred disposal.
+- No local private NativeArray owns SHINOBU_23 truth.
+
+## Blackbox
+- 300-frame ring active: `QuestDagTelemetryEntry[300]`.
+- Fixed-point cap emits `Docs/AgentLogs/Dump_QUEST_DAG.bin` and `Docs/AgentLogs/Dump_QUEST_DAG.h8dump`.
+- Dump writer uses `MemoryMappedFile` on Editor/Standalone and a zero-alloc `FileStream.Write(ReadOnlySpan<byte>)` fallback elsewhere; both preserve chronological payload ordering.
+
+## Compile Guard
+- No direct sibling runtime domain dependency was added.
+- Cross-domain output is typed `SignalBus<StateChangedSignal>` and vault buffers.
+- Unity R5 proves SHINOBU_23 files entered Bee compile; it does not prove global project compile because unrelated audio/UI blockers remain.
+- Root `.csproj` coverage is still not trusted as Quest DAG proof when generated project files omit untracked Unity source.
+
+<SELF_AUDIT>
+  <TASK_01 status="PASS">OSHINO binary load plus emergency mock path exists.</TASK_01>
+  <TASK_02 status="PASS_WITH_BOUNDARY">SHINOBU_23 resolver uses `NativeArray&lt;ulong&gt;`; legacy QuestManager managed compatibility remains pending integration.</TASK_02>
+  <TASK_03 status="PASS">Direct fields and `UnsafeUtility.ArrayElementAsRef&lt;ulong&gt;` state mutation path exist.</TASK_03>
+  <TASK_04 status="PASS">Primary DTO byte layouts listed; no `Pack=1` remains in Quest namespace.</TASK_04>
+  <TASK_05 status="PASS">Mock story/player/item signals and mock producer job exist.</TASK_05>
+  <TASK_06 status="PASS">Burst bitwise resolver job exists.</TASK_06>
+  <TASK_07 status="PASS">100m spatial hash uses bounded trigger insertion and queries same/adjacent player cells.</TASK_07>
+  <TASK_08 status="PASS">Inventory prerequisite arrays are SoA hash/quantity data.</TASK_08>
+  <TASK_09 status="PASS">Fixed-point cascade is capped at 5 and no-trigger nodes are vault-indexed.</TASK_09>
+  <TASK_10 status="PASS">Delayed events are `ulong TargetTimestamp` checks.</TASK_10>
+  <TASK_11 status="PASS">Old/new XOR emits typed `StateChangedSignal`.</TASK_11>
+  <TASK_12 status="PASS">Save handoff uses `UnsafeUtility.MemCpy` over packed ulong masks.</TASK_12>
+  <TASK_13 status="PASS">Hardware health dilation to every 15 frames exists.</TASK_13>
+  <TASK_14 status="PASS">AUP trigger math subtracts double3 before float3 cast.</TASK_14>
+  <TASK_15 status="PASS">Faction thresholds and atomic delta writes exist.</TASK_15>
+  <TASK_16 status="PASS">Spatial hash is allocated once and dirty-rebuilt only.</TASK_16>
+  <TASK_17 status="PASS">300-frame telemetry ring dumps `.bin` and `.h8dump` on deadlock.</TASK_17>
+  <TASK_18 status="PASS">Narrative DAG Inspector reads `node_names.csv`.</TASK_18>
+  <TASK_19 status="PASS">CSV override parser applies live unmanaged data changes.</TASK_19>
+  <TASK_20 status="PASS">Editor force-complete flips unmanaged state and emits a signal.</TASK_20>
+  <ARM64_CHECK status="PASS">DTO sizes are multiples of 8; offsets listed above.</ARM64_CHECK>
+  <ZERO_GC_CHECK status="PASS_WITH_BOUNDARY">`QuestDag*` resolver hot path has no strings, dictionaries, LINQ, closures, boxing, UnityEvents, scene search, or GetComponent. Legacy Quest facade is not clean and is explicitly not claimed as hot-path proof.</ZERO_GC_CHECK>
+  <AUP_CHECK status="PASS">All trigger distance checks use local double delta before float distance-squared math.</AUP_CHECK>
+  <DEAR_LIE_CHECK status="PASS">Timed/cutscene truth is faked as bit/timestamp math.</DEAR_LIE_CHECK>
+  <DEPENDENCY_CHECK status="PASS">Uses GlobalDataVault and typed SignalBus lanes, not direct player/inventory/UI class coupling.</DEPENDENCY_CHECK>
+</SELF_AUDIT>
+
+## Residual Risk
+- No Play Mode, profiler, GCMonitor, player build, Burst inspector, IL2CPP build, ARM64 device build, or measured 10,000-trigger 0.05ms proof exists.
+- The legacy Quest facade still needs integration work before the whole production quest namespace can honestly claim "no strings/dictionaries."
+- Current global Unity compile is blocked outside SHINOBU_23.
+
+# SHINOBU_23 POLISH REPORT R6 - Spatial Budget Persistence And Platform Dump Guard
+
+Date: 2026-05-18
+Status: PENDING VERIFICATION
+Evidence class: STATIC_SOURCE + ROSLYN_PROBE + UNITY_BATCHMODE_IMPORT_COMPILE_BOUNDARY
+
+## What Was Wrong
+- The source still needed proof that `SpatialHashCellsPerTriggerBudget` persisted as 27 after context compaction.
+- The dump writer imported `System.IO.MemoryMappedFiles` without platform guard.
+- The two-cell radius-overlap case was not represented by an explicit edit test.
+
+## What Was Done
+- Confirmed `SpatialHashCellsPerTriggerBudget = 27` and `SpatialHashMaxInsertedCellRadius = 1`.
+- Added `Resolver_RadiusOverlapAcrossTwoCells_CompletesTrigger`.
+- Guarded MMF with `UNITY_STANDALONE || UNITY_EDITOR`.
+- Added `WriteStreamPayload()` fallback using `FileStream.Write(ReadOnlySpan<byte>)` over unsafe pointers.
+- Ran Unity R6 batchmode import after the code change.
+
+## In-Game Result
+- Boundary/large-radius narrative triggers inside the adjacent-cell contract no longer depend on center-cell-only luck.
+- Android/Quest compile path no longer needs the MMF namespace for this dump writer.
+
+## What Was Verified
+- Independent OSHINO binary verifier exited 0.
+- Roslyn runtime probe passed for fallback/no Unity defines.
+- Roslyn runtime probe passed for `UNITY_EDITOR;UNITY_STANDALONE`.
+- Roslyn edit-test probe passed without duplicate `QuestRuntimeTypes.cs` source.
+- Unity R6 included SHINOBU_23 files and reported no `QuestDag*` or `NarrativeDagInspector*` compiler errors.
+- Unity R6 still fails globally outside SHINOBU_23: Audio editor `Hecton8.Environment.NewLine`, TerminalOS missing fields, and `Hecton8.Graphics.RenderMeshPrimitives`.
+
+## Cinematic Cheats Used
+- Spatial truth remains a coarse 100m hash plus exact local radius check.
+- Timed narrative remains integer-gated bit logic.
+
+## Exact Microseconds Saved
+- Not measured. This pass fixed correctness/capacity and platform compile risk; profiler proof remains absent.

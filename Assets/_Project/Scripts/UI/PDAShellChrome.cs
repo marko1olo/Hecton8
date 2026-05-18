@@ -2,11 +2,13 @@ using System;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton.Localization;
 using Hecton8.Input;
 using TMPro;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,7 +17,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Shell Chrome")]
-    public sealed class PDAShellChrome : MonoBehaviour, ILateFrameTickable, IPDAEventListener, ILocalizationLanguageChangedListener
+    public sealed class PDAShellChrome : MonoBehaviour, ILateFrameTickable, IPDAEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const string TitleTextValue = "HECTON-8 PERSONAL DATA ASSISTANT";
         private const string ActiveTabInventory = "ACTIVE TAB // INVENTORY";
@@ -40,6 +42,7 @@ namespace Hecton8.UI
         private const string IntrusionFooterNumericTemplate = "O2 {N0:0}%  |  PWR {N1:0}%  |  REBOOT {N2}%";
         private const int NumericTemplateWriteAttemptLimit = 8;
         private const int CharCapacityGrowthWatchdogLimit = 31;
+        private const int LegacyGlitchReadabilityPrefixChars = 5;
         private const int VaultPressureWarningStaleFrames = 300;
         private const byte DataVaultMemoryPressureFlag = 2;
 
@@ -141,6 +144,8 @@ namespace Hecton8.UI
         private char[] _leftFooterBuffer = new char[160];
         // COLD ALLOC: char[128] - PDA right footer staging buffer - owner: PDAShellChrome
         private char[] _rightFooterBuffer = new char[128];
+        // COLD ALLOC: char[160] — PDA caller-owned glitch scratch buffer — owner: PDAShellChrome
+        private char[] _glitchScratchBuffer = new char[160];
         // COLD ALLOC: char[64] - PDA context tag staging buffer - owner: PDAShellChrome
         private char[] _contextTagBuffer = new char[64];
         // COLD ALLOC: char[96] - intrusion status hint buffer - owner: PDAShellChrome
@@ -153,6 +158,10 @@ namespace Hecton8.UI
         private int _appliedContextTagVersion = int.MinValue;
         private int _appliedLeftFooterVersion = int.MinValue;
         private int _appliedRightFooterVersion = int.MinValue;
+        private IDataVault _glitchVault;
+        private VaultBufferHandle<byte> _glitchTableHandle;
+        private bool _glitchTableHandleReady;
+        private bool _hotSwapRegistered;
 
         private void Awake()
         {
@@ -164,6 +173,8 @@ namespace Hecton8.UI
             RefreshBindings();
             RefreshLocalizedTextCache();
             EnsureBuilt();
+            CacheGlitchTableVaultCold();
+            TryRegisterHotSwapListener();
             Subscribe();
             RefreshChrome();
             EvaluateTickRegistration();
@@ -172,6 +183,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
+            TryUnregisterHotSwapListener();
             Unsubscribe();
             UnregisterFromTickManager();
         }
@@ -278,6 +290,81 @@ namespace Hecton8.UI
         {
             PDAEvents.Register(this);
             LocalizationEvents.RegisterLanguageListener(this);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+                BindGlitchTableVault(currentService as IDataVault);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void CacheGlitchTableVaultCold()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
+                vault = latestVault;
+
+            BindGlitchTableVault(vault);
+        }
+
+        private void BindGlitchTableVault(IDataVault vault)
+        {
+            _glitchVault = vault;
+            _glitchTableHandle = default;
+            _glitchTableHandleReady = false;
+            if (vault == null)
+                return;
+
+            _glitchTableHandle = vault.GetBufferHandle<byte>(
+                (BufferID)DiegeticGlitchSurgeonRuntime.GlitchTableBufferIdRaw,
+                DiegeticGlitchSurgeonRuntime.GlitchTableCapacity,
+                SystemID.UI,
+                NativeArrayOptions.UninitializedMemory);
+            _glitchTableHandleReady = _glitchTableHandle.IsCreated;
+            if (!_glitchTableHandleReady)
+                return;
+
+            unsafe
+            {
+                byte* table = (byte*)_glitchTableHandle.ResolvePointer(vault);
+                if (table != null && !GlitchTable.IsValidGlyphTable(table, DiegeticGlitchSurgeonRuntime.GlitchTableCapacity))
+                    GlitchTable.CopyEmbeddedGlyphsTo(table, DiegeticGlitchSurgeonRuntime.GlitchTableCapacity);
+            }
+        }
+
+        private unsafe bool TryResolveGlitchTablePointer(out byte* table, out int tableLength)
+        {
+            table = null;
+            tableLength = 0;
+            if (!_glitchTableHandleReady || _glitchVault == null)
+                return false;
+
+            table = (byte*)_glitchTableHandle.ResolvePointer(_glitchVault);
+            if (table == null)
+                return false;
+
+            tableLength = DiegeticGlitchSurgeonRuntime.GlitchTableCapacity;
+            return true;
         }
 
         private void Unsubscribe()
@@ -1106,7 +1193,7 @@ namespace Hecton8.UI
             appliedVersion = 0;
         }
 
-        private static void ApplyTextBuffer(
+        private void ApplyTextBuffer(
             TMP_Text label,
             char[] sourceBuffer,
             int sourceLength,
@@ -1128,14 +1215,41 @@ namespace Hecton8.UI
 
             if (useStressReactiveStrings)
             {
-                GlitchEncoder.ApplyDecay(
-                    sourceBuffer,
-                    sourceLength,
-                    stressReactiveIntensity,
-                    unchecked((version * 397) ^ corruptionSalt),
-                    out char[] corruptedBuffer,
-                    out int corruptedLength);
-                ApplyDynamicBuffer(label, corruptedBuffer, corruptedLength);
+                if (sourceLength > _glitchScratchBuffer.Length)
+                {
+                    ApplyDynamicBuffer(label, sourceBuffer, sourceLength);
+                }
+                else
+                {
+                    unsafe
+                    {
+                        if (TryResolveGlitchTablePointer(out byte* table, out int tableLength))
+                        {
+                            GlitchEncoder.ApplyDecayToBuffer(
+                                sourceBuffer,
+                                sourceLength,
+                                _glitchScratchBuffer,
+                                stressReactiveIntensity,
+                                unchecked((version * 397) ^ corruptionSalt),
+                                table,
+                                tableLength,
+                                LegacyGlitchReadabilityPrefixChars,
+                                out int corruptedLength);
+                            ApplyDynamicBuffer(label, _glitchScratchBuffer, corruptedLength);
+                        }
+                        else
+                        {
+                            GlitchEncoder.ApplyDecayToBuffer(
+                                sourceBuffer,
+                                sourceLength,
+                                _glitchScratchBuffer,
+                                stressReactiveIntensity,
+                                unchecked((version * 397) ^ corruptionSalt),
+                                out int corruptedLength);
+                            ApplyDynamicBuffer(label, _glitchScratchBuffer, corruptedLength);
+                        }
+                    }
+                }
             }
             else
             {

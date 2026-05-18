@@ -318,7 +318,9 @@ namespace Hecton8.SaveSystem
                 return true;
             }
 
-            AsyncOperationHandle<GameObject> handle = prefabReference.LoadAssetAsync<GameObject>();
+            if (!TryAcquireWorldPrefabHandle(dispatchAssetKey, prefabReference, out AsyncOperationHandle<GameObject> handle))
+                return TryGetDirectWorldPrefabFallback(hashId, out _);
+
             WorldPrefabRuntimeRecord loadingRecord = new WorldPrefabRuntimeRecord
             {
                 PrefabReference = prefabReference,
@@ -390,6 +392,7 @@ namespace Hecton8.SaveSystem
                 }
 
                 CompleteWorldPrefabDispatch(ref runtimeRecord, success: true);
+                MarkWorldPrefabLoaded(ref runtimeRecord);
                 runtimeRecord.LoadState = WorldPrefabLoadState.Loaded;
                 _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
             }
@@ -808,7 +811,16 @@ namespace Hecton8.SaveSystem
                 }
 
                 runtimeRecord.DispatchRequestId = ticket.RequestId;
-                runtimeRecord.Handle = runtimeRecord.PrefabReference.LoadAssetAsync<GameObject>();
+                if (!TryAcquireWorldPrefabHandle(runtimeRecord.DispatchAssetKey, runtimeRecord.PrefabReference, out AsyncOperationHandle<GameObject> handle))
+                {
+                    dispatcher.AcknowledgeDispatchRequest(ticket.RequestId, false);
+                    runtimeRecord.DispatchRequestId = 0;
+                    runtimeRecord.LoadState = WorldPrefabLoadState.Failed;
+                    _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
+                    continue;
+                }
+
+                runtimeRecord.Handle = handle;
                 runtimeRecord.LoadState = WorldPrefabLoadState.Loading;
                 runtimeRecord.LastAccessFrame = Time.frameCount;
                 CaptureCurrentPlayerAup(ref runtimeRecord);
@@ -820,9 +832,16 @@ namespace Hecton8.SaveSystem
 
         private void ReleaseWorldPrefabRuntimeRecord(int hashId, WorldPrefabRuntimeRecord runtimeRecord)
         {
+            uint assetKey = runtimeRecord.DispatchAssetKey;
             CancelPendingWorldPrefabDispatch(ref runtimeRecord);
             if (runtimeRecord.Handle.IsValid())
-                Addressables.Release(runtimeRecord.Handle);
+            {
+                AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+                if (governor != null && assetKey != 0u)
+                    governor.ReleaseAddressableAsset(assetKey);
+                else
+                    Addressables.Release(runtimeRecord.Handle);
+            }
 
             _pendingWorldPrefabReleaseSet?.Remove(hashId);
             _worldPrefabRuntimeLookup.Remove(hashId);
@@ -831,6 +850,49 @@ namespace Hecton8.SaveSystem
         private static uint BuildWorldPrefabDispatchKey(int hashId)
         {
             return unchecked((uint)hashId) ^ 0xA77E0001u;
+        }
+
+        private static bool TryAcquireWorldPrefabHandle(
+            uint dispatchAssetKey,
+            AssetReferenceGameObject prefabReference,
+            out AsyncOperationHandle<GameObject> handle)
+        {
+            handle = default;
+            AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+            if (governor == null)
+                return false;
+
+            return governor.TryAcquireAddressableGameObject(
+                dispatchAssetKey,
+                prefabReference,
+                null,
+                AssetPriorityTier.Tier2Proximity,
+                AssetResidencyKind.Addressable,
+                0L,
+                Vector3.zero,
+                false,
+                out handle,
+                out _);
+        }
+
+        private static void MarkWorldPrefabLoaded(ref WorldPrefabRuntimeRecord runtimeRecord)
+        {
+            AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+            if (governor == null ||
+                runtimeRecord.DispatchAssetKey == 0u ||
+                !runtimeRecord.Handle.IsValid() ||
+                runtimeRecord.Handle.Status != AsyncOperationStatus.Succeeded)
+            {
+                return;
+            }
+
+            governor.MarkAddressableLoaded(
+                runtimeRecord.DispatchAssetKey,
+                runtimeRecord.Handle,
+                runtimeRecord.Handle.Result,
+                0L,
+                Vector3.zero,
+                false);
         }
 
         private static void CancelPendingWorldPrefabDispatch(ref WorldPrefabRuntimeRecord runtimeRecord)

@@ -22,7 +22,7 @@ Shader "Hidden/Hecton8/NoirDepthFog"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
         #include "Hecton_WaterExtinction.hlsl"
 
-        CBUFFER_START(UnityPerMaterial)
+        CBUFFER_START(HectonNoirDepthFogGlobals)
             float4 _HectonNoirDepthFogShallowColor;
             float4 _HectonNoirDepthFogAbyssColor;
             float4 _HectonNoirDepthFogParamsA; // x=visual density, y=start meters, z=max meters, w=reserved

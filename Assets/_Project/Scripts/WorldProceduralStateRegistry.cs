@@ -227,12 +227,17 @@ namespace Hecton8.World
                         break;
                     }
 
+                    byte flags = 0;
+                    if (pair.Value.isLargeThreatZone)
+                        flags |= ProceduralFaunaStateDTO.FlagLargeThreatZone;
+                    if (pair.Value.blocked)
+                        flags |= ProceduralFaunaStateDTO.FlagBlocked;
+
                     dto.faunaStates[faunaIndex] = new ProceduralFaunaStateDTO
                     {
                         runtimeKey = pair.Key,
                         cooldownUntilPlayTime = pair.Value.cooldownUntilPlayTime,
-                        isLargeThreatZone = pair.Value.isLargeThreatZone,
-                        blocked = pair.Value.blocked
+                        flags = flags
                     };
                     faunaIndex++;
                 }
@@ -270,8 +275,8 @@ namespace Hecton8.World
                     _faunaSpawnStates[entry.runtimeKey] = new FaunaSpawnState
                     {
                         cooldownUntilPlayTime = entry.cooldownUntilPlayTime,
-                        isLargeThreatZone = entry.isLargeThreatZone,
-                        blocked = entry.blocked
+                        isLargeThreatZone = (entry.flags & ProceduralFaunaStateDTO.FlagLargeThreatZone) != 0,
+                        blocked = (entry.flags & ProceduralFaunaStateDTO.FlagBlocked) != 0
                     };
                 }
             }

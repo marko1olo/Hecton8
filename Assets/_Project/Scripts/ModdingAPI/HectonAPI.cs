@@ -172,6 +172,16 @@ namespace Hecton8.Modding
         public static class Commands
         {
             /// <summary>
+            /// Enqueues one binary-only Future Command envelope for Burst validation.
+            /// </summary>
+            /// <param name="envelope">Fixed 64-byte command envelope.</param>
+            /// <returns>True when the envelope entered the quarantine queue.</returns>
+            public static bool RequestFuture(in FutureCommandEnvelope envelope)
+            {
+                return FutureCommandSandboxValidator.Request(in envelope);
+            }
+
+            /// <summary>
             /// Enqueues a sandboxed command request.
             /// </summary>
             /// <param name="command">Command packet. Mod identity is assigned by the engine.</param>

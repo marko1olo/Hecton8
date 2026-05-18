@@ -1,7 +1,22 @@
 # QUALITY_GATES.md
 ## SECONDARY LAYER: QUALITY CONTROL
-Date: 2026-05-15
+Date: 2026-05-18
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Verification: PENDING VERIFICATION
 Apply only after production result exists.
 Source of truth for asset specs: PROCEDURAL_ASSET_PIPELINE.md
@@ -13,13 +28,13 @@ Performance tooling: SYSTEMS_CONTRACTS.md source x-ray. `BenchmarkRunner.cs` is 
 - This stable file is the acceptance-gate authority. Dated reports are evidence/counter snapshots only.
 - This is a gate/checklist contract, not evidence that any asset passed.
 - Do not fill or cite this document as proof without a real prefab/material/scatter profile and fresh validation output.
-- Current project truth starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older evidence reports.
+- Current authority spine starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, and fresh artifacts; dated reports such as `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` are historical evidence snapshots.
 - May 11 report text claimed historical Core dependency build evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. This is not current artifact-backed proof in the workspace.
 - Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, scene/prefab gameplay, player build, import, frame-time, memory, and visual quality proof remain absent.
 - 2026-05-14 DOC_AUDIT R43/R45 update: current external root-project CLI compile surface is clean under single-project no-restore checks, but Quality Gates remain `PENDING VERIFICATION` because Unity import/Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene/prefab, and visual proof are still absent.
-- 2026-05-15 DOC_AUDIT continuation: current `Hecton8.Core.csproj` CLI compile artifact `Docs/AgentLogs/Build_DOC_AUDIT_CONTINUATION_20260515_183949_Hecton8Core.log` exits `0` with `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`. Current H-Phi full static budget artifact `Docs/AgentLogs/HPhi_DOC_AUDIT_CONTINUATION_20260515_184218_CurrentDiskBudgetGate.json` exits `0` with `MemoryAlignment=0.506309148`, `DataSovereignty=0.021306032`, `HPhiStaticRisk=0.000634446`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, and Core graph debt still at `25/10/14/8/6`.
-- Latest observed same-day current-disk artifacts supersede that DOC_AUDIT slice as the top evidence: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` exits `0` with `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, and `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` exits `0` with all active budget gates passed: `RuntimeHPhiRisk=0.000636091`, `MemoryAlignment=0.506309148`, `DataSovereignty=0.021306032`, `GlobalRegistrySurface=5060/5060`, `ManagedFormatSurface=534/534`, `PrimaryManagedRuntimeRisk=147/147`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, and Core graph debt `25/10/14/8/6`.
-- DOC_HONEST_ANALYSIS R3 cleared transient unused Core asmdef reference drift for `Hecton8.World.GPR`; post-prune artifact `Docs/Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json` exits `0`, reports Core graph debt `25/10/14/8/6`, and reports no unused Core asmdef reference candidates. CurrentDisk53/BudgetGate22 supersede that same-day slice as the current top Core compile/H-Phi boundary after the later 22:38 source write.
+- 2026-05-15 DOC_AUDIT continuation path correction: the previously cited `Docs/AgentLogs/Build_DOC_AUDIT_CONTINUATION_20260515_183949_Hecton8Core.log` and `Docs/AgentLogs/HPhi_DOC_AUDIT_CONTINUATION_20260515_184218_CurrentDiskBudgetGate.json` artifacts are absent from the current filesystem and must not be used as proof. Use the archived CurrentDisk53/BudgetGate22 artifacts below as historical CLI/static evidence only.
+- Latest observed same-day current-disk artifacts are archived evidence: `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` exited `0` with `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, and `Docs/Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` exited `0` with all active budget gates passed: `RuntimeHPhiRisk=0.000636091`, `MemoryAlignment=0.506309148`, `DataSovereignty=0.021306032`, `GlobalRegistrySurface=5060/5060`, `ManagedFormatSurface=534/534`, `PrimaryManagedRuntimeRisk=147/147`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, and Core graph debt `25/10/14/8/6`.
+- DOC_HONEST_ANALYSIS R3 cleared transient unused Core asmdef reference drift for `Hecton8.World.GPR`; post-prune artifact `Docs/Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json` exits `0`, reports Core graph debt `25/10/14/8/6`, and reports no unused Core asmdef reference candidates. CurrentDisk53/BudgetGate22 supersede that same-day slice as archived CLI/static boundary evidence only; current compile proof is pending under the active dirty workspace.
 - These May 15 artifacts satisfy only the CLI/static quality slice. They do not satisfy Unity import, Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene/prefab, save/load, or visual acceptance gates.
 
 2026-05-12 permanent build gate protocol:
@@ -51,7 +66,7 @@ Rules:
 - `H8Memory.cs` is the only allowed first-party file with direct `new NativeArray<T>` constructors.
 - Field-like `NativeArray<T>` declarations are allowed only in `H8Memory.cs` and `GlobalDataVault.cs`; every other declaration is migration debt unless it is removed or replaced by a vault accessor contract in a coordinated domain pass.
 - Every other first-party direct constructor is legacy debt until migrated to `GlobalDataVault` or `H8Memory.Allocate`.
-- The no-regression gate allows debt to decrease but blocks any file whose forbidden constructor count or field-like declaration count increases against `Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCER.json`.
+- The no-regression gate allows debt to decrease but requires a regenerated baseline at `Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCER.json`; the R17 filesystem check did not find that baseline, so this gate is pending until the artifact is created.
 - The zero-debt gate is expected to fail until the remaining cross-domain migrations are complete.
 
 ---

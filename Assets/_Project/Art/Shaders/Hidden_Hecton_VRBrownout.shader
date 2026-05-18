@@ -27,16 +27,19 @@ Shader "Hidden/Hecton8/VRBrownout"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            CBUFFER_START(UnityPerMaterial)
-                float _HectonVRBrownoutIntensity;
-                float _HectonWorldFocusBlur;
-                float _HectonVRNearCollisionIntensity;
-                float _HectonWorldBlurTexelRadius;
-                float _HectonVRBrownoutScanlineStrength;
-                float _HectonVRBrownoutDitherStrength;
+            CBUFFER_START(HectonVRBrownoutGlobals)
+                float4 _HectonVRBrownoutParams0;
+                float4 _HectonVRBrownoutParams1;
                 float4 _HectonVrComfortSignals;
                 float4 _HectonVrComfortMotion;
             CBUFFER_END
+
+            #define _HectonVRBrownoutIntensity _HectonVRBrownoutParams0.x
+            #define _HectonWorldFocusBlur _HectonVRBrownoutParams0.y
+            #define _HectonVRNearCollisionIntensity _HectonVRBrownoutParams0.z
+            #define _HectonWorldBlurTexelRadius _HectonVRBrownoutParams0.w
+            #define _HectonVRBrownoutScanlineStrength _HectonVRBrownoutParams1.x
+            #define _HectonVRBrownoutDitherStrength _HectonVRBrownoutParams1.y
 
             TEXTURE2D_X(_BlitTexture);
             float4 _BlitTexture_TexelSize;

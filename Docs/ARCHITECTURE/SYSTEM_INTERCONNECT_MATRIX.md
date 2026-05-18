@@ -1,7 +1,21 @@
-﻿# System Interconnect Matrix
+# System Interconnect Matrix
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Mandates followed:
 
@@ -27,14 +41,14 @@ Current modding boundary:
 Current-state boundary:
 
 - This matrix maps lane ownership and flush order.
-- It is not runtime profiler proof. Code validators passed for the edited scripts; console/play-mode GC proof is separate.
+- It is not runtime profiler proof. Code-validator status requires a linked artifact path, command, timestamp, and edited-script list; until then this matrix is `STATIC_DOC / STATIC_SOURCE` only.
 - `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` remains the historic risk authority for event cascade/depth concerns.
 
-## Five-Artery Mega-Bus Model
+## Typed Signal-Lane Orientation
 
-The source inventory is summarized as exactly five arteries. This is a documentation-level ownership model over the existing queue lanes, not a replacement for `SystemDispatcher.LateUpdate()`.
+The old five-bucket bus summary is legacy shorthand only. Current ownership uses the 9-echelon / 85-domain map plus typed `SignalBus<T>` and `NativeQueue` lanes; Core/Env/Player/Base/AI are local reading buckets, not complete architecture coverage or exclusive cross-domain authority.
 
-| Artery | Runtime scope | Representative lanes |
+| Legacy bucket | Runtime scope | Representative lanes |
 |---|---|---|
 | Core | bootstrap, scene, registry, save/load, localization, telemetry, performance, object-pool diagnostics, mod registry | `BootstrapEvents`, `SceneBootstrap`, `GlobalRegistry`, `SaveEvents`, `LocalizationEvents`, `GlobalTelemetryBus`, `PerformanceEvents`, `ObjectPoolDiagnostics`, `ModRegistryEvents` |
 | Env | weather, atmosphere, biome, celestial, acoustic, physics, fluid, pressure, depth, soundscape, random/seismic world pressure | `WeatherEvents`, `AtmosphereEvents`, `MapMagicBiomeEvents`, `BiomeMatrixEvents`, `CelestialEvents`, `EclipseGameplayEvents`, `AcousticZoneEvents`, `PhysicsEventBus`, `PhysicsEvents`, `FluidFeedbackEvents`, `HighPressureEvents`, `FatalPressureImplosionEvents`, `DepthZoneEvents`, `SoundscapeEvents`, `RandomEventEvents` |
@@ -42,7 +56,7 @@ The source inventory is summarized as exactly five arteries. This is a documenta
 | Base | base modules, airlocks, base integrity, submarine OS, power grid, emergency service relay, drone fleet telemetry | `ModuleStatusEvents`, `BaseAirlockEvents`, `BaseIntegrityEvents`, `HectonSubmarineOsEvents`, `PowerGridTelemetryEvents`, `EmergencyServiceRelayEvents`, `HectonDroneFleetEvents` |
 | AI | encounter director, quest/progression, narrative/audio logs, first-hour, endings, Atlas-6 directives, ecosystem/fauna pressure | `DirectorAIEvents`, `QuestEvents`, `NarrativeEvents`, `AudioLogEvents`, `FirstHourEvents`, `EndingEvents`, `Atlas6Events`, `SargassumGlobalDragManager` |
 
-## Verified LateUpdate Flush Order
+## Static Source LateUpdate Flush Order
 
 Source: `Assets/_Project/Scripts/Core/SystemDispatcher.cs`
 
@@ -268,7 +282,7 @@ Spatial mod record path:
 - GC: none added by this document.
 - Memory: no runtime change.
 - Cadence: documentation drift risk is high if new queue lanes are added without updating this matrix and `PROJECT_ATLAS.md`.
-- Correctness: low risk on queue ownership claims because every lane listed here was verified from source files and dispatcher flush order.
+- Correctness: low risk on queue ownership claims because every lane listed here was mapped from source files and dispatcher flush order.
 
 ## Hot Path Impact
 
@@ -283,6 +297,6 @@ Spatial mod record path:
 
 ## Why Kept
 
-- the file separates verified queue lanes from managed mod bus traffic
+- the file separates source-observed queue lanes from managed mod bus traffic
 - the dispatch order is anchored to `SystemDispatcher.LateUpdate()`
 - no inferred listener graph was invented beyond what source ownership supports

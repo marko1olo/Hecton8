@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Unity.Collections;
@@ -33,6 +35,8 @@ namespace Hecton8.World
         private const int VisibleIndexStride = sizeof(uint);
         private const int ThreadsPerGroup = 64;
         private const int FrustumPlaneCount = 6;
+        private const int CpuCullingScratchPlaneCapacity = 16;
+        private const int CpuCullingScratchBufferCount = 2;
         private const int BrgMetadataPlaceholderCount = 1;
         private const int MaxVegetationVisibilityPasses = 3;
         private const int MaxVegetationDrawCommands = 7;
@@ -43,9 +47,22 @@ namespace Hecton8.World
         private const byte VisibilityMaskShadow = 1 << 2;
         private const int FloraGrowthTelemetryFrameCount = 300;
         private const int FloraGrowthTelemetryMaxSamples = 64;
-        private const int FloraGrowthTelemetryDumpVersion = 1;
+        private const int FloraGrowthTelemetryDumpVersion = 2;
         private const uint FloraGrowthTelemetryHashSeed = 2166136261u;
         private const string FloraGrowthDumpRelativePath = "Docs/AgentLogs/Dump_FLORA_GROWTH_SYSTEM.bin";
+        private const int ScatterCullTelemetryFrameCount = 300;
+        private const int ScatterCullTelemetryCounterCount = 4;
+        private const int ScatterCullTelemetryReadbackStrideFrames = 30;
+        private const int ScatterCullTelemetryTotalCounter = 0;
+        private const int ScatterCullTelemetryFrustumCounter = 1;
+        private const int ScatterCullTelemetryOcclusionCounter = 2;
+        private const int ScatterCullTelemetryVisibleCounter = 3;
+        private const int ScatterCullOverdrawWarningVisibleCount = 50000;
+        private const int MockScatterDefaultAxisCount = 100;
+        private const float MockScatterDefaultSpacing = 2f;
+        private const uint MockScatterDefaultSeed = 0x53484939u;
+        private const string ScatterCullDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_09.bin";
+        private const string ScatterCullH8DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_09.h8dump";
 #if UNITY_EDITOR
         private const string ComputeShaderAssetPath = "Assets/_Project/Art/Shaders/FloraCulling.compute";
         private const string AbyssalFlowFieldComputeAssetPath = "Assets/_Project/Art/Shaders/AbyssalFlowField.compute";
@@ -105,6 +122,9 @@ namespace Hecton8.World
         private static readonly int _VisibleIndicesLod1Id = Shader.PropertyToID("_HectonVisibleInstanceIndicesLOD1");
         private static readonly int _VisibleIndicesShadowId = Shader.PropertyToID("_HectonVisibleInstanceIndicesShadow");
         private static readonly int _FarLodAppendEnabledId = Shader.PropertyToID("_HectonFarLodAppendEnabled");
+        private static readonly int _DensityDecimationStepId = Shader.PropertyToID("_HectonDensityDecimationStep");
+        private static readonly int _CullTelemetryCountersId = Shader.PropertyToID("_HectonCullTelemetryCounters");
+        private static readonly int _CullTelemetryEnabledId = Shader.PropertyToID("_HectonCullTelemetryEnabled");
         private static readonly int _IndirectArgsBufferId = Shader.PropertyToID("_HectonIndirectArgsBuffer");
         private static readonly int _IndirectIndexCountPerInstanceId = Shader.PropertyToID("_HectonIndirectIndexCountPerInstance");
         private static readonly int _IndirectStartIndexId = Shader.PropertyToID("_HectonIndirectStartIndex");
@@ -284,6 +304,19 @@ namespace Hecton8.World
         [Tooltip("Distance in meters after which peripheral instances become eligible for the dot-product cone cull.")]
         private float _peripheralCullDistance = 30f;
 
+        [Header("Density Scaling")]
+        [SerializeField, Range(0.05f, 1f)]
+        [Tooltip("Upper density scalar applied by deterministic decimation. 0.5 keeps roughly every second candidate.")]
+        private float _maxDensity01 = 1f;
+
+        [SerializeField, Range(1, 4)]
+        [Tooltip("Minimum deterministic density-decimation step. System health may raise this at runtime.")]
+        private int _minimumDensityDecimationStep = 1;
+
+        [SerializeField]
+        [Tooltip("Samples GPU cull counters into a 300-frame native ring for the Scatter Diagnostics window.")]
+        private bool _enableCullTelemetry = true;
+
         [Header("Legacy Fallback")]
         [SerializeField]
         [Tooltip("Fallback vegetation type used when no external instance metadata buffer is bound.")]
@@ -356,8 +389,29 @@ namespace Hecton8.World
         private Material _shadowBrgMaterial;
         private Material _motionNearBrgMaterial;
         private Material _motionFarBrgMaterial;
+        private MaterialBindingState _nearMaterialBindingState;
+        private MaterialBindingState _farMaterialBindingState;
+        private MaterialBindingState _depthNearMaterialBindingState;
+        private MaterialBindingState _depthFarMaterialBindingState;
+        private MaterialBindingState _shadowMaterialBindingState;
+        private MaterialBindingState _motionNearMaterialBindingState;
+        private MaterialBindingState _motionFarMaterialBindingState;
+        private MaterialVectorBindingState _motionNearPreviousCameraBindingState;
+        private MaterialVectorBindingState _motionFarPreviousCameraBindingState;
+        private ComputeCullBindingState _mainCullComputeBindingState;
+        private ComputeCullBindingState _shadowCullComputeBindingState;
+        private ComputeSnapBindingState _clearSnapComputeBindingState;
+        private ComputeSnapBindingState _flagSnapComputeBindingState;
+        private IndirectArgsClearBindingState _indirectArgsClearBindingState;
         private NativeArray<Matrix4x4> _cpuCullingMatrices;
         private NativeArray<HectonVegetationInstanceData> _cpuCullingData;
+        private CpuCullingScratchBuffer _cpuCullingScratchA;
+        private CpuCullingScratchBuffer _cpuCullingScratchB;
+        private int _cpuCullingScratchCursor;
+        private JobHandle _cpuCullingDataDisposeHandle;
+        private JobHandle _cpuCullingScratchDisposeHandle;
+        private bool _cpuCullingDataDisposeHandleValid;
+        private bool _cpuCullingScratchDisposeHandleValid;
         private bool _hasCpuCullingData;
 
         private Vector4[] _scooterHeadlightPositionsWs;
@@ -377,6 +431,7 @@ namespace Hecton8.World
         private GraphicsBuffer _indirectArgsLod0Buffer;
         private GraphicsBuffer _indirectArgsLod1Buffer;
         private GraphicsBuffer _indirectArgsShadowBuffer;
+        private GraphicsBuffer _cullTelemetryCountersBuffer;
         private int _gpuVisibleIndexCapacity;
         private int _floraAgeCapacity;
         private int _floraSnapFlagCapacity;
@@ -399,11 +454,112 @@ namespace Hecton8.World
 
         private HectonVegetationInstanceData[] _legacyInstanceData;
         private NativeArray<float> _floraAges01;
+#if UNITY_EDITOR
+        private NativeList<Matrix4x4> _mockScatterMatrices;
+        private NativeList<HectonVegetationInstanceData> _mockScatterData;
+        private const int EditorScatterGizmoBoundsCapacity = 96;
+        private static readonly Bounds[] s_editorScatterVisibleBounds = new Bounds[EditorScatterGizmoBoundsCapacity]; // COLD ALLOC: Bounds[96] - SHINOBU_09 editor visible flora gizmo cache - owner: HectonIndirectVegetationRenderer
+        private static readonly Bounds[] s_editorScatterCulledBounds = new Bounds[EditorScatterGizmoBoundsCapacity]; // COLD ALLOC: Bounds[96] - SHINOBU_09 editor culled flora gizmo cache - owner: HectonIndirectVegetationRenderer
+        [SerializeField]
+        private bool _drawEditorScatterDebugGizmos;
+#endif
         private NativeArray<FloraGrowthTelemetryEntry> _floraGrowthTelemetry;
+        private NativeArray<ScatterCullTelemetryEntry> _scatterCullTelemetry;
+        private uint[] _cullTelemetryClearPayload;
         private int _floraGrowthTelemetryCursor;
         private int _lastFloraGrowthTelemetryFrame = -1;
+        private int _scatterCullTelemetryCursor;
+        private int _lastScatterCullTelemetryFrame = -1;
+        private int _lastScatterCullTelemetrySampleFrame = -1;
+        private int _resolvedDensityDecimationStep = 1;
+        private byte _cachedScalabilityTierProfileByte = ScalabilityTierProfiles.HighRtx;
+        private float _cachedSystemStress01;
+        private AsyncGPUReadbackRequest _cullTelemetryReadbackRequest;
         private bool _floraGrowthTelemetryDumped;
+        private bool _scatterCullTelemetryReadbackPending;
+        private bool _scatterCullTelemetryDumped;
+        private bool _lastCullOverdrawWarning;
 
+        private struct MaterialBindingState
+        {
+            public Material Material;
+            public GraphicsBuffer InstanceMatrixBuffer;
+            public GraphicsBuffer InstanceDataBuffer;
+            public GraphicsBuffer FloraAgeBuffer;
+            public GraphicsBuffer FloraPhaseSeedBuffer;
+            public GraphicsBuffer FloraSnapFlagBuffer;
+            public GraphicsBuffer VisibleIndicesBuffer;
+            public Vector4 GlobalFloatingOffset;
+            public float PassMode;
+            public float NearDistance;
+            public float FarDistance;
+            public float TransitionRange;
+            public float ImpostorWidth;
+            public float ImpostorHeight;
+            public bool UseGpuIndirect;
+            public bool IsValid;
+        }
+
+        private struct MaterialVectorBindingState
+        {
+            public Material Material;
+            public Vector3 Value;
+            public bool IsValid;
+        }
+
+        private struct ComputeCullBindingState
+        {
+            public ComputeShader Shader;
+            public int Kernel;
+            public GraphicsBuffer MatrixBuffer;
+            public GraphicsBuffer InstanceDataBuffer;
+            public GraphicsBuffer FloraAgeBuffer;
+            public GraphicsBuffer VisibleLod0Buffer;
+            public GraphicsBuffer VisibleLod1Buffer;
+            public GraphicsBuffer VisibleShadowBuffer;
+            public GraphicsBuffer TelemetryCountersBuffer;
+            public bool IsShadowKernel;
+            public bool IsValid;
+        }
+
+        private struct ComputeSnapBindingState
+        {
+            public ComputeShader Shader;
+            public int Kernel;
+            public GraphicsBuffer MatrixBuffer;
+            public GraphicsBuffer InstanceDataBuffer;
+            public GraphicsBuffer SnapFlagBuffer;
+            public bool IsClearKernel;
+            public bool IsValid;
+        }
+
+        private struct IndirectArgsClearBindingState
+        {
+            public ComputeShader Shader;
+            public int Kernel;
+            public GraphicsBuffer ArgsBuffer;
+            public Mesh Mesh;
+            public int SubMeshIndex;
+            public int IndexCountPerInstance;
+            public int StartIndex;
+            public int BaseVertexIndex;
+            public bool IsValid;
+        }
+
+        private struct CpuCullingScratchBuffer
+        {
+            public NativeArray<byte> VisibilityMask;
+            public NativeArray<float4> CullingPlanes;
+            public NativeArray<float4> HeadlightPositionsWs;
+            public NativeArray<float4> HeadlightDirectionsWs;
+            public NativeArray<float4> HeadlightColors;
+            public NativeArray<float4> HeadlightConeData;
+            public JobHandle ActiveHandle;
+            public int VisibilityCapacity;
+            public bool ActiveHandleValid;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = 40)]
         private struct FloraGrowthTelemetryEntry
         {
             public int FrameIndex;
@@ -415,6 +571,37 @@ namespace Hecton8.World
             public float MinAge01;
             public float MaxAge01;
             public uint AgeHash;
+            public int Reserved0;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = 40)]
+        public struct VegetationCullTelemetrySnapshot
+        {
+            public int FrameIndex;
+            public int TotalInstances;
+            public int FrustumCulledCount;
+            public int OcclusionCulledCount;
+            public int VisibleCount;
+            public int DensityDecimationStep;
+            public int OverdrawWarning;
+            public float SystemStress01;
+            public float MaxDensity01;
+            public int Reserved0;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = 40)]
+        private struct ScatterCullTelemetryEntry
+        {
+            public int FrameIndex;
+            public int TotalInstances;
+            public int FrustumCulledCount;
+            public int OcclusionCulledCount;
+            public int VisibleCount;
+            public int DensityDecimationStep;
+            public int OverdrawWarning;
+            public float SystemStress01;
+            public float MaxDensity01;
+            public int Reserved0;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -435,6 +622,7 @@ namespace Hecton8.World
             public bool UseFarPass;
             public bool UseShadowPass;
             public bool BypassDarknessCulling;
+            public int DensityDecimationStep;
             public float3 ViewPosition;
             public float3 GlobalOffset;
             public float Lod0MaxDistanceSq;
@@ -445,6 +633,12 @@ namespace Hecton8.World
             {
                 if (index >= InstanceCount)
                     return;
+
+                if (!PassesDensityDecimation(index, DensityDecimationStep))
+                {
+                    VisibilityMask[index] = 0;
+                    return;
+                }
 
                 byte instanceVisibility = 0;
                 if (EnableCpuCulling)
@@ -586,7 +780,110 @@ namespace Hecton8.World
                     matrixValue.m10 * x + matrixValue.m11 * y + matrixValue.m12 * z + matrixValue.m13,
                     matrixValue.m20 * x + matrixValue.m21 * y + matrixValue.m22 * z + matrixValue.m23);
             }
+
+            private static bool PassesDensityDecimation(int index, int decimationStep)
+            {
+                if (decimationStep <= 1)
+                    return true;
+
+                uint hash = Hash((uint)index * 747796405u + 2891336453u);
+                return (hash % (uint)math.clamp(decimationStep, 1, 4)) == 0u;
+            }
+
+            private static uint Hash(uint value)
+            {
+                value ^= value >> 16;
+                value *= 0x7feb352du;
+                value ^= value >> 15;
+                value *= 0x846ca68bu;
+                value ^= value >> 16;
+                return value;
+            }
         }
+
+#if UNITY_EDITOR
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct MockMatrixGeneratorJob : IJobParallelFor
+        {
+            public NativeArray<Matrix4x4> Matrices;
+            public NativeArray<HectonVegetationInstanceData> InstanceData;
+            public int CellsX;
+            public float Spacing;
+            public uint Seed;
+
+            public void Execute(int index)
+            {
+                int cellsX = math.max(1, CellsX);
+                int x = index % cellsX;
+                int z = index / cellsX;
+                uint hash = Hash((uint)index ^ Seed);
+                float jitterX = Hash01(hash ^ 0x9E3779B9u) - 0.5f;
+                float jitterZ = Hash01(hash ^ 0x85EBCA6Bu) - 0.5f;
+                float angle = Hash01(hash ^ 0xC2B2AE35u) * 6.2831855f;
+                float height = math.lerp(0.35f, 1f, Hash01(hash ^ 0x27D4EB2Fu));
+                float width = math.lerp(0.75f, 1f, Hash01(hash ^ 0x165667B1u));
+                float scale = math.lerp(0.75f, 1.35f, Hash01(hash ^ 0xD3A2646Cu));
+                float spacing = math.max(0.25f, Spacing);
+                float originX = (x - (cellsX - 1) * 0.5f) * spacing + jitterX * spacing * 0.35f;
+                float originZ = (z - (cellsX - 1) * 0.5f) * spacing + jitterZ * spacing * 0.35f;
+                float sin = math.sin(angle);
+                float cos = math.cos(angle);
+
+                Matrix4x4 matrix = default;
+                matrix.m00 = cos * scale;
+                matrix.m01 = 0f;
+                matrix.m02 = -sin * scale;
+                matrix.m03 = originX;
+                matrix.m10 = 0f;
+                matrix.m11 = scale;
+                matrix.m12 = 0f;
+                matrix.m13 = 0f;
+                matrix.m20 = sin * scale;
+                matrix.m21 = 0f;
+                matrix.m22 = cos * scale;
+                matrix.m23 = originZ;
+                matrix.m30 = 0f;
+                matrix.m31 = 0f;
+                matrix.m32 = 0f;
+                matrix.m33 = 1f;
+                Matrices[index] = matrix;
+
+                float variation = Hash01(hash ^ 0xA24BAED5u);
+                float type = variation < 0.55f ? 0f : (variation < 0.78f ? 1f : 2f);
+                InstanceData[index] = new HectonVegetationInstanceData
+                {
+                    Type = type,
+                    HeightScale = height,
+                    WidthScale = width,
+                    Variation = variation,
+                    TemplateIndex = -1f,
+                    RuntimeState = HectonVegetationInstanceData.RuntimeStateIdle,
+                    RuntimeFlags = 0f,
+                    PulseFrequency = 0.3f + variation,
+                    BioluminescenceColor = new Vector4(0.05f, 0.35f + variation * 0.3f, 0.48f, 0.12f + variation * 0.2f),
+                    SwaySpeed = 0.75f + variation * 0.75f,
+                    BendAmplitude = 0.65f + variation * 0.55f,
+                    HealthNormalized = 1f,
+                    Reserved0 = 1f
+                };
+            }
+
+            private static float Hash01(uint value)
+            {
+                return (Hash(value) & 0xFFFFu) * (1f / 65535f);
+            }
+
+            private static uint Hash(uint value)
+            {
+                value ^= value >> 16;
+                value *= 0x7feb352du;
+                value ^= value >> 15;
+                value *= 0x846ca68bu;
+                value ^= value >> 16;
+                return value;
+            }
+        }
+#endif
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct FinalizeVegetationDrawOutputJob : IJob
@@ -883,6 +1180,24 @@ namespace Hecton8.World
         /// <summary>Configured distance where impostor rendering ends and the pass culls completely.</summary>
         public float FarLodDistance => _farLodDistance;
 
+        /// <summary>Configured crossfade range around the LOD threshold.</summary>
+        public float LodTransitionDistance => _lodTransitionRange;
+
+        /// <summary>Maximum density scalar before deterministic hardware decimation is applied.</summary>
+        public float MaxDensity01 => _maxDensity01;
+
+        /// <summary>Designer-authored floor for deterministic density decimation.</summary>
+        public int MinimumDensityDecimationStep => _minimumDensityDecimationStep;
+
+        /// <summary>Resolved runtime decimation step after quality and SystemHealth pressure have been applied.</summary>
+        public int ResolvedDensityDecimationStep => _resolvedDensityDecimationStep;
+
+        /// <summary>Latest cached system stress scalar consumed by density decimation.</summary>
+        public float SystemStress01 => _cachedSystemStress01;
+
+        /// <summary>True when the last cull telemetry sample crossed the 50k visible-instance overdraw threshold.</summary>
+        public bool CullOverdrawWarning => _lastCullOverdrawWarning;
+
         /// <summary>True when the far impostor pass is currently enabled.</summary>
         public bool UsesImpostorPass => _farLodDistance > _nearLodDistance;
 
@@ -899,8 +1214,198 @@ namespace Hecton8.World
             totalBytes += EstimateGraphicsBufferBytes(_batchHandleBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_floraAgeBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_floraSnapFlagBuffer);
+            totalBytes += EstimateGraphicsBufferBytes(_cullTelemetryCountersBuffer);
             return totalBytes;
         }
+
+        /// <summary>
+        /// Writes live diagnostic LOD and density values. Editor tooling uses this instead of mutating serialized fields by reflection.
+        /// </summary>
+        public void SetDiagnosticLodAndDensity(float nearLodDistance, float farLodDistance, float maxDensity01)
+        {
+            SetDiagnosticScatterTuning(nearLodDistance, farLodDistance, maxDensity01, _minimumDensityDecimationStep);
+        }
+
+        /// <summary>
+        /// Writes live diagnostic LOD and density values including the hardware-decimation floor.
+        /// </summary>
+        public void SetDiagnosticScatterTuning(float nearLodDistance, float farLodDistance, float maxDensity01, int minimumDensityDecimationStep)
+        {
+            _nearLodDistance = Mathf.Clamp(nearLodDistance, 1f, 500f);
+            _farLodDistance = Mathf.Clamp(farLodDistance, _nearLodDistance, 1000f);
+            _maxDensity01 = Mathf.Clamp(maxDensity01, 0.05f, 1f);
+            _minimumDensityDecimationStep = Mathf.Clamp(minimumDensityDecimationStep, 1, 4);
+            _resolvedDensityDecimationStep = ResolveDensityDecimationStep();
+            _hasFarCullingSnapshot = false;
+        }
+
+        /// <summary>
+        /// Returns the most recent 300-frame cull-ring sample without allocating.
+        /// </summary>
+        public bool TryGetLatestCullTelemetry(out VegetationCullTelemetrySnapshot snapshot)
+        {
+            snapshot = default;
+            if (!_scatterCullTelemetry.IsCreated)
+                return false;
+
+            int readIndex = _scatterCullTelemetryCursor - 1;
+            if (readIndex < 0)
+                readIndex = ScatterCullTelemetryFrameCount - 1;
+
+            ScatterCullTelemetryEntry entry = _scatterCullTelemetry[readIndex];
+            if (entry.FrameIndex <= 0)
+                return false;
+
+            snapshot = new VegetationCullTelemetrySnapshot
+            {
+                FrameIndex = entry.FrameIndex,
+                TotalInstances = entry.TotalInstances,
+                FrustumCulledCount = entry.FrustumCulledCount,
+                OcclusionCulledCount = entry.OcclusionCulledCount,
+                VisibleCount = entry.VisibleCount,
+                DensityDecimationStep = entry.DensityDecimationStep,
+                OverdrawWarning = entry.OverdrawWarning,
+                SystemStress01 = entry.SystemStress01,
+                MaxDensity01 = entry.MaxDensity01
+            };
+            return true;
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Builds a deterministic 100x100 no-producer scatter lane for BRG/compute validation.
+        /// </summary>
+        public bool GenerateMockScatterForDiagnostics()
+        {
+            return GenerateMockScatterForDiagnostics(MockScatterDefaultAxisCount, MockScatterDefaultAxisCount, MockScatterDefaultSpacing, MockScatterDefaultSeed);
+        }
+
+        /// <summary>
+        /// Builds deterministic no-producer scatter matrices and metadata into persistent native lists, then binds them.
+        /// </summary>
+        public bool GenerateMockScatterForDiagnostics(int cellsX, int cellsZ, float spacing, uint seed)
+        {
+            int safeCellsX = Mathf.Clamp(cellsX, 1, 512);
+            int safeCellsZ = Mathf.Clamp(cellsZ, 1, 512);
+            int count = Mathf.Min(150000, safeCellsX * safeCellsZ);
+            if (count <= 0)
+                return false;
+
+            _bufferSource = null;
+            ReleaseMockScatterBuffers();
+            _mockScatterMatrices = new NativeList<Matrix4x4>(count, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[mockCount] - SHINOBU_09 vacuum scatter matrices - owner: HectonIndirectVegetationRenderer
+            _mockScatterData = new NativeList<HectonVegetationInstanceData>(count, Allocator.Persistent); // COLD ALLOC: NativeList<HectonVegetationInstanceData>[mockCount] - SHINOBU_09 vacuum scatter metadata - owner: HectonIndirectVegetationRenderer
+            _mockScatterMatrices.ResizeUninitialized(count);
+            _mockScatterData.ResizeUninitialized(count);
+            NativeMemorySentinel.RegisterNativeList(_mockScatterMatrices, nameof(HectonIndirectVegetationRenderer), nameof(_mockScatterMatrices), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeList(_mockScatterData, nameof(HectonIndirectVegetationRenderer), nameof(_mockScatterData), NativeAllocationLifetime.Session);
+
+            NativeArray<Matrix4x4> matrices = _mockScatterMatrices.AsArray();
+            NativeArray<HectonVegetationInstanceData> instanceData = _mockScatterData.AsArray();
+            new MockMatrixGeneratorJob
+            {
+                Matrices = matrices,
+                InstanceData = instanceData,
+                CellsX = safeCellsX,
+                Spacing = Mathf.Max(0.25f, spacing),
+                Seed = seed
+            }.Schedule(count, 64).Complete();
+
+            float width = (safeCellsX + 2) * Mathf.Max(0.25f, spacing);
+            float depth = (safeCellsZ + 2) * Mathf.Max(0.25f, spacing);
+            SetDrawBounds(new Bounds(transform.position + _boundsCenterOffset, new Vector3(width, Mathf.Max(_boundsSize.y, 32f), depth)));
+            return BindInstanceNativeArrays(matrices, instanceData, count);
+        }
+
+        /// <summary>True when editor gizmos should render sampled BRG scatter bounds.</summary>
+        public bool EditorScatterDebugGizmosEnabled => _drawEditorScatterDebugGizmos;
+
+        /// <summary>Enables the editor-only OnDrawGizmos scatter bounds hook.</summary>
+        public void SetEditorScatterDebugGizmosEnabled(bool enabled)
+        {
+            _drawEditorScatterDebugGizmos = enabled;
+        }
+
+        /// <summary>
+        /// Copies sampled per-instance debug bounds into caller-owned arrays for editor scene visualization.
+        /// </summary>
+        public int CopyDebugBoundsNonAlloc(Bounds[] visibleBounds, Bounds[] culledBounds)
+        {
+            if (!_hasCpuCullingData ||
+                !_cpuCullingMatrices.IsCreated ||
+                !_cpuCullingData.IsCreated ||
+                _instanceCount <= 0)
+            {
+                return 0;
+            }
+
+            int capacity = Mathf.Min(
+                visibleBounds != null ? visibleBounds.Length : 0,
+                culledBounds != null ? culledBounds.Length : 0);
+            if (capacity <= 0)
+                return 0;
+
+            int written = 0;
+            int stride = Mathf.Max(1, _instanceCount / capacity);
+            Vector3 viewPosition = _cachedCullCameraPosition;
+            float farDistance = Mathf.Max(_farLodDistance, _nearLodDistance);
+            float farDistanceSq = farDistance * farDistance;
+            for (int instanceIndex = 0; instanceIndex < _instanceCount && written < capacity; instanceIndex += stride)
+            {
+                Matrix4x4 matrix = _cpuCullingMatrices[instanceIndex];
+                HectonVegetationInstanceData data = _cpuCullingData[instanceIndex];
+                ResolveInstanceShape(in data, out float instanceHeight, out float instanceWidth);
+                Vector3 root = TransformPoint(matrix, 0f, 0f, 0f);
+                Vector3 center = TransformPoint(matrix, 0f, instanceHeight * 0.5f, 0f);
+                Vector3 size = new Vector3(
+                    Mathf.Max(0.1f, instanceWidth * 2f),
+                    Mathf.Max(0.1f, instanceHeight),
+                    Mathf.Max(0.1f, instanceWidth * 2f));
+                Bounds bounds = new Bounds(center, size);
+                bool visible = (root - viewPosition).sqrMagnitude <= farDistanceSq;
+                if (visible)
+                {
+                    visibleBounds[written] = bounds;
+                    culledBounds[written] = default;
+                }
+                else
+                {
+                    visibleBounds[written] = default;
+                    culledBounds[written] = bounds;
+                }
+                written++;
+            }
+
+            return written;
+        }
+
+        private void OnDrawGizmos()
+        {
+            if (!_drawEditorScatterDebugGizmos)
+                return;
+
+            int count = CopyDebugBoundsNonAlloc(s_editorScatterVisibleBounds, s_editorScatterCulledBounds);
+            Color previousColor = Gizmos.color;
+            for (int i = 0; i < count; i++)
+            {
+                Bounds visibleBounds = s_editorScatterVisibleBounds[i];
+                if (visibleBounds.size.sqrMagnitude > 0.0001f)
+                {
+                    Gizmos.color = new Color(1f, 0.9f, 0.12f, 0.85f);
+                    Gizmos.DrawWireCube(visibleBounds.center, visibleBounds.size);
+                }
+
+                Bounds culledBounds = s_editorScatterCulledBounds[i];
+                if (culledBounds.size.sqrMagnitude > 0.0001f)
+                {
+                    Gizmos.color = new Color(1f, 0.08f, 0.05f, 0.65f);
+                    Gizmos.DrawWireCube(culledBounds.center, culledBounds.size);
+                }
+            }
+
+            Gizmos.color = previousColor;
+        }
+#endif
 
         private void Awake()
         {
@@ -909,6 +1414,11 @@ namespace Hecton8.World
             _lodTransitionRange = LodTransitionRangeMeters;
             _farCullingFrameStride = Mathf.Clamp(_farCullingFrameStride, 1, 8);
             _farCullingCadenceDistance = Mathf.Max(0f, _farCullingCadenceDistance);
+            _maxDensity01 = Mathf.Clamp(_maxDensity01, 0.05f, 1f);
+            _minimumDensityDecimationStep = Mathf.Clamp(_minimumDensityDecimationStep, 1, 4);
+            _cachedScalabilityTierProfileByte = ScalabilityTierProfiles.Normalize(GlobalRegistry.ScalabilityTierProfileByte);
+            _cachedSystemStress01 = 0f;
+            _resolvedDensityDecimationStep = ResolveDensityDecimationStep();
             TryAutoAssignAssets();
             if (_cullingCompute != null)
             {
@@ -968,6 +1478,7 @@ namespace Hecton8.World
             _scooterHeadlightConeData = new Vector4[MaxScooterHeadlights];
             _frustumPlaneCache = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - cached frustum planes for GPU vegetation culling upload - owner: HectonIndirectVegetationRenderer
             _frustumPlaneVectors = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] - packed frustum planes for compute upload - owner: HectonIndirectVegetationRenderer
+            _cullTelemetryClearPayload = new uint[ScatterCullTelemetryCounterCount]; // COLD ALLOC: uint[4] - GPU cull telemetry counter clear payload - owner: HectonIndirectVegetationRenderer
             CreateAuxiliaryMaterials();
         }
 
@@ -997,9 +1508,14 @@ namespace Hecton8.World
             ReleaseUploadedInstanceBuffers();
             ReleaseFloraAgeResources();
             ReleaseFloraGrowthTelemetryResources();
+            ReleaseScatterCullTelemetryResources();
+#if UNITY_EDITOR
+            ReleaseMockScatterBuffers();
+#endif
             ReleaseAuxiliaryMaterials();
             ReleaseRuntimeMaterial();
             ReleaseCpuCullingData();
+            ReleaseCpuCullingScratchBuffers(deferActiveJobs: true);
 
             if (_generatedMesh != null)
             {
@@ -1261,6 +1777,8 @@ namespace Hecton8.World
         public void Tick(float deltaTime)
         {
             SyncSourceBinding();
+            ConsumeScatterRuntimeSignals();
+            PollCullTelemetryReadback();
 
             Material renderMaterial = ResolveRenderMaterial();
             if (_instanceMatrixBuffer == null || _instanceCount <= 0 || renderMaterial == null)
@@ -1292,7 +1810,7 @@ namespace Hecton8.World
                 return;
 
             EnsureBatchRendererGroupResources();
-            if (_batchRendererGroup == null || _batchId.Equals(default))
+            if (_batchRendererGroup == null || _batchId.value == 0u)
                 return;
 
             if (!TryBindBrgMaterials())
@@ -1302,6 +1820,47 @@ namespace Hecton8.World
             SyncBatchBuffer(_instanceMatrixBuffer);
             _batchRendererGroup.SetGlobalBounds(drawBounds);
             UpdateMotionVectorHistory(cullCamera, cullCameraPosition);
+        }
+
+        private void ConsumeScatterRuntimeSignals()
+        {
+            ReadOnlySpan<ScalabilityChangedEvent> scalabilitySignals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
+            for (int signalIndex = 0; signalIndex < scalabilitySignals.Length; signalIndex++)
+                _cachedScalabilityTierProfileByte = ScalabilityTierProfiles.Normalize(scalabilitySignals[signalIndex].CurrentTier);
+
+            float stress01 = 0f;
+            ReadOnlySpan<SystemHealthSignal> healthSignals = SignalBus<SystemHealthSignal>.GetFrameSnapshot();
+            for (int signalIndex = 0; signalIndex < healthSignals.Length; signalIndex++)
+            {
+                SystemHealthSignal signal = healthSignals[signalIndex];
+                if (math.isfinite(signal.SystemHealthIndex01))
+                    stress01 = math.max(stress01, 1f - math.saturate(signal.SystemHealthIndex01));
+                stress01 = math.max(stress01, math.saturate(signal.PressureLevel * 0.25f));
+            }
+
+            if (healthSignals.Length == 0)
+                stress01 = _cachedSystemStress01;
+
+            _cachedSystemStress01 = math.saturate(stress01);
+            _resolvedDensityDecimationStep = ResolveDensityDecimationStep();
+        }
+
+        private int ResolveDensityDecimationStep()
+        {
+            int step = Mathf.Clamp(_minimumDensityDecimationStep, 1, 4);
+            float maxDensity = Mathf.Clamp(_maxDensity01, 0.05f, 1f);
+            if (maxDensity < 0.999f)
+                step = Mathf.Max(step, Mathf.CeilToInt(1f / maxDensity));
+
+            if (_cachedScalabilityTierProfileByte == ScalabilityTierProfiles.LowMx350)
+                step = Mathf.Max(step, 2);
+
+            if (_cachedSystemStress01 >= 0.85f)
+                step = Mathf.Max(step, 3);
+            else if (_cachedSystemStress01 >= 0.70f)
+                step = Mathf.Max(step, 2);
+
+            return Mathf.Clamp(step, 1, 4);
         }
 
         private Bounds ResolveDrawBounds(Vector3 rendererPosition)
@@ -1432,13 +1991,13 @@ namespace Hecton8.World
 
             Vector4 globalFloatingOffset = ResolveVegetationFloatingOffset();
             EnsureAndDispatchFloraSnapFlags(activeInstanceDataBuffer, globalFloatingOffset);
-            ApplyMaterialBindings(_nearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
-            ApplyMaterialBindings(_farBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, null, false);
-            ApplyMaterialBindings(_depthNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
-            ApplyMaterialBindings(_depthFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, null, false);
-            ApplyMaterialBindings(_shadowBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
-            ApplyMaterialBindings(_motionNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
-            ApplyMaterialBindings(_motionFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, null, false);
+            ApplyMaterialBindings(ref _nearMaterialBindingState, _nearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
+            ApplyMaterialBindings(ref _farMaterialBindingState, _farBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, null, false);
+            ApplyMaterialBindings(ref _depthNearMaterialBindingState, _depthNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
+            ApplyMaterialBindings(ref _depthFarMaterialBindingState, _depthFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, null, false);
+            ApplyMaterialBindings(ref _shadowMaterialBindingState, _shadowBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
+            ApplyMaterialBindings(ref _motionNearMaterialBindingState, _motionNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
+            ApplyMaterialBindings(ref _motionFarMaterialBindingState, _motionFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, null, false);
             return true;
         }
 
@@ -1498,17 +2057,18 @@ namespace Hecton8.World
             }
 
             Vector4 globalFloatingOffset = ResolveVegetationFloatingOffset();
-            ApplyMaterialBindings(_nearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
-            ApplyMaterialBindings(_farBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
-            ApplyMaterialBindings(_depthNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
-            ApplyMaterialBindings(_depthFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
-            ApplyMaterialBindings(_shadowBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesShadowBuffer, true);
-            ApplyMaterialBindings(_motionNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
-            ApplyMaterialBindings(_motionFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
+            ApplyMaterialBindings(ref _nearMaterialBindingState, _nearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
+            ApplyMaterialBindings(ref _farMaterialBindingState, _farBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
+            ApplyMaterialBindings(ref _depthNearMaterialBindingState, _depthNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
+            ApplyMaterialBindings(ref _depthFarMaterialBindingState, _depthFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
+            ApplyMaterialBindings(ref _shadowMaterialBindingState, _shadowBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesShadowBuffer, true);
+            ApplyMaterialBindings(ref _motionNearMaterialBindingState, _motionNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
+            ApplyMaterialBindings(ref _motionFarMaterialBindingState, _motionFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
             return true;
         }
 
         private void ApplyMaterialBindings(
+            ref MaterialBindingState state,
             Material material,
             GraphicsBuffer activeInstanceDataBuffer,
             Vector4 globalFloatingOffset,
@@ -1519,14 +2079,31 @@ namespace Hecton8.World
             if (material == null || _instanceMatrixBuffer == null || activeInstanceDataBuffer == null)
                 return;
 
-            material.enableInstancing = true;
             GraphicsBuffer floraAgeBuffer = ResolveFloraAgeBuffer();
+            if (MaterialBindingStateMatches(
+                    in state,
+                    material,
+                    activeInstanceDataBuffer,
+                    floraAgeBuffer,
+                    globalFloatingOffset,
+                    passMode,
+                    visibleIndicesBuffer,
+                    useGpuIndirect))
+            {
+                return;
+            }
+
+            material.enableInstancing = true;
             material.SetBuffer(_InstanceMatricesId, _instanceMatrixBuffer);
             material.SetBuffer(_InstanceDataId, activeInstanceDataBuffer);
             if (floraAgeBuffer != null)
                 material.SetBuffer(_FloraAges01Id, floraAgeBuffer);
+            else if (state.FloraAgeBuffer != null)
+                material.SetBuffer(_FloraAges01Id, (GraphicsBuffer)null);
             if (_floraPhaseSeedBuffer != null)
                 material.SetBuffer(_FloraPhaseSeedsId, _floraPhaseSeedBuffer);
+            else if (state.FloraPhaseSeedBuffer != null)
+                material.SetBuffer(_FloraPhaseSeedsId, (GraphicsBuffer)null);
             if (_floraSnapFlagBuffer != null)
             {
                 material.SetBuffer(_FloraSnapFlagsId, _floraSnapFlagBuffer);
@@ -1553,6 +2130,166 @@ namespace Hecton8.World
             {
                 material.DisableKeyword(GpuIndirectKeyword);
             }
+
+            state = new MaterialBindingState
+            {
+                Material = material,
+                InstanceMatrixBuffer = _instanceMatrixBuffer,
+                InstanceDataBuffer = activeInstanceDataBuffer,
+                FloraAgeBuffer = floraAgeBuffer,
+                FloraPhaseSeedBuffer = _floraPhaseSeedBuffer,
+                FloraSnapFlagBuffer = _floraSnapFlagBuffer,
+                VisibleIndicesBuffer = visibleIndicesBuffer,
+                GlobalFloatingOffset = globalFloatingOffset,
+                PassMode = passMode,
+                NearDistance = _nearLodDistance,
+                FarDistance = _farLodDistance,
+                TransitionRange = _lodTransitionRange,
+                ImpostorWidth = _impostorWidth,
+                ImpostorHeight = _impostorHeight,
+                UseGpuIndirect = useGpuIndirect,
+                IsValid = true
+            };
+        }
+
+        private bool MaterialBindingStateMatches(
+            in MaterialBindingState state,
+            Material material,
+            GraphicsBuffer activeInstanceDataBuffer,
+            GraphicsBuffer floraAgeBuffer,
+            Vector4 globalFloatingOffset,
+            float passMode,
+            GraphicsBuffer visibleIndicesBuffer,
+            bool useGpuIndirect)
+        {
+            return state.IsValid &&
+                ReferenceEquals(state.Material, material) &&
+                ReferenceEquals(state.InstanceMatrixBuffer, _instanceMatrixBuffer) &&
+                ReferenceEquals(state.InstanceDataBuffer, activeInstanceDataBuffer) &&
+                ReferenceEquals(state.FloraAgeBuffer, floraAgeBuffer) &&
+                ReferenceEquals(state.FloraPhaseSeedBuffer, _floraPhaseSeedBuffer) &&
+                ReferenceEquals(state.FloraSnapFlagBuffer, _floraSnapFlagBuffer) &&
+                ReferenceEquals(state.VisibleIndicesBuffer, visibleIndicesBuffer) &&
+                state.GlobalFloatingOffset.x == globalFloatingOffset.x &&
+                state.GlobalFloatingOffset.y == globalFloatingOffset.y &&
+                state.GlobalFloatingOffset.z == globalFloatingOffset.z &&
+                state.GlobalFloatingOffset.w == globalFloatingOffset.w &&
+                state.PassMode == passMode &&
+                state.NearDistance == _nearLodDistance &&
+                state.FarDistance == _farLodDistance &&
+                state.TransitionRange == _lodTransitionRange &&
+                state.ImpostorWidth == _impostorWidth &&
+                state.ImpostorHeight == _impostorHeight &&
+                state.UseGpuIndirect == useGpuIndirect;
+        }
+
+        private void ApplyCullComputeBindings(
+            ref ComputeCullBindingState state,
+            int kernel,
+            GraphicsBuffer activeInstanceDataBuffer,
+            GraphicsBuffer floraAgeBuffer,
+            bool shadowKernel)
+        {
+            if (_cullingCompute == null || kernel < 0 || _instanceMatrixBuffer == null || activeInstanceDataBuffer == null || floraAgeBuffer == null)
+                return;
+
+            GraphicsBuffer visibleLod0Buffer = shadowKernel ? null : _visibleIndicesLod0Buffer;
+            GraphicsBuffer visibleLod1Buffer = shadowKernel ? null : _visibleIndicesLod1Buffer;
+            GraphicsBuffer visibleShadowBuffer = shadowKernel ? _visibleIndicesShadowBuffer : null;
+            GraphicsBuffer telemetryCountersBuffer = _cullTelemetryCountersBuffer;
+
+            if (state.IsValid &&
+                ReferenceEquals(state.Shader, _cullingCompute) &&
+                state.Kernel == kernel &&
+                ReferenceEquals(state.MatrixBuffer, _instanceMatrixBuffer) &&
+                ReferenceEquals(state.InstanceDataBuffer, activeInstanceDataBuffer) &&
+                ReferenceEquals(state.FloraAgeBuffer, floraAgeBuffer) &&
+                ReferenceEquals(state.VisibleLod0Buffer, visibleLod0Buffer) &&
+                ReferenceEquals(state.VisibleLod1Buffer, visibleLod1Buffer) &&
+                ReferenceEquals(state.VisibleShadowBuffer, visibleShadowBuffer) &&
+                ReferenceEquals(state.TelemetryCountersBuffer, telemetryCountersBuffer) &&
+                state.IsShadowKernel == shadowKernel)
+            {
+                return;
+            }
+
+            _cullingCompute.SetBuffer(kernel, _SourceMatricesId, _instanceMatrixBuffer);
+            _cullingCompute.SetBuffer(kernel, _SourceDataId, activeInstanceDataBuffer);
+            _cullingCompute.SetBuffer(kernel, _FloraAges01Id, floraAgeBuffer);
+            if (shadowKernel)
+            {
+                if (visibleShadowBuffer != null)
+                    _cullingCompute.SetBuffer(kernel, _VisibleIndicesShadowId, visibleShadowBuffer);
+            }
+            else
+            {
+                if (visibleLod0Buffer != null)
+                    _cullingCompute.SetBuffer(kernel, _VisibleIndicesLod0Id, visibleLod0Buffer);
+                if (visibleLod1Buffer != null)
+                    _cullingCompute.SetBuffer(kernel, _VisibleIndicesLod1Id, visibleLod1Buffer);
+            }
+
+            if (telemetryCountersBuffer != null)
+                _cullingCompute.SetBuffer(kernel, _CullTelemetryCountersId, telemetryCountersBuffer);
+
+            state = new ComputeCullBindingState
+            {
+                Shader = _cullingCompute,
+                Kernel = kernel,
+                MatrixBuffer = _instanceMatrixBuffer,
+                InstanceDataBuffer = activeInstanceDataBuffer,
+                FloraAgeBuffer = floraAgeBuffer,
+                VisibleLod0Buffer = visibleLod0Buffer,
+                VisibleLod1Buffer = visibleLod1Buffer,
+                VisibleShadowBuffer = visibleShadowBuffer,
+                TelemetryCountersBuffer = telemetryCountersBuffer,
+                IsShadowKernel = shadowKernel,
+                IsValid = true
+            };
+        }
+
+        private void ApplySnapComputeBindings(
+            ref ComputeSnapBindingState state,
+            int kernel,
+            GraphicsBuffer activeInstanceDataBuffer,
+            bool clearKernel)
+        {
+            if (_abyssalFlowFieldCompute == null || kernel < 0 || _floraSnapFlagBuffer == null)
+                return;
+
+            GraphicsBuffer matrixBuffer = clearKernel ? null : _instanceMatrixBuffer;
+            GraphicsBuffer instanceDataBuffer = clearKernel ? null : activeInstanceDataBuffer;
+            if (!clearKernel && (matrixBuffer == null || instanceDataBuffer == null))
+                return;
+
+            if (state.IsValid &&
+                ReferenceEquals(state.Shader, _abyssalFlowFieldCompute) &&
+                state.Kernel == kernel &&
+                ReferenceEquals(state.MatrixBuffer, matrixBuffer) &&
+                ReferenceEquals(state.InstanceDataBuffer, instanceDataBuffer) &&
+                ReferenceEquals(state.SnapFlagBuffer, _floraSnapFlagBuffer) &&
+                state.IsClearKernel == clearKernel)
+            {
+                return;
+            }
+
+            if (!clearKernel)
+            {
+                _abyssalFlowFieldCompute.SetBuffer(kernel, _SourceMatricesId, matrixBuffer);
+                _abyssalFlowFieldCompute.SetBuffer(kernel, _SourceDataId, instanceDataBuffer);
+            }
+
+            _abyssalFlowFieldCompute.SetBuffer(kernel, _FloraSnapFlagsId, _floraSnapFlagBuffer);
+            state = new ComputeSnapBindingState
+            {
+                Shader = _abyssalFlowFieldCompute,
+                Kernel = kernel,
+                MatrixBuffer = matrixBuffer,
+                InstanceDataBuffer = instanceDataBuffer,
+                SnapFlagBuffer = _floraSnapFlagBuffer,
+                IsClearKernel = clearKernel,
+                IsValid = true
+            };
         }
 
         private bool TryRenderGpuIndirect(
@@ -1678,6 +2415,10 @@ namespace Hecton8.World
             float brgNearLodDistance = Mathf.Max(0.01f, _nearLodDistance * brgLodDistanceScalar);
             float brgFarLodDistance = Mathf.Max(brgNearLodDistance, _farLodDistance * brgLodDistanceScalar);
             float brgLodTransitionRange = Mathf.Max(0.01f, _lodTransitionRange * brgLodDistanceScalar);
+            int densityDecimationStep = ResolveDensityDecimationStep();
+            _resolvedDensityDecimationStep = densityDecimationStep;
+            EnsureCullTelemetryCounterBuffer();
+            bool sampleCullTelemetry = BeginCullTelemetrySample();
             bool hasFarLod = farMesh != null && _visibleIndicesLod1Buffer != null && _indirectArgsLod1Buffer != null;
             bool farCadenceEligible = hasFarLod &&
                                       _farCullingFrameStride > 1 &&
@@ -1707,13 +2448,15 @@ namespace Hecton8.World
             if (floraAgeBuffer == null)
                 return;
 
-            _cullingCompute.SetBuffer(_cullFloraKernel, _SourceMatricesId, _instanceMatrixBuffer);
-            _cullingCompute.SetBuffer(_cullFloraKernel, _SourceDataId, activeInstanceDataBuffer);
-            _cullingCompute.SetBuffer(_cullFloraKernel, _FloraAges01Id, floraAgeBuffer);
-            _cullingCompute.SetBuffer(_cullFloraKernel, _VisibleIndicesLod0Id, _visibleIndicesLod0Buffer);
-            if (_visibleIndicesLod1Buffer != null)
-                _cullingCompute.SetBuffer(_cullFloraKernel, _VisibleIndicesLod1Id, _visibleIndicesLod1Buffer);
+            ApplyCullComputeBindings(
+                ref _mainCullComputeBindingState,
+                _cullFloraKernel,
+                activeInstanceDataBuffer,
+                floraAgeBuffer,
+                shadowKernel: false);
             _cullingCompute.SetInt(_FarLodAppendEnabledId, updateFarLodThisFrame ? 1 : 0);
+            _cullingCompute.SetInt(_DensityDecimationStepId, densityDecimationStep);
+            _cullingCompute.SetInt(_CullTelemetryEnabledId, sampleCullTelemetry ? 1 : 0);
             _cullingCompute.SetInt(_SourceInstanceCountId, _instanceCount);
             _cullingCompute.SetMatrix(_ViewProjectionId, viewProjection);
             _cullingCompute.SetMatrix(_ViewMatrixId, viewMatrix);
@@ -1744,11 +2487,7 @@ namespace Hecton8.World
                 _depthPyramidHeight));
 
             int headlightCount = CopyScooterHeadlightPayload();
-            _cullingCompute.SetInt(_ScooterHeadlightCountId, headlightCount);
-            _cullingCompute.SetVectorArray(_ScooterHeadlightPositionsWsId, _scooterHeadlightPositionsWs);
-            _cullingCompute.SetVectorArray(_ScooterHeadlightDirectionsWsId, _scooterHeadlightDirectionsWs);
-            _cullingCompute.SetVectorArray(_ScooterHeadlightColorsId, _scooterHeadlightColors);
-            _cullingCompute.SetVectorArray(_ScooterHeadlightConeDataId, _scooterHeadlightConeData);
+            ApplyScooterHeadlightPayloadToCullCompute(headlightCount, uploadPayloadArrays: true);
             _cullingCompute.SetFloat(_FloorBiolumStrengthId, Shader.GetGlobalFloat(_FloorBiolumStrengthId));
             _cullingCompute.SetFloat(_OceanBiolumStrengthId, Shader.GetGlobalFloat(_OceanBiolumStrengthId));
             _cullingCompute.SetFloat(_BiolumIntensityVectorId, ResolveBiolumIntensityScalar());
@@ -1759,10 +2498,14 @@ namespace Hecton8.World
 
             if (_visibleIndicesShadowBuffer != null && _cullFloraShadowKernel >= 0)
             {
-                _cullingCompute.SetBuffer(_cullFloraShadowKernel, _SourceMatricesId, _instanceMatrixBuffer);
-                _cullingCompute.SetBuffer(_cullFloraShadowKernel, _SourceDataId, activeInstanceDataBuffer);
-                _cullingCompute.SetBuffer(_cullFloraShadowKernel, _FloraAges01Id, floraAgeBuffer);
-                _cullingCompute.SetBuffer(_cullFloraShadowKernel, _VisibleIndicesShadowId, _visibleIndicesShadowBuffer);
+                ApplyCullComputeBindings(
+                    ref _shadowCullComputeBindingState,
+                    _cullFloraShadowKernel,
+                    activeInstanceDataBuffer,
+                    floraAgeBuffer,
+                    shadowKernel: true);
+                _cullingCompute.SetInt(_DensityDecimationStepId, densityDecimationStep);
+                _cullingCompute.SetInt(_CullTelemetryEnabledId, 0);
                 _cullingCompute.SetInt(_SourceInstanceCountId, _instanceCount);
                 _cullingCompute.SetMatrix(_ViewProjectionId, viewProjection);
                 _cullingCompute.SetMatrix(_ViewMatrixId, viewMatrix);
@@ -1776,10 +2519,7 @@ namespace Hecton8.World
                 _cullingCompute.SetFloat(_PeripheralCullDistanceSqId, peripheralCullDistanceSq);
                 _cullingCompute.SetInt(_DarknessCullEnabledId, _enableDarknessCulling ? 1 : 0);
                 _cullingCompute.SetFloat(_DarknessBiolumThresholdId, _darknessBiolumThreshold);
-                _cullingCompute.SetVectorArray(_ScooterHeadlightPositionsWsId, _scooterHeadlightPositionsWs);
-                _cullingCompute.SetVectorArray(_ScooterHeadlightDirectionsWsId, _scooterHeadlightDirectionsWs);
-                _cullingCompute.SetVectorArray(_ScooterHeadlightColorsId, _scooterHeadlightColors);
-                _cullingCompute.SetVectorArray(_ScooterHeadlightConeDataId, _scooterHeadlightConeData);
+                ApplyScooterHeadlightPayloadToCullCompute(headlightCount, uploadPayloadArrays: false);
                 _cullingCompute.SetVectorArray(_FrustumPlanesId, _frustumPlaneVectors);
                 _cullingCompute.Dispatch(_cullFloraShadowKernel, dispatchGroups, 1, 1);
             }
@@ -1792,6 +2532,8 @@ namespace Hecton8.World
             }
             if (_visibleIndicesShadowBuffer != null && _indirectArgsShadowBuffer != null)
                 GraphicsBuffer.CopyCount(_visibleIndicesShadowBuffer, _indirectArgsShadowBuffer, sizeof(uint));
+
+            RequestCullTelemetryReadback(sampleCullTelemetry);
         }
 
         private void DispatchFloraSnapFlagUpdate(GraphicsBuffer activeInstanceDataBuffer, Vector4 globalFloatingOffset, int dispatchGroups)
@@ -1808,7 +2550,11 @@ namespace Hecton8.World
 
             if (_floraSnapFlagBufferRequiresClear && _clearFloraSnapFlagsKernel >= 0)
             {
-                _abyssalFlowFieldCompute.SetBuffer(_clearFloraSnapFlagsKernel, _FloraSnapFlagsId, _floraSnapFlagBuffer);
+                ApplySnapComputeBindings(
+                    ref _clearSnapComputeBindingState,
+                    _clearFloraSnapFlagsKernel,
+                    activeInstanceDataBuffer,
+                    clearKernel: true);
                 _abyssalFlowFieldCompute.SetInt(_SourceInstanceCountId, _instanceCount);
                 _abyssalFlowFieldCompute.Dispatch(_clearFloraSnapFlagsKernel, dispatchGroups, 1, 1);
                 _floraSnapFlagBufferRequiresClear = false;
@@ -1819,14 +2565,29 @@ namespace Hecton8.World
             if (washVelocity.w <= 10f || washSphere.w <= 0f)
                 return;
 
-            _abyssalFlowFieldCompute.SetBuffer(_flagSnappedFloraKernel, _SourceMatricesId, _instanceMatrixBuffer);
-            _abyssalFlowFieldCompute.SetBuffer(_flagSnappedFloraKernel, _SourceDataId, activeInstanceDataBuffer);
-            _abyssalFlowFieldCompute.SetBuffer(_flagSnappedFloraKernel, _FloraSnapFlagsId, _floraSnapFlagBuffer);
+            ApplySnapComputeBindings(
+                ref _flagSnapComputeBindingState,
+                _flagSnappedFloraKernel,
+                activeInstanceDataBuffer,
+                clearKernel: false);
             _abyssalFlowFieldCompute.SetInt(_SourceInstanceCountId, _instanceCount);
             _abyssalFlowFieldCompute.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
             _abyssalFlowFieldCompute.SetVector(_SubmarineWashSphereId, washSphere);
             _abyssalFlowFieldCompute.SetVector(_SubmarineWashVelocityId, washVelocity);
             _abyssalFlowFieldCompute.Dispatch(_flagSnappedFloraKernel, dispatchGroups, 1, 1);
+        }
+
+        private void ApplyScooterHeadlightPayloadToCullCompute(int headlightCount, bool uploadPayloadArrays)
+        {
+            _cullingCompute.SetInt(_ScooterHeadlightCountId, headlightCount);
+
+            if (!uploadPayloadArrays || headlightCount <= 0)
+                return;
+
+            _cullingCompute.SetVectorArray(_ScooterHeadlightPositionsWsId, _scooterHeadlightPositionsWs);
+            _cullingCompute.SetVectorArray(_ScooterHeadlightDirectionsWsId, _scooterHeadlightDirectionsWs);
+            _cullingCompute.SetVectorArray(_ScooterHeadlightColorsId, _scooterHeadlightColors);
+            _cullingCompute.SetVectorArray(_ScooterHeadlightConeDataId, _scooterHeadlightConeData);
         }
 
         private void EnsureAndDispatchFloraSnapFlags(GraphicsBuffer activeInstanceDataBuffer, Vector4 globalFloatingOffset)
@@ -1958,11 +2719,13 @@ namespace Hecton8.World
                 _visibleIndicesShadowBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, requiredCapacity, VisibleIndexStride); // COLD ALLOC: GraphicsBuffer[visibleCapacity] - shadow vegetation visible-instance append buffer - owner: HectonIndirectVegetationRenderer
                 _gpuVisibleIndexCapacity = requiredCapacity;
                 _hasFarCullingSnapshot = false;
+                ResetCullComputeBindingStates();
             }
 
             EnsureIndirectArgsBuffer(ref _indirectArgsLod0Buffer);
             EnsureIndirectArgsBuffer(ref _indirectArgsLod1Buffer);
             EnsureIndirectArgsBuffer(ref _indirectArgsShadowBuffer);
+            EnsureCullTelemetryCounterBuffer();
             if (_abyssalFlowFieldCompute != null && _clearFloraSnapFlagsKernel >= 0 && _flagSnappedFloraKernel >= 0)
                 EnsureFloraSnapFlagBufferCapacity(requiredCapacity);
             else
@@ -1973,6 +2736,31 @@ namespace Hecton8.World
         {
             if (argsBuffer == null)
                 argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - GPU-cleared indirect indexed draw arguments for vegetation pass - owner: HectonIndirectVegetationRenderer
+        }
+
+        private void EnsureCullTelemetryCounterBuffer()
+        {
+            if (!_enableCullTelemetry &&
+                _cullTelemetryCountersBuffer != null &&
+                _cullTelemetryCountersBuffer.IsValid())
+            {
+                // The compute kernel declares this RW buffer. Keep a tiny bound dummy even when sampling is disabled.
+                return;
+            }
+
+            if (_cullTelemetryCountersBuffer != null &&
+                _cullTelemetryCountersBuffer.IsValid() &&
+                _cullTelemetryCountersBuffer.count >= ScatterCullTelemetryCounterCount)
+            {
+                return;
+            }
+
+            ReleaseGraphicsBuffer(ref _cullTelemetryCountersBuffer);
+            _cullTelemetryCountersBuffer = new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                ScatterCullTelemetryCounterCount,
+                sizeof(uint)); // COLD ALLOC: GraphicsBuffer[4] - GPU cull telemetry counters for SHINOBU_09 scatter diagnostics - owner: HectonIndirectVegetationRenderer
+            ResetCullComputeBindingStates();
         }
 
         private void EnsureFloraSnapFlagBufferCapacity(int requiredCapacity)
@@ -1991,6 +2779,7 @@ namespace Hecton8.World
             _floraSnapFlagBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, requiredCapacity, sizeof(uint)); // COLD ALLOC: GraphicsBuffer[visibleCapacity] - persistent GPU-only snapped flora flags - owner: HectonIndirectVegetationRenderer
             _floraSnapFlagCapacity = requiredCapacity;
             _floraSnapFlagBufferRequiresClear = true;
+            ResetSnapComputeBindingStates();
         }
 
         private void ReleaseFloraSnapFlagBuffer()
@@ -1998,6 +2787,7 @@ namespace Hecton8.World
             ReleaseGraphicsBuffer(ref _floraSnapFlagBuffer);
             _floraSnapFlagCapacity = 0;
             _floraSnapFlagBufferRequiresClear = false;
+            ResetSnapComputeBindingStates();
         }
 
         private GraphicsBuffer ResolveFloraAgeBuffer()
@@ -2255,6 +3045,7 @@ namespace Hecton8.World
                         writer.Write(entry.MinAge01);
                         writer.Write(entry.MaxAge01);
                         writer.Write(entry.AgeHash);
+                        writer.Write(entry.Reserved0);
                     }
                 }
             }
@@ -2264,6 +3055,177 @@ namespace Hecton8.World
                 Debug.LogError($"[HectonIndirectVegetationRenderer] Failed to dump flora growth telemetry: {exception.Message}", this);
 #endif
             }
+        }
+
+        private bool BeginCullTelemetrySample()
+        {
+            if (!_enableCullTelemetry ||
+                _cullTelemetryCountersBuffer == null ||
+                _cullTelemetryClearPayload == null ||
+                _scatterCullTelemetryReadbackPending)
+            {
+                return false;
+            }
+
+            int frameIndex = Time.frameCount;
+            if (frameIndex == _lastScatterCullTelemetrySampleFrame ||
+                frameIndex % ScatterCullTelemetryReadbackStrideFrames != 0)
+            {
+                return false;
+            }
+
+            _lastScatterCullTelemetrySampleFrame = frameIndex;
+            _cullTelemetryCountersBuffer.SetData(_cullTelemetryClearPayload, 0, 0, ScatterCullTelemetryCounterCount);
+            return true;
+        }
+
+        private void RequestCullTelemetryReadback(bool sampleCullTelemetry)
+        {
+            if (!sampleCullTelemetry || _cullTelemetryCountersBuffer == null || _scatterCullTelemetryReadbackPending)
+                return;
+
+            _cullTelemetryReadbackRequest = AsyncGPUReadback.Request(_cullTelemetryCountersBuffer);
+            _scatterCullTelemetryReadbackPending = true;
+        }
+
+        private void PollCullTelemetryReadback()
+        {
+            if (!_scatterCullTelemetryReadbackPending || !_cullTelemetryReadbackRequest.done)
+                return;
+
+            _scatterCullTelemetryReadbackPending = false;
+            if (_cullTelemetryReadbackRequest.hasError)
+                return;
+
+            NativeArray<uint> counters = _cullTelemetryReadbackRequest.GetData<uint>();
+            if (!counters.IsCreated || counters.Length < ScatterCullTelemetryCounterCount)
+                return;
+
+            int totalCount = ClampCounterToInt(counters[ScatterCullTelemetryTotalCounter]);
+            int frustumCount = ClampCounterToInt(counters[ScatterCullTelemetryFrustumCounter]);
+            int occlusionCount = ClampCounterToInt(counters[ScatterCullTelemetryOcclusionCounter]);
+            int visibleCount = ClampCounterToInt(counters[ScatterCullTelemetryVisibleCounter]);
+            RecordScatterCullTelemetry(totalCount, frustumCount, occlusionCount, visibleCount);
+        }
+
+        private void EnsureScatterCullTelemetry()
+        {
+            if (_scatterCullTelemetry.IsCreated)
+                return;
+
+            _scatterCullTelemetry = new NativeArray<ScatterCullTelemetryEntry>(
+                ScatterCullTelemetryFrameCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ScatterCullTelemetryEntry>[300] - SHINOBU_09 cull black-box circular telemetry - owner: HectonIndirectVegetationRenderer
+            NativeMemorySentinel.RegisterNativeArray(_scatterCullTelemetry, nameof(HectonIndirectVegetationRenderer), nameof(_scatterCullTelemetry), NativeAllocationLifetime.Session);
+        }
+
+        private void RecordScatterCullTelemetry(int totalCount, int frustumCount, int occlusionCount, int visibleCount)
+        {
+            int frameIndex = Time.frameCount;
+            if (_lastScatterCullTelemetryFrame == frameIndex)
+                return;
+
+            _lastScatterCullTelemetryFrame = frameIndex;
+            EnsureScatterCullTelemetry();
+            if (!_scatterCullTelemetry.IsCreated)
+                return;
+
+            bool invalidCounterState =
+                totalCount < 0 ||
+                frustumCount < 0 ||
+                occlusionCount < 0 ||
+                visibleCount < 0 ||
+                visibleCount > totalCount + _resolvedDensityDecimationStep;
+            _lastCullOverdrawWarning = visibleCount > ScatterCullOverdrawWarningVisibleCount;
+
+            _scatterCullTelemetry[_scatterCullTelemetryCursor] = new ScatterCullTelemetryEntry
+            {
+                FrameIndex = frameIndex,
+                TotalInstances = totalCount,
+                FrustumCulledCount = frustumCount,
+                OcclusionCulledCount = occlusionCount,
+                VisibleCount = visibleCount,
+                DensityDecimationStep = _resolvedDensityDecimationStep,
+                OverdrawWarning = _lastCullOverdrawWarning ? 1 : 0,
+                SystemStress01 = _cachedSystemStress01,
+                MaxDensity01 = _maxDensity01
+            };
+            _scatterCullTelemetryCursor = (_scatterCullTelemetryCursor + 1) % ScatterCullTelemetryFrameCount;
+
+            if (invalidCounterState && !_scatterCullTelemetryDumped)
+                DumpScatterCullTelemetry();
+        }
+
+        private void ReleaseScatterCullTelemetryResources()
+        {
+            if (_scatterCullTelemetry.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_scatterCullTelemetry);
+                _scatterCullTelemetry.Dispose();
+            }
+
+            _scatterCullTelemetryCursor = 0;
+            _lastScatterCullTelemetryFrame = -1;
+            _lastScatterCullTelemetrySampleFrame = -1;
+            _scatterCullTelemetryReadbackPending = false;
+        }
+
+        private void DumpScatterCullTelemetry()
+        {
+            _scatterCullTelemetryDumped = true;
+            if (!_scatterCullTelemetry.IsCreated)
+                return;
+
+            TryWriteScatterCullTelemetryDump(ScatterCullDumpRelativePath);
+            TryWriteScatterCullTelemetryDump(ScatterCullH8DumpRelativePath);
+        }
+
+        private void TryWriteScatterCullTelemetryDump(string relativePath)
+        {
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string dumpPath = Path.Combine(projectRoot, relativePath);
+                string dumpDirectory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(dumpDirectory))
+                    Directory.CreateDirectory(dumpDirectory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(ScatterCullTelemetryFrameCount);
+                    writer.Write(_scatterCullTelemetryCursor);
+                    writer.Write(_instanceCount);
+
+                    for (int offset = 0; offset < ScatterCullTelemetryFrameCount; offset++)
+                    {
+                        int readIndex = (_scatterCullTelemetryCursor + offset) % ScatterCullTelemetryFrameCount;
+                        ScatterCullTelemetryEntry entry = _scatterCullTelemetry[readIndex];
+                        writer.Write(entry.FrameIndex);
+                        writer.Write(entry.TotalInstances);
+                        writer.Write(entry.FrustumCulledCount);
+                        writer.Write(entry.OcclusionCulledCount);
+                        writer.Write(entry.VisibleCount);
+                        writer.Write(entry.DensityDecimationStep);
+                        writer.Write(entry.OverdrawWarning);
+                        writer.Write(entry.SystemStress01);
+                        writer.Write(entry.MaxDensity01);
+                        writer.Write(entry.Reserved0);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError($"[HectonIndirectVegetationRenderer] Failed to dump scatter cull telemetry: {exception.Message}", this);
+#endif
+            }
+        }
+
+        private static int ClampCounterToInt(uint counter)
+        {
+            return counter > int.MaxValue ? int.MaxValue : (int)counter;
         }
 
         private bool ClearIndirectArgsBuffer(GraphicsBuffer argsBuffer, Mesh mesh)
@@ -2276,13 +3238,52 @@ namespace Hecton8.World
                 return false;
             }
 
-            _cullingCompute.SetBuffer(_clearIndirectArgsKernel, _IndirectArgsBufferId, argsBuffer);
-            uint indexCount = mesh.GetIndexCount(_subMeshIndex);
-            uint startIndex = mesh.GetIndexStart(_subMeshIndex);
-            _cullingCompute.SetInt(_IndirectIndexCountPerInstanceId, indexCount > int.MaxValue ? int.MaxValue : (int)indexCount);
-            _cullingCompute.SetInt(_IndirectStartIndexId, startIndex > int.MaxValue ? int.MaxValue : (int)startIndex);
-            uint baseVertexIndex = (uint)mesh.GetBaseVertex(_subMeshIndex);
-            _cullingCompute.SetInt(_IndirectBaseVertexIndexId, baseVertexIndex > int.MaxValue ? int.MaxValue : (int)baseVertexIndex);
+            bool sameShaderKernel = _indirectArgsClearBindingState.IsValid &&
+                                    ReferenceEquals(_indirectArgsClearBindingState.Shader, _cullingCompute) &&
+                                    _indirectArgsClearBindingState.Kernel == _clearIndirectArgsKernel;
+            bool sameArgsBuffer = sameShaderKernel &&
+                                  ReferenceEquals(_indirectArgsClearBindingState.ArgsBuffer, argsBuffer);
+            bool sameMeshConstants = sameShaderKernel &&
+                                     ReferenceEquals(_indirectArgsClearBindingState.Mesh, mesh) &&
+                                     _indirectArgsClearBindingState.SubMeshIndex == _subMeshIndex;
+
+            if (!sameArgsBuffer)
+                _cullingCompute.SetBuffer(_clearIndirectArgsKernel, _IndirectArgsBufferId, argsBuffer);
+
+            int indexCountPerInstance;
+            int startIndex;
+            int baseVertexIndex;
+            if (sameMeshConstants)
+            {
+                indexCountPerInstance = _indirectArgsClearBindingState.IndexCountPerInstance;
+                startIndex = _indirectArgsClearBindingState.StartIndex;
+                baseVertexIndex = _indirectArgsClearBindingState.BaseVertexIndex;
+            }
+            else
+            {
+                uint meshIndexCount = mesh.GetIndexCount(_subMeshIndex);
+                uint meshStartIndex = mesh.GetIndexStart(_subMeshIndex);
+                uint meshBaseVertexIndex = mesh.GetBaseVertex(_subMeshIndex);
+                indexCountPerInstance = meshIndexCount > int.MaxValue ? int.MaxValue : (int)meshIndexCount;
+                startIndex = meshStartIndex > int.MaxValue ? int.MaxValue : (int)meshStartIndex;
+                baseVertexIndex = meshBaseVertexIndex > int.MaxValue ? int.MaxValue : (int)meshBaseVertexIndex;
+                _cullingCompute.SetInt(_IndirectIndexCountPerInstanceId, indexCountPerInstance);
+                _cullingCompute.SetInt(_IndirectStartIndexId, startIndex);
+                _cullingCompute.SetInt(_IndirectBaseVertexIndexId, baseVertexIndex);
+            }
+
+            _indirectArgsClearBindingState = new IndirectArgsClearBindingState
+            {
+                Shader = _cullingCompute,
+                Kernel = _clearIndirectArgsKernel,
+                ArgsBuffer = argsBuffer,
+                Mesh = mesh,
+                SubMeshIndex = _subMeshIndex,
+                IndexCountPerInstance = indexCountPerInstance,
+                StartIndex = startIndex,
+                BaseVertexIndex = baseVertexIndex,
+                IsValid = true
+            };
             _cullingCompute.Dispatch(_clearIndirectArgsKernel, 1, 1, 1);
             return true;
         }
@@ -2308,13 +3309,30 @@ namespace Hecton8.World
             ReleaseGraphicsBuffer(ref _indirectArgsLod0Buffer);
             ReleaseGraphicsBuffer(ref _indirectArgsLod1Buffer);
             ReleaseGraphicsBuffer(ref _indirectArgsShadowBuffer);
+            ReleaseGraphicsBuffer(ref _cullTelemetryCountersBuffer);
             ReleaseDepthPyramidTexture();
             _gpuVisibleIndexCapacity = 0;
             _gpuCullingFrameIndex = 0;
             _hasFarCullingSnapshot = false;
+            _scatterCullTelemetryReadbackPending = false;
             _depthPyramidWidth = 0;
             _depthPyramidHeight = 0;
             _depthPyramidMipCount = 0;
+            ResetCullComputeBindingStates();
+            ResetSnapComputeBindingStates();
+        }
+
+        private void ResetCullComputeBindingStates()
+        {
+            _mainCullComputeBindingState = default;
+            _shadowCullComputeBindingState = default;
+            _indirectArgsClearBindingState = default;
+        }
+
+        private void ResetSnapComputeBindingStates()
+        {
+            _clearSnapComputeBindingState = default;
+            _flagSnapComputeBindingState = default;
         }
 
         private static void ReleaseVisibleIndexBuffer(ref GraphicsBuffer buffer)
@@ -2370,6 +3388,7 @@ namespace Hecton8.World
             if (target == null)
                 return;
 
+            ResetMaterialBindingState(target);
             ReleaseRegisteredBrgMaterial(target);
 
             if (Application.isPlaying)
@@ -2378,6 +3397,28 @@ namespace Hecton8.World
                 DestroyImmediate(target);
 
             target = null;
+        }
+
+        private void ResetMaterialBindingState(Material material)
+        {
+            if (ReferenceEquals(_nearMaterialBindingState.Material, material))
+                _nearMaterialBindingState = default;
+            if (ReferenceEquals(_farMaterialBindingState.Material, material))
+                _farMaterialBindingState = default;
+            if (ReferenceEquals(_depthNearMaterialBindingState.Material, material))
+                _depthNearMaterialBindingState = default;
+            if (ReferenceEquals(_depthFarMaterialBindingState.Material, material))
+                _depthFarMaterialBindingState = default;
+            if (ReferenceEquals(_shadowMaterialBindingState.Material, material))
+                _shadowMaterialBindingState = default;
+            if (ReferenceEquals(_motionNearMaterialBindingState.Material, material))
+                _motionNearMaterialBindingState = default;
+            if (ReferenceEquals(_motionFarMaterialBindingState.Material, material))
+                _motionFarMaterialBindingState = default;
+            if (ReferenceEquals(_motionNearPreviousCameraBindingState.Material, material))
+                _motionNearPreviousCameraBindingState = default;
+            if (ReferenceEquals(_motionFarPreviousCameraBindingState.Material, material))
+                _motionFarPreviousCameraBindingState = default;
         }
 
         private void ReleaseRegisteredBrgMaterial(Material material)
@@ -2452,7 +3493,7 @@ namespace Hecton8.World
             if (registeredMesh == mesh)
                 return;
 
-            if (!batchMeshId.Equals(default))
+            if (batchMeshId.value != 0u)
                 _batchRendererGroup.UnregisterMesh(batchMeshId);
 
             batchMeshId = mesh != null ? _batchRendererGroup.RegisterMesh(mesh) : default;
@@ -2467,7 +3508,7 @@ namespace Hecton8.World
             if (registeredMaterial == material)
                 return;
 
-            if (!batchMaterialId.Equals(default))
+            if (batchMaterialId.value != 0u)
                 _batchRendererGroup.UnregisterMaterial(batchMaterialId);
 
             batchMaterialId = material != null ? _batchRendererGroup.RegisterMaterial(material) : default;
@@ -2476,7 +3517,7 @@ namespace Hecton8.World
 
         private void SyncBatchBuffer(GraphicsBuffer matrixBuffer)
         {
-            if (_batchRendererGroup == null || _batchId.Equals(default) || matrixBuffer == null)
+            if (_batchRendererGroup == null || _batchId.value == 0u || matrixBuffer == null)
                 return;
 
             if (ReferenceEquals(_registeredBatchBuffer, matrixBuffer))
@@ -2498,12 +3539,44 @@ namespace Hecton8.World
                 ? _previousMotionCameraPosition
                 : currentCameraPosition;
 
-            _motionNearBrgMaterial?.SetVector(_PreviousCameraPositionId, previousCameraPosition);
-            _motionFarBrgMaterial?.SetVector(_PreviousCameraPositionId, previousCameraPosition);
+            ApplyMotionVectorPreviousCamera(
+                _motionNearBrgMaterial,
+                ref _motionNearPreviousCameraBindingState,
+                previousCameraPosition);
+            ApplyMotionVectorPreviousCamera(
+                _motionFarBrgMaterial,
+                ref _motionFarPreviousCameraBindingState,
+                previousCameraPosition);
 
             _previousMotionCameraPosition = currentCameraPosition;
             _previousMotionCamera = renderCamera;
             _hasPreviousMotionCameraPosition = true;
+        }
+
+        private void ApplyMotionVectorPreviousCamera(
+            Material material,
+            ref MaterialVectorBindingState state,
+            Vector3 previousCameraPosition)
+        {
+            if (material == null)
+                return;
+
+            if (state.IsValid &&
+                ReferenceEquals(state.Material, material) &&
+                state.Value.x == previousCameraPosition.x &&
+                state.Value.y == previousCameraPosition.y &&
+                state.Value.z == previousCameraPosition.z)
+            {
+                return;
+            }
+
+            material.SetVector(_PreviousCameraPositionId, previousCameraPosition);
+            state = new MaterialVectorBindingState
+            {
+                Material = material,
+                Value = previousCameraPosition,
+                IsValid = true
+            };
         }
 
         private void EnsureCpuCullingCapacity(int instanceCount)
@@ -2511,6 +3584,7 @@ namespace Hecton8.World
             if (instanceCount <= 0)
                 return;
 
+            RetireCompletedCpuCullingDisposeHandles();
             int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(16, instanceCount));
             if (_cpuCullingMatrices.IsCreated &&
                 _cpuCullingMatrices.Length >= nextCapacity &&
@@ -2529,20 +3603,236 @@ namespace Hecton8.World
 
         private void ReleaseCpuCullingData()
         {
-            if (_cpuCullingMatrices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_cpuCullingMatrices);
-                _cpuCullingMatrices.Dispose();
-            }
-
-            if (_cpuCullingData.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_cpuCullingData);
-                _cpuCullingData.Dispose();
-            }
+            bool hasCullDependency = TryGetCpuCullingScratchDependency(out JobHandle cullDependency);
+            DisposeCpuCullingDataArray(ref _cpuCullingMatrices, cullDependency, hasCullDependency);
+            DisposeCpuCullingDataArray(ref _cpuCullingData, cullDependency, hasCullDependency);
 
             _hasCpuCullingData = false;
         }
+
+        private bool TryGetCpuCullingScratchDependency(out JobHandle dependency)
+        {
+            dependency = default;
+            bool hasDependency = false;
+
+            if (_cpuCullingScratchA.ActiveHandleValid)
+            {
+                dependency = _cpuCullingScratchA.ActiveHandle;
+                hasDependency = true;
+            }
+
+            if (_cpuCullingScratchB.ActiveHandleValid)
+            {
+                dependency = hasDependency
+                    ? JobHandle.CombineDependencies(dependency, _cpuCullingScratchB.ActiveHandle)
+                    : _cpuCullingScratchB.ActiveHandle;
+                hasDependency = true;
+            }
+
+            return hasDependency;
+        }
+
+        private void RetireCompletedCpuCullingDisposeHandles()
+        {
+            if (_cpuCullingDataDisposeHandleValid && _cpuCullingDataDisposeHandle.IsCompleted)
+            {
+                _cpuCullingDataDisposeHandle.Complete();
+                _cpuCullingDataDisposeHandle = default;
+                _cpuCullingDataDisposeHandleValid = false;
+            }
+
+            if (_cpuCullingScratchDisposeHandleValid && _cpuCullingScratchDisposeHandle.IsCompleted)
+            {
+                _cpuCullingScratchDisposeHandle.Complete();
+                _cpuCullingScratchDisposeHandle = default;
+                _cpuCullingScratchDisposeHandleValid = false;
+            }
+        }
+
+        private void DisposeCpuCullingDataArray<T>(ref NativeArray<T> array, JobHandle dependency, bool hasDependency)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            if (!hasDependency)
+            {
+                array.Dispose();
+            }
+            else
+            {
+                AppendCpuCullingDataDisposeHandle(array.Dispose(dependency));
+            }
+
+            array = default;
+        }
+
+        private void AppendCpuCullingDataDisposeHandle(JobHandle disposeHandle)
+        {
+            _cpuCullingDataDisposeHandle = _cpuCullingDataDisposeHandleValid
+                ? JobHandle.CombineDependencies(_cpuCullingDataDisposeHandle, disposeHandle)
+                : disposeHandle;
+            _cpuCullingDataDisposeHandleValid = true;
+        }
+
+        private bool TryPrepareCpuCullingScratch(int instanceCount, out int scratchIndex)
+        {
+            RetireCompletedCpuCullingDisposeHandles();
+            for (int attempt = 0; attempt < CpuCullingScratchBufferCount; attempt++)
+            {
+                int candidateIndex = (_cpuCullingScratchCursor + attempt) & 1;
+                ref CpuCullingScratchBuffer candidate = ref GetCpuCullingScratch(candidateIndex);
+                if (candidate.ActiveHandleValid && !candidate.ActiveHandle.IsCompleted)
+                    continue;
+
+                if (candidate.ActiveHandleValid)
+                {
+                    candidate.ActiveHandle.Complete();
+                    candidate.ActiveHandle = default;
+                    candidate.ActiveHandleValid = false;
+                }
+
+                EnsureCpuCullingScratchCapacity(ref candidate, candidateIndex, instanceCount);
+                if (!candidate.VisibilityMask.IsCreated ||
+                    !candidate.CullingPlanes.IsCreated ||
+                    candidate.VisibilityCapacity < instanceCount)
+                {
+                    scratchIndex = -1;
+                    return false;
+                }
+
+                _cpuCullingScratchCursor = (candidateIndex + 1) & 1;
+                scratchIndex = candidateIndex;
+                return true;
+            }
+
+            scratchIndex = -1;
+            return false;
+        }
+
+        private ref CpuCullingScratchBuffer GetCpuCullingScratch(int scratchIndex)
+        {
+            if ((scratchIndex & 1) == 0)
+                return ref _cpuCullingScratchA;
+
+            return ref _cpuCullingScratchB;
+        }
+
+        private void EnsureCpuCullingScratchCapacity(ref CpuCullingScratchBuffer scratch, int scratchIndex, int instanceCount)
+        {
+            int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(16, instanceCount));
+            if (scratch.VisibilityMask.IsCreated &&
+                scratch.VisibilityCapacity >= nextCapacity &&
+                scratch.CullingPlanes.IsCreated &&
+                scratch.HeadlightPositionsWs.IsCreated &&
+                scratch.HeadlightDirectionsWs.IsCreated &&
+                scratch.HeadlightColors.IsCreated &&
+                scratch.HeadlightConeData.IsCreated)
+            {
+                return;
+            }
+
+            ReleaseCpuCullingScratch(ref scratch, deferActiveJobs: false);
+            scratch.VisibilityMask = new NativeArray<byte>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[NextPowerOfTwo(instanceCount)] - BRG fallback visibility scratch - owner: HectonIndirectVegetationRenderer
+            scratch.CullingPlanes = new NativeArray<float4>(CpuCullingScratchPlaneCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[16] - BRG fallback culling plane scratch - owner: HectonIndirectVegetationRenderer
+            scratch.HeadlightPositionsWs = new NativeArray<float4>(MaxScooterHeadlights, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[2] - BRG fallback headlight position scratch - owner: HectonIndirectVegetationRenderer
+            scratch.HeadlightDirectionsWs = new NativeArray<float4>(MaxScooterHeadlights, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[2] - BRG fallback headlight direction scratch - owner: HectonIndirectVegetationRenderer
+            scratch.HeadlightColors = new NativeArray<float4>(MaxScooterHeadlights, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[2] - BRG fallback headlight color scratch - owner: HectonIndirectVegetationRenderer
+            scratch.HeadlightConeData = new NativeArray<float4>(MaxScooterHeadlights, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[2] - BRG fallback headlight cone scratch - owner: HectonIndirectVegetationRenderer
+            scratch.VisibilityCapacity = nextCapacity;
+            scratch.ActiveHandle = default;
+            scratch.ActiveHandleValid = false;
+
+            bool firstScratch = scratchIndex == 0;
+            NativeMemorySentinel.RegisterNativeArray(scratch.VisibilityMask, nameof(HectonIndirectVegetationRenderer), firstScratch ? "CpuCullingScratchA.VisibilityMask" : "CpuCullingScratchB.VisibilityMask", NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(scratch.CullingPlanes, nameof(HectonIndirectVegetationRenderer), firstScratch ? "CpuCullingScratchA.CullingPlanes" : "CpuCullingScratchB.CullingPlanes", NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(scratch.HeadlightPositionsWs, nameof(HectonIndirectVegetationRenderer), firstScratch ? "CpuCullingScratchA.HeadlightPositionsWs" : "CpuCullingScratchB.HeadlightPositionsWs", NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(scratch.HeadlightDirectionsWs, nameof(HectonIndirectVegetationRenderer), firstScratch ? "CpuCullingScratchA.HeadlightDirectionsWs" : "CpuCullingScratchB.HeadlightDirectionsWs", NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(scratch.HeadlightColors, nameof(HectonIndirectVegetationRenderer), firstScratch ? "CpuCullingScratchA.HeadlightColors" : "CpuCullingScratchB.HeadlightColors", NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(scratch.HeadlightConeData, nameof(HectonIndirectVegetationRenderer), firstScratch ? "CpuCullingScratchA.HeadlightConeData" : "CpuCullingScratchB.HeadlightConeData", NativeAllocationLifetime.Session);
+        }
+
+        private void ReleaseCpuCullingScratchBuffers(bool deferActiveJobs)
+        {
+            ReleaseCpuCullingScratch(ref _cpuCullingScratchA, deferActiveJobs);
+            ReleaseCpuCullingScratch(ref _cpuCullingScratchB, deferActiveJobs);
+            _cpuCullingScratchCursor = 0;
+        }
+
+        private void ReleaseCpuCullingScratch(ref CpuCullingScratchBuffer scratch, bool deferActiveJobs)
+        {
+            JobHandle disposeDependency = default;
+            bool hasDisposeDependency = false;
+            if (scratch.ActiveHandleValid)
+            {
+                if (deferActiveJobs && !scratch.ActiveHandle.IsCompleted)
+                {
+                    disposeDependency = scratch.ActiveHandle;
+                    hasDisposeDependency = true;
+                }
+                else
+                {
+                    scratch.ActiveHandle.Complete();
+                }
+
+                scratch.ActiveHandle = default;
+                scratch.ActiveHandleValid = false;
+            }
+
+            DisposeCpuCullingScratchArray(ref scratch.VisibilityMask, disposeDependency, hasDisposeDependency);
+            DisposeCpuCullingScratchArray(ref scratch.CullingPlanes, disposeDependency, hasDisposeDependency);
+            DisposeCpuCullingScratchArray(ref scratch.HeadlightPositionsWs, disposeDependency, hasDisposeDependency);
+            DisposeCpuCullingScratchArray(ref scratch.HeadlightDirectionsWs, disposeDependency, hasDisposeDependency);
+            DisposeCpuCullingScratchArray(ref scratch.HeadlightColors, disposeDependency, hasDisposeDependency);
+            DisposeCpuCullingScratchArray(ref scratch.HeadlightConeData, disposeDependency, hasDisposeDependency);
+
+            scratch = default;
+        }
+
+        private void DisposeCpuCullingScratchArray<T>(ref NativeArray<T> array, JobHandle dependency, bool hasDependency)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            if (!hasDependency)
+            {
+                array.Dispose();
+            }
+            else
+            {
+                AppendCpuCullingScratchDisposeHandle(array.Dispose(dependency));
+            }
+
+            array = default;
+        }
+
+        private void AppendCpuCullingScratchDisposeHandle(JobHandle disposeHandle)
+        {
+            _cpuCullingScratchDisposeHandle = _cpuCullingScratchDisposeHandleValid
+                ? JobHandle.CombineDependencies(_cpuCullingScratchDisposeHandle, disposeHandle)
+                : disposeHandle;
+            _cpuCullingScratchDisposeHandleValid = true;
+        }
+
+#if UNITY_EDITOR
+        private void ReleaseMockScatterBuffers()
+        {
+            if (_mockScatterMatrices.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeList(nameof(HectonIndirectVegetationRenderer), nameof(_mockScatterMatrices));
+                _mockScatterMatrices.Dispose();
+            }
+
+            if (_mockScatterData.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeList(nameof(HectonIndirectVegetationRenderer), nameof(_mockScatterData));
+                _mockScatterData.Dispose();
+            }
+        }
+#endif
 
         private void CopyCpuCullingPayload(
             Matrix4x4[] instanceMatrices,
@@ -2697,16 +3987,16 @@ namespace Hecton8.World
             Mesh farMesh = FrameTimeWatchdog.IsDistantFloraRenderingEnabled && _farLodDistance > _nearLodDistance
                 ? ResolveImpostorRenderMesh()
                 : null;
-            bool useFarPass = farMesh != null && !_farBatchMeshId.Equals(default) && !_farBatchMaterialId.Equals(default);
-            bool useDepthPass = _enableDepthPrepass && _depthNearBrgMaterial != null && !_depthNearBatchMaterialId.Equals(default);
-            bool useShadowPass = _enableShadowCasterDraw && _shadowBrgMaterial != null && !_shadowBatchMaterialId.Equals(default) && HasMainDirectionalShadowLight();
-            bool useMotionPass = _enableMotionVectorDraw && _motionNearBrgMaterial != null && !_motionNearBatchMaterialId.Equals(default);
+            bool useFarPass = farMesh != null && _farBatchMeshId.value != 0u && _farBatchMaterialId.value != 0u;
+            bool useDepthPass = _enableDepthPrepass && _depthNearBrgMaterial != null && _depthNearBatchMaterialId.value != 0u;
+            bool useShadowPass = _enableShadowCasterDraw && _shadowBrgMaterial != null && _shadowBatchMaterialId.value != 0u && HasMainDirectionalShadowLight();
+            bool useMotionPass = _enableMotionVectorDraw && _motionNearBrgMaterial != null && _motionNearBatchMaterialId.value != 0u;
 
             if (_instanceCount <= 0 ||
-                _batchId.Equals(default) ||
+                _batchId.value == 0u ||
                 nearMesh == null ||
-                _nearBatchMeshId.Equals(default) ||
-                _nearBatchMaterialId.Equals(default))
+                _nearBatchMeshId.value == 0u ||
+                _nearBatchMaterialId.value == 0u)
             {
                 HectonBatchRendererGroupUtility.WriteDirectDrawOutput(
                     cullingOutput,
@@ -2723,8 +4013,8 @@ namespace Hecton8.World
                 return default;
             }
 
-            bool useDepthFarPass = useDepthPass && useFarPass && _depthFarBrgMaterial != null && !_depthFarBatchMaterialId.Equals(default);
-            bool useMotionFarPass = useMotionPass && useFarPass && _motionFarBrgMaterial != null && !_motionFarBatchMaterialId.Equals(default);
+            bool useDepthFarPass = useDepthPass && useFarPass && _depthFarBrgMaterial != null && _depthFarBatchMaterialId.value != 0u;
+            bool useMotionFarPass = useMotionPass && useFarPass && _motionFarBrgMaterial != null && _motionFarBatchMaterialId.value != 0u;
             bool enableCpuCulling = _hasCpuCullingData &&
                                     _cpuCullingMatrices.IsCreated &&
                                     _cpuCullingData.IsCreated &&
@@ -2738,6 +4028,8 @@ namespace Hecton8.World
             float lod1MinDistance = Mathf.Max(0f, nearLodDistance - lodTransition);
             float lod1MaxDistance = farLodDistance + lodTransition;
             Vector4 floatingOffset = ResolveVegetationFloatingOffset();
+            int densityDecimationStep = ResolveDensityDecimationStep();
+            _resolvedDensityDecimationStep = densityDecimationStep;
 
             if (!enableCpuCulling)
             {
@@ -2752,13 +4044,28 @@ namespace Hecton8.World
                 return default;
             }
 
-            NativeArray<byte> visibilityMask = new NativeArray<byte>(_instanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeArray<float4> cullingPlanes = default;
-            NativeArray<float4> headlightPositionsWs = default;
-            NativeArray<float4> headlightDirectionsWs = default;
-            NativeArray<float4> headlightColors = default;
-            NativeArray<float4> headlightConeData = default;
+            if (!TryPrepareCpuCullingScratch(_instanceCount, out int scratchIndex))
+            {
+                WriteAllVisibleVegetationOutput(
+                    cullingOutput,
+                    useFarPass,
+                    useDepthPass,
+                    useDepthFarPass,
+                    useShadowPass,
+                    useMotionPass,
+                    useMotionFarPass);
+                return default;
+            }
+
+            ref CpuCullingScratchBuffer scratch = ref GetCpuCullingScratch(scratchIndex);
+            NativeArray<byte> visibilityMask = scratch.VisibilityMask;
+            NativeArray<float4> cullingPlanes = scratch.CullingPlanes;
+            NativeArray<float4> headlightPositionsWs = scratch.HeadlightPositionsWs;
+            NativeArray<float4> headlightDirectionsWs = scratch.HeadlightDirectionsWs;
+            NativeArray<float4> headlightColors = scratch.HeadlightColors;
+            NativeArray<float4> headlightConeData = scratch.HeadlightConeData;
             bool bypassDarknessCulling = !_enableDarknessCulling;
+            int cullingPlaneCount = 0;
             int headlightCount = 0;
 
             if (enableCpuCulling)
@@ -2766,12 +4073,13 @@ namespace Hecton8.World
                 int planeCount = cullingContext.cullingPlanes.IsCreated ? cullingContext.cullingPlanes.Length : 0;
                 if (planeCount > 0)
                 {
-                    cullingPlanes = new NativeArray<float4>(planeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    for (int planeIndex = 0; planeIndex < planeCount; planeIndex++)
+                    int safePlaneCount = math.min(planeCount, cullingPlanes.Length);
+                    for (int planeIndex = 0; planeIndex < safePlaneCount; planeIndex++)
                     {
                         Plane plane = cullingContext.cullingPlanes[planeIndex];
                         cullingPlanes[planeIndex] = new float4(plane.normal.x, plane.normal.y, plane.normal.z, plane.distance);
                     }
+                    cullingPlaneCount = safePlaneCount;
                 }
 
                 if (_enableDarknessCulling)
@@ -2791,10 +4099,6 @@ namespace Hecton8.World
                         headlightCount = CopyScooterHeadlightPayload();
                         if (headlightCount > 0)
                         {
-                            headlightPositionsWs = new NativeArray<float4>(MaxScooterHeadlights, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                            headlightDirectionsWs = new NativeArray<float4>(MaxScooterHeadlights, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                            headlightColors = new NativeArray<float4>(MaxScooterHeadlights, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                            headlightConeData = new NativeArray<float4>(MaxScooterHeadlights, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                             for (int headlightIndex = 0; headlightIndex < MaxScooterHeadlights; headlightIndex++)
                             {
                                 Vector4 lightPosition = _scooterHeadlightPositionsWs[headlightIndex];
@@ -2841,12 +4145,13 @@ namespace Hecton8.World
                     HeadlightConeData = headlightConeData,
                     VisibilityMask = visibilityMask,
                     InstanceCount = _instanceCount,
-                    CullingPlaneCount = cullingPlanes.IsCreated ? cullingPlanes.Length : 0,
+                    CullingPlaneCount = cullingPlaneCount,
                     HeadlightCount = headlightCount,
                     EnableCpuCulling = enableCpuCulling,
                     UseFarPass = useFarPass,
                     UseShadowPass = useShadowPass,
                     BypassDarknessCulling = bypassDarknessCulling,
+                    DensityDecimationStep = densityDecimationStep,
                     ViewPosition = _cachedCullCameraPosition,
                     GlobalOffset = new float3(floatingOffset.x, floatingOffset.y, floatingOffset.z),
                     Lod0MaxDistanceSq = lod0MaxDistance * lod0MaxDistance,
@@ -2882,18 +4187,9 @@ namespace Hecton8.World
                     OutputCommands = (BatchCullingOutputDrawCommands*)NativeArrayUnsafeUtility.GetUnsafePtr(cullingOutput.drawCommands)
                 }.Schedule(visibilityHandle);
 
-                JobHandle disposeHandle = visibilityMask.Dispose(finalizeHandle);
-                if (cullingPlanes.IsCreated)
-                    disposeHandle = cullingPlanes.Dispose(disposeHandle);
-                if (headlightPositionsWs.IsCreated)
-                    disposeHandle = headlightPositionsWs.Dispose(disposeHandle);
-                if (headlightDirectionsWs.IsCreated)
-                    disposeHandle = headlightDirectionsWs.Dispose(disposeHandle);
-                if (headlightColors.IsCreated)
-                    disposeHandle = headlightColors.Dispose(disposeHandle);
-                if (headlightConeData.IsCreated)
-                    disposeHandle = headlightConeData.Dispose(disposeHandle);
-                return disposeHandle;
+                scratch.ActiveHandle = finalizeHandle;
+                scratch.ActiveHandleValid = true;
+                return finalizeHandle;
             }
         }
 
@@ -3098,7 +4394,7 @@ namespace Hecton8.World
             bool receiveShadows,
             MotionVectorGenerationMode motionMode)
         {
-            if (visibleCount <= 0 || materialId.Equals(default) || meshId.Equals(default))
+            if (visibleCount <= 0 || materialId.value == 0u || meshId.value == 0u)
                 return commandIndex;
 
             output.drawCommands[commandIndex] = new BatchDrawCommand
@@ -3127,7 +4423,7 @@ namespace Hecton8.World
         {
             if (_batchRendererGroup != null)
             {
-                if (!_batchId.Equals(default))
+                if (_batchId.value != 0u)
                     _batchRendererGroup.RemoveBatch(_batchId);
 
                 UnregisterBatchMesh(ref _nearBatchMeshId);
@@ -3178,7 +4474,7 @@ namespace Hecton8.World
 
         private void UnregisterBatchMesh(ref BatchMeshID batchMeshId)
         {
-            if (_batchRendererGroup != null && !batchMeshId.Equals(default))
+            if (_batchRendererGroup != null && batchMeshId.value != 0u)
                 _batchRendererGroup.UnregisterMesh(batchMeshId);
 
             batchMeshId = default;
@@ -3186,7 +4482,7 @@ namespace Hecton8.World
 
         private void UnregisterBatchMaterial(ref BatchMaterialID batchMaterialId)
         {
-            if (_batchRendererGroup != null && !batchMaterialId.Equals(default))
+            if (_batchRendererGroup != null && batchMaterialId.value != 0u)
                 _batchRendererGroup.UnregisterMaterial(batchMaterialId);
 
             batchMaterialId = default;
@@ -3211,7 +4507,7 @@ namespace Hecton8.World
                 }
 
                 JobHandle producerHandle = readBuffer.ProducerHandle;
-                if (!producerHandle.Equals(default) && !producerHandle.IsCompleted)
+                if (!producerHandle.IsCompleted)
                 {
                     nativeBufferSource.ReleaseNativeReadBuffer(readBuffer, default);
                     return;
@@ -3321,8 +4617,6 @@ namespace Hecton8.World
 
         private int CopyScooterHeadlightPayload()
         {
-            ClearScooterHeadlightPayload();
-
             if (!_enableDarknessCulling)
                 return 0;
 
@@ -3363,25 +4657,6 @@ namespace Hecton8.World
             }
 
             playerTransform.TryGetComponent(out _playerToolManager);
-        }
-
-        private void ClearScooterHeadlightPayload()
-        {
-            if (_scooterHeadlightPositionsWs == null ||
-                _scooterHeadlightDirectionsWs == null ||
-                _scooterHeadlightColors == null ||
-                _scooterHeadlightConeData == null)
-            {
-                return;
-            }
-
-            for (int headlightIndex = 0; headlightIndex < MaxScooterHeadlights; headlightIndex++)
-            {
-                _scooterHeadlightPositionsWs[headlightIndex] = Vector4.zero;
-                _scooterHeadlightDirectionsWs[headlightIndex] = Vector4.zero;
-                _scooterHeadlightColors[headlightIndex] = Vector4.zero;
-                _scooterHeadlightConeData[headlightIndex] = Vector4.zero;
-            }
         }
 
         private static Vector4 ResolveVegetationFloatingOffset()

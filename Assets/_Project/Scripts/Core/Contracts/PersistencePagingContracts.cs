@@ -63,7 +63,7 @@ namespace Hecton8.Core.Contracts
             WfcOutpostCellStateFlags.DatapadLooted);
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct H8WorldPageReadTicket
     {
         [FieldOffset(0)] public long SectorHash;
@@ -77,7 +77,7 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(28)] public uint Reserved;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct H8WorldPagerTelemetrySnapshot
     {
         [FieldOffset(0)] public int PendingDiskWrites;

@@ -1,0 +1,23 @@
+{
+    "name": "Hecton8.World.ShinobuBiomimetic.Editor",
+    "rootNamespace": "Hecton8.World.ShinobuBiomimetic.Editor",
+    "references": [
+        "Hecton8.World.ShinobuBiomimetic",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

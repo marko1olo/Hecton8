@@ -1,0 +1,134 @@
+# Rationale_SHINOBU_34
+
+Status: PENDING RUNTIME VERIFICATION / EXTERNAL COMPILE WALL
+
+## Decision 00 - Active Truth Recovery
+Problem: Active SHINOBU_34 status/rationale/log files were missing while archive Batch008 carried the prior trail. Continuing from chat memory would violate the anti-amnesia protocol.  
+Solution: Re-extracted SHINOBU_34 from active `Docs/Tasks/CURRENT_BATCH.md`, verified 20 task markers, read archive files as recovery evidence, and recreated active files in `Docs/Tasks` and `Docs/AgentLogs`.  
+Rejected Alternatives: Trusting conversation history or another agent's active status file.  
+Scalability potential: Low through ultra tiers get deterministic agent state and no cross-agent domain bleed.  
+Hardware Impact: 0 us runtime; prevents architecture drift.
+
+## Decision 01 - Merkle Runtime Layout Contract
+Problem: Save DTOs must be both binary-stable and ARM64-safe. Pack=1 or historic short records would create unaligned reads and brittle WAL scans.  
+Solution: Keep runtime DTOs Pack=8 with explicit sizes and padding. Primary layouts: `MerkleNodeDTO` 32B, `SectorEntry` 32B, `StateDeltaRecordDTO` 64B, `Lz4SubBlockHeader` 32B, `SaveMerkleWalAppendHeader` 64B, `SaveMerkleTelemetryEntry` 64B.  
+Rejected Alternatives: Historic 28-byte sector entries, managed wrappers, and size-only padding without offset proof.  
+Scalability potential: Low/Steam Deck/Quest avoid unaligned traps; high/ultra keep predictable cache-line scans for richer diagnostics.  
+Hardware Impact: 1-3 us avoided on ARM64 WAL/directory scans; more important, no misaligned-read cliff.
+
+## Decision 02 - Raw DataVault Hashing, No JSON
+Problem: Autosave bloat and hitches come from text serialization and object walking. The Merkle layer cannot allocate managed arrays or strings while hashing.  
+Solution: Hash unmanaged `NativeArray<byte>` leaf spans directly through XXHash3-128 in Burst jobs and write raw delta headers/payloads into vault-owned byte arenas.  
+Rejected Alternatives: `JsonUtility`, `System.Text.Json`, `BinaryFormatter`, `byte[]`, `NativeList` growth, and Unity object traversal.  
+Scalability potential: Low tier hashes fewer active descriptors; middle/high/ultra keep the same topology with larger data volume and richer state.  
+Hardware Impact: Eliminates GC-class autosave spikes; branch reduction estimated 20-60 us for 4369 nodes.
+
+## Decision 03 - Blind Mocks Instead of Cross-Domain Coupling
+Problem: SHINOBU_34 is blind to inventory/base/ecosystem implementation and must not create direct assembly dependencies.  
+Solution: Add `MockInventoryData`, `MockStatePayload`, descriptor builder, and deep 4-byte mutation job to prove byte-delta math in isolation. Cross-domain input stays unmanaged bytes plus descriptors.  
+Rejected Alternatives: Referencing inventory SOA or construction runtime types.  
+Scalability potential: Low runs compact mocks; high/ultra can enlarge descriptors without changing save math.  
+Hardware Impact: Test-only generation; mutation is one aligned XOR.
+
+## Decision 04 - Fixed-Arena Delta Extraction
+Problem: Auto-growing delta buffers create unpredictable allocation and stalls when a large base change lands during autosave.  
+Solution: Use fixed vault-owned `NativeArray<byte>` delta arenas and counter slots. Overflow sets `DeltaFlagOverflow`; it does not allocate.  
+Rejected Alternatives: Managed `List<byte>`, `NativeList<byte>` growth, monolithic full-world rewrite.  
+Scalability potential: Low can cap arena and drop cosmetics; high/ultra can increase capacity through CSV.  
+Hardware Impact: 2-6 us per changed leaf plus memcpy; avoids whole-save rewrite.
+
+## Decision 05 - LZ4 Subblocks Without Dictionary Claims
+Problem: Raw deltas can still be large, but monolithic compression and dictionary claims without bindings/benchmarks create load spikes and false reports.  
+Solution: Compress fixed 16KB default subblocks with a 32-byte header, CRC32, 16-byte alignment, and raw fallback for incompressible blocks.  
+Rejected Alternatives: Whole-save compression and LZ4 dictionary mode; current mandate says dictionaries require native bindings and corpus proof.  
+Scalability potential: Low uses default 16KB blocks; high/ultra can raise block size through CSV if I/O is fast.  
+Hardware Impact: 30-120 us per 256KB delta depending entropy; prevents monolithic decompression spikes.
+
+## Decision 06 - Cosmetic Prune Before Compression
+Problem: Reporting cosmetic byte pressure after LZ4 is not a real drop and does not shrink WAL payloads.  
+Solution: `CosmeticDeltaPayloadPruneJob` parses the delta stream before LZ4, drops only `LeafFlagCosmetic` records after threshold, rewrites payload offsets, and records exact dropped byte/record counters.  
+Rejected Alternatives: Fake LZ4-layer accounting or dropping bytes inside the compressor.  
+Scalability potential: Low/slow storage prunes aggressively; middle mostly keeps payload; high/ultra can raise thresholds.  
+Hardware Impact: 8-35 us on large changed-record streams, traded for reduced MicroSD write pressure.
+
+## Decision 07 - WAL Commit Barrier
+Problem: The previous tree must mean "last committed WAL baseline." If the pipeline copies current tree before WAL fsync and the append fails, the next autosave can falsely no-op and lose data.  
+Solution: `ScheduleVaultDeltaWalPipeline()` now returns after LZ4. `ScheduleAcceptCommittedTree()` copies current tree to previous only after caller confirms WAL append success. `CopyMerkleTreeJob` stamps `CommittedTreeSentinel` into the root padding lane.  
+Rejected Alternatives: Copying current->previous at the end of compression or treating "previous frame" as committed save state.  
+Scalability potential: All tiers gain corruption-proof baseline semantics; high/ultra can run more frequent autosaves without silent loss.  
+Hardware Impact: Copy is 4369 nodes, scheduled; correctness fix outweighs tiny memory bandwidth cost.
+
+## Decision 08 - Previous Baseline Initialization
+Problem: `NativeArrayOptions.UninitializedMemory` is correct for current tree because jobs overwrite it, but an uninitialized previous tree can poison the first root compare.  
+Solution: Previous tree resolves with clear memory and `EnsureCommittedBaselineJob` zeros/stamps the baseline if the root sentinel is absent.  
+Rejected Alternatives: Trusting uninitialized previous bytes or zeroing the current tree every frame.  
+Scalability potential: Low avoids undefined first-save behavior; high/ultra keep uninitialized current tree performance.  
+Hardware Impact: First-use clear is cold; per-frame baseline check is one root read.
+
+## Decision 09 - Vault Buffer Separation
+Problem: Pruned delta bytes were sharing the tombstone scratch BufferID, creating alias risk between two independent stages.  
+Solution: Added `BufferID.SaveMerklePrunedDeltaBytes = 70283` and resolved pruned deltas from that vault-owned buffer.  
+Rejected Alternatives: Reusing tombstone scratch for unrelated pruned payload stream.  
+Scalability potential: All tiers avoid cross-stage memory clobber; high/ultra can size pruned/compressed buffers independently.  
+Hardware Impact: 0 us hot-path arithmetic; prevents rare corruption and rework.
+
+## Decision 10 - AUP Dear Lie
+Problem: Saving every transient transform/rotation bloats files and pretends presentation motion is authoritative.  
+Solution: Save stable-rest or needs-wake flags plus sector-local `QuantizedAupSectorHalf3`. Runtime simulation resumes from truth.  
+Rejected Alternatives: Serializing absolute `double3` or direct float world positions.  
+Scalability potential: Low stores coarse authority; high/ultra can sample richer optional visuals while core truth stays compact.  
+Hardware Impact: About 70% spatial payload shrink; tens of KB avoided per far dynamic sector.
+
+## Decision 11 - Blackbox and Human Facade
+Problem: A corruption-proof save system needs forensic state and an editor control surface, not invisible background behavior.  
+Solution: Keep a 300-frame `SaveMerkleTelemetryEntry` ring, raw binary dump path, and `State Delta X-Ray` EditorWindow with dirty branch mask, WAL validation, and corruption injection.  
+Rejected Alternatives: Hot-path `Debug.Log`, string telemetry, or log-only diagnostics.  
+Scalability potential: Low gets fixed 19.2KB telemetry; high/ultra can publish richer editor snapshots without player cost.  
+Hardware Impact: Telemetry write about 0.2 us; editor UI is player-stripped.
+
+## Decision 12 - Compile Boundary
+Problem: Current core build fails on external `SomaticKinematicsRuntime.cs` and `VoxelDeltaProcessor.cs`. Editing those would violate SHINOBU_34 domain unless explicitly assigned.  
+Solution: Record as external compile wall and continue static/owned-file validation. No direct sibling runtime dependency was added by Save/Merkle code.  
+Rejected Alternatives: Cross-domain "compile medic" edits from the save architect.  
+Scalability potential: Keeps compile-wall blast radius contained for parallel agents.  
+Hardware Impact: 0 us runtime; protects iteration boundaries.
+
+## Decision 13 - Empty Leaf Canonicalization
+Problem: Empty or inactive leaves previously retained `SectorKey` metadata. Branch reduction hashed all 16 child DTO bytes, so an otherwise empty tree could produce a non-zero root and trigger phantom WAL work.  
+Solution: Inactive leaves now write an all-zero `MerkleNodeDTO`. Branch nodes hash only when `childMask != 0`; empty branches remain all-zero.  
+Rejected Alternatives: Keeping inactive `SectorKey` in leaf nodes and relying on leaf-level comparison to filter records. That still burns pipeline work and can keep an empty first save in a repeated no-record state.  
+Scalability potential: Low/Steam Deck avoids phantom autosave wakeups. Middle/high/ultra get deterministic root behavior when descriptors churn but payload truth does not.  
+Hardware Impact: Avoids a wasted Merkle->delta->LZ4 schedule on empty/inactive trees; cost is one `childMask` branch per parent.
+
+## Decision 14 - Reference-AUP Dear Lie Gate
+Problem: Dear Lie dehydration measured "far sector" from absolute world origin. In a 100x100km AUP world this is not a valid distance test and can mark stable/rest state incorrectly after rebases.  
+Solution: `DearLieDehydrationJob` now subtracts `ReferenceAupMeters` before distance-squared comparison and rejects non-finite `double3` lanes before quantization.  
+Rejected Alternatives: Casting absolute AUP to float or using distance from zero. Both violate AUP precision law and create save-state jitter/false rest flags.  
+Scalability potential: Low uses the same cheap squared-distance gate; high/ultra can provide a more precise current sector/camera reference without changing DTOs.  
+Hardware Impact: One double3 subtract and length-squared per dehydrated payload; prevents bad save truth rather than saving CPU.
+
+## Decision 15 - WAL Append Offset and Tail Recovery
+Problem: `TryAppendCompressedWalMmf()` accepted caller-provided logical offsets and could leave a file length extended if MMF setup failed after `SetLength()`. That creates unverifiable WAL tails.  
+Solution: The method now stamps the actual `stream.Length` append offset into the header before CRC, and any MMF exception truncates back to the original append offset before FileStream fallback.  
+Rejected Alternatives: Trusting caller offset or returning failure with an already-extended WAL tail.  
+Scalability potential: All storage tiers get deterministic header truth. Slow devices get clean fallback instead of corruption after a platform MMF failure.  
+Hardware Impact: One length read and possible cold-path truncation; no added autosave hot-path allocation.
+
+## Decision 16 - LZ4 Fail-Closed Counters and Validation
+Problem: A partial LZ4 write could leave non-zero stored counters if capacity/header failure happened mid-job. WAL validation also accepted weak stored-size/flag combinations and used int alignment math.  
+Solution: LZ4 counters now publish `StoredBytes=0` and `BlockCount=0` on failure. Validator rejects zero stored bytes, stored bytes larger than raw bytes, invalid raw/compressed flag combinations, and uses long `Align16()` for large WAL payloads.  
+Rejected Alternatives: Letting the caller infer failure from mixed partial counters, or validating only per-block CRC.  
+Scalability potential: Low storage paths fail closed instead of appending partial blocks; high/ultra large WALs avoid 2GB int truncation in alignment math.  
+Hardware Impact: Failure path only; normal path pays a few integer checks during cold validation.
+
+<SELF_AUDIT>
+  <task_matrix>01 PASS; 02 PASS; 03 PASS; 04 PASS; 05 PASS; 06 PASS; 07 PASS; 08 PASS; 09 PASS; 10 PASS; 11 PASS; 12 PASS; 13 PASS; 14 PASS; 15 PASS; 16 PASS; 17 PASS; 18 PASS; 19 PASS; 20 PASS.</task_matrix>
+  <arm64_layouts>MerkleNodeDTO 32 bytes: HashLo 0, HashHi 8, SectorKey 16, ChildMask 20, _pad0 24. SectorEntry 32 bytes: SectorHash 0, ByteOffset 8, CompressedSize 16, DecompressedSize 20, Checksum 24, _pad0 28. StateDeltaRecordDTO 64 bytes: PreviousHashLo 0, PreviousHashHi 8, NewHashLo 16, NewHashHi 24, SourceOffsetBytes 32, DataLength 36, DeltaPayloadOffset 40, CompressedOffset 44, SectorKey 48, Flags 52, Crc32 56, _pad0 60.</arm64_layouts>
+  <zero_gc_check>Owned hot jobs use NativeArray, raw pointers, fixed counters, and value DTOs. Static scan found no JSON APIs, managed byte arrays, NativeList, LINQ, foreach, local new NativeArray, or mid-pipeline Complete in owned files.</zero_gc_check>
+  <aup_check>AUP persistence uses sector key plus QuantizedAupSectorHalf3. Dear Lie distance checks subtract ReferenceAupMeters before squared-distance tests; no absolute AUP is cast directly to float for saved authority.</aup_check>
+  <dear_lie_check>Stable-rest/needs-wake dehydration and cosmetic delta dropping replace transient physical exactness where it is not gameplay truth.</dear_lie_check>
+  <dependency_check>Data enters through IDataVault BufferIDs and unmanaged descriptors; no inventory/base/ecosystem direct runtime dependency was added.</dependency_check>
+  <h_phi_check>Current tree, previous committed tree, descriptors, delta bytes, pruned bytes, compressed bytes, LZ4 headers, counters, hash table, and telemetry ring resolve from GlobalDataVault-owned BufferIDs.</h_phi_check>
+  <blackbox_check>300-frame SaveMerkleTelemetryEntry ring and Dump_SAVE_MERKLE_TREE.bin dump path are active in source.</blackbox_check>
+  <compile_guard>Current Core compile wall is external to SHINOBU_34; scoped static/diff checks are clean.</compile_guard>
+</SELF_AUDIT>

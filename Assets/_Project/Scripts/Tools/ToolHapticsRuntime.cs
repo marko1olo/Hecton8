@@ -48,21 +48,22 @@ namespace Hecton8.Tools
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential, Size = 40)]
         public struct HapticCommand
         {
             public float LowFreqIntensity;
             public float HighFreqIntensity;
             public float DurationRemaining;
             public float DecayRate;
-            public byte Priority;
-            public byte MotorMask;
-            public byte BlendMode;
-            public byte Reserved;
             public float BaseLowFreqIntensity;
             public float BaseHighFreqIntensity;
             public float ElapsedSeconds;
             public float FrequencyHz;
+            public byte Priority;
+            public byte MotorMask;
+            public byte BlendMode;
+            public byte Reserved;
+            private uint _pad0;
         }
 
         public static void EnqueueToolFeedback(float powerDelivered, float ratedPower, byte priority = 1)

@@ -1,7 +1,22 @@
-﻿# Procedural World Vertical Architecture
+# Procedural World Vertical Architecture
 
 Date: 2026-05-11
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Verification: `PENDING VERIFICATION`
 
 This file defines how HECTON-8 expands from flora into a full procedural asset pipeline without creating parallel runtime systems.
@@ -10,7 +25,7 @@ This file defines how HECTON-8 expands from flora into a full procedural asset p
 
 - This document defines the vertical procedural architecture contract.
 - It does not prove that every category below has production-ready prefabs, materials, scatter profiles, or runtime validation.
-- Current conceptual project truth starts at `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`, `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Historical conceptual background includes `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`, `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`; current authority starts at `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, current source, and the latest DOC_GLOBAL R24/R23/R22/R21/R20/R19/R18 boundaries.
 - Current scatter runtime remains owned by `WorldProceduralScatterDirector` and adjacent backend seams; no category may create a parallel scatter stack.
 - Encoding-damaged geology production notes were moved to `Docs/DEPRECATED/Encoding_Damaged_2026-05-01/`; use `Docs/ARCHITECTURE/SEISMIC_GEOLOGY_SYSTEM.md` for readable geology/seismic reference.
 - Procedural world content must use visual realism fakes first: material masks, shader motion, baked flow, impostors, pooled event VFX, and proxy colliders before any new runtime simulation.

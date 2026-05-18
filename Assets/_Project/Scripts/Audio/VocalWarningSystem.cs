@@ -31,7 +31,7 @@ namespace Hecton8.Audio
             public AudioClip[] Clips => clips;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct VwsTelemetryEntry
         {
             [FieldOffset(0)] public uint Frame;

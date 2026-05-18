@@ -136,25 +136,25 @@ namespace Hecton8.SaveSystem
 
     public readonly struct SteamCloudSaveCandidate
     {
+        public readonly ulong TimestampUnixMs;
+        public readonly float PlayTimeSeconds;
+
         public SteamCloudSaveCandidate(ulong timestampUnixMs, float playTimeSeconds)
         {
             TimestampUnixMs = timestampUnixMs;
             PlayTimeSeconds = playTimeSeconds;
         }
-
-        public ulong TimestampUnixMs { get; }
-        public float PlayTimeSeconds { get; }
     }
 
     public readonly struct SteamCloudSaveResolution
     {
+        public readonly SteamCloudSaveChoice SuggestedChoice;
+        public readonly SteamCloudSaveChoice AlternateChoice;
+
         public SteamCloudSaveResolution(SteamCloudSaveChoice suggestedChoice, SteamCloudSaveChoice alternateChoice)
         {
             SuggestedChoice = suggestedChoice;
             AlternateChoice = alternateChoice;
         }
-
-        public SteamCloudSaveChoice SuggestedChoice { get; }
-        public SteamCloudSaveChoice AlternateChoice { get; }
     }
 }

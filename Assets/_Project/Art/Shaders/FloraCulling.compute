@@ -33,6 +33,7 @@ AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesLOD1;
 AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesShadow;
 Texture2D<float> _HectonDepthPyramid;
 RWByteAddressBuffer _HectonIndirectArgsBuffer;
+RWStructuredBuffer<uint> _HectonCullTelemetryCounters;
 
 uint _HectonSourceInstanceCount;
 float4x4 _HectonViewProjection;
@@ -50,6 +51,8 @@ float _HectonOcclusionDepthBias;
 uint _HectonOcclusionEnabled;
 uint _HectonFarLodAppendEnabled;
 uint _HectonDarknessCullEnabled;
+uint _HectonDensityDecimationStep;
+uint _HectonCullTelemetryEnabled;
 int _HectonScooterHeadlightCount;
 float4 _HectonScooterHeadlightPositionsWS[HECTON_MAX_SCOOTER_HEADLIGHTS];
 float4 _HectonScooterHeadlightDirectionsWS[HECTON_MAX_SCOOTER_HEADLIGHTS];
@@ -86,6 +89,34 @@ bool IsFiniteFloat3(float3 value)
 bool IsFiniteFloat4(float4 value)
 {
     return all(isfinite(value));
+}
+
+uint HashUint(uint value)
+{
+    value ^= value >> 16;
+    value *= 0x7feb352du;
+    value ^= value >> 15;
+    value *= 0x846ca68bu;
+    value ^= value >> 16;
+    return value;
+}
+
+bool PassesDensityDecimation(uint instanceIndex)
+{
+    uint step = min(max(_HectonDensityDecimationStep, 1u), 4u);
+    if (step <= 1u)
+        return true;
+
+    uint hash = HashUint(instanceIndex * 747796405u + 2891336453u);
+    return (hash % step) == 0u;
+}
+
+void AddCullTelemetry(uint counterIndex, uint value)
+{
+    if (_HectonCullTelemetryEnabled == 0)
+        return;
+
+    InterlockedAdd(_HectonCullTelemetryCounters[counterIndex], value);
 }
 
 float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
@@ -421,15 +452,28 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     if (instanceIndex >= _HectonSourceInstanceCount)
         return;
 
+    AddCullTelemetry(0u, 1u);
+    if (!PassesDensityDecimation(instanceIndex))
+    {
+        AddCullTelemetry(1u, 1u);
+        return;
+    }
+
     float4x4 instanceMatrix = _HectonSourceInstanceMatrices[instanceIndex];
     float3 originWS = ResolveShiftedWorldPosition(ResolveInstanceOrigin(instanceMatrix));
     if (!IsFiniteFloat3(originWS))
+    {
+        AddCullTelemetry(1u, 1u);
         return;
+    }
 
     float3 cameraDelta = originWS - _HectonCameraPosition;
     float distanceSq = dot(cameraDelta, cameraDelta);
     if (!IsFiniteScalar(distanceSq))
+    {
+        AddCullTelemetry(1u, 1u);
         return;
+    }
 
     float lod0Distance = max(_HectonLodNearDistance, 0.01);
     float lod1Distance = max(_HectonLodFarDistance, lod0Distance);
@@ -442,15 +486,24 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     float lod1MaxDistanceSq = lod1MaxDistance * lod1MaxDistance;
 
     if (_HectonFarLodAppendEnabled == 0 && distanceSq > lod0MaxDistanceSq)
+    {
+        AddCullTelemetry(1u, 1u);
         return;
+    }
 
     if (distanceSq > lod1MaxDistanceSq)
+    {
+        AddCullTelemetry(1u, 1u);
         return;
+    }
 
     HectonVegetationInstanceGpuData instanceData = _HectonSourceVegetationInstanceData[instanceIndex];
     float age01 = ResolveFloraAge01(instanceIndex);
     if (age01 < 0.0)
+    {
+        AddCullTelemetry(1u, 1u);
         return;
+    }
 
     age01 = saturate(age01);
     float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
@@ -470,6 +523,7 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
         !IsFiniteFloat3(sideAWS) ||
         !IsFiniteFloat3(sideBWS))
     {
+        AddCullTelemetry(1u, 1u);
         return;
     }
 
@@ -483,7 +537,10 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     float wakeCullExpandedRadius = max(instanceHeight, instanceWidth) + 2.0;
     radiusSq = max(radiusSq, wakeCullExpandedRadius * wakeCullExpandedRadius);
     if (!IsSphereVisibleInFrustumSq(centerWS, max(0.0625, radiusSq)))
+    {
+        AddCullTelemetry(1u, 1u);
         return;
+    }
 
     float4 clipRoot = mul(_HectonViewProjection, float4(originWS, 1.0));
     float4 clipCenter = mul(_HectonViewProjection, float4(centerWS, 1.0));
@@ -492,22 +549,44 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     float4 clipSideB = mul(_HectonViewProjection, float4(sideBWS, 1.0));
 
     if (!IsVisibleInFrustum(clipRoot, clipCenter, clipTop, clipSideA, clipSideB))
+    {
+        AddCullTelemetry(1u, 1u);
         return;
+    }
 
     if (IsOccludedByDepth(originWS, centerWS, topWS, sideAWS, sideBWS, clipRoot, clipCenter, clipTop, clipSideA, clipSideB))
+    {
+        AddCullTelemetry(2u, 1u);
         return;
+    }
 
     if (!IsVisibleInDarkness(centerWS))
+    {
+        AddCullTelemetry(1u, 1u);
         return;
+    }
 
     if (!IsVisibleInPeripheralCone(centerWS))
+    {
+        AddCullTelemetry(1u, 1u);
         return;
+    }
 
+    bool appendedVisible = false;
     if (distanceSq <= lod0MaxDistanceSq)
+    {
         _HectonVisibleInstanceIndicesLOD0.Append(instanceIndex);
+        appendedVisible = true;
+    }
 
     if (_HectonFarLodAppendEnabled != 0 && distanceSq >= lod1MinDistanceSq && distanceSq <= lod1MaxDistanceSq)
+    {
         _HectonVisibleInstanceIndicesLOD1.Append(instanceIndex);
+        appendedVisible = true;
+    }
+
+    if (appendedVisible)
+        AddCullTelemetry(3u, 1u);
 }
 
 [numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
@@ -515,6 +594,9 @@ void CullFloraShadowInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
     uint instanceIndex = dispatchThreadId.x;
     if (instanceIndex >= _HectonSourceInstanceCount)
+        return;
+
+    if (!PassesDensityDecimation(instanceIndex))
         return;
 
     float4x4 instanceMatrix = _HectonSourceInstanceMatrices[instanceIndex];

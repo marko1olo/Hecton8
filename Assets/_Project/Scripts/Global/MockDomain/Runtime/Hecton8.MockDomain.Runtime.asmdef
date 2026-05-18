@@ -1,0 +1,25 @@
+{
+    "name": "Hecton8.MockDomain.Runtime",
+    "rootNamespace": "Hecton8.MockDomain.Runtime",
+    "references": [
+        "Hecton8.Global.Contracts",
+        "Hecton8.MockDomain.Contracts",
+        "Unity.Burst",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.burst",
+            "expression": "1.8.0",
+            "define": "H8_BURST_FUNCTION_POINTERS"
+        }
+    ],
+    "noEngineReferences": true
+}

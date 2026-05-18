@@ -10,6 +10,7 @@ using Hecton8.Audio.Propagation;
 using Hecton8.Audio.Virtualization;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -39,27 +40,6 @@ namespace Hecton8.Core
         /// Services with real update lanes should override this with their own counter.
         /// </summary>
         int TickCount => global::System.Environment.TickCount;
-    }
-
-    /// <summary>
-    /// Allocation-free localization contract exposed through GlobalRegistry for Babel UI consumers.
-    /// </summary>
-    public interface IBabelLocalization : ISystem
-    {
-        /// <summary>Active language as a compact stable id.</summary>
-        ushort ActiveLanguageId { get; }
-
-        /// <summary>Resolve UTF-8 bytes for a localization key hash without creating a managed string.</summary>
-        bool TryGetLocalizedSpan(uint hash, out ReadOnlySpan<byte> utf8Bytes);
-
-        /// <summary>Resolve a staged char buffer for TMP SetCharArray without creating a managed string.</summary>
-        bool TryGetLocalizedBuffer(uint hash, out char[] buffer, out int length);
-
-        /// <summary>Inject one integer payload into a localized template using caller-owned storage.</summary>
-        bool TryWriteLocalizedInt(uint templateHash, int value, Span<char> destination, out int length);
-
-        /// <summary>Resolve singular/plural key choice through deterministic integer math.</summary>
-        uint ResolvePluralHash(uint singularHash, uint pluralHash, int value);
     }
 
     /// <summary>
@@ -489,27 +469,32 @@ namespace Hecton8.Core
     /// <summary>
     /// Shared current-metadata payload mandated for flow-field-derived systems.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct CurrentMeta
     {
         /// <summary>
         /// Base world-space current vector before local modifiers.
         /// </summary>
+        [FieldOffset(0)]
         public float3 GlobalBaseVector;
 
         /// <summary>
         /// Scalar applied to the base vector.
         /// </summary>
+        [FieldOffset(12)]
         public float GlobalScale;
 
         /// <summary>
         /// Thermocline / halocline response strength.
         /// </summary>
+        [FieldOffset(16)]
         public float ThermalIntensity;
 
         /// <summary>
         /// Monotonic weather-side time accumulator for wave phase evolution.
         /// </summary>
+        [FieldOffset(20)]
         public float TimeAccumulator;
     }
 
@@ -553,12 +538,17 @@ namespace Hecton8.Core
     /// <summary>
     /// Shared metadata for the global data-vault Gerstner spectrum buffer.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct OceanGerstnerWaveBufferMeta
     {
+        [FieldOffset(0)]
         public int ActiveWaveCount;
+        [FieldOffset(4)]
         public float TimeSeconds;
+        [FieldOffset(8)]
         public int SleepCount;
+        [FieldOffset(12)]
         public int Version;
     }
 
@@ -891,9 +881,24 @@ namespace Hecton8.Core
         /// Consumes the newest valid buffered action matching the requested token.
         /// </summary>
         /// <param name="action">Buffered action token to resolve.</param>
-        /// <param name="maxAgeSeconds">Maximum valid input age in seconds. Values below zero fall back to the service default.</param>
+        /// <param name="maxAgeSeconds">Maximum valid input age converted to the deterministic 60 Hz frame window. Values below zero use the full ten-frame ring.</param>
         /// <returns>True when a valid buffered action was consumed.</returns>
         bool TryConsumeBufferedAction(PlayerBufferedAction action, float maxAgeSeconds);
+
+        /// <summary>
+        /// Checks whether a raw button bit was present in the deterministic ten-frame mask window.
+        /// </summary>
+        bool CheckBufferedInput(uint buttonBit, int frames);
+
+        /// <summary>
+        /// Reads the contextual input block mask staged by UI/gameplay systems.
+        /// </summary>
+        uint GetInputBlockMask();
+
+        /// <summary>
+        /// Writes the contextual input block mask without coupling UI state to movement code.
+        /// </summary>
+        void SetInputBlockMask(uint mask);
 
         /// <summary>
         /// Switches native input routing to gameplay.
@@ -1022,7 +1027,7 @@ namespace Hecton8.Core
     /// Blittable prologue audio transition state routed from visual-sync orchestration into procedural DSP.
     /// Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct AudioTransitionState
     {
         public const byte StageSpace = 1;
@@ -3515,7 +3520,8 @@ namespace Hecton8.Core
     /// Data-vault resident ambient biota state. Velocity lives in BufferID.BiotaVelocities;
     /// AUP truth lives in BufferID.BiotaAUPs.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct AmbientBiotaState
     {
         public const uint FlagActive = 1u << 0;
@@ -3540,7 +3546,8 @@ namespace Hecton8.Core
     /// <summary>
     /// Fixed-size ambient-biota black-box sample. Stored in BufferID.BiotaTelemetryRing.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct AmbientBiotaTelemetryEntry
     {
         [FieldOffset(0)] public AbsoluteUniversePosition CenterAup;

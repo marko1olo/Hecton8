@@ -482,8 +482,9 @@ namespace Hecton8.Dev
 #if UNITY_EDITOR
             string delta = ReadProjectFile("Assets/_Project/Scripts/VoxelDeltaProcessor.cs");
             bool dumpContract =
-                delta.IndexOf("NativeArray<VoxelCarveTelemetryEntry> _blackBox", System.StringComparison.Ordinal) >= 0 &&
-                delta.IndexOf("Dump_WORLD_VOXEL_CAVING.bin", System.StringComparison.Ordinal) >= 0 &&
+                delta.IndexOf("VaultBufferHandle<VoxelCarveTelemetryEntry> _blackBoxHandle", System.StringComparison.Ordinal) >= 0 &&
+                delta.IndexOf("BufferID.ShinobuDeltaCrusherVoxelBlackBox", System.StringComparison.Ordinal) >= 0 &&
+                delta.IndexOf("Dump_SHINOBU_05_VOXEL_CARVE.h8dump", System.StringComparison.Ordinal) >= 0 &&
                 delta.IndexOf("DumpBlackBoxOnce", System.StringComparison.Ordinal) >= 0 &&
                 delta.IndexOf("WriteBlackBoxSample", System.StringComparison.Ordinal) >= 0;
 #else
@@ -492,7 +493,7 @@ namespace Hecton8.Dev
 
             return Require(
                 VoxelDeltaProcessor.DebugVoxelBlackBoxCapacity == 300 &&
-                VoxelDeltaProcessor.DebugVoxelBlackBoxEntryBytes == 64 &&
+                VoxelDeltaProcessor.DebugVoxelBlackBoxEntryBytes == 80 &&
                 finiteGateValid &&
                 dumpContract,
                 "Voxel black-box telemetry contract failed.");

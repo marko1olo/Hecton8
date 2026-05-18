@@ -2,6 +2,20 @@
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 Scope: source-backed orientation map for the event-bus layer.
 
@@ -28,18 +42,18 @@ The first-party queue-backed pattern now used by the migrated buses is:
 
 This removes direct managed string-delegate fanout from the migrated buses and moves runtime dispatch into deterministic late-frame drains.
 
-## Five-Artery Mega-Bus Model
+## Typed Signal-Lane Orientation
 
-The current architecture map classifies the first-party bus surface into exactly five arteries. This is an ownership summary over existing source queues, not a new dispatcher.
+The old five-artery grouping is legacy shorthand only. Current ownership uses the 9-echelon / 85-domain map plus typed `SignalBus<T>` and `NativeQueue` lanes; Core/Env/Player/Base/AI are local reading buckets, not complete architecture coverage or exclusive cross-domain authority.
 
 Authority rule:
 
-- `Core`, `Env`, `Player`, `Base`, and `AI` are the only documented first-party cross-domain communication arteries.
+- `Core`, `Env`, `Player`, `Base`, and `AI` are local documentation buckets, not the only documented first-party cross-domain communication authority.
 - Any direct `Action`, `Func`, C# `event`, `delegate`, or `UnityEvent` chain that crosses a domain boundary is legacy debt unless this document explicitly marks it as local, inspector-only, or modding-only.
-- Local callbacks inside a single owner are not a Mega-Bus lane and must not be documented as cross-domain authority.
+- Local callbacks inside a single owner are not signal-lane authority and must not be documented as cross-domain authority.
 - `HectonEventBus` remains a separate managed modding boundary; it is not the first-party bus authority for gameplay systems.
 
-| Artery | Scope | Representative lanes |
+| Legacy bucket | Scope | Representative lanes |
 |---|---|---|
 | Core | bootstrap, registry, save/load, localization, telemetry, object-pool diagnostics, scene bootstrap, mod registry | `BootstrapEvents`, `GlobalRegistry`, `SaveEvents`, `LocalizationEvents`, `GlobalTelemetryBus`, `ObjectPoolDiagnostics`, `SceneBootstrap`, `ModRegistryEvents` |
 | Env | atmosphere, weather, celestial, biome, acoustic, fluid, pressure, physics, depth, soundscape, random/seismic world pressure | `AtmosphereEvents`, `WeatherEvents`, `CelestialEvents`, `MapMagicBiomeEvents`, `BiomeMatrixEvents`, `AcousticZoneEvents`, `FluidFeedbackEvents`, `HighPressureEvents`, `FatalPressureImplosionEvents`, `PhysicsEventBus`, `DepthZoneEvents`, `SoundscapeEvents`, `RandomEventEvents` |
@@ -47,7 +61,7 @@ Authority rule:
 | Base | construction/base module state, submarine OS, power telemetry, airlock, base integrity, emergency relays, drone fleet telemetry | `ModuleStatusEvents`, `BaseAirlockEvents`, `BaseIntegrityEvents`, `HectonSubmarineOsEvents`, `PowerGridTelemetryEvents`, `EmergencyServiceRelayEvents`, `HectonDroneFleetEvents` |
 | AI | director, quest/progression, narrative/audio-log, first-hour/ending, Atlas-6 directives, ecosystem/fauna pressure | `DirectorAIEvents`, `QuestEvents`, `NarrativeEvents`, `AudioLogEvents`, `FirstHourEvents`, `EndingEvents`, `Atlas6Events`, `SargassumGlobalDragManager` |
 
-## Queue-Backed Buses Verified In Code
+## Queue-Backed Buses Observed In Static Source
 
 | Bus | Payload | Listener interface | Flush owner |
 |---|---|---|---|
@@ -96,7 +110,7 @@ Primary first-party event files currently tied to this topology:
 - `Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs`
 - `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs`
 
-## Verified Constraints From Project Instructions
+## Constraints From Project Instructions
 
 | Constraint | Source |
 |---|---|

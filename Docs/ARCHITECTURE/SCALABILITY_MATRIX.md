@@ -1,8 +1,50 @@
 # Scalability Matrix
 
-Date: 2026-05-12
-Status: SOURCE VERIFIED / RUNTIME PENDING
+Date: 2026-05-18
+Status: SOURCE PATCHED / FULL BUILD BLOCKED OUTSIDE SCALABILITY / RUNTIME PROFILER PENDING
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Owners: `DistanceMath`, `GlobalRegistry`, `GameBootstrapper`, shader keywords
+
+## Continuous Scalability Contract
+
+`HomeostasisBrain` now publishes the authoritative continuous scalar through `ScalabilityStateDTO`:
+
+| Offset | Field | Meaning |
+|---:|---|---|
+| 0 | `GlobalQualityWeight` | `1.0` visual overkill, `0.0` minimum survival |
+| 4 | `FractionalTimeSlice` | `lerp(0.1, 1.0, GlobalQualityWeight)` for smooth logic cadence |
+| 8 | `VramPressure` | normalized graphics-memory pressure |
+| 12 | `ThermalIndex` | normalized heat/downclock risk |
+
+Runtime consumers must prefer this float contract over new binary quality branches. The dictator also pushes `_GlobalQualityWeight` / `_H8GlobalQualityWeight` shader globals and sends `lerp(0.5, 1.0, GlobalQualityWeight)` to `IDynamicResolutionRuntime` when the scalar changes.
+
+The dictator owns a dedicated 300-frame telemetry ring:
+
+| Offset | Field | Meaning |
+|---:|---|---|
+| 0 | `Timestamp` | Stopwatch tick |
+| 8 | `RawFrameMs` | measured frame time |
+| 12 | `SmoothedFrameMs` | EWMA-derived frame time |
+| 16 | `GlobalQualityWeight` | current continuous quality scalar |
+| 20 | `VramPressure` | normalized VRAM pressure |
+| 24 | `Flags` | folded active pressure bits |
+| 28 | `_pad0` | explicit 32-byte alignment padding |
+
+Current verification: scoped static scans were reported for the scalability files, but this document does not link a fresh scan artifact. Treat the result as `PENDING VERIFICATION` until the command, timestamp, and output are recorded. Full `Hecton8.Core.csproj` and `Hecton8.Editor.csproj` builds were historically blocked outside this domain by `Assets/_Project/Scripts/PlayerBuilder.cs` missing Construction/Habitat DTOs; rerun current compile before using that blocker as live status. Profiler/Unity Play Mode capture is still pending.
 
 ## Math Precision Paths
 
@@ -96,8 +138,38 @@ Recovery is one step per 30 frames for VRAM pressure and one step per 10 stable 
 
 No runtime evidence exists in this document. Current status remains SOURCE DEFINED / RUNTIME PENDING.
 
+## SHINOBU_44 Continuous Dictator Delta
+
+Runtime authority is the continuous `GlobalQualityWeight` exported by `HomeostasisBrain`, not a tier switch. The human-readable tier table above is documentation vocabulary only; runtime consumers must treat it as curve endpoints and interpolate using the 0.0-1.0 scalar.
+
+The dictator writes its 300-frame forensic ring through `BufferID.ShinobuScalabilityOscilloscope`. Hot-path samples are stored by `VaultBufferHandle.GetElementAsRef` into the 32-byte `ScalabilityTelemetryEntry`; `NativeArray` views are reserved for cold clear, dump, and editor oscilloscope copy. A frame over 20 ms while weight is at minimum survival triggers `Docs/AgentLogs/Dump_SCALABILITY_DICTATOR.bin`.
+
+`MockHeavyLoadSignal.FrameSpikeMs` is applied immediately after the Stopwatch frame sample and before FPS EWMA/history updates. The fake pressure therefore flows through the same monitor, telemetry, DRS, and oscilloscope path as a real frame-time spike, and is not added a second time in the raw SHI solver. The canonical blind-test payload is 20 ms; emergency mock profiles store that value with flags disabled until the tuner or CSV arms the signal. First-time partial CSV overrides remain lane-specific: `mock_vram_pressure` does not inherit the dormant 20 ms spike unless the mock was already armed or a frame-spike lane is explicitly supplied.
+
+The hot state writer resolves only `ShinobuScalabilitySystemHealth` and `ShinobuScalabilityState`. Mock load, mock terrain proof, CSV scratch, and telemetry each own separate handle-resolution helpers so cold/editor support buffers do not leak into the per-frame state path.
+
+`_MATH_LOD_LOW` is retained as a shader scalar for compatibility, but it is not binary at runtime. SHINOBU_44 publishes a continuous low-weight: polynomial pressure from `GlobalQualityWeight`, polynomial pressure from `SystemHealthIndex01`, and a `math.step` survival floor below about `0.1`.
+
+Forced quality overrides are test/tuning controls, not a second quality mode. Releasing an override must resume from the current scalar and recover through slow release; it must not reseed the controller and jump upward.
+
+The live editor oscilloscope uses a separate sample count so cleared entries in the fixed 300-frame forensic ring are not presented as valid zero-quality samples immediately after boot.
+
+The oscilloscope copy path also rejects invalid frame samples after both raw and smoothed lanes are checked. If neither lane is finite and positive, the graph receives the current target frame time rather than NaN or zero.
+
+The human tuning facade is backed by `BufferID.ShinobuScalabilityTunerState`, not editor-local truth. `ScalabilityTuningDTO` is 16 bytes: offset 0 `TargetFrameMs`, offset 4 `EmergencyThreshold`, offset 8 `HysteresisReleaseFrames`, offset 12 `Flags`. Hot runtime mirrors these values into scalar fields after a tuner/CSV change.
+
+Frame-time samples that are not finite and positive are not accepted as proof of headroom. The dictator falls back to target frame time for controller, DTO, and DRS publication rather than allowing cleared `0ms` state to accelerate recovery.
+
+Deterministic stochastic decimation has exact endpoints: `GlobalQualityWeight <= 0` executes no optional stochastic work, `>= 1` executes all optional stochastic work, and intermediate weights use strict probability comparison.
+
+The exported stochastic threshold is saturated at the public boundary. Consumers never need to defend against cold/reset values outside `0.0-1.0`; they still must treat the scalar as a continuous probability, not a mode bit.
+
+The 300-frame telemetry ring stores only finite positive frame samples. Invalid, zero, or negative frame-time input is replaced with the current target frame time before persistence, keeping blackbox evidence useful during boot, reset, and editor-forced transitions.
+
+The global culling multiplier is continuous as well: it lerps from `1.0` toward the configured low multiplier using the same low-pressure curve that drives `_MATH_LOD_LOW`. Binary culling mask bits are compatibility/telemetry only.
+
 ## Rule
 
 Performance is currency. The low path exists to buy stable presentation on weak hardware. The high path exists to spend that currency on visible detail. Neither path may change deterministic gameplay state unless the source contract explicitly says it is presentation-only.
 
-STATUS: SOURCE VERIFIED / RUNTIME PENDING
+STATUS: SOURCE PATCHED / FULL BUILD BLOCKED OUTSIDE SCALABILITY / RUNTIME PROFILER PENDING

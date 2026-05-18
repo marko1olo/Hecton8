@@ -2,7 +2,22 @@
 
 Date: 2026-05-17
 Owner: NET_SYNC_MERKLE_ARCHITECT / BACKEND_ENGINEER
-Status: NETWORK PROTOCOL READY - OFFLINE SIM VERIFIED; UNITY RUNTIME PENDING
+Status: OFFLINE STATIC/SIM PASSED; UNITY RUNTIME PENDING
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Evidence class: STATIC_DOC / OFFLINE_SIM / STATIC_SOURCE
 
 This document defines the lockstep, Merkle-diff, rollback, and AUP packet contract for future co-op runtime work. It is not Unity Console, Play Mode, profiler, GCMonitor, player-build, or scene-wiring proof.
@@ -311,7 +326,7 @@ Baseline result:
 
 | Metric | Result |
 |---|---:|
-| Status | NETWORK PROTOCOL READY |
+| Status | OFFLINE_SIM_PASS |
 | Sent packets | 1296 |
 | Lost packets | 78 |
 | Delivered packets | 1218 |
@@ -333,7 +348,7 @@ Rollback stress result:
 
 | Metric | Result |
 |---|---:|
-| Status | NETWORK PROTOCOL READY |
+| Status | OFFLINE_SIM_PASS |
 | Rollback events | 1190 |
 | Max rollback depth | 4 ticks |
 | Too-old corrections | 0 |
@@ -353,7 +368,7 @@ Four-client sanity result:
 
 | Metric | Result |
 |---|---:|
-| Status | NETWORK PROTOCOL READY |
+| Status | OFFLINE_SIM_PASS |
 | Sent packets | 7776 |
 | Lost packets | 390 |
 | Payload estimate | 161422 B/s |
@@ -380,7 +395,7 @@ Gate output:
 - Report: `Docs/Reports/Net_Protocol_Gate_Report.md`
 - Scenarios: baseline, rollback stress, four-client sanity
 - Unit tests: 8
-- Status: `NETWORK PROTOCOL READY`
+- Status: `OFFLINE_SIM_PASS`
 
 Regression test coverage:
 
@@ -407,7 +422,7 @@ Current stress result:
 
 | Metric | Result |
 |---|---:|
-| Status | NETWORK PROTOCOL READY |
+| Status | OFFLINE_SIM_PASS |
 | Sent packets | 7848 |
 | Lost packets | 672 |
 | Delivered packets | 7176 |
@@ -420,13 +435,13 @@ Current stress result:
 | Float hash audit | PASS |
 | Last MasterStateHash | `0x3128242EF58ACE91` |
 
-Current data-truth locks:
+Historical 2026-05-17 data-truth locks, superseded for binary hygiene by Batch008 RECHECK2:
 
-- `VerifyNetSyncMerkleProtocol.py`: `STRUCT_COUNT=6`, `DOMAIN_LABELS=85`, `FNV_LABELS=107`, `BINARY_PAYLOADS_ALIGNED=46`, `DATAGRAM_CEILING=1200`, `HEADER_CRC16_SAMPLE=0x220C`, `JITTER_SIM_STATUS=NETWORK PROTOCOL READY`.
-- `VerifyMetricPhiDataTruth.py`: `checks=37`, `failed=0`, `binary_files=46`, `unaligned=0`, `struct_format_sites=133`, `endian_failures=0`.
+- `VerifyNetSyncMerkleProtocol.py`: `STRUCT_COUNT=6`, `DOMAIN_LABELS=85`, `FNV_LABELS=107`, historical binary-alignment payload count `46`, `DATAGRAM_CEILING=1200`, `HEADER_CRC16_SAMPLE=0x220C`, `JITTER_SIM_STATUS=OFFLINE_SIM_PASS`.
+- `VerifyMetricPhiDataTruth.py`: `checks=37`, `failed=0`, historical binary file count `46`, historical unaligned count `0`, `struct_format_sites=133`, `endian_failures=0`. Batch008 RECHECK2 reports current global binary hygiene `BINARY_HYGIENE_FAILED`, `binaryCount=65`, `misalignedCount=16`: product payload `Data/Balance/Baked/Babel_Dictionary.h8bin` plus 15 Bakery editor/plugin fixtures.
 - `VerifyH8HashCollisions.py`: 1,018 records, 0 FNV collisions.
 - `CraftingEconomyMonteCarlo.py --steps 1000000`: `profit_steps=0`; value, mass, and energy deltas are negative.
-- `NetProtocolGate.py`: `NETWORK PROTOCOL READY`, 3 scenarios, 8 unit tests.
+- `NetProtocolGate.py`: offline simulation/static gate pass, 3 scenarios, 8 unit tests.
 - Python cache hygiene: NET-owned cache entries were absent during final scan, and the final broad `Tools` cache readback reported `CACHE_FILES_LEFT=0`, `PYCACHE_DIRS_LEFT=0`. Stable global cache-zero is blocked while unrelated Python agents continue writing `Tools/__pycache__`.
 
 ## Regression Model
@@ -450,4 +465,4 @@ Correctness: simulator proves deterministic replay under the tested 200 ms / 5% 
 - Merkle leaf hash mismatch after applying delta: discard back buffer and request full snapshot.
 - Input ring slot tick mismatch: reset slot, clear masks, never merge stale input.
 
-STATUS: NETWORK PROTOCOL READY - OFFLINE SIM VERIFIED; UNITY RUNTIME PENDING
+STATUS: OFFLINE STATIC/SIM PASSED; UNITY RUNTIME PENDING

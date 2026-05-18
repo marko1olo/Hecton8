@@ -82,7 +82,7 @@ namespace Hecton8.AI
         public bool forceRetreat;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public readonly struct SpeciesCognitionTuning
     {
         public SpeciesCognitionTuning(
@@ -103,16 +103,22 @@ namespace Hecton8.AI
             LightReactionDotThreshold = math.clamp(lightReactionDotThreshold, -1f, 1f);
             LightFrenzySpeedMultiplier = math.max(1f, lightFrenzySpeedMultiplier);
             LightReactionFearBoost01 = math.saturate(lightReactionFearBoost01);
+            _pad0 = 0;
+            _pad1 = 0;
+            _pad2 = 0;
         }
 
-        public float HungerWeight { get; }
-        public float FearWeight { get; }
-        public float CuriosityWeight { get; }
-        public FaunaLightReactionMode LightReactionMode { get; }
-        public float LightReactionRangeMeters { get; }
-        public float LightReactionDotThreshold { get; }
-        public float LightFrenzySpeedMultiplier { get; }
-        public float LightReactionFearBoost01 { get; }
+        public readonly float HungerWeight;
+        public readonly float FearWeight;
+        public readonly float CuriosityWeight;
+        public readonly float LightReactionRangeMeters;
+        public readonly float LightReactionDotThreshold;
+        public readonly float LightFrenzySpeedMultiplier;
+        public readonly float LightReactionFearBoost01;
+        public readonly FaunaLightReactionMode LightReactionMode;
+        private readonly byte _pad0;
+        private readonly byte _pad1;
+        private readonly byte _pad2;
     }
 
     public readonly struct FaunaInteractionResponse
@@ -145,7 +151,7 @@ namespace Hecton8.AI
     [CreateAssetMenu(fileName = "FaunaDataTemplate_", menuName = "Hecton8/Fauna/Data Template")]
     public sealed class FaunaDataTemplate : ScriptableObject
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         public struct RuntimeDescriptor
         {
             public int SpeciesId;

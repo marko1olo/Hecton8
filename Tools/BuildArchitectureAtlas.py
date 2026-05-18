@@ -296,33 +296,30 @@ def scan_source() -> dict[str, object]:
 
         cached = cached_files.get(path_rel)
         cache_entry_valid = isinstance(cached, dict) and cached.get("first_party") == first_party
-        if cache_entry_valid and changed_paths is not None and path_rel not in changed_paths:
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+
+        cache_metadata_valid = (
+            cache_entry_valid
+            and cached.get("size") == stat.st_size
+            and cached.get("mtime_ns") == stat.st_mtime_ns
+        )
+        if cache_metadata_valid and (changed_paths is None or path_rel not in changed_paths):
             analysis = cached.get("analysis")
-            new_cache_files[path_rel] = cached
         else:
             try:
-                stat = path.stat()
+                analysis = analyze_source_file(path, path_rel, first_party)
             except OSError:
                 continue
 
-            if (
-                cache_entry_valid
-                and cached.get("size") == stat.st_size
-                and cached.get("mtime_ns") == stat.st_mtime_ns
-            ):
-                analysis = cached.get("analysis")
-            else:
-                try:
-                    analysis = analyze_source_file(path, path_rel, first_party)
-                except OSError:
-                    continue
-
-            new_cache_files[path_rel] = {
-                "size": stat.st_size,
-                "mtime_ns": stat.st_mtime_ns,
-                "first_party": first_party,
-                "analysis": analysis,
-            }
+        new_cache_files[path_rel] = {
+            "size": stat.st_size,
+            "mtime_ns": stat.st_mtime_ns,
+            "first_party": first_party,
+            "analysis": analysis,
+        }
 
         if not isinstance(analysis, dict):
             continue
@@ -662,6 +659,12 @@ def append_vram(out: list[str], vram: dict[str, object]) -> None:
 
 
 def append_sherst(out: list[str], hits: list[tuple[str, int, str]]) -> None:
+    def sanitize_text_cell(text: str) -> str:
+        safe = text.replace("|", "/")
+        for prefix in ("Assets/", "Docs/", "Packages/", "ProjectSettings/", "Tools/", ".agents-skills/"):
+            safe = safe.replace(prefix, prefix.replace("/", "&#47;"))
+        return safe
+
     out.append("## SHERST Wall Of Shame")
     out.append("")
     out.append(
@@ -673,7 +676,7 @@ def append_sherst(out: list[str], hits: list[tuple[str, int, str]]) -> None:
     out.append("|---|---:|---|")
     if hits:
         for path, line, text in hits:
-            out.append(f"| `{path}` | {line} | {text.replace('|', '/')} |")
+            out.append(f"| `{path}` | {line} | {sanitize_text_cell(text)} |")
     else:
         out.append("| none | 0 | no active matches |")
     out.append("")
@@ -721,9 +724,11 @@ def append_phi(out: list[str], source: dict[str, object], exact_exists: bool, ne
     out.append("")
 
 
-def build_markdown(data: dict[str, object] | None = None) -> str:
+def build_markdown(data: dict[str, object] | None = None, generated_at: datetime | None = None) -> str:
     if data is None:
         data = collect_atlas_data()
+    if generated_at is None:
+        generated_at = datetime.now()
 
     asmdefs = data["asmdefs"]
     source = data["source"]
@@ -736,12 +741,32 @@ def build_markdown(data: dict[str, object] | None = None) -> str:
     out: list[str] = []
     out.append("# HECTON-8 Architecture Atlas - Dependency Graph")
     out.append("")
-    out.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    out.append("Status: ATLAS VERIFIED PENDING RUNTIME VERIFICATION")
+    out.append(f"Generated: {generated_at.strftime('%Y-%m-%d %H:%M:%S')}")
+    out.append(f"Date: {generated_at.strftime('%Y-%m-%d')}")
+    out.append("Status: ATLAS GENERATED STATIC SOURCE / ATLASCHECK SEPARATE GATE REQUIRED / RUNTIME PENDING")
     out.append(
         "Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PY_TOOL. "
         "No Unity Editor, Play Mode, Memory Profiler, Frame Debugger, or player build evidence is claimed here."
     )
+    out.append("")
+    out.append("<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->")
+    out.append("## 2026-05-17 R4 Interior Actuality Boundary")
+    out.append("")
+    out.append("This document is active only where it agrees with:")
+    out.append("")
+    out.append("- `Docs/README.md`")
+    out.append("- `Docs/DOC_GOVERNANCE.md`")
+    out.append("- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`")
+    out.append("- current source files")
+    out.append("- fresh verification logs and artifacts")
+    out.append("")
+    out.append(
+        "No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, "
+        "Frame Debugger, player build, save/load route, or visual-route proof is implied unless "
+        "this document links a fresh evidence artifact. Historical counters and older version claims "
+        "inside this file are subordinate to the current authority spine above."
+    )
+    out.append("<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->")
     out.append("")
 
     append_source_authority(out)
@@ -811,10 +836,8 @@ def build_markdown(data: dict[str, object] | None = None) -> str:
     out.append("- `python Tools/BuildArchitectureAtlas.py`")
     out.append("- `python Tools/AtlasCheck.py`")
     out.append("- `python -m py_compile Tools/BuildArchitectureAtlas.py Tools/AtlasCheck.py`")
-    out.append(
-        '- `rg --files | rg "\\.sln$|\\.csproj$"` returned no project files during this pass, '
-        "so C# compile verification is not available from current root state."
-    )
+    out.append("- C# compile verification is outside this atlas; run Unity import/Console and serial CLI builds as separate evidence.")
+    out.append("- This generated atlas is not `VERIFIED` unless `Tools/AtlasCheck.py` exits `0` after generation.")
     out.append("")
 
     out.append("## Residual Risk")
@@ -833,7 +856,9 @@ def build_markdown(data: dict[str, object] | None = None) -> str:
     return "\n".join(out)
 
 
-def build_json_payload(data: dict[str, object]) -> dict[str, object]:
+def build_json_payload(data: dict[str, object], generated_at: datetime | None = None) -> dict[str, object]:
+    if generated_at is None:
+        generated_at = datetime.now()
     asmdefs = data["asmdefs"]
     source = data["source"]
     lanes = data["queue_lanes"]
@@ -868,9 +893,9 @@ def build_json_payload(data: dict[str, object]) -> dict[str, object]:
 
     return {
         "schema_version": 1,
-        "status": "ATLAS VERIFIED PENDING RUNTIME VERIFICATION",
+        "status": "ATLAS GENERATED STATIC SOURCE / ATLASCHECK SEPARATE GATE REQUIRED / RUNTIME PENDING",
         "evidence_class": "STATIC_SOURCE/STATIC_DOC/FILESYSTEM/PY_TOOL",
-        "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generated": generated_at.strftime("%Y-%m-%d %H:%M:%S"),
         "summary": {
             "source_file_count": source["source_file_count"],
             "source_line_count": source["total_lines"],
@@ -927,8 +952,9 @@ def build_json_payload(data: dict[str, object]) -> dict[str, object]:
 
 def main() -> int:
     data = collect_atlas_data()
-    OUTPUT.write_text(build_markdown(data), encoding="utf-8")
-    JSON_OUTPUT.write_text(json.dumps(build_json_payload(data), indent=2), encoding="utf-8")
+    generated_at = datetime.now()
+    OUTPUT.write_text(build_markdown(data, generated_at), encoding="utf-8")
+    JSON_OUTPUT.write_text(json.dumps(build_json_payload(data, generated_at), indent=2), encoding="utf-8")
     print(f"WROTE {rel(OUTPUT)}")
     print(f"WROTE {rel(JSON_OUTPUT)}")
     return 0

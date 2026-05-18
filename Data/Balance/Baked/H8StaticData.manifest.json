@@ -14,12 +14,13 @@
     "<IIIffffIIII",
     "<IIIfffffIII"
   ],
-  "recordLayout": "lookup records are H8StaticDataLookupEntry; payload records are Pack=1 fixed-size balance DTOs",
+  "recordLayout": "lookup records and payload records are sequential fixed-size balance DTOs; BabelIndexDTO is 16-byte aligned",
   "runtimeContract": "static balance data is read by offset/type from H8StaticDataLookupEntry without runtime JSON parsing",
-  "sha256": "54163C6F26E36CE43AD49D9526C770A7D2F1ED67F71228B971AE7D06049A6BC1",
+  "sha256": "3786DACF17D2CCC4344E676ABDF91A500D2D9C67195AA33B31ECEA56822B0348",
   "sourceEvidence": [
-    "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs:H8StaticDataHeader Pack=1 Size=64",
-    "Assets/_Project/Scripts/Core/Data/H8DataBaker.cs:WriteStaticData sets LittleEndianFlag"
+    "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs:Sequential fixed-size DTO contracts",
+    "Assets/_Project/Scripts/Core/Data/H8DataBaker.cs:WriteStaticData stores current Babel payload CRC"
   ],
-  "status": "BALANCE_STATIC_ENDIAN_VERIFIED"
+  "status": "BALANCE_STATIC_ENDIAN_VERIFIED",
+  "babelCrc32": "0x199CAC7A"
 }

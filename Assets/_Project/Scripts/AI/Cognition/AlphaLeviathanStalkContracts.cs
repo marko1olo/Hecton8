@@ -75,7 +75,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Blittable AUP payload local to AI/Cognition so the solver does not depend on World runtime classes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct AlphaLeviathanAup
     {
         [FieldOffset(0)] public long GridX;
@@ -102,73 +102,150 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// DataVault-owned truth state for one Alpha Leviathan slot.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 144)]
+    [StructLayout(LayoutKind.Explicit, Size = 192)]
     public struct AlphaLeviathanCognitionState
     {
+        [FieldOffset(0)]
         public AlphaLeviathanAup LeviathanAup;
+        [FieldOffset(48)]
         public AlphaLeviathanAup TargetAnchorAup;
+        [FieldOffset(96)]
         public float3 Forward;
+        [FieldOffset(108)]
         public float3 PreviousSteeringDirection;
+        [FieldOffset(120)]
         public float AgressionLevel01;
+        [FieldOffset(124)]
         public float PhaseStartSeconds;
+        [FieldOffset(128)]
         public uint LastShiftFrameId;
+        [FieldOffset(132)]
         public uint StateHash;
+        [FieldOffset(140)]
         public ushort Slot;
+        [FieldOffset(142)]
         public byte CurrentPhase;
+        [FieldOffset(143)]
         public byte Flags;
+        [FieldOffset(136)]
         public uint Reserved0;
+        [FieldOffset(144)]
+        private ulong _pad1;
+        [FieldOffset(152)]
+        private ulong _pad2;
+        [FieldOffset(160)]
+        private ulong _pad3;
+        [FieldOffset(168)]
+        private ulong _pad4;
+        [FieldOffset(176)]
+        private ulong _pad5;
+        [FieldOffset(184)]
+        private ulong _pad6;
     }
 
     /// <summary>
     /// DataVault-owned sensory row consumed by tangent-orbit steering.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 176)]
+    [StructLayout(LayoutKind.Explicit, Size = 176)]
     public struct AlphaLeviathanSensoryStimulus
     {
+        [FieldOffset(0)]
         public AlphaLeviathanAup PlayerAup;
+        [FieldOffset(48)]
         public AlphaLeviathanAup PingAup;
+        [FieldOffset(96)]
         public float3 PlayerForward;
+        [FieldOffset(108)]
         public float3 SdfGradient;
+        [FieldOffset(120)]
         public float PlayerNoise01;
+        [FieldOffset(124)]
         public float NoiseThreshold01;
+        [FieldOffset(128)]
         public float HeadlightDot;
+        [FieldOffset(132)]
         public float FogDistanceMeters;
+        [FieldOffset(136)]
         public float DeltaTime;
+        [FieldOffset(140)]
         public float SystemStress01;
+        [FieldOffset(144)]
         public float SonarPingAgeSeconds;
+        [FieldOffset(148)]
         public float SonarPingIntensity01;
+        [FieldOffset(152)]
         public float CurrentTimeSeconds;
+        [FieldOffset(156)]
         public uint RuntimeFlags;
+        [FieldOffset(160)]
         public uint ObservedShiftFrameId;
+        [FieldOffset(164)]
         public uint Reserved0;
+        [FieldOffset(168)]
         public uint Reserved1;
+        [FieldOffset(172)]
+        private uint _pad0;
     }
 
     /// <summary>
     /// DataVault-owned steering output row produced by <see cref="LeviathanStalkJob"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 88)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct AlphaLeviathanSteeringOutput
     {
+        [FieldOffset(0)]
         public float3 DesiredDirection;
+        [FieldOffset(12)]
         public float3 TargetRuntimeOffsetMeters;
+        [FieldOffset(24)]
         public float DesiredRingDistanceMeters;
+        [FieldOffset(28)]
         public float DistanceToAnchorMeters;
+        [FieldOffset(32)]
         public float BioluminescenceIntensity;
+        [FieldOffset(36)]
         public float AgressionLevel01;
+        [FieldOffset(40)]
         public uint StateHash;
+        [FieldOffset(44)]
         public float SdfContourWeight01;
+        [FieldOffset(48)]
         public float WakeSiltIntensity01;
+        [FieldOffset(52)]
         public float VisualOverkill01;
+        [FieldOffset(56)]
         public float RecommendedCadenceSeconds;
+        [FieldOffset(60)]
         public float VisorSaltCrystalGrowth01;
+        [FieldOffset(64)]
         public float HullDentImpulse01;
+        [FieldOffset(68)]
         public float SubsurfaceScatterPulse01;
+        [FieldOffset(72)]
         public float ParticleOverkillBudget01;
+        [FieldOffset(76)]
         public float PredatorSilhouetteNoise01;
+        [FieldOffset(80)]
         public ushort Slot;
+        [FieldOffset(82)]
         public byte CurrentPhase;
+        [FieldOffset(83)]
         public byte Flags;
+        [FieldOffset(84)]
         public byte IntentFlags;
+        [FieldOffset(85)]
+        private byte _pad0;
+        [FieldOffset(86)]
+        private ushort _pad1;
+        [FieldOffset(88)]
+        private ulong _pad2;
+        [FieldOffset(96)]
+        private ulong _pad3;
+        [FieldOffset(104)]
+        private ulong _pad4;
+        [FieldOffset(112)]
+        private ulong _pad5;
+        [FieldOffset(120)]
+        private ulong _pad6;
     }
 }

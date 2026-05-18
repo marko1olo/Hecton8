@@ -13,6 +13,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.Scripting;
 #if UNITY_EDITOR
@@ -24,7 +25,7 @@ using DebugSignalKind = Hecton8.Core.Contracts.Signals.DebugSignalKind;
 namespace Hecton8.Core.Diagnostics.Visuals
 {
     [Preserve]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
+    [StructLayout(LayoutKind.Sequential, Size = 80)]
     public struct ArchitectEyeQuadInstance
     {
         public float4 CenterHalfX;
@@ -35,7 +36,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
     }
 
     [Preserve]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct ArchitectEyeBlackBoxEntry
     {
         public uint Frame;
@@ -56,7 +57,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
     }
 
     [Preserve]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct ArchitectEyeRuntimeState
     {
         public int TickPhase;
@@ -337,7 +338,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (!IsDiagnosticsRuntimeAllowed())
                 return;
 
-            if (UnityEngine.Input.GetKeyDown(KeyCode.F12))
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.f12Key.wasPressedThisFrame)
             {
                 _enabled = !_enabled;
                 if (!_enabled)

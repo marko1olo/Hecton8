@@ -2,6 +2,21 @@
 
 Date: 2026-05-17
 Status: STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION  
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Owner prompt: MODDING_API_SCHEMA_BUILDER  
 Source file: `Assets/_Project/Scripts/ModdingAPI/HectonAPI.cs`  
 Companion schema: `Docs/Modding/Signal_Schema.json`
@@ -11,7 +26,7 @@ Companion schema: `Docs/Modding/Signal_Schema.json`
 Source-backed facade facts:
 
 - 16 public nested API surfaces under `HectonAPI`.
-- 34 public static facade methods.
+- 35 public static facade methods.
 - 2 public static facade properties.
 - 9 internal static methods exist in public nested classes but are not public mod rights.
 
@@ -21,7 +36,7 @@ Source-backed facade facts:
 |---|---|---|---|
 | `Events` | `Subscribe`, `SubscribeNative`, `SubscribeProjected`, `OnPlayerSpawned`, `OnBiomeChanged`, `Unsubscribe`, `Publish` | unmanaged event/read-only projection/mod-owned payload | No direct first-party `SignalBus<T>` or managed `HectonEvent` subscription for mods. |
 | `Input` | `GetButtonMask`, `HasButtonMask` | read-only frame mask | No Input System objects or action references. |
-| `Commands` | `Request`, `RequestAup`, `RequestRenderInstance` | engine-validated write request | Mods request; first-party kernels execute or reject. |
+| `Commands` | `RequestFuture`, `Request`, `RequestAup`, `RequestRenderInstance` | engine-validated write request | Mods request; first-party kernels execute or reject. |
 | `Resources` | `Proxy`, `TryResolvePrefab`, `TryResolveAudioClip`, `TryResolveTexture` | hash-only resource resolution | No Unity asset reference leaves the engine. |
 | `Telemetry` | `Publish` | mod marker write | Active mod execution scope required; hash plus scalar only. |
 | `Items` | `RegisterCustomItem`, `TryFindItem` | cold catalog overlay | Runtime overlay only; no authored asset mutation. |
@@ -56,6 +71,7 @@ RegisterRecipe
 RegisterRecycleYield
 RegisterSetting
 RegisterSetting
+RequestFuture
 Request
 RequestAup
 RequestRenderInstance

@@ -2,6 +2,14 @@
 
 Date: 2026-05-12
 Status: HISTORICAL STATIC AUDIT / SUPERSEDED COUNTERS / RUNTIME PENDING
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Auditor: DOC_CHRONOS
 
 ## 2026-05-13 Supersession
@@ -54,7 +62,7 @@ Forbidden write scope honored:
 
 The current source truth is `GlobalSignals.cs`, not the old prose-only five-artery event bus.
 
-`GlobalSignals` owns 33 typed `NativeQueue<T>` lanes. Payloads are fixed 32/64-byte structs. Thirteen lanes expose `NativeQueue<T>.ParallelWriter` for MPSC producer jobs. `SpscSignalRingBuffer<T>` exists for SPSC-only cases.
+R21 supersession note: this May 12 report's older 33-lane statement is historical. Current static source orientation sees `73` direct `CreateQueue(...)` native queue slots in `InitializeAllQueues()`, `133` typed `SignalBus<T>.EnsureInitialized()` lanes in `InitializeCategorySignalLanes()`, and `DebugSignal` through `ConfigureDebugSignalLane()`. Rerun before exact use. Runtime/profiler proof remains absent.
 
 ## Aligned Struct Hot List
 
@@ -78,10 +86,10 @@ Critical aligned records found by static source scan:
 
 | File | Line | Claim |
 |---|---:|---|
-| `Docs/AgentLogs/LOG_CORE_SCAVENGING_CRAFTING.md` | 44 | task 15 blocked because project build was not clean outside domain |
-| `Docs/AgentLogs/Rationale_CORE_CHUNK_STREAMING.md` | 49 | compile blocked by external missing symbols, final blocker `SurvivalPhysiologyScalarResult` |
-| `Docs/AgentLogs/Rationale_UI_DIEGETIC_HUD.md` | 118 | task 15 marked blocked after third build attempt |
-| `Docs/AgentLogs/Rationale_WEATHER_THERMODYNAMICS.md` | 99 | build blocked by unrelated missing core/native symbols |
+| `Docs/Archive/Batch002/AgentLogs/LOG_CORE_SCAVENGING_CRAFTING.md` | 44 | task 15 blocked because project build was not clean outside domain |
+| `Docs/Archive/Batch002/AgentLogs/Rationale_CORE_CHUNK_STREAMING.md` | 49 | compile blocked by external missing symbols, final blocker `SurvivalPhysiologyScalarResult` |
+| `Docs/Archive/Batch002/AgentLogs/Rationale_UI_DIEGETIC_HUD.md` | 118 | task 15 marked blocked after third build attempt |
+| `Docs/Archive/Batch002/AgentLogs/Rationale_WEATHER_THERMODYNAMICS.md` | 99 | build blocked by unrelated missing core/native symbols |
 
 This report lists the debt but does not edit those logs.
 
@@ -221,7 +229,7 @@ Target docs with non-ASCII content:
 | Old lie | Code truth |
 |---|---|
 | "MMF-backed save paging is current." | `SaveBinaryStorage` uses FileStream plus cached native read windows; no source `MemoryMappedFile` usage was found. |
-| "Event bus is five arteries." | `GlobalSignals.cs` defines 33 typed NativeQueue lanes and 13 `ParallelWriter` producers. |
+| "Event bus is five arteries." | Historical May 12 correction: `GlobalSignals.cs` was already typed/source-backed. R21 static scan supersedes the old 33-lane count with `73` direct queues, `133` typed `SignalBus<T>` lanes, and `DebugSignal`; rerun before exact use. |
 | "Architecture matrix is 80 domains." | `Docs/Actual Domains of Project.txt` contains domain ids 1 through 85. |
 
 ## Omega Reverification

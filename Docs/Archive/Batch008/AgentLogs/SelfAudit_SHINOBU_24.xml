@@ -1,0 +1,44 @@
+<SELF_AUDIT agent="SHINOBU_24" date="2026-05-18" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_BLOCK">
+  <TASK_MATRIX total="20">
+    <TASK id="01" status="PASS">Binary archaeology fallback exists through aligned metadata DTOs and emergency mock scan data; no managed dictionary or split path in scanner hot loop.</TASK>
+    <TASK id="02" status="PASS">Physics queries eradicated from SHINOBU_24 runtime; scanner uses vault-backed bucket arrays plus line/sphere math.</TASK>
+    <TASK id="03" status="PASS">ActiveScanStateDTO uses raw fields and ref mutation via NativeArray memory; no get/set properties on array DTOs.</TASK>
+    <TASK id="04" status="PASS">ScannableEntityMetadataDTO remains 16 bytes; support DTOs were reordered for 8-byte ARM64 lane alignment.</TASK>
+    <TASK id="05" status="PASS">MockSpatialHashGrid, MockScannerInputSignal, MockToolTransformSignal, MockToolTransformSignalJob, and MockSdfOcclusionZoneDTO isolate flora/fauna/tool dependencies.</TASK>
+    <TASK id="06" status="PASS">ScannerSpatialQueryJob is Burst-compatible, bounded by max cell/candidate settings, and uses O(1) bucket lookup without Unity physics.</TASK>
+    <TASK id="07" status="PASS">ScannerScanProgression mutates unmanaged active state and decays when target lock is lost.</TASK>
+    <TASK id="08" status="PASS">Dear Lie occlusion uses one midpoint SDF sphere sample instead of a wall raycast.</TASK>
+    <TASK id="09" status="PASS">Completion emits typed EncyclopediaUnlockSignal, ScanCompleteSignal, and existing scan discovery route by uint hash.</TASK>
+    <TASK id="10" status="PASS">Multiple target disambiguation uses distance plus forward-dot score; no sorting and no hit arrays.</TASK>
+    <TASK id="11" status="PASS">Quality tier and SystemHealthIndex throttle reacquisition cadence; progression remains separate from query cadence.</TASK>
+    <TASK id="12" status="PASS">AUP math subtracts double3 positions first, then narrows local delta to float3 for ray/sphere tests.</TASK>
+    <TASK id="13" status="PASS">ScannerVfxDTO is a 32-byte vault export; visuals do not query scanner internals.</TASK>
+    <TASK id="14" status="PASS">Depletable metadata emits EntityDepletedSignal and ResourceDepletionDeltaSignal; scanner does not mutate world objects directly.</TASK>
+    <TASK id="15" status="PASS">Progress and completion emit typed acoustic signals; scanner owns no AudioSource.</TASK>
+    <TASK id="16" status="PASS">Active state reset uses UnsafeUtility.MemClear and does not allocate.</TASK>
+    <TASK id="17" status="PASS">300-frame ScannerTelemetryEntry ring is vault-owned and dumps to Docs/AgentLogs/Dump_SHINOBU_24.bin plus Docs/AgentLogs/Dump_SHINOBU_24.h8dump on NaN/budget breach.</TASK>
+    <TASK id="18" status="PASS">DataMiningTunerWindow reads/writes ScannerSettingsDTO through GlobalDataVault during Play Mode when available.</TASK>
+    <TASK id="19" status="PASS_WITH_SCOPE_NOTE">Zero-GC line parser updates unmanaged metadata durations. Continuous disk watching is intentionally not in the player hot path; file IO must be supplied by a cold/background bridge.</TASK>
+    <TASK id="20" status="PASS">Editor SceneView visualizer draws yellow cone, red lock line, and blue hit sphere from scanner/VFX data.</TASK>
+  </TASK_MATRIX>
+
+  <ARM64_CHECK>
+    <STRUCT name="ScanResultDTO" size="48">0 double3 AUP; 24 uint EntityHash; 28 float Distance; 32 float ScanProgress; 36 uint _pad0; 40 ulong _pad1.</STRUCT>
+    <STRUCT name="ScannerSpatialEntityDTO" size="64">0 double3 AUP; 24 long SectorHash; 32 ulong DepletionMask; 40 uint EntityHash; 44 float SphereRadius; 48 uint MetadataIndex; 52 uint Flags; 56 uint DepletionWordIndex; 60 uint _pad0.</STRUCT>
+    <STRUCT name="ActiveScanStateDTO" size="128">0 double3 TargetAUP; 24 double3 LastOriginAUP; 48 long SectorHash; 56 ulong DepletionMask; 64 ulong _pad0; 72 ulong _pad1; 80 uint TargetHash; 84 float Progress01; 88 float ScanDurationSeconds; 92 float HoldSeconds; 96 uint LastFrame; 100 uint Flags; 104 uint CompletedHash; 108 int BestEntityIndex; 112 uint DepletionWordIndex; 116 uint MetadataFlags; 120 float HitDistance; 124 float BeamScore.</STRUCT>
+    <STRUCT name="ScannerTelemetryEntry" size="64">0 double3 TargetAUP; 24 ulong _pad0; 32 uint Frame; 36 uint TargetHash; 40 uint Flags; 44 uint CandidateCount; 48 uint CompletedCount; 52 uint EstimatedMicroseconds; 56 float Progress01; 60 float HitDistance.</STRUCT>
+    <SIGNALS>EncyclopediaUnlockSignal and EntityDepletedSignal use explicit offsets with Size=32 and no Pack=1.</SIGNALS>
+  </ARM64_CHECK>
+
+  <ZERO_GC_CHECK>
+    <HOT_PATH>No Physics.Raycast, OverlapSphere, GetComponent, FindObjectsOfType, NativeList, NativeParallelMultiHashMap, new NativeArray, LINQ, string Split, sorting, closures, boxing, or ToString in SHINOBU_24 runtime/editor scanner files.</HOT_PATH>
+    <RESULT_STORAGE>Query result is a vault-owned fixed NativeArray slot plus an int result count. This replaces NativeList to satisfy H-Phi and still avoids resizing/allocation.</RESULT_STORAGE>
+  </ZERO_GC_CHECK>
+
+  <AUP_CHECK>Ray/sphere and occlusion math subtract scanner double3 AUP from target/zone double3 AUP before casting the local delta to float3. Absolute AUP is never narrowed directly for targeting.</AUP_CHECK>
+  <DEAR_LIE_CHECK>Bounding spheres replace colliders/mesh raycasts; one midpoint SDF sphere sample fakes wall occlusion; dot-distance scalar replaces sorted hit lists.</DEAR_LIE_CHECK>
+  <DEPENDENCY_CHECK>Cross-domain outputs use GlobalSignals/SignalBus and vault DTOs. No direct flora, fauna, PDA, VFX, audio, or tool kinematics concrete class dependency was added.</DEPENDENCY_CHECK>
+  <H_PHI_CHECK>Persistent runtime buffers live in GlobalDataVault IDs 70640-70651. ScannerDataMiningRouter stores only VaultBufferHandle fields and scalar cursors.</H_PHI_CHECK>
+  <BLACKBOX_CHECK>ScannerTelemetryEntry ring capacity is 300 frames and is vault-owned; fatal/budget breach writes both legacy .bin and .h8dump artifacts for post-mortem.</BLACKBOX_CHECK>
+  <COMPILE_GUARD>dotnet build Hecton8.Core.csproj is blocked externally by GlobalTelemetryBus.Blackbox missing TryBindBlackboxVaultBuffersNoLock, SubmarineDynamicsRuntime math.min ambiguity, and missing GlobalPhysicsStateManager SHINOBU_37 partial members. No SHINOBU_24 file appears in compiler output.</COMPILE_GUARD>
+</SELF_AUDIT>

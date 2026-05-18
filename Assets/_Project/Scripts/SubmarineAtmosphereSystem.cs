@@ -108,7 +108,7 @@ namespace Hecton8.Atmosphere
     /// <summary>
     /// Unmanaged high-pressure warning payload carried by the deferred event lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct HighPressureEventPayload
     {
         public Vector3 RuntimePosition;
@@ -378,7 +378,7 @@ namespace Hecton8.Atmosphere
     /// <summary>
     /// Unmanaged fatal pressure implosion payload carried by the deferred event lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
     public struct FatalPressureImplosionEventPayload
     {
         public Vector3 RuntimePosition;
@@ -798,7 +798,7 @@ namespace Hecton8.Atmosphere
             public int RoomIndex;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         private struct PendingAtmosphereMutation
         {
             public float OxygenUnits;
@@ -806,6 +806,7 @@ namespace Hecton8.Atmosphere
             public float HydrogenPocketUnits;
             public float OxygenPocketUnits;
             public float PressureSpikeKPa;
+            private int _pad0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -876,7 +877,7 @@ namespace Hecton8.Atmosphere
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct AtmosphereStepJob : IJob
         {
             [ReadOnly] public NativeArray<float> O2Front;

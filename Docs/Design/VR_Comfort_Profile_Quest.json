@@ -1,7 +1,7 @@
 {
   "schema": "hecton8.vr_comfort_profile.v1",
   "owner": "SOMATIC_COMFORT_ANALYST",
-  "status": "COMFORT DEFINED",
+  "status": "STATIC_COMFORT_PROFILE_DEFINED_PENDING_RUNTIME_VERIFICATION",
   "verificationStatus": "PENDING_RUNTIME_VERIFICATION",
   "profileCount": 2,
   "units": {
@@ -143,7 +143,7 @@
         "sharpness": 14.0,
         "alphaQuest2_72Hz": 0.163,
         "alphaQuest3_90Hz": 0.135,
-        "use": "default current runtime profile"
+        "use": "default authored profile; runtime binding pending"
       },
       {
         "id": "high",
@@ -255,10 +255,11 @@
     ]
   },
   "selfAudit": {
-    "DeviceTableParity": "PASS",
-    "SourceContractValidation": "PASS",
-    "RuntimeAccelerationIntegration": "PASS",
-    "SnapTurnSimulation": "PASS",
-    "RuntimeVerification": "PENDING"
+    "DeviceTableParity": "STATIC_DOC_REVIEWED",
+    "SourceContractValidation": "STATIC_DOC_REVIEWED",
+    "RuntimeAccelerationIntegration": "PENDING_ARTIFACT_RECHECK",
+    "SnapTurnSimulation": "PENDING_ARTIFACT_RECHECK",
+    "RuntimeVerification": "PENDING",
+    "evidencePathRequirement": "Link timestamped Unity, profiler, GCMonitor, Quest-device, and visual artifacts before any PASS status."
   }
 }

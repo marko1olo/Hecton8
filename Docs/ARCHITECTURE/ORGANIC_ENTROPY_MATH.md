@@ -1,7 +1,22 @@
-﻿# ORGANIC_ENTROPY_MATH
+# ORGANIC_ENTROPY_MATH
 Date: 2026-05-07
 
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Verification: PENDING VERIFICATION
 
 ## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
@@ -379,10 +394,11 @@ Verification boundary: this is static source plus Python harness evidence. Unity
 
 Post-hardening verification:
 
-- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`; mature counts stable through day 1000.
-- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: latest optimized run `STATUS=ENTROPY BALANCED`; elapsed 68.723 s under current machine load.
-- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: latest run `STATUS=ENTROPY BALANCED`; mature counts stable through day 1000.
-- `python -m unittest Tools.test_world_entropy_sim -v`: latest run 25 tests passed in 107.456 s.
-- Visual Studio Roslyn C# 9 probe compile against Unity/Hecton8 stubs: exit code `0`; re-run after config overflow guard tightening remained exit code `0`.
+- Historical local command text: `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest` reported `STATUS=ENTROPY BALANCED`; mature counts stable through day 1000.
+- Historical local command text: `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest` reported `STATUS=ENTROPY BALANCED`; elapsed 68.723 s under then-current machine load.
+- Historical local command text: `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest` reported `STATUS=ENTROPY BALANCED`; mature counts stable through day 1000.
+- Historical local command text: `python -m unittest Tools.test_world_entropy_sim -v` reported 25 tests passed in 107.456 s.
+- Historical local command text: Visual Studio Roslyn C# 9 probe compile against Unity/Hecton8 stubs reported exit code `0`; re-run after config overflow guard tightening remained exit code `0`.
+- Treat the command lines above as historical local text unless paired with a fresh artifact path and timestamp. Unity import, Burst compile, Play Mode, profiler, GCMonitor, and player build remain `PENDING VERIFICATION`.
 - Static scans: no forbidden hot-path token matches and no raw `new NativeArray` or raw native dispose remains in `WorldRegrowthSimulation.cs`.
 - Full Unity import and Burst compile remain `PENDING VERIFICATION` because no Unity CLI/editor route was available in-session.

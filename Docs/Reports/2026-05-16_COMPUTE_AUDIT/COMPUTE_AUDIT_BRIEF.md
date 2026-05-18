@@ -429,3 +429,29 @@ Marginal H-Phi ROI vs 13:37: `3,893,267,624` tokens per `+0.001` Runtime H-Phi r
 
 Detailed file: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_1539.md`.
 
+## Token Rebase 2026-05-18T17:34+04:00
+
+This section supersedes the 2026-05-17 15:39 token total for current token-accounting only. It is local telemetry, not an invoice.
+
+| Metric | Value |
+|---|---:|
+| SQLite HECTON/Hades live tokens at 2026-05-18T17:35:14+04:00 | 54,517,775,171 |
+| SQLite all-local live tokens | 54,555,349,108 |
+| JSONL HECTON/Hades final tokens | 54,468,241,841 |
+| JSONL all-local final tokens | 54,507,104,762 |
+| Delta vs 2026-05-17T15:39 SQLite total | +2,931,323,073 |
+| Last 24h HECTON/Hades tokens | 2,862,892,706 |
+| Last 24h HECTON/Hades average | 33,135.33 tokens/sec |
+| JSONL HECTON/Hades cache-aware estimate | USD 37,575.94 |
+| SQLite HECTON/Hades live cache-aware estimate | USD 37,610.11 |
+| SQLite HECTON/Hades live no-cache equivalent | USD 246,711.58 |
+| Cached-input ratio | 96.007% |
+| Current first-party script files | 1,698 |
+| Current meaningful LOC | 934,997 |
+| Tokens per meaningful LOC, SQLite HECTON/Hades | 58,302.09 |
+| Current energy estimate, SQLite HECTON/Hades | 2,725.61 MWh |
+
+Scan surface: 1,002 JSONL files, 9,580,317,579 bytes, 468,382 usable token rows, 0 parse errors. The HECTON scope includes both `C:\hades` and `C:\hades\Hecton8`; `C:\Users\danat\Downloads` is excluded as non-project drift.
+
+Detailed file: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_REBASE_20260518_1734.md`.
+

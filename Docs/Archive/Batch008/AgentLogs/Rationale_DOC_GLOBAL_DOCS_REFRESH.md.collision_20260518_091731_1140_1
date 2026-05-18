@@ -1,0 +1,15 @@
+# Rationale_DOC_GLOBAL_DOCS_REFRESH
+
+## Decision 13: R10 Long-Tail Interior Closure And Evidence Reconstruction
+
+Problem: The user demanded continued whole-document actuality work. The workspace already contained partial R10 edits that linked to `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, but that report did not exist. Source counts drifted again during concurrent agent work. During validation, DOC_GLOBAL status/rationale/log files and `Docs/Tasks/CURRENT_BATCH.md` were absent from the working tree.
+
+Solution: Treat R10 as local-only static documentation/source evidence. Re-read authority files and mandates, regenerate the atlas, recapture source counters, patch active long-tail docs and indexes, write the missing R10 report, and recreate only DOC_GLOBAL evidence files. Record missing unrelated task/log files as blockers instead of restoring other agents' files.
+
+Rejected Alternatives: Stopping at R9 was rejected because active docs already referenced an unwritten R10 report. Keeping partial R10 counters was rejected because live scans showed `1739 / 1686 / 1722` C# files and `107` first-party asmdefs. Restoring all deleted task/log files was rejected as cross-agent ownership interference. Claiming Unity/runtime proof was rejected because no Unity or profiler artifact was produced.
+
+Scalability potential: Low-tier readers get current static boundaries without chasing stale May 4/May 6/R9 counters. Middle-tier review gets atlas and schema gates. High/Ultra review can spend saved interpretation time on actual runtime proof, visual proof, and profiler captures instead of cleaning false documentation claims.
+
+Hardware Impact: Runtime impact is 0 us/frame. Documentation work only. Estimated gain for low-end i3/MX350 is process-only: prevents engineering time from being spent on stale or false runtime assumptions; no frame-time saving is claimed.
+
+Evidence Class: STATIC_DOC / STATIC_SOURCE / FILESYSTEM / PY_TOOL. Runtime verification remains PENDING VERIFICATION.

@@ -4,6 +4,8 @@
     "references":  [
                        "Hecton8.Core.Contracts",
                        "Hecton8.Core",
+                       "Hecton8.Core.Memory",
+                       "Hecton8.SeedShipAnomaly.Runtime",
                        "Hecton8.Power.Generators",
                        "Hecton8.Power.Generators.Contracts",
                        "Hecton8.Audio.Propagation",

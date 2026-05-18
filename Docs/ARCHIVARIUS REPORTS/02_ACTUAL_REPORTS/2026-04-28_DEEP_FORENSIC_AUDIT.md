@@ -1,6 +1,14 @@
 # DEEP FORENSIC AUDIT â€” HECTON-8 SYSTEM ARCHAEOLOGY & HARDWARE DICTATORSHIP
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 
 ## Current-State Addendum (2026-04-29)
@@ -9,7 +17,7 @@ This file is a dated static snapshot, not the current source-of-truth.
 
 The following points are now known stale or materially incomplete:
 
-- script-count scale is no longer in the `514+` range; current first-party inventory is `1010` `.cs` under `Assets/_Project` and `970` under `Assets/_Project/Scripts`
+- script-count scale is no longer in the `514+` range; historical `1010` / `970` counts are also stale. R18 late static scan sees `1743` `.cs` under `Assets/_Project` and `1690` under `Assets/_Project/Scripts`.
 - current direct service ownership has changed or been reverified:
   - `SpatialAudioManager -> IAudioService`
   - `SuitHUDV4CanvasOverlay -> IUIService`

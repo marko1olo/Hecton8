@@ -49,7 +49,7 @@ namespace Hecton8.Core
         PrologueStage = 29
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct TelemetryEvent
     {
         public uint FrameIndex;
@@ -68,7 +68,7 @@ namespace Hecton8.Core
         public uint Reserved7;
     }
 
-    public static class GlobalTelemetryBus
+    public static partial class GlobalTelemetryBus
     {
         private const int RetainedFrameCount = 1000;
         private const int Capacity = 1024;
@@ -140,6 +140,7 @@ namespace Hecton8.Core
 
         private static void DisposeStaticState()
         {
+            DisposeBlackboxState();
             StopExportThread();
             lock (_initGate)
             {
@@ -445,6 +446,7 @@ namespace Hecton8.Core
         public static void PublishMemoryBreachEvent(uint contextHash, float currentMegabytes)
         {
             Publish(TelemetryEventType.MemoryBreach, contextHash, 0u, math.max(0f, currentMegabytes), default);
+            RequestBlackboxMmfFlushAsync();
         }
 
         /// <summary>
@@ -519,6 +521,8 @@ namespace Hecton8.Core
             if (!_ringBuffer.IsCreated)
                 return;
 
+            CommitBlackboxFrame();
+
             if (_snapshotInProgress)
             {
                 ContinueSnapshotCopy();
@@ -576,8 +580,8 @@ namespace Hecton8.Core
         /// </summary>
         public static bool TryEmergencyFlushSynchronous()
         {
-            RequestEmergencyFlushAsync();
-            return false;
+            EnsureInitialized();
+            return TryWriteBlackboxDumpSynchronous(BlackboxEmergencyFlushHash);
         }
 
         /// <summary>
@@ -585,6 +589,8 @@ namespace Hecton8.Core
         /// </summary>
         public static void RequestEmergencyFlushAsync()
         {
+            RequestBlackboxEmergencyDumpAsync(BlackboxEmergencyFlushHash);
+
             if (!_ringBuffer.IsCreated ||
                 !_snapshotBuffer.IsCreated ||
                 !_exportScratch.IsCreated ||
@@ -623,6 +629,12 @@ namespace Hecton8.Core
         /// </summary>
         public static bool TryEmergencyFlushFromBackground()
         {
+#if UNITY_EDITOR
+            return false;
+#else
+            if (TryWriteBlackboxDumpFromBackground(BlackboxEmergencyFlushHash))
+                return true;
+
             if (!_ringBuffer.IsCreated ||
                 !_snapshotBuffer.IsCreated ||
                 !_exportScratch.IsCreated ||
@@ -643,6 +655,7 @@ namespace Hecton8.Core
             Volatile.Write(ref _pendingExportRequest, ExportRequestNone);
             Interlocked.Exchange(ref _exportInFlight, 0);
             return false;
+#endif
         }
 
         private static bool TryEmergencyFlushLocked()
@@ -696,6 +709,7 @@ namespace Hecton8.Core
 
             _ringBuffer.Write(in telemetryEvent);
             Volatile.Write(ref _writeCursor, _ringBuffer.TotalWrites);
+            PushEvent(subjectHash != 0u ? subjectHash : (uint)eventType, scalarValue, contextHash);
         }
 
         private static void EnsureInitialized()
@@ -749,6 +763,7 @@ namespace Hecton8.Core
                     _pendingTelemetryDirectory = HectonPersistentPathPolicy.CombineDirectory(ExportFolderName);
 
                 StartExportThread();
+                EnsureBlackboxInitialized();
             }
         }
 

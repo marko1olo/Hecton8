@@ -10,7 +10,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Blittable AUP transfer payload used by H8_MacroDB without taking a World assembly dependency.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct MacroDatabaseAup
     {
         public const int CellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;

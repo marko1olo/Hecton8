@@ -10,7 +10,6 @@
         "Unity.Collections",
         "Unity.Jobs",
         "Unity.Mathematics",
-        "Unity.Profiling.Core",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime"
     ],

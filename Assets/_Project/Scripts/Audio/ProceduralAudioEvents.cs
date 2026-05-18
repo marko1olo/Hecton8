@@ -22,7 +22,7 @@ namespace Hecton8.Audio
     /// <summary>
     /// Zero-allocation payload for sample-accurate procedural audio triggers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct AudioPingTriggerInfo
     {
         /// <summary>
@@ -93,7 +93,7 @@ namespace Hecton8.Audio
     /// <summary>
     /// Zero-allocation habitat pressure impulse consumed by structural granular synthesis.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct HullStressSignal
     {
         /// <summary>
@@ -195,7 +195,7 @@ namespace Hecton8.Audio
     /// <summary>
     /// Zero-allocation payload for habitat structural stress groan synthesis.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct StructuralStressAudioInfo
     {
         /// <summary>

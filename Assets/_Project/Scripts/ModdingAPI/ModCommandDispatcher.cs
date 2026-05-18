@@ -3,6 +3,7 @@ using Hecton8.Caves;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.World;
@@ -202,6 +203,12 @@ namespace Hecton8.Modding
         private const int MaxAupResponsesPerLateFrame = MaxDrainPerLateFrame;
         private const int MaxMemoryEvictionEventsPerLateFrame = ModCapacity;
         private const int CurrentApiVersion = ModLoader.CurrentAPIVersion;
+        private const ushort FutureKernelReservedOpcodeMin = 0x7800;
+        private const ushort FutureKernelReservedOpcodeMax = 0x78FF;
+        private const ushort FutureKernelReservedTargetMin = 0x7800;
+        private const ushort FutureKernelReservedTargetMax = 0x78FF;
+        private const uint MemorySentinelModMaskLaneHash = 0x4D4D534Bu; // MMSK
+        private const uint MemorySentinelModMaskSourceHash = 0x53483738u; // SH78
         private const int AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
         private const double SpawnConflictEpsilonSq = 0.25d;
         private const long ModHeapQuotaBytes = 16L * 1024L * 1024L;
@@ -275,6 +282,7 @@ namespace Hecton8.Modding
         private static int _queuedAupResponseCount;
         private static int _kernelCount;
         private static int _modCount;
+        private static bool _modMaskSignalConfigured;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -343,10 +351,16 @@ namespace Hecton8.Modding
                 _kernelIndexByCommandKey = new NativeHashMap<uint, int>(KernelCapacity, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[32] - O(1) command kernel lookup - owner: ModCommandDispatcher
                 NativeMemorySentinel.RegisterNativeHashMap(_kernelIndexByCommandKey, nameof(ModCommandDispatcher), nameof(_kernelIndexByCommandKey), NativeAllocationLifetime.Session);
             }
+
+            FutureCommandSandboxValidator.Initialize();
         }
 
         internal static void Shutdown()
         {
+            bool notifyShutdown = _modCount != 0 || _modMaskSignalConfigured;
+
+            FutureCommandSandboxValidator.Shutdown();
+
             DisposeQueue(ref _pendingCommands, nameof(_pendingCommands));
             DisposeQueue(ref _pendingAupCommands, nameof(_pendingAupCommands));
             DisposeQueue(ref _pendingRenderCommands, nameof(_pendingRenderCommands));
@@ -397,6 +411,9 @@ namespace Hecton8.Modding
             _queuedAupResponseCount = 0;
             _kernelCount = 0;
             _modCount = 0;
+            if (notifyShutdown)
+                NotifyMemorySentinelModMask(ModdedGameMaskSignal.FlagLifecycleShutdown);
+            _modMaskSignalConfigured = false;
         }
 
         internal static uint ComputeModHash(string modId)
@@ -442,6 +459,8 @@ namespace Hecton8.Modding
                 Reserved0 = 0,
                 Reserved1 = 0
             };
+
+            NotifyMemorySentinelModMask(0u);
         }
 
         internal static void UnregisterMod(string modId)
@@ -469,6 +488,34 @@ namespace Hecton8.Modding
             _modHashesByIndex[lastIndex] = 0u;
             _modIndexByHash.Remove(modHash);
             _modCount = math.max(0, _modCount - 1);
+            NotifyMemorySentinelModMask(0u);
+        }
+
+        private static void NotifyMemorySentinelModMask(uint flags)
+        {
+            EnsureMemorySentinelModMaskLane();
+
+            ModdedGameMaskSignal signal = default;
+            signal.ModdedGameMask = _modCount > 0 ? 1u : 0u;
+            signal.ActiveModCount = unchecked((uint)math.max(0, _modCount));
+            signal.Frame = unchecked((uint)math.max(0, Time.frameCount));
+            signal.SourceHash = MemorySentinelModMaskSourceHash;
+            signal.Flags = flags;
+            SignalBus<ModdedGameMaskSignal>.TryPush(in signal);
+        }
+
+        private static void EnsureMemorySentinelModMaskLane()
+        {
+            if (_modMaskSignalConfigured)
+                return;
+
+            SignalBus<ModdedGameMaskSignal>.Configure(
+                8,
+                maxFrameSignals: 8,
+                lowTierFrameSignals: 2,
+                laneHash: MemorySentinelModMaskLaneHash);
+            SignalBus<ModdedGameMaskSignal>.EnsureInitialized();
+            _modMaskSignalConfigured = true;
         }
 
         internal static bool IsRegisteredMod(string modId)
@@ -543,8 +590,14 @@ namespace Hecton8.Modding
             ModCommandTargetSystem targetSystem,
             IModCommandKernel kernel)
         {
-            if (kernel == null || opcode == ModCommandOpcode.None || targetSystem == ModCommandTargetSystem.None)
+            if (kernel == null ||
+                opcode == ModCommandOpcode.None ||
+                targetSystem == ModCommandTargetSystem.None ||
+                IsFutureKernelReservedOpcode((ushort)opcode) ||
+                IsFutureKernelReservedTarget((ushort)targetSystem))
+            {
                 return false;
+            }
 
             Initialize();
             uint key = BuildCommandKey((ushort)opcode, (ushort)targetSystem);
@@ -689,6 +742,7 @@ namespace Hecton8.Modding
         {
             FlushDeferredEventQueues();
             DrainRenderCommands();
+            FutureCommandSandboxValidator.DrainLateFrame();
         }
 
         /// <summary>
@@ -696,6 +750,7 @@ namespace Hecton8.Modding
         /// </summary>
         internal static void DrainPreSimulation()
         {
+            FutureCommandSandboxValidator.DrainPreSimulation();
             DrainAupCommands();
             DrainStandardCommands();
         }
@@ -846,6 +901,18 @@ namespace Hecton8.Modding
             if (command.Opcode == (ushort)ModCommandOpcode.None)
             {
                 rejectReason = ModCommandRejectReason.InvalidOpcode;
+                return false;
+            }
+
+            if (IsFutureKernelReservedOpcode(command.Opcode))
+            {
+                rejectReason = ModCommandRejectReason.InvalidOpcode;
+                return false;
+            }
+
+            if (IsFutureKernelReservedTarget(command.TargetSystem))
+            {
+                rejectReason = ModCommandRejectReason.InvalidTarget;
                 return false;
             }
 
@@ -1423,6 +1490,16 @@ namespace Hecton8.Modding
                 default:
                     return false;
             }
+        }
+
+        private static bool IsFutureKernelReservedOpcode(ushort opcode)
+        {
+            return opcode >= FutureKernelReservedOpcodeMin && opcode <= FutureKernelReservedOpcodeMax;
+        }
+
+        private static bool IsFutureKernelReservedTarget(ushort targetSystem)
+        {
+            return targetSystem >= FutureKernelReservedTargetMin && targetSystem <= FutureKernelReservedTargetMax;
         }
 
         private static bool RequiresAup(ushort opcode)

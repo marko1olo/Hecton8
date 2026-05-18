@@ -508,6 +508,7 @@ namespace Hecton8.Core
         private static HectonBiolumManager _biolumManagerRuntime;
         private static HectonBiolumController _biolumControllerRuntime;
         private static LocalizationManager _localizationRuntime;
+        private static IBabelLocalization _babelLocalizationRuntime;
         private static AudioLogSystem _audioLogRuntime;
         private static AcousticZoneController _acousticZoneRuntime;
         private static HectonSurfaceWeatherDirector _surfaceWeatherRuntime;
@@ -1437,7 +1438,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Registered allocation-free Babel localization interface.
         /// </summary>
-        public static IBabelLocalization BabelLocalization => _localizationRuntime;
+        public static IBabelLocalization BabelLocalization => _babelLocalizationRuntime ?? _localizationRuntime;
 
         /// <summary>
         /// Registered audio-log runtime owner.
@@ -2113,6 +2114,13 @@ namespace Hecton8.Core
         [Preserve]
         public static bool TryGet<T>(out T service) where T : class
         {
+            if (typeof(T) == typeof(IBabelLocalization))
+            {
+                service = (_babelLocalizationRuntime ?? _localizationRuntime) as T;
+                if (service != null)
+                    return true;
+            }
+
             GlobalRegistryServiceSlot serviceSlot = ResolveServiceSlot<T>();
             if (Volatile.Read(ref _registryPhase) != (int)RegistryPhase.Ready)
                 MarkServiceRequested(serviceSlot);
@@ -2229,6 +2237,7 @@ namespace Hecton8.Core
             _biolumManagerRuntime = null;
             _biolumControllerRuntime = null;
             _localizationRuntime = null;
+            _babelLocalizationRuntime = null;
             _audioLogRuntime = null;
             _acousticZoneRuntime = null;
             _surfaceWeatherRuntime = null;
@@ -3300,6 +3309,37 @@ namespace Hecton8.Core
         public static void RegisterLocalizationRuntime(LocalizationManager instance)
         {
             RegisterServiceAllowSameInstance(ref _localizationRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers an allocation-free Babel localization provider without requiring the concrete localization manager.
+        /// </summary>
+        public static void RegisterBabelLocalizationRuntime(IBabelLocalization instance)
+        {
+            if (instance == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[GlobalRegistry] Cannot register null as IBabelLocalization.");
+#endif
+                return;
+            }
+
+            GuardServicePublication<IBabelLocalization>(default);
+            IBabelLocalization previousService = Volatile.Read(ref _babelLocalizationRuntime);
+            if (ReferenceEquals(previousService, instance))
+            {
+                MarkServiceRegistered(GlobalRegistryServiceSlot.LocalizationRuntime);
+                return;
+            }
+
+            if (previousService != null)
+                ThrowSlotHijack(previousService, instance);
+
+            previousService = Interlocked.CompareExchange(ref _babelLocalizationRuntime, instance, null);
+            if (previousService != null && !ReferenceEquals(previousService, instance))
+                ThrowSlotHijack(previousService, instance);
+
+            MarkServiceRegistered(GlobalRegistryServiceSlot.LocalizationRuntime);
         }
 
         /// <summary>
@@ -5022,6 +5062,22 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current Babel localization provider if the owner matches.
+        /// </summary>
+        public static void UnregisterBabelLocalizationRuntime(IBabelLocalization instance)
+        {
+            if (!ReferenceEquals(_babelLocalizationRuntime, instance))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[GlobalRegistry] Unregister mismatch for IBabelLocalization.");
+#endif
+                return;
+            }
+
+            Interlocked.CompareExchange(ref _babelLocalizationRuntime, null, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current audio-log runtime owner if the owner matches.
         /// </summary>
         public static void UnregisterAudioLogRuntime(AudioLogSystem instance)
@@ -5693,6 +5749,40 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers a Kahn-sorted master dispatcher system without taking a direct domain dependency.
+        /// </summary>
+        public static bool TryRegisterDispatcherSystem(IDispatcherSystem item)
+        {
+            if (item == null)
+                return false;
+
+            if (!Application.isPlaying)
+                return false;
+
+            if (!TryEnsureDispatcherRegistration())
+                return false;
+
+            return SystemDispatcher.Register(item);
+        }
+
+        /// <summary>
+        /// Registers a fixed-only master dispatcher system without mixing it into frame jobs.
+        /// </summary>
+        public static bool TryRegisterDispatcherFixedSystem(IDispatcherFixedSystem item)
+        {
+            if (item == null)
+                return false;
+
+            if (!Application.isPlaying)
+                return false;
+
+            if (!TryEnsureDispatcherRegistration())
+                return false;
+
+            return SystemDispatcher.Register(item);
+        }
+
+        /// <summary>
         /// Registers an update owner into both the global bucket and its dispatcher lane.
         /// </summary>
         /// <param name="item">Update owner.</param>
@@ -6035,6 +6125,28 @@ namespace Hecton8.Core
 
             _updatables.TryUnregister(item);
             SystemDispatcher.Unregister(item, layer);
+        }
+
+        /// <summary>
+        /// Unregisters a master dispatcher system.
+        /// </summary>
+        public static void UnregisterDispatcherSystem(IDispatcherSystem item)
+        {
+            if (item == null)
+                return;
+
+            SystemDispatcher.Unregister(item);
+        }
+
+        /// <summary>
+        /// Unregisters a fixed-only master dispatcher system.
+        /// </summary>
+        public static void UnregisterDispatcherFixedSystem(IDispatcherFixedSystem item)
+        {
+            if (item == null)
+                return;
+
+            SystemDispatcher.Unregister(item);
         }
 
         /// <summary>
@@ -7008,7 +7120,7 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.ResolutionScalerService: return _resolutionScalerService;
                 case GlobalRegistryServiceSlot.ImpostorRuntime: return _impostorRuntime;
                 case GlobalRegistryServiceSlot.DepthZoneRuntime: return _depthZoneRuntime;
-                case GlobalRegistryServiceSlot.LocalizationRuntime: return _localizationRuntime;
+                case GlobalRegistryServiceSlot.LocalizationRuntime: return _localizationRuntime ?? _babelLocalizationRuntime;
                 case GlobalRegistryServiceSlot.AudioLogRuntime: return _audioLogRuntime;
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime: return _atlasSignalRuntime;
                 case GlobalRegistryServiceSlot.FirstHourRuntime: return _firstHourRuntime;
@@ -7470,6 +7582,20 @@ namespace Hecton8.Core
             public bool TryConsumeBufferedAction(PlayerBufferedAction action, float maxAgeSeconds)
             {
                 return false;
+            }
+
+            public bool CheckBufferedInput(uint buttonBit, int frames)
+            {
+                return false;
+            }
+
+            public uint GetInputBlockMask()
+            {
+                return 0u;
+            }
+
+            public void SetInputBlockMask(uint mask)
+            {
             }
 
             public void SwitchToPlayerInput()

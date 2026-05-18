@@ -528,13 +528,40 @@ namespace Hecton8.Caves
             return GetSDFDensity(aupPosition, out float density) ? density : 0f;
         }
 
+        /// <summary>
+        /// Samples published SDF density from an absolute-universe position supplied in legacy float precision.
+        /// </summary>
         public static bool GetSDFDensity(float3 aupPosition, out float density)
         {
+            return GetSDFDensity(
+                new double3(
+                    aupPosition.x,
+                    aupPosition.y,
+                    aupPosition.z),
+                out density);
+        }
+
+        /// <summary>
+        /// Samples published SDF density from an absolute-universe position without reducing AUP precision before origin subtraction.
+        /// </summary>
+        public static bool GetSDFDensity(double3 aupPosition, out float density)
+        {
             density = 0f;
-            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(new Vector3(
-                aupPosition.x,
-                aupPosition.y,
-                aupPosition.z));
+            if (!math.all(math.isfinite(aupPosition)))
+                return false;
+
+            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(aupPosition);
+            return TrySampleRuntimeSdfDensity(runtimePosition, out density);
+        }
+
+        /// <summary>
+        /// Samples published SDF density at a runtime-space point that has already passed through floating-origin localization.
+        /// </summary>
+        public static bool TrySampleRuntimeSdfDensity(Vector3 runtimePosition, out float density)
+        {
+            density = 0f;
+            if (!IsFinite(runtimePosition))
+                return false;
 
             for (int i = s_activePublishedVolumes.Count - 1; i >= 0; i--)
             {

@@ -108,6 +108,23 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public unsafe void NativeArenaSlice_WritesByRef()
+        {
+            const uint OwnerHash = 0x534C4943u;
+            Assert.IsTrue(HectonArenaAllocator.TryAcquireSlice<int>(
+                8,
+                OwnerHash,
+                out HectonArenaAllocator.NativeArenaSlice<int> slice));
+
+            Assert.AreEqual(0L, ((long)slice.Ptr) & (HectonArenaAllocator.CacheLineAlignment - 1L));
+
+            ref int value = ref slice.GetElementAsRef(3);
+            value = 911;
+
+            Assert.AreEqual(911, slice.GetElementAsRef(3));
+        }
+
+        [Test]
         public unsafe void Shutdown_ClearsArenaTelemetryState()
         {
             const uint OwnerHash = 0x5348444Eu;

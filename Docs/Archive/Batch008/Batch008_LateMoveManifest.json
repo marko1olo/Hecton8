@@ -1,0 +1,412 @@
+﻿[
+    {
+        "Pass":  1,
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\LOG_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_091731_0519_1",
+        "Name":  "LOG_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_091731_0519_1",
+        "Length":  1999,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:17:26.4010694Z"
+    },
+    {
+        "Pass":  1,
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_091731_1140_1",
+        "Name":  "Rationale_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_091731_1140_1",
+        "Length":  2020,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:17:26.4000705Z"
+    },
+    {
+        "Pass":  1,
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_22.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_SHINOBU_22.md.collision_20260518_091731_1240_1",
+        "Name":  "Rationale_SHINOBU_22.md.collision_20260518_091731_1240_1",
+        "Length":  4631,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:13:58.1119707Z"
+    },
+    {
+        "Pass":  1,
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_36.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_SHINOBU_36.md.collision_20260518_091731_1336_1",
+        "Name":  "Rationale_SHINOBU_36.md.collision_20260518_091731_1336_1",
+        "Length":  2130,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:12:02.7010242Z"
+    },
+    {
+        "Pass":  1,
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\VerifyQuestDagBinaryIndependent_SHINOBU_23.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\VerifyQuestDagBinaryIndependent_SHINOBU_23.json",
+        "Name":  "VerifyQuestDagBinaryIndependent_SHINOBU_23.json",
+        "Length":  117,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:16:23.4463296Z"
+    },
+    {
+        "Pass":  1,
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_091731_1443_1",
+        "Name":  "Status_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_091731_1443_1",
+        "Length":  4535,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:17:26.3975475Z"
+    },
+    {
+        "Pass":  1,
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_22.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_SHINOBU_22.md.collision_20260518_091731_1518_1",
+        "Name":  "Status_SHINOBU_22.md.collision_20260518_091731_1518_1",
+        "Length":  2463,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:13:34.6478636Z"
+    },
+    {
+        "Pass":  1,
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_36.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_SHINOBU_36.md.collision_20260518_091731_1899_1",
+        "Name":  "Status_SHINOBU_36.md.collision_20260518_091731_1899_1",
+        "Length":  1820,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:12:02.7004930Z"
+    },
+    {
+        "Pass":  "extra-manifest-repair",
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_06.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_SHINOBU_06.md.collision_20260518_092032_9211_1",
+        "Name":  "Status_SHINOBU_06.md.collision_20260518_092032_9211_1",
+        "Length":  5533,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:19:43.4904974Z"
+    },
+    {
+        "Pass":  "extra-manifest-repair",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_06.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\LOG_SHINOBU_06.md.collision_20260518_092032_9046_1",
+        "Name":  "LOG_SHINOBU_06.md.collision_20260518_092032_9046_1",
+        "Length":  2903,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:20:31.1723082Z"
+    },
+    {
+        "Pass":  "extra-manifest-repair",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_06.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_SHINOBU_06.md.collision_20260518_092032_9211_1",
+        "Name":  "Rationale_SHINOBU_06.md.collision_20260518_092032_9211_1",
+        "Length":  5803,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:20:14.9921350Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_11.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\LOG_SHINOBU_11.md.collision_20260518_092421_5194_1",
+        "Name":  "LOG_SHINOBU_11.md.collision_20260518_092421_5194_1",
+        "Length":  43390,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T23:17:48.2736924Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_22.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\LOG_SHINOBU_22.md.collision_20260518_092421_6834_1",
+        "Name":  "LOG_SHINOBU_22.md.collision_20260518_092421_6834_1",
+        "Length":  19245,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T22:01:57.5605129Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_23.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\LOG_SHINOBU_23.md.collision_20260518_092421_7222_1",
+        "Name":  "LOG_SHINOBU_23.md.collision_20260518_092421_7222_1",
+        "Length":  2301,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:24:18.0219296Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_36.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\LOG_SHINOBU_36.md.collision_20260518_092421_7262_1",
+        "Name":  "LOG_SHINOBU_36.md.collision_20260518_092421_7262_1",
+        "Length":  4257,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:23:05.1819929Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_11.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_SHINOBU_11.md.collision_20260518_092421_7303_1",
+        "Name":  "Rationale_SHINOBU_11.md.collision_20260518_092421_7303_1",
+        "Length":  39505,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T23:16:53.8558358Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_22.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_SHINOBU_22.md.collision_20260518_092421_7761_1",
+        "Name":  "Rationale_SHINOBU_22.md.collision_20260518_092421_7761_1",
+        "Length":  34157,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T22:01:57.5588864Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_23.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_SHINOBU_23.md.collision_20260518_092421_8126_1",
+        "Name":  "Rationale_SHINOBU_23.md.collision_20260518_092421_8126_1",
+        "Length":  3776,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:24:18.0219296Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_36.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_SHINOBU_36.md.collision_20260518_092421_8221_1",
+        "Name":  "Rationale_SHINOBU_36.md.collision_20260518_092421_8221_1",
+        "Length":  3750,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:23:05.1809237Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SelfAudit_SHINOBU_36.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\SelfAudit_SHINOBU_36.xml",
+        "Name":  "SelfAudit_SHINOBU_36.xml",
+        "Length":  4835,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:21:44.2844600Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_11.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_SHINOBU_11.md.collision_20260518_092421_8373_1",
+        "Name":  "Status_SHINOBU_11.md.collision_20260518_092421_8373_1",
+        "Length":  19826,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T23:16:53.8539029Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_22.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_SHINOBU_22.md.collision_20260518_092421_8413_1",
+        "Name":  "Status_SHINOBU_22.md.collision_20260518_092421_8413_1",
+        "Length":  13933,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T22:01:57.5570900Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_23.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_SHINOBU_23.md.collision_20260518_092421_8453_1",
+        "Name":  "Status_SHINOBU_23.md.collision_20260518_092421_8453_1",
+        "Length":  6021,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:24:18.0204081Z"
+    },
+    {
+        "Pass":  "quiesce-1",
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_36.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_SHINOBU_36.md.collision_20260518_092421_8490_1",
+        "Name":  "Status_SHINOBU_36.md.collision_20260518_092421_8490_1",
+        "Length":  3335,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:23:05.1803752Z"
+    },
+    {
+        "Pass":  "stable-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_SHINOBU_12_sdf_los_cleanup_20260518.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Build_SHINOBU_12_sdf_los_cleanup_20260518.log.collision_20260518_092642_8477_1",
+        "Name":  "Build_SHINOBU_12_sdf_los_cleanup_20260518.log.collision_20260518_092642_8477_1",
+        "Length":  10114,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:25:51.0056788Z"
+    },
+    {
+        "Pass":  "stable-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\LOG_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_092642_9353_1",
+        "Name":  "LOG_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_092642_9353_1",
+        "Length":  1586,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:25:51.3025794Z"
+    },
+    {
+        "Pass":  "stable-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_03.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\LOG_SHINOBU_03.md.collision_20260518_092642_9397_1",
+        "Name":  "LOG_SHINOBU_03.md.collision_20260518_092642_9397_1",
+        "Length":  28561,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T23:07:41.9958476Z"
+    },
+    {
+        "Pass":  "stable-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_12.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\LOG_SHINOBU_12.md.collision_20260518_092642_9460_1",
+        "Name":  "LOG_SHINOBU_12.md.collision_20260518_092642_9460_1",
+        "Length":  2497,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:24:27.1768861Z"
+    },
+    {
+        "Pass":  "stable-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_092642_9537_1",
+        "Name":  "Rationale_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_092642_9537_1",
+        "Length":  1470,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:25:51.3025794Z"
+    },
+    {
+        "Pass":  "stable-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_03.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_SHINOBU_03.md.collision_20260518_092642_9594_1",
+        "Name":  "Rationale_SHINOBU_03.md.collision_20260518_092642_9594_1",
+        "Length":  22542,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T23:08:26.8455381Z"
+    },
+    {
+        "Pass":  "stable-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_12.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_SHINOBU_12.md.collision_20260518_092642_9653_1",
+        "Name":  "Rationale_SHINOBU_12.md.collision_20260518_092642_9653_1",
+        "Length":  5186,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:24:27.1753437Z"
+    },
+    {
+        "Pass":  "stable-1",
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\CURRENT_BATCH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\CURRENT_BATCH.md.collision_20260518_092642_9729_1",
+        "Name":  "CURRENT_BATCH.md.collision_20260518_092642_9729_1",
+        "Length":  457324,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T15:53:53.5145886Z"
+    },
+    {
+        "Pass":  "stable-1",
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_092642_9784_1",
+        "Name":  "Status_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_092642_9784_1",
+        "Length":  2462,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:25:51.3010499Z"
+    },
+    {
+        "Pass":  "stable-1",
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_03.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_SHINOBU_03.md.collision_20260518_092642_9887_1",
+        "Name":  "Status_SHINOBU_03.md.collision_20260518_092642_9887_1",
+        "Length":  14317,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T23:03:07.5873819Z"
+    },
+    {
+        "Pass":  "stable-1",
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_12.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_SHINOBU_12.md.collision_20260518_092643_0034_1",
+        "Name":  "Status_SHINOBU_12.md.collision_20260518_092643_0034_1",
+        "Length":  5443,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:24:27.1737184Z"
+    },
+    {
+        "Pass":  "longstable-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\LOG_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_092933_0980_1",
+        "Name":  "LOG_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_092933_0980_1",
+        "Length":  1586,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:28:32.8670449Z"
+    },
+    {
+        "Pass":  "longstable-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_38.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\LOG_SHINOBU_38.md.collision_20260518_092933_1475_1",
+        "Name":  "LOG_SHINOBU_38.md.collision_20260518_092933_1475_1",
+        "Length":  7071,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T22:46:36.0280612Z"
+    },
+    {
+        "Pass":  "longstable-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_092933_1526_1",
+        "Name":  "Rationale_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_092933_1526_1",
+        "Length":  1470,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:28:32.8670449Z"
+    },
+    {
+        "Pass":  "longstable-1",
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_38.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\AgentLogs\\Rationale_SHINOBU_38.md.collision_20260518_092933_1588_1",
+        "Name":  "Rationale_SHINOBU_38.md.collision_20260518_092933_1588_1",
+        "Length":  12791,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T22:46:19.1202439Z"
+    },
+    {
+        "Pass":  "longstable-1",
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_092933_1654_1",
+        "Name":  "Status_DOC_GLOBAL_DOCS_REFRESH.md.collision_20260518_092933_1654_1",
+        "Length":  2462,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T05:28:32.8650328Z"
+    },
+    {
+        "Pass":  "longstable-1",
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_38.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch008\\Tasks\\Status_SHINOBU_38.md.collision_20260518_092933_1700_1",
+        "Name":  "Status_SHINOBU_38.md.collision_20260518_092933_1700_1",
+        "Length":  8650,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-17T22:45:50.7473853Z"
+    }
+]

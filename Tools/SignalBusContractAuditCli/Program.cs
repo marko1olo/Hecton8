@@ -1,0 +1,1554 @@
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+
+namespace SignalBusContractAuditCli;
+
+internal static class Program
+{
+    private const string Agent = "SHINOBU_02";
+    private static readonly Regex StructDeclarationRegex = new(@"^\s*(?:(?:public|internal|private|protected)\s+)*(?:(?:readonly|partial|unsafe|ref)\s+)*struct\s+([A-Za-z_][A-Za-z0-9_]*)\b", RegexOptions.Compiled);
+    private static readonly Regex LayoutPack1Regex = new(@"\[StructLayout\([^\]]*Pack\s*=\s*1", RegexOptions.Compiled);
+    private static readonly Regex ManagedEventRegex = new(@"\b(event\s+(System\.)?Action|UnityEvent|SendMessage\s*\(|BroadcastMessage\s*\(|SendMessageUpwards\s*\(|System\.Action|System\.Func|Action<|Func<)", RegexOptions.Compiled);
+    private static readonly Regex StringFieldRegex = new(@"\b(string|System\.String)\s+[A-Za-z_][A-Za-z0-9_]*", RegexOptions.Compiled);
+    private static readonly Regex TelemetryArrayRegex = new(@"\bprivate\s+(?:static\s+)?(?:readonly\s+)?NativeArray\s*<[^>]*(Telemetry|BlackBox|Signal)[^>]*>\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=[^;]*)?;", RegexOptions.Compiled);
+    private static readonly Regex SignalQueueRegex = new(@"\b(?:private|internal|public|protected)\s+(?:static\s+)?(?:readonly\s+)?NativeQueue\s*<[^>]*(Signal|Command|Packet)[^>]*>\s+([A-Za-z_][A-Za-z0-9_]*)\b", RegexOptions.Compiled);
+    private static readonly Regex SyncIoRegex = new(@"\b(File|Directory)\.(Read|Write|Append|Open|Create|Delete)|new\s+FileStream\s*\(", RegexOptions.Compiled);
+    private static readonly Regex Compute1024Regex = new(@"numthreads\s*\(\s*1024\s*,", RegexOptions.Compiled);
+    private static readonly Regex ContainerTypeRegex = new(@"\b(?<kind>SignalBus|NativeQueue|NativeList|NativeArray)\s*<\s*(?<type>[A-Za-z_][A-Za-z0-9_]*)\s*>", RegexOptions.Compiled);
+    private static readonly Regex FieldDeclarationTypeRegex = new(@"^\s*(?:\[[^\]]+\]\s*)*(?:public|internal|private|protected)\s+(?:readonly\s+)?(?<type>(?:[A-Za-z_][A-Za-z0-9_]*\.)*[A-Za-z_][A-Za-z0-9_]*)\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*(?:[=;])", RegexOptions.Compiled);
+    private static readonly Regex MethodDeclarationRegex = new(@"^\s*(?:(?:public|internal|private|protected)\s+)*(?:(?:static|unsafe|virtual|override|sealed|async|readonly|extern)\s+)*(?:[A-Za-z_][A-Za-z0-9_<>,\[\]\.?\s]*\s+)+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\([^;]*\)\s*(?:where\b[^{]+)?\{?", RegexOptions.Compiled);
+    private static readonly Regex HotPathEnumerationRegex = new(@"\bforeach\s*\(|\.Where\s*\(|\.Select\s*\(|\.OrderBy\s*\(|\.ToList\s*\(|\.ToArray\s*\(|Enumerable\.", RegexOptions.Compiled);
+    private static readonly Regex HotPathAllocationRegex = new(@"\bnew\s+(?:List\s*<|Dictionary\s*<|HashSet\s*<|Queue\s*<|Stack\s*<|StringBuilder\b|string\b|Regex\b|FileStream\b|MemoryStream\b|StringWriter\b|Action\b|Func\b|WaitForSeconds\b|GameObject\b|Material\b|Texture2D\b|RenderTexture\b|Mesh\b|[A-Za-z_][A-Za-z0-9_<>,\.\s]*\s*\[)", RegexOptions.Compiled);
+    private static readonly Regex UnityLookupRegex = new(@"GetComponent\s*<|FindObjectOfType|FindObjectsOfType|GameObject\.Find|Object\.Find", RegexOptions.Compiled);
+    private static readonly Regex MaterialMutationRegex = new(@"\.material\b|Material\.Set(Float|Int|Color|Vector|Texture)|\.Set(Float|Int|Color|Vector|Texture)\s*\(", RegexOptions.Compiled);
+
+    private static int Main(string[] args)
+    {
+        try
+        {
+            var options = CliOptions.Parse(args);
+            var scanner = new AuditScanner(options);
+            var result = scanner.Run();
+
+            Directory.CreateDirectory(Path.GetDirectoryName(options.OutputJson)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(options.OutputMarkdown)!);
+
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+            File.WriteAllText(options.OutputJson, JsonSerializer.Serialize(result, jsonOptions), new UTF8Encoding(false));
+            File.WriteAllText(options.OutputMarkdown, MarkdownWriter.Write(result), new UTF8Encoding(false));
+
+            Console.WriteLine("SignalBusContractAuditCli: files={0} shaders={1} errors={2} warnings={3} infos={4} confirmedErrors={5} json={6} markdown={7}",
+                result.ScannedFiles,
+                result.ShaderFilesScanned,
+                result.Errors,
+                result.Warnings,
+                result.Infos,
+                result.ConfirmedErrors,
+                options.OutputJson,
+                options.OutputMarkdown);
+
+            return options.FailOnError && result.Errors > 0 ? 2 : 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("SignalBusContractAuditCli failed: " + ex.Message);
+            return 1;
+        }
+    }
+
+    private sealed class AuditScanner
+    {
+        private readonly CliOptions _options;
+        private readonly List<Finding> _findings = [];
+        private readonly List<SignalDefinition> _signalDefinitions = [];
+        private readonly Dictionary<string, List<Pack1StructInfo>> _pack1StructsByName = new(StringComparer.Ordinal);
+        private int _scannedFiles;
+        private int _shaderFilesScanned;
+        private int _pack1Count;
+        private int _runtimeSignalPack1Count;
+        private int _transitivePack1FieldCount;
+        private int _managedEventCount;
+        private int _localNativeTelemetryCount;
+        private int _registeredLocalTelemetryCount;
+        private int _localNativeQueueCount;
+        private int _computeThreadGroupRiskCount;
+        private int _hotPathRiskCount;
+        private int _coldSyncIoCount;
+        private int _asmdefContractBoundaryCount;
+
+        public AuditScanner(CliOptions options)
+        {
+            _options = options;
+        }
+
+        public AuditResult Run()
+        {
+            var scriptsRoot = Path.Combine(_options.ProjectRoot, "Assets", "_Project", "Scripts");
+            var assetsRoot = Path.Combine(_options.ProjectRoot, "Assets");
+            if (!Directory.Exists(scriptsRoot))
+            {
+                throw new DirectoryNotFoundException("Scripts root not found: " + scriptsRoot);
+            }
+
+            BuildPack1StructIndex(Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories));
+
+            foreach (var file in EnumerateScriptFiles(scriptsRoot))
+            {
+                ScanCSharpFile(file);
+            }
+
+            if (Directory.Exists(assetsRoot))
+            {
+                foreach (var file in Directory.EnumerateFiles(assetsRoot, "*.compute", SearchOption.AllDirectories))
+                {
+                    ScanComputeFile(file);
+                }
+            }
+
+            ScanAssemblyContractBoundaries(scriptsRoot);
+            AddDuplicateFindings();
+            return BuildResult();
+        }
+
+        private IEnumerable<string> EnumerateScriptFiles(string scriptsRoot)
+        {
+            var files = Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
+            if (!string.Equals(_options.Scope, "SignalCritical", StringComparison.OrdinalIgnoreCase))
+            {
+                return files;
+            }
+
+            return files.Where(path =>
+            {
+                var relative = ToRelativePath(path);
+                return Regex.IsMatch(relative, @"Assets/_Project/Scripts/Core/GlobalSignals\.cs$|Assets/_Project/Scripts/Core/Signals/|Assets/_Project/Scripts/Core/SystemDispatcher\.cs$|Assets/_Project/Scripts/Editor/SignalTrafficMonitorWindow\.cs$");
+            });
+        }
+
+        private void ScanAssemblyContractBoundaries(string scriptsRoot)
+        {
+            var asmdefs = Directory
+                .EnumerateFiles(scriptsRoot, "*.asmdef", SearchOption.AllDirectories)
+                .Select(TryReadAsmdef)
+                .Where(item => item is not null)
+                .Cast<AsmdefInfo>()
+                .ToArray();
+
+            if (asmdefs.Length == 0)
+            {
+                return;
+            }
+
+            foreach (var file in EnumerateScriptFiles(scriptsRoot))
+            {
+                var text = File.ReadAllText(file);
+                if (!UsesSignalContracts(text))
+                {
+                    continue;
+                }
+
+                var owner = FindNearestAsmdef(file, asmdefs);
+                if (owner is null ||
+                    string.Equals(owner.Name, "Hecton8.Core.Contracts", StringComparison.Ordinal) ||
+                    owner.References.Contains("Hecton8.Core.Contracts"))
+                {
+                    continue;
+                }
+
+                _asmdefContractBoundaryCount++;
+                AddFinding(
+                    "WARN",
+                    "ASMDEF_SIGNAL_CONTRACT_REFERENCE_MISSING",
+                    85,
+                    "COMPILE_WALL_DEPENDENCY_REVIEW",
+                    "ASMDEF_REFERENCE_SCAN",
+                    owner.RelativePath,
+                    owner.ReferenceLine,
+                    owner.Name,
+                    "Signal contract source: " + ToRelativePath(file),
+                    "Add a direct Hecton8.Core.Contracts asmdef reference for signal contract usage. Keep Hecton8.Core only when this assembly also consumes runtime Core APIs.",
+                    new Dictionary<string, object?>
+                    {
+                        ["source"] = ToRelativePath(file),
+                        ["hasCoreReference"] = owner.References.Contains("Hecton8.Core"),
+                        ["hasContractsReference"] = false
+                    });
+            }
+        }
+
+        private void ScanCSharpFile(string path)
+        {
+            var relativePath = ToRelativePath(path);
+            var rawText = File.ReadAllText(path);
+            _scannedFiles++;
+
+            if (!HasRelevantText(rawText))
+            {
+                return;
+            }
+
+            var rawLines = File.ReadAllLines(path);
+            var codeLines = rawLines.Select(RemoveCodeTrivia).ToArray();
+            var isEditor = IsEditorPath(relativePath);
+            var isCoreSignalFile = IsCoreSignalFile(relativePath);
+            var containerTypes = GetContainerTypes(codeLines);
+            var structs = CollectStructs(relativePath, rawLines, codeLines, containerTypes);
+            var structByIndex = structs.ToDictionary(item => item.Index);
+
+            StructMetadata? currentStruct = null;
+            var currentStructIsSignalCandidate = false;
+            var currentStructIsStrictRuntimeContract = false;
+            var structBraceDepth = 0;
+            var structStarted = false;
+            var currentMethodName = "";
+            var methodBraceDepth = 0;
+            var methodStarted = false;
+
+            for (var lineIndex = 0; lineIndex < codeLines.Length; lineIndex++)
+            {
+                var rawLine = rawLines[lineIndex];
+                var code = codeLines[lineIndex];
+                var lineNumber = lineIndex + 1;
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    continue;
+                }
+
+                var structMatch = StructDeclarationRegex.Match(code);
+                if (structMatch.Success)
+                {
+                    currentStruct = structByIndex.GetValueOrDefault(lineIndex);
+                    currentStructIsSignalCandidate = currentStruct is not null &&
+                        (currentStruct.ImplementsISignal ||
+                         currentStruct.IsSignalLikeName ||
+                         containerTypes.SignalBus.Contains(currentStruct.Name) ||
+                         containerTypes.NativeQueue.Contains(currentStruct.Name));
+                    currentStructIsStrictRuntimeContract = currentStruct is not null &&
+                        !currentStruct.IsEditor &&
+                        (currentStruct.ImplementsISignal ||
+                         currentStruct.IsCoreSignalFile ||
+                         containerTypes.SignalBus.Contains(currentStruct.Name) ||
+                         containerTypes.NativeQueue.Contains(currentStruct.Name));
+                    structBraceDepth = CountBraceDelta(code);
+                    structStarted = code.Contains('{');
+                }
+                else if (currentStruct is not null)
+                {
+                    if (code.Contains('{'))
+                    {
+                        structStarted = true;
+                    }
+
+                    if (structStarted)
+                    {
+                        structBraceDepth += CountBraceDelta(code);
+                        if (structBraceDepth <= 0 && code.Contains('}'))
+                        {
+                            currentStruct = null;
+                            currentStructIsSignalCandidate = false;
+                            currentStructIsStrictRuntimeContract = false;
+                            structStarted = false;
+                            structBraceDepth = 0;
+                        }
+                    }
+                }
+
+                var methodMatch = MethodDeclarationRegex.Match(code);
+                if (methodMatch.Success &&
+                    !code.Contains("=>", StringComparison.Ordinal) &&
+                    !Regex.IsMatch(code, @"\b(class|struct|interface|enum)\b"))
+                {
+                    currentMethodName = methodMatch.Groups["name"].Value;
+                    methodBraceDepth = CountBraceDelta(code);
+                    methodStarted = code.Contains('{', StringComparison.Ordinal);
+                    if (methodStarted && methodBraceDepth <= 0 && code.Contains('}', StringComparison.Ordinal))
+                    {
+                        currentMethodName = "";
+                        methodStarted = false;
+                        methodBraceDepth = 0;
+                    }
+                }
+                else if (methodStarted && currentMethodName.Length > 0)
+                {
+                    methodBraceDepth += CountBraceDelta(code);
+                    if (methodBraceDepth <= 0 && code.Contains('}', StringComparison.Ordinal))
+                    {
+                        currentMethodName = "";
+                        methodStarted = false;
+                        methodBraceDepth = 0;
+                    }
+                }
+
+                ScanPack1(relativePath, rawLine, code, codeLines, lineNumber, lineIndex, isEditor, isCoreSignalFile, containerTypes, structs);
+                ScanManagedEventSurface(relativePath, rawLine, code, lineNumber, isEditor);
+                ScanManagedStringPayload(relativePath, rawLine, code, lineNumber, isEditor, currentStruct, currentStructIsSignalCandidate, currentStructIsStrictRuntimeContract);
+                ScanTransitivePack1Field(relativePath, rawLine, code, lineNumber, currentStruct, currentStructIsStrictRuntimeContract);
+                ScanTelemetryRing(relativePath, rawText, rawLine, code, lineNumber, isEditor);
+                ScanLocalSignalQueue(relativePath, rawText, rawLine, code, lineNumber, isEditor);
+                ScanSyncRuntimeIo(relativePath, rawLine, code, lineNumber, isEditor, currentMethodName);
+                if (_options.IncludeHotPathHeuristics)
+                {
+                    ScanHotPathHeuristics(relativePath, rawLine, code, lineNumber, isEditor, currentMethodName);
+                }
+            }
+        }
+
+        private void BuildPack1StructIndex(IEnumerable<string> files)
+        {
+            foreach (var path in files)
+            {
+                var relativePath = ToRelativePath(path);
+                var rawText = File.ReadAllText(path);
+                if (!ContainsAny(rawText, "StructLayout", "Pack"))
+                {
+                    continue;
+                }
+
+                var rawLines = File.ReadAllLines(path);
+                var codeLines = rawLines.Select(RemoveCodeTrivia).ToArray();
+                for (var lineIndex = 0; lineIndex < codeLines.Length; lineIndex++)
+                {
+                    var code = codeLines[lineIndex];
+                    if (code.IndexOf("StructLayout", StringComparison.Ordinal) < 0 ||
+                        code.IndexOf("Pack", StringComparison.Ordinal) < 0 ||
+                        !LayoutPack1Regex.IsMatch(code))
+                    {
+                        continue;
+                    }
+
+                    var structIndex = FindStructDeclarationNearAttribute(codeLines, lineIndex);
+                    if (structIndex < 0)
+                    {
+                        continue;
+                    }
+
+                    var match = StructDeclarationRegex.Match(codeLines[structIndex]);
+                    if (!match.Success)
+                    {
+                        continue;
+                    }
+
+                    var name = match.Groups[1].Value;
+                    var info = new Pack1StructInfo(
+                        name,
+                        relativePath,
+                        structIndex + 1,
+                        IsEditorPath(relativePath),
+                        IsFileFormatLike(relativePath, name),
+                        StructBodyContainsWideField(codeLines, structIndex));
+
+                    if (!_pack1StructsByName.TryGetValue(name, out var entries))
+                    {
+                        entries = [];
+                        _pack1StructsByName.Add(name, entries);
+                    }
+
+                    if (!entries.Any(item => item.Path == info.Path && item.Line == info.Line))
+                    {
+                        entries.Add(info);
+                    }
+                }
+            }
+        }
+
+        private List<StructMetadata> CollectStructs(string relativePath, string[] rawLines, string[] codeLines, ContainerTypes containerTypes)
+        {
+            var structs = new List<StructMetadata>();
+            for (var lineIndex = 0; lineIndex < codeLines.Length; lineIndex++)
+            {
+                var match = StructDeclarationRegex.Match(codeLines[lineIndex]);
+                if (!match.Success)
+                {
+                    continue;
+                }
+
+                var name = match.Groups[1].Value;
+                var metadata = new StructMetadata(
+                    name,
+                    codeLines[lineIndex].Trim(),
+                    relativePath,
+                    lineIndex + 1,
+                    lineIndex,
+                    HasStructLayoutBefore(codeLines, lineIndex),
+                    StructImplementsISignal(codeLines, lineIndex),
+                    IsEditorPath(relativePath),
+                    string.Equals(relativePath, "Assets/_Project/Scripts/Core/GlobalSignals.cs", StringComparison.Ordinal),
+                    IsCoreSignalFile(relativePath),
+                    IsSignalLikeName(name));
+
+                structs.Add(metadata);
+                if (metadata.IsSignalLikeName || metadata.ImplementsISignal)
+                {
+                    var strictSignal = !metadata.IsEditor &&
+                        (metadata.ImplementsISignal ||
+                         metadata.IsCoreSignalFile ||
+                         containerTypes.SignalBus.Contains(name) ||
+                         containerTypes.NativeQueue.Contains(name));
+                    _signalDefinitions.Add(new SignalDefinition(metadata.Name, metadata.Path, metadata.Line, metadata.HasStructLayout, metadata.ImplementsISignal, metadata.IsEditor, metadata.IsCoreGlobalSignals, strictSignal));
+                }
+
+                var strictSignalForLayout = !metadata.IsEditor &&
+                    (metadata.ImplementsISignal || metadata.IsCoreSignalFile || containerTypes.SignalBus.Contains(name) || containerTypes.NativeQueue.Contains(name));
+                var advisorySignal = metadata.IsSignalLikeName || Regex.IsMatch(name, "(Signal|Command|Packet)$");
+                if (advisorySignal && !metadata.HasStructLayout)
+                {
+                    if (strictSignalForLayout)
+                    {
+                        AddFinding("WARN", "SIGNAL_LAYOUT_UNDECLARED", 86, "PROBABLE_RUNTIME_PAYLOAD", "ANCHORED_STRUCT_DECLARATION", relativePath, lineIndex + 1, name, rawLines[lineIndex], "Add explicit StructLayout or document unmanaged field order before this payload crosses Burst/native/binary boundaries.",
+                            new Dictionary<string, object?> { ["isEditor"] = metadata.IsEditor, ["implementsISignal"] = metadata.ImplementsISignal, ["isCoreSignalFile"] = metadata.IsCoreSignalFile });
+                    }
+                    else if (metadata.IsEditor)
+                    {
+                        AddFinding("INFO", "EDITOR_SIGNAL_LAYOUT_REVIEW", 55, "EDITOR_ONLY_REVIEW", "ANCHORED_STRUCT_DECLARATION", relativePath, lineIndex + 1, name, rawLines[lineIndex], "Editor/test signal-like structs do not gate runtime, but should not shadow production contracts.",
+                            new Dictionary<string, object?> { ["isEditor"] = metadata.IsEditor, ["implementsISignal"] = metadata.ImplementsISignal });
+                    }
+                    else
+                    {
+                        AddFinding("WARN", "SIGNAL_LAYOUT_REVIEW", 65, "NAME_BASED_REVIEW", "ANCHORED_STRUCT_DECLARATION", relativePath, lineIndex + 1, name, rawLines[lineIndex], "Confirm whether this signal-like struct crosses native/Burst boundaries; if yes, add explicit layout.",
+                            new Dictionary<string, object?> { ["isEditor"] = metadata.IsEditor, ["implementsISignal"] = metadata.ImplementsISignal });
+                    }
+                }
+            }
+
+            return structs;
+        }
+
+        private void ScanPack1(string relativePath, string rawLine, string code, string[] codeLines, int lineNumber, int lineIndex, bool isEditor, bool isCoreSignalFile, ContainerTypes containerTypes, List<StructMetadata> structs)
+        {
+            if (code.IndexOf("StructLayout", StringComparison.Ordinal) < 0 ||
+                code.IndexOf("Pack", StringComparison.Ordinal) < 0 ||
+                !LayoutPack1Regex.IsMatch(code))
+            {
+                return;
+            }
+
+            _pack1Count++;
+            var metadata = FindNearestStructMetadata(structs, lineIndex);
+            var symbol = metadata?.Name ?? "";
+            var implementsISignal = metadata?.ImplementsISignal ?? false;
+            var symbolIsEditor = metadata?.IsEditor ?? isEditor;
+            var symbolIsCoreSignalFile = metadata?.IsCoreSignalFile ?? isCoreSignalFile;
+            var symbolIsSignalLike = metadata?.IsSignalLikeName ?? false;
+            var usedAsSignalBus = containerTypes.SignalBus.Contains(symbol);
+            var usedAsNativeQueue = containerTypes.NativeQueue.Contains(symbol);
+            var usedAsNativeList = containerTypes.NativeList.Contains(symbol);
+            var nativeQueueSignalPayload = usedAsNativeQueue &&
+                (symbolIsSignalLike || Regex.IsMatch(symbol, "(Signal|Command|Packet|Event|Payload)$", RegexOptions.CultureInvariant));
+            var usedAsSignalContainer = usedAsSignalBus || usedAsNativeQueue;
+            var usedAsNativeArray = containerTypes.NativeArray.Contains(symbol);
+            var fileFormatLike = IsFileFormatLike(relativePath, symbol);
+            var strictRuntimeSignal = !symbolIsEditor &&
+                (implementsISignal || symbolIsCoreSignalFile || usedAsSignalBus || nativeQueueSignalPayload);
+            var wideField = StructBodyContainsWideField(codeLines, lineIndex);
+
+            if (strictRuntimeSignal)
+            {
+                _runtimeSignalPack1Count++;
+                var confidence = implementsISignal || usedAsSignalContainer ? 96 : 90;
+                AddFinding("ERROR", "RUNTIME_SIGNAL_PACK1_FORBIDDEN", confidence, "CONFIRMED_OR_PROBABLE_RUNTIME_SIGNAL", "STRUCTLAYOUT_ATTRIBUTE", relativePath, lineNumber, symbol, rawLine, "Remove Pack=1 from runtime signal/native payloads. Reorder wide fields first, use explicit padding, and keep sizeof(T) a multiple of 8.",
+                    new Dictionary<string, object?> { ["isEditor"] = symbolIsEditor, ["implementsISignal"] = implementsISignal, ["isCoreSignalFile"] = symbolIsCoreSignalFile, ["usedAsSignalContainer"] = usedAsSignalContainer, ["usedAsNativeList"] = usedAsNativeList, ["fileFormatLike"] = fileFormatLike });
+            }
+            else if (symbolIsEditor)
+            {
+                AddFinding("INFO", "EDITOR_PACK1_REVIEW", 50, "EDITOR_ONLY_REVIEW", "STRUCTLAYOUT_ATTRIBUTE", relativePath, lineNumber, symbol, rawLine, "Editor/test Pack=1 does not gate runtime memory, but avoid copying it into player DTOs.",
+                    new Dictionary<string, object?> { ["isEditor"] = true, ["fileFormatLike"] = fileFormatLike });
+            }
+            else if (symbolIsSignalLike || usedAsNativeArray)
+            {
+                AddFinding("WARN", "PACK1_RUNTIME_NATIVE_REVIEW", 78, "PROBABLE_RUNTIME_NATIVE_PAYLOAD", "STRUCTLAYOUT_ATTRIBUTE", relativePath, lineNumber, symbol, rawLine, "Confirm this runtime/native payload is not in hot memory. Prefer natural alignment and explicit padding on ARM64.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["isSignalLikeName"] = symbolIsSignalLike, ["usedAsNativeArray"] = usedAsNativeArray });
+            }
+            else if (fileFormatLike)
+            {
+                AddFinding("INFO", "PACK1_FILE_FORMAT_BOUNDARY_REVIEW", 62, "FILE_FORMAT_OR_SERIALIZATION_CANDIDATE", "STRUCTLAYOUT_ATTRIBUTE", relativePath, lineNumber, symbol, rawLine, "If this is disk/network/binary layout, keep it behind a codec boundary and do not pass it to Burst/native runtime memory.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["fileFormatLike"] = true, ["usedAsNativeArray"] = usedAsNativeArray });
+            }
+            else
+            {
+                AddFinding("WARN", "PACK1_REQUIRES_OWNER_JUSTIFICATION", 68, "STATIC_LAYOUT_REVIEW", "STRUCTLAYOUT_ATTRIBUTE", relativePath, lineNumber, symbol, rawLine, "Document why Pack=1 is safe here, or replace it with explicit layout/padding before it enters runtime native memory.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["fileFormatLike"] = fileFormatLike });
+            }
+
+            if (!wideField)
+            {
+                return;
+            }
+
+            if (strictRuntimeSignal || (symbolIsSignalLike && !symbolIsEditor))
+            {
+                AddFinding("ERROR", "PACK1_WIDE_FIELD_ALIGNMENT_RISK", 98, "CONFIRMED_ARM64_ALIGNMENT_RISK", "STRUCT_BODY_FIELD_SCAN", relativePath, lineNumber, symbol, rawLine, "This Pack=1 struct contains double/long/pointer-sized fields. Reorder 8-byte fields first and add explicit padding to 8-byte size.",
+                    new Dictionary<string, object?> { ["isEditor"] = symbolIsEditor, ["implementsISignal"] = implementsISignal, ["usedAsSignalContainer"] = usedAsSignalContainer, ["usedAsNativeList"] = usedAsNativeList });
+            }
+            else
+            {
+                AddFinding("WARN", "PACK1_WIDE_FIELD_REVIEW", 84, "PROBABLE_ARM64_ALIGNMENT_RISK", "STRUCT_BODY_FIELD_SCAN", relativePath, lineNumber, symbol, rawLine, "Pack=1 plus 8-byte fields is risky on ARM64 even outside signal lanes. Verify it never enters runtime native memory.",
+                    new Dictionary<string, object?> { ["isEditor"] = symbolIsEditor, ["fileFormatLike"] = fileFormatLike });
+            }
+        }
+
+        private void ScanManagedEventSurface(string relativePath, string rawLine, string code, int lineNumber, bool isEditor)
+        {
+            if (!ContainsAny(code, "Action", "Func", "UnityEvent", "SendMessage", "BroadcastMessage") ||
+                !Regex.IsMatch(relativePath, @"Signal|Signals|Events|Core/GlobalSignals\.cs|Core/Contracts") ||
+                !ManagedEventRegex.IsMatch(code))
+            {
+                return;
+            }
+
+            _managedEventCount++;
+            if (isEditor)
+            {
+                AddFinding("WARN", "EDITOR_MANAGED_EVENT_SURFACE_REVIEW", 62, "EDITOR_ONLY_REVIEW", "SANITIZED_LINE_REGEX", relativePath, lineNumber, "", rawLine, "Editor managed delegates are not runtime transport, but do not copy this surface into player signal paths.",
+                    new Dictionary<string, object?> { ["isEditor"] = true });
+            }
+            else
+            {
+                AddFinding("ERROR", "MANAGED_EVENT_SURFACE_IN_SIGNAL_DOMAIN", 88, "PROBABLE_RUNTIME_TRANSPORT_VIOLATION", "SANITIZED_LINE_REGEX", relativePath, lineNumber, "", rawLine, "Route broadcasts through unmanaged SignalBus<T> lanes or cold GlobalRegistry interfaces. Do not add managed delegates to transport surfaces.",
+                    new Dictionary<string, object?> { ["isEditor"] = false });
+            }
+        }
+
+        private void ScanManagedStringPayload(string relativePath, string rawLine, string code, int lineNumber, bool isEditor, StructMetadata? currentStruct, bool currentStructIsSignalCandidate, bool currentStructIsStrictRuntimeContract)
+        {
+            if (!currentStructIsSignalCandidate || !ContainsAny(code, "string", "String") || !StringFieldRegex.IsMatch(code))
+            {
+                return;
+            }
+
+            var symbol = currentStruct?.Name ?? "";
+            var implementsISignal = currentStruct?.ImplementsISignal ?? false;
+            if (isEditor)
+            {
+                AddFinding("WARN", "EDITOR_MANAGED_STRING_IN_SIGNAL_REVIEW", 60, "EDITOR_ONLY_REVIEW", "STRUCT_BODY_FIELD_SCAN", relativePath, lineNumber, symbol, rawLine, "Editor/test signal-like structs can use managed strings, but must not become runtime payload contracts.",
+                    new Dictionary<string, object?> { ["isEditor"] = true, ["implementsISignal"] = implementsISignal });
+            }
+            else if (!currentStructIsStrictRuntimeContract)
+            {
+                AddFinding("WARN", "MANAGED_STRING_IN_SIGNAL_LIKE_REVIEW", 72, "STATIC_CONTRACT_REVIEW", "STRUCT_BODY_FIELD_SCAN", relativePath, lineNumber, symbol, rawLine, "This signal-like private/native-adjacent struct carries a managed string. Confirm it never crosses SignalBus<T>, NativeQueue<T>, Burst, or NativeArray boundaries; otherwise replace with FixedString or a stable uint hash.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["implementsISignal"] = implementsISignal, ["strictRuntimeContract"] = false });
+            }
+            else
+            {
+                AddFinding("ERROR", "MANAGED_STRING_IN_SIGNAL_PAYLOAD", 94, "CONFIRMED_OR_PROBABLE_RUNTIME_PAYLOAD", "STRUCT_BODY_FIELD_SCAN", relativePath, lineNumber, symbol, rawLine, "Use FixedString32Bytes/64Bytes or a stable uint hash inside signal payloads.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["implementsISignal"] = implementsISignal, ["strictRuntimeContract"] = true });
+            }
+        }
+
+        private void ScanTransitivePack1Field(string relativePath, string rawLine, string code, int lineNumber, StructMetadata? currentStruct, bool currentStructIsStrictRuntimeContract)
+        {
+            if (!currentStructIsStrictRuntimeContract ||
+                currentStruct is null ||
+                !ContainsAny(code, "public", "internal", "private", "protected") ||
+                _pack1StructsByName.Count == 0)
+            {
+                return;
+            }
+
+            var match = FieldDeclarationTypeRegex.Match(code);
+            if (!match.Success)
+            {
+                return;
+            }
+
+            var fieldType = GetSimpleTypeName(match.Groups["type"].Value);
+            if (fieldType == currentStruct.Name ||
+                !_pack1StructsByName.TryGetValue(fieldType, out var pack1Infos))
+            {
+                return;
+            }
+
+            var fieldName = match.Groups["name"].Value;
+            foreach (var pack1Info in pack1Infos)
+            {
+                _transitivePack1FieldCount++;
+                AddFinding(
+                    "WARN",
+                    "TRANSITIVE_PACK1_FIELD_REVIEW",
+                    pack1Info.HasWideField ? 88 : 82,
+                    pack1Info.HasWideField ? "PROBABLE_ARM64_ALIGNMENT_RISK" : "STATIC_LAYOUT_REVIEW",
+                    "STRUCT_BODY_FIELD_SCAN",
+                    relativePath,
+                    lineNumber,
+                    currentStruct.Name + "." + fieldName,
+                    rawLine,
+                    "Runtime signal/native payload embeds a Pack=1 struct. Replace it with an aligned runtime projection, or prove this field never crosses SignalBus<T>, NativeArray<T>, Burst jobs, or runtime memcpy boundaries.",
+                    new Dictionary<string, object?>
+                    {
+                        ["fieldType"] = fieldType,
+                        ["pack1TypePath"] = pack1Info.Path,
+                        ["pack1TypeLine"] = pack1Info.Line,
+                        ["pack1TypeIsEditor"] = pack1Info.IsEditor,
+                        ["pack1TypeFileFormatLike"] = pack1Info.IsFileFormatLike,
+                        ["pack1TypeHasWideField"] = pack1Info.HasWideField,
+                        ["currentStructPath"] = currentStruct.Path,
+                        ["currentStructLine"] = currentStruct.Line
+                    });
+            }
+        }
+
+        private void ScanTelemetryRing(string relativePath, string rawText, string rawLine, string code, int lineNumber, bool isEditor)
+        {
+            if (code.IndexOf("NativeArray", StringComparison.Ordinal) < 0 || !ContainsAny(code, "Telemetry", "BlackBox", "Signal"))
+            {
+                return;
+            }
+
+            var match = TelemetryArrayRegex.Match(code);
+            if (!match.Success)
+            {
+                return;
+            }
+
+            var fieldName = match.Groups[2].Value;
+            var ownership = GetOwnership(relativePath, rawText, rawLine, fieldName, "Array");
+            var isTelemetryOrBlackBox = ContainsAny(code, "Telemetry", "BlackBox", "Blackbox") ||
+                ContainsAny(fieldName, "Telemetry", "telemetry", "BlackBox", "blackBox", "Blackbox", "blackbox");
+            if (!isTelemetryOrBlackBox)
+            {
+                AddFinding("INFO", "LOCAL_NATIVE_SIGNAL_ARRAY_REVIEW", 68, "SIGNAL_SCRATCH_REVIEW", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This NativeArray stores signal-like scratch data, not a telemetry/blackbox ring. Confirm it is a bounded staging buffer and not a private SignalBus<T> replacement.",
+                    ownership.ToTags(isEditor));
+                return;
+            }
+
+            _localNativeTelemetryCount++;
+            if (isEditor)
+            {
+                AddFinding("INFO", "EDITOR_LOCAL_NATIVE_TELEMETRY_REVIEW", 56, "EDITOR_ONLY_REVIEW", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "Editor-only telemetry buffers do not gate player H-Phi, but should still dispose deterministically when the window closes.",
+                    ownership.ToTags(true));
+            }
+            else if (ownership.HasVaultAlias)
+            {
+                AddFinding("INFO", "LOCAL_NATIVE_TELEMETRY_RING_VAULT_ALIAS", 92, "CONFIRMED_VAULT_ALIAS_REVIEW", "FIELD_DECLARATION_PLUS_VAULT_ALIAS", relativePath, lineNumber, fieldName, rawLine, "This field is documented as a GlobalDataVault alias. Verify generation checks and dispose ownership stay in the vault; do not count it as a private owner breach.",
+                    ownership.ToTags(isEditor));
+            }
+            else if (ownership.IsOwned)
+            {
+                _registeredLocalTelemetryCount++;
+                AddFinding("WARN", "LOCAL_NATIVE_TELEMETRY_RING_REGISTERED_NON_VAULT", 88, "CONFIRMED_NON_VAULT_OWNERSHIP_WITH_SENTINEL", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This private telemetry ring has register/unregister/dispose coverage, but H-Phi still prefers VaultBufferHandle<T> from GlobalDataVault for persistent blackbox state.",
+                    ownership.ToTags(isEditor));
+            }
+            else if (!ownership.HasAllocation)
+            {
+                AddFinding("WARN", "LOCAL_NATIVE_TELEMETRY_RING_DECLARED_ONLY", 73, "STATIC_DECLARATION_REVIEW", "FIELD_DECLARATION_WITHOUT_ALLOCATION", relativePath, lineNumber, fieldName, rawLine, "This telemetry field is declared but no persistent allocation was found in the same source file. Keep it under review, but do not count it as a live ownership breach until allocation exists.",
+                    ownership.ToTags(isEditor));
+            }
+            else
+            {
+                AddFinding("ERROR", "LOCAL_NATIVE_TELEMETRY_RING_UNOWNED", 90, "PROBABLE_NATIVE_OWNERSHIP_BREACH", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "Persistent telemetry/blackbox rings must be DataVault-owned or at least registered, unregistered, and disposed through the native sentinel.",
+                    ownership.ToTags(isEditor));
+            }
+        }
+
+        private void ScanLocalSignalQueue(string relativePath, string rawText, string rawLine, string code, int lineNumber, bool isEditor)
+        {
+            if (code.IndexOf("NativeQueue", StringComparison.Ordinal) < 0 || !ContainsAny(code, "Signal", "Command", "Packet"))
+            {
+                return;
+            }
+
+            var match = SignalQueueRegex.Match(code);
+            if (!match.Success || Regex.IsMatch(relativePath, @"Core/GlobalSignals\.cs|Core/Signals/SignalWardenRuntime\.cs|Editor/"))
+            {
+                return;
+            }
+
+            _localNativeQueueCount++;
+            var fieldName = match.Groups[2].Value;
+            var ownership = GetOwnership(relativePath, rawText, rawLine, fieldName, "Queue");
+            if (ownership.IsOwned)
+            {
+                AddFinding("INFO", "LOCAL_SIGNAL_QUEUE_REGISTERED_NON_BUS_REVIEW", 70, "REGISTERED_LOCAL_QUEUE_REVIEW", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This local signal queue has sentinel ownership, but confirm it intentionally bypasses SignalBus<T> and does not fragment the global signal corridor.",
+                    ownership.ToTags(isEditor));
+            }
+            else
+            {
+                AddFinding("WARN", "POSSIBLE_ORPHANED_SIGNAL_QUEUE", 82, "PROBABLE_SIGNAL_CORRIDOR_BYPASS", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "Confirm this queue is registered as a typed lane or migrate producers to SignalBus<T>.",
+                    ownership.ToTags(isEditor));
+            }
+        }
+
+        private void ScanSyncRuntimeIo(string relativePath, string rawLine, string code, int lineNumber, bool isEditor, string methodName)
+        {
+            if (!ContainsAny(code, "File", "Directory") ||
+                isEditor ||
+                Regex.IsMatch(relativePath, "Save|Persistence|Crash|Dump|Telemetry|Tools|Editor") ||
+                !SyncIoRegex.IsMatch(code))
+            {
+                return;
+            }
+
+            if (IsColdOrFatalIoContext(relativePath, methodName))
+            {
+                _coldSyncIoCount++;
+                AddFinding("INFO", "COLD_OR_FATAL_SYNC_IO_REVIEW", 64, "COLD_OR_FATAL_IO_BOUNDARY", "SANITIZED_LINE_REGEX", relativePath, lineNumber, methodName, rawLine, "This synchronous file I/O is in a cold, load, dump, or fatal-reporting context by name. Keep it outside Tick/dispatch hot paths and prefer background/MMF for recurring writes.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+                return;
+            }
+
+            AddFinding("WARN", "RUNTIME_SYNC_FILE_IO_REVIEW", 76, "IO_PRESSURE_HEURISTIC", "SANITIZED_LINE_REGEX", relativePath, lineNumber, "", rawLine, "Confirm this synchronous file I/O is cold/fatal only. Runtime WAL/save paths should stage work off the main thread.",
+                new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+        }
+
+        private void ScanHotPathHeuristics(string relativePath, string rawLine, string code, int lineNumber, bool isEditor, string methodName)
+        {
+            if (isEditor || methodName.Length == 0 || !IsHotMethodName(methodName))
+            {
+                return;
+            }
+
+            if (rawLine.Contains("COLD ALLOC:", StringComparison.Ordinal) || IsFieldDeclarationLike(code))
+            {
+                return;
+            }
+
+            if (ContainsAny(code, "foreach", ".Where", ".Select", ".OrderBy", ".ToList", ".ToArray", "Enumerable") &&
+                HotPathEnumerationRegex.IsMatch(code))
+            {
+                _hotPathRiskCount++;
+                AddFinding("WARN", "ZERO_GC_HOT_PATH_ENUMERATION_REVIEW", 72, "HOT_PATH_HEURISTIC", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "Review this hot-path enumeration/LINQ surface for allocations, boxing, or hidden iterator state.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+            }
+
+            if (code.Contains("new ", StringComparison.Ordinal) &&
+                HotPathAllocationRegex.IsMatch(code) &&
+                !Regex.IsMatch(code, @"new\s+(NativeArray|NativeList|NativeQueue|NativeHashMap|NativeParallel|UnsafeList|UnsafeHashMap)\b"))
+            {
+                _hotPathRiskCount++;
+                AddFinding("WARN", "ZERO_GC_HOT_PATH_ALLOCATION_REVIEW", 66, "HOT_PATH_HEURISTIC", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "Review this hot-path allocation. If intentional, move it to bootstrap/cold path or document the pooled owner.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+            }
+
+            if (ContainsAny(code, "GetComponent", "FindObject", "GameObject.Find", "Object.Find") &&
+                UnityLookupRegex.IsMatch(code))
+            {
+                _hotPathRiskCount++;
+                AddFinding("WARN", "HOT_PATH_UNITY_LOOKUP_REVIEW", 82, "HOT_PATH_HEURISTIC", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "Cache component/object references outside Tick/Update/Schedule paths. Do not perform Unity hierarchy lookups in hot loops.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+            }
+
+            if (ContainsAny(code, ".material", "Material.Set", ".SetFloat", ".SetColor", ".SetVector", ".SetTexture") &&
+                MaterialMutationRegex.IsMatch(code))
+            {
+                _hotPathRiskCount++;
+                AddFinding("WARN", "SRP_BATCHER_HOT_PATH_MATERIAL_REVIEW", 64, "HOT_PATH_HEURISTIC", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "Review material mutation in hot path. Prefer GraphicsBuffer/CBUFFER paths that keep SRP batching intact.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+            }
+        }
+
+        private void ScanComputeFile(string path)
+        {
+            var relativePath = ToRelativePath(path);
+            var lines = File.ReadAllLines(path);
+            _shaderFilesScanned++;
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (!Compute1024Regex.IsMatch(lines[i]))
+                {
+                    continue;
+                }
+
+                _computeThreadGroupRiskCount++;
+                AddFinding("WARN", "COMPUTE_THREADS_1024_REVIEW", 80, "GPU_PORTABILITY_HEURISTIC", "COMPUTE_SHADER_SCAN", relativePath, i + 1, "", lines[i], "Use tiered thread-group constants; 1024-wide groups are PC-biased and risky on mobile/Metal-class GPUs.",
+                    new Dictionary<string, object?> { ["shader"] = true });
+            }
+        }
+
+        private void AddDuplicateFindings()
+        {
+            foreach (var group in _signalDefinitions.GroupBy(item => item.Name).Where(item => item.Count() > 1))
+            {
+                var entries = group.ToArray();
+                var runtimeCount = entries.Count(item => !item.IsEditor);
+                var strictRuntimeCount = entries.Count(item => item.IsStrictRuntimeContract);
+                var editorCount = entries.Length - runtimeCount;
+                foreach (var entry in entries)
+                {
+                    var tags = new Dictionary<string, object?>
+                    {
+                        ["duplicateCount"] = entries.Length,
+                        ["runtimeDuplicateCount"] = runtimeCount,
+                        ["strictRuntimeDuplicateCount"] = strictRuntimeCount,
+                        ["editorDuplicateCount"] = editorCount
+                    };
+
+                    if (strictRuntimeCount > 1 && entry.IsStrictRuntimeContract)
+                    {
+                        AddFinding("ERROR", "DUPLICATE_RUNTIME_SIGNAL_NAME", 92, "CONFIRMED_RUNTIME_CONTRACT_COLLISION", "ANCHORED_STRUCT_GROUP", entry.Path, entry.Line, entry.Name, "struct " + entry.Name, "Signal names must be globally unique across runtime contracts. Merge duplicate contracts or wrap mock/domain-local payloads behind explicit names.", tags);
+                    }
+                    else if (runtimeCount >= 1 && entry.IsEditor)
+                    {
+                        AddFinding("WARN", "EDITOR_SIGNAL_NAME_SHADOWS_RUNTIME", 68, "EDITOR_ONLY_REVIEW", "ANCHORED_STRUCT_GROUP", entry.Path, entry.Line, entry.Name, "struct " + entry.Name, "Editor/test structs should not shadow runtime signal names; rename smoke payloads or fully isolate them.", tags);
+                    }
+                    else
+                    {
+                        AddFinding("WARN", "DUPLICATE_SIGNAL_LIKE_NAME_REVIEW", 74, "STATIC_CONTRACT_REVIEW", "ANCHORED_STRUCT_GROUP", entry.Path, entry.Line, entry.Name, "struct " + entry.Name, "Review duplicate signal-like names. They may be namespace-safe C#, but telemetry/AOT/operator tooling treats names as global identifiers.", tags);
+                    }
+                }
+            }
+        }
+
+        private AuditResult BuildResult()
+        {
+            var ruleStats = _findings
+                .GroupBy(item => item.Rule)
+                .OrderByDescending(item => item.Count())
+                .Select(item =>
+                {
+                    var findings = item.ToArray();
+                    return new RuleStat(
+                        item.Key,
+                        findings.Length,
+                        findings.Count(finding => finding.Severity == "ERROR"),
+                        findings.Count(finding => finding.Severity == "WARN"),
+                        findings.Count(finding => finding.Severity == "INFO"),
+                        Math.Round(findings.Average(finding => finding.Confidence), 1));
+                })
+                .ToArray();
+
+            var classificationStats = _findings
+                .GroupBy(item => item.Classification)
+                .OrderByDescending(item => item.Count())
+                .Select(item => new ClassificationStat(item.Key, item.Count()))
+                .ToArray();
+
+            var errors = _findings.Count(item => item.Severity == "ERROR");
+            var warnings = _findings.Count(item => item.Severity == "WARN");
+            var infos = _findings.Count(item => item.Severity == "INFO");
+            var confirmedErrors = _findings.Count(item => item.Severity == "ERROR" && item.Confidence >= 90);
+            var reviewOnly = _findings.Count(item => item.Confidence < 75);
+            var coreGlobalSignals = _signalDefinitions.Count(item => item.InCoreGlobalSignals);
+            var signalsWithoutLayout = _signalDefinitions.Count(item => !item.HasStructLayout);
+
+            return new AuditResult(
+                Agent,
+                "STATIC_SOURCE_CLASSIFIED",
+                _options.Scope,
+                DateTime.UtcNow.ToString("o"),
+                _options.ProjectRoot,
+                _scannedFiles,
+                _shaderFilesScanned,
+                _pack1Count,
+                _runtimeSignalPack1Count,
+                _transitivePack1FieldCount,
+                _managedEventCount,
+                _localNativeTelemetryCount,
+                _registeredLocalTelemetryCount,
+                _localNativeQueueCount,
+                _computeThreadGroupRiskCount,
+                _hotPathRiskCount,
+                _coldSyncIoCount,
+                _asmdefContractBoundaryCount,
+                _signalDefinitions.Count,
+                coreGlobalSignals,
+                signalsWithoutLayout,
+                errors,
+                warnings,
+                infos,
+                confirmedErrors,
+                reviewOnly,
+                ruleStats,
+                classificationStats,
+                _findings.ToArray());
+        }
+
+        private void AddFinding(string severity, string rule, int confidence, string classification, string evidenceKind, string path, int line, string symbol, string evidence, string requiredAction, Dictionary<string, object?> tags)
+        {
+            _findings.Add(new Finding(severity, rule, Math.Clamp(confidence, 1, 100), classification, evidenceKind, path, line, symbol, evidence.Trim(), requiredAction, tags));
+        }
+
+        private string ToRelativePath(string path)
+        {
+            var full = Path.GetFullPath(path);
+            var root = _options.ProjectRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (full.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+            {
+                return full[root.Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Replace('\\', '/');
+            }
+
+            return full.Replace('\\', '/');
+        }
+
+        private static bool UsesSignalContracts(string text)
+        {
+            return text.Contains("using Hecton8.Core.Contracts.Signals", StringComparison.Ordinal) ||
+                   text.Contains("Hecton8.Core.Contracts.Signals.", StringComparison.Ordinal) ||
+                   Regex.IsMatch(text, @":\s*(?:[^{};,\n]*\.)?ISignal\b");
+        }
+
+        private AsmdefInfo? TryReadAsmdef(string path)
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(File.ReadAllText(path));
+                var root = document.RootElement;
+                if (!root.TryGetProperty("name", out var nameElement))
+                {
+                    return null;
+                }
+
+                var references = new HashSet<string>(StringComparer.Ordinal);
+                if (root.TryGetProperty("references", out var referencesElement) &&
+                    referencesElement.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var reference in referencesElement.EnumerateArray())
+                    {
+                        if (reference.ValueKind == JsonValueKind.String)
+                        {
+                            var value = reference.GetString();
+                            if (!string.IsNullOrWhiteSpace(value))
+                            {
+                                references.Add(value);
+                            }
+                        }
+                    }
+                }
+
+                var rawLines = File.ReadAllLines(path);
+                var referenceLine = 1;
+                for (var i = 0; i < rawLines.Length; i++)
+                {
+                    if (rawLines[i].Contains("\"references\"", StringComparison.Ordinal))
+                    {
+                        referenceLine = i + 1;
+                        break;
+                    }
+                }
+
+                return new AsmdefInfo(
+                    path,
+                    ToRelativePath(path),
+                    nameElement.GetString() ?? "",
+                    references,
+                    Path.GetDirectoryName(Path.GetFullPath(path)) ?? _options.ProjectRoot,
+                    referenceLine);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
+
+        private static AsmdefInfo? FindNearestAsmdef(string sourcePath, AsmdefInfo[] asmdefs)
+        {
+            var full = Path.GetFullPath(sourcePath);
+            AsmdefInfo? nearest = null;
+            var nearestLength = -1;
+            foreach (var asmdef in asmdefs)
+            {
+                if (IsUnderDirectory(full, asmdef.Directory) && asmdef.Directory.Length > nearestLength)
+                {
+                    nearest = asmdef;
+                    nearestLength = asmdef.Directory.Length;
+                }
+            }
+
+            return nearest;
+        }
+
+        private static bool IsUnderDirectory(string path, string directory)
+        {
+            if (!path.StartsWith(directory, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return path.Length == directory.Length ||
+                   path[directory.Length] == Path.DirectorySeparatorChar ||
+                   path[directory.Length] == Path.AltDirectorySeparatorChar;
+        }
+    }
+
+    private static bool HasRelevantText(string rawText)
+    {
+        return ContainsAny(rawText, "struct", "StructLayout", "NativeArray", "NativeQueue", "NativeList", "SignalBus", "UnityEvent", "Action", "Func", "SendMessage", "BroadcastMessage", "File.", "Directory.", "FileStream");
+    }
+
+    private static string RemoveCodeTrivia(string line)
+    {
+        if (string.IsNullOrEmpty(line))
+        {
+            return "";
+        }
+
+        var inString = false;
+        var inChar = false;
+        var verbatim = false;
+        for (var i = 0; i < line.Length - 1; i++)
+        {
+            var c = line[i];
+            var next = line[i + 1];
+
+            if (!inChar && c == '"' && (i == 0 || line[i - 1] != '\\'))
+            {
+                verbatim = i > 0 && line[i - 1] == '@';
+                inString = !inString;
+                continue;
+            }
+
+            if (!inString && c == '\'' && (i == 0 || line[i - 1] != '\\'))
+            {
+                inChar = !inChar;
+                continue;
+            }
+
+            if (inString && verbatim && c == '"' && next == '"')
+            {
+                i++;
+                continue;
+            }
+
+            if (!inString && !inChar && c == '/' && next == '/')
+            {
+                return line[..i];
+            }
+        }
+
+        return line;
+    }
+
+    private static bool IsEditorPath(string relativePath)
+    {
+        return Regex.IsMatch(relativePath, @"(^|/)Editor(/|$)|(^|/)Tests/Editor(/|$)|SmokeTester|SmokeTest|Automation|QA/Headless|TOOL_");
+    }
+
+    private static bool IsCoreSignalFile(string relativePath)
+    {
+        return Regex.IsMatch(relativePath, @"Core/GlobalSignals\.cs$|Core/Signals/");
+    }
+
+    private static bool IsFileFormatLike(string relativePath, string symbol)
+    {
+        var combined = relativePath + "/" + symbol;
+        return Regex.IsMatch(combined, "Save|Persistence|Persist|Serialize|Deserialize|Binary|Codec|Compression|Archive|Header|Record|Wal|WAL|Pager|Page|Snapshot|Modding|Protocol|Manifest|Layout|Disk|FileFormat|StaticData|DataArena");
+    }
+
+    private static bool IsSignalLikeName(string symbol)
+    {
+        return Regex.IsMatch(symbol, "(Signal|Command|Packet|Telemetry|BlackBox|Aup|AbsoluteUniversePosition)$|Telemetry|BlackBox");
+    }
+
+    private static bool IsHotMethodName(string methodName)
+    {
+        return Regex.IsMatch(methodName, @"^(Tick|Update|LateUpdate|FixedUpdate|Execute|OnUpdate|Run|Schedule|Simulate|Step|Process|Dispatch|Flush|Render|Sync)");
+    }
+
+    private static bool IsColdOrFatalIoContext(string relativePath, string methodName)
+    {
+        var context = relativePath + "/" + methodName;
+        return Regex.IsMatch(context, "Archaeology|Bootstrap|Cold|Csv|CSV|Debug|Dump|Export|Fatal|Import|Initialize|Load|Open|Report|Shutdown|Teardown|TryLoad|TryOpen|Validate");
+    }
+
+    private static bool IsFieldDeclarationLike(string code)
+    {
+        return Regex.IsMatch(code, @"^\s*(?:public|internal|private|protected)\s+(?:static\s+)?(?:readonly\s+)?(?:volatile\s+)?(?:unsafe\s+)?[A-Za-z_][^;=]*\s+[A-Za-z_][A-Za-z0-9_]*\s*=");
+    }
+
+    private static string GetSimpleTypeName(string typeName)
+    {
+        var dot = typeName.LastIndexOf('.');
+        return dot >= 0 ? typeName[(dot + 1)..] : typeName;
+    }
+
+    private static bool HasStructLayoutBefore(string[] codeLines, int index)
+    {
+        var start = Math.Max(0, index - 8);
+        for (var i = index; i >= start; i--)
+        {
+            if (codeLines[i].Contains("[StructLayout", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (i != index && Regex.IsMatch(codeLines[i], @"^\s*(?:public|internal|private|protected)?\s*(?:class|interface|enum)\s+"))
+            {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    private static int FindStructDeclarationNearAttribute(string[] codeLines, int attributeIndex)
+    {
+        var limit = Math.Min(codeLines.Length - 1, attributeIndex + 24);
+        for (var i = attributeIndex; i <= limit; i++)
+        {
+            if (StructDeclarationRegex.IsMatch(codeLines[i]))
+            {
+                return i;
+            }
+
+            if (i != attributeIndex &&
+                (codeLines[i].Contains("[StructLayout", StringComparison.Ordinal) ||
+                 Regex.IsMatch(codeLines[i], @"^\s*(?:public|internal|private|protected)?\s*(?:class|interface|enum)\s+")))
+            {
+                return -1;
+            }
+        }
+
+        return -1;
+    }
+
+    private static bool StructImplementsISignal(string[] codeLines, int index)
+    {
+        var builder = new StringBuilder();
+        var limit = Math.Min(codeLines.Length - 1, index + 3);
+        for (var i = index; i <= limit; i++)
+        {
+            builder.Append(' ');
+            builder.Append(codeLines[i]);
+            if (codeLines[i].Contains('{'))
+            {
+                break;
+            }
+        }
+
+        return Regex.IsMatch(builder.ToString(), @":\s*[^{};]*\bISignal\b");
+    }
+
+    private static StructMetadata? FindNearestStructMetadata(List<StructMetadata> structs, int index)
+    {
+        StructMetadata? bestForward = null;
+        for (var i = 0; i < structs.Count; i++)
+        {
+            var item = structs[i];
+            if (item.Index < index || item.Index > index + 24)
+            {
+                continue;
+            }
+
+            if (bestForward is null || item.Index < bestForward.Index)
+            {
+                bestForward = item;
+            }
+        }
+
+        if (bestForward is not null)
+        {
+            return bestForward;
+        }
+
+        StructMetadata? bestBack = null;
+        for (var i = 0; i < structs.Count; i++)
+        {
+            var item = structs[i];
+            if (item.Index > index || item.Index < index - 8)
+            {
+                continue;
+            }
+
+            if (bestBack is null || item.Index > bestBack.Index)
+            {
+                bestBack = item;
+            }
+        }
+
+        return bestBack;
+    }
+
+    private static bool StructBodyContainsWideField(string[] codeLines, int index)
+    {
+        var limit = Math.Min(codeLines.Length - 1, index + 100);
+        for (var i = index; i <= limit; i++)
+        {
+            if (i > index && codeLines[i].Contains("[StructLayout", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (i > index && StructDeclarationRegex.IsMatch(codeLines[i]))
+            {
+                return false;
+            }
+
+            if (Regex.IsMatch(codeLines[i], @"\b(double|double2|double3|double4|long|ulong|IntPtr|UIntPtr)\b"))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static OwnershipInfo GetOwnership(string relativePath, string rawText, string declarationLine, string fieldName, string collectionKind)
+    {
+        var escaped = Regex.Escape(fieldName);
+        var registerToken = "RegisterNative" + collectionKind;
+        var unregisterToken = "UnregisterNative" + collectionKind;
+        var hasDirectNativeArrayAllocation = collectionKind == "Array" &&
+            Regex.IsMatch(rawText, escaped + @"\s*=\s*new\s+NativeArray\s*<", RegexOptions.Singleline);
+        var hasH8MemoryAllocate = collectionKind == "Array" &&
+            Regex.IsMatch(rawText, escaped + @"\s*=\s*H8Memory\s*\.\s*Allocate\s*<", RegexOptions.Singleline);
+        var hasH8MemoryRelease = collectionKind == "Array" &&
+            Regex.IsMatch(rawText, @"H8Memory\s*\.\s*Release\s*\(\s*ref\s+" + escaped + @"\b", RegexOptions.Singleline);
+        var hasH8MemoryOwnership = hasH8MemoryAllocate && hasH8MemoryRelease;
+        var hasVaultAlias =
+            declarationLine.Contains("Vault alias", StringComparison.OrdinalIgnoreCase) ||
+            declarationLine.Contains("GlobalDataVault owns", StringComparison.OrdinalIgnoreCase) ||
+            declarationLine.Contains("ResolveNativeBuffer", StringComparison.Ordinal) ||
+            Regex.IsMatch(rawText, @"(?i)(Vault alias|GlobalDataVault owns|VaultBufferHandle)[^\r\n]*\b" + escaped + @"\b|\b" + escaped + @"\b[^\r\n]*(Vault alias|GlobalDataVault owns|VaultBufferHandle)") ||
+            Regex.IsMatch(rawText, @"\bVaultBufferHandle\s*<[^>]+>\s+" + escaped + @"Handle\b") ||
+            Regex.IsMatch(rawText, escaped + @"\s*=\s*[A-Za-z_][A-Za-z0-9_]*Handle\s*\.\s*Resolve\s*\(") ||
+            Regex.IsMatch(rawText, escaped + @"\s*=\s*ResolveNativeBuffer\s*<");
+
+        var hasRegister = rawText.Contains(registerToken, StringComparison.Ordinal) &&
+            Regex.IsMatch(rawText, registerToken + @"\s*\([^;]*(" + escaped + @"|nameof\s*\(\s*" + escaped + @"\s*\))", RegexOptions.Singleline);
+        var hasUnregister = rawText.Contains(unregisterToken, StringComparison.Ordinal) &&
+            Regex.IsMatch(rawText, unregisterToken + @"\s*\([^;]*(" + escaped + @"|nameof\s*\(\s*" + escaped + @"\s*\))", RegexOptions.Singleline);
+        var hasDispose = rawText.Contains(".Dispose", StringComparison.Ordinal) &&
+            Regex.IsMatch(rawText, escaped + @"\s*\.\s*Dispose\s*\(", RegexOptions.Singleline);
+        var fieldPassedToRegisterHelper = Regex.IsMatch(rawText, @"\b(?:Register|Track)[A-Za-z0-9_]*(?:Array|Buffer|Native)[A-Za-z0-9_]*\s*\(\s*(?:ref\s+)?" + escaped + @"\b", RegexOptions.Singleline);
+        var helperRegistersArray = rawText.Contains(registerToken, StringComparison.Ordinal) &&
+            Regex.IsMatch(rawText, registerToken + @"\s*\([^;]*(array|buffer|nativeArray)", RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        var fieldPassedToDisposeHelper = Regex.IsMatch(rawText, @"\b(?:Dispose|Release)[A-Za-z0-9_]*(?:Array|Buffer|Native)[A-Za-z0-9_]*\s*\(\s*(?:ref\s+)?" + escaped + @"\b", RegexOptions.Singleline);
+        var helperUnregistersArray = rawText.Contains(unregisterToken, StringComparison.Ordinal) &&
+            Regex.IsMatch(rawText, unregisterToken + @"\s*\([^;]*(array|buffer|nativeArray)", RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        var helperDisposesArray = Regex.IsMatch(rawText, @"\b(array|buffer|nativeArray)\s*\.\s*Dispose\s*\(", RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        var hasHelperRegister = fieldPassedToRegisterHelper && helperRegistersArray;
+        if (hasHelperRegister)
+        {
+            hasRegister = true;
+        }
+
+        var hasHelperDispose = fieldPassedToDisposeHelper && helperUnregistersArray && helperDisposesArray;
+        if (hasHelperDispose)
+        {
+            hasUnregister = true;
+            hasDispose = true;
+        }
+
+        var isH8MemoryRootAllocator =
+            collectionKind == "Array" &&
+            relativePath.EndsWith("Assets/_Project/Scripts/Core/Memory/H8Memory.cs", StringComparison.Ordinal) &&
+            hasDirectNativeArrayAllocation &&
+            hasDispose;
+        var hasAllocation = hasDirectNativeArrayAllocation ||
+            hasH8MemoryAllocate ||
+            Regex.IsMatch(rawText, escaped + @"\s*=\s*ResolveNativeBuffer\s*<", RegexOptions.Singleline) ||
+            Regex.IsMatch(rawText, escaped + @"\s*=\s*[A-Za-z_][A-Za-z0-9_]*Handle\s*\.\s*Resolve\s*\(", RegexOptions.Singleline);
+
+        return new OwnershipInfo(hasRegister, hasUnregister, hasDispose, hasVaultAlias, hasHelperDispose, hasH8MemoryOwnership, isH8MemoryRootAllocator, hasAllocation);
+    }
+
+    private static ContainerTypes GetContainerTypes(string[] codeLines)
+    {
+        var signalBus = new HashSet<string>(StringComparer.Ordinal);
+        var nativeQueue = new HashSet<string>(StringComparer.Ordinal);
+        var nativeList = new HashSet<string>(StringComparer.Ordinal);
+        var nativeArray = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var code in codeLines)
+        {
+            if (!code.Contains('<') || !ContainsAny(code, "SignalBus", "NativeQueue", "NativeList", "NativeArray"))
+            {
+                continue;
+            }
+
+            foreach (Match match in ContainerTypeRegex.Matches(code))
+            {
+                var type = match.Groups["type"].Value;
+                switch (match.Groups["kind"].Value)
+                {
+                    case "SignalBus":
+                        signalBus.Add(type);
+                        break;
+                    case "NativeQueue":
+                        nativeQueue.Add(type);
+                        break;
+                    case "NativeList":
+                        nativeList.Add(type);
+                        break;
+                    case "NativeArray":
+                        nativeArray.Add(type);
+                        break;
+                }
+            }
+        }
+
+        return new ContainerTypes(signalBus, nativeQueue, nativeList, nativeArray);
+    }
+
+    private static int CountBraceDelta(string line)
+    {
+        var delta = 0;
+        foreach (var c in line)
+        {
+            if (c == '{')
+            {
+                delta++;
+            }
+            else if (c == '}')
+            {
+                delta--;
+            }
+        }
+
+        return delta;
+    }
+
+    private static bool ContainsAny(string text, params string[] values)
+    {
+        foreach (var value in values)
+        {
+            if (text.Contains(value, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+internal sealed record CliOptions(string ProjectRoot, string OutputJson, string OutputMarkdown, string Scope, bool FailOnError, bool IncludeHotPathHeuristics)
+{
+    public static CliOptions Parse(string[] args)
+    {
+        var projectRoot = Directory.GetCurrentDirectory();
+        string? outputJson = null;
+        string? outputMarkdown = null;
+        var scope = "Full";
+        var failOnError = false;
+        var includeHotPathHeuristics = false;
+
+        for (var i = 0; i < args.Length; i++)
+        {
+            var arg = args[i];
+            switch (arg)
+            {
+                case "--project-root":
+                    projectRoot = RequireValue(args, ref i, arg);
+                    break;
+                case "--json":
+                case "--output-json":
+                    outputJson = RequireValue(args, ref i, arg);
+                    break;
+                case "--markdown":
+                case "--output-markdown":
+                    outputMarkdown = RequireValue(args, ref i, arg);
+                    break;
+                case "--scope":
+                    scope = RequireValue(args, ref i, arg);
+                    break;
+                case "--fail-on-error":
+                    failOnError = true;
+                    break;
+                case "--include-hot-path-heuristics":
+                    includeHotPathHeuristics = true;
+                    break;
+                case "--help":
+                case "-h":
+                    throw new InvalidOperationException("Usage: --project-root <path> --json <path> --markdown <path> [--scope Full|SignalCritical] [--include-hot-path-heuristics] [--fail-on-error]");
+                default:
+                    throw new InvalidOperationException("Unknown argument: " + arg);
+            }
+        }
+
+        projectRoot = Path.GetFullPath(projectRoot);
+        if (!string.Equals(scope, "Full", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(scope, "SignalCritical", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Invalid scope. Expected Full or SignalCritical.");
+        }
+
+        outputJson ??= Path.Combine(projectRoot, "Temp", "SignalBusContractAuditCli.json");
+        outputMarkdown ??= Path.Combine(projectRoot, "Temp", "SignalBusContractAuditCli.md");
+        outputJson = Path.GetFullPath(Path.IsPathRooted(outputJson) ? outputJson : Path.Combine(projectRoot, outputJson));
+        outputMarkdown = Path.GetFullPath(Path.IsPathRooted(outputMarkdown) ? outputMarkdown : Path.Combine(projectRoot, outputMarkdown));
+
+        return new CliOptions(projectRoot, outputJson, outputMarkdown, scope, failOnError, includeHotPathHeuristics);
+    }
+
+    private static string RequireValue(string[] args, ref int index, string name)
+    {
+        if (index + 1 >= args.Length)
+        {
+            throw new InvalidOperationException("Missing value for " + name);
+        }
+
+        index++;
+        return args[index];
+    }
+}
+
+internal static class MarkdownWriter
+{
+    public static string Write(AuditResult result)
+    {
+        var md = new StringBuilder();
+        md.AppendLine("# SHINOBU_02 Signal Bus Contract Audit CLI");
+        md.AppendLine();
+        md.AppendLine("Evidence Class: " + result.EvidenceClass);
+        md.AppendLine("Scope: " + result.Scope);
+        md.AppendLine("Generated UTC: " + result.GeneratedUtc);
+        md.AppendLine();
+        md.AppendLine("## Summary");
+        md.AppendLine();
+        md.AppendLine("- Files scanned: " + result.ScannedFiles + " C# / " + result.ShaderFilesScanned + " compute");
+        md.AppendLine("- Signal-like definitions found: " + result.SignalDefinitions);
+        md.AppendLine("- Signal definitions still in Core/GlobalSignals.cs: " + result.CoreGlobalSignalDefinitions);
+        md.AppendLine("- Pack=1 layouts: " + result.Pack1Layouts);
+        md.AppendLine("- Runtime signal Pack=1 layouts: " + result.RuntimeSignalPack1Layouts);
+        md.AppendLine("- Runtime signal transitive Pack=1 field hits: " + result.TransitivePack1FieldHits);
+        md.AppendLine("- Signal-like definitions without nearby StructLayout: " + result.SignalsWithoutLayout);
+        md.AppendLine("- Managed event surface hits: " + result.ManagedEventSurfaceHits);
+        md.AppendLine("- Local native telemetry ring hits: " + result.LocalNativeTelemetryRings);
+        md.AppendLine("- Registered local telemetry rings: " + result.RegisteredLocalTelemetryRings);
+        md.AppendLine("- Local native signal queue hits: " + result.LocalNativeSignalQueues);
+        md.AppendLine("- Compute 1024-thread-group hits: " + result.ComputeThreadGroupRiskHits);
+        md.AppendLine("- Hot-path heuristic hits: " + result.HotPathRiskHits);
+        md.AppendLine("- Cold/fatal sync I/O review hits: " + result.ColdSyncIoReviewHits);
+        md.AppendLine("- Assembly contract boundary hits: " + result.AsmdefContractBoundaryHits);
+        md.AppendLine("- Errors: " + result.Errors);
+        md.AppendLine("- Warnings: " + result.Warnings);
+        md.AppendLine("- Infos: " + result.Infos);
+        md.AppendLine("- Confirmed/probable errors at confidence >= 90: " + result.ConfirmedErrors);
+        md.AppendLine("- Review-only findings below confidence 75: " + result.ReviewOnlyFindings);
+        md.AppendLine();
+        md.AppendLine("## Rule Breakdown");
+        md.AppendLine();
+        foreach (var stat in result.RuleStats)
+        {
+            md.AppendLine("- " + stat.Rule + ": total " + stat.Count + ", errors " + stat.Errors + ", warnings " + stat.Warnings + ", infos " + stat.Infos + ", avg confidence " + stat.AverageConfidence);
+        }
+
+        md.AppendLine();
+        md.AppendLine("## Classification Breakdown");
+        md.AppendLine();
+        foreach (var stat in result.ClassificationStats)
+        {
+            md.AppendLine("- " + stat.Classification + ": " + stat.Count);
+        }
+
+        md.AppendLine();
+        md.AppendLine("## Findings");
+        md.AppendLine();
+        if (result.Findings.Length == 0)
+        {
+            md.AppendLine("No findings. This is static-source only, not runtime proof.");
+        }
+        else
+        {
+            foreach (var finding in result.Findings)
+            {
+                md.AppendLine("- [" + finding.Severity + "][" + finding.Confidence + "%][" + finding.Classification + "] " + finding.Rule + " | " + finding.Path + ":" + finding.Line + " | " + finding.Symbol);
+                md.AppendLine("  Evidence kind: " + finding.EvidenceKind);
+                md.AppendLine("  Evidence: `" + finding.Evidence.Replace("`", "'") + "`");
+                md.AppendLine("  Required action: " + finding.RequiredAction);
+            }
+        }
+
+        md.AppendLine();
+        md.AppendLine("## Non-Claims");
+        md.AppendLine();
+        md.AppendLine("- This audit does not prove Unity import, player build, IL2CPP, runtime GC, profiler, scene wiring, or actual struct sizeof(T).");
+        md.AppendLine("- Static confidence is not semantic proof. This CLI intentionally stays outside Unity and uses standard .NET only.");
+        md.AppendLine("- This audit reports contract debt only. It does not modify runtime contracts.");
+        return md.ToString();
+    }
+}
+
+internal sealed record ContainerTypes(HashSet<string> SignalBus, HashSet<string> NativeQueue, HashSet<string> NativeList, HashSet<string> NativeArray);
+
+internal sealed record StructMetadata(
+    string Name,
+    string Declaration,
+    string Path,
+    int Line,
+    int Index,
+    bool HasStructLayout,
+    bool ImplementsISignal,
+    bool IsEditor,
+    bool IsCoreGlobalSignals,
+    bool IsCoreSignalFile,
+    bool IsSignalLikeName);
+
+internal sealed record SignalDefinition(string Name, string Path, int Line, bool HasStructLayout, bool ImplementsISignal, bool IsEditor, bool InCoreGlobalSignals, bool IsStrictRuntimeContract);
+
+internal sealed record Pack1StructInfo(string Name, string Path, int Line, bool IsEditor, bool IsFileFormatLike, bool HasWideField);
+
+internal sealed record AsmdefInfo(string Path, string RelativePath, string Name, HashSet<string> References, string Directory, int ReferenceLine);
+
+internal sealed record OwnershipInfo(
+    bool HasRegister,
+    bool HasUnregister,
+    bool HasDispose,
+    bool HasVaultAlias,
+    bool HasHelperDispose,
+    bool HasH8MemoryOwnership,
+    bool IsH8MemoryRootAllocator,
+    bool HasAllocation)
+{
+    public bool IsOwned => (HasRegister && HasUnregister && HasDispose) || HasH8MemoryOwnership || IsH8MemoryRootAllocator;
+
+    public Dictionary<string, object?> ToTags(bool isEditor)
+    {
+        return new Dictionary<string, object?>
+        {
+            ["hasSentinelRegistration"] = HasRegister,
+            ["hasSentinelUnregister"] = HasUnregister,
+            ["hasDisposePath"] = HasDispose,
+            ["hasVaultAlias"] = HasVaultAlias,
+            ["hasHelperDisposePath"] = HasHelperDispose,
+            ["hasH8MemoryOwnership"] = HasH8MemoryOwnership,
+            ["isH8MemoryRootAllocator"] = IsH8MemoryRootAllocator,
+            ["hasAllocation"] = HasAllocation,
+            ["isEditor"] = isEditor
+        };
+    }
+}
+
+internal sealed record Finding(
+    string Severity,
+    string Rule,
+    int Confidence,
+    string Classification,
+    string EvidenceKind,
+    string Path,
+    int Line,
+    string Symbol,
+    string Evidence,
+    string RequiredAction,
+    Dictionary<string, object?> Tags);
+
+internal sealed record RuleStat(string Rule, int Count, int Errors, int Warnings, int Infos, double AverageConfidence);
+
+internal sealed record ClassificationStat(string Classification, int Count);
+
+internal sealed record AuditResult(
+    string Agent,
+    string EvidenceClass,
+    string Scope,
+    string GeneratedUtc,
+    string ProjectRoot,
+    int ScannedFiles,
+    int ShaderFilesScanned,
+    int Pack1Layouts,
+    int RuntimeSignalPack1Layouts,
+    int TransitivePack1FieldHits,
+    int ManagedEventSurfaceHits,
+    int LocalNativeTelemetryRings,
+    int RegisteredLocalTelemetryRings,
+    int LocalNativeSignalQueues,
+    int ComputeThreadGroupRiskHits,
+    int HotPathRiskHits,
+    int ColdSyncIoReviewHits,
+    int AsmdefContractBoundaryHits,
+    int SignalDefinitions,
+    int CoreGlobalSignalDefinitions,
+    int SignalsWithoutLayout,
+    int Errors,
+    int Warnings,
+    int Infos,
+    int ConfirmedErrors,
+    int ReviewOnlyFindings,
+    RuleStat[] RuleStats,
+    ClassificationStat[] ClassificationStats,
+    Finding[] Findings);

@@ -106,7 +106,7 @@ namespace Hecton8.Core.Hardware
             ? severity.AsReadOnly()
             : default;
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         private struct ThermalTelemetryEntry
         {
             [FieldOffset(0)]

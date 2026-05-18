@@ -13,7 +13,7 @@ namespace Hecton8.Core
     [NativeContainer]
     [NativeContainerSupportsMinMaxWriteRestriction]
     [NoAlias]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct NativeArenaArray<T> where T : unmanaged
     {
         [NativeDisableUnsafePtrRestriction]
@@ -28,6 +28,7 @@ namespace Hecton8.Core
         private int _arenaIndex;
         private int _slabIndex;
         private int _frameSequence;
+        private int _pad0;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
         internal AtomicSafetyHandle m_Safety;
@@ -60,6 +61,19 @@ namespace Hecton8.Core
         public ref T ElementAt(int index)
         {
             CheckWriteIndex(index);
+            return ref UnsafeUtility.ArrayElementAsRef<T>(_buffer, index);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref T GetElementAsRef(int index)
+        {
+            return ref ElementAt(index);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref readonly T GetElementAsReadOnlyRef(int index)
+        {
+            CheckReadIndex(index);
             return ref UnsafeUtility.ArrayElementAsRef<T>(_buffer, index);
         }
 
@@ -113,7 +127,8 @@ namespace Hecton8.Core
                 _byteCount = byteCount,
                 _arenaIndex = arenaIndex,
                 _slabIndex = slabIndex,
-                _frameSequence = frameSequence
+                _frameSequence = frameSequence,
+                _pad0 = 0
             };
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             array.m_Safety = HectonArenaAllocator.GetSafetyHandle(arenaIndex);

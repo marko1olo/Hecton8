@@ -1496,26 +1496,7 @@ namespace Hecton8.Audio
 
         private void ApplyLayerMixerState(bool force)
         {
-            if (_layerMixer == null)
-                return;
-
-            SetMixerFloatIfChanged(_rhythmLayerParameter, _layerRhythm01, ref _lastRhythmDb, force);
-            SetMixerFloatIfChanged(_bassLayerParameter, _layerBass01, ref _lastBassDb, force);
-            SetMixerFloatIfChanged(_atmosphereLayerParameter, _layerAtmosphere01, ref _lastAtmosphereDb, force);
-            SetMixerFloatIfChanged(_dangerLayerParameter, _layerDanger01, ref _lastDangerDb, force);
-        }
-
-        private void SetMixerFloatIfChanged(string parameterName, float normalizedValue, ref float cachedDb, bool force)
-        {
-            if (string.IsNullOrEmpty(parameterName))
-                return;
-
-            float db = math.lerp(MixerFloorDb, MixerCeilingDb, math.saturate(normalizedValue));
-            if (!force && math.abs(db - cachedDb) < 0.1f)
-                return;
-
-            _layerMixer.SetFloat(parameterName, db);
-            cachedDb = db;
+            _ = force;
         }
 
         private void ApplyConfig(HectonMusicDirectorConfig config)

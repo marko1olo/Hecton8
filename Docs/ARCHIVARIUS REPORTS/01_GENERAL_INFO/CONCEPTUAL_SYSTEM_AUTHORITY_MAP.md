@@ -2,6 +2,21 @@
 
 Date: 2026-05-11
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Scope: concept-level current system ownership across source and active docs
 
 Mandates followed:
@@ -17,7 +32,7 @@ It is the current conceptual map for what systems exist, which ones carry runtim
 Source wins over this file.
 Runtime proof is absent unless a later Unity/Profiler/MCP report says otherwise.
 Current authority starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, stable `Docs/*.md` files, current source, and fresh logs.
-Current documentation/status override starts at `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` and `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
+Current DOC_GLOBAL root/architecture/navigation/status override starts at `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`; compact content correction order is R24 -> R23 -> R22 -> R21 -> R20 -> R19 -> R18 -> R17 -> R16 -> R15 -> R14 -> R13 -> R11 -> R10 -> R9. May 13/15 remain historical baselines where later DOC_GLOBAL evidence does not conflict.
 The May 11 continuation and manifest are historical evidence/manifest snapshots, not current counters.
 Current presentation doctrine starts at `AGENTS.md`, `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`, `.agents-skills/README.md`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`; `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is supporting evidence.
 

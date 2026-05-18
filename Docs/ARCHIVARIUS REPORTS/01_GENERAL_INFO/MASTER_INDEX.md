@@ -1,6 +1,20 @@
 # HECTON-8 ARCHIVARIUS MASTER INDEX
-Date: 2026-05-11
+Date: 2026-05-18
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 
 Scope: `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO` + `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS`
@@ -20,18 +34,18 @@ This index is path-accurate, not truth-uniform.
 - current project authority starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, stable architecture docs, current source, and fresh logs
 - for Archivarius-local orientation, read `01_GENERAL_INFO/README.md`, `PROJECT_ATLAS.md`, `DOC_AUTHORITY_CLASSIFICATION.md`, and `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
 - for report-vault trust rules, read `02_ACTUAL_REPORTS/README.md`
-- for current documentation/status overrides, read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` and `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`; the May 11 continuation and manifest are historical snapshots only
+- for current documentation/status overrides, read `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, and `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`; the May 13/15 reports, May 11 continuation, and May 11 manifest are historical snapshots or baselines only
 
 ## Coverage Snapshot
 
 | Bucket | Count |
 |---|---:|
 | `01_GENERAL_INFO` markdown files | 26 |
-| `02_ACTUAL_REPORTS` markdown files | 47 |
+| `02_ACTUAL_REPORTS` markdown files | 48 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
 | `02_ACTUAL_REPORTS` patch artifacts | 9 |
-| **Total indexed docs/datasets** | **83** |
-| **Total physical non-meta files in folders `01` and `02`** | **83** |
+| **Total indexed docs/datasets** | **84** |
+| **Total physical non-meta files in folders `01` and `02`** | **84** |
 
 Patch artifacts in `02_ACTUAL_REPORTS` physically exist but are not current narrative authority by themselves.
 Read the paired surgery log or audit note before treating a `.patch` file as implementation truth.
@@ -54,7 +68,7 @@ Read the paired surgery log or audit note before treating a `.patch` file as imp
 | `GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md` | Broad owner ledger across major gameplay domains |
 | `GLOSSARY.md` | Shared terminology |
 | `HUD_EDITOR_SPEC.md` | HUD editor/layout spec |
-| `INTERFACE_CONTRACT_TABLE.md` | Verified interface-to-implementor table |
+| `INTERFACE_CONTRACT_TABLE.md` | Static interface-to-implementor table |
 | `INTERFACE_STRATEGY.md` | Interface cleanup and ownership strategy |
 | `MASTER_INDEX.md` | This file |
 | `NAMING_VIOLATIONS.md` | Current non-ASCII path/content inventory and English replacement queue |
@@ -132,7 +146,7 @@ Read the paired surgery log or audit note before treating a `.patch` file as imp
 | `2026-04-28_LIAR_DETECTION.md` | Claim-vs-code liar detection |
 | `2026-04-28_HOT_PATH_VIOLATIONS.md` | Current-source hot-path and architecture debt snapshot |
 | `2026-04-28_EVENT_LEAK_REPORT.md` | Current-source `HectonEventBus` subscription hygiene snapshot |
-| `2026-04-28_CIRCULAR_DEPS.md` | Current asmdef dependency snapshot |
+| `2026-04-28_CIRCULAR_DEPS.md` | Historical asmdef dependency snapshot; rerun current source before use |
 | `2026-04-28_CYRILLIC_SWEEP.md` | Measured non-ASCII asset-path sweep |
 | `AGENTS_SKILLS_AUDIT.md` | `.agents-skills` coverage audit |
 | `AUDIO_ROUTING_AUDIT.md` | Audio routing ownership audit |

@@ -1,54 +1,66 @@
-// ============================================================================
-// HECTON-8 — HectonNetworkManager.cs
-// Basic networking manager for multiplayer prep.
-// ============================================================================
-
 using UnityEngine;
 
 namespace Hecton8.Networking
 {
-    #pragma warning disable CS0414 // Serialized networking placeholders are intentionally retained until multiplayer wiring exists.
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(HectonRollbackNetcodeRuntime))]
     public sealed class HectonNetworkManager : MonoBehaviour
     {
-        [Header("Network Settings")]
-        [SerializeField] private bool isServer = false;
-        [SerializeField] private bool isClient = false;
+        [Header("Lockstep Settings")]
+        [SerializeField] private bool isServer;
+        [SerializeField] private bool isClient;
         [SerializeField] private string serverAddress = "127.0.0.1";
         [SerializeField] private int port = 7777;
 
-        private void Start()
+        private HectonRollbackNetcodeRuntime _runtime;
+
+        private void Awake()
         {
-            // TODO: Initialize networking (e.g., Mirror, Netcode)
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("HectonNetworkManager initialized - multiplayer prep");
-#endif
+            TryGetComponent(out _runtime);
         }
 
         public void StartServer()
         {
-            // TODO: Start server
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("Starting server...");
-#endif
+            isServer = true;
+            isClient = false;
+            EnsureRuntime();
+            HectonRollbackNetcodeRuntime.TrySetMode(server: true, client: false);
         }
 
         public void StartClient()
         {
-            // TODO: Start client
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("Starting client...");
-#endif
+            isServer = false;
+            isClient = true;
+            EnsureRuntime();
+            HectonRollbackNetcodeRuntime.TrySetMode(server: false, client: true);
         }
 
         public void StopNetwork()
         {
-            // TODO: Stop network
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("Stopping network...");
-#endif
+            isServer = false;
+            isClient = false;
+            HectonRollbackNetcodeRuntime.TryStopMode();
         }
 
-        // TODO: Add network messages, player sync, etc.
+        public void ApplySerializedMode()
+        {
+            EnsureRuntime();
+            HectonRollbackNetcodeRuntime.TrySetMode(isServer, isClient);
+        }
+
+        public string ServerAddress => serverAddress;
+
+        public int Port => port;
+
+        private HectonRollbackNetcodeRuntime EnsureRuntime()
+        {
+            if (_runtime != null)
+                return _runtime;
+
+            if (!TryGetComponent(out _runtime))
+                _runtime = gameObject.AddComponent<HectonRollbackNetcodeRuntime>();
+
+            return _runtime;
+        }
     }
-    #pragma warning restore CS0414
 }

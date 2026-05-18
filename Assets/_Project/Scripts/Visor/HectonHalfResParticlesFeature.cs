@@ -1,6 +1,8 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -24,6 +26,7 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_HalfResParticleComposite.shader";
 #endif
+        private const int HalfResParticlesGlobalsStrideBytes = 16;
 
         private static bool IsUnsupportedCameraType(CameraType cameraType)
         {
@@ -67,11 +70,9 @@ namespace Hecton8.Visor
             private readonly ShaderTagId _srpDefaultUnlitTag;
             private FeatureSettings _settings;
             private Material _compositeMaterial;
-            private Material _lastUploadedCompositeMaterial;
-            private bool _hasCompositeStrength;
-            private bool _hasBilateralDepthScale;
-            private float _lastCompositeStrength;
-            private float _lastBilateralDepthScale;
+            private GraphicsBuffer _halfResParticlesGlobalsBuffer;
+            private HalfResParticlesGlobalsDTO _lastHalfResParticlesGlobals;
+            private bool _hasHalfResParticlesGlobals;
 
             public HalfResParticlesPass()
             {
@@ -89,6 +90,15 @@ namespace Hecton8.Visor
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
+                EnsureHalfResParticlesGlobalsBuffer();
+            }
+
+            public void Dispose()
+            {
+                _halfResParticlesGlobalsBuffer?.Release();
+                _halfResParticlesGlobalsBuffer = null;
+                _lastHalfResParticlesGlobals = default;
+                _hasHalfResParticlesGlobals = false;
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -167,10 +177,14 @@ namespace Hecton8.Visor
 
                 TextureHandle particlesTexture = renderGraph.CreateTexture(particlesDesc);
                 TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
-                UpdateCompositeMaterial(
-                    _compositeMaterial,
-                    math.saturate(_settings.compositeStrength),
-                    math.max(0f, _settings.bilateralDepthScale));
+                if (!UpdateCompositeGlobals(
+                        math.saturate(_settings.compositeStrength),
+                        math.max(0f, _settings.bilateralDepthScale)))
+                {
+                    SetGlobalActive(0f);
+                    return;
+                }
+
                 SetGlobalActive(1f);
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<DrawPassData>(
@@ -204,36 +218,69 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = compositeTexture;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private void UpdateCompositeMaterial(Material material, float compositeStrength, float bilateralDepthScale)
+            private bool EnsureHalfResParticlesGlobalsBuffer()
             {
-                if (_lastUploadedCompositeMaterial != material)
+                if (!SystemInfo.supportsSetConstantBuffer)
+                    return false;
+
+                if (_halfResParticlesGlobalsBuffer == null || !_halfResParticlesGlobalsBuffer.IsValid())
                 {
-                    _lastUploadedCompositeMaterial = material;
-                    _hasCompositeStrength = false;
-                    _hasBilateralDepthScale = false;
+                    _halfResParticlesGlobalsBuffer = new GraphicsBuffer(
+                        GraphicsBuffer.Target.Constant,
+                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                        1,
+                        HalfResParticlesGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[16B] - half-res particle composite globals - owner: HalfResParticlesPass
+                    _hasHalfResParticlesGlobals = false;
                 }
 
-                if (!_hasCompositeStrength || math.abs(_lastCompositeStrength - compositeStrength) > 0.000001f)
+                return _halfResParticlesGlobalsBuffer != null && _halfResParticlesGlobalsBuffer.IsValid();
+            }
+
+            private bool UpdateCompositeGlobals(float compositeStrength, float bilateralDepthScale)
+            {
+                if (!EnsureHalfResParticlesGlobalsBuffer())
+                    return false;
+
+                HalfResParticlesGlobalsDTO globals = HalfResParticlesGlobalsDTO.FromValues(compositeStrength, bilateralDepthScale);
+                if (_hasHalfResParticlesGlobals && _lastHalfResParticlesGlobals.Params == globals.Params)
                 {
-                    material.SetFloat(ShaderConstants.CompositeStrengthId, compositeStrength);
-                    _lastCompositeStrength = compositeStrength;
-                    _hasCompositeStrength = true;
+                    Shader.SetGlobalConstantBuffer(ShaderConstants.HalfResParticlesGlobalsBufferId, _halfResParticlesGlobalsBuffer, 0, HalfResParticlesGlobalsStrideBytes);
+                    return true;
                 }
 
-                if (_hasBilateralDepthScale && math.abs(_lastBilateralDepthScale - bilateralDepthScale) <= 0.000001f)
-                    return;
+                NativeArray<HalfResParticlesGlobalsDTO> mapped = _halfResParticlesGlobalsBuffer.LockBufferForWrite<HalfResParticlesGlobalsDTO>(0, 1);
+                try
+                {
+                    mapped[0] = globals;
+                }
+                finally
+                {
+                    _halfResParticlesGlobalsBuffer.UnlockBufferAfterWrite<HalfResParticlesGlobalsDTO>(1);
+                }
 
-                material.SetFloat(ShaderConstants.BilateralDepthScaleId, bilateralDepthScale);
-                _lastBilateralDepthScale = bilateralDepthScale;
-                _hasBilateralDepthScale = true;
+                Shader.SetGlobalConstantBuffer(ShaderConstants.HalfResParticlesGlobalsBufferId, _halfResParticlesGlobalsBuffer, 0, HalfResParticlesGlobalsStrideBytes);
+                _lastHalfResParticlesGlobals = globals;
+                _hasHalfResParticlesGlobals = true;
+                return true;
+            }
+
+            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = HalfResParticlesGlobalsStrideBytes)]
+            private struct HalfResParticlesGlobalsDTO
+            {
+                internal Vector4 Params;
+
+                internal static HalfResParticlesGlobalsDTO FromValues(float compositeStrength, float bilateralDepthScale)
+                {
+                    HalfResParticlesGlobalsDTO dto;
+                    dto.Params = new Vector4(compositeStrength, bilateralDepthScale, 1f, 0f);
+                    return dto;
+                }
             }
         }
 
         private static class ShaderConstants
         {
-            internal static readonly int CompositeStrengthId = Shader.PropertyToID("_HectonHalfResParticlesCompositeStrength");
-            internal static readonly int BilateralDepthScaleId = Shader.PropertyToID("_HectonHalfResParticlesBilateralDepthScale");
+            internal static readonly int HalfResParticlesGlobalsBufferId = Shader.PropertyToID("HectonHalfResParticlesGlobals");
             internal static readonly int ParticlesTextureId = Shader.PropertyToID("_HectonHalfResParticlesTex");
             internal static readonly int ActiveId = Shader.PropertyToID("_HectonHalfResParticlesActive");
         }
@@ -279,12 +326,19 @@ namespace Hecton8.Visor
                 return;
             }
 
+            if (HectonDrsRenderFeatureGate.ShouldCullForSurvivalScale())
+            {
+                SetGlobalActive(0f);
+                return;
+            }
+
             _pass.Setup(settings, _compositeMaterial);
             renderer.EnqueuePass(_pass);
         }
 
         protected override void Dispose(bool disposing)
         {
+            _pass?.Dispose();
             DisposeMaterial(ref _compositeMaterial);
             SetGlobalActive(0f);
         }

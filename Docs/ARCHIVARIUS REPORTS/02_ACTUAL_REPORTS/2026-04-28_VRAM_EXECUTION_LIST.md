@@ -1,6 +1,14 @@
 # VRAM_EXECUTION_LIST.md â€” Top 20 VRAM Offenders
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 
 ## Current-State Addendum (2026-04-29)
@@ -61,6 +69,6 @@ Preferred current cross-checks:
 4. **Monitor:** If total > 90% (810 MB), trigger automatic Mip-downgrade policy.
 
 ## Verdict
-- **Current:** 660 / 900 MB = 73% âš ï¸
+- **Historical static estimate:** 660 / 900 MB = 73%; current VRAM residency requires fresh Memory Profiler / Frame Debugger artifacts.
 - **Threshold:** 90% (810 MB) â†’ Mip-downgrade mandatory
 - **Headroom:** ~240 MB before critical path

@@ -1,0 +1,24 @@
+{
+    "name": "Hecton8.Tools.ToolKinematics.Editor",
+    "rootNamespace": "Hecton8.Tools.ToolKinematics.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Tools.ToolKinematics",
+        "Hecton8.Tools.ToolKinematics.Contracts",
+        "Unity.Mathematics",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -32,6 +32,8 @@ namespace Hecton8.Ecosystem
 
             if (runtimeRoot.GetComponent<EcosystemPopulationBalancer>() == null)
                 runtimeRoot.AddComponent<EcosystemPopulationBalancer>();
+
+            ShinobuEcosystemBalancer.EnsureRuntimeService();
         }
     }
 }

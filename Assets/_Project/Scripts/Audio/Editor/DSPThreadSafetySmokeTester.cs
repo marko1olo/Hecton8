@@ -61,7 +61,7 @@ namespace Hecton8.Audio.Editor
                 string onDestroy = ExtractMethodBody(renderer, "private void OnDestroy()");
 
                 AssertContains(renderer, "private struct AudioParameterSnapshot", "AudioParameterSnapshot value struct exists", builder, ref failureCount);
-                AssertContains(renderer, "StructLayout(LayoutKind.Explicit, Pack = 1, Size = 320)", "Audio parameter snapshot slots include explicit ARM64-safe cache-line padding", builder, ref failureCount);
+                AssertContains(renderer, "StructLayout(LayoutKind.Explicit, Size = 320)", "Audio parameter snapshot slots include explicit ARM64-safe cache-line padding without packed runtime layout", builder, ref failureCount);
                 AssertContains(renderer, "internal struct AudioThreadDiagnostics", "Audio thread diagnostic snapshot exists", builder, ref failureCount);
                 AssertContains(renderer, "TryGetAudioThreadDiagnostics(out AudioThreadDiagnostics diagnostics)", "Audio diagnostics expose SPSC counters through native bridge state", builder, ref failureCount);
                 AssertContains(renderer, "diagnostics.OverflowDropCount = sampleRingBuffer.OverflowDropCount", "Audio diagnostics include overflow drop count", builder, ref failureCount);

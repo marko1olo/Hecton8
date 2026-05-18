@@ -1,0 +1,68 @@
+# SHINOBU_02 Rationale
+
+Date: 2026-05-18
+Status: PENDING VERIFICATION - SIGNALCRITICAL STATIC CLEAN - FULL AUDIT 6 HARD ERRORS OUTSIDE SHINOBU_02 - CORE CLI GREEN - EDITOR TEMP METADATA BLOCKED - UNITY RUNTIME NOT RUN
+
+## Prompt Provenance Correction
+
+Problem: Active `Docs/Tasks/CURRENT_BATCH.md` changed during concurrent work, and stale status text claimed the active XML still contained `<AGENT_PROMPT id="SHINOBU_02">`.
+Solution: Re-ran strict CLI extraction against current disk truth. The active batch file currently returns `NO_SHINOBU_02_PROMPT`; the 20-task matrix remains from the direct user mandate and prior SHINOBU_02 continuity, not active XML.
+Rejected Alternatives: Keeping stale provenance; importing archive files as active source without marking provenance; pretending current XML exists.
+Scalability potential: Process-only. Reduces cross-agent drift by making current authority explicit.
+Hardware Impact: 0 us runtime.
+
+## Macro Database Ownership And Layout Pass
+
+Problem: `H8MacroDatabaseService._blackBox` was a live 300-frame `NativeArray<MacroDatabaseTelemetryEntry>` without Sentinel ownership, and stale status text incorrectly said it had already been registered. Directly referencing `Hecton8.Core.NativeMemorySentinel` from `Hecton8.Core.Database` would create an asmdef cycle because root Core already references Database.
+Solution: Added `NativeMemoryTrackingBridge` in `Hecton8.Core.Contracts`, added a root Core installer that routes the bridge to `NativeMemorySentinel`, and registered/unregistered `_blackBox` through that bridge after cold allocation / before dispose. Existing `SectorCoord64` / `HydrationCandidate` natural sequential layouts with explicit `Size = 24` and `Size = 48` remain aligned.
+Rejected Alternatives: A direct Database -> Core asmdef reference was rejected as a compile wall. Migrating the macro database blackbox to GlobalDataVault in this pass was rejected because it changes service ownership during external compile-wall churn. Leaving private runtime `Pack=1` was rejected by the ARM64 mandate.
+Scalability potential: Low = cleaner ARM64 native scratch layout and leak-visible blackbox ownership. Middle = better long-session database telemetry. High/Ultra = future Vault migration has a bounded source.
+Hardware Impact: 0 us hot path. Registration/unregister is cold lifecycle work only. Full audit hard errors dropped 7 -> 6.
+
+## Audit Classifier Accuracy Pass
+
+Problem: The full-project scanner mixed live unowned telemetry rings with H8Memory-owned, root-allocator-owned, NativeList-only scratch records, and declaration-only fields.
+Solution: Updated `SignalBusContractAuditCli` to recognize `H8Memory.Allocate/Release`, H8Memory root allocator self-owned rings, declaration-only telemetry fields, and to keep `SignalBus<T>` / signal-like `NativeQueue<T>` payloads as the hard signal corridor while downgrading `NativeList<T>` record review. Current full scan is 6 errors, 828 warnings, 107 infos; SignalCritical remains 0 errors.
+Rejected Alternatives: Blanket suppression and cross-domain edits were rejected. Real external unowned rings remain hard errors.
+Scalability potential: Low = fewer false red gates. Middle = clearer owner queue. High/Ultra = suitable for stricter CI once other domains fix their real debt.
+Hardware Impact: 0 us runtime; tool-only process improvement.
+
+## External Compile Wall
+
+Problem: Editor generated-project validation is blocked before first-party source validation by missing `Temp/bin/Debug` third-party/package metadata DLLs.
+Solution: Re-ran current gates after the sentinel bridge patch. `Hecton8.Core.csproj --no-restore --no-dependencies` is green with 0 warnings / 0 errors. `Hecton8.Editor.csproj --no-dependencies` fails with 13 `CS0006` missing metadata errors for generated/vendor/package DLLs (`Crest`, `Den.Tools`, `EasySave3`, `GPUInstancer`, `MapMagic`, `ShapesRuntime`, URP/ShaderGraph/Crest assemblies, etc.).
+Rejected Alternatives: Editing vendor/generated project artifacts or adding asmdef references from SHINOBU_02 was rejected. Claiming Unity/editor verification was rejected.
+Scalability potential: Process only. Keeps SignalBus changes isolated while exposing the dependency wall to the integrator.
+Hardware Impact: 0 us runtime.
+
+## Runtime Signal Layout Pass
+
+Problem: SignalCritical audit reported 164 runtime signal `Pack=1` errors. Packed runtime DTOs are hostile to ARM64 alignment and obscure actual cache-line layout.
+Solution: Removed `Pack=1` from explicit and sequential SignalCritical runtime signal DTO declarations in `GlobalSignals.cs` and `Core/Signals/PlayerMovementPresentationSignals.cs`. Existing `Size` values remain 8-byte multiples. Explicit DTOs retain their `FieldOffset` maps; sequential DTOs now use natural alignment instead of forced byte packing.
+Rejected Alternatives: A full manual binary-layout rewrite of every signal in one pass was rejected because it would create broad ABI risk. Leaving packed DTOs was rejected by `DATA_Runtime_Struct_Layout_ARM64`.
+Scalability potential: Low = ARM64/Quest/Deck avoids forced misalignment hazards. Middle = cleaner Burst/native queues. High = richer signal telemetry can be spent on visual feedback. Ultra = presentation consumers remain decoupled from gameplay truth.
+Hardware Impact: No microseconds measured. Static risk removed: SignalCritical Pack=1 findings 164 -> 0.
+
+## Core Structural Command Payload Pass
+
+Problem: Full audit still found two Core command payloads using `Pack=1` in `ThreadSafeCommandQueue.cs`.
+Solution: Removed packed layout from `EntityCommand` and `StorageReservationCommitResolvedPayload`. They are transient structural command payloads, not file formats.
+Rejected Alternatives: Moving this queue to SignalBus in the same pass was rejected as unrelated behavior churn.
+Scalability potential: Low = safer alignment for structural command drains. Middle/High/Ultra = no additional runtime coupling.
+Hardware Impact: No microseconds measured. Full audit errors dropped 29 -> 18 after this and registered telemetry reclassification from generated project state.
+
+## Compile Guard
+
+Problem: The project has many concurrent agent edits and a high risk of compile-wall regressions.
+Solution: Did not add asmdef references or new sibling domain using directives. Ran Core and Editor generated project builds after the layout pass.
+Rejected Alternatives: Editing world/audio/inventory findings just to drive the full scanner to zero was rejected because SHINOBU_02 owns SignalBus/Core boundaries, not those runtime domains.
+Scalability potential: Faster iteration through fewer regenerated failures in the Core signal corridor.
+Hardware Impact: Compile-time process impact only; runtime not measured.
+
+## Residual Debt
+
+Problem: Full audit remains red with 6 hard errors outside SignalCritical: unowned local telemetry rings in Voxel, UI, Visor, Graphics/Culling, Narrative/Prologue, and Prologue/VFX.
+Solution: Leave them visible in `SignalBusContractAuditCli_SHINOBU_02_full.md` for owning agents/integrator. Do not hide them by weakening the scanner or by editing non-owned domains from SHINOBU_02.
+Rejected Alternatives: Broad cross-domain edits; scanner suppression.
+Scalability potential: Preserves clean ownership boundaries for the next agents.
+Hardware Impact: 0 us runtime.

@@ -11,14 +11,15 @@ namespace Hecton8.Core
     /// </summary>
     public static class HectonShaderGlobalDataVaultBridge
     {
-        private const int BiolumMasterPhaseSlot = 0;
-        private const int AupShiftOffsetSlot = 1;
-        private const int WaterExtinctionRuntimeSlot = 2;
-        private const int WaterExtinctionWeatherSlot = 3;
-        private const int WaterExtinctionParamsSlot = 4;
-        private const int UberNoirRuntimeSlot = 5;
-        private const int UberNoirFeatureMaskSlot = 6;
-        private const int SlotCount = 7;
+        internal const int BiolumMasterPhaseSlot = 0;
+        internal const int AupShiftOffsetSlot = 1;
+        internal const int WaterExtinctionRuntimeSlot = 2;
+        internal const int WaterExtinctionWeatherSlot = 3;
+        internal const int WaterExtinctionParamsSlot = 4;
+        internal const int UberNoirRuntimeSlot = 5;
+        internal const int UberNoirFeatureMaskSlot = 6;
+        // Shared with GlobalShaderDispatcher: slots 64-363 are the 300-frame CBuffer blackbox.
+        internal const int SlotCount = 512;
 
         private static readonly int _BiolumMasterPhaseId = Shader.PropertyToID("_BiolumMasterPhase");
         private static readonly int _GlobalBiolumPhaseId = Shader.PropertyToID("_GlobalBiolumPhase");
@@ -42,6 +43,7 @@ namespace Hecton8.Core
         private static float4 _fallbackWaterExtinctionParams;
         private static float4 _fallbackUberNoirRuntime;
         private static float4 _fallbackUberNoirFeatureMask;
+        private static bool _visualSyncDispatcherActive;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -56,6 +58,12 @@ namespace Hecton8.Core
             _fallbackWaterExtinctionParams = new float4(1500f, 2.5f, 0f, 0f);
             _fallbackUberNoirRuntime = new float4(0f, 1f, 0f, 0f);
             _fallbackUberNoirFeatureMask = default;
+            _visualSyncDispatcherActive = false;
+        }
+
+        internal static void SetVisualSyncDispatcherActive(bool active)
+        {
+            _visualSyncDispatcherActive = active;
         }
 
         public static void PublishBiolumMasterPhase(Vector4 phaseVector)
@@ -65,22 +73,30 @@ namespace Hecton8.Core
                 ToFiniteFloat4(phaseVector),
                 ref _fallbackBiolumMasterPhase);
             Vector4 bridgedPhase = ToVector4(storedPhase);
-            Shader.SetGlobalVector(_BiolumMasterPhaseId, bridgedPhase);
-            Shader.SetGlobalFloat(_GlobalBiolumPhaseId, bridgedPhase.x);
+            if (!_visualSyncDispatcherActive)
+            {
+                Shader.SetGlobalVector(_BiolumMasterPhaseId, bridgedPhase);
+                Shader.SetGlobalFloat(_GlobalBiolumPhaseId, bridgedPhase.x);
+            }
         }
 
         public static void PublishAupShaderGlobals(Vector4 totalUniverseOffset, Vector4 aupShiftOffset, float aupJitterMask)
         {
+            float4 packedShift = ToFiniteFloat4(aupShiftOffset);
+            packedShift.w = math.saturate(aupJitterMask);
             float4 storedShift = WriteReadSlot(
                 AupShiftOffsetSlot,
-                ToFiniteFloat4(aupShiftOffset),
+                packedShift,
                 ref _fallbackAupShiftOffset);
             Vector4 bridgedTotal = ToVector4(ToFiniteFloat4(totalUniverseOffset));
             Vector4 bridgedShift = ToVector4(storedShift);
-            Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, bridgedTotal);
-            Shader.SetGlobalVector(_TotalUniverseOffsetId, bridgedTotal);
-            Shader.SetGlobalVector(_AupShiftOffsetId, bridgedShift);
-            Shader.SetGlobalFloat(_AupJitterMaskId, math.saturate(aupJitterMask));
+            if (!_visualSyncDispatcherActive)
+            {
+                Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, bridgedTotal);
+                Shader.SetGlobalVector(_TotalUniverseOffsetId, bridgedTotal);
+                Shader.SetGlobalVector(_AupShiftOffsetId, bridgedShift);
+                Shader.SetGlobalFloat(_AupJitterMaskId, math.saturate(aupJitterMask));
+            }
         }
 
         public static void ResetAupShaderGlobals()
@@ -103,7 +119,8 @@ namespace Hecton8.Core
                 WaterExtinctionParamsSlot,
                 value,
                 ref _fallbackWaterExtinctionParams);
-            Shader.SetGlobalVector(_ExtinctionLutParamsId, ToVector4(stored));
+            if (!_visualSyncDispatcherActive)
+                Shader.SetGlobalVector(_ExtinctionLutParamsId, ToVector4(stored));
         }
 
         /// <summary>
@@ -120,7 +137,8 @@ namespace Hecton8.Core
                 WaterExtinctionRuntimeSlot,
                 value,
                 ref _fallbackWaterExtinctionRuntime);
-            Shader.SetGlobalVector(_ExtinctionLutRuntimeId, ToVector4(stored));
+            if (!_visualSyncDispatcherActive)
+                Shader.SetGlobalVector(_ExtinctionLutRuntimeId, ToVector4(stored));
         }
 
         /// <summary>
@@ -136,7 +154,8 @@ namespace Hecton8.Core
                 WaterExtinctionWeatherSlot,
                 value,
                 ref _fallbackWaterExtinctionWeather);
-            Shader.SetGlobalVector(_ExtinctionLutWeatherParamsId, ToVector4(stored));
+            if (!_visualSyncDispatcherActive)
+                Shader.SetGlobalVector(_ExtinctionLutWeatherParamsId, ToVector4(stored));
         }
 
         /// <summary>
@@ -185,8 +204,11 @@ namespace Hecton8.Core
                 new float4(safeFeatureMask, 0f, 0f, 0f),
                 ref _fallbackUberNoirFeatureMask);
 
-            Shader.SetGlobalVector(_HectonUberNoirRuntimeParamsId, ToVector4(storedRuntime));
-            Shader.SetGlobalFloat(_HectonActiveShaderFeatureMaskId, storedMask.x);
+            if (!_visualSyncDispatcherActive)
+            {
+                Shader.SetGlobalVector(_HectonUberNoirRuntimeParamsId, ToVector4(storedRuntime));
+                Shader.SetGlobalFloat(_HectonActiveShaderFeatureMaskId, storedMask.x);
+            }
         }
 
         private static float4 WriteReadSlot(int slot, float4 value, ref float4 fallback)

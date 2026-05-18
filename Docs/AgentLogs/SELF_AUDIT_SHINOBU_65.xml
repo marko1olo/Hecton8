@@ -1,0 +1,92 @@
+<SELF_AUDIT agent_id="SHINOBU_65" domain="DIEGETIC_VISOR_AND_LENS_SIMULATOR" date="2026-05-18" status="PENDING_VERIFICATION">
+  <TASK_RECONCILIATION total="20">
+    <TASK id="01" name="BINARY_GRAVEYARD_RECONNAISSANCE" result="PASS">Fixed probes cover Batch005, Batch006, Batch007 and StreamingAssets for visor_materials_006.h8bin. No active visor payload is listed in BINARY_PAYLOAD_INTEGRATION_LEDGER, so GenerateEmergencyMockVisorData remains the correct fallback.</TASK>
+    <TASK id="02" name="CANVAS_OVERLAY_ERADICATION_PASS" result="PASS">No Canvas Image, RawImage, or ParticleSystem path was added. The visual surface is the existing URP RenderGraph visor pass.</TASK>
+    <TASK id="03" name="CS1612_ENCAPSULATION_PURGE" result="PASS">VisorStateDTO has public fields only. Runtime state in the touched RenderFeature was converted from property accessors to readonly fields.</TASK>
+    <TASK id="04" name="ARM64_PADDING_RECONSTRUCTION" result="PASS">Primary DTOs are 16, 32, 48, 64, or 96 bytes. No Pack=1 exists in the SHINOBU visor DTO path.</TASK>
+    <TASK id="05" name="BLIND_DEPENDENCY_MOCKING" result="PASS">MockPhysiologySignal is a partial unmanaged 32-byte struct. The Burst job reads respiration, heart rate, core temperature, and breath spike without depending on the Physiology assembly.</TASK>
+    <TASK id="06" name="BURST_CONDENSATION_SOLVER" result="PASS">VisorCondensationJob uses math.exp(-ClearingRate * dt), cold water, respiration, heart rate, core temperature, and anomaly scalar. Burst flags are CompileSynchronously=true, FloatMode.Fast, FloatPrecision.Standard.</TASK>
+    <TASK id="07" name="THE_DEAR_LIE_DROPLET_KINEMATICS" result="PASS">Camera-local angular velocity becomes a float2 droplet gravity vector. No per-droplet physics or particles exist.</TASK>
+    <TASK id="08" name="PRESSURE_CRACK_ROUTING" result="PASS">External pressure scalar grows CrackSeverity; shader uses procedural ridge/noise crack masks instead of decals.</TASK>
+    <TASK id="09" name="SURFACE_EMERGENCE_WASH" result="PASS">PlayerWaterSplashSignal and NotifySurfaceEmergence spike WaterDropletIntensity and drain over the tuning-defined seconds.</TASK>
+    <TASK id="10" name="MUD_AND_SILT_ACCUMULATION" result="PASS">Silt scalar grows DirtAccumulation; RequestWipeVisor drains dirt, droplets, and fog through the same job path.</TASK>
+    <TASK id="11" name="CONTINUOUS_SCALABILITY_VISOR_LOD" result="PASS">GlobalQualityWeight feeds CPU cadence, dynamicBlend, refractionScale, LowTierWeight01, dynamicVisorWeight, and refractionWeight. Low quality collapses to 5 Hz scalar updates plus static film/chroma; high and ultra restore 60 Hz scalar updates, droplet noise, refraction, reflection, salt, and silt ALU.</TASK>
+    <TASK id="12" name="BIOLUMINESCENT_REFLECTION" result="PASS">Darkness and anomaly scalars modulate a visor reflection tint. No reflection camera was added.</TASK>
+    <TASK id="13" name="AUP_PRECISION_IGNORE" result="PASS">The new visor runtime/types contain no double, double3, or AbsoluteUniversePosition. Camera rotation is reduced to local float3 angular velocity.</TASK>
+    <TASK id="14" name="ANOMALY_GLITCH_INJECTION" result="PASS">SystemGlitchSignal and mock corruption feed condensation, cracks, and shader glitch scalar.</TASK>
+    <TASK id="15" name="AUDIO_MUFFLING_LINK" result="PASS">VisorBreachSignal is now a partial unmanaged 32-byte ISignal and is prewarmed on SignalBus. Audio consumption remains a downstream owner task.</TASK>
+    <TASK id="16" name="ZERO_INIT_OVERHEAD_BYPASS" result="PASS">Persistent memory is acquired through GlobalDataVault with NativeArrayOptions.UninitializedMemory and cold-cleared by UnsafeUtility.MemClear.</TASK>
+    <TASK id="17" name="TELEMETRY_VISOR_RECORDER" result="PASS">Vault-owned 300-frame VisorLensTelemetryEntry ring records state, quality, pressure, silt, hashes, refraction scale, and ShaderUpdateComputeTimeNs. NaN flags dump Docs/AgentLogs/Dump_VISOR_SURGEON.bin.</TASK>
+    <TASK id="18" name="VISOR_TUNER_EDITOR_WINDOW" result="PASS">Diegetic Visor Tuner exists under Assets/_Project/Scripts/Editor and writes state/tuning through runtime ref access.</TASK>
+    <TASK id="19" name="CSV_OVERRIDE_INGESTOR" result="PASS">visor_properties.csv uses a cold bounded byte-buffer parser. No Split or LINQ path exists.</TASK>
+    <TASK id="20" name="LIVE_LENS_DEBUG_GIZMO" result="PASS">The EditorWindow draws a procedural preview of fog, droplets, cracks, and dirt. It does not create runtime UI.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <DTO name="VisorStateDTO" size="16" alignment="16-byte SIMD friendly">
+      <FIELD name="CondensationLevel" offset="0" size="4" />
+      <FIELD name="WaterDropletIntensity" offset="4" size="4" />
+      <FIELD name="CrackSeverity" offset="8" size="4" />
+      <FIELD name="DirtAccumulation" offset="12" size="4" />
+      <PADDING bytes="0" />
+    </DTO>
+    <DTO name="MockPhysiologySignal" size="32" layout="Explicit">
+      <FIELD name="RespirationRate" offset="0" size="4" />
+      <FIELD name="HeartRate" offset="4" size="4" />
+      <FIELD name="CoreTemperatureC" offset="8" size="4" />
+      <FIELD name="BreathSpike01" offset="12" size="4" />
+      <FIELD name="Frame" offset="16" size="4" />
+      <FIELD name="Flags" offset="20" size="4" />
+      <FIELD name="_pad0" offset="24" size="4" />
+      <FIELD name="_pad1" offset="28" size="4" />
+    </DTO>
+    <DTO name="DiegeticVisorLensGpuGlobalsDTO" size="64" layout="four float4 lanes" />
+    <DTO name="VisorLensTelemetryEntry" size="64" layout="Explicit cache-line entry" false_sharing_status="single writer cursor, no concurrent atomic counters">
+      <FIELD name="Frame" offset="0" size="4" />
+      <FIELD name="Flags" offset="4" size="4" />
+      <FIELD name="Condensation01" offset="8" size="4" />
+      <FIELD name="Droplets01" offset="12" size="4" />
+      <FIELD name="Crack01" offset="16" size="4" />
+      <FIELD name="Dirt01" offset="20" size="4" />
+      <FIELD name="Quality01" offset="24" size="4" />
+      <FIELD name="RespirationRate" offset="28" size="4" />
+      <FIELD name="ExternalPressure01" offset="32" size="4" />
+      <FIELD name="SiltDensity01" offset="36" size="4" />
+      <FIELD name="HeadAngularSpeed" offset="40" size="4" />
+      <FIELD name="StateHash" offset="44" size="4" />
+      <FIELD name="GpuStateHash" offset="48" size="4" />
+      <FIELD name="RefractionScale01" offset="52" size="4" />
+      <FIELD name="ShaderUpdateComputeTimeNs" offset="56" size="4" />
+      <FIELD name="Anomaly01" offset="60" size="4" />
+    </DTO>
+    <DTO name="VisorBreachSignal" size="32" layout="Sequential unmanaged partial ISignal" />
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    At GlobalQualityWeight 0.1, ResolveSimulationInterval maps the CPU Burst visor solver to 5 Hz. At GlobalQualityWeight 1.0 it maps to 60 Hz. The transition uses a smooth polynomial and math.lerp, with event paths forcing a single immediate schedule for breath, splash, wipe, pressure, and glitch. Below approximately 0.3, CPU updates are sparse and the shader resolves LowTierWeight01/dynamicVisorWeight/refractionWeight, skips ComputeDropletMask value-noise work, avoids Snell refraction sampling, and renders a static edge-weighted film plus chroma fallback. Middle quality blends cadence and masks. High and ultra restore 60 Hz scalar updates, head-motion UV skew, richer refraction, reflection tint, salt crystals, and suspended silt presentation.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS private_persistent_native_arrays="0">
+    <BUFFER id="71020" name="State" type="VisorStateDTO[1]" />
+    <BUFFER id="71021" name="Tuning" type="VisorLensTuningDTO[1]" />
+    <BUFFER id="71022" name="Physiology" type="MockPhysiologySignal[1]" />
+    <BUFFER id="71023" name="Environment" type="MockVisorEnvironmentSignal[1]" />
+    <BUFFER id="71024" name="GpuGlobals" type="DiegeticVisorLensGpuGlobalsDTO[1]" />
+    <BUFFER id="71025" name="TelemetryRing" type="VisorLensTelemetryEntry[300]" />
+    <BUFFER id="71026" name="TelemetryCursor" type="int[1]" />
+    <BUFFER id="71027" name="CsvScratch" type="byte[4096]" />
+    <BUFFER id="71028" name="BinaryProbeScratch" type="byte[64]" />
+    <BUFFER id="71029" name="NanFlags" type="int[1]" />
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <JOB name="VisorCondensationJob" input="Vault NativeArray handles resolved at schedule time" output="State, Physiology, Environment, GpuGlobals, NanFlags" dependency_in="none currently exposed by SystemDispatcher" dependency_out="_scheduledHandle" noalias="State,Tuning,Physiology,Environment,GpuGlobals,NanFlags" cadence="5Hz at q=0.1, 60Hz at q=1.0, event-forced one-shot" />
+    <COMPLETION_POLICY>Tick never completes the job. It returns while scheduled work is active. LateFrameTick is the nonblocking visual-sync commit point and OnDisable is the only forced completion site because shutdown must reclaim graphics/native ownership.</COMPLETION_POLICY>
+    <MUTATION_BARRIER>External mock, pressure, silt, surface, wipe, and editor writes stage primitive pending fields while _hasScheduledWork is true. Pending values are copied into Vault buffers only before the next schedule, after the previous job has committed.</MUTATION_BARRIER>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    Runtime usings are System, System.IO, Hecton8.Core, Hecton8.Core.Contracts, Hecton8.Core.Contracts.Signals, Hecton8.Core.Memory, Unity.Burst, Unity.Collections, Unity.Collections.LowLevel.Unsafe, Unity.Jobs, Unity.Mathematics, UnityEngine. No direct sibling Physiology, Audio, Gameplay, Anomaly, or UI runtime assembly reference is required by the new visor runtime.
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    Before the Dear Lie, honest droplets would be O(n droplets) CPU integration plus particle/render overhead and potential per-pixel render-texture fog accumulation. After the Dear Lie, CPU work is O(1) scalar state, O(k) bounded signal snapshots, one scalar Burst job, one dirty 64-byte GPU upload, and shader procedural masks. Vapor is not simulated; cracks are procedural thresholds; dirt is a scalar grunge multiplier; water flow is UV math driven by head angular velocity.
+  </DEAR_LIE_CONFIRMATION>
+  <VERIFICATION no_dotnet_build="true">
+    Static grep after polish found no runtime singleton instance, DTO properties, Pack=1, double, AbsoluteUniversePosition, Canvas, Image, ParticleSystem, SetData, SetFloat, MaterialPropertyBlock, UnityEngine.Random, Time.deltaTime, Split, LINQ, or new NativeArray in the touched visor runtime/type/editor/feature files. git diff --check returned only existing CRLF normalization warnings for the shader and RenderFeature. dotnet build was not launched because CPU samples were 100/100/100 and the generated Hecton8.Core.csproj still omits the new visor runtime/types/editor source files.
+  </VERIFICATION>
+</SELF_AUDIT>

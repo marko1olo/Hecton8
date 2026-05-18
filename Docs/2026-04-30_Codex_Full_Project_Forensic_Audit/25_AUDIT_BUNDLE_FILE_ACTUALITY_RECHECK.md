@@ -1,11 +1,19 @@
-﻿# 25 Audit Bundle File Actuality Recheck
+# 25 Audit Bundle File Actuality Recheck
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 ## 2026-05-04 Supersession Note
 
-This file is a May 2 audit-bundle recheck. Current global source/doc counts are superseded by `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`: `1118` first-party `.cs` files under `Assets/_Project`, `1078` under `Assets/_Project/Scripts`, `519952` static script lines, active `Docs/**/*.md` count `188`, and active/root markdown surface `214`.
+This file is a May 2 audit-bundle recheck. The May 4 counters are now historical; rerun current source/doc counts before use.
 
 Mandates followed:
 - `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`
@@ -54,7 +62,7 @@ Historical snapshot date: 2026-05-02.
 |---|---:|
 | first-party C# under `Assets/_Project` | 1087 |
 | C# under `Assets/_Project/Scripts` | 1047 |
-| C# tests under `Assets/_Project/Tests` | 4 |
+| C# tests under `Assets/_Project/Tests` | Historical `4`; R18 static count `17` |
 | non-meta files under `Assets/_Project/Data` | 1287 |
 | prefabs under `Assets/_Project/Prefabs` | 378 |
 | first-party `.shader` files | 65 |

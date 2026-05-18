@@ -3,7 +3,8 @@
     "rootNamespace": "Hecton8.QA.Headless.Editor",
     "references": [
         "Hecton8.QA.Headless",
-        "Hecton8.Core"
+        "Hecton8.Core",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [
         "Editor"

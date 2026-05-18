@@ -1,6 +1,7 @@
 using System;
-using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -20,6 +21,8 @@ namespace Hecton8.Visor
     /// </summary>
     public sealed class HectonStochasticSsrFeature : ScriptableRendererFeature
     {
+        private const int StochasticSsrGlobalsStrideBytes = 48;
+
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_StochasticSSR.shader";
 #endif
@@ -61,11 +64,9 @@ namespace Hecton8.Visor
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Reflection Sheen");
             private FeatureSettings _settings;
             private Material _material;
-            private Material _lastUploadedMaterial;
-            private bool _hasMaterialState;
-            private Vector4 _lastInputSize;
-            private Vector4 _lastParamsA;
-            private Vector4 _lastParamsB;
+            private GraphicsBuffer _stochasticSsrGlobalsBuffer;
+            private StochasticSsrGlobalsDTO _lastStochasticSsrGlobals;
+            private bool _hasStochasticSsrGlobals;
 
             public ReflectionSheenPass()
             {
@@ -80,6 +81,7 @@ namespace Hecton8.Visor
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingTransparents;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
+                EnsureStochasticSsrGlobalsBuffer();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -101,7 +103,8 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                UpdateMaterialParameters(_material, _settings, sourceDesc.width, sourceDesc.height);
+                if (!UpdateStochasticSsrGlobals(_settings, sourceDesc.width, sourceDesc.height))
+                    return;
 
                 TextureDesc maskDesc = new TextureDesc(sourceDesc);
                 maskDesc.name = "_HectonStochasticSsrMask";
@@ -148,8 +151,39 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private void UpdateMaterialParameters(Material material, FeatureSettings settings, int inputWidth, int inputHeight)
+            public void Dispose()
             {
+                _stochasticSsrGlobalsBuffer?.Release();
+                _stochasticSsrGlobalsBuffer = null;
+                _hasStochasticSsrGlobals = false;
+            }
+
+            private bool EnsureStochasticSsrGlobalsBuffer()
+            {
+                if (!SystemInfo.supportsSetConstantBuffer)
+                {
+                    Dispose();
+                    return false;
+                }
+
+                if (_stochasticSsrGlobalsBuffer != null && _stochasticSsrGlobalsBuffer.IsValid())
+                    return true;
+
+                _stochasticSsrGlobalsBuffer?.Release();
+                _stochasticSsrGlobalsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    StochasticSsrGlobalsStrideBytes);
+                _hasStochasticSsrGlobals = false;
+                return _stochasticSsrGlobalsBuffer.IsValid();
+            }
+
+            private bool UpdateStochasticSsrGlobals(FeatureSettings settings, int inputWidth, int inputHeight)
+            {
+                if (!EnsureStochasticSsrGlobalsBuffer())
+                    return false;
+
                 Vector4 inputSize = new Vector4(inputWidth, inputHeight, 1f / math.max(1, inputWidth), 1f / math.max(1, inputHeight));
                 Vector4 paramsA = new Vector4(
                     math.max(settings.maxPixelOffset, 0.25f),
@@ -158,36 +192,48 @@ namespace Hecton8.Visor
                     math.max(settings.edgeFade, 1f));
                 Vector4 paramsB = new Vector4(math.saturate(settings.noiseModulation), 0f, 0f, 0f);
 
-                if (_lastUploadedMaterial != material)
+                StochasticSsrGlobalsDTO globals = new StochasticSsrGlobalsDTO(inputSize, paramsA, paramsB);
+                if (_hasStochasticSsrGlobals && StochasticSsrGlobalsEqual(in _lastStochasticSsrGlobals, in globals))
                 {
-                    _lastUploadedMaterial = material;
-                    _hasMaterialState = false;
+                    Shader.SetGlobalConstantBuffer(ShaderConstants.StochasticSsrGlobalsBufferId, _stochasticSsrGlobalsBuffer, 0, StochasticSsrGlobalsStrideBytes);
+                    return true;
                 }
 
-                bool materialDirty = !_hasMaterialState;
-                SetMaterialVectorIfChanged(material, ShaderConstants.InputSizeId, inputSize, ref _lastInputSize, materialDirty);
-                SetMaterialVectorIfChanged(material, ShaderConstants.ParamsAId, paramsA, ref _lastParamsA, materialDirty);
-                SetMaterialVectorIfChanged(material, ShaderConstants.ParamsBId, paramsB, ref _lastParamsB, materialDirty);
-
-                _hasMaterialState = true;
+                NativeArray<StochasticSsrGlobalsDTO> mapped = _stochasticSsrGlobalsBuffer.LockBufferForWrite<StochasticSsrGlobalsDTO>(0, 1);
+                mapped[0] = globals;
+                _stochasticSsrGlobalsBuffer.UnlockBufferAfterWrite<StochasticSsrGlobalsDTO>(1);
+                _lastStochasticSsrGlobals = globals;
+                _hasStochasticSsrGlobals = true;
+                Shader.SetGlobalConstantBuffer(ShaderConstants.StochasticSsrGlobalsBufferId, _stochasticSsrGlobalsBuffer, 0, StochasticSsrGlobalsStrideBytes);
+                return true;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static void SetMaterialVectorIfChanged(Material material, int shaderId, Vector4 value, ref Vector4 cachedValue, bool materialDirty)
+            private static bool StochasticSsrGlobalsEqual(in StochasticSsrGlobalsDTO left, in StochasticSsrGlobalsDTO right)
             {
-                if (!materialDirty && cachedValue == value)
-                    return;
+                return left.InputSize == right.InputSize &&
+                       left.ParamsA == right.ParamsA &&
+                       left.ParamsB == right.ParamsB;
+            }
 
-                material.SetVector(shaderId, value);
-                cachedValue = value;
+            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = StochasticSsrGlobalsStrideBytes)]
+            private struct StochasticSsrGlobalsDTO
+            {
+                public Vector4 InputSize;
+                public Vector4 ParamsA;
+                public Vector4 ParamsB;
+
+                public StochasticSsrGlobalsDTO(Vector4 inputSize, Vector4 paramsA, Vector4 paramsB)
+                {
+                    InputSize = inputSize;
+                    ParamsA = paramsA;
+                    ParamsB = paramsB;
+                }
             }
         }
 
         private static class ShaderConstants
         {
-            internal static readonly int InputSizeId = Shader.PropertyToID("_HectonSsrInputSize");
-            internal static readonly int ParamsAId = Shader.PropertyToID("_HectonSsrParamsA");
-            internal static readonly int ParamsBId = Shader.PropertyToID("_HectonSsrParamsB");
+            internal static readonly int StochasticSsrGlobalsBufferId = Shader.PropertyToID("HectonStochasticSsrGlobals");
             internal static readonly int MaskTextureId = Shader.PropertyToID("_HectonSsrMaskTex");
         }
 
@@ -227,6 +273,7 @@ namespace Hecton8.Visor
 
         protected override void Dispose(bool disposing)
         {
+            _pass?.Dispose();
             DisposeMaterial(ref _material);
         }
 

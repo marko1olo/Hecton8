@@ -1,7 +1,15 @@
-﻿# Reverification Addendum â€” 2026-04-30
+# Reverification Addendum â€” 2026-04-30
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 Purpose:
 - re-check whether the initial forensic audit findings were still current
@@ -43,9 +51,7 @@ These findings remain current after reverification:
   - DOTS scripts still explicitly describe fallback behavior
 
 - Test maturity is still extremely weak:
-  - current test inventory exposes only 2 tests
-  - `RequiredTest` (EditMode)
-  - `Submerge` (PlayMode)
+  - historical test inventory exposed only 2 tests; R18 static count sees `17` test `.cs` files: `13` Editor and `4` PlayMode.
 
 ## Findings From Initial Pass That Are Now Stale Or Unconfirmed
 
@@ -162,7 +168,7 @@ It was not perfectly time-stable.
 
 The project changed underneath the audit window, and the editor itself entered a degraded state during reverification.
 
-Current strongest verified conclusions:
+Strongest static-audit conclusions from this historical pass:
 - the project still has real engineering depth
 - the project still has architecture drift
 - DOTS is still mostly non-production

@@ -1,4 +1,3 @@
-using Hecton8.Audio.Propagation;
 using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
@@ -14,23 +13,59 @@ namespace Hecton8.Audio.Virtualization
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
     public struct VirtualVoiceSortJob : IJob
     {
-        public NativeList<VirtualVoice> Voices;
+        public NativeArray<VirtualVoice> Voices;
+        public NativeArray<VirtualVoiceSortKey> SortKeys;
         public NativeArray<VirtualVoiceSelection> Selections;
         public NativeArray<VirtualVoiceStatistics> Statistics;
         public AcousticAup ListenerAup;
+        public float3 ListenerVelocityMetersPerSecond;
+        public MockSDFSampler SdfSampler;
+        public float DefaultSabineRt60Seconds;
+        public float DefaultSabineRoomVolumeCubicMeters;
+        public float SoundSpeedMetersPerSecond;
+        public float GlobalOcclusionPenalty;
+        public float OccludedLowPassHertz;
+        public float SabineDecayScale;
         public int PhysicalVoiceLimit;
+        public int VoiceCount;
         public int DroppedVoiceCount;
         public int Frame;
+        public int DisableSdfOcclusion;
         public float MinimumAudibleEnergy;
 
         public void Execute()
         {
-            int totalVoices = Voices.Length;
+            int sortKeyCapacity = SortKeys.IsCreated ? SortKeys.Length : 0;
+            int totalVoices = math.clamp(VoiceCount, 0, math.min(Voices.Length, sortKeyCapacity));
             int culledVoices = 0;
             int audibleCount = 0;
+            int occludedCount = 0;
+            int delayedCount = 0;
             int safeLimit = math.clamp(PhysicalVoiceLimit, 0, Selections.Length);
-            int selectedCount = 0;
             float minAudibleEnergy = math.max(0f, MinimumAudibleEnergy);
+            float soundSpeed = math.clamp(
+                VirtualVoiceUtility.SanitizeFinite(SoundSpeedMetersPerSecond, VirtualVoiceUtility.DelaySpeedMetersPerSecond),
+                250f,
+                2000f);
+            float occlusionPenalty = math.clamp(
+                VirtualVoiceUtility.SanitizeFinite(GlobalOcclusionPenalty, VirtualVoiceUtility.DearLieOccludedGain),
+                0.03162278f,
+                1f);
+            float occludedLowPass = math.clamp(
+                VirtualVoiceUtility.SanitizeFinite(OccludedLowPassHertz, VirtualVoiceUtility.OccludedLowPassHertz),
+                80f,
+                VirtualVoiceUtility.OpenLowPassHertz);
+            float sabineScale = math.clamp(
+                VirtualVoiceUtility.SanitizeFinite(SabineDecayScale, 1f),
+                0.1f,
+                4f);
+            float rt60Sum = 0f;
+            float lowPassSum = 0f;
+            float maxDelay = 0f;
+
+            float3 listenerVelocity = math.all(math.isfinite(ListenerVelocityMetersPerSecond))
+                ? ListenerVelocityMetersPerSecond
+                : float3.zero;
 
             for (int i = 0; i < totalVoices; i++)
             {
@@ -42,44 +77,107 @@ namespace Hecton8.Audio.Virtualization
                     continue;
                 }
 
-                float volume = math.saturate(SanitizeFinite(voice.Volume, 0f));
-                float priority = math.max(0f, SanitizeFinite(voice.Priority, 0f));
+                float volume = math.saturate(VirtualVoiceUtility.SanitizeFinite(voice.Volume, 0f));
+                float importance = math.max(0f, VirtualVoiceUtility.SanitizeFinite(voice.Priority, 0f));
                 float3 relative = AcousticAup.RelativeFloat3(in voice.SourceAup, in ListenerAup);
                 float distanceSq = math.lengthsq(relative);
                 if (!math.isfinite(distanceSq))
                     distanceSq = float.MaxValue * 0.25f;
 
-                float attenuation = math.rcp(distanceSq + 1f);
-                float audibleEnergy = volume * attenuation;
-                if (priority <= 0f || audibleEnergy < minAudibleEnergy)
+                float attenuation = math.rcp(math.max(1f, distanceSq));
+                float lowPass = math.clamp(
+                    VirtualVoiceUtility.SanitizeFinite(voice.LowPassCutoffHz, VirtualVoiceUtility.OpenLowPassHertz),
+                    80f,
+                    VirtualVoiceUtility.OpenLowPassHertz);
+
+                VirtualVoiceDspFlags flags = voice.DspFlags;
+                bool occluded = (flags & VirtualVoiceDspFlags.SdfOccluded) != 0 ||
+                    VirtualVoiceUtility.ResolveDearLieOcclusion(relative, in SdfSampler, DisableSdfOcclusion);
+                if (occluded)
+                {
+                    volume *= occlusionPenalty;
+                    lowPass = math.min(lowPass, occludedLowPass);
+                    flags |= VirtualVoiceDspFlags.SdfOccluded;
+                    occludedCount++;
+                }
+
+                if ((flags & VirtualVoiceDspFlags.InsideSubmarineHull) != 0)
+                    lowPass = math.min(lowPass, VirtualVoiceUtility.HullLowPassHertz);
+
+                float effectiveVolume = volume * attenuation;
+                float weight = effectiveVolume * importance;
+                if (importance <= 0f || effectiveVolume < minAudibleEnergy)
                 {
                     culledVoices++;
                     continue;
                 }
 
+                float sabineRt60 = math.clamp(
+                    ResolveSabineRt60(in voice) * sabineScale,
+                    VirtualVoiceUtility.SabineMinimumRt60Seconds,
+                    VirtualVoiceUtility.SabineMaximumRt60Seconds);
+                float delaySeconds = math.max(
+                    0f,
+                    math.max(
+                        VirtualVoiceUtility.SanitizeFinite(voice.DelaySeconds, 0f),
+                        VirtualVoiceUtility.ComputeDelaySeconds(distanceSq, soundSpeed)));
+                if (delaySeconds > 0.0001f)
+                {
+                    flags |= VirtualVoiceDspFlags.Delayed;
+                    delayedCount++;
+                }
+
+                float3 sourceVelocity = math.all(math.isfinite(voice.SourceVelocityMetersPerSecond))
+                    ? voice.SourceVelocityMetersPerSecond
+                    : float3.zero;
+
                 voice.Volume = volume;
-                voice.Priority = priority;
-                voice.Pitch = math.clamp(SanitizeFinite(voice.Pitch, 1f), 0.1f, 3f);
-                voice.DopplerRatio = math.clamp(
-                    SanitizeFinite(voice.DopplerRatio, 1f),
-                    VirtualVoiceUtility.MinimumDopplerRatio,
-                    VirtualVoiceUtility.MaximumDopplerRatio);
+                voice.Priority = importance;
+                voice.Pitch = math.clamp(VirtualVoiceUtility.SanitizeFinite(voice.Pitch, 1f), 0.1f, 3f);
+                voice.DopplerRatio = VirtualVoiceUtility.ComputeDopplerRatio(
+                    relative,
+                    sourceVelocity,
+                    listenerVelocity,
+                    voice.DopplerRatio,
+                    soundSpeed);
                 voice.Attenuation = attenuation;
                 voice.DistanceSq = distanceSq;
-                voice.Weight = priority * attenuation;
-                Voices[audibleCount] = voice;
+                voice.EffectiveVolume = effectiveVolume;
+                voice.Weight = weight;
+                voice.SabineRt60Seconds = sabineRt60;
+                voice.LowPassCutoffHz = lowPass;
+                voice.DelaySeconds = delaySeconds;
+                voice.DspFlags = flags | VirtualVoiceDspFlags.SabineResolved;
+                int compactIndex = audibleCount;
+                Voices[compactIndex] = voice;
+                SortKeys[compactIndex] = new VirtualVoiceSortKey
+                {
+                    Weight = weight,
+                    VoiceIndex = compactIndex,
+                    StableKey = voice.StableKey,
+                    Padding = 0u
+                };
                 audibleCount++;
-                selectedCount = InsertSelectionCandidate(in voice, Selections, safeLimit, selectedCount);
+                rt60Sum += sabineRt60;
+                lowPassSum += lowPass;
+                maxDelay = math.max(maxDelay, delaySeconds);
             }
 
-            if (audibleCount < totalVoices)
-                Voices.ResizeUninitialized(audibleCount);
+            SortKeysDescending(SortKeys, audibleCount);
+            int selectedCount = math.min(safeLimit, audibleCount);
+            for (int i = 0; i < selectedCount; i++)
+            {
+                VirtualVoiceSortKey key = SortKeys[i];
+                int voiceIndex = math.clamp(key.VoiceIndex, 0, math.max(0, audibleCount - 1));
+                Selections[i] = CreateSelection(Voices[voiceIndex]);
+            }
 
             for (int i = selectedCount; i < Selections.Length; i++)
                 Selections[i] = default;
 
             if (Statistics.Length > 0)
             {
+                float invAudible = audibleCount > 0 ? math.rcp((float)audibleCount) : 0f;
                 Statistics[0] = new VirtualVoiceStatistics
                 {
                     Frame = Frame,
@@ -89,44 +187,141 @@ namespace Hecton8.Audio.Virtualization
                     ActivePhysicalVoices = selectedCount,
                     PhysicalVoiceLimit = safeLimit,
                     StolenVoices = math.max(0, audibleCount - selectedCount),
-                    DroppedVoices = math.max(0, DroppedVoiceCount)
+                    DroppedVoices = math.max(0, DroppedVoiceCount),
+                    OccludedVoices = occludedCount,
+                    DelayedVoices = delayedCount,
+                    SortTimeMs = 0f,
+                    LoudestWeight = selectedCount > 0 ? SortKeys[0].Weight : 0f,
+                    AverageRt60Seconds = rt60Sum * invAudible,
+                    AverageLowPassHertz = lowPassSum * invAudible,
+                    MaximumDelaySeconds = maxDelay
                 };
             }
         }
 
-        private static float SanitizeFinite(float value, float fallback)
+        private float ResolveSabineRt60(in VirtualVoice voice)
         {
-            return math.isfinite(value) ? value : fallback;
+            float authoredRt60 = VirtualVoiceUtility.SanitizeFinite(voice.SabineRt60Seconds, 0f);
+            if (authoredRt60 > 0f)
+                return math.clamp(authoredRt60, VirtualVoiceUtility.SabineMinimumRt60Seconds, VirtualVoiceUtility.SabineMaximumRt60Seconds);
+
+            float defaultRt60 = VirtualVoiceUtility.SanitizeFinite(DefaultSabineRt60Seconds, 0f);
+            if (defaultRt60 > 0f)
+                return math.clamp(defaultRt60, VirtualVoiceUtility.SabineMinimumRt60Seconds, VirtualVoiceUtility.SabineMaximumRt60Seconds);
+
+            float roomVolume = VirtualVoiceUtility.SanitizeFinite(voice.SabineRoomVolumeCubicMeters, 0f);
+            if (roomVolume <= 0f)
+                roomVolume = VirtualVoiceUtility.SanitizeFinite(DefaultSabineRoomVolumeCubicMeters, 0f);
+
+            return VirtualVoiceUtility.ComputeSabineRt60(roomVolume, voice.AcousticEnvironment);
         }
 
-        private static int InsertSelectionCandidate(
-            in VirtualVoice voice,
-            NativeArray<VirtualVoiceSelection> selections,
-            int safeLimit,
-            int selectedCount)
+        private static void SortKeysDescending(NativeArray<VirtualVoiceSortKey> keys, int count)
         {
-            if (safeLimit <= 0)
-                return selectedCount;
+            if (count <= 1)
+                return;
 
-            if (selectedCount == safeLimit && voice.Weight <= selections[safeLimit - 1].Weight)
-                return selectedCount;
+            unsafe
+            {
+                const int StackCapacity = 64;
+                int* leftStack = stackalloc int[StackCapacity];
+                int* rightStack = stackalloc int[StackCapacity];
+                int stackTop = 0;
+                leftStack[0] = 0;
+                rightStack[0] = count - 1;
 
-            int insertIndex = selectedCount;
-            while (insertIndex > 0 && selections[insertIndex - 1].Weight < voice.Weight)
-                insertIndex--;
+                while (stackTop >= 0)
+                {
+                    int left = leftStack[stackTop];
+                    int right = rightStack[stackTop];
+                    stackTop--;
 
-            if (insertIndex >= safeLimit)
-                return selectedCount;
+                    while (left < right)
+                    {
+                        int i = left;
+                        int j = right;
+                        VirtualVoiceSortKey pivot = keys[(left + right) >> 1];
+                        while (i <= j)
+                        {
+                            while (i <= right && IsHigherPriority(keys[i], pivot))
+                                i++;
+                            while (j >= left && IsHigherPriority(pivot, keys[j]))
+                                j--;
+                            if (i > j)
+                                break;
 
-            int moveStart = math.min(selectedCount, safeLimit - 1);
-            for (int moveIndex = moveStart; moveIndex > insertIndex; moveIndex--)
-                selections[moveIndex] = selections[moveIndex - 1];
+                            VirtualVoiceSortKey swap = keys[i];
+                            keys[i] = keys[j];
+                            keys[j] = swap;
+                            i++;
+                            j--;
+                        }
 
-            selections[insertIndex] = CreateSelection(in voice);
-            if (selectedCount < safeLimit)
-                selectedCount++;
+                        if (j - left > right - i)
+                        {
+                            if (left < j)
+                            {
+                                if (stackTop >= StackCapacity - 1)
+                                {
+                                    ShellSortKeysDescending(keys, count);
+                                    return;
+                                }
 
-            return selectedCount;
+                                stackTop++;
+                                leftStack[stackTop] = left;
+                                rightStack[stackTop] = j;
+                            }
+
+                            left = i;
+                        }
+                        else
+                        {
+                            if (i < right)
+                            {
+                                if (stackTop >= StackCapacity - 1)
+                                {
+                                    ShellSortKeysDescending(keys, count);
+                                    return;
+                                }
+
+                                stackTop++;
+                                leftStack[stackTop] = i;
+                                rightStack[stackTop] = right;
+                            }
+
+                            right = j;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void ShellSortKeysDescending(NativeArray<VirtualVoiceSortKey> keys, int count)
+        {
+            for (int gap = count >> 1; gap > 0; gap >>= 1)
+            {
+                for (int i = gap; i < count; i++)
+                {
+                    VirtualVoiceSortKey candidate = keys[i];
+                    int j = i;
+                    while (j >= gap && IsHigherPriority(candidate, keys[j - gap]))
+                    {
+                        keys[j] = keys[j - gap];
+                        j -= gap;
+                    }
+
+                    keys[j] = candidate;
+                }
+            }
+        }
+
+        private static bool IsHigherPriority(VirtualVoiceSortKey lhs, VirtualVoiceSortKey rhs)
+        {
+            if (lhs.Weight > rhs.Weight)
+                return true;
+            if (lhs.Weight < rhs.Weight)
+                return false;
+            return lhs.StableKey < rhs.StableKey;
         }
 
         private static VirtualVoiceSelection CreateSelection(in VirtualVoice voice)
@@ -136,6 +331,7 @@ namespace Hecton8.Audio.Virtualization
                 EventID = voice.EventID,
                 ClipHash = voice.ClipHash,
                 StableKey = voice.StableKey,
+                SourceEntityID = voice.SourceEntityID,
                 SourceAup = voice.SourceAup,
                 Volume = voice.Volume,
                 Pitch = voice.Pitch,
@@ -143,9 +339,15 @@ namespace Hecton8.Audio.Virtualization
                 Attenuation = voice.Attenuation,
                 Weight = voice.Weight,
                 DistanceSq = voice.DistanceSq,
+                EffectiveVolume = voice.EffectiveVolume,
+                SabineRt60Seconds = voice.SabineRt60Seconds,
+                LowPassCutoffHz = voice.LowPassCutoffHz,
+                DelaySeconds = voice.DelaySeconds,
                 StationaryCacheKey = voice.StationaryCacheKey,
                 PortalFlags = voice.PortalFlags,
-                FoveatedTier = voice.FoveatedTier
+                FoveatedTier = voice.FoveatedTier,
+                AcousticEnvironment = voice.AcousticEnvironment,
+                DspFlags = voice.DspFlags
             };
         }
     }

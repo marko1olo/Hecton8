@@ -1,7 +1,14 @@
-﻿# System Reality Matrix
+# System Reality Matrix
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 | System | Reality State | Readiness | Audit Read |
 |---|---|---:|---|
@@ -65,11 +72,11 @@ Criticism where required:
 Source-backed update after the May 1 audit pass:
 
 - `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` now provides the conceptual system classification layer: load-bearing, active/transitional, presentation/support, experimental/seam, and historical/evidence.
-- Current first-party script surface is superseded by the May 4 sweep: `1078` C# files under `Assets/_Project/Scripts`, `519952` lines by PowerShell line count.
+- Historical May 4 script surface was `1078` C# files under `Assets/_Project/Scripts`, `519952` lines by PowerShell line count. R22 late static validation spot count sees `1755` C# files and `1176132` PowerShell-counted lines under `Assets/_Project/Scripts`; rerun before use.
 - `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` is now the current high-risk failure map. It supersedes softer claims that event, headless, AUP, and job-safety risks were only theoretical.
 - Event buses are no longer accurately described as having no breaker at all. `SystemDispatcher` contains `MaxLateFrameEventsPerFrame = 1000` and many static event lanes call `TryConsumeLateFrameEventDispatch()`. `HectonEventBus` also contains `MaxDispatchDepth = 4`. The remaining risk is narrower: no proven same-frame generation split across all event lanes and no runtime cascade proof.
 - The original `FaunaBrain.UpdateBioluminescentHypnosis()` camera-specific headless violation is stale by current source recheck: the method now consumes `PlayerRuntimeContext.LookState`. Fauna headless proof is still absent because perception still uses player Transform/Rigidbody paths and no no-camera Play Mode test was run. `StorageCrate.OpenCrate()` remains source-patched but runtime-unverified.
-- The hot-lane job barrier finding is not "all Complete calls are equally bad." The older documented Severity-High cases naming `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick` are stale by May 2 strict grep. Current `.Complete(` hits are dispatcher completion callbacks in `ItemCatalog.cs` / `AssetLifecycleGovernor.cs` and one explicit `JobHandle.Complete()` in `World/DispatcherJobSwap.cs`.
+- The hot-lane job barrier finding is not "all Complete calls are equally bad." The older documented Severity-High cases naming `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick` are a May 2 strict-grep snapshot only. Current static grep finds broader `.Complete(` usage and requires a fresh barrier audit before using exact offender lists.
 - Coroutine eradication has improved since the older Awaitable report. May 2 strict grep found `0` `StartCoroutine(` call sites under `Assets/_Project/Scripts`.
 - Object pool exhaustion policy was tightened by code inspection: spawn exhaustion returns `null` and emits `GlobalTelemetryBus.PublishPoolExhausted(...)`; runtime expansion through `InstantiatePooled` is warmup-only by current source review.
 - Unity MCP console proof from the previous May 1 report pass: error query returned `0` entries. Current delta pass attempted `read_console` twice and MCP returned `no_unity_session`; therefore this update has no fresh console proof. Play Mode, GCMonitor, profiler, and runtime deadlock proof remain absent.
@@ -97,9 +104,9 @@ Conceptual corrections:
 Source/log-backed update after the documentation actuality sweep:
 
 - Fresh local command `dotnet build .\Hecton8.Core.csproj` exited `0` with `136 Warning(s)` and `0 Error(s)` in `00:01:24.05`; latest post-restore `dotnet build .\Hecton8.Core.csproj --no-restore` rerun exited `0` with `73 Warning(s)` and `0 Error(s)` in `00:00:23.95`.
-- Current first-party source inventory is superseded by the May 4 sweep: `1118` `.cs` files under `Assets/_Project`, `1078` under `Assets/_Project/Scripts`, `519952` static script lines, `325` scripts directly under `Assets/_Project/Scripts`, and `33` direct public interfaces in `GlobalRegistryContracts.cs`.
+- Historical May 4 source inventory was `1118` `.cs` files under `Assets/_Project`, `1078` under `Assets/_Project/Scripts`, `519952` static script lines, `325` scripts directly under `Assets/_Project/Scripts`, and `33` direct public interfaces. R22 late static validation spot count sees `1811` first-party `.cs`, `1755` under Scripts, `1176132` script lines, and `63` `GlobalRegistryContracts` interfaces.
 - `Packages/manifest.json` still does not declare `com.unity.entities`; strict source grep found `0` active `Unity.Entities`, `IComponentData`, `SystemBase`, or `ISystem` references under `Assets/_Project/Scripts`.
-- `.codex-artifacts/dotnet-Hecton8.Core-2026-05-02-after-scatter-candidate-count-clamp.log` is not zero-byte evidence; it reports `Build succeeded`, `73 Warning(s)`, `0 Error(s)`.
+- Historical report text references `.codex-artifacts/dotnet-Hecton8.Core-2026-05-02-after-scatter-candidate-count-clamp.log` as build evidence, but the artifact is absent in the current R20 workspace check. Treat that build claim as unverified unless the log is restored or replaced by a fresh artifact.
 - `unity-batch-autonomous-registry-sweep-rerun.log` contains stale `VehicleDockingModule.ResolveColliderRuntimeId` errors, then later records `ExitCode: 0` and `Tundra build success`; do not use the stale errors alone as current compile truth.
 - Play Mode, GCMonitor, profiler, scene/prefab readback, and long-run memory retention remain unverified.
 

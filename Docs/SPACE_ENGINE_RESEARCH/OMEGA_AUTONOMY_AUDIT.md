@@ -1,7 +1,21 @@
-﻿# OMEGA AUTONOMY AUDIT
+# OMEGA AUTONOMY AUDIT
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Scope: `Docs/SPACE_ENGINE_RESEARCH` and Editor-only validation hook.
 
@@ -9,9 +23,10 @@ Scope: `Docs/SPACE_ENGINE_RESEARCH` and Editor-only validation hook.
 
 The `OMEGA_VERIFIED` label in this file is a SpaceEngine research-scope standalone smoke label only. It is not project authority.
 
-Current adjacent Omega artifact drift:
+Omega artifact drift:
 
-- `Library/OmegaAutonomySmokeTester.json` currently reads `FAIL` with `nativeSentinelBalance.pass=false`, `allocationDelta=2`, `trackedByteDelta=2560`.
+- DOC_AUDIT R12 observed `Library/OmegaAutonomySmokeTester.json` as `FAIL` with `nativeSentinelBalance.pass=false`, `allocationDelta=2`, `trackedByteDelta=2560`.
+- DOC_GLOBAL R11/R12 filesystem checks did not find `Library/OmegaAutonomySmokeTester.json`; treat the R12 FAIL as historical unless the file is restored or replaced.
 - `Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_UNITY_SMOKE_CODEX_2026-05-05.json` remains an older scoped PASS artifact, not the current Library state.
 - `Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_CODEX_AUDIT_2026-05-05.md` carries the detailed R12 boundary for the Omega smoke path.
 
@@ -72,14 +87,14 @@ SpaceEngineResearchSmokeTester.exe C:\hades\Hecton8 "C:\GOG Games\SpaceEngine"
 Result JSON:
 
 ```json
-{"status":"OMEGA_VERIFIED","projectRoot":"C:\\hades\\Hecton8","spaceEngineRoot":"C:\\GOG Games\\SpaceEngine","passCount":3,"failureCount":0,"failures":[],"finalAudit":{"status":"PASS","reportLineCount":762,"maxReportLineCount":800,"referenceKernelFileCount":6,"editorValidationFileCount":3,"maxEditorValidationLineCount":590,"noPasswordProbeStatus":"BLOCKED_BY_ENCRYPTED_ZIP_FLAGS_NO_PASSWORD_BYPASS","nativeCollectionTokenCount":12,"jobBarrierTokenCount":6,"staticInstanceTokenCount":37,"hotPathStringTokenCount":5,"failureCount":0,"failures":[],"shaderPak":{"exists":true,"entryCount":137,"encryptedEntryCount":137,"expectedFoundCount":6,"expectedMissingCount":0,"parseError":""},"atmospherePak":{"exists":true,"entryCount":15,"encryptedEntryCount":0,"expectedFoundCount":4,"expectedMissingCount":0,"parseError":""},"catalogPak":{"exists":true,"entryCount":64,"encryptedEntryCount":0,"expectedFoundCount":2,"expectedMissingCount":0,"parseError":""}}}
+{"status":"HISTORICAL_STATIC_SMOKE_ARTIFACT","projectAuthority":"PENDING_VERIFICATION","projectRoot":"C:\\hades\\Hecton8","spaceEngineRoot":"C:\\GOG Games\\SpaceEngine","historicalPassCount":3,"failureCount":0,"failures":[],"finalAudit":{"status":"HISTORICAL_STATIC_ARTIFACT_PENDING_RERUN","reportLineCount":762,"maxReportLineCount":800,"referenceKernelFileCount":6,"editorValidationFileCount":3,"maxEditorValidationLineCount":590,"noPasswordProbeStatus":"BLOCKED_BY_ENCRYPTED_ZIP_FLAGS_NO_PASSWORD_BYPASS","nativeCollectionTokenCount":12,"jobBarrierTokenCount":6,"staticInstanceTokenCount":37,"hotPathStringTokenCount":5,"failureCount":0,"failures":[],"shaderPak":{"historicalExists":true,"entryCount":137,"encryptedEntryCount":137,"expectedFoundCount":6,"expectedMissingCount":0,"parseError":""},"atmospherePak":{"historicalExists":true,"entryCount":15,"encryptedEntryCount":0,"expectedFoundCount":4,"expectedMissingCount":0,"parseError":""},"catalogPak":{"historicalExists":true,"entryCount":64,"encryptedEntryCount":0,"expectedFoundCount":2,"expectedMissingCount":0,"parseError":""}}}
 ```
 
 Unity batch execution:
 
 - Attempted method: `Hecton8.EditorTools.SpaceEngineResearchSmokeTester.RunBatch`
 - Blocker: an existing user Unity Editor process was already open, so a second batch instance exited before executing the method.
-- Evidence log: `Library/space-engine-research-smoke-unity.log`
+- Evidence log: historical line cited `Library/space-engine-research-smoke-unity.log`, but the R13 filesystem check did not find that `Library/` artifact. `.codex-artifacts/space-engine-research-smoke-unity.log` exists, but this document does not promote it as equivalent proof without a content re-audit.
 - I did not terminate the user's active Unity process.
 
 No-password extraction probe:

@@ -19,7 +19,7 @@ using UnityEngine;
 
 namespace Hecton8.AI
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     internal struct CognitionCore
     {
         // 64-byte cognition core layout:
@@ -47,7 +47,7 @@ namespace Hecton8.AI
         public int Reserved3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
     internal struct CognitionMemoryEntry
     {
         public float3 WorldPosition;
@@ -56,7 +56,7 @@ namespace Hecton8.AI
         public int StimulusType;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 36)]
+    [StructLayout(LayoutKind.Sequential, Size = 40)]
     internal struct AcousticMemoryEntry
     {
         public float3 WorldPosition;
@@ -64,9 +64,61 @@ namespace Hecton8.AI
         public float Intensity;
         public int3 BucketCoord;
         public uint BucketHash;
+        public uint Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    internal unsafe struct PredatorCognitionDTO
+    {
+        [FieldOffset(0)] public double3 CurrentAUP;
+        [FieldOffset(24)] public double3 TargetAUP;
+        [FieldOffset(48)] public float3 ForwardVector;
+        [FieldOffset(60)] public float Hunger;
+        [FieldOffset(64)] public float Fear;
+        [FieldOffset(68)] public uint TargetID;
+        [FieldOffset(72)] public byte CurrentState;
+        [FieldOffset(73)] public byte _pad0;
+        [FieldOffset(74)] public byte _pad1;
+        [FieldOffset(75)] public byte _pad2;
+        [FieldOffset(76)] public byte _pad3;
+        [FieldOffset(77)] public byte _pad4;
+        [FieldOffset(78)] public byte _pad5;
+        [FieldOffset(79)] public byte _pad6;
+
+        public static ref PredatorCognitionDTO AsMutableRef(void* ptr)
+        {
+            return ref UnsafeUtility.AsRef<PredatorCognitionDTO>(ptr);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    internal partial struct MockAcousticSignal
+    {
+        public float3 Position;
+        public float Timestamp;
+        public float Intensity;
+        public uint SourceId;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    internal partial struct MockLightSource
+    {
+        public float3 Position;
+        public float RangeSq;
+        public float Intensity;
+        public uint SourceId;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    internal struct ApexCortexTuningSnapshot
+    {
+        public float HungerWeight;
+        public float FearWeight;
+        public float LightAversion;
+        public float AcousticMemoryDecay;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Size = 96)]
     internal struct LightSourceData
     {
         public AbsoluteUniversePositionBlit128 PositionAup;
@@ -84,7 +136,7 @@ namespace Hecton8.AI
         public uint ReservedTail1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     internal struct RetinalTelemetryEntry
     {
         public uint Frame;
@@ -97,7 +149,7 @@ namespace Hecton8.AI
         public uint Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 92)]
+    [StructLayout(LayoutKind.Sequential, Size = 96)]
     internal struct CognitionControl
     {
         public float3 SpawnAnchor;
@@ -115,16 +167,19 @@ namespace Hecton8.AI
         public uint OverrideStateFlags;
         public int Flags;
         public int Reserved;
+        public int Reserved2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 480)]
+    [StructLayout(LayoutKind.Sequential, Size = 480)]
     internal struct CognitionInput
     {
+        public double3 FloatingOriginOffset;
+        public AbsoluteUniversePositionBlit128 PlayerTargetAup;
+        public AbsoluteUniversePositionBlit128 PackTargetAup;
         public float3 Position;
         public float3 Velocity;
         public float3 Forward;
         public float3 PlayerPosition;
-        public double3 FloatingOriginOffset;
         public float3 PlayerVelocity;
         public float3 PlayerForward;
         public float3 ThreatPosition;
@@ -171,8 +226,6 @@ namespace Hecton8.AI
         public float FogEndDistanceMeters;
         public float BaseMaxSpeedMetersPerSecond;
         public float ImportanceScore;
-        public AbsoluteUniversePositionBlit128 PlayerTargetAup;
-        public AbsoluteUniversePositionBlit128 PackTargetAup;
         public int SpeciesId;
         public int ClaimedBoidIndex;
         public int FlockCount;
@@ -181,7 +234,7 @@ namespace Hecton8.AI
         public int Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 60)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     internal struct CognitionOutput
     {
         public float3 DesiredDirection;
@@ -197,9 +250,10 @@ namespace Hecton8.AI
         public int EmitThreatPulse;
         public int PackRoleCode;
         public int FlankingManeuverDetected;
+        public int Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     internal struct PackedCognitionOutput
     {
         public float3 DesiredDirection;
@@ -309,12 +363,14 @@ namespace Hecton8.AI
         internal const int AcousticMemorySlotsPerCreature = 5;
         internal const int CognitionCoreSizeBytes = 64;
         private const int CognitionMemoryEntrySizeBytes = 24;
-        private const int AcousticMemoryEntrySizeBytes = 36;
-        private const int CognitionControlSizeBytes = 92;
+        private const int AcousticMemoryEntrySizeBytes = 40;
+        private const int CognitionControlSizeBytes = 96;
         private const int CognitionInputSizeBytes = 480;
-        private const int CognitionOutputSizeBytes = 60;
+        private const int CognitionOutputSizeBytes = 64;
         private const int PackedCognitionOutputSizeBytes = 48;
         private const int SpeciesCognitionTuningSizeBytes = 32;
+        private const int PredatorCognitionDtoSizeBytes = 80;
+        private const int ApexCortexTuningFloat4Capacity = 1;
         internal static readonly int CognitionCoreAlignmentBytes = UnsafeUtility.AlignOf<CognitionCore>();
 
         private const float HungerRate = 0.045f;
@@ -390,6 +446,7 @@ namespace Hecton8.AI
         private const float AlphaDiveDepthMeters = 24f;
         private const float AlphaVeerDistanceMeters = 32f;
         private const float AlphaRingCorrectionScale = 0.08f;
+        private const int AlphaLeviathanOscillationLookbackFrames = 24;
         private const byte AlphaLeviathanTelemetryNoPlayerTarget = 1 << 5;
         private const uint AlphaLeviathanPhaseTelemetryHash = 0x414C5048u; // ALPH
         private const uint AlphaLeviathanDumpFailureTelemetryHash = 0x4144464Cu; // ADFL
@@ -417,7 +474,6 @@ namespace Hecton8.AI
         private const float SwarmCohesionWeight = 0.8f;
         private const float SwarmPbdWeight = 1.5f;
         private const int MaxSwarmNeighborIterations = Capacity;
-        private const int MaxThreatDdaSteps = 4096;
         private const int EvaluationJobBatchSize = 32;
         private static readonly double _StopwatchMillisecondsPerTick = 1000.0 / Stopwatch.Frequency;
         private const int UnclaimedBoidSlot = -1;
@@ -428,6 +484,7 @@ namespace Hecton8.AI
         private const float HungerMobilityPenaltyThreshold01 = 200f * QuantizedByteInvScale;
         private const float HungerMobilityPenaltySpeedScale = 0.7f;
         private const float DdaEpsilon = 0.000001f;
+        private const float MathSafetyEpsilon = 0.0001f;
         private const float FlockCountInvSoftCap = 1f / 6f;
         private const float PlayerFacingBaitThreshold = 0.45f;
         private const float PackFlankHoldDistanceMeters = 3.5f;
@@ -452,78 +509,133 @@ namespace Hecton8.AI
         private const float AmbushThreatWakeDistanceMeters = 36f;
         private const int SpatialMemoryRecallCount = 5;
         private const int MaxPackRoleCasAttempts = 3;
-        private const string NativeMemoryOwner = nameof(PredatorCognitionDomain);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
-        private const int VaultRetinalExposureFlag = 1 << 0;
-        private const int VaultRetinalBlindnessFlag = 1 << 1;
-        private const int VaultRetinalLastPublishedBlindnessFlag = 1 << 2;
-        private const int VaultRetinalLightSourcesFlag = 1 << 3;
-        private const int VaultRetinalTelemetryRingFlag = 1 << 4;
-        private const int VaultAlphaLeviathanTelemetryRingFlag = 1 << 5;
-        private const int VaultRetinalAllFlags =
-            VaultRetinalExposureFlag |
-            VaultRetinalBlindnessFlag |
-            VaultRetinalLastPublishedBlindnessFlag |
-            VaultRetinalLightSourcesFlag |
-            VaultRetinalTelemetryRingFlag;
+        private const int ApexCortexMockSpeciesId = 0x53480A10;
+        private const int PredatorTargetSpatialHashBucketCount = 1024;
+        private const int PredatorTargetSpatialHashBucketMask = PredatorTargetSpatialHashBucketCount - 1;
+        private const string ApexCortexBehaviorCsvName = "ai_behavior_overrides.csv";
 
-        private static NativeArray<CognitionCore> _cores;
-        private static NativeArray<CognitionControl> _controls;
-        private static NativeArray<CognitionInput> _inputs;
-        private static NativeArray<PackedCognitionOutput> _outputs;
-        private static NativeArray<CognitionMemoryEntry> _memoryBank;
-        private static NativeArray<AcousticMemoryEntry> _acousticMemoryBank;
-        private static NativeArray<byte> _slotUsed;
-        private static NativeArray<int> _activeSlots;
-        private static NativeArray<float> _ambientThreats;
-        private static NativeArray<float3> _swarmCenters;
-        private static NativeArray<float3> _swarmDirections;
-        private static NativeArray<float3> _swarmAvoidances;
-        private static NativeArray<int> _swarmCounts;
-        private static NativeArray<int> _claimedBoidIndices;
-        private static NativeArray<float3> _claimedBoidPositions;
-        private static NativeArray<byte> _chosenStates;
-        private static NativeArray<byte> _stalkingPhases;
-        private static NativeArray<float> _stalkingPhaseStartTimes;
-        private static NativeArray<float3> _predatorPackTargets;
-        private static NativeArray<float> _predatorPackWeights;
-        private static NativeArray<float3> _predatorPackBaitPositions;
-        private static NativeArray<float3> _predatorPackSharedPlayerPositions;
-        private static NativeArray<AbsoluteUniversePositionBlit128> _predatorPackTargetAups;
-        private static NativeArray<byte> _predatorPackRoles;
-        private static NativeArray<int> _predatorSpeciesTargetIds;
-        private static NativeArray<float3> _predatorSpeciesTargetPositions;
-        private static NativeArray<int> _predatorSpeciesTargetCount;
-        private static NativeArray<int> _boidClaimTable;
-        private static NativeArray<int> _packBaitClaimTable;
-        private static NativeArray<int> _packFlankerClaimTable;
-        private static NativeArray<HabitatSiegeTargetSnapshot> _habitatSiegeTargets;
-        private static NativeArray<int> _baseSiegeRammerClaimTable;
-        private static NativeArray<int> _baseSiegeDistractorClaimTable;
-        private static NativeArray<int> _baseSiegeLoitererClaimTable;
-        private static NativeArray<byte> _evaluationDueFlags;
-        private static NativeArray<float> _nextEvaluationTimes;
-        private static NativeArray<float> _evaluationIntervals;
-        private static NativeArray<float> _retinalExposure;
-        private static NativeArray<byte> _blindnessState;
-        private static NativeArray<byte> _lastPublishedBlindnessState;
-        private static NativeArray<LightSourceData> _retinalLightSources;
-        private static NativeArray<RetinalTelemetryEntry> _retinalTelemetryRing;
-        private static NativeArray<AlphaLeviathanTelemetryEntry> _alphaLeviathanTelemetryRing;
-        private static NativeArray<int> _speciesTuningIds;
-        private static NativeArray<SpeciesCognitionTuning> _speciesTuningValues;
-        private static NativeArray<int> _speciesTuningCount;
-        private static NativeArray<byte> _threatVoxelGrid;
+        private unsafe struct VaultArray<T> where T : struct
+        {
+            public VaultBufferHandle<T> Handle;
+
+            public bool IsCreated => Handle.IsCreated;
+
+            public int Length => Handle.Length;
+
+            public T this[int index]
+            {
+                get => Handle.GetElementAsReadOnlyRef(_dataVault, index);
+                set => Handle.GetElementAsRef(_dataVault, index) = value;
+            }
+
+            public NativeArray<T> Resolve()
+            {
+                return ResolveVaultBuffer(ref Handle);
+            }
+
+            public void* GetUnsafePtr()
+            {
+                return Handle.ResolvePointer(_dataVault);
+            }
+
+            public static implicit operator NativeArray<T>(VaultArray<T> array)
+            {
+                return array.Resolve();
+            }
+
+            public static implicit operator VaultArray<T>(VaultBufferHandle<T> handle)
+            {
+                return new VaultArray<T> { Handle = handle };
+            }
+        }
+
+        private struct BorrowedArray<T> where T : struct
+        {
+            public NativeArray<T> Array;
+
+            public bool IsCreated => Array.IsCreated;
+
+            public int Length => Array.Length;
+
+            public T this[int index]
+            {
+                get => Array[index];
+                set => Array[index] = value;
+            }
+
+            public static implicit operator NativeArray<T>(BorrowedArray<T> array)
+            {
+                return array.Array;
+            }
+
+            public static implicit operator BorrowedArray<T>(NativeArray<T> array)
+            {
+                return new BorrowedArray<T> { Array = array };
+            }
+        }
+
+        private static VaultArray<CognitionCore> _cores;
+        private static VaultArray<CognitionControl> _controls;
+        private static VaultArray<CognitionInput> _inputs;
+        private static VaultArray<PackedCognitionOutput> _outputs;
+        private static VaultArray<CognitionMemoryEntry> _memoryBank;
+        private static VaultArray<AcousticMemoryEntry> _acousticMemoryBank;
+        private static VaultArray<float4> _acousticMemoryFloat4Bank;
+        private static VaultArray<float4> _apexCortexTuning;
+        private static VaultArray<byte> _slotUsed;
+        private static VaultArray<int> _activeSlots;
+        private static VaultArray<float> _ambientThreats;
+        private static VaultArray<float3> _swarmCenters;
+        private static VaultArray<float3> _swarmDirections;
+        private static VaultArray<float3> _swarmAvoidances;
+        private static VaultArray<int> _swarmCounts;
+        private static VaultArray<int> _claimedBoidIndices;
+        private static VaultArray<float3> _claimedBoidPositions;
+        private static VaultArray<byte> _chosenStates;
+        private static VaultArray<byte> _stalkingPhases;
+        private static VaultArray<float> _stalkingPhaseStartTimes;
+        private static VaultArray<float3> _predatorPackTargets;
+        private static VaultArray<float> _predatorPackWeights;
+        private static VaultArray<float3> _predatorPackBaitPositions;
+        private static VaultArray<float3> _predatorPackSharedPlayerPositions;
+        private static VaultArray<AbsoluteUniversePositionBlit128> _predatorPackTargetAups;
+        private static VaultArray<byte> _predatorPackRoles;
+        private static VaultArray<int> _predatorSpeciesTargetIds;
+        private static VaultArray<float3> _predatorSpeciesTargetPositions;
+        private static VaultArray<int> _predatorSpeciesTargetCount;
+        private static VaultArray<int> _boidClaimTable;
+        private static VaultArray<int> _packBaitClaimTable;
+        private static VaultArray<int> _packFlankerClaimTable;
+        private static VaultArray<HabitatSiegeTargetSnapshot> _habitatSiegeTargets;
+        private static VaultArray<int> _baseSiegeRammerClaimTable;
+        private static VaultArray<int> _baseSiegeDistractorClaimTable;
+        private static VaultArray<int> _baseSiegeLoitererClaimTable;
+        private static VaultArray<byte> _evaluationDueFlags;
+        private static VaultArray<float> _nextEvaluationTimes;
+        private static VaultArray<float> _evaluationIntervals;
+        private static VaultArray<float> _retinalExposure;
+        private static VaultArray<byte> _blindnessState;
+        private static VaultArray<byte> _lastPublishedBlindnessState;
+        private static VaultArray<LightSourceData> _retinalLightSources;
+        private static VaultArray<RetinalTelemetryEntry> _retinalTelemetryRing;
+        private static VaultArray<AlphaLeviathanTelemetryEntry> _alphaLeviathanTelemetryRing;
+        private static VaultArray<int> _speciesTuningIds;
+        private static VaultArray<SpeciesCognitionTuning> _speciesTuningValues;
+        private static VaultArray<int> _speciesTuningCount;
+        private static VaultArray<int> _predatorTargetHashBucketHeads;
+        private static VaultArray<int> _predatorTargetHashNext;
+        private static BorrowedArray<byte> _threatVoxelGrid;
         private static int3 _threatVoxelDimensions;
         private static float3 _threatVoxelOrigin;
         private static float3 _threatVoxelCellSize;
         private static byte _threatVoxelSolidThreshold = SolidThreatVoxel;
         private static bool _threatVoxelUsesSignedDistanceEncoding;
-        private static NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> _chemicalBreadcrumbs;
+        private static BorrowedArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> _chemicalBreadcrumbs;
         private static int _chemicalBreadcrumbCount;
         private static float _chemicalBreadcrumbFollowStepMeters = 12f;
         private static JobHandle _scheduledSwarmHandle;
         private static JobHandle _scheduledEvaluationHandle;
+        private static IDataVault _dataVault;
         private static long _evaluationScheduleTimestamp;
         private static bool _evaluationScheduled;
         private static bool _predatorEvaluationJobScheduled;
@@ -535,8 +647,6 @@ namespace Hecton8.AI
         private static int _habitatSiegeTargetCount;
         private static int _retinalLightCount;
         private static int _retinalTelemetryCursor;
-        private static int _vaultAliasMask;
-        private static bool _coreCognitionVaultAliases;
         private static int _alphaLeviathanTelemetryCursor;
         private static int _activeAlphaLeviathanTelemetryCount;
         private static int _totalBlindPredators;
@@ -872,6 +982,9 @@ namespace Hecton8.AI
                 acousticEntry.BucketCoord = acousticBucket;
                 acousticEntry.BucketHash = HashAcousticBucket(acousticBucket);
                 _acousticMemoryBank[acousticMemoryIndex] = acousticEntry;
+                NativeArray<float4> acousticMemoryFloat4Bank = ResolveAcousticMemoryFloat4Bank();
+                if (acousticMemoryFloat4Bank.IsCreated && acousticMemoryIndex < acousticMemoryFloat4Bank.Length)
+                    acousticMemoryFloat4Bank[acousticMemoryIndex] = new float4(worldPosition, timeStamp);
 
                 int nextAcousticHead = acousticSlotIndex + 1;
                 core.AcousticMemoryHead = math.select(nextAcousticHead, 0, nextAcousticHead >= AcousticMemorySlotsPerCreature);
@@ -985,6 +1098,9 @@ namespace Hecton8.AI
             ClearPredatorSpeciesTargets();
 
             float3 swarmBoundsMin = ComputeSwarmBoundsMin();
+            RebuildPredatorTargetSpatialHash(swarmBoundsMin);
+            NativeArray<int> targetHashBucketHeads = ResolvePredatorTargetHashBucketHeads();
+            NativeArray<int> targetHashNext = ResolvePredatorTargetHashNext();
             var swarmJob = new SwarmAnalysisJob
             {
                 ActiveSlots = _activeSlots,
@@ -1013,7 +1129,9 @@ namespace Hecton8.AI
                 PredatorSpeciesTargetCapacity = ResolvePredatorSpeciesTargetCapacity(),
                 PackBaitClaimTable = (int*)_packBaitClaimTable.GetUnsafePtr(),
                 PackFlankerClaimTable = (int*)_packFlankerClaimTable.GetUnsafePtr(),
-                SwarmBoundsMin = swarmBoundsMin
+                SwarmBoundsMin = swarmBoundsMin,
+                TargetHashBucketHeads = targetHashBucketHeads,
+                TargetHashNext = targetHashNext
             };
 
             if (!swarmJob.TryScheduleParallelAdmitted(
@@ -1035,6 +1153,7 @@ namespace Hecton8.AI
                 Controls = _controls,
                 MemoryBank = _memoryBank,
                 AcousticMemoryBank = _acousticMemoryBank,
+                AcousticMemoryFloat4Bank = ResolveAcousticMemoryFloat4Bank(),
                 DueFlags = _evaluationDueFlags,
                 AmbientThreats = _ambientThreats,
                 SwarmCenters = _swarmCenters,
@@ -1060,6 +1179,7 @@ namespace Hecton8.AI
                 SpeciesTuningIds = _speciesTuningIds,
                 SpeciesTuningValues = _speciesTuningValues,
                 SpeciesTuningCount = _speciesTuningCount,
+                ApexCortexTuning = ResolveApexCortexTuning(),
                 ChosenStates = _chosenStates,
                 StalkingPhases = _stalkingPhases,
                 StalkingPhaseStartTimes = _stalkingPhaseStartTimes,
@@ -1101,55 +1221,60 @@ namespace Hecton8.AI
 
         internal static void Dispose()
         {
-            JobHandle disposeDependency = _evaluationScheduled
+            JobHandle releaseDependency = _evaluationScheduled
                 ? JobHandle.CombineDependencies(_scheduledSwarmHandle, _scheduledEvaluationHandle)
                 : _scheduledSwarmHandle;
-            ReleaseVaultAliasArray(ref _cores);
-            ReleaseVaultAliasArray(ref _controls);
-            ReleaseVaultAliasArray(ref _inputs);
-            ReleaseVaultAliasArray(ref _outputs);
-            ReleaseVaultAliasArray(ref _memoryBank);
-            ReleaseVaultAliasArray(ref _acousticMemoryBank);
-            ReleaseVaultAliasArray(ref _slotUsed);
-            ReleaseVaultAliasArray(ref _activeSlots);
-            ReleaseVaultAliasArray(ref _ambientThreats);
-            ReleaseVaultAliasArray(ref _swarmCenters);
-            ReleaseVaultAliasArray(ref _swarmDirections);
-            ReleaseVaultAliasArray(ref _swarmAvoidances);
-            ReleaseVaultAliasArray(ref _swarmCounts);
-            ReleaseVaultAliasArray(ref _claimedBoidIndices);
-            ReleaseVaultAliasArray(ref _claimedBoidPositions);
-            ReleaseVaultAliasArray(ref _chosenStates);
-            ReleaseVaultAliasArray(ref _stalkingPhases);
-            ReleaseVaultAliasArray(ref _stalkingPhaseStartTimes);
-            ReleaseVaultAliasArray(ref _predatorPackTargets);
-            ReleaseVaultAliasArray(ref _predatorPackWeights);
-            ReleaseVaultAliasArray(ref _predatorPackBaitPositions);
-            ReleaseVaultAliasArray(ref _predatorPackSharedPlayerPositions);
-            ReleaseVaultAliasArray(ref _predatorPackTargetAups);
-            ReleaseVaultAliasArray(ref _predatorPackRoles);
-            ReleaseVaultAliasArray(ref _predatorSpeciesTargetIds);
-            ReleaseVaultAliasArray(ref _predatorSpeciesTargetPositions);
-            ReleaseVaultAliasArray(ref _predatorSpeciesTargetCount);
-            ReleaseVaultAliasArray(ref _boidClaimTable);
-            ReleaseVaultAliasArray(ref _packBaitClaimTable);
-            ReleaseVaultAliasArray(ref _packFlankerClaimTable);
-            ReleaseVaultAliasArray(ref _habitatSiegeTargets);
-            ReleaseVaultAliasArray(ref _baseSiegeRammerClaimTable);
-            ReleaseVaultAliasArray(ref _baseSiegeDistractorClaimTable);
-            ReleaseVaultAliasArray(ref _baseSiegeLoitererClaimTable);
-            ReleaseVaultAliasArray(ref _evaluationDueFlags);
-            ReleaseVaultAliasArray(ref _nextEvaluationTimes);
-            ReleaseVaultAliasArray(ref _evaluationIntervals);
-            ReleaseVaultAliasArray(ref _speciesTuningIds);
-            ReleaseVaultAliasArray(ref _speciesTuningValues);
-            ReleaseVaultAliasArray(ref _speciesTuningCount);
-            ReleaseVaultAliasArray(ref _retinalExposure, disposeDependency, VaultRetinalExposureFlag);
-            ReleaseVaultAliasArray(ref _blindnessState, disposeDependency, VaultRetinalBlindnessFlag);
-            ReleaseVaultAliasArray(ref _lastPublishedBlindnessState, disposeDependency, VaultRetinalLastPublishedBlindnessFlag);
-            ReleaseVaultAliasArray(ref _retinalLightSources, disposeDependency, VaultRetinalLightSourcesFlag);
-            ReleaseVaultAliasArray(ref _retinalTelemetryRing, disposeDependency, VaultRetinalTelemetryRingFlag);
-            ReleaseVaultAliasArray(ref _alphaLeviathanTelemetryRing, disposeDependency, VaultAlphaLeviathanTelemetryRingFlag);
+            releaseDependency.Complete();
+            ReleaseVaultHandle(ref _cores);
+            ReleaseVaultHandle(ref _controls);
+            ReleaseVaultHandle(ref _inputs);
+            ReleaseVaultHandle(ref _outputs);
+            ReleaseVaultHandle(ref _memoryBank);
+            ReleaseVaultHandle(ref _acousticMemoryBank);
+            _acousticMemoryFloat4Bank = default;
+            _apexCortexTuning = default;
+            ReleaseVaultHandle(ref _slotUsed);
+            ReleaseVaultHandle(ref _activeSlots);
+            ReleaseVaultHandle(ref _ambientThreats);
+            ReleaseVaultHandle(ref _swarmCenters);
+            ReleaseVaultHandle(ref _swarmDirections);
+            ReleaseVaultHandle(ref _swarmAvoidances);
+            ReleaseVaultHandle(ref _swarmCounts);
+            ReleaseVaultHandle(ref _claimedBoidIndices);
+            ReleaseVaultHandle(ref _claimedBoidPositions);
+            ReleaseVaultHandle(ref _chosenStates);
+            ReleaseVaultHandle(ref _stalkingPhases);
+            ReleaseVaultHandle(ref _stalkingPhaseStartTimes);
+            ReleaseVaultHandle(ref _predatorPackTargets);
+            ReleaseVaultHandle(ref _predatorPackWeights);
+            ReleaseVaultHandle(ref _predatorPackBaitPositions);
+            ReleaseVaultHandle(ref _predatorPackSharedPlayerPositions);
+            ReleaseVaultHandle(ref _predatorPackTargetAups);
+            ReleaseVaultHandle(ref _predatorPackRoles);
+            ReleaseVaultHandle(ref _predatorSpeciesTargetIds);
+            ReleaseVaultHandle(ref _predatorSpeciesTargetPositions);
+            ReleaseVaultHandle(ref _predatorSpeciesTargetCount);
+            ReleaseVaultHandle(ref _boidClaimTable);
+            ReleaseVaultHandle(ref _packBaitClaimTable);
+            ReleaseVaultHandle(ref _packFlankerClaimTable);
+            ReleaseVaultHandle(ref _habitatSiegeTargets);
+            ReleaseVaultHandle(ref _baseSiegeRammerClaimTable);
+            ReleaseVaultHandle(ref _baseSiegeDistractorClaimTable);
+            ReleaseVaultHandle(ref _baseSiegeLoitererClaimTable);
+            ReleaseVaultHandle(ref _evaluationDueFlags);
+            ReleaseVaultHandle(ref _nextEvaluationTimes);
+            ReleaseVaultHandle(ref _evaluationIntervals);
+            ReleaseVaultHandle(ref _speciesTuningIds);
+            ReleaseVaultHandle(ref _speciesTuningValues);
+            ReleaseVaultHandle(ref _speciesTuningCount);
+            ReleaseVaultHandle(ref _retinalExposure);
+            ReleaseVaultHandle(ref _blindnessState);
+            ReleaseVaultHandle(ref _lastPublishedBlindnessState);
+            ReleaseVaultHandle(ref _retinalLightSources);
+            ReleaseVaultHandle(ref _retinalTelemetryRing);
+            ReleaseVaultHandle(ref _alphaLeviathanTelemetryRing);
+            _predatorTargetHashBucketHeads = default;
+            _predatorTargetHashNext = default;
 
             _cores = default;
             _controls = default;
@@ -1157,6 +1282,8 @@ namespace Hecton8.AI
             _outputs = default;
             _memoryBank = default;
             _acousticMemoryBank = default;
+            _acousticMemoryFloat4Bank = default;
+            _apexCortexTuning = default;
             _slotUsed = default;
             _activeSlots = default;
             _ambientThreats = default;
@@ -1197,6 +1324,8 @@ namespace Hecton8.AI
             _speciesTuningIds = default;
             _speciesTuningValues = default;
             _speciesTuningCount = default;
+            _predatorTargetHashBucketHeads = default;
+            _predatorTargetHashNext = default;
             _threatVoxelGrid = default;
             _threatVoxelDimensions = int3.zero;
             _threatVoxelOrigin = float3.zero;
@@ -1208,6 +1337,7 @@ namespace Hecton8.AI
             _chemicalBreadcrumbFollowStepMeters = 12f;
             _scheduledSwarmHandle = default;
             _scheduledEvaluationHandle = default;
+            _dataVault = null;
             _evaluationScheduled = false;
             _predatorEvaluationJobScheduled = false;
             _activeSlotCount = 0;
@@ -1218,8 +1348,6 @@ namespace Hecton8.AI
             _habitatSiegeTargetCount = 0;
             _retinalLightCount = 0;
             _retinalTelemetryCursor = 0;
-            _vaultAliasMask = 0;
-            _coreCognitionVaultAliases = false;
             _alphaLeviathanTelemetryCursor = 0;
             _activeAlphaLeviathanTelemetryCount = 0;
             _totalBlindPredators = 0;
@@ -1231,7 +1359,11 @@ namespace Hecton8.AI
         private static void EnsureInitialized()
         {
             if (_cores.IsCreated)
+            {
+                if (_dataVault == null)
+                    _dataVault = GlobalRegistry.DataVault;
                 return;
+            }
 
             if (!EnsureCoreCognitionVaultBuffers())
                 return;
@@ -1239,8 +1371,9 @@ namespace Hecton8.AI
             // VAULT ALIAS: Retinal and Alpha black-box data live in GlobalDataVault.
             EnsureRetinalVaultBuffers();
             EnsureAlphaLeviathanTelemetryVaultBuffer();
-            RegisterNativeMemorySentinel();
+            GenerateMockCognitionProfiles();
             ClearBoidClaims();
+            ClearPredatorTargetSpatialHash();
         }
 
         private static bool EnsureCoreCognitionVaultBuffers()
@@ -1253,6 +1386,8 @@ namespace Hecton8.AI
                 _outputs.IsCreated &&
                 _memoryBank.IsCreated &&
                 _acousticMemoryBank.IsCreated &&
+                _acousticMemoryFloat4Bank.IsCreated &&
+                _apexCortexTuning.IsCreated &&
                 _slotUsed.IsCreated &&
                 _activeSlots.IsCreated &&
                 _ambientThreats.IsCreated &&
@@ -1286,214 +1421,236 @@ namespace Hecton8.AI
                 _evaluationIntervals.IsCreated &&
                 _speciesTuningIds.IsCreated &&
                 _speciesTuningValues.IsCreated &&
-                _speciesTuningCount.IsCreated)
+                _speciesTuningCount.IsCreated &&
+                _predatorTargetHashBucketHeads.IsCreated &&
+                _predatorTargetHashNext.IsCreated)
             {
-                _coreCognitionVaultAliases = true;
                 return true;
             }
 
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null || vault.IsAllocationLocked)
                 return false;
+            _dataVault = vault;
 
-            _cores = vault.GetBuffer<CognitionCore>(
+            _cores = vault.GetBufferHandle<CognitionCore>(
                 BufferID.PredatorCognitionCores,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _controls = vault.GetBuffer<CognitionControl>(
+            _controls = vault.GetBufferHandle<CognitionControl>(
                 BufferID.PredatorCognitionControls,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _inputs = vault.GetBuffer<CognitionInput>(
+            _inputs = vault.GetBufferHandle<CognitionInput>(
                 BufferID.PredatorCognitionInputs,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _outputs = vault.GetBuffer<PackedCognitionOutput>(
+            _outputs = vault.GetBufferHandle<PackedCognitionOutput>(
                 BufferID.PredatorCognitionOutputs,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _memoryBank = vault.GetBuffer<CognitionMemoryEntry>(
+            _memoryBank = vault.GetBufferHandle<CognitionMemoryEntry>(
                 BufferID.PredatorCognitionMemoryBank,
                 Capacity * MemorySlotsPerCreature,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _acousticMemoryBank = vault.GetBuffer<AcousticMemoryEntry>(
+            _acousticMemoryBank = vault.GetBufferHandle<AcousticMemoryEntry>(
                 BufferID.PredatorCognitionAcousticMemoryBank,
                 Capacity * AcousticMemorySlotsPerCreature,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _slotUsed = vault.GetBuffer<byte>(
+            _acousticMemoryFloat4Bank = vault.GetBufferHandle<float4>(
+                BufferID.PredatorCognitionAcousticFloat4Bank,
+                Capacity * AcousticMemorySlotsPerCreature,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _apexCortexTuning = vault.GetBufferHandle<float4>(
+                BufferID.PredatorCognitionApexCortexTuning,
+                ApexCortexTuningFloat4Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _slotUsed = vault.GetBufferHandle<byte>(
                 BufferID.PredatorCognitionSlotUsed,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _activeSlots = vault.GetBuffer<int>(
+            _activeSlots = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionActiveSlots,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _ambientThreats = vault.GetBuffer<float>(
+            _ambientThreats = vault.GetBufferHandle<float>(
                 BufferID.PredatorCognitionAmbientThreats,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _swarmCenters = vault.GetBuffer<float3>(
+            _swarmCenters = vault.GetBufferHandle<float3>(
                 BufferID.PredatorCognitionSwarmCenters,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _swarmDirections = vault.GetBuffer<float3>(
+            _swarmDirections = vault.GetBufferHandle<float3>(
                 BufferID.PredatorCognitionSwarmDirections,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _swarmAvoidances = vault.GetBuffer<float3>(
+            _swarmAvoidances = vault.GetBufferHandle<float3>(
                 BufferID.PredatorCognitionSwarmAvoidances,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _swarmCounts = vault.GetBuffer<int>(
+            _swarmCounts = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionSwarmCounts,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _claimedBoidIndices = vault.GetBuffer<int>(
+            _claimedBoidIndices = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionClaimedBoidIndices,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _claimedBoidPositions = vault.GetBuffer<float3>(
+            _claimedBoidPositions = vault.GetBufferHandle<float3>(
                 BufferID.PredatorCognitionClaimedBoidPositions,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _chosenStates = vault.GetBuffer<byte>(
+            _chosenStates = vault.GetBufferHandle<byte>(
                 BufferID.PredatorCognitionChosenStates,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _stalkingPhases = vault.GetBuffer<byte>(
+            _stalkingPhases = vault.GetBufferHandle<byte>(
                 BufferID.PredatorCognitionStalkingPhases,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _stalkingPhaseStartTimes = vault.GetBuffer<float>(
+            _stalkingPhaseStartTimes = vault.GetBufferHandle<float>(
                 BufferID.PredatorCognitionStalkingPhaseStartTimes,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _predatorPackTargets = vault.GetBuffer<float3>(
+            _predatorPackTargets = vault.GetBufferHandle<float3>(
                 BufferID.PredatorCognitionPackTargets,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _predatorPackWeights = vault.GetBuffer<float>(
+            _predatorPackWeights = vault.GetBufferHandle<float>(
                 BufferID.PredatorCognitionPackWeights,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _predatorPackBaitPositions = vault.GetBuffer<float3>(
+            _predatorPackBaitPositions = vault.GetBufferHandle<float3>(
                 BufferID.PredatorCognitionPackBaitPositions,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _predatorPackSharedPlayerPositions = vault.GetBuffer<float3>(
+            _predatorPackSharedPlayerPositions = vault.GetBufferHandle<float3>(
                 BufferID.PredatorCognitionPackSharedPlayerPositions,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _predatorPackTargetAups = vault.GetBuffer<AbsoluteUniversePositionBlit128>(
+            _predatorPackTargetAups = vault.GetBufferHandle<AbsoluteUniversePositionBlit128>(
                 BufferID.PredatorCognitionPackTargetAups,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _predatorPackRoles = vault.GetBuffer<byte>(
+            _predatorPackRoles = vault.GetBufferHandle<byte>(
                 BufferID.PredatorCognitionPackRoles,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _predatorSpeciesTargetIds = vault.GetBuffer<int>(
+            _predatorSpeciesTargetIds = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionSpeciesTargetIds,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _predatorSpeciesTargetPositions = vault.GetBuffer<float3>(
+            _predatorSpeciesTargetPositions = vault.GetBufferHandle<float3>(
                 BufferID.PredatorCognitionSpeciesTargetPositions,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _predatorSpeciesTargetCount = vault.GetBuffer<int>(
+            _predatorSpeciesTargetCount = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionSpeciesTargetCount,
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _boidClaimTable = vault.GetBuffer<int>(
+            _boidClaimTable = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionBoidClaimTable,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _packBaitClaimTable = vault.GetBuffer<int>(
+            _packBaitClaimTable = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionPackBaitClaimTable,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _packFlankerClaimTable = vault.GetBuffer<int>(
+            _packFlankerClaimTable = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionPackFlankerClaimTable,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _habitatSiegeTargets = vault.GetBuffer<HabitatSiegeTargetSnapshot>(
+            _habitatSiegeTargets = vault.GetBufferHandle<HabitatSiegeTargetSnapshot>(
                 BufferID.PredatorCognitionHabitatSiegeTargets,
                 HabitatGraphManager.MaxSiegeTargetCount,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _baseSiegeRammerClaimTable = vault.GetBuffer<int>(
+            _baseSiegeRammerClaimTable = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionBaseSiegeRammerClaimTable,
                 HabitatGraphManager.MaxSiegeTargetCount,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _baseSiegeDistractorClaimTable = vault.GetBuffer<int>(
+            _baseSiegeDistractorClaimTable = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionBaseSiegeDistractorClaimTable,
                 HabitatGraphManager.MaxSiegeTargetCount,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _baseSiegeLoitererClaimTable = vault.GetBuffer<int>(
+            _baseSiegeLoitererClaimTable = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionBaseSiegeLoitererClaimTable,
                 HabitatGraphManager.MaxSiegeTargetCount,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _evaluationDueFlags = vault.GetBuffer<byte>(
+            _evaluationDueFlags = vault.GetBufferHandle<byte>(
                 BufferID.PredatorCognitionEvaluationDueFlags,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _nextEvaluationTimes = vault.GetBuffer<float>(
+            _nextEvaluationTimes = vault.GetBufferHandle<float>(
                 BufferID.PredatorCognitionNextEvaluationTimes,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _evaluationIntervals = vault.GetBuffer<float>(
+            _evaluationIntervals = vault.GetBufferHandle<float>(
                 BufferID.PredatorCognitionEvaluationIntervals,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _speciesTuningIds = vault.GetBuffer<int>(
+            _speciesTuningIds = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionSpeciesTuningIds,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _speciesTuningValues = vault.GetBuffer<SpeciesCognitionTuning>(
+            _speciesTuningValues = vault.GetBufferHandle<SpeciesCognitionTuning>(
                 BufferID.PredatorCognitionSpeciesTuningValues,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            _speciesTuningCount = vault.GetBuffer<int>(
+            _speciesTuningCount = vault.GetBufferHandle<int>(
                 BufferID.PredatorCognitionSpeciesTuningCount,
                 1,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _predatorTargetHashBucketHeads = vault.GetBufferHandle<int>(
+                BufferID.PredatorCognitionTargetHashBucketHeads,
+                PredatorTargetSpatialHashBucketCount,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _predatorTargetHashNext = vault.GetBufferHandle<int>(
+                BufferID.PredatorCognitionTargetHashNext,
+                Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
 
@@ -1504,6 +1661,8 @@ namespace Hecton8.AI
                 _outputs.IsCreated &&
                 _memoryBank.IsCreated &&
                 _acousticMemoryBank.IsCreated &&
+                ResolveAcousticMemoryFloat4Bank().IsCreated &&
+                ResolveApexCortexTuning().IsCreated &&
                 _slotUsed.IsCreated &&
                 _activeSlots.IsCreated &&
                 _ambientThreats.IsCreated &&
@@ -1537,64 +1696,68 @@ namespace Hecton8.AI
                 _evaluationIntervals.IsCreated &&
                 _speciesTuningIds.IsCreated &&
                 _speciesTuningValues.IsCreated &&
-                _speciesTuningCount.IsCreated;
+                _speciesTuningCount.IsCreated &&
+                ResolvePredatorTargetHashBucketHeads().IsCreated &&
+                ResolvePredatorTargetHashNext().IsCreated;
             if (!resolvedAll)
             {
-                ReleaseCoreCognitionVaultAliases();
+                ReleaseCoreCognitionVaultHandles();
                 _activeSlotCount = 0;
-                _coreCognitionVaultAliases = false;
                 return false;
             }
 
-            _coreCognitionVaultAliases = true;
             ClearCoreCognitionVaultBuffers();
             _activeSlotCount = 0;
             return true;
         }
 
-        private static void ReleaseCoreCognitionVaultAliases()
+        private static void ReleaseCoreCognitionVaultHandles()
         {
             _activeSlotCount = 0;
-            ReleaseVaultAliasArray(ref _cores);
-            ReleaseVaultAliasArray(ref _controls);
-            ReleaseVaultAliasArray(ref _inputs);
-            ReleaseVaultAliasArray(ref _outputs);
-            ReleaseVaultAliasArray(ref _memoryBank);
-            ReleaseVaultAliasArray(ref _acousticMemoryBank);
-            ReleaseVaultAliasArray(ref _slotUsed);
-            ReleaseVaultAliasArray(ref _activeSlots);
-            ReleaseVaultAliasArray(ref _ambientThreats);
-            ReleaseVaultAliasArray(ref _swarmCenters);
-            ReleaseVaultAliasArray(ref _swarmDirections);
-            ReleaseVaultAliasArray(ref _swarmAvoidances);
-            ReleaseVaultAliasArray(ref _swarmCounts);
-            ReleaseVaultAliasArray(ref _claimedBoidIndices);
-            ReleaseVaultAliasArray(ref _claimedBoidPositions);
-            ReleaseVaultAliasArray(ref _chosenStates);
-            ReleaseVaultAliasArray(ref _stalkingPhases);
-            ReleaseVaultAliasArray(ref _stalkingPhaseStartTimes);
-            ReleaseVaultAliasArray(ref _predatorPackTargets);
-            ReleaseVaultAliasArray(ref _predatorPackWeights);
-            ReleaseVaultAliasArray(ref _predatorPackBaitPositions);
-            ReleaseVaultAliasArray(ref _predatorPackSharedPlayerPositions);
-            ReleaseVaultAliasArray(ref _predatorPackTargetAups);
-            ReleaseVaultAliasArray(ref _predatorPackRoles);
-            ReleaseVaultAliasArray(ref _predatorSpeciesTargetIds);
-            ReleaseVaultAliasArray(ref _predatorSpeciesTargetPositions);
-            ReleaseVaultAliasArray(ref _predatorSpeciesTargetCount);
-            ReleaseVaultAliasArray(ref _boidClaimTable);
-            ReleaseVaultAliasArray(ref _packBaitClaimTable);
-            ReleaseVaultAliasArray(ref _packFlankerClaimTable);
-            ReleaseVaultAliasArray(ref _habitatSiegeTargets);
-            ReleaseVaultAliasArray(ref _baseSiegeRammerClaimTable);
-            ReleaseVaultAliasArray(ref _baseSiegeDistractorClaimTable);
-            ReleaseVaultAliasArray(ref _baseSiegeLoitererClaimTable);
-            ReleaseVaultAliasArray(ref _evaluationDueFlags);
-            ReleaseVaultAliasArray(ref _nextEvaluationTimes);
-            ReleaseVaultAliasArray(ref _evaluationIntervals);
-            ReleaseVaultAliasArray(ref _speciesTuningIds);
-            ReleaseVaultAliasArray(ref _speciesTuningValues);
-            ReleaseVaultAliasArray(ref _speciesTuningCount);
+            ReleaseVaultHandle(ref _cores);
+            ReleaseVaultHandle(ref _controls);
+            ReleaseVaultHandle(ref _inputs);
+            ReleaseVaultHandle(ref _outputs);
+            ReleaseVaultHandle(ref _memoryBank);
+            ReleaseVaultHandle(ref _acousticMemoryBank);
+            _acousticMemoryFloat4Bank = default;
+            _apexCortexTuning = default;
+            ReleaseVaultHandle(ref _slotUsed);
+            ReleaseVaultHandle(ref _activeSlots);
+            ReleaseVaultHandle(ref _ambientThreats);
+            ReleaseVaultHandle(ref _swarmCenters);
+            ReleaseVaultHandle(ref _swarmDirections);
+            ReleaseVaultHandle(ref _swarmAvoidances);
+            ReleaseVaultHandle(ref _swarmCounts);
+            ReleaseVaultHandle(ref _claimedBoidIndices);
+            ReleaseVaultHandle(ref _claimedBoidPositions);
+            ReleaseVaultHandle(ref _chosenStates);
+            ReleaseVaultHandle(ref _stalkingPhases);
+            ReleaseVaultHandle(ref _stalkingPhaseStartTimes);
+            ReleaseVaultHandle(ref _predatorPackTargets);
+            ReleaseVaultHandle(ref _predatorPackWeights);
+            ReleaseVaultHandle(ref _predatorPackBaitPositions);
+            ReleaseVaultHandle(ref _predatorPackSharedPlayerPositions);
+            ReleaseVaultHandle(ref _predatorPackTargetAups);
+            ReleaseVaultHandle(ref _predatorPackRoles);
+            ReleaseVaultHandle(ref _predatorSpeciesTargetIds);
+            ReleaseVaultHandle(ref _predatorSpeciesTargetPositions);
+            ReleaseVaultHandle(ref _predatorSpeciesTargetCount);
+            ReleaseVaultHandle(ref _boidClaimTable);
+            ReleaseVaultHandle(ref _packBaitClaimTable);
+            ReleaseVaultHandle(ref _packFlankerClaimTable);
+            ReleaseVaultHandle(ref _habitatSiegeTargets);
+            ReleaseVaultHandle(ref _baseSiegeRammerClaimTable);
+            ReleaseVaultHandle(ref _baseSiegeDistractorClaimTable);
+            ReleaseVaultHandle(ref _baseSiegeLoitererClaimTable);
+            ReleaseVaultHandle(ref _evaluationDueFlags);
+            ReleaseVaultHandle(ref _nextEvaluationTimes);
+            ReleaseVaultHandle(ref _evaluationIntervals);
+            ReleaseVaultHandle(ref _speciesTuningIds);
+            ReleaseVaultHandle(ref _speciesTuningValues);
+            ReleaseVaultHandle(ref _speciesTuningCount);
+            _predatorTargetHashBucketHeads = default;
+            _predatorTargetHashNext = default;
         }
 
         private static void ClearCoreCognitionVaultBuffers()
@@ -1605,6 +1768,8 @@ namespace Hecton8.AI
             ClearArray(_outputs);
             ClearArray(_memoryBank);
             ClearArray(_acousticMemoryBank);
+            ClearArray(ResolveAcousticMemoryFloat4Bank());
+            ClearArray(ResolveApexCortexTuning());
             ClearArray(_slotUsed);
             ClearArray(_activeSlots);
             ClearArray(_ambientThreats);
@@ -1639,6 +1804,7 @@ namespace Hecton8.AI
             ClearArray(_speciesTuningIds);
             ClearArray(_speciesTuningValues);
             ClearArray(_speciesTuningCount);
+            ClearPredatorTargetSpatialHash();
         }
 
         private static void ClearArray<T>(NativeArray<T> array) where T : struct
@@ -1650,6 +1816,480 @@ namespace Hecton8.AI
                 array[i] = default;
         }
 
+        private static void ClearArray<T>(VaultArray<T> array) where T : struct
+        {
+            ClearArray(array.Resolve());
+        }
+
+        private static NativeArray<float4> ResolveAcousticMemoryFloat4Bank()
+        {
+            return _acousticMemoryFloat4Bank.Resolve();
+        }
+
+        private static NativeArray<float4> ResolveApexCortexTuning()
+        {
+            return _apexCortexTuning.Resolve();
+        }
+
+        private static NativeArray<int> ResolvePredatorTargetHashBucketHeads()
+        {
+            return _predatorTargetHashBucketHeads.Resolve();
+        }
+
+        private static NativeArray<int> ResolvePredatorTargetHashNext()
+        {
+            return _predatorTargetHashNext.Resolve();
+        }
+
+        private static NativeArray<T> ResolveVaultBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct
+        {
+            return handle.IsCreated && _dataVault != null ? handle.Resolve(_dataVault) : default;
+        }
+
+        private static void ClearPredatorTargetSpatialHash()
+        {
+            NativeArray<int> bucketHeads = ResolvePredatorTargetHashBucketHeads();
+            if (bucketHeads.IsCreated)
+            {
+                for (int i = 0; i < bucketHeads.Length; i++)
+                    bucketHeads[i] = UnclaimedBoidSlot;
+            }
+
+            NativeArray<int> hashNext = ResolvePredatorTargetHashNext();
+            if (hashNext.IsCreated)
+            {
+                for (int i = 0; i < hashNext.Length; i++)
+                    hashNext[i] = UnclaimedBoidSlot;
+            }
+        }
+
+        private static void RebuildPredatorTargetSpatialHash(float3 boundsMin)
+        {
+            NativeArray<int> bucketHeads = ResolvePredatorTargetHashBucketHeads();
+            NativeArray<int> hashNext = ResolvePredatorTargetHashNext();
+            if (!bucketHeads.IsCreated || !hashNext.IsCreated)
+                return;
+
+            ClearPredatorTargetSpatialHash();
+            int safeCount = math.min(_activeSlotCount, _activeSlots.IsCreated ? _activeSlots.Length : 0);
+            for (int i = 0; i < safeCount; i++)
+            {
+                int slot = _activeSlots[i];
+                if ((uint)slot >= (uint)hashNext.Length)
+                    continue;
+
+                CognitionInput input = _inputs[slot];
+                if ((input.Flags & (int)CognitionInputFlags.Active) == 0)
+                    continue;
+
+                int3 bucket = ResolveSpatialBucketCoordinates(input.Position, boundsMin, SwarmBucketCellSize);
+                int bucketIndex = HashSpatialBucket(bucket) & PredatorTargetSpatialHashBucketMask;
+                hashNext[slot] = bucketHeads[bucketIndex];
+                bucketHeads[bucketIndex] = slot;
+            }
+        }
+
+        private static int HashSpatialBucket(int3 bucketCoord)
+        {
+            unchecked
+            {
+                uint x = (uint)bucketCoord.x;
+                uint y = (uint)bucketCoord.y;
+                uint z = (uint)bucketCoord.z;
+                return (int)((x * 73856093u) ^ (y * 19349663u) ^ (z * 83492791u));
+            }
+        }
+
+        internal static bool TryGetApexCortexTuning(out ApexCortexTuningSnapshot snapshot)
+        {
+            EnsureInitialized();
+            return TryReadApexCortexTuningNoEnsure(out snapshot);
+        }
+
+        internal static bool TrySetApexCortexTuning(in ApexCortexTuningSnapshot snapshot)
+        {
+            EnsureInitialized();
+            NativeArray<float4> apexCortexTuning = ResolveApexCortexTuning();
+            if (!apexCortexTuning.IsCreated || apexCortexTuning.Length <= 0)
+                return false;
+
+            WriteApexCortexTuningNoEnsure(in snapshot);
+            return true;
+        }
+
+        internal static bool TryReloadApexCortexBehaviorOverrides()
+        {
+            EnsureInitialized();
+            return TryLoadBehaviorOverridesCsvCold();
+        }
+
+        internal static int CopyApexCortexDebugGizmos(
+            Vector3[] origins,
+            Vector3[] targets,
+            Vector3[] wallRepulsions,
+            Vector3[] desiredVelocities,
+            Vector3[] acousticMemory,
+            int maxCount)
+        {
+            if (origins == null ||
+                targets == null ||
+                wallRepulsions == null ||
+                desiredVelocities == null ||
+                acousticMemory == null)
+            {
+                return 0;
+            }
+
+            EnsureInitialized();
+            if (!_activeSlots.IsCreated || !_inputs.IsCreated || !_outputs.IsCreated || !_cores.IsCreated)
+                return 0;
+
+            int capacity = math.min(
+                math.max(0, maxCount),
+                math.min(origins.Length, math.min(targets.Length, math.min(wallRepulsions.Length, math.min(desiredVelocities.Length, acousticMemory.Length)))));
+            int count = 0;
+            for (int i = 0; i < _activeSlotCount && count < capacity; i++)
+            {
+                int slot = _activeSlots[i];
+                if ((uint)slot >= (uint)Capacity)
+                    continue;
+
+                CognitionInput input = _inputs[slot];
+                if ((input.Flags & (int)CognitionInputFlags.PredatorRole) == 0)
+                    continue;
+
+                CognitionCore core = _cores[slot];
+                PackedCognitionOutput output = _outputs[slot];
+                float3 target = (input.Flags & (int)CognitionInputFlags.HasPackTarget) != 0
+                    ? input.PackTargetPosition
+                    : (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0
+                        ? input.PlayerPosition
+                        : input.Position + (output.DesiredDirection * 8f);
+
+                origins[count] = new Vector3(core.Position.x, core.Position.y, core.Position.z);
+                targets[count] = new Vector3(target.x, target.y, target.z);
+                float3 wall = _swarmAvoidances.IsCreated ? _swarmAvoidances[slot] : float3.zero;
+                wallRepulsions[count] = new Vector3(wall.x, wall.y, wall.z);
+                desiredVelocities[count] = new Vector3(output.DesiredDirection.x, output.DesiredDirection.y, output.DesiredDirection.z);
+                acousticMemory[count] = ResolveLatestAcousticDebugPosition(slot, core.Position);
+                count++;
+            }
+
+            return count;
+        }
+
+        private static Vector3 ResolveLatestAcousticDebugPosition(int slot, float3 fallback)
+        {
+            NativeArray<float4> acousticMemoryFloat4Bank = ResolveAcousticMemoryFloat4Bank();
+            if (!acousticMemoryFloat4Bank.IsCreated || slot < 0 || slot >= Capacity)
+                return new Vector3(fallback.x, fallback.y, fallback.z);
+
+            int startIndex = slot * AcousticMemorySlotsPerCreature;
+            float bestTime = float.NegativeInfinity;
+            float3 bestPosition = fallback;
+            for (int i = 0; i < AcousticMemorySlotsPerCreature; i++)
+            {
+                float4 packed = acousticMemoryFloat4Bank[startIndex + i];
+                if (packed.w <= bestTime)
+                    continue;
+
+                bestTime = packed.w;
+                bestPosition = packed.xyz;
+            }
+
+            return new Vector3(bestPosition.x, bestPosition.y, bestPosition.z);
+        }
+
+        private static void GenerateMockCognitionProfiles()
+        {
+            NativeArray<float4> apexCortexTuning = ResolveApexCortexTuning();
+            if (!apexCortexTuning.IsCreated || apexCortexTuning.Length <= 0)
+                return;
+
+            if (math.lengthsq(apexCortexTuning[0]) <= DdaEpsilon)
+            {
+                ApexCortexTuningSnapshot snapshot = default;
+                snapshot.HungerWeight = 0.92f;
+                snapshot.FearWeight = 1.16f;
+                snapshot.LightAversion = 0.76f;
+                snapshot.AcousticMemoryDecay = 0.68f;
+                WriteApexCortexTuningNoEnsure(in snapshot);
+                return;
+            }
+
+            TryReadApexCortexTuningNoEnsure(out ApexCortexTuningSnapshot existing);
+            UpsertSpeciesTuningNoEnsure(ApexCortexMockSpeciesId, BuildApexCortexSpeciesTuning(in existing));
+        }
+
+        private static bool TryReadApexCortexTuningNoEnsure(out ApexCortexTuningSnapshot snapshot)
+        {
+            snapshot = default;
+            NativeArray<float4> apexCortexTuning = ResolveApexCortexTuning();
+            if (!apexCortexTuning.IsCreated || apexCortexTuning.Length <= 0)
+                return false;
+
+            float4 raw = apexCortexTuning[0];
+            snapshot.HungerWeight = math.max(0.1f, raw.x);
+            snapshot.FearWeight = math.max(0.1f, raw.y);
+            snapshot.LightAversion = math.max(0f, raw.z);
+            snapshot.AcousticMemoryDecay = math.max(0.01f, raw.w);
+            return true;
+        }
+
+        private static void WriteApexCortexTuningNoEnsure(in ApexCortexTuningSnapshot snapshot)
+        {
+            NativeArray<float4> apexCortexTuning = ResolveApexCortexTuning();
+            if (!apexCortexTuning.IsCreated || apexCortexTuning.Length <= 0)
+                return;
+
+            float4 raw = new float4(
+                math.max(0.1f, snapshot.HungerWeight),
+                math.max(0.1f, snapshot.FearWeight),
+                math.max(0f, snapshot.LightAversion),
+                math.max(0.01f, snapshot.AcousticMemoryDecay));
+            apexCortexTuning[0] = raw;
+            ApexCortexTuningSnapshot sanitized = default;
+            sanitized.HungerWeight = raw.x;
+            sanitized.FearWeight = raw.y;
+            sanitized.LightAversion = raw.z;
+            sanitized.AcousticMemoryDecay = raw.w;
+            UpsertSpeciesTuningNoEnsure(ApexCortexMockSpeciesId, BuildApexCortexSpeciesTuning(in sanitized));
+        }
+
+        private static SpeciesCognitionTuning BuildApexCortexSpeciesTuning(in ApexCortexTuningSnapshot snapshot)
+        {
+            return new SpeciesCognitionTuning(
+                snapshot.HungerWeight,
+                snapshot.FearWeight,
+                snapshot.AcousticMemoryDecay,
+                FaunaLightReactionMode.Aversion,
+                20f,
+                0.8f,
+                1f,
+                math.saturate(snapshot.LightAversion));
+        }
+
+        private static void UpsertSpeciesTuningNoEnsure(int speciesId, in SpeciesCognitionTuning tuning)
+        {
+            if (speciesId == 0 ||
+                !_speciesTuningIds.IsCreated ||
+                !_speciesTuningValues.IsCreated ||
+                !_speciesTuningCount.IsCreated ||
+                _speciesTuningCount.Length <= 0)
+            {
+                return;
+            }
+
+            int count = math.min(
+                math.max(_speciesTuningCount[0], 0),
+                math.min(_speciesTuningIds.Length, _speciesTuningValues.Length));
+            for (int i = 0; i < count; i++)
+            {
+                if (_speciesTuningIds[i] != speciesId)
+                    continue;
+
+                _speciesTuningValues[i] = tuning;
+                return;
+            }
+
+            if (count >= _speciesTuningIds.Length || count >= _speciesTuningValues.Length)
+                return;
+
+            _speciesTuningIds[count] = speciesId;
+            _speciesTuningValues[count] = tuning;
+            _speciesTuningCount[0] = count + 1;
+        }
+
+        private static bool TryLoadBehaviorOverridesCsvCold()
+        {
+            NativeArray<float4> apexCortexTuning = ResolveApexCortexTuning();
+            if (!apexCortexTuning.IsCreated || apexCortexTuning.Length <= 0)
+                return false;
+
+            string path = ResolveBehaviorOverridesPathCold();
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            string csv = File.ReadAllText(path);
+            System.ReadOnlySpan<char> csvSpan = csv;
+            return TryApplyBehaviorOverridesCsv(csvSpan);
+        }
+
+        private static string ResolveBehaviorOverridesPathCold()
+        {
+            DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
+            string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
+            string path = Path.Combine(projectRoot, ApexCortexBehaviorCsvName);
+            if (File.Exists(path))
+                return path;
+
+            path = Path.Combine(projectRoot, "Assets", "StreamingAssets", ApexCortexBehaviorCsvName);
+            if (File.Exists(path))
+                return path;
+
+            path = Path.Combine(projectRoot, "Data", "AI", ApexCortexBehaviorCsvName);
+            return File.Exists(path) ? path : null;
+        }
+
+        private static bool TryApplyBehaviorOverridesCsv(System.ReadOnlySpan<char> csv)
+        {
+            if (!TryReadApexCortexTuningNoEnsure(out ApexCortexTuningSnapshot snapshot))
+                return false;
+
+            bool changed = false;
+            int lineStart = 0;
+            while (lineStart < csv.Length)
+            {
+                int lineEnd = lineStart;
+                while (lineEnd < csv.Length && csv[lineEnd] != '\n' && csv[lineEnd] != '\r')
+                    lineEnd++;
+
+                System.ReadOnlySpan<char> line = TrimCsvToken(csv.Slice(lineStart, lineEnd - lineStart));
+                if (TryReadCsvKeyValue(line, out System.ReadOnlySpan<char> key, out float value))
+                {
+                    if (KeyEquals(key, "HungerWeight"))
+                    {
+                        snapshot.HungerWeight = value;
+                        changed = true;
+                    }
+                    else if (KeyEquals(key, "FearWeight"))
+                    {
+                        snapshot.FearWeight = value;
+                        changed = true;
+                    }
+                    else if (KeyEquals(key, "LightAversion") || KeyEquals(key, "LightAversionWeight"))
+                    {
+                        snapshot.LightAversion = value;
+                        changed = true;
+                    }
+                    else if (KeyEquals(key, "AcousticMemoryDecay") || KeyEquals(key, "AcousticTrackingWeight"))
+                    {
+                        snapshot.AcousticMemoryDecay = value;
+                        changed = true;
+                    }
+                }
+
+                lineStart = lineEnd + 1;
+                while (lineStart < csv.Length && (csv[lineStart] == '\n' || csv[lineStart] == '\r'))
+                    lineStart++;
+            }
+
+            if (!changed)
+                return false;
+
+            WriteApexCortexTuningNoEnsure(in snapshot);
+            return true;
+        }
+
+        private static bool TryReadCsvKeyValue(
+            System.ReadOnlySpan<char> line,
+            out System.ReadOnlySpan<char> key,
+            out float value)
+        {
+            key = default;
+            value = 0f;
+            if (line.Length <= 0 || line[0] == '#')
+                return false;
+
+            int comma = FindComma(line);
+            if (comma <= 0 || comma >= line.Length - 1)
+                return false;
+
+            key = TrimCsvToken(line.Slice(0, comma));
+            System.ReadOnlySpan<char> valueToken = TrimCsvToken(line.Slice(comma + 1));
+            return key.Length > 0 && TryParseFloatInvariant(valueToken, out value);
+        }
+
+        private static int FindComma(System.ReadOnlySpan<char> line)
+        {
+            for (int i = 0; i < line.Length; i++)
+            {
+                if (line[i] == ',')
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static System.ReadOnlySpan<char> TrimCsvToken(System.ReadOnlySpan<char> token)
+        {
+            int start = 0;
+            int end = token.Length - 1;
+            while (start <= end && char.IsWhiteSpace(token[start]))
+                start++;
+            while (end >= start && char.IsWhiteSpace(token[end]))
+                end--;
+            if (end >= start && token[start] == '"' && token[end] == '"')
+            {
+                start++;
+                end--;
+            }
+
+            return start <= end ? token.Slice(start, end - start + 1) : default;
+        }
+
+        private static bool KeyEquals(System.ReadOnlySpan<char> key, string token)
+        {
+            if (key.Length != token.Length)
+                return false;
+
+            for (int i = 0; i < key.Length; i++)
+            {
+                if (char.ToUpperInvariant(key[i]) != char.ToUpperInvariant(token[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryParseFloatInvariant(System.ReadOnlySpan<char> token, out float value)
+        {
+            value = 0f;
+            token = TrimCsvToken(token);
+            if (token.Length <= 0)
+                return false;
+
+            int index = 0;
+            float sign = 1f;
+            if (token[index] == '-')
+            {
+                sign = -1f;
+                index++;
+            }
+            else if (token[index] == '+')
+            {
+                index++;
+            }
+
+            double result = 0d;
+            bool hasDigits = false;
+            while (index < token.Length && token[index] >= '0' && token[index] <= '9')
+            {
+                result = (result * 10d) + (token[index] - '0');
+                index++;
+                hasDigits = true;
+            }
+
+            if (index < token.Length && token[index] == '.')
+            {
+                index++;
+                double scale = 0.1d;
+                while (index < token.Length && token[index] >= '0' && token[index] <= '9')
+                {
+                    result += (token[index] - '0') * scale;
+                    scale *= 0.1d;
+                    index++;
+                    hasDigits = true;
+                }
+            }
+
+            if (!hasDigits)
+                return false;
+
+            value = (float)(result * sign);
+            return float.IsFinite(value);
+        }
+
         private static void ValidateAbiLayout()
         {
             if (UnsafeUtility.SizeOf<CognitionCore>() != CognitionCoreSizeBytes ||
@@ -1659,6 +2299,7 @@ namespace Hecton8.AI
                 UnsafeUtility.SizeOf<CognitionInput>() != CognitionInputSizeBytes ||
                 UnsafeUtility.SizeOf<CognitionOutput>() != CognitionOutputSizeBytes ||
                 UnsafeUtility.SizeOf<PackedCognitionOutput>() != PackedCognitionOutputSizeBytes ||
+                UnsafeUtility.SizeOf<PredatorCognitionDTO>() != PredatorCognitionDtoSizeBytes ||
                 UnsafeUtility.SizeOf<SpeciesCognitionTuning>() != SpeciesCognitionTuningSizeBytes)
             {
                 FatalMemoryException.ThrowAbiLayoutMismatch();
@@ -1676,22 +2317,36 @@ namespace Hecton8.AI
                 return;
             }
 
-            if (!RetinalAdaptationVault.TryResolve(
-                    GlobalRegistry.DataVault,
-                    Capacity,
-                    RetinalLightCapacity,
-                    RetinalTelemetryCapacity,
-                    out RetinalAdaptationVaultBuffers buffers))
-            {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsAllocationLocked)
                 return;
-            }
 
-            _retinalExposure = buffers.Exposure;
-            _blindnessState = buffers.BlindnessState;
-            _lastPublishedBlindnessState = buffers.LastPublishedBlindnessState;
-            _retinalLightSources = buffers.LightSources;
-            _retinalTelemetryRing = buffers.TelemetryRing;
-            _vaultAliasMask |= VaultRetinalAllFlags;
+            _dataVault = vault;
+            _retinalExposure = vault.GetBufferHandle<float>(
+                BufferID.PredatorRetinalExposure,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _blindnessState = vault.GetBufferHandle<byte>(
+                BufferID.PredatorRetinalBlindnessState,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _lastPublishedBlindnessState = vault.GetBufferHandle<byte>(
+                BufferID.PredatorRetinalLastPublishedBlindnessState,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _retinalLightSources = vault.GetBufferHandle<LightSourceData>(
+                BufferID.PredatorRetinalLightSources,
+                RetinalLightCapacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _retinalTelemetryRing = vault.GetBufferHandle<RetinalTelemetryEntry>(
+                BufferID.PredatorRetinalTelemetryRing,
+                RetinalTelemetryCapacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
         }
 
         private static void EnsureAlphaLeviathanTelemetryVaultBuffer()
@@ -1703,98 +2358,17 @@ namespace Hecton8.AI
             if (vault == null || vault.IsAllocationLocked)
                 return;
 
-            _alphaLeviathanTelemetryRing = vault.GetBuffer<AlphaLeviathanTelemetryEntry>(
+            _dataVault = vault;
+            _alphaLeviathanTelemetryRing = vault.GetBufferHandle<AlphaLeviathanTelemetryEntry>(
                 BufferID.AlphaLeviathanTelemetryRing,
                 AlphaLeviathanTelemetryVaultCapacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            if (_alphaLeviathanTelemetryRing.IsCreated)
-                _vaultAliasMask |= VaultAlphaLeviathanTelemetryRingFlag;
         }
 
-        private static void RegisterNativeMemorySentinel()
-        {
-            if (!_coreCognitionVaultAliases)
-            {
-                NativeMemorySentinel.RegisterNativeArray(_cores, NativeMemoryOwner, nameof(_cores), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_controls, NativeMemoryOwner, nameof(_controls), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_inputs, NativeMemoryOwner, nameof(_inputs), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_outputs, NativeMemoryOwner, nameof(_outputs), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_memoryBank, NativeMemoryOwner, nameof(_memoryBank), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_acousticMemoryBank, NativeMemoryOwner, nameof(_acousticMemoryBank), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_slotUsed, NativeMemoryOwner, nameof(_slotUsed), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_ambientThreats, NativeMemoryOwner, nameof(_ambientThreats), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_swarmCenters, NativeMemoryOwner, nameof(_swarmCenters), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_swarmDirections, NativeMemoryOwner, nameof(_swarmDirections), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_swarmAvoidances, NativeMemoryOwner, nameof(_swarmAvoidances), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_swarmCounts, NativeMemoryOwner, nameof(_swarmCounts), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_claimedBoidIndices, NativeMemoryOwner, nameof(_claimedBoidIndices), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_claimedBoidPositions, NativeMemoryOwner, nameof(_claimedBoidPositions), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_chosenStates, NativeMemoryOwner, nameof(_chosenStates), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_stalkingPhases, NativeMemoryOwner, nameof(_stalkingPhases), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_stalkingPhaseStartTimes, NativeMemoryOwner, nameof(_stalkingPhaseStartTimes), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_predatorPackTargets, NativeMemoryOwner, nameof(_predatorPackTargets), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_predatorPackWeights, NativeMemoryOwner, nameof(_predatorPackWeights), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_predatorPackBaitPositions, NativeMemoryOwner, nameof(_predatorPackBaitPositions), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_predatorPackSharedPlayerPositions, NativeMemoryOwner, nameof(_predatorPackSharedPlayerPositions), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_predatorPackTargetAups, NativeMemoryOwner, nameof(_predatorPackTargetAups), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_predatorPackRoles, NativeMemoryOwner, nameof(_predatorPackRoles), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_boidClaimTable, NativeMemoryOwner, nameof(_boidClaimTable), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_packBaitClaimTable, NativeMemoryOwner, nameof(_packBaitClaimTable), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_packFlankerClaimTable, NativeMemoryOwner, nameof(_packFlankerClaimTable), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_habitatSiegeTargets, NativeMemoryOwner, nameof(_habitatSiegeTargets), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_baseSiegeRammerClaimTable, NativeMemoryOwner, nameof(_baseSiegeRammerClaimTable), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_baseSiegeDistractorClaimTable, NativeMemoryOwner, nameof(_baseSiegeDistractorClaimTable), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_baseSiegeLoitererClaimTable, NativeMemoryOwner, nameof(_baseSiegeLoitererClaimTable), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_evaluationDueFlags, NativeMemoryOwner, nameof(_evaluationDueFlags), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_nextEvaluationTimes, NativeMemoryOwner, nameof(_nextEvaluationTimes), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(_evaluationIntervals, NativeMemoryOwner, nameof(_evaluationIntervals), NativeMemoryLifetime);
-            }
-
-            RegisterNativeArrayIfDomainOwned(_retinalExposure, nameof(_retinalExposure), VaultRetinalExposureFlag);
-            RegisterNativeArrayIfDomainOwned(_blindnessState, nameof(_blindnessState), VaultRetinalBlindnessFlag);
-            RegisterNativeArrayIfDomainOwned(_lastPublishedBlindnessState, nameof(_lastPublishedBlindnessState), VaultRetinalLastPublishedBlindnessFlag);
-            RegisterNativeArrayIfDomainOwned(_retinalLightSources, nameof(_retinalLightSources), VaultRetinalLightSourcesFlag);
-            RegisterNativeArrayIfDomainOwned(_retinalTelemetryRing, nameof(_retinalTelemetryRing), VaultRetinalTelemetryRingFlag);
-            RegisterNativeArrayIfDomainOwned(_alphaLeviathanTelemetryRing, nameof(_alphaLeviathanTelemetryRing), VaultAlphaLeviathanTelemetryRingFlag);
-        }
-
-        private static void RegisterNativeArrayIfDomainOwned<T>(NativeArray<T> array, string label, int vaultFlag) where T : struct
-        {
-            if (!array.IsCreated || (_vaultAliasMask & vaultFlag) != 0)
-                return;
-
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle disposeDependency) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(disposeDependency);
-            array = default;
-        }
-
-        private static void ReleaseVaultAliasArray<T>(ref NativeArray<T> array) where T : struct
+        private static void ReleaseVaultHandle<T>(ref VaultArray<T> array) where T : struct
         {
             array = default;
-        }
-
-        private static void ReleaseVaultAliasArray<T>(ref NativeArray<T> array, JobHandle disposeDependency, int vaultFlag) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            if ((_vaultAliasMask & vaultFlag) != 0)
-            {
-                array = default;
-                _vaultAliasMask &= ~vaultFlag;
-                return;
-            }
-
-            DisposeNativeArray(ref array, disposeDependency);
         }
 
         private static bool PrepareEvaluationDueFlags()
@@ -1962,7 +2536,7 @@ namespace Hecton8.AI
             if (!MathGuard.IsFinite(direction) || lengthSq <= DdaEpsilon)
                 return new float3(0f, 0f, 1f);
 
-            return direction * math.rsqrt(math.max(lengthSq, DdaEpsilon));
+            return direction * math.rsqrt(math.max(lengthSq, MathSafetyEpsilon));
         }
 
         private static float ComputeLightPriority(in LightSourceData light)
@@ -2164,28 +2738,8 @@ namespace Hecton8.AI
                 string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
-                string dumpPath = Path.Combine(logDirectory, "Dump_FAUNA_RETINAL_ADAPTATION.bin");
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(frameId);
-                    writer.Write(_retinalTelemetryCursor);
-                    writer.Write(_totalBlindPredators);
-                    writer.Write(_retinalLightCount);
-                    for (int i = 0; i < RetinalTelemetryCapacity; i++)
-                    {
-                        RetinalTelemetryEntry entry = _retinalTelemetryRing[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.TotalBlindPredators);
-                        writer.Write(entry.ActiveLightCount);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.MaxExposure);
-                        writer.Write(entry.HottestLightPosition.x);
-                        writer.Write(entry.HottestLightPosition.y);
-                        writer.Write(entry.HottestLightPosition.z);
-                        writer.Write(entry.SourceId);
-                    }
-                }
+                WriteRetinalBlackBoxFile(Path.Combine(logDirectory, "Dump_FAUNA_RETINAL_ADAPTATION.bin"), frameId);
+                WriteRetinalBlackBoxFile(Path.Combine(logDirectory, "Dump_FAUNA_RETINAL_ADAPTATION.h8dump"), frameId);
             }
             catch (System.Exception)
             {
@@ -2193,6 +2747,31 @@ namespace Hecton8.AI
                     RetinalDumpFailureTelemetryHash,
                     RetinalTelemetryContextHash,
                     frameId);
+            }
+        }
+
+        private static void WriteRetinalBlackBoxFile(string dumpPath, int frameId)
+        {
+            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(frameId);
+                writer.Write(_retinalTelemetryCursor);
+                writer.Write(_totalBlindPredators);
+                writer.Write(_retinalLightCount);
+                for (int i = 0; i < RetinalTelemetryCapacity; i++)
+                {
+                    RetinalTelemetryEntry entry = _retinalTelemetryRing[i];
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.TotalBlindPredators);
+                    writer.Write(entry.ActiveLightCount);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.MaxExposure);
+                    writer.Write(entry.HottestLightPosition.x);
+                    writer.Write(entry.HottestLightPosition.y);
+                    writer.Write(entry.HottestLightPosition.z);
+                    writer.Write(entry.SourceId);
+                }
             }
         }
 
@@ -2249,7 +2828,7 @@ namespace Hecton8.AI
                 }
 
                 float distanceSq = hasPlayerTarget ? math.lengthsq(playerPosition - core.Position) : 0f;
-                float distanceMeters = distanceSq > DdaEpsilon ? distanceSq * math.rsqrt(math.max(distanceSq, DdaEpsilon)) : 0f;
+                float distanceMeters = distanceSq > DdaEpsilon ? distanceSq * math.rsqrt(math.max(distanceSq, MathSafetyEpsilon)) : 0f;
                 float fogRingDistance = math.max(
                     AlphaFalseChargeVeerDistanceMeters + 5f,
                     math.max(input.FogEndDistanceMeters, AlphaFogFallbackEndMeters) - AlphaFogSilhouetteOffsetMeters);
@@ -2287,12 +2866,29 @@ namespace Hecton8.AI
                 int telemetryFrame = (frameId < 0 ? 0 : frameId) % RetinalTelemetryCapacity;
                 int telemetrySlot = math.min(activeAlphaCount - 1, AlphaLeviathanTelemetrySlotCapacity - 1);
                 int telemetryIndex = (telemetryFrame * AlphaLeviathanTelemetrySlotCapacity) + telemetrySlot;
+                bool oscillating = IsAlphaPhaseOscillating(telemetryFrame, entry.Slot, phase);
+                if (oscillating)
+                {
+                    foundFault = true;
+                    flags |= AlphaLeviathanTelemetryFlags.Fault;
+                    _stalkingPhases[slot] = AlphaLeviathanPhase.Hidden;
+                    _stalkingPhaseStartTimes[slot] = 0f;
+                    entry.Phase = AlphaLeviathanPhase.Hidden;
+                    entry.Flags = flags;
+                    entry.DesiredDirection = float3.zero;
+                    entry.StateHash = BuildAlphaLeviathanTelemetryHash(
+                        slot,
+                        entry.Phase,
+                        flags,
+                        _chosenStates.IsCreated ? _chosenStates[slot] : (byte)0);
+                }
+
                 if ((uint)telemetryIndex < (uint)_alphaLeviathanTelemetryRing.Length)
                     _alphaLeviathanTelemetryRing[telemetryIndex] = entry;
 
                 _alphaLeviathanTelemetryCursor = telemetryFrame;
-                lastPhase = phase;
-                lastStateHash = stateHash;
+                lastPhase = entry.Phase;
+                lastStateHash = entry.StateHash;
             }
 
             _activeAlphaLeviathanTelemetryCount = activeAlphaCount;
@@ -2301,6 +2897,45 @@ namespace Hecton8.AI
 
             if (activeAlphaCount > 0 && (frameId & 31) == 0)
                 GlobalTelemetryBus.PublishModTelemetry(AlphaLeviathanPhaseTelemetryHash, lastStateHash, lastPhase);
+        }
+
+        private static bool IsAlphaPhaseOscillating(int telemetryFrame, ushort slot, byte currentPhase)
+        {
+            if (!_alphaLeviathanTelemetryRing.IsCreated)
+                return false;
+
+            bool foundPrevious = false;
+            byte previousPhase = AlphaLeviathanPhase.Hidden;
+            int lookback = math.min(AlphaLeviathanOscillationLookbackFrames, RetinalTelemetryCapacity - 1);
+            for (int frameOffset = 1; frameOffset <= lookback; frameOffset++)
+            {
+                int frame = telemetryFrame - frameOffset;
+                if (frame < 0)
+                    frame += RetinalTelemetryCapacity;
+
+                int baseIndex = frame * AlphaLeviathanTelemetrySlotCapacity;
+                for (int slotIndex = 0; slotIndex < AlphaLeviathanTelemetrySlotCapacity; slotIndex++)
+                {
+                    int telemetryIndex = baseIndex + slotIndex;
+                    if ((uint)telemetryIndex >= (uint)_alphaLeviathanTelemetryRing.Length)
+                        continue;
+
+                    AlphaLeviathanTelemetryEntry entry = _alphaLeviathanTelemetryRing[telemetryIndex];
+                    if (entry.Slot != slot)
+                        continue;
+
+                    if (!foundPrevious)
+                    {
+                        previousPhase = entry.Phase;
+                        foundPrevious = true;
+                        continue;
+                    }
+
+                    return previousPhase != currentPhase && entry.Phase == currentPhase;
+                }
+            }
+
+            return false;
         }
 
         private static uint BuildAlphaLeviathanTelemetryHash(int slot, byte phase, byte flags, byte state)
@@ -2324,7 +2959,7 @@ namespace Hecton8.AI
             if (!MathGuard.IsFinite(direction) || lengthSq <= DdaEpsilon)
                 return float3.zero;
 
-            return direction * math.rsqrt(math.max(lengthSq, DdaEpsilon));
+            return direction * math.rsqrt(math.max(lengthSq, MathSafetyEpsilon));
         }
 
         private static void DumpAlphaLeviathanBlackBoxCold(int frameId)
@@ -2339,38 +2974,8 @@ namespace Hecton8.AI
                 string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
-                string dumpPath = Path.Combine(logDirectory, "Dump_ALPHA_LEVIATHAN_COGNITION.bin");
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(frameId);
-                    writer.Write(_alphaLeviathanTelemetryCursor);
-                    writer.Write(_activeAlphaLeviathanTelemetryCount);
-                    writer.Write(RetinalTelemetryCapacity);
-                    writer.Write(AlphaLeviathanTelemetrySlotCapacity);
-                    int dumpCount = math.min(_alphaLeviathanTelemetryRing.Length, AlphaLeviathanTelemetryVaultCapacity);
-                    writer.Write(dumpCount);
-                    for (int i = 0; i < dumpCount; i++)
-                    {
-                        AlphaLeviathanTelemetryEntry entry = _alphaLeviathanTelemetryRing[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Slot);
-                        writer.Write(entry.Phase);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.DistanceToPlayerMeters);
-                        writer.Write(entry.FogRingDistanceMeters);
-                        writer.Write(entry.Position.x);
-                        writer.Write(entry.Position.y);
-                        writer.Write(entry.Position.z);
-                        writer.Write(entry.PlayerPosition.x);
-                        writer.Write(entry.PlayerPosition.y);
-                        writer.Write(entry.PlayerPosition.z);
-                        writer.Write(entry.DesiredDirection.x);
-                        writer.Write(entry.DesiredDirection.y);
-                        writer.Write(entry.DesiredDirection.z);
-                        writer.Write(entry.StateHash);
-                    }
-                }
+                WriteAlphaLeviathanBlackBoxFile(Path.Combine(logDirectory, "Dump_LEVIATHAN_CORTEX.bin"), frameId);
+                WriteAlphaLeviathanBlackBoxFile(Path.Combine(logDirectory, "Dump_LEVIATHAN_CORTEX.h8dump"), frameId);
             }
             catch (System.Exception)
             {
@@ -2378,6 +2983,41 @@ namespace Hecton8.AI
                     AlphaLeviathanDumpFailureTelemetryHash,
                     AlphaLeviathanTelemetryContextHash,
                     frameId);
+            }
+        }
+
+        private static void WriteAlphaLeviathanBlackBoxFile(string dumpPath, int frameId)
+        {
+            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(frameId);
+                writer.Write(_alphaLeviathanTelemetryCursor);
+                writer.Write(_activeAlphaLeviathanTelemetryCount);
+                writer.Write(RetinalTelemetryCapacity);
+                writer.Write(AlphaLeviathanTelemetrySlotCapacity);
+                int dumpCount = math.min(_alphaLeviathanTelemetryRing.Length, AlphaLeviathanTelemetryVaultCapacity);
+                writer.Write(dumpCount);
+                for (int i = 0; i < dumpCount; i++)
+                {
+                    AlphaLeviathanTelemetryEntry entry = _alphaLeviathanTelemetryRing[i];
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.Slot);
+                    writer.Write(entry.Phase);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.DistanceToPlayerMeters);
+                    writer.Write(entry.FogRingDistanceMeters);
+                    writer.Write(entry.Position.x);
+                    writer.Write(entry.Position.y);
+                    writer.Write(entry.Position.z);
+                    writer.Write(entry.PlayerPosition.x);
+                    writer.Write(entry.PlayerPosition.y);
+                    writer.Write(entry.PlayerPosition.z);
+                    writer.Write(entry.DesiredDirection.x);
+                    writer.Write(entry.DesiredDirection.y);
+                    writer.Write(entry.DesiredDirection.z);
+                    writer.Write(entry.StateHash);
+                }
             }
         }
 
@@ -2513,12 +3153,18 @@ namespace Hecton8.AI
 
         private static void ClearAcousticMemoryEntries(int slot)
         {
-            if (!_acousticMemoryBank.IsCreated || slot < 0 || slot >= Capacity)
+            NativeArray<float4> acousticMemoryFloat4Bank = ResolveAcousticMemoryFloat4Bank();
+            if ((!_acousticMemoryBank.IsCreated && !acousticMemoryFloat4Bank.IsCreated) || slot < 0 || slot >= Capacity)
                 return;
 
             int startIndex = slot * AcousticMemorySlotsPerCreature;
             for (int i = 0; i < AcousticMemorySlotsPerCreature; i++)
-                _acousticMemoryBank[startIndex + i] = default;
+            {
+                if (_acousticMemoryBank.IsCreated)
+                    _acousticMemoryBank[startIndex + i] = default;
+                if (acousticMemoryFloat4Bank.IsCreated)
+                    acousticMemoryFloat4Bank[startIndex + i] = default;
+            }
         }
 
         private static void ClearBoidClaims()
@@ -2761,6 +3407,121 @@ namespace Hecton8.AI
             return math.saturate(lane * QuantizedByteInvScale);
         }
 
+        internal static JobHandle ScheduleMockStimulusProbe(
+            NativeArray<PredatorCognitionDTO> dtos,
+            NativeQueue<MockAcousticSignal>.ParallelWriter acousticSignals,
+            NativeArray<MockLightSource> lightSources,
+            NativeArray<SignalWardenMockDamageSignal> damageSignals,
+            uint seed,
+            float currentTime,
+            JobHandle dependency)
+        {
+            if (!dtos.IsCreated || dtos.Length <= 0)
+                return dependency;
+
+            var job = new MockPredatorStimulusJob
+            {
+                Dtos = dtos,
+                AcousticSignals = acousticSignals,
+                LightSources = lightSources,
+                DamageSignals = damageSignals,
+                Seed = seed == 0u ? 1u : seed,
+                CurrentTime = currentTime
+            };
+            return job.Schedule(dtos.Length, EvaluationJobBatchSize, dependency);
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct MockPredatorStimulusJob : IJobParallelFor
+        {
+            [NativeDisableParallelForRestriction] public NativeArray<PredatorCognitionDTO> Dtos;
+            public NativeQueue<MockAcousticSignal>.ParallelWriter AcousticSignals;
+            [NativeDisableParallelForRestriction] public NativeArray<MockLightSource> LightSources;
+            [NativeDisableParallelForRestriction] public NativeArray<SignalWardenMockDamageSignal> DamageSignals;
+            public uint Seed;
+            public float CurrentTime;
+
+            public void Execute(int index)
+            {
+                PredatorCognitionDTO* dtoPtr = (PredatorCognitionDTO*)Dtos.GetUnsafePtr() + index;
+                ref PredatorCognitionDTO dto = ref PredatorCognitionDTO.AsMutableRef(dtoPtr);
+                uint localSeed = math.max(1u, Seed ^ ((uint)index * 0x9E3779B9u));
+                Unity.Mathematics.Random random = new Unity.Mathematics.Random(localSeed);
+                float3 current = new float3((float)dto.CurrentAUP.x, (float)dto.CurrentAUP.y, (float)dto.CurrentAUP.z);
+                float3 forward = ResolveDominantAxis(dto.ForwardVector, new float3(0f, 0f, 1f));
+
+                if (random.NextFloat() < 0.25f)
+                {
+                    float3 noiseOffset = ResolveDominantAxis(new float3(random.NextFloat(-1f, 1f), random.NextFloat(-0.4f, 0.4f), random.NextFloat(-1f, 1f)), forward);
+                    MockAcousticSignal acoustic = default;
+                    acoustic.Position = current + (noiseOffset * random.NextFloat(4f, 24f));
+                    acoustic.Timestamp = CurrentTime;
+                    acoustic.Intensity = random.NextFloat(0.35f, 1f);
+                    acoustic.SourceId = unchecked((uint)index + 1u);
+                    AcousticSignals.Enqueue(acoustic);
+                    dto.TargetAUP = new double3(acoustic.Position.x, acoustic.Position.y, acoustic.Position.z);
+                }
+
+                float fearSpike = 0f;
+                if (LightSources.IsCreated && index < LightSources.Length && random.NextFloat() < 0.16f)
+                {
+                    float3 lightOffset = forward * random.NextFloat(5f, 18f);
+                    MockLightSource light = default;
+                    light.Position = current + lightOffset;
+                    light.RangeSq = 400f;
+                    light.Intensity = random.NextFloat(0.65f, 1f);
+                    light.SourceId = unchecked(0x4C495448u + (uint)index);
+                    LightSources[index] = light;
+                }
+
+                if (LightSources.IsCreated)
+                {
+                    int lightCount = math.min(LightSources.Length, 4);
+                    for (int i = 0; i < lightCount; i++)
+                    {
+                        MockLightSource light = LightSources[i];
+                        float3 toLight = light.Position - current;
+                        float distanceSq = math.lengthsq(toLight);
+                        if (distanceSq <= DdaEpsilon || distanceSq > math.max(1f, light.RangeSq))
+                            continue;
+
+                        float3 toLightDir = toLight * math.rsqrt(math.max(distanceSq, MathSafetyEpsilon));
+                        float glareDot = math.dot(forward, toLightDir);
+                        fearSpike = math.max(fearSpike, math.select(0f, light.Intensity, glareDot > 0.8f));
+                    }
+                }
+
+                if (DamageSignals.IsCreated && index < DamageSignals.Length && random.NextFloat() < 0.08f)
+                {
+                    SignalWardenMockDamageSignal damage = default;
+                    damage.Aup = dto.CurrentAUP;
+                    damage.Damage = random.NextFloat(0.2f, 0.85f);
+                    damage.EntityId = dto.TargetID;
+                    DamageSignals[index] = damage;
+                }
+
+                if (DamageSignals.IsCreated)
+                {
+                    int damageCount = math.min(DamageSignals.Length, 4);
+                    for (int i = 0; i < damageCount; i++)
+                    {
+                        SignalWardenMockDamageSignal damage = DamageSignals[i];
+                        if (damage.EntityId != dto.TargetID)
+                            continue;
+
+                        fearSpike = math.max(fearSpike, damage.Damage);
+                    }
+                }
+
+                dto.Fear = math.saturate(math.max(dto.Fear, fearSpike));
+                bool enraged = dto.Fear > 0.75f && dto.Hunger > 0.8f;
+                dto.CurrentState = (byte)math.select(
+                    (int)math.select((int)PredatorUtilityState.Stalking, (int)PredatorUtilityState.Attacking, dto.Hunger > 0.55f),
+                    (int)PredatorUtilityState.Fleeing,
+                    dto.Fear > 0.65f && !enraged);
+            }
+        }
+
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct SwarmAnalysisJob : IJobParallelFor
         {
@@ -2796,11 +3557,13 @@ namespace Hecton8.AI
             // pack roles must resolve to one shared reservation table for bait/flanker exclusivity in the same frame.
             // SAFETY_JUSTIFICATION_PARAGRAPH_3:
             // Safety invariant: each attempted write targets reservationIndex in [0, Capacity) and is guarded by atomic
-            // compare-exchange. The arrays are allocated once, registered with NativeMemorySentinel, and disposed only
+            // compare-exchange. The Vault buffers are allocated once and released only
             // through PredatorCognitionDomain teardown after the scheduled job dependency is included.
             [NativeDisableUnsafePtrRestriction] public int* PackBaitClaimTable;
             [NativeDisableUnsafePtrRestriction] public int* PackFlankerClaimTable;
             public float3 SwarmBoundsMin;
+            [ReadOnly] public NativeArray<int> TargetHashBucketHeads;
+            [ReadOnly] public NativeArray<int> TargetHashNext;
 
             public void Execute(int index)
             {
@@ -2868,94 +3631,119 @@ namespace Hecton8.AI
                 float separationRadiusSq = SwarmSeparationRadius * SwarmSeparationRadius;
                 float swarmPbdMinDistanceSq = SwarmPbdMinDistance * SwarmPbdMinDistance;
                 int maxNeighborIterations = math.min(math.max(ActiveSlotCount, 0), MaxSwarmNeighborIterations);
-                for (int i = 0; i < maxNeighborIterations; i++)
+                int processedNeighborIterations = 0;
+                bool targetHashReady = TargetHashBucketHeads.IsCreated && TargetHashNext.IsCreated;
+                for (int offsetX = -1; offsetX <= 1 && processedNeighborIterations < maxNeighborIterations; offsetX++)
                 {
-                    int otherSlot = ActiveSlots[i];
-                    CognitionInput otherInput = Inputs[otherSlot];
-                    if ((otherInput.Flags & (int)CognitionInputFlags.Active) == 0)
-                        continue;
-
-                    int3 otherContagionBucket = ResolveSpatialBucketCoordinates(otherInput.Position, SwarmBoundsMin, ContagionBucketCellSize);
-                    if (math.all(otherContagionBucket == contagionBucket))
+                    for (int offsetY = -1; offsetY <= 1 && processedNeighborIterations < maxNeighborIterations; offsetY++)
                     {
-                        threatSum += UnpackThreatLevel(PriorCores[otherSlot].QuantizedDrives);
-                        threatCount++;
-                    }
-
-                    int3 otherSwarmBucket = ResolveSpatialBucketCoordinates(otherInput.Position, SwarmBoundsMin, SwarmBucketCellSize);
-                    int3 bucketDelta = math.abs(otherSwarmBucket - selfSwarmBucket);
-                    if (math.any(bucketDelta > 1))
-                        continue;
-
-                    if (otherSlot == slot)
-                        continue;
-
-                    float3 diff = input.Position - otherInput.Position;
-                    float distSq = math.lengthsq(diff);
-                    if (distSq <= DdaEpsilon || distSq > perceptionRadiusSq)
-                        continue;
-
-                    bool sameSpecies = otherInput.SpeciesId == input.SpeciesId;
-                    if (sameSpecies)
-                    {
-                        float inSeparation = math.select(0f, 1f, distSq < separationRadiusSq);
-                        separationForce += (diff * math.rcp(math.max(distSq, DdaEpsilon))) * inSeparation;
-                        alignmentSum += otherInput.Velocity;
-                        cohesionSum += otherInput.Position;
-                        neighbourCount++;
-
-                        if (distSq < swarmPbdMinDistanceSq)
+                        for (int offsetZ = -1; offsetZ <= 1 && processedNeighborIterations < maxNeighborIterations; offsetZ++)
                         {
-                            float3 dir = ResolveDominantAxis(diff, float3.zero);
-                            float push01 = 1f - math.saturate(distSq * math.rcp(swarmPbdMinDistanceSq));
-                            pbdCorrection += dir * (push01 * SwarmPbdMinDistance * 0.5f);
-                        }
-                    }
+                            if (!targetHashReady)
+                                continue;
 
-                    if (canCoordinatePack &&
-                        sameSpecies &&
-                        (otherInput.Flags & (int)CognitionInputFlags.PredatorRole) != 0 &&
-                        (otherInput.Flags & (int)CognitionInputFlags.HasPackTarget) != 0 &&
-                        (PriorCores[otherSlot].StateFlags & (uint)FaunaWorldStateFlags.Hunting) != 0u)
-                    {
-                        float3 otherTargetPosition = ResolveRuntimePosition(in otherInput.PackTargetAup, otherInput.FloatingOriginOffset);
-                        float otherDistanceToTargetSq = math.lengthsq(otherTargetPosition - otherInput.Position);
-                        if (otherDistanceToTargetSq < bestBaitDistanceSq)
-                        {
-                            bestBaitDistanceSq = otherDistanceToTargetSq;
-                            bestBaitSlot = otherSlot;
-                        }
+                            int neighborBucket = HashSpatialBucket(selfSwarmBucket + new int3(offsetX, offsetY, offsetZ)) &
+                                                 PredatorTargetSpatialHashBucketMask;
+                            if ((uint)neighborBucket >= (uint)TargetHashBucketHeads.Length)
+                                continue;
 
-                        float coordinationWeight = 1f - math.saturate(distSq * math.rcp(math.max(packCoordinationRadiusSq, 1f)));
-                        if (coordinationWeight > predatorPackWeight)
-                        {
-                            float3 targetForward = ResolveDominantAxis(
-                                otherInput.PackTargetVelocity,
-                                ResolveDominantAxis(otherInput.PlayerForward, ResolveDominantAxis(otherInput.Forward, new float3(0f, 0f, 1f))));
-                            float3 packRight = ResolveDominantAxis(
-                                math.cross(new float3(0f, 1f, 0f), targetForward),
-                                math.cross(new float3(0f, 0f, 1f), targetForward));
-                            if (math.lengthsq(packRight) > DdaEpsilon)
+                            int otherSlot = TargetHashBucketHeads[neighborBucket];
+                            int chainGuard = 0;
+                            while (otherSlot != UnclaimedBoidSlot &&
+                                   (uint)otherSlot < (uint)TargetHashNext.Length &&
+                                   chainGuard++ < MaxSwarmNeighborIterations)
                             {
-                                float sideSign = math.select(-1f, 1f, math.dot(input.Position - otherTargetPosition, packRight) >= 0f);
-                                predatorPackSharedPlayerPosition = otherTargetPosition;
-                                predatorPackTarget = otherTargetPosition + (packRight * (packFlankDistance * sideSign));
-                                predatorPackBaitPosition = otherInput.Position;
-                                predatorPackTargetAup = otherInput.PackTargetAup;
-                                predatorPackWeight = coordinationWeight;
+                                int currentSlot = otherSlot;
+                                otherSlot = TargetHashNext[currentSlot];
+
+                                if (processedNeighborIterations++ >= maxNeighborIterations)
+                                    break;
+
+                                CognitionInput otherInput = Inputs[currentSlot];
+                                if ((otherInput.Flags & (int)CognitionInputFlags.Active) == 0)
+                                    continue;
+
+                                int3 otherContagionBucket = ResolveSpatialBucketCoordinates(otherInput.Position, SwarmBoundsMin, ContagionBucketCellSize);
+                                if (math.all(otherContagionBucket == contagionBucket))
+                                {
+                                    threatSum += UnpackThreatLevel(PriorCores[currentSlot].QuantizedDrives);
+                                    threatCount++;
+                                }
+
+                                if (currentSlot == slot)
+                                    continue;
+
+                                float3 diff = input.Position - otherInput.Position;
+                                float distSq = math.lengthsq(diff);
+                                if (distSq <= DdaEpsilon || distSq > perceptionRadiusSq)
+                                    continue;
+
+                                bool sameSpecies = otherInput.SpeciesId == input.SpeciesId;
+                                if (sameSpecies)
+                                {
+                                    float inSeparation = math.select(0f, 1f, distSq < separationRadiusSq);
+                                    separationForce += (diff * math.rcp(math.max(distSq, MathSafetyEpsilon))) * inSeparation;
+                                    alignmentSum += otherInput.Velocity;
+                                    cohesionSum += otherInput.Position;
+                                    neighbourCount++;
+
+                                    if (distSq < swarmPbdMinDistanceSq)
+                                    {
+                                        float3 dir = ResolveDominantAxis(diff, float3.zero);
+                                        float push01 = 1f - math.saturate(distSq * math.rcp(math.max(swarmPbdMinDistanceSq, MathSafetyEpsilon)));
+                                        pbdCorrection += dir * (push01 * SwarmPbdMinDistance * 0.5f);
+                                    }
+                                }
+
+                                if (canCoordinatePack &&
+                                    sameSpecies &&
+                                    (otherInput.Flags & (int)CognitionInputFlags.PredatorRole) != 0 &&
+                                    (otherInput.Flags & (int)CognitionInputFlags.HasPackTarget) != 0 &&
+                                    (PriorCores[currentSlot].StateFlags & (uint)FaunaWorldStateFlags.Hunting) != 0u)
+                                {
+                                    float3 otherTargetPosition = ResolveRuntimePosition(in otherInput.PackTargetAup, otherInput.FloatingOriginOffset);
+                                    float otherDistanceToTargetSq = math.lengthsq(otherTargetPosition - otherInput.Position);
+                                    if (otherDistanceToTargetSq < bestBaitDistanceSq)
+                                    {
+                                        bestBaitDistanceSq = otherDistanceToTargetSq;
+                                        bestBaitSlot = currentSlot;
+                                    }
+
+                                    float coordinationWeight = 1f - math.saturate(distSq * math.rcp(math.max(packCoordinationRadiusSq, 1f)));
+                                    if (coordinationWeight > predatorPackWeight)
+                                    {
+                                        float3 targetForward = ResolveDominantAxis(
+                                            otherInput.PackTargetVelocity,
+                                            ResolveDominantAxis(otherInput.PlayerForward, ResolveDominantAxis(otherInput.Forward, new float3(0f, 0f, 1f))));
+                                        float3 packRight = ResolveDominantAxis(
+                                            math.cross(new float3(0f, 1f, 0f), targetForward),
+                                            math.cross(new float3(0f, 0f, 1f), targetForward));
+                                        if (math.lengthsq(packRight) > DdaEpsilon)
+                                        {
+                                            float sideSign = math.select(-1f, 1f, math.dot(input.Position - otherTargetPosition, packRight) >= 0f);
+                                            predatorPackSharedPlayerPosition = otherTargetPosition;
+                                            predatorPackTarget = otherTargetPosition + (packRight * (packFlankDistance * sideSign));
+                                            predatorPackBaitPosition = otherInput.Position;
+                                            predatorPackTargetAup = otherInput.PackTargetAup;
+                                            predatorPackWeight = coordinationWeight;
+                                        }
+                                    }
+                                }
+
+                                if (!canClaimBoid || (otherInput.Flags & (int)CognitionInputFlags.PredatorRole) != 0 || distSq >= bestClaimDistanceSq)
+                                    continue;
+
+                                claimedSlot = currentSlot;
+                                claimedPosition = otherInput.Position;
+                                bestClaimDistanceSq = distSq;
                             }
                         }
                     }
-
-                    if (!canClaimBoid || (otherInput.Flags & (int)CognitionInputFlags.PredatorRole) != 0 || distSq >= bestClaimDistanceSq)
-                        continue;
-
-                    claimedSlot = otherSlot;
-                    claimedPosition = otherInput.Position;
-                    bestClaimDistanceSq = distSq;
                 }
 
-                AmbientThreats[slot] = threatCount > 0 ? math.saturate(threatSum * math.rcp((float)threatCount)) : 0f;
+                AmbientThreats[slot] = threatCount > 0
+                    ? math.saturate(threatSum * math.rcp(math.max((float)threatCount, MathSafetyEpsilon)))
+                    : 0f;
                 ClaimedBoidIndices[slot] = claimedSlot;
                 ClaimedBoidPositions[slot] = claimedPosition;
 
@@ -2987,7 +3775,7 @@ namespace Hecton8.AI
                 int swarmCount = math.max(0, input.FlockCount);
                 if (neighbourCount > 0)
                 {
-                    float invNeighbourCount = math.rcp((float)neighbourCount);
+                    float invNeighbourCount = math.rcp(math.max((float)neighbourCount, MathSafetyEpsilon));
                     float3 averageVelocity = alignmentSum * invNeighbourCount;
                     float3 centerOfMass = cohesionSum * invNeighbourCount;
                     float3 alignmentForce = averageVelocity - input.Velocity;
@@ -3084,6 +3872,7 @@ namespace Hecton8.AI
             public NativeArray<CognitionControl> Controls;
             [ReadOnly] public NativeArray<CognitionMemoryEntry> MemoryBank;
             [ReadOnly] public NativeArray<AcousticMemoryEntry> AcousticMemoryBank;
+            [ReadOnly] public NativeArray<float4> AcousticMemoryFloat4Bank;
             [ReadOnly] public NativeArray<byte> DueFlags;
             [ReadOnly] public NativeArray<float> AmbientThreats;
             [ReadOnly] public NativeArray<float3> SwarmCenters;
@@ -3120,6 +3909,7 @@ namespace Hecton8.AI
             [ReadOnly] public NativeArray<int> SpeciesTuningIds;
             [ReadOnly] public NativeArray<SpeciesCognitionTuning> SpeciesTuningValues;
             [ReadOnly] public NativeArray<int> SpeciesTuningCount;
+            [ReadOnly] public NativeArray<float4> ApexCortexTuning;
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
             // ChosenStates and BoidClaimTable are intentionally shared output tables indexed by stable fauna slots, not
             // by the job iteration index. NativeDisableParallelForRestriction is required because the valid writer index
@@ -3247,6 +4037,17 @@ namespace Hecton8.AI
                     input.LightFrenzySpeedMultiplier = tuning.LightFrenzySpeedMultiplier;
                     input.LightReactionFearBoost01 = tuning.LightReactionFearBoost01;
                 }
+                else if ((input.Flags & (int)CognitionInputFlags.UseAlphaLeviathanCognition) != 0 &&
+                         ApexCortexTuning.IsCreated &&
+                         ApexCortexTuning.Length > 0)
+                {
+                    float4 apex = ApexCortexTuning[0];
+                    input.HungerWeight = math.max(0.1f, apex.x);
+                    input.FearWeight = math.max(0.1f, apex.y);
+                    input.CuriosityWeight = math.max(0.1f, apex.w);
+                    input.LightReactionMode = (int)FaunaLightReactionMode.Aversion;
+                    input.LightReactionFearBoost01 = math.saturate(apex.z);
+                }
 
                 CognitionCore core = Cores[slot];
                 CognitionControl control = Controls[slot];
@@ -3356,7 +4157,7 @@ namespace Hecton8.AI
                 return (byte)math.clamp(stateCode, 0, byte.MaxValue);
             }
 
-            [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 20)]
+            [StructLayout(LayoutKind.Sequential, Size = 24)]
             private struct RetinalLightResult
             {
                 public float Exposure01;
@@ -3365,9 +4166,10 @@ namespace Hecton8.AI
                 public byte Reserved0;
                 public byte Reserved1;
                 public byte Reserved2;
+                public uint ReservedTail;
             }
 
-            [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
+            [StructLayout(LayoutKind.Sequential, Size = 32)]
             private struct AlphaLeviathanDirective
             {
                 public byte Phase;
@@ -3380,6 +4182,11 @@ namespace Hecton8.AI
                 public byte Reserved0;
                 public byte Reserved1;
                 public byte Reserved2;
+                public byte Reserved3;
+                public byte Reserved4;
+                public byte Reserved5;
+                public byte Reserved6;
+                public byte Reserved7;
             }
 
             private RetinalLightResult ResolveRetinalExposure(int slot, in CognitionInput input, float3 fallbackForward)
@@ -3430,7 +4237,7 @@ namespace Hecton8.AI
                     if (distanceSq > light.RangeSq || distanceSq <= DdaEpsilon)
                         continue;
 
-                    float invDistance = math.rsqrt(math.max(distanceSq, DdaEpsilon));
+                    float invDistance = math.rsqrt(math.max(distanceSq, MathSafetyEpsilon));
                     float3 lightToPredatorDir = lightToPredator * invDistance;
                     float coneDot = math.dot(light.Forward, lightToPredatorDir);
                     if (coneDot < light.SpotOuterCos)
@@ -3794,7 +4601,7 @@ namespace Hecton8.AI
                                           targetDistanceSq <= AmbushHoldDistanceMeters * AmbushHoldDistanceMeters &&
                                           math.lengthsq(predictedPlayerPosition - input.Position) > AmbushThreatWakeDistanceMeters * AmbushThreatWakeDistanceMeters;
                 float attackCommit01 = hasTarget
-                    ? ScoreHunger(math.saturate(1f - (targetDistanceSq * math.rcp(attackRangeSq))))
+                    ? ScoreHunger(math.saturate(1f - (targetDistanceSq * math.rcp(math.max(attackRangeSq, MathSafetyEpsilon)))))
                     : 0f;
 
                 bool overrideActive = control.OverrideUntilTime > input.CurrentTime;
@@ -4069,7 +4876,7 @@ namespace Hecton8.AI
                 float distanceSq = math.lengthsq(playerToSelf);
                 float3 awayFromPlayer = ResolveRsqrtDirection(playerToSelf, -fallbackForward);
                 float currentDistance = distanceSq > DdaEpsilon
-                    ? distanceSq * math.rsqrt(math.max(distanceSq, DdaEpsilon))
+                    ? distanceSq * math.rsqrt(math.max(distanceSq, MathSafetyEpsilon))
                     : 0f;
                 float3 playerForward = ResolveRsqrtDirection(input.PlayerForward, -awayFromPlayer);
                 float playerLookDot = math.dot(playerForward, awayFromPlayer);
@@ -4186,7 +4993,7 @@ namespace Hecton8.AI
                 tangent = math.select(tangent, -tangent, (slot & 1) != 0);
                 float distanceSq = math.lengthsq(input.Position - playerPosition);
                 float currentDistance = distanceSq > DdaEpsilon
-                    ? distanceSq * math.rsqrt(math.max(distanceSq, DdaEpsilon))
+                    ? distanceSq * math.rsqrt(math.max(distanceSq, MathSafetyEpsilon))
                     : ringDistanceMeters;
                 float radialCorrection = math.clamp((ringDistanceMeters - currentDistance) * AlphaRingCorrectionScale, -1f, 1f);
                 float3 desired = tangent + (awayFromPlayer * radialCorrection);
@@ -4250,7 +5057,7 @@ namespace Hecton8.AI
                 float escapeSafeDistanceSq = escapeSafeDistance * escapeSafeDistance;
                 float playerDistanceSq = math.lengthsq(input.PlayerPosition - input.Position);
                 float playerThreat = hasPlayerTarget
-                    ? math.saturate(1f - (playerDistanceSq * math.rcp(escapeSafeDistanceSq)))
+                    ? math.saturate(1f - (playerDistanceSq * math.rcp(math.max(escapeSafeDistanceSq, MathSafetyEpsilon))))
                     : 0f;
                 bool lightAversionActive = IsLightAversionActive(input);
                 if (lightAversionActive)
@@ -4302,7 +5109,7 @@ namespace Hecton8.AI
                 float curiosityWeight = math.max(0.1f, input.CuriosityWeight);
                 float escapeScore = ScoreFear(math.max(fear, threatLevel)) * math.max(0.1f, input.FearWeight) * math.select(0f, 1f, shouldEscape);
                 float homeDistance01 = useHomeTerritory && input.PatrolRadius > 0f
-                    ? math.saturate(homeDistanceSq * math.rcp(patrolRadiusSq))
+                    ? math.saturate(homeDistanceSq * math.rcp(math.max(patrolRadiusSq, MathSafetyEpsilon)))
                     : 0f;
                 float returnScore = ScoreThreat(homeDistance01) * math.select(0f, 1f, homeOutOfBounds && !shouldEscape && !satedActive);
                 float scatterScore = math.select(0f, OverrideScoreBias + ScoreThreat(math.max(acousticScore, threatLevel)), scatterActive);
@@ -4428,7 +5235,7 @@ namespace Hecton8.AI
                 int bestIndex = -1;
                 HabitatSiegeTargetSnapshot bestTarget = default;
                 float engageRadiusSq = BaseSiegeEngageRadiusMeters * BaseSiegeEngageRadiusMeters;
-                float invEngageRadiusSq = math.rcp(engageRadiusSq);
+                float invEngageRadiusSq = math.rcp(math.max(engageRadiusSq, MathSafetyEpsilon));
                 int targetCount = math.min(HabitatSiegeTargetCount, HabitatSiegeTargets.Length);
                 for (int i = 0; i < targetCount; i++)
                 {
@@ -4557,8 +5364,13 @@ namespace Hecton8.AI
 
                 for (int i = 0; i < AcousticMemorySlotsPerCreature; i++)
                 {
-                    AcousticMemoryEntry entry = AcousticMemoryBank[startIndex + i];
-                    float age = currentTime - entry.Timestamp;
+                    int memoryIndex = startIndex + i;
+                    AcousticMemoryEntry entry = AcousticMemoryBank[memoryIndex];
+                    float4 packedMemory = AcousticMemoryFloat4Bank.IsCreated && memoryIndex < AcousticMemoryFloat4Bank.Length
+                        ? AcousticMemoryFloat4Bank[memoryIndex]
+                        : new float4(entry.WorldPosition, entry.Timestamp);
+                    float memoryTimestamp = math.select(entry.Timestamp, packedMemory.w, packedMemory.w > 0f);
+                    float age = currentTime - memoryTimestamp;
                     if (age < 0f ||
                         age > AcousticMemoryLifetimeSeconds ||
                         entry.Intensity <= 0f)
@@ -4566,7 +5378,10 @@ namespace Hecton8.AI
                         continue;
                     }
 
-                    float decayWeight = 1f - math.saturate(age * AcousticMemoryLifetimeInvSeconds);
+                    float acousticDecay = ApexCortexTuning.IsCreated && ApexCortexTuning.Length > 0
+                        ? math.max(0.01f, ApexCortexTuning[0].w)
+                        : 1f;
+                    float decayWeight = 1f - math.saturate(age * AcousticMemoryLifetimeInvSeconds * acousticDecay);
                     decayWeight *= decayWeight;
 
                     int3 bucketDelta = math.abs(selfBucket - entry.BucketCoord);
@@ -4578,7 +5393,7 @@ namespace Hecton8.AI
                         continue;
 
                     bestScore = candidateScore;
-                    bestPosition = entry.WorldPosition;
+                    bestPosition = packedMemory.xyz;
                     found = true;
                 }
 
@@ -4627,7 +5442,7 @@ namespace Hecton8.AI
                     return false;
                 }
 
-                position = weightedPosition * math.rcp(totalWeight);
+                position = weightedPosition * math.rcp(math.max(totalWeight, MathSafetyEpsilon));
                 threatWeight = math.saturate(strongestWeight);
                 return true;
             }
@@ -4961,7 +5776,7 @@ namespace Hecton8.AI
                     return 0f;
 
                 float safeRange = math.max(range, 1f);
-                return math.saturate(1f - (distanceSq * math.rcp(safeRange * safeRange)));
+                return math.saturate(1f - (distanceSq * math.rcp(math.max(safeRange * safeRange, MathSafetyEpsilon))));
             }
 
             private float3 ResolvePredatorDirection(
@@ -5160,7 +5975,7 @@ namespace Hecton8.AI
                 if (!MathGuard.IsFinite(direction) || lengthSq <= DdaEpsilon)
                     return new float3(0f, 0f, 1f);
 
-                return direction * math.rsqrt(math.max(lengthSq, DdaEpsilon));
+                return direction * math.rsqrt(math.max(lengthSq, MathSafetyEpsilon));
             }
 
             private static float3 SanitizeSteeringVector(float3 direction, float3 fallback)
@@ -5189,10 +6004,7 @@ namespace Hecton8.AI
 
             private bool ResolveThreatVisibility(float3 start, float3 end, float importanceScore)
             {
-                if (importanceScore < MinimumDetailedThreatImportanceScore)
-                    return HasThreatGridHeuristic(start, end);
-
-                return HasVoxelLineOfSight(start, end);
+                return HasThreatGridHeuristic(start, end);
             }
 
             private bool HasThreatGridHeuristic(float3 start, float3 end)
@@ -5221,59 +6033,6 @@ namespace Hecton8.AI
                 return true;
             }
 
-            private bool HasVoxelLineOfSight(float3 start, float3 end)
-            {
-                if (!ThreatVoxelGrid.IsCreated ||
-                    ThreatVoxelDimensions.x <= 0 ||
-                    ThreatVoxelDimensions.y <= 0 ||
-                    ThreatVoxelDimensions.z <= 0)
-                {
-                    return true;
-                }
-
-                float3 delta = end - start;
-                float distanceSq = math.lengthsq(delta);
-                if (distanceSq <= DdaEpsilon)
-                    return true;
-
-                if (!TryWorldToVoxel(start, out int3 currentVoxel) ||
-                    !TryWorldToVoxel(end, out int3 targetVoxel))
-                {
-                    return true;
-                }
-
-                float3 rayDir = delta;
-                bool3 positiveMask = rayDir >= 0f;
-                bool3 activeAxisMask = math.abs(rayDir) > DdaEpsilon;
-                int3 step = math.select(new int3(-1, -1, -1), new int3(1, 1, 1), positiveMask);
-                float3 cellMin = ThreatVoxelOrigin + (new float3(currentVoxel.x, currentVoxel.y, currentVoxel.z) * ThreatVoxelCellSize);
-                float3 voxelBoundary = cellMin + math.select(float3.zero, ThreatVoxelCellSize, positiveMask);
-                float3 safeAbsDir = math.max(math.abs(rayDir), new float3(DdaEpsilon));
-                float3 rayDirInv = math.rcp(safeAbsDir);
-                float3 tMax = math.abs((voxelBoundary - start) * rayDirInv);
-                float3 tDelta = ThreatVoxelCellSize * rayDirInv;
-                tMax = math.select(new float3(1000000f, 1000000f, 1000000f), tMax, activeAxisMask);
-                tDelta = math.select(new float3(1000000f, 1000000f, 1000000f), tDelta, activeAxisMask);
-                int maxSteps = math.min(ThreatVoxelDimensions.x + ThreatVoxelDimensions.y + ThreatVoxelDimensions.z, MaxThreatDdaSteps);
-
-                for (int i = 0; i < maxSteps; i++)
-                {
-                    if (IsThreatVoxelSolid(SampleThreatVoxel(currentVoxel)))
-                        return false;
-
-                    if (math.all(currentVoxel == targetVoxel))
-                        return true;
-
-                    bool3 axisMask = (tMax <= tMax.yzx) & (tMax <= tMax.zxy);
-                    tMax += math.select(float3.zero, tDelta, axisMask);
-                    currentVoxel += math.select(int3.zero, step, axisMask);
-                    if (!IsVoxelInside(currentVoxel))
-                        return true;
-                }
-
-                return true;
-            }
-
             private bool TryWorldToVoxel(float3 worldPosition, out int3 voxel)
             {
                 float3 local = worldPosition - ThreatVoxelOrigin;
@@ -5283,7 +6042,7 @@ namespace Hecton8.AI
                     return false;
                 }
 
-                float3 invCellSize = math.rcp(math.max(ThreatVoxelCellSize, new float3(DdaEpsilon)));
+                float3 invCellSize = math.rcp(math.max(ThreatVoxelCellSize, new float3(MathSafetyEpsilon)));
                 int3 candidate = new int3(
                     (int)math.floor(local.x * invCellSize.x),
                     (int)math.floor(local.y * invCellSize.y),

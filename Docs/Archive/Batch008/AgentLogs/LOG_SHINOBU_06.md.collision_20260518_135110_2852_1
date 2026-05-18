@@ -1,0 +1,38 @@
+# LOG_SHINOBU_06
+
+## 2026-05-18 - SHINOBU Ultra-Think Polish Pass 6
+
+What was wrong:
+- Live SHINOBU status/rationale/log files were missing from active docs and only existed in `Docs/Archive/Batch008`.
+- KCC velocity still used a concrete physics facade.
+- Duplicate/orphan local signal lanes existed for acoustic and haptic output.
+- The hand stroke ring used render-frame indexing, so fixed ticks could alias samples.
+- Hand/head input could carry NaN into hand history, fatigue, and scratch signals.
+- Origin shift sequence was not written into SHINOBU state/blackbox.
+- `VRSomaticProvider` still owned persistent native arrays and polled `GlobalRegistry` from hot paths.
+
+What was done:
+- Restored active `Docs/Tasks/Status_SHINOBU_06.md`, `Docs/AgentLogs/Rationale_SHINOBU_06.md`, and this log.
+- Replaced `PhysicsDeterminismSignals.PublishKccVelocity` with direct `SignalBus<KccVelocitySignal>`.
+- Removed duplicate `AcousticEchoTap` and local haptic signal payload; canonical `MovementAcousticSignal` and `HapticRequest` remain.
+- Added cold preconfiguration for `ShinobuPlayerExertionSignal`.
+- Added `_fixedFrameSequence` and removed `Time.frameCount` from hand ring and dump frame tracking.
+- Sanitized frame input, hand samples, stroke deltas, and exertion before NativeArray writes.
+- Wrote `ShiftFrameId`, mirrored it into blackbox `Reserved`, and emitted `SyncFenceSignal` on origin shifts.
+- Moved `VRSomaticProvider` persistent buffers to DataVault-backed `VaultNativeArray<T>` handles using `BufferID.ShinobuVRSomatic*`.
+- Cached provider player camera/tier/low-memory state outside hot update/late-frame code and removed `DefaultExecutionOrder`.
+
+Cinematic Cheats used:
+- No real fluid or PhysX realism added. SHINOBU still uses backward-hand dot thrust, 1D drag LUT, triangle-wave current fallback, tetra SDF squeeze, algebraic buoyancy, and low-tier single-step CCD.
+
+Exact Microseconds saved:
+- No measured claim. Expected gains are removal of physics facade hop, removal of first-push orphan signal allocation risk, fixed-step I/O firewall, and DataVault ownership replacing provider-local native allocation. Profiler proof remains required.
+
+Verification:
+- Static scan after pass 6 found no SHINOBU runtime/provider/bootstrap hits for physics facade, duplicate acoustic signal, local haptic signal, Unity physics authority, local NativeArray ownership, `new NativeArray`, `DefaultExecutionOrder`, `foreach`, LINQ list allocation, `ReadAllBytes`, `FileInfo`, or direct `.Complete(`.
+- `git diff --check` passed on tracked touched files; only CRLF conversion warnings remain.
+- `dotnet restore Hecton8.Core.csproj` succeeded.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` still fails, but not in SHINOBU. Current unrelated blockers: `TetherInstance.cs` and `TetherManager.cs` missing `TetherBlackBoxDumpWriter`; `AI/Ecosystem/ShinobuEcosystemBalancer.cs` expects missing `LotkaVolterraMacroJob.SectorBucketHeads` and `.SectorEntityLinks`.
+
+Integrator note:
+- `VRSomaticProvider` now uses DataVault buffer IDs 70142-70149. Do not reuse those IDs.

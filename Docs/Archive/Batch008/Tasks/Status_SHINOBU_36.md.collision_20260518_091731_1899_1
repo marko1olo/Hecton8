@@ -1,0 +1,23 @@
+# SHINOBU_36 Status
+
+Date: 2026-05-18
+Domain: INPUT_DETERMINISM_AND_HAPTICS
+Status: REOPENED AFTER BATCH008 ARCHIVE - CORE COMPILE WALL IN EXTERNAL SOMATIC FILE
+
+## Current Truth
+
+- `Docs/Tasks/CURRENT_BATCH.md` is absent after batch hygiene.
+- Previous SHINOBU_36 status/rationale/log files were moved to `Docs/Archive/Batch008`.
+- User explicitly ordered: `WORK FURTHER`.
+- `Hecton8.Input.csproj` builds green.
+- `Hecton8.Editor.csproj` builds green with existing warnings.
+- `Hecton8.Core.csproj` currently fails in `Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs`, outside the input domain, after the SHINOBU input compile layer was repaired.
+
+## Active Checklist
+
+- [x] Re-read active state files before continuing. DOD: active files were missing due archive; new active files created. Rejected: relying on archived old logs as current batch memory. Estimate: 0 us runtime.
+- [x] Re-run input compile. DOD: `dotnet build Hecton8.Input.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` passed. Rejected: reporting from old chat. Estimate: 0 us runtime.
+- [x] Re-run editor compile. DOD: `dotnet build Hecton8.Editor.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` passed with existing warnings. Rejected: ignoring editor facade compile. Estimate: 0 us runtime.
+- [ ] Clear current core compile wall. DOD: `Hecton8.Core.csproj` green from a sequential build, not parallel file-lock noise. Rejected: parallel Core/Editor builds touching the same temp DLL.
+- [ ] Re-run SHINOBU static scans. DOD: no legacy `UnityEngine.Input` reads in input authority, no InputAction callbacks subscribed in authority, no Pack=1 in SHINOBU DTOs.
+- [ ] Append final continuation report to active `Docs/AgentLogs/LOG_SHINOBU_36.md`.

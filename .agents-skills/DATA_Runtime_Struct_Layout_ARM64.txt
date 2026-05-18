@@ -1,0 +1,102 @@
+# HECTON-8 | Runtime Struct Layout | ARM64 Alignment Law
+
+Status: ENFORCED / PENDING RUNTIME VERIFICATION
+Date: 2026-05-17
+Authority: AGENTS.md + QA_Evidence_Text_Filter_Audit + Native memory mandates
+Scope: runtime DTOs, NativeArray element structs, SignalBus payloads, telemetry entries, save staging records, Burst job records, GPU upload records, and platform-crossing unmanaged data.
+
+---
+
+## Prime Law
+
+[RULE] Runtime memory structs must be naturally aligned for ARM64, Quest, Android, Steam Deck, Windows, Linux, and macOS.
+[RULE] Runtime structs used in NativeArray, Burst, SignalBus, telemetry, save staging, or GPU upload paths must be unmanaged, finite-safe, and layout-stable.
+[RULE] Field order is largest to smallest unless a stricter GPU/API layout requires explicit layout:
+- 8-byte fields first: `double`, `long`, `ulong`, `double2`, `double3`, pointers, 64-bit hashes.
+- 4-byte fields next: `float`, `int`, `uint`, `float2`, `float3`, `float4`.
+- 2-byte fields next: `short`, `ushort`.
+- 1-byte fields last: `byte`, `sbyte`; runtime `bool` is rejected.
+[RULE] Total `UnsafeUtility.SizeOf<T>()` for runtime structs must be a multiple of 8. Add explicit named padding fields when needed.
+[RULE] GPU StructuredBuffer payloads that are consumed by shaders must additionally respect shader packing. Prefer `float4` lanes or explicit 16-byte padding when shader reads are vectorized.
+
+[FORBID] `[StructLayout(Pack=1)]` on runtime memory structs.
+[FORBID] `[StructLayout(Pack=4)]` on runtime structs that contain any 8-byte field.
+[FORBID] Managed references, strings, arrays, classes, UnityEngine.Object references, or non-explicit enum backing in hot-path payloads.
+[FORBID] Runtime `bool` fields in unmanaged DTOs. Use `byte` or bit flags.
+[FORBID] Shipping a primary runtime DTO without a byte-offset audit in the agent self-audit.
+
+---
+
+## Runtime Layout Pattern
+
+Use default sequential layout or explicit layout with a declared total size. Do not use pack pragmas as a shortcut.
+
+```
+[StructLayout(LayoutKind.Sequential)]
+public struct ItemData
+{
+    public ulong InstanceUid; // offset 0, size 8
+    public uint HashId;       // offset 8, size 4
+    public float Quality;     // offset 12, size 4
+    public ushort StackCount; // offset 16, size 2
+    public ushort Flags;      // offset 18, size 2
+    private uint _pad0;       // offset 20, size 4 -> total 24, multiple of 8
+}
+```
+
+[RULE] Padding fields are named `_pad0`, `_pad1`, etc. Padding is not magic; it is part of the contract.
+[RULE] Padding must be included in the offset map and self-audit.
+[RULE] If an old binary wire record is packed for storage, copy it into an aligned runtime struct before NativeArray/Burst/hot-path use.
+
+---
+
+## Required Self-Audit
+
+Every agent that creates or changes a primary DTO must write:
+
+- struct name
+- `UnsafeUtility.SizeOf<T>()`
+- field offsets
+- field sizes
+- explicit padding fields
+- total-size multiple-of-8 proof
+- whether the struct enters NativeArray, SignalBus, telemetry, save, GPU, or Burst
+- exception note if this is a cold file-format-only packed record
+
+Evidence class is `STATIC_SOURCE` until Unity Editor, Burst, IL2CPP, or player-build proof exists.
+
+---
+
+## Exception Boundary
+
+Packed file-format structs are allowed only as cold import/export records when all of these are true:
+
+- They never live in NativeArray, NativeList, NativeQueue, SignalBus frame snapshots, Burst jobs, or hot GPU upload buffers.
+- They are copied into aligned runtime structs before simulation or rendering.
+- The file-format reason is documented with version, endian, struct size, and migration path.
+- The report labels this as file I/O layout, not runtime memory layout.
+
+[FORBID] Defending runtime `Pack=1` as "smaller memory." Misaligned reads cost more than the bytes saved on ARM64.
+
+---
+
+## Hardware Matrix
+
+Low/MX350/Steam Deck: 8-byte aligned runtime DTOs, SoA where possible, no hidden padding surprises.
+
+Middle: same layout law, plus editor offset tests for primary binary/native payloads.
+
+High: richer telemetry fields may be added only if the total size remains aligned and cache behavior is documented.
+
+Ultra: visual-overkill payloads stay in presentation lanes and do not bloat gameplay truth structs.
+
+---
+
+## Engineering Data
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| Runtime DTO | unmanaged, finite-safe, multiple of 8 bytes | static source + Unity/Burst test |
+| Signal payload | unique lane, layout-stable, no managed refs | source scan + compile |
+| Save/wire payload | packed only if cold and copied into aligned runtime struct | import/export test |
+| Platform claim | ARM64/Quest/Android safe only with platform build artifact | player build |

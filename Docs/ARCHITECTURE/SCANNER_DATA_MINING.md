@@ -1,8 +1,34 @@
-﻿# Scanner Data Mining
+# Scanner Data Mining
 Date: 2026-05-07
 
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Verification: PENDING VERIFICATION
+
+## 2026-05-18 SHINOBU_24 Scanner Router Boundary
+
+- Current scanner router implementation: `Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs`.
+- Persistent scanner data lives in `GlobalDataVault` under `BufferID.ShinobuScannerEntities` through `BufferID.ShinobuScannerSettings` (`70640..70651`).
+- Runtime spatial lookup is a flat bucket hash: `BucketHeads[int]` plus `BucketNext[int]`; no runtime-owned `NativeParallelMultiHashMap`.
+- Gameplay truth uses bounding-sphere ray intersection and midpoint SDF occlusion. Unity `Physics.Raycast`, collider queries, and component lookup are outside this scanner path.
+- `ScannerVfxDTO` is the 32-byte visual bridge; VFX consumers must read the DTO/buffer and must not query scanner internals.
+- Designer tuning path is `DataMiningTunerWindow` -> `ScannerSettingsDTO` in the vault during Play Mode, with static fallback only when the vault is unavailable.
+- Black-box dump path writes both `Docs/AgentLogs/Dump_SHINOBU_24.bin` and `Docs/AgentLogs/Dump_SHINOBU_24.h8dump` on NaN/budget breach.
+- Continuous CSV disk monitoring is not a player hot-path responsibility; the scanner exposes a zero-GC metadata line parser and expects file IO to arrive through a cold/background bridge.
 
 ## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 

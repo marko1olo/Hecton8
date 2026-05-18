@@ -19,25 +19,26 @@ namespace Hecton8.Gameplay
     /// Those behaviors remain owned by their dedicated components to prevent a submarine God Object.
     /// </remarks>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Submarine Core Director")]
     public sealed class SubmarineCoreDirector : MonoBehaviour, ISubmarineRuntimeContext, IFixedTickable
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential, Size = 40)]
         public struct SubmarinePhysicsBindingState
         {
             public float3 LinearVelocity;
             public float3 AngularVelocity;
             public float3 CenterOfMass;
+            private int _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential, Size = 8)]
         public struct SubmarineGridState
         {
             public byte HasStructuralGrid;
             public byte HasFluidDynamics;
             public byte HasAtmosphereSystem;
             public byte IsTransportPlatformActive;
+            private uint _pad0;
         }
 
         private const int HullSummarySlotCount = 4;
@@ -89,6 +90,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Optional explicit transform used as the rider-space reference frame. Defaults to this root transform.")]
         [SerializeField] private Transform platformFrame;
 
+        [Tooltip("Legacy fallback only. SHINOBU kinematic dynamics should be authoritative for new submarines.")]
+        [SerializeField] private bool enableLegacyPhysXAutoLevelInstall;
+
         [Tooltip("When true, player yaw inherits submarine hull rotation through the shared transport pipeline.")]
         [SerializeField] private bool inheritPlatformRotation = true;
 
@@ -119,7 +123,7 @@ namespace Hecton8.Gameplay
         private NativeArray<SubmarineGridState> _gridStatesNative;
 
         /// <inheritdoc />
-        public bool IsTransportPlatformActive => isActiveAndEnabled && PlatformTransform != null && hullRigidbody != null;
+        public bool IsTransportPlatformActive => isActiveAndEnabled && PlatformTransform != null;
 
         /// <inheritdoc />
         public Transform PlatformTransform => platformFrame != null ? platformFrame : _cachedTransform;
@@ -360,6 +364,7 @@ namespace Hecton8.Gameplay
                 TryGetComponent(out structuralGrid);
 
             if (Application.isPlaying &&
+                enableLegacyPhysXAutoLevelInstall &&
                 !TryGetComponent<SubmarineAutoLevelBallastController>(out _))
             {
                 gameObject.AddComponent<SubmarineAutoLevelBallastController>();

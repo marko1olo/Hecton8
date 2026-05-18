@@ -2,6 +2,21 @@
 
 Date: 2026-05-17
 Status: STATIC_SOURCE_AUDIT / RUNTIME_PENDING
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Owner prompt: MODDING_API_SCHEMA_BUILDER
 
 ## Source Files
@@ -40,6 +55,8 @@ Owner prompt: MODDING_API_SCHEMA_BUILDER
 | `EntryType` | `string` | Optional managed entry type. |
 | `RequiredAPIVersion` | `int` | Must be positive and no higher than `CurrentAPIVersion`. |
 | `ModPriority` | `int` | Arbitration priority for conflicting mod world requests. |
+
+Current SDK builder gap: `ModBuilderWindow.ModManifestData` emits `7` manifest fields and omits `RequiredAPIVersion` / `ModPriority`, while `ModLoader` disables manifests with `RequiredAPIVersion <= 0`. Treat SDK-built packages as `PENDING VERIFICATION` until the builder emits these fields or runtime smoke evidence proves the package loads without manual edits.
 
 ## Metadata Fields
 

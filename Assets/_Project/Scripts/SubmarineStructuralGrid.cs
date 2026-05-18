@@ -129,7 +129,7 @@ namespace Hecton8.Physics
         private const string NativeMemoryOwner = nameof(SubmarineStructuralGrid);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullDamageDiffusionJob : IJob
         {
@@ -242,7 +242,7 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullCompartmentMappingJob : IJobParallelFor
         {
@@ -291,7 +291,7 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullFatigueCompartmentJob : IJob
         {
@@ -341,7 +341,7 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         private struct ImpactCommand
         {
             public float3 LocalPoint;
@@ -350,7 +350,7 @@ namespace Hecton8.Physics
             public int DamageBytes;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
         private struct BreachRepairJob : IJob
         {
@@ -386,7 +386,7 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct DamageControlTelemetryEntry
         {
             public float3 FirstBreachLocal;

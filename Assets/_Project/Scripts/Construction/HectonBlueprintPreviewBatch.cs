@@ -1,9 +1,13 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Memory.Layout;
 using Hecton8.World;
+using System;
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -18,17 +22,14 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     public sealed class HectonBlueprintPreviewBatch : MonoBehaviour, IRenderable, ILateFrameTickable
     {
-        private const string NativeMemoryOwner = nameof(HectonBlueprintPreviewBatch);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const string WireShaderPath = "Assets/_Project/Art/Shaders/Hecton_BlueprintWireInstanced.shader";
         private const int MaxDrawMeshInstancedBatch = 1023;
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildPreviewMatricesJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<BlueprintPreviewInstance> Instances;
-            public NativeArray<Matrix4x4> Matrices;
+            [ReadOnly, NoAlias] public NativeArray<BlueprintPreviewInstance> Instances;
+            [NoAlias] public NativeArray<Matrix4x4> Matrices;
             public float TimeSeconds;
             public int Count;
 
@@ -74,18 +75,18 @@ namespace Hecton8.Construction
         }
 
         [BinaryBlittableSafe]
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         public struct BlueprintPreviewInstance
         {
-            public float3 Position;
-            public quaternion Rotation;
-            public float3 Scale;
-            public uint RequirementMask;
-            public uint OwnedMask;
-            public float BobAmplitude;
-            public float BobFrequency;
-            public float SpinRadiansPerSecond;
-            public float FlickerAmplitude;
+            [FieldOffset(0)] public quaternion Rotation;
+            [FieldOffset(16)] public float3 Position;
+            [FieldOffset(28)] public float3 Scale;
+            [FieldOffset(40)] public uint RequirementMask;
+            [FieldOffset(44)] public uint OwnedMask;
+            [FieldOffset(48)] public float BobAmplitude;
+            [FieldOffset(52)] public float BobFrequency;
+            [FieldOffset(56)] public float SpinRadiansPerSecond;
+            [FieldOffset(60)] public float FlickerAmplitude;
         }
 
         [SerializeField] private Mesh previewMesh;
@@ -94,14 +95,16 @@ namespace Hecton8.Construction
         [SerializeField] private Camera targetCamera;
         [SerializeField, Min(1)] private int capacity = 128;
         [SerializeField] private Color validColor = new Color(0.08f, 1f, 0.72f, 0.72f);
+        [SerializeField] private Color invalidColor = new Color(1f, 0.18f, 0.12f, 0.78f);
 
-        private NativeArray<BlueprintPreviewInstance> _writeInstances;
-        private NativeArray<BlueprintPreviewInstance> _buildInstances;
-        private NativeArray<Matrix4x4> _matrices;
+        private VaultBufferHandle<BlueprintPreviewInstance> _writeInstancesHandle;
+        private VaultBufferHandle<BlueprintPreviewInstance> _buildInstancesHandle;
+        private VaultBufferHandle<Matrix4x4> _matricesHandle;
+        private IDataVault _vault;
         private Matrix4x4[] _matrixMirror;
         private JobHandle _buildHandle;
-        private JobHandle _disposeHandle;
         private bool _buildScheduled;
+        private bool _previewVaultLocksHeld;
         private bool _registeredRenderable;
         private bool _registeredLateFrame;
         private bool _hasBaseColorProperty;
@@ -112,17 +115,21 @@ namespace Hecton8.Construction
         private int _drawCount;
         private Color _appliedBaseColor;
         private Material _cachedMaterialForProperties;
+        private int _lastPreviewSignalFrame = -1;
+        private bool _lastPreviewAllowed = true;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
         private void Awake()
         {
+            ConfigureSignalLane();
             EnsureBuffers();
             EnsureMaterial();
         }
 
         private void OnEnable()
         {
+            ConfigureSignalLane();
             if (!Application.isPlaying)
                 return;
 
@@ -144,38 +151,17 @@ namespace Hecton8.Construction
                 _registeredLateFrame = false;
             }
 
+            CompleteOutstandingBuildForTeardown();
             _drawCount = 0;
         }
 
         private void OnDestroy()
         {
-            JobHandle disposeDependency = _buildScheduled ? _buildHandle : default;
-            _buildScheduled = false;
-            _scheduledCount = 0;
-            _drawCount = 0;
-
-            if (_writeInstances.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_writeInstances);
-                _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, _writeInstances.Dispose(disposeDependency));
-                _writeInstances = default;
-            }
-
-            if (_buildInstances.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_buildInstances);
-                _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, _buildInstances.Dispose(disposeDependency));
-                _buildInstances = default;
-            }
-
-            if (_matrices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_matrices);
-                _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, _matrices.Dispose(disposeDependency));
-                _matrices = default;
-            }
-
-            // Deferred native disposal only. Completing here would serialize teardown against the job worker.
+            CompleteOutstandingBuildForTeardown();
+            _writeInstancesHandle = default;
+            _buildInstancesHandle = default;
+            _matricesHandle = default;
+            _vault = null;
 
             if (previewMaterial != null && previewMaterial.hideFlags == HideFlags.DontSave)
                 Destroy(previewMaterial);
@@ -189,16 +175,22 @@ namespace Hecton8.Construction
 
         public void LateFrameTick()
         {
+            ConsumeConstructionPreviewSignals();
             CompleteReadyBuild();
         }
 
         public bool SetPreview(int index, Vector3 position, Quaternion rotation, Vector3 scale, uint requirementMask, uint ownedMask)
         {
-            EnsureBuffers();
-            if ((uint)index >= (uint)_writeInstances.Length)
+            if (!TryEnsureAndResolveBuffers(
+                    out NativeArray<BlueprintPreviewInstance> writeInstances,
+                    out _,
+                    out _))
                 return false;
 
-            _writeInstances[index] = new BlueprintPreviewInstance
+            if ((uint)index >= (uint)writeInstances.Length)
+                return false;
+
+            writeInstances[index] = new BlueprintPreviewInstance
             {
                 Position = (float3)position,
                 Rotation = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w),
@@ -217,9 +209,14 @@ namespace Hecton8.Construction
 
         public void SetActivePreviewCount(int count)
         {
-            EnsureBuffers();
+            if (!TryEnsureAndResolveBuffers(
+                    out NativeArray<BlueprintPreviewInstance> writeInstances,
+                    out _,
+                    out _))
+                return;
+
             int previousCount = _activeCount;
-            _activeCount = math.clamp(count, 0, _writeInstances.Length);
+            _activeCount = math.clamp(count, 0, writeInstances.Length);
             if (_drawCount > _activeCount)
                 _drawCount = _activeCount;
             if (_scheduledCount > _activeCount)
@@ -245,10 +242,22 @@ namespace Hecton8.Construction
                 return;
 
             _buildScheduled = false;
+            if (!TryResolvePreviewBuffers(
+                    out _,
+                    out _,
+                    out NativeArray<Matrix4x4> matrices))
+            {
+                ReleasePreviewVaultLocks();
+                _drawCount = 0;
+                return;
+            }
+
             int completedCount = math.min(_scheduledCount, _activeCount);
             _drawCount = math.min(completedCount, _matrixMirror != null ? _matrixMirror.Length : 0);
             for (int i = 0; i < _drawCount; i++)
-                _matrixMirror[i] = _matrices[i];
+                _matrixMirror[i] = matrices[i];
+
+            ReleasePreviewVaultLocks();
         }
 
         private void DrawPreparedBatch()
@@ -259,10 +268,11 @@ namespace Hecton8.Construction
             if (_cachedMaterialForProperties != previewMaterial)
                 CacheMaterialProperties();
 
-            if (_hasBaseColorProperty && (!_baseColorApplied || _appliedBaseColor != validColor))
+            Color targetColor = _lastPreviewAllowed ? validColor : invalidColor;
+            if (_hasBaseColorProperty && (!_baseColorApplied || _appliedBaseColor != targetColor))
             {
-                previewMaterial.SetColor(BaseColorId, validColor);
-                _appliedBaseColor = validColor;
+                previewMaterial.SetColor(BaseColorId, targetColor);
+                _appliedBaseColor = targetColor;
                 _baseColorApplied = true;
             }
 
@@ -283,20 +293,29 @@ namespace Hecton8.Construction
 
         private void ScheduleNextBuild()
         {
-            if (_buildScheduled || _activeCount <= 0 || !_writeInstances.IsCreated || !_buildInstances.IsCreated || !_matrices.IsCreated)
+            if (_buildScheduled || _activeCount <= 0)
                 return;
 
-            _scheduledCount = math.min(_activeCount, _writeInstances.Length);
+            if (!TryEnsureAndResolveBuffers(
+                    out NativeArray<BlueprintPreviewInstance> writeInstances,
+                    out NativeArray<BlueprintPreviewInstance> buildInstances,
+                    out NativeArray<Matrix4x4> matrices))
+                return;
+
+            _scheduledCount = math.min(_activeCount, writeInstances.Length);
+            if (_scheduledCount <= 0 || !TryLockPreviewVaultBuffers())
+                return;
+
             if (_instancesDirty)
             {
-                MemoryInquisitor.Blit(_writeInstances, 0, _buildInstances, 0, _scheduledCount);
+                MemoryInquisitor.Blit(writeInstances, 0, buildInstances, 0, _scheduledCount);
                 _instancesDirty = false;
             }
 
             BuildPreviewMatricesJob job = new BuildPreviewMatricesJob
             {
-                Instances = _buildInstances,
-                Matrices = _matrices,
+                Instances = buildInstances,
+                Matrices = matrices,
                 TimeSeconds = Time.time,
                 Count = _scheduledCount
             };
@@ -304,35 +323,209 @@ namespace Hecton8.Construction
             _buildScheduled = true;
         }
 
-        private void EnsureBuffers()
+        private static void ConfigureSignalLane()
         {
-            if (_writeInstances.IsCreated && _buildInstances.IsCreated && _matrices.IsCreated && _matrixMirror != null)
+            SignalBus<ConstructionPreviewSignal>.Configure(
+                expectedCapacity: 4,
+                maxFrameSignals: 8,
+                lowTierFrameSignals: 1,
+                laneHash: ConstructionPreviewSignal.LaneHash);
+        }
+
+        private void ConsumeConstructionPreviewSignals()
+        {
+            ReadOnlySpan<ConstructionPreviewSignal> signals = SignalBus<ConstructionPreviewSignal>.GetFrameSnapshot();
+            if (signals.Length <= 0)
+            {
+                if (_lastPreviewSignalFrame >= 0 && Time.frameCount - _lastPreviewSignalFrame > 1)
+                    ClearPreviews();
+                return;
+            }
+
+            EnsureBuffers();
+            if (!TryResolvePreviewBuffers(
+                    out NativeArray<BlueprintPreviewInstance> writeInstances,
+                    out _,
+                    out _))
                 return;
 
+            int capacityLimit = writeInstances.Length;
+            int writeCount = 0;
+            for (int i = 0; i < signals.Length && writeCount < capacityLimit; i++)
+            {
+                ConstructionPreviewSignal signal = signals[i];
+                if ((signal.Flags & ConstructionPreviewSignal.FlagActive) == 0)
+                    continue;
+
+                float3 runtimePosition = signal.CenterAup.ToRuntimeFloat3();
+                float3 safeScale = math.max(signal.Scale, new float3(0.001f));
+                Quaternion rotation = new Quaternion(signal.Rotation.x, signal.Rotation.y, signal.Rotation.z, signal.Rotation.w);
+                uint ownedMask = signal.IsValid != 0 ? 1u : 0u;
+                writeInstances[writeCount] = new BlueprintPreviewInstance
+                {
+                    Position = runtimePosition,
+                    Rotation = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w),
+                    Scale = safeScale,
+                    RequirementMask = 1u,
+                    OwnedMask = ownedMask,
+                    BobAmplitude = 0.025f,
+                    BobFrequency = 1.35f,
+                    SpinRadiansPerSecond = 0.22f,
+                    FlickerAmplitude = 1f
+                };
+                _lastPreviewAllowed = signal.IsValid != 0;
+                _lastPreviewSignalFrame = Time.frameCount;
+                writeCount++;
+            }
+
+            SetActivePreviewCount(writeCount);
+        }
+
+        private void EnsureBuffers()
+        {
             int resolvedCapacity = math.clamp(capacity, 1, MaxDrawMeshInstancedBatch);
-            if (!_writeInstances.IsCreated)
+            if (!TryResolveVault(out IDataVault vault))
+                return;
+
+            _vault = vault;
+            if (_writeInstancesHandle.IsCreated &&
+                _buildInstancesHandle.IsCreated &&
+                _matricesHandle.IsCreated &&
+                _writeInstancesHandle.Length >= resolvedCapacity &&
+                _buildInstancesHandle.Length >= resolvedCapacity &&
+                _matricesHandle.Length >= resolvedCapacity &&
+                _matrixMirror != null &&
+                _matrixMirror.Length >= resolvedCapacity &&
+                vault.ResolveBuffer(ref _writeInstancesHandle) &&
+                vault.ResolveBuffer(ref _buildInstancesHandle) &&
+                vault.ResolveBuffer(ref _matricesHandle))
             {
-                _writeInstances = new NativeArray<BlueprintPreviewInstance>(resolvedCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BlueprintPreviewInstance>[capacity] - blueprint write snapshot buffer - owner: HectonBlueprintPreviewBatch
-                NativeMemorySentinel.RegisterNativeArray(_writeInstances, NativeMemoryOwner, nameof(_writeInstances), NativeMemoryLifetime);
+                return;
             }
 
-            if (!_buildInstances.IsCreated)
-            {
-                _buildInstances = new NativeArray<BlueprintPreviewInstance>(resolvedCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BlueprintPreviewInstance>[capacity] - Burst read snapshot buffer - owner: HectonBlueprintPreviewBatch
-                NativeMemorySentinel.RegisterNativeArray(_buildInstances, NativeMemoryOwner, nameof(_buildInstances), NativeMemoryLifetime);
-            }
+            if (_buildScheduled)
+                return;
 
-            if (!_matrices.IsCreated)
-            {
-                _matrices = new NativeArray<Matrix4x4>(resolvedCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[capacity] - Burst-built preview matrices - owner: HectonBlueprintPreviewBatch
-                NativeMemorySentinel.RegisterNativeArray(_matrices, NativeMemoryOwner, nameof(_matrices), NativeMemoryLifetime);
-            }
+            _writeInstancesHandle = vault.GetBufferHandle<BlueprintPreviewInstance>(
+                BufferID.ConstructionPreviewWrite,
+                resolvedCapacity,
+                SystemID.Construction,
+                NativeArrayOptions.ClearMemory);
+            _buildInstancesHandle = vault.GetBufferHandle<BlueprintPreviewInstance>(
+                BufferID.ConstructionPreviewBuild,
+                resolvedCapacity,
+                SystemID.Construction,
+                NativeArrayOptions.ClearMemory);
+            _matricesHandle = vault.GetBufferHandle<Matrix4x4>(
+                BufferID.ConstructionPreviewMatrices,
+                resolvedCapacity,
+                SystemID.Construction,
+                NativeArrayOptions.UninitializedMemory);
 
-            if (_matrixMirror == null)
+            if (_matrixMirror == null || _matrixMirror.Length < resolvedCapacity)
             {
                 _matrixMirror = new Matrix4x4[resolvedCapacity]; // COLD ALLOC: Matrix4x4[capacity] - DrawMeshInstanced managed mirror - owner: HectonBlueprintPreviewBatch
                 _instancesDirty = true;
             }
+        }
+
+        private bool TryEnsureAndResolveBuffers(
+            out NativeArray<BlueprintPreviewInstance> writeInstances,
+            out NativeArray<BlueprintPreviewInstance> buildInstances,
+            out NativeArray<Matrix4x4> matrices)
+        {
+            EnsureBuffers();
+            return TryResolvePreviewBuffers(out writeInstances, out buildInstances, out matrices);
+        }
+
+        private bool TryResolvePreviewBuffers(
+            out NativeArray<BlueprintPreviewInstance> writeInstances,
+            out NativeArray<BlueprintPreviewInstance> buildInstances,
+            out NativeArray<Matrix4x4> matrices)
+        {
+            writeInstances = default;
+            buildInstances = default;
+            matrices = default;
+
+            IDataVault vault = _vault;
+            if (vault == null && !TryResolveVault(out vault))
+                return false;
+
+            _vault = vault;
+            writeInstances = _writeInstancesHandle.Resolve(vault);
+            buildInstances = _buildInstancesHandle.Resolve(vault);
+            matrices = _matricesHandle.Resolve(vault);
+            return writeInstances.IsCreated && buildInstances.IsCreated && matrices.IsCreated;
+        }
+
+        private bool TryLockPreviewVaultBuffers()
+        {
+            if (_previewVaultLocksHeld)
+                return true;
+
+            if (_vault == null)
+                return false;
+
+            bool lockedWrite = _vault.TryLockBuffer(BufferID.ConstructionPreviewWrite, SystemID.Construction);
+            bool lockedBuild = lockedWrite &&
+                               _vault.TryLockBuffer(BufferID.ConstructionPreviewBuild, SystemID.Construction);
+            bool lockedMatrices = lockedBuild &&
+                                  _vault.TryLockBuffer(BufferID.ConstructionPreviewMatrices, SystemID.Construction);
+            if (lockedWrite && lockedBuild && lockedMatrices)
+            {
+                _previewVaultLocksHeld = true;
+                return true;
+            }
+
+            if (lockedMatrices)
+                _vault.TryUnlockBuffer(BufferID.ConstructionPreviewMatrices, SystemID.Construction);
+            if (lockedBuild)
+                _vault.TryUnlockBuffer(BufferID.ConstructionPreviewBuild, SystemID.Construction);
+            if (lockedWrite)
+                _vault.TryUnlockBuffer(BufferID.ConstructionPreviewWrite, SystemID.Construction);
+            return false;
+        }
+
+        private void ReleasePreviewVaultLocks()
+        {
+            if (!_previewVaultLocksHeld || _vault == null)
+            {
+                _previewVaultLocksHeld = false;
+                return;
+            }
+
+            _vault.TryUnlockBuffer(BufferID.ConstructionPreviewMatrices, SystemID.Construction);
+            _vault.TryUnlockBuffer(BufferID.ConstructionPreviewBuild, SystemID.Construction);
+            _vault.TryUnlockBuffer(BufferID.ConstructionPreviewWrite, SystemID.Construction);
+            _previewVaultLocksHeld = false;
+        }
+
+        private void CompleteOutstandingBuildForTeardown()
+        {
+            if (_buildScheduled)
+            {
+                DispatcherJobSwap.TryComplete(ref _buildHandle, forceComplete: true);
+                _buildScheduled = false;
+            }
+
+            ReleasePreviewVaultLocks();
+            _scheduledCount = 0;
+            _drawCount = 0;
+        }
+
+        private static bool TryResolveVault(out IDataVault vault)
+        {
+            vault = GlobalRegistry.DataVault;
+            if (vault != null)
+                return true;
+
+            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
+            {
+                vault = latest;
+                return true;
+            }
+
+            return false;
         }
 
         private void EnsureMaterial()

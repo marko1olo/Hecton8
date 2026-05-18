@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
-using Hecton8.Gameplay;
-using Hecton8.Narrative;
 using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections;
@@ -25,13 +23,16 @@ namespace Hecton8.SaveSystem
                                                             ItemGeneticsToxicFlag |
                                                             ItemGeneticsEdibleFlag |
                                                             ItemGeneticsHarvestableFlag;
-        private const ulong LegacyGlowGeneMask = (ulong)GeneticTraitProfile.GeneticTraitMask.Bioluminescent;
-        private const ulong LegacyToxicGeneMask = (ulong)GeneticTraitProfile.GeneticTraitMask.Toxic;
-        private const ulong LegacyEdibleGeneMask = (ulong)GeneticTraitProfile.GeneticTraitMask.Medicinal;
-        private const ulong LegacyHarvestableGeneMask = (ulong)(
-            GeneticTraitProfile.GeneticTraitMask.OxygenProducing |
-            GeneticTraitProfile.GeneticTraitMask.FastGrowing |
-            GeneticTraitProfile.GeneticTraitMask.Aquatic);
+        private const ulong LegacyGlowGeneMask = 1UL << 0;
+        private const ulong LegacyOxygenGeneMask = 1UL << 1;
+        private const ulong LegacyToxicGeneMask = 1UL << 2;
+        private const ulong LegacyFastGrowingGeneMask = 1UL << 3;
+        private const ulong LegacyEdibleGeneMask = 1UL << 4;
+        private const ulong LegacyAquaticGeneMask = 1UL << 6;
+        private const ulong LegacyHarvestableGeneMask =
+            LegacyOxygenGeneMask |
+            LegacyFastGrowingGeneMask |
+            LegacyAquaticGeneMask;
         private const float BiologicalReferenceTemperatureCelsius = 4f;
         private const float BiologicalDecayRatePerSecond = 0.001f;
         private const int NullCollectionCount = -1;
@@ -388,7 +389,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            bytesWritten = writer.BytesWritten;
+            bytesWritten = writer.GetBytesWritten();
             return true;
         }
 
@@ -415,7 +416,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            bytesRead = reader.BytesRead;
+            bytesRead = reader.GetBytesRead();
             return true;
         }
 
@@ -888,9 +889,9 @@ namespace Hecton8.SaveSystem
         private static bool WriteDataArchaeology(ref BufferWriter writer, SaveData data)
         {
             long[] words = data != null ? data.dataArchaeologyDiscoveryBitWords : null;
-            if (!DataArchaeologyDiscoveryBitMask.HasExpectedCapacity(words))
+            if (!HasExpectedDataArchaeologyDiscoveryCapacity(words))
             {
-                for (int i = 0; i < DataArchaeologyDiscoveryBitMask.WordCount; i++)
+                for (int i = 0; i < SaveData.MaxDataArchaeologyDiscoveryWords; i++)
                 {
                     if (!writer.WriteLong(0L))
                         return false;
@@ -898,7 +899,7 @@ namespace Hecton8.SaveSystem
             }
             else
             {
-                for (int i = 0; i < DataArchaeologyDiscoveryBitMask.WordCount; i++)
+                for (int i = 0; i < SaveData.MaxDataArchaeologyDiscoveryWords; i++)
                 {
                     if (!writer.WriteLong(words[i]))
                         return false;
@@ -929,19 +930,32 @@ namespace Hecton8.SaveSystem
             if (data == null)
                 return false;
 
-            DataArchaeologyDiscoveryBitMask.EnsureCapacity(ref data.dataArchaeologyDiscoveryBitWords);
-            DataArchaeologyDiscoveryBitMask.Clear(data.dataArchaeologyDiscoveryBitWords);
+            EnsureDataArchaeologyDiscoveryCapacity(ref data.dataArchaeologyDiscoveryBitWords);
+            ClearDataArchaeologyDiscoveryWords(data.dataArchaeologyDiscoveryBitWords);
             data.dataArchaeologyPartialScanCount = 0;
-            data.dataArchaeologyPartialScanHashes = new uint[SaveData.MaxDataArchaeologyPartialScans];
-            data.dataArchaeologyPartialScanProgressPermille = new ushort[SaveData.MaxDataArchaeologyPartialScans];
+            SaveData.EnsureExactArrayCapacity(
+                ref data.dataArchaeologyPartialScanHashes,
+                SaveData.MaxDataArchaeologyPartialScans);
+            SaveData.EnsureExactArrayCapacity(
+                ref data.dataArchaeologyPartialScanProgressPermille,
+                SaveData.MaxDataArchaeologyPartialScans);
             data.dataArchaeologyScanStateCount = 0;
-            data.dataArchaeologyScanStateKeys = new int[SaveData.MaxDataArchaeologyScanStates];
-            data.dataArchaeologyScanStateValues = new byte[SaveData.MaxDataArchaeologyScanStates];
+            SaveData.EnsureExactArrayCapacity(
+                ref data.dataArchaeologyScanStateKeys,
+                SaveData.MaxDataArchaeologyScanStates);
+            SaveData.EnsureExactArrayCapacity(
+                ref data.dataArchaeologyScanStateValues,
+                SaveData.MaxDataArchaeologyScanStates);
+
+            Array.Clear(data.dataArchaeologyPartialScanHashes, 0, data.dataArchaeologyPartialScanHashes.Length);
+            Array.Clear(data.dataArchaeologyPartialScanProgressPermille, 0, data.dataArchaeologyPartialScanProgressPermille.Length);
+            Array.Clear(data.dataArchaeologyScanStateKeys, 0, data.dataArchaeologyScanStateKeys.Length);
+            Array.Clear(data.dataArchaeologyScanStateValues, 0, data.dataArchaeologyScanStateValues.Length);
 
             if (saveDataVersion < DataArchaeologySaveVersion)
                 return true;
 
-            for (int i = 0; i < DataArchaeologyDiscoveryBitMask.WordCount; i++)
+            for (int i = 0; i < SaveData.MaxDataArchaeologyDiscoveryWords; i++)
             {
                 if (!reader.ReadLong(out data.dataArchaeologyDiscoveryBitWords[i]))
                     return false;
@@ -975,6 +989,25 @@ namespace Hecton8.SaveSystem
             }
 
             return ReadDataArchaeologyScanStates(ref reader, saveDataVersion, data);
+        }
+
+        private static bool HasExpectedDataArchaeologyDiscoveryCapacity(long[] words)
+        {
+            return words != null && words.Length == SaveData.MaxDataArchaeologyDiscoveryWords;
+        }
+
+        private static void EnsureDataArchaeologyDiscoveryCapacity(ref long[] words)
+        {
+            SaveData.EnsureExactArrayCapacity(ref words, SaveData.MaxDataArchaeologyDiscoveryWords);
+        }
+
+        private static void ClearDataArchaeologyDiscoveryWords(long[] words)
+        {
+            if (words == null)
+                return;
+
+            for (int i = 0; i < words.Length; i++)
+                words[i] = 0L;
         }
 
         private static bool WriteDataArchaeologyScanStates(ref BufferWriter writer, SaveData data)
@@ -1106,8 +1139,14 @@ namespace Hecton8.SaveSystem
             if (saveDataVersion < EncryptedAudioLogFragmentSaveVersion)
             {
                 data.audioLogEncryptedFragmentCount = 0;
-                data.audioLogEncryptedFragmentHashes = new uint[SaveData.MaxEncryptedAudioLogFragments];
-                data.audioLogEncryptedFragmentBits = new uint[SaveData.MaxEncryptedAudioLogFragments];
+                SaveData.EnsureExactArrayCapacity(
+                    ref data.audioLogEncryptedFragmentHashes,
+                    SaveData.MaxEncryptedAudioLogFragments);
+                SaveData.EnsureExactArrayCapacity(
+                    ref data.audioLogEncryptedFragmentBits,
+                    SaveData.MaxEncryptedAudioLogFragments);
+                Array.Clear(data.audioLogEncryptedFragmentHashes, 0, data.audioLogEncryptedFragmentHashes.Length);
+                Array.Clear(data.audioLogEncryptedFragmentBits, 0, data.audioLogEncryptedFragmentBits.Length);
                 return true;
             }
 
@@ -1777,10 +1816,12 @@ namespace Hecton8.SaveSystem
             for (int i = 0; i < safeCount; i++)
             {
                 ProceduralFaunaStateDTO value = values[i];
+                bool isLargeThreatZone = (value.flags & ProceduralFaunaStateDTO.FlagLargeThreatZone) != 0;
+                bool blocked = (value.flags & ProceduralFaunaStateDTO.FlagBlocked) != 0;
                 if (!writer.WriteLong(value.runtimeKey) ||
                     !writer.WriteFloat(value.cooldownUntilPlayTime) ||
-                    !writer.WriteBool(value.isLargeThreatZone) ||
-                    !writer.WriteBool(value.blocked) ||
+                    !writer.WriteBool(isLargeThreatZone) ||
+                    !writer.WriteBool(blocked) ||
                     !writer.WriteByte(0) ||
                     !writer.WriteByte(0))
                 {
@@ -1843,8 +1884,12 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                values[i].isLargeThreatZone = isLargeThreatZone;
-                values[i].blocked = blocked;
+                byte flags = 0;
+                if (isLargeThreatZone)
+                    flags |= ProceduralFaunaStateDTO.FlagLargeThreatZone;
+                if (blocked)
+                    flags |= ProceduralFaunaStateDTO.FlagBlocked;
+                values[i].flags = flags;
             }
 
             return true;
@@ -1865,6 +1910,7 @@ namespace Hecton8.SaveSystem
             for (int i = 0; i < safeCount; i++)
             {
                 HibernatedFaunaStateDTO value = values[i];
+                bool isLargeThreat = (value.flags & HibernatedFaunaStateDTO.FlagLargeThreat) != 0;
                 if (!writer.WriteInt(value.speciesId) ||
                     !writer.WriteInt(value.biomeIndex) ||
                     !writer.WriteInt(value.creatureTypeIndex) ||
@@ -1881,7 +1927,7 @@ namespace Hecton8.SaveSystem
                     !writer.WriteFloat(value.angularVelocityY) ||
                     !writer.WriteFloat(value.angularVelocityZ) ||
                     !writer.WriteUInt(value.uniqueInstanceUid) ||
-                    !writer.WriteBool(value.isLargeThreat) ||
+                    !writer.WriteBool(isLargeThreat) ||
                     !writer.WriteByte(0) ||
                     !writer.WriteByte(0) ||
                     !writer.WriteByte(0))
@@ -1958,7 +2004,7 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                values[i].isLargeThreat = isLargeThreat;
+                values[i].flags = isLargeThreat ? HibernatedFaunaStateDTO.FlagLargeThreat : (byte)0;
             }
 
             return true;
@@ -3728,8 +3774,12 @@ namespace Hecton8.SaveSystem
                 Error = string.Empty;
             }
 
-            public int BytesWritten => _cursor;
-            public string Error { get; private set; }
+            public string Error;
+
+            public int GetBytesWritten()
+            {
+                return _cursor;
+            }
 
             public bool WriteStruct<T>(T value) where T : unmanaged
             {
@@ -3916,8 +3966,12 @@ namespace Hecton8.SaveSystem
                 Error = string.Empty;
             }
 
-            public int BytesRead => _cursor;
-            public string Error { get; private set; }
+            public string Error;
+
+            public int GetBytesRead()
+            {
+                return _cursor;
+            }
 
             public void SetError(string error)
             {

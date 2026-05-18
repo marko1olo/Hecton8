@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -59,6 +60,7 @@ namespace Hecton8.Power
         private float _pendingWirelessToolDemandWattSeconds;
         private float _nextPowerColdTickTime;
         private WfcOutpostPowerBootRuntime _wfcOutpostPowerBoot; // COLD ALLOC: WfcOutpostPowerBootRuntime[1] - WFC outpost signal boot owner - owner: PowerGridManager
+        private ShinobuLogisticsRouter _shinobuLogisticsRouter; // COLD ALLOC: ShinobuLogisticsRouter[1] - zero-GC WFC logistics BFS owner - owner: PowerGridManager
         private const float PowerGridColdTickSeconds = 1f;
         private const float MaxPendingWirelessToolDemandWattSeconds = 4096f;
 
@@ -83,6 +85,7 @@ namespace Hecton8.Power
         {
             EnsureStorage();
             EnsureWfcOutpostPowerBoot();
+            EnsureShinobuLogisticsRouter();
             TryRegister();
             TryRegisterService();
         }
@@ -130,12 +133,14 @@ namespace Hecton8.Power
                 _allGrids = new List<PowerGrid>(math.max(1, initialGridCapacity));
 
             EnsureWfcOutpostPowerBoot();
+            EnsureShinobuLogisticsRouter();
         }
 
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
             EnsureWfcOutpostPowerBoot();
+            EnsureShinobuLogisticsRouter();
             TryRegister();
             TryRegisterService();
         }
@@ -161,6 +166,8 @@ namespace Hecton8.Power
             DisposeAllGrids();
             _wfcOutpostPowerBoot?.Dispose();
             _wfcOutpostPowerBoot = null;
+            _shinobuLogisticsRouter?.Dispose();
+            _shinobuLogisticsRouter = null;
             _pendingWirelessToolDemandWattSeconds = 0f;
             _debugPendingWirelessToolDemandWattSeconds = 0f;
             _slowTickFinalizationPending = false;
@@ -182,6 +189,7 @@ namespace Hecton8.Power
         {
             float now = Time.unscaledTime;
             _wfcOutpostPowerBoot?.SlowTick(now);
+            _shinobuLogisticsRouter?.SlowTick(now);
 
             if (_slowTickFinalizationPending)
                 return;
@@ -213,6 +221,7 @@ namespace Hecton8.Power
         public void LateFrameTick()
         {
             _wfcOutpostPowerBoot?.LateFrameTick(Time.unscaledTime);
+            _shinobuLogisticsRouter?.LateFrameTick(Time.unscaledTime);
             if (!_slowTickFinalizationPending)
                 return;
 
@@ -230,7 +239,18 @@ namespace Hecton8.Power
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.GasDynamicsRuntime)
+            {
                 _wfcOutpostPowerBoot?.BindGasDynamics(currentService as IGasDynamicsSolver);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                _shinobuLogisticsRouter?.Dispose();
+                _shinobuLogisticsRouter = null;
+                if (currentService is IDataVault)
+                    EnsureShinobuLogisticsRouter();
+            }
         }
 
         public static PowerGrid CreateGrid(PowerNode initialNode)
@@ -635,6 +655,15 @@ namespace Hecton8.Power
 
             _wfcOutpostPowerBoot = new WfcOutpostPowerBootRuntime();
             _wfcOutpostPowerBoot.Initialize();
+        }
+
+        private void EnsureShinobuLogisticsRouter()
+        {
+            if (_shinobuLogisticsRouter == null)
+                _shinobuLogisticsRouter = new ShinobuLogisticsRouter();
+
+            _shinobuLogisticsRouter.InjectDataVault(GlobalRegistry.DataVault);
+            _shinobuLogisticsRouter.EnsureInitialized();
         }
 
         private void TryRegisterHotSwapListener()

@@ -1,0 +1,96 @@
+# SHINOBU_41 Geological Synthesis
+
+Status: STATIC SOURCE ORIENTATION / DATAVAULT BLACKBOX SOURCE NOTES / REFLECTION ABI DEBT ISOLATED / CORE BUILD BLOCKED OUTSIDE SHINOBU / UNITY RUNTIME PENDING
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, R24 root/architecture correction, R23 proof-language/navigation boundary, and R22 prior source-count boundary.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+`Assets/_Project/Scripts/World/GlobalWorldSampler.cs` is the terrain truth path for SHINOBU_41. It fuses MapMagic-style quantized height samples and voxel SDF samples through polynomial smooth-min without Unity Physics.
+
+`Assets/_Project/Scripts/World/Terrain/HybridTerrainSeamJobs.cs` and `Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs` are the cold Unity Terrain seam writeback path. They now consume `GlobalQualityWeight` for hybrid MapMagic/SDF patch deformation instead of selecting by hardware tier.
+
+## Runtime Contract
+
+- Input positions are `double3` AUP. The sampler subtracts `ActiveChunkOriginAup` before float math.
+- Runtime data is injected as `NativeArray` slices through `GlobalWorldSamplerData`.
+- Quality is continuous through `GlobalQualityWeight` in the 0..1 range.
+- Below `GlobalQualityWeight` 0.3, expensive height/SDF interpolation collapses to nearest lookup and math raymarching trends to one step. Above 0.3, smoothstep ramps toward bilinear/trilinear; above 0.7, extra micro-detail is allowed.
+- Normal estimation follows the same curve: below 0.3 it returns a stable cheap up-normal, then `math.lerp` blends into tetrahedron gradient normals as quality rises.
+- Biome and erosion lanes also collapse below 0.3: biome uses nearest hash, erosion uses nearest mask only when micro-detail is active, and Simplex micro-detail is skipped until the ramp opens.
+- `ResolveSamplingCadenceDivisor()` maps low quality to a 12-frame divisor (60Hz caller -> 5Hz) and high quality to divisor 1. Dispatchers own stale-buffer policy; the sampler does not block for immediate reads.
+- `FilterGlobalQualityWeight()` accepts deterministic `SimulationTickDelta` so thermal load shedding/recovery can be rate-limited without Unity `Time.deltaTime`.
+- `GlobalWorldSamplerQualityState` is a 32-byte aligned scheduler DTO for quality hysteresis. `QualityWeightFilterJob` updates this state through the job graph; callers then apply `CurrentWeight` to `GlobalWorldSamplerData`.
+- Missing/unloaded sectors are routed through `ActiveSectorPointers` and return HardFloor.
+- Cave authority uses `SdfOverrideMask` before discarding 2D height beneath the macro surface.
+- Inactive SDF/sea lanes use bounded finite sentinel `1048576f`, not `float.MaxValue`; `SanitizeResult` clamps result fields before NativeArray and telemetry exposure.
+- `SampleDistanceOnly()` sanitizes every exit path, so direct raymarch/vehicle-style consumers do not need to rediscover the full `Sample()` wrapper to get bounded DTOs.
+
+## Job Dependency API
+
+Public scheduling wrappers are the terrain-domain dependency boundary:
+
+- `ScheduleBatchSampler`
+- `ScheduleLocalBatchSampler`
+- `ScheduleGradientNormals`
+- `ScheduleMockTerrainStress`
+- `ScheduleMockRaymarch`
+- `ScheduleQualityWeightFilter`
+
+Each wrapper consumes a caller `JobHandle inputDeps` and returns the scheduled output handle. No SHINOBU_41 runtime code calls `JobHandle.Complete()`.
+
+## Compile Guard
+
+`Assets/_Project/Scripts/World/Terrain/Hecton8.World.Terrain.asmdef` references only `Hecton8.World.Contracts` and Unity Burst/Collections/Jobs/Mathematics. No sibling gameplay, flora, vehicle, audio, or streaming runtime assembly is referenced from the terrain job assembly.
+
+`WorldGenerativeGeologyTerrainSeamApplier` lives in the existing broad `Hecton8.Core` assembly and consumes the terrain job assembly through the pre-existing Core reference. This pass did not add or edit asmdef references.
+
+## Data Lanes
+
+- `TerrainSampleDTO`: 24 bytes, `float3 Normal`, `float Distance`, `uint BiomeHash`, `uint _pad0`.
+- `MapMagicCellDTO`: 8 bytes, `float Height`, `short TerrainType`, `byte Wetness`, private byte pad.
+- `TerrainSampleResult`: 64 bytes, extended with `BiomeHash` at offset 60.
+- `GlobalWorldSamplerCounterBlock`: 64 bytes explicit layout, atomic `Value` at offset 0, 60-byte reserved padding to prevent false sharing.
+- `TerrainPayloadHeaderDTO`: 64 bytes, cold OSHINO header mirror with 8-byte magic/payload fields, 32-bit dimensions/flags/scales/checksum/endian tag, and explicit padding at offsets 56 and 60.
+- `GlobalWorldSamplerQualityState`: 32 bytes, current/target quality, simulation tick delta, shed/recover rates, frame, and two padding words.
+- Bounded inactive-distance sentinel: `1048576f`; this is a scalar contract, not a DTO field, so no struct sizes change.
+
+## Binary Boundary
+
+No authoritative terrain binary is currently wired by the ledger. If an OSHINO terrain payload appears, it must hydrate through `TryReadTerrainPayloadHeader(ReadOnlySpan<byte>, sourceBigEndian, out header)` before any NativeArray receives data. The header path is cold, endian-aware, and rejects undersized/malformed headers. Runtime sampling still consumes DataVault slices only.
+
+## Telemetry
+
+The sampler writes a 300-entry ring and dumps to `Docs/AgentLogs/Dump_TERRAIN_SPLICER.bin` when the throughput threshold exceeds 800,000 samples. `ResetFrameTelemetryCounters()` is the explicit PRE_SIM reset point for sample/OOB/smooth-min frame counters. Reserved telemetry fields carry estimated smooth-min ns, out-of-bounds count, quality weight, and biome hash. Every telemetry frame/warning row sanitizes a local DTO copy before entering the ring. Hot counters should use `CounterBlocks` when available; legacy `SampleCounter` remains fallback only.
+
+Normal-enabled logical queries do not always cost one terrain sample. `ResolveTerrainSampleCost()` charges cost 1 below the expensive-quality ramp and cost 5 above it when tetrahedron normal estimation executes the four extra distance probes. Batch jobs accumulate this true cost before the atomic counter write, and `ShouldTripThroughputWarning(previousTotal, total)` detects threshold crossings even when the counter jumps past 800001.
+
+The Unity Terrain seam bridge no longer owns its 300-frame black-box as a private persistent `NativeArray`. `WorldGenerativeGeologyTerrainSeamApplier` requests `VaultBufferHandle<TerrainSeamTelemetryEntry>` from `GlobalDataVault` with domain-local `BufferID 0x530421`, length 300, owner `SystemID.TerrainSeams`. Record and dump paths resolve the vault alias; dispose does not unregister/free a private telemetry allocation.
+
+## Hybrid Seam Writeback
+
+- `WorldGenerativeGeologyTerrainSeamApplier` reads `HomeostasisBrain.GlobalQualityWeight` and no longer branches on `GlobalRegistry.ScalabilityTier` or `ScalabilityTierProfileByte` for seam quality.
+- `HybridSdfHeightmapProjectionJob` has required Burst flags, `[NoAlias]` buffers, and quality lanes for Unity-regenerated source assemblies.
+- Hybrid seam projection is terrain-local. The applier subtracts terrain absolute AUP from plan/contact/voxel AUP in double space before casting local deltas to float. The job no longer compares absolute 100km runtime floats inside distance/raymarch math.
+- Fallback patch deformation, voxel snap, trench deformation, and plan/trench rect selection follow the same local-AUP rule.
+- Raymarch steps resolve from 1 to 16 through a polynomial curve. Below 0.3 quality the expensive deformation raymarch collapses; above 0.3 it smoothly returns; above 0.7 the mask-detail job fades in slope boost.
+- The old byte field is retained only as a stale generated-csproj fallback. A direct-field purge was attempted and failed with CS0117 because the generated Core compile lane still resolves stale `Hecton8.World.Terrain.dll` metadata. Until Unity regenerates that assembly or a contracts-level facade replaces the stale ABI, the applier uses cold reflection to inject continuous quality into newer source jobs. This is explicit integration debt, not a clean compile-wall pass.
+- `VoxelChunkModifiedEvent.Frame` and `TerrainSeamTelemetryEntry.Frame` now use a local monotonic seam frame counter instead of `Time.frameCount`.
+- `TerrainSeamTelemetryEntry` is a natural sequential 64-byte row with explicit `Reserved4` tail padding; no manual `Pack` is used.
+- The seam black-box ring is vault-owned (`BufferID 0x530421`, 300 rows, 19,200 bytes) rather than a private persistent `NativeArray`.
+
+## Editor Facade
+
+`HECTON-8/World/Math-Terrain Probe` raymarches the math field from the Scene camera, draws the hit and normal, hot-reloads `biome_atlas_overrides.csv`, and exposes `Force Quality Weight` for Low/Middle/High/Ultra behavior inspection.
+
+## Verification
+
+- Forbidden-pattern grep on `GlobalWorldSampler.cs` and `HybridTerrainSeamJobs.cs`: latest run found no Physics/MeshCollider/Terrain.GetHeights/Raycast/UnityEngine.Random/ReadAllLines/Split/Pack=1/low Burst precision/Time.deltaTime/property hot-path patterns.
+- Seam quality grep: `WorldGenerativeGeologyTerrainSeamApplier.cs` no longer contains `GlobalRegistry.ScalabilityTier`, `ScalabilityTierProfileByte`, or tier resolver methods for seam quality. The only remaining `ForceMathLodLow` text in SHINOBU terrain code is the documented legacy ABI enum bit in `GlobalWorldSamplerConfigFlags`.
+- Direct-field reflection purge attempt: failed with CS0117 because the local generated Core project resolves stale `Hecton8.World.Terrain.dll` job metadata without `GlobalQualityWeight` fields. The direct-field chunk was reverted under fail-fast rules.
+- `dotnet build Hecton8.Core.csproj --no-restore /clp:ErrorsOnly`: latest local run failed outside SHINOBU_41 on `Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs` lines 890, 892, 900, 931, 932, and 956 missing `DataArchaeologyDiscoveryBitMask`. No compiler error references SHINOBU_41 terrain files.
+- `Assembly-CSharp.csproj`: attempted, timed out after 129.7s; no pass claimed.

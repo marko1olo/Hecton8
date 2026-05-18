@@ -1,13 +1,28 @@
-﻿# Scatter Runtime Docs
+# Scatter Runtime Docs
 
-Date: 2026-05-07
+Date: 2026-05-18
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Purpose: canonical active bundle for scatter runtime refactor planning, baseline, and DOTS scope.
 
-Current-state boundary:
+## 2026-05-18 R11 Active Evidence Boundary
 
-- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this bundle as current project truth.
+- Read current stable docs plus `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, and `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md` before treating older May 4 / May 6 / May 11 reports as current context.
+- R11 capture-time static counters supersede older broad source-count text in this bundle where exact values differ: `1742` project C# files, `1689` script C# files, `1725` non-test C# files, `1138660` project source lines, `1119546` script source lines, `1134363` non-test source lines, `296` project-wide interface declaration hits, `294` script interface hits, `63` direct public interfaces in `GlobalRegistryContracts.cs`, and `107` first-party asmdefs. These counts are volatile under concurrent agents; rerun `rg` before treating exact values as current.
 - Scatter runtime remains owned by `WorldProceduralScatterDirector` and adjacent scatter backend seams.
 - DOTS/Entities scatter work is currently a disabled placeholder seam unless package, define, profiler parity, and runtime validation prove otherwise.
 - Current source/package check: `com.unity.entities` is not declared in `Packages/manifest.json`.
@@ -19,7 +34,7 @@ Current-state boundary:
 
 Status: SOURCE-SCANNED, RUNTIME PENDING VERIFICATION.
 
-[SOURCE] Current source sizes are: `WorldProceduralScatterDirector.cs` `539165` bytes / `11907` lines, `WorldProceduralScatterWorkingMemory.cs` `42878` bytes / `590` lines, `World/WorldChunkResidencyManager.cs` `187902` bytes / `4368` lines, `World/HectonMapMagicVegetationBridge.cs` `336953` bytes / `7041` lines, `WorldProceduralFieldSampler.cs` `263836` bytes / `5133` lines, and `World/PersistentWorldRegistry.cs` `273872` bytes / `6159` lines.
+[SOURCE] Current source sizes in the R10 refresh are: `WorldProceduralScatterDirector.cs` `539165` bytes / `11907` lines, `WorldProceduralScatterWorkingMemory.cs` `42878` bytes / `590` lines, `World/WorldChunkResidencyManager.cs` `231081` bytes / `5146` lines, `World/HectonMapMagicVegetationBridge.cs` `345014` bytes / `7227` lines, `WorldProceduralFieldSampler.cs` `263836` bytes / `5133` lines, and `World/PersistentWorldRegistry.cs` `280619` bytes / `6320` lines. These are static filesystem counts only.
 
 [SOURCE] The scatter refactor is partially source-present, not complete: `SamplingSnapshot.cs`, `ScatterHeuristicsUtility.cs`, `ScatterDiagnosticsTracker.cs`, and `WorldProceduralScatterWorkingMemory.cs` exist. `ScatterRescueContext` exists only as a private readonly struct in `WorldProceduralScatterDirectorRescueContexts.cs`, not as the manifesto's standalone `ref struct`. `GetGridPlacements()` exists but exposes bucketed `IReadOnlyDictionary<long, List<ScatterPlacement>>`. `ScatterSpawningService` was not found; spawn/reconcile remains director-owned.
 

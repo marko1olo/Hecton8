@@ -1,0 +1,89 @@
+<SELF_AUDIT agent_id="SHINOBU_67" date="2026-05-19" domain="ADDRESSABLES_HEAP_SANITIZER" status="PENDING_UNITY_GC_PROFILER">
+  <ACTIVE_PROMPT>Second SHINOBU_67 block: ADDRESSABLES_HEAP_SANITIZER. User request targets chunk memory control, reference counting, Blind Frame release, and AsyncOperationHandle leak suppression.</ACTIVE_PROMPT>
+  <TASK_RECONCILIATION>
+    <TASK id="01" name="BINARY_GRAVEYARD_RECONNAISSANCE" status="PASS">No authoritative asset_cache_profiles.h8bin found. Emergency 16B AssetCacheProfileDTO mock profiles hydrate the Vault cache-profile lane.</TASK>
+    <TASK id="02" name="ORPHANED_HANDLE_ERADICATION_PASS" status="PASS">Chunk prefab and item world-prefab Addressables paths route through AssetLifecycleGovernor; bootstrap/content-authority ledgers remain scoped owners.</TASK>
+    <TASK id="03" name="CS1612_ENCAPSULATION_PURGE" status="PASS">Hot DTOs use public fields only. No get/set properties in AssetTrackerDTO or map DTO.</TASK>
+    <TASK id="04" name="ARM64_PADDING_RECONSTRUCTION" status="PASS">AssetTrackerDTO is 16B; AssetHandleMapEntryDTO is 64B; no Pack=1.</TASK>
+    <TASK id="05" name="BLIND_DEPENDENCY_MOCKING" status="PASS">MockChunkLoadSignal and MockChunkLoadSpamJob exist for refcount spam verification without Agent 35 dependency.</TASK>
+    <TASK id="06" name="NATIVE_HANDLE_REGISTRY_KERNEL" status="PASS_RECONCILED">Original NativeHashMap requirement was superseded by Vault law. The runtime now uses a Vault-backed open-address table carrying AssetHash, slot, refcount, and ulong handle id; AsyncOperationHandle remains in fixed managed bridge array because it is not blittable.</TASK>
+    <TASK id="07" name="BURST_TTL_EVALUATOR" status="PASS">AssetTtlEvaluationJob decrements TTL for zero-ref entries and marks releasable flags through a scheduled JobHandle. No job.Run remains in the Addressables sanitizer.</TASK>
+    <TASK id="08" name="SAFE_FRAME_GARBAGE_COLLECTION" status="PASS">Addressables.Release drain is blocked unless hard-reaper visual static, mock fade-to-black, zero-delta dispatcher blind frame, or VRAM panic is active.</TASK>
+    <TASK id="09" name="THE_DEAR_LIE_MESH_SWAP" status="PASS">Fallback cube impostor mesh exists for unresolved loads; simulation does not wait for disk.</TASK>
+    <TASK id="10" name="VRAM_EVICTION_ROUTING" status="PASS">Cached VRAMPressureMonitor drives panic path at threshold and forces unused TTL to zero.</TASK>
+    <TASK id="11" name="CONTINUOUS_SCALABILITY_CACHE_SIZE" status="PASS">GlobalQualityWeight smoothsteps TTL from 10s to high-end 300s; no binary low/high switch.</TASK>
+    <TASK id="12" name="ATOMIC_REFERENCE_COUNTING" status="PASS">AssetTrackerAtomic uses Interlocked over native tracker memory.</TASK>
+    <TASK id="13" name="AUP_PRECISION_IGNORE" status="PASS">Tracking structs store hashes/counts/TTL/flags only; no double3 or AUP payload in handle tracker DTOs.</TASK>
+    <TASK id="14" name="ASSET_BUNDLE_FRAGMENTATION_DEFRAG" status="PASS">Bundle-prefix hash is stored in the Vault map; shared bundle entries get TTL inflation.</TASK>
+    <TASK id="15" name="NARRATIVE_PINNING_LOCK" status="PASS">SetHeapSanitizerPin toggles the Pinned flag and blocks TTL release.</TASK>
+    <TASK id="16" name="ZERO_INIT_OVERHEAD_BYPASS" status="PASS">Native lanes are requested from GlobalDataVault with UninitializedMemory and explicit cold clear; no private NativeArray fields, private new NativeArray, or private NativeHashMap remain in the governor.</TASK>
+    <TASK id="17" name="TELEMETRY_HEAP_RECORDER" status="PASS">300-frame AssetHeapTelemetryEntry Vault ring records active handles, releases, hit ratio, VRAM, TTL, leak hash; dumps on leak suspect.</TASK>
+    <TASK id="18" name="MEMORY_TUNER_EDITOR_WINDOW" status="PASS">HeapSanitizerTunerWindow exposes TTL, VRAM panic threshold, active hashes/refcounts, CSV load, and leak warning.</TASK>
+    <TASK id="19" name="CSV_OVERRIDE_INGESTOR" status="PASS">ReadOnlySpan CSV parser hydrates AssetCacheProfileDTO without Split/LINQ in the parser.</TASK>
+    <TASK id="20" name="LIVE_LEAK_DETECTOR_GIZMO" status="PASS">Editor facade flags RefCount greater than 50 as LEAK SUSPECT.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <STRUCT name="AssetTrackerDTO" size="16" multiple_of_8="true" native_array="true">
+      <FIELD name="AssetHash" offset="0" size="4" />
+      <FIELD name="ReferenceCount" offset="4" size="4" />
+      <FIELD name="HandlePointer" offset="8" size="8" />
+      <MATH>4 + 4 + 8 = 16 bytes. 16 % 8 = 0.</MATH>
+    </STRUCT>
+    <STRUCT name="AssetHandleMapEntryDTO" size="64" cache_line_padded="true" native_array="true">
+      <FIELD name="HandlePointer" offset="0" size="8" />
+      <FIELD name="AssetHash" offset="8" size="4" />
+      <FIELD name="BundlePrefixHash" offset="12" size="4" />
+      <FIELD name="Slot" offset="16" size="4" />
+      <FIELD name="RefCount" offset="20" size="4" />
+      <FIELD name="Flags" offset="24" size="4" />
+      <FIELD name="Generation" offset="28" size="4" />
+      <FIELD name="_pad0" offset="32" size="8" />
+      <FIELD name="_pad1" offset="40" size="8" />
+      <FIELD name="_pad2" offset="48" size="8" />
+      <FIELD name="_pad3" offset="56" size="8" />
+      <MATH>8 + 4 + 4 + 4 + 4 + 4 + 4 + 32 padding = 64 bytes. One L1 cache line. 64 % 16 = 0.</MATH>
+    </STRUCT>
+    <STRUCT name="AssetHeapTelemetryEntry" size="64" cache_line_padded="true" native_array="true">
+      <MATH>Telemetry row is explicit 64B. It stores uint counters, float scalars, flags/hash, and two uint pads.</MATH>
+    </STRUCT>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE_EXPLANATION>
+    ResolveAdaptiveTtlSeconds reads HomeostasisBrain.GlobalQualityWeight, applies smoothstep polynomial q*q*(3-2*q), and lerps TTL from 10 seconds to the high-end configured 300 seconds. Below 0.3 effective hardware pressure the sanitizer behaves as hold-and-delay with short residency; at 1.0 it allows long visited-map retention. VRAM pressure at or above threshold forces unused TTL to zero regardless of quality to prevent mobile OS memory kill. No binary quality branch controls the cache size.
+  </SCALABILITY_CURVE_EXPLANATION>
+  <H_PHI_VAULT_STATUS private_native_allocations="0">
+    <BUFFER id="AddressableHeapTrackers" type="AssetTrackerDTO" owner="SystemID.WorldStreaming" />
+    <BUFFER id="AddressableHeapTimeToLive" type="float" owner="SystemID.WorldStreaming" />
+    <BUFFER id="AddressableHeapTrackerFlags" type="byte" owner="SystemID.WorldStreaming" />
+    <BUFFER id="AddressableHeapHandleMap" type="AssetHandleMapEntryDTO" owner="SystemID.WorldStreaming" />
+    <BUFFER id="AddressableHeapCacheProfiles" type="AssetCacheProfileDTO" owner="SystemID.WorldStreaming" />
+    <BUFFER id="AddressableHeapTelemetry" type="AssetHeapTelemetryEntry" owner="SystemID.WorldStreaming" />
+    <NOTE>AssetLifecycleGovernor stores VaultBufferHandle values only. NativeArray views are local method variables resolved from the Vault, then discarded. The governor does not call new NativeArray or dispose Vault buffers.</NOTE>
+    <MANAGED_BRIDGE>Unity AsyncOperationHandle is non-blittable, so the managed bridge remains fixed and cold-sized. Dictionary and pending-release queue are preallocated to MaxTrackedAddressableCapacity=8192; the Vault handle map is fixed at up to MaxAddressableHandleMapCapacity=16384. Runtime growth inside this ceiling is rejected.</MANAGED_BRIDGE>
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <JOB name="AssetTtlEvaluationJob" burst="CompileSynchronously Fast Standard" fields="NoAlias Trackers, NoAlias TimeToLiveSeconds, NoAlias Flags" consumes="AddressableHeapTrackers AddressableHeapTimeToLive AddressableHeapTrackerFlags" outputs="Flags and TimeToLiveSeconds" cadence="SlowTick 1Hz" scheduling="JobHandle scheduled after release drain; results consumed on next slow tick or by IsCompleted-guarded mutation fence" />
+    <JOB name="MockChunkLoadSpamJob" burst="CompileSynchronously Fast Standard" fields="NoAlias Trackers pointer, NoAlias OutputSignals" consumes="none" outputs="MockChunkLoadSignal lane" cadence="test/mock only" />
+    <NOTE>TTL job buffers are locked through GlobalDataVault while scheduled so live compaction cannot relocate those pointers. Mutation fences call Complete only after JobHandle.IsCompleted is true. Cache-hit acquire/release can defer native sync through the managed AssetRecord registry instead of blocking the main thread.</NOTE>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD status="PASS">
+    <EVIDENCE>Domain changed Core/Optimization files only. No sibling runtime asmdef reference was added. Communication remains through GlobalRegistry AssetLifecycle/DataVault/VRAMPressure/SystemDispatcher surfaces already in Core.</EVIDENCE>
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    <FAKE>Predictive cache retention and fallback impostor mesh. The sanitizer does not simulate faster disk or block gameplay on disk completion.</FAKE>
+    <BIG_O before="O(requests * duplicate Addressables handle creation + bundle churn)" after="O(fixed open-address probe + Interlocked refcount) on cache hit; cold miss still Unity Addressables async load" />
+    <VISUAL_OVERKILL>Saved stalls buy smoother chunk traversal: weak devices keep short TTL to avoid MicroSD thrash; high-end devices retain larger visited-map caches for seamless return movement.</VISUAL_OVERKILL>
+  </DEAR_LIE_CONFIRMATION>
+  <STATIC_SCANS status="PASS">
+    <SCAN>No private NativeArray fields, NativeHashMap, private new NativeArray, Sentinel native registration, job.Run, or old _native* fields remain in AssetLifecycleGovernor.</SCAN>
+    <SCAN>Managed capacity seal added after recheck: no 512-entry registry/queue ceiling remains in the Addressables sanitizer; hard-coded 8192/16384 clamps are named constants.</SCAN>
+    <SCAN>git diff --check reports only LF/CRLF warnings in touched files.</SCAN>
+  </STATIC_SCANS>
+  <BUILD status="DEFERRED_BY_CPU_GUARD_AFTER_MANAGED_CAPACITY_SEAL">
+    <PREVIOUS_COMMAND>dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false /p:UseSharedCompilation=false /v:minimal</PREVIOUS_COMMAND>
+    <PREVIOUS_RESULT>Before the alias-purge pass: 0 errors, 8 pre-existing CS0649 warnings in GlobalPhysicsStateManager.PhysicsDistanceCullingJob.</PREVIOUS_RESULT>
+    <CURRENT_GUARD>After the managed capacity seal, CPU guard sampled 100 percent, 100 percent, 100 percent, and 100 percent with no active dotnet/csc/VBCSCompiler process. Build was not launched.</CURRENT_GUARD>
+  </BUILD>
+  <UNVERIFIED>
+    Unity import, Play Mode, GCMonitor, Memory Profiler, Burst Inspector, frame-time, and real Addressables residency soak were not run in this terminal pass.
+  </UNVERIFIED>
+</SELF_AUDIT>

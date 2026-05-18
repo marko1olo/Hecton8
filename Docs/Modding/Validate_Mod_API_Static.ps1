@@ -534,8 +534,18 @@ foreach ($requiredIndexLink in $requiredIndexLinks) {
 
 $expectedSchemaRevisionText = 'Schema revision: `' + [string]$schema.schemaRevision + '`'
 Assert-True ($contractIndexText.Contains($expectedSchemaRevisionText)) 'Contract index missing schema revision.'
-Assert-True ($contractIndexText.Contains('Source `ISignal` structs: `134`')) 'Contract index missing current signal count.'
+$expectedSourceSignalText = 'Source `ISignal` structs: `' + [string]$schema.sourceSignalInventory.uniqueISignalStructCount + '`'
+Assert-True ($contractIndexText.Contains($expectedSourceSignalText)) 'Contract index missing current signal count.'
+$expectedDeniedSignalText = 'Denied-by-default `ISignal` structs: `' + [string]$schema.sourceSignalInventory.deniedByDefaultISignalCount + '`'
+Assert-True ($contractIndexText.Contains($expectedDeniedSignalText)) 'Contract index missing denied signal count.'
 Assert-True ($contractIndexText.Contains('Runtime proof: `PENDING`')) 'Contract index missing runtime proof boundary.'
+
+$lastStaticValidation = $schema.staticValidation.lastStaticValidationSnapshot
+Assert-True ($null -ne $lastStaticValidation) "Schema lastStaticValidationSnapshot missing."
+Assert-True ([string]$lastStaticValidation.runtimeProof -eq "PENDING_VERIFICATION") "Schema lastStaticValidationSnapshot must not imply runtime proof."
+Assert-True ([int]$lastStaticValidation.sourceSignals -eq $uniqueSignals.Count) "Schema lastStaticValidationSnapshot sourceSignals drift. Source=$($uniqueSignals.Count) SchemaLastKnown=$($lastStaticValidation.sourceSignals)"
+Assert-True ([int]$lastStaticValidation.allowedProjectedSignals -eq $allowedSignals.Count) "Schema lastStaticValidationSnapshot allowedProjectedSignals drift. Source=$($allowedSignals.Count) SchemaLastKnown=$($lastStaticValidation.allowedProjectedSignals)"
+Assert-True ([int]$lastStaticValidation.deniedByDefaultSignals -eq [int]$schema.sourceSignalInventory.deniedByDefaultISignalCount) "Schema lastStaticValidationSnapshot deniedByDefaultSignals drift. SchemaInventory=$($schema.sourceSignalInventory.deniedByDefaultISignalCount) SchemaLastKnown=$($lastStaticValidation.deniedByDefaultSignals)"
 
 $requiredSamplePhrases = @(
     'RequiredAPIVersion": 2',

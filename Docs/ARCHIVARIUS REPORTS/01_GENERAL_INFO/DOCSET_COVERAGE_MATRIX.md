@@ -1,7 +1,22 @@
 # HECTON-8 DOCSET COVERAGE MATRIX
 
-Date: 2026-05-07
+Date: 2026-05-18
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Scope: coverage map for active doc folders `01_GENERAL_INFO` and `02_ACTUAL_REPORTS`
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 
@@ -17,11 +32,10 @@ This file answers four operational questions:
 It is a navigation and completeness tool.
 It is not runtime proof.
 
-## 2026-05-15 Current Override
+## 2026-05-18 Current Override
 
-Current documentation/status override starts at `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
-Current root/index cleanup starts at `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
-The May 11 manifest/continuation and May 4 actuality sweep remain historical evidence unless a later static or runtime proof file explicitly revalidates their counters.
+Current DOC_GLOBAL root/architecture/navigation/status override starts at `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`. Use compact content read order R24 -> R23 -> R22 -> R21 -> R20 -> R19 -> R18 -> R17 -> R16 -> R15 -> R14 -> R13 -> R11 -> R10 -> R9 for DOC_GLOBAL correction layers.
+The May 13 X-Ray, May 15 root cleanup, May 11 manifest/continuation, and May 4 actuality sweep remain historical evidence unless a later static or runtime proof file explicitly revalidates their counters.
 
 ## Coverage Model
 
@@ -34,23 +48,23 @@ Authority levels used below:
 
 ## Coverage Inventory Snapshot
 
-Filesystem snapshot: 2026-05-02.
+Filesystem snapshot: 2026-05-18 R10.
 
 | Bucket | Current count |
 |---|---:|
-| `01_GENERAL_INFO` markdown files | 24 |
-| `02_ACTUAL_REPORTS` markdown files | 46 |
+| `01_GENERAL_INFO` markdown files | 26 |
+| `02_ACTUAL_REPORTS` markdown files | 48 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
 | `02_ACTUAL_REPORTS` patch artifacts | 9 |
-| indexed docs/datasets in `01` + `02` | 71 |
-| physical non-meta files in `01` + `02` | 80 |
+| indexed docs/datasets in `01` + `02` | 84 |
+| physical non-meta files in `01` + `02` | 84 |
 
 Correction:
 - Earlier `19` / `43` folder-count claims are stale against the current filesystem.
 - The current source-backed coverage map includes `PLAYER_GAMEPLAY_CORE_MAP.md`, `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`, and `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`.
 - Patch artifacts are evidence files, not independent current-state authority.
 - `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is still the first conceptual current-state entry point outside this Archivarius folder.
-- `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` plus `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md` are the current counter/root-boundary correction starting points. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` is a historical broad read-pass unless rerun.
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, and the R15/R14/R13/R11/R10/R9 DOC_GLOBAL reports are the current DOC_GLOBAL correction starting points. May 13/15 and May 4 reports are historical broad read-passes unless rerun.
 
 ## Domain Coverage
 
@@ -134,18 +148,33 @@ Correction:
 
 For current-source truth, prefer in this order:
 
-1. `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`
-2. `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`
-3. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` as historical broad context only
-4. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-5. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
-6. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
-7. `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`
-8. `PROJECT_ATLAS.md`
-9. `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
-10. current-source summaries in `01_GENERAL_INFO`
-11. current-source rewrites in `02_ACTUAL_REPORTS`
-12. dated `2026-04-28_*` bundles only after checking whether they were reframed as historical snapshots
+1. `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`
+2. `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`
+3. `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`
+3. `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`
+4. `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`
+5. `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`
+6. `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`
+7. `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`
+8. `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`
+9. `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`
+10. `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`
+9. `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`
+10. `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`
+11. `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`
+12. `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`
+13. `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` as historical broad counter/missing-artifact context only
+13. `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md` as historical broad context only
+14. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` as historical broad context only
+15. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+16. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
+17. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` as historical compile/source evidence
+18. `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` as historical compile/source evidence
+19. `PROJECT_ATLAS.md`
+20. `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
+21. current-source summaries in `01_GENERAL_INFO`
+22. current-source rewrites in `02_ACTUAL_REPORTS`
+23. dated `2026-04-28_*` bundles only after checking whether they were reframed as historical snapshots
 
 Do not treat dated bundles as current runtime proof.
 
@@ -169,7 +198,7 @@ STATUS: PENDING VERIFICATION
 
 ## 2026-05-02 Coverage Delta
 
-Current doc counts:
+Historical May 2 doc counts retained for comparison:
 
 | Scope | Current Count |
 |---|---:|
@@ -198,16 +227,16 @@ New high-authority May 1 report inputs:
 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY | current conceptual system-ownership entry point |
 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY | current blunt project-level verdict; source/doc-backed, not runtime proof |
 | `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` | HISTORICAL DOCSET ACTUALITY | historical full root/`Docs` markdown read-pass; counters/root assumptions superseded by May 13/May 15 unless rerun |
-| `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | PRIMARY COMPILE DELTA | current editor compile/MCP console evidence for event-bus listener migration and spatial-hash repair |
-| `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | PRIMARY COMPILE DELTA | current editor compile/reload evidence after `VegetationJobRecovery.cs.meta` restoration and Bee/backend recovery |
+| `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | HISTORICAL COMPILE/SOURCE DELTA | historical editor compile/MCP console evidence for event-bus listener migration and spatial-hash repair |
+| `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | HISTORICAL COMPILE/SOURCE DELTA | historical editor compile/reload evidence after `VegetationJobRecovery.cs.meta` restoration and Bee/backend recovery |
 
 Coverage corrections:
 
-- The older trust boundary remains valid only as a read-order policy. For current risk framing, read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, then the relevant dated subsystem report. This is still not runtime proof.
+- The older trust boundary remains valid only as a read-order policy. For current risk framing, read the R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9 DOC_GLOBAL reports first, then May 13/15 historical baselines, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, then the relevant dated subsystem report. This is still not runtime proof.
 - `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md` remains current on late-frame dispatch budgeting, but current risk is no proven same-frame generation split for all event cascade paths. `HectonEventBus.MaxDispatchDepth = 4` exists by May 2 source grep.
 - `PROJECT_CONTENT_LEDGER.md` remains the content ledger, but validator execution proof is still not a live runtime proof.
 - `DEAD_CODE_GRAVEYARD.md` remains the deletion ledger. Its conclusions must be cross-checked before deleting additional code because the worktree is currently heavily modified by multiple agents.
-- `../02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md` interface coverage must be rechecked before use. May 13 DOC_AUDIT R3 source grep counts `51` direct public interfaces in `GlobalRegistryContracts.cs`; older `33` and `41` counts are historical.
+- `../02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md` interface coverage must be rechecked before use. May 18 R18 active-doc spot check records `63` direct public interfaces in `GlobalRegistryContracts.cs`; older `33`, `41`, and `51` counts are historical.
 - `PROJECT_CONTENT_LEDGER.md` now includes the current hadal carbon / pressure diamond / void-glass meteorite assets found in the workspace.
 - `DEAD_CODE_GRAVEYARD.md` now corrects the stale `SaveSystemRuntimeSmokeTester` removal claim; the file exists and is Awaitable-based, but has no YAML attachment evidence.
 - `2026-04-30_EDITOR_RUNTIME_FORENSICS.md` contains older coroutine findings. May 2 strict grep found `0` `StartCoroutine(` hits under `Assets/_Project/Scripts`.

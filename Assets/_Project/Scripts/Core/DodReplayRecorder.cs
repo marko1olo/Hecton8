@@ -15,7 +15,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Fixed-size replay snapshot header. Keep exactly 128 bytes for forward-compatible parsers.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct DodReplaySnapshotHeader
     {
         /// <summary>Replay file magic.</summary>
@@ -62,7 +62,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Fixed-size segment header for one captured native buffer or replay sidecar.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct DodReplaySegmentHeader
     {
         /// <summary>Owning system hash.</summary>
@@ -91,7 +91,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Binary hardware-input journal event for deterministic replay.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct DodReplayInputEvent
     {
         /// <summary>Double precision input timestamp.</summary>

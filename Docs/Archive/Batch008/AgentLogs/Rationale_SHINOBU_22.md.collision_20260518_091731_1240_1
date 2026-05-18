@@ -1,0 +1,39 @@
+Date: 2026-05-18
+Agent: SHINOBU_22
+Domain: DIEGETIC_TOOL_KINEMATICS
+Status: ACTIVE AFTER BATCH008 ARCHIVE / PENDING VERIFICATION
+
+Source memory:
+- Batch008 archived the previous SHINOBU_22 rationale/log/status under `Docs/Archive/Batch008/`.
+- This active file records only the continuation pass after the archive move.
+
+## Decision 20 - Padding Truth Recovery
+Problem: `ToolStateDTO._pad0/_pad1` were documented as ARM64 padding but were carrying live flags and frame seed. That makes the ABI report false and invites future agents to treat padding as free hidden state.
+Solution: Kept the mandated 56-byte `ToolStateDTO` layout intact and moved persistent state flags into the existing vault-owned `ToolScreenExportDTO.StateFlags` lane. `SdfRaymarchJob` reads previous flags from that lane, writes final flags after pose finite-checks, and clears both ToolState padding fields to zero before storing state.
+Rejected Alternatives: Renaming padding fields, expanding `ToolStateDTO`, or adding another BufferID lane. Expanding the primary DTO would break the assignment ABI; adding a new buffer is unnecessary because the 16-byte screen export already owns a state flag field.
+Scalability potential: Low/Middle/High/Ultra share the same honest ABI; presentation/UI readers still consume the same screen export lane.
+Hardware Impact: Removes hidden state from padding and keeps ToolState at 56 bytes; no measurable CPU claim beyond preserving aligned reads.
+
+## Decision 21 - Hardware LOD Hysteresis
+Problem: `SystemHealthIndex` drove Math LOD every frame. That violates the state hysteresis mandate and can make VR hands flick between snap IK and analytic IK during stress oscillation.
+Solution: Added a 2.0 second latched LOD resolver in `ToolKinematicsRuntime`. Raw stress still comes from serialized/editor/CSV tuning, but `FrameInputs.SystemHealthIndex` now receives an encoded latched tier. Burst jobs remain stateless and only consume the frame input.
+Rejected Alternatives: Immediate Low-tier fallback, smoothing inside Burst jobs, or storing LOD state in ToolState padding. Immediate flips cause visual thrash; job-side state would violate stateless kernel design; ToolState padding is reserved.
+Scalability potential: Low stays stable on weak hardware; Middle/High/Ultra upgrades are delayed until the stress tier holds long enough, buying smooth visual transitions over twitchy micro-savings.
+Hardware Impact: One scalar latch branch on main fixed tick; expected gain is reduced IK/beam/recoil churn under unstable frame time, not a fake microsecond benchmark.
+
+## Decision 22 - CSV Watcher Lifecycle
+Problem: `StopCsvWatcher()` used a timed join then nulled the thread reference even if the background thread remained alive. A later enable could create a second watcher touching the same fixed buffers.
+Solution: The stop path now keeps the thread reference when the worker is still alive, and the start path returns while that worker is alive or clears a dead reference before creating a replacement.
+Rejected Alternatives: Blocking indefinitely in OnDisable or allocating a new cancellation abstraction. Indefinite join can stall editor teardown; managed cancellation wrappers add lifecycle noise for a single cold worker.
+Scalability potential: All tiers keep CSV hot-reload without duplicate background I/O contention.
+Hardware Impact: Cold lifecycle only; protects Steam Deck/MicroSD path from duplicate watcher reads.
+
+<SELF_AUDIT>
+  <TwentyTaskCheck>Tasks 01-20 remain PASS by archived Batch008 evidence; Loop 9 changed only correctness around padding, LOD hysteresis, and CSV watcher lifecycle.</TwentyTaskCheck>
+  <ARM64Check>ToolStateDTO remains 56 bytes with `_pad0/_pad1` cleared to zero in runtime writes. Persistent state flags live in ToolScreenExportDTO.StateFlags, an explicit 16-byte DTO.</ARM64Check>
+  <ZeroGCCheck>FixedTick and Burst jobs still use vault NativeArrays and for-loops. The new LOD latch uses scalar fields only. No new NativeArray, LINQ, foreach, Raycast, LineRenderer, Unity Update, GetComponent, or Find path was added.</ZeroGCCheck>
+  <AUPCheck>No AUP behavior changed. Tool AUP stays double3; raymarch and recoil consume camera-relative float3 deltas.</AUPCheck>
+  <DearLieCheck>SDF penetration plus wrist-pivot recoil remains the collision fake; Low tier remains snap/no recoil.</DearLieCheck>
+  <DependencyCheck>No new sibling runtime dependency, asmdef reference, Unity Rigging path, voxel/VFX/inventory reference, or World namespace was added.</DependencyCheck>
+  <BlackboxCheck>300-frame telemetry ring remains active; final verification pending.</BlackboxCheck>
+</SELF_AUDIT>

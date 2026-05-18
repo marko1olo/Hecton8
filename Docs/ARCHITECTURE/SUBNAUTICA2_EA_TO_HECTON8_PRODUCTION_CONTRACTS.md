@@ -2,6 +2,21 @@
 
 Date: 2026-05-17
 Status: ACTIVE PRODUCTION-CONTRACT REFERENCE / RUNTIME PENDING
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Owner: SUBNAUTICA_RESEARCHER
 Scope: clean-room public reference research plus current HECTON-8 source audit.
 Runtime changes: none.
@@ -55,7 +70,7 @@ Unknown Worlds' first public roadmap sequence is the important production signal
 
 Tactical meaning for HECTON-8: do not chase screenshots first. The competitive foundation is update cadence plus save/schema stability, content packaging, co-op-safe state, feedback telemetry, and route density.
 
-## HECTON-8 Current Proof Snapshot
+## HECTON-8 Static Disk Snapshot / Runtime Proof Pending
 
 ### Static Content
 

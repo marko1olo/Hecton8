@@ -1,7 +1,15 @@
-﻿# Subsystem Implementation Catalog
+# Subsystem Implementation Catalog
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 Purpose:
 - describe which project domains are materially implemented
@@ -12,14 +20,14 @@ Purpose:
 
 Primary first-party runtime-heavy folders by source size:
 
-| Folder | Files | Approx. lines | Current reading |
-|---|---:|---:|---|
-| `World` | 108 | 64,476 | dominant simulation/content/runtime infrastructure surface |
-| `UI` | 78 | 36,339 | large user-facing runtime and presentation logic layer |
-| `Gameplay` | 104 | 33,995 | large player/tool/interaction/game-state core |
-| `Core` | 33 | 9,568 | real shared runtime backbone |
-| `Construction` | 24 | 8,932 | substantial system, not placeholder |
-| `Visor` | 19 | 8,217 | real dedicated feature lane, not cosmetic garnish |
+| Folder | Historical / R18 Static Size | Current reading |
+|---|---:|---|
+| `World` | historical `108 / 64,476`; R18 `183 / 125,062` | dominant simulation/content/runtime infrastructure surface |
+| `UI` | historical `78 / 36,339`; R18 `115 / 79,632` | large user-facing runtime and presentation logic layer |
+| `Gameplay` | historical `104 / 33,995`; R18 `141 / 75,206` | large player/tool/interaction/game-state core |
+| `Core` | historical `33 / 9,568`; R18 `180 / 83,921` | real shared runtime backbone |
+| `Construction` | historical `24 / 8,932` | substantial system, not placeholder |
+| `Visor` | historical `19 / 8,217` | real dedicated feature lane, not cosmetic garnish |
 | `Audio` | 13 | 7,874 | custom runtime depth is real |
 | `Fauna` | 15 | 7,759 | meaningful simulation layer |
 | `Optimization` | 22 | 4,294 | active governance/tooling layer |

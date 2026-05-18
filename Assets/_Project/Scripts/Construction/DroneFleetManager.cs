@@ -26,7 +26,8 @@ namespace Hecton8.Construction
     {
         None = 0,
         RepairModule = 1,
-        CutParasite = 2
+        CutParasite = 2,
+        MineNode = 3
     }
 
     internal readonly struct DroneFleetTask
@@ -126,7 +127,7 @@ namespace Hecton8.Construction
     /// <summary>
     /// Blittable snapshot payload queued before dispatch to fleet snapshot listeners.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 44)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct HectonDroneFleetSnapshotPayload
     {
         public int ActiveHubCount;
@@ -143,6 +144,7 @@ namespace Hecton8.Construction
         private byte _padding0;
         private byte _padding1;
         private byte _padding2;
+        private uint _paddingTail;
     }
 
     /// <summary>
@@ -408,6 +410,12 @@ namespace Hecton8.Construction
         private const int HeadlessTaskCapacity = 64;
         private const int HeadlessPendingLaunchCapacity = HeadlessDroneCapacity;
         private const int DroneServiceCommandCapacity = HeadlessDroneCapacity * 3;
+        private const int DroneAStarGridSide = 8;
+        private const int DroneAStarNodeCapacity = DroneAStarGridSide * DroneAStarGridSide * DroneAStarGridSide;
+        private const int DroneAStarTelemetryCapacity = 1;
+        private const int DroneAStarRouteNodeStride = 8;
+        private const int DroneAStarRouteNodeCapacity = HeadlessDroneCapacity * DroneAStarRouteNodeStride;
+        private const int DroneAStarRouteDebugPointCount = 4;
         private const int DockingObstacleProbeMaxSegments = 3;
         private const int DockingRaycastCapacity = HeadlessDroneCapacity * DockingObstacleProbeMaxSegments;
         private const int DockingRaycastMinCommandsPerJob = 8;
@@ -418,7 +426,10 @@ namespace Hecton8.Construction
         private const int InvalidHubId = 0;
         private const int EmptyTaskIndex = -1;
         private const string NativeMemoryOwner = nameof(DroneFleetManager);
-        private const string DroneFleetBlackBoxDumpPath = "Docs/AgentLogs/Dump_VEHICLE_AUTONOMOUS_DOCKING.bin";
+        private const string DroneFleetBlackBoxDumpPath = "Docs/AgentLogs/Dump_DRONE_FLEET.bin";
+        private const string DroneFleetBlackBoxH8DumpPath = "Docs/AgentLogs/Dump_DRONE_FLEET.h8dump";
+        private const string DroneSpecsCsvFileName = "drone_specs.csv";
+        private const int DroneSpecsCsvMaxBytes = 16 * 1024;
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const float MinimumScoreDistanceMeters = 0.75f;
         private const float MinimumScoreDistanceMetersSq = MinimumScoreDistanceMeters * MinimumScoreDistanceMeters;
@@ -437,6 +448,7 @@ namespace Hecton8.Construction
         private const float HeadlessWeldPowerNormalized = 0.75f;
         private const float HeadlessWeldRangeMeters = 1.25f;
         private const uint DroneRepairSparksSignalHash = 0x44525350u;
+        private const int DroneInventoryCopperHash = 0x43555052;
         private const byte DroneRepairSparkDebrisKind = 1;
         private const float SolderIntegrityUnitsPerPack = 10f;
         private const float OrphanWanderDistanceMeters = 4f;
@@ -462,7 +474,7 @@ namespace Hecton8.Construction
         private const float DroneRelayPingLifetimeSeconds = 4f;
         private const int MaxDroneRelayContacts = 16;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
+        [StructLayout(LayoutKind.Sequential, Size = 80)]
         private struct DroneRenderInstance
         {
             public float4x4 Matrix;
@@ -470,7 +482,7 @@ namespace Hecton8.Construction
             public float3 Padding;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
         private struct DroneCullingStateGpu
         {
             public float3 Position;
@@ -501,7 +513,7 @@ namespace Hecton8.Construction
             public int LoadedSolderUnits;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 60)]
+        [StructLayout(LayoutKind.Sequential, Size = 80)]
         private struct DroneFleetBlackBoxEntry
         {
             public int Frame;
@@ -510,6 +522,11 @@ namespace Hecton8.Construction
             public int Flags;
             public float DeltaTime;
             public int DockingAborts;
+            public int PathSolves;
+            public int PathFailures;
+            public int PathIterations;
+            public float AveragePathfindingTimeMs;
+            public int TasksCompleted;
             public float3 FirstPosition;
             public float3 BoundsCenter;
             public float3 BoundsExtents;
@@ -546,15 +563,77 @@ namespace Hecton8.Construction
         private static NativeArray<float4x4> s_DroneRenderMatrixBackBuffer;
         private static NativeArray<DroneRenderInstance> s_DroneRenderInstances;
         private static NativeArray<DroneCullingStateGpu> s_DroneCullingStates;
+        private static bool s_TaskClaimCountsVaultBacked;
+        private static bool s_DroneStatesVaultBacked;
+        private static bool s_DroneStateBackBufferVaultBacked;
+        private static bool s_DroneRenderMatricesVaultBacked;
+        private static bool s_DroneRenderMatrixBackBufferVaultBacked;
+        private static bool s_DroneRenderInstancesVaultBacked;
         private static bool s_DroneCullingStatesVaultBacked;
         private static NativeArray<float3> s_DronePositionsSoA;
         private static NativeArray<byte> s_DroneStateBytes;
         private static NativeArray<DroneFleetBlackBoxEntry> s_DroneBlackBox;
+        private static NativeArray<DroneFleetTuningConstants> s_DroneTuningConstants;
+        private static NativeArray<PathWaypointDTO> s_DroneMacroWaypoints;
+        private static NativeArray<byte> s_DroneMacroWaypointStates;
+        private static NativeArray<DroneNativeMinHeapNode> s_DroneAStarOpenHeap;
+        private static NativeArray<float> s_DroneAStarGCosts;
+        private static NativeArray<int> s_DroneAStarCameFrom;
+        private static NativeArray<byte> s_DroneAStarNodeStates;
+        private static NativeArray<int> s_DroneMacroRouteNodes;
+        private static NativeArray<byte> s_DroneMacroRouteCounts;
+        private static NativeArray<DroneAStarTelemetry> s_DroneAStarTelemetry;
         private static NativeArray<int> s_HeadlessTaskClaimOwners;
         private static NativeArray<int> s_FleetTelemetryAccumulator;
         private static NativeArray<RaycastCommand> s_DockingRaycastCommands;
         private static NativeArray<RaycastHit> s_DockingRaycastHits;
         private static NativeArray<int> s_DockingRaycastSlots;
+        private static NativeArray<DroneTaskDTO> s_DroneTaskPriorityHeap;
+        private static VaultBufferHandle<int> s_TaskClaimCountsHandle;
+        private static VaultBufferHandle<HeadlessDroneState> s_DroneStatesHandle;
+        private static VaultBufferHandle<HeadlessDroneState> s_DroneStateBackBufferHandle;
+        private static VaultBufferHandle<float4x4> s_DroneRenderMatricesHandle;
+        private static VaultBufferHandle<float4x4> s_DroneRenderMatrixBackBufferHandle;
+        private static VaultBufferHandle<DroneRenderInstance> s_DroneRenderInstancesHandle;
+        private static VaultBufferHandle<DroneCullingStateGpu> s_DroneCullingStatesHandle;
+        private static VaultBufferHandle<float3> s_DronePositionsSoAHandle;
+        private static VaultBufferHandle<byte> s_DroneStateBytesHandle;
+        private static VaultBufferHandle<DroneFleetBlackBoxEntry> s_DroneBlackBoxHandle;
+        private static VaultBufferHandle<DroneFleetTuningConstants> s_DroneTuningConstantsHandle;
+        private static VaultBufferHandle<PathWaypointDTO> s_DroneMacroWaypointsHandle;
+        private static VaultBufferHandle<byte> s_DroneMacroWaypointStatesHandle;
+        private static VaultBufferHandle<DroneNativeMinHeapNode> s_DroneAStarOpenHeapHandle;
+        private static VaultBufferHandle<float> s_DroneAStarGCostsHandle;
+        private static VaultBufferHandle<int> s_DroneAStarCameFromHandle;
+        private static VaultBufferHandle<byte> s_DroneAStarNodeStatesHandle;
+        private static VaultBufferHandle<int> s_DroneMacroRouteNodesHandle;
+        private static VaultBufferHandle<byte> s_DroneMacroRouteCountsHandle;
+        private static VaultBufferHandle<DroneAStarTelemetry> s_DroneAStarTelemetryHandle;
+        private static VaultBufferHandle<int> s_HeadlessTaskClaimOwnersHandle;
+        private static VaultBufferHandle<int> s_FleetTelemetryAccumulatorHandle;
+        private static VaultBufferHandle<RaycastCommand> s_DockingRaycastCommandsHandle;
+        private static VaultBufferHandle<RaycastHit> s_DockingRaycastHitsHandle;
+        private static VaultBufferHandle<int> s_DockingRaycastSlotsHandle;
+        private static VaultBufferHandle<DroneTaskDTO> s_DroneTaskPriorityHeapHandle;
+        private static bool s_DronePositionsSoAVaultBacked;
+        private static bool s_DroneStateBytesVaultBacked;
+        private static bool s_DroneBlackBoxVaultBacked;
+        private static bool s_DroneTuningConstantsVaultBacked;
+        private static bool s_DroneMacroWaypointsVaultBacked;
+        private static bool s_DroneMacroWaypointStatesVaultBacked;
+        private static bool s_DroneAStarOpenHeapVaultBacked;
+        private static bool s_DroneAStarGCostsVaultBacked;
+        private static bool s_DroneAStarCameFromVaultBacked;
+        private static bool s_DroneAStarNodeStatesVaultBacked;
+        private static bool s_DroneMacroRouteNodesVaultBacked;
+        private static bool s_DroneMacroRouteCountsVaultBacked;
+        private static bool s_DroneAStarTelemetryVaultBacked;
+        private static bool s_HeadlessTaskClaimOwnersVaultBacked;
+        private static bool s_FleetTelemetryAccumulatorVaultBacked;
+        private static bool s_DockingRaycastCommandsVaultBacked;
+        private static bool s_DockingRaycastHitsVaultBacked;
+        private static bool s_DockingRaycastSlotsVaultBacked;
+        private static bool s_DroneTaskPriorityHeapVaultBacked;
         private static NativeParallelMultiHashMap<int, HeadlessDroneTask> s_HeadlessTasksByHub;
         private static NativeParallelMultiHashMap<int, int> s_HeadlessDroneSpatialHash;
         private static NativeQueue<DroneServiceCommand> s_DroneServiceCommands;
@@ -617,6 +696,14 @@ namespace Hecton8.Construction
         private static int s_DockingAbortCount;
         private static int s_DroneBlackBoxCursor;
         private static int s_LastDroneBlackBoxDumpFrame;
+        private static int s_DroneFrameIndex;
+        private static int s_DroneAStarSolvedCount;
+        private static int s_DroneAStarFailureCount;
+        private static int s_DroneAStarIterationCount;
+        private static int s_LastDroneAStarStatus;
+        private static float s_LastDroneAStarAveragePathfindingTimeMs;
+        private static int s_DroneTasksCompletedCount;
+        private static int s_LastDroneSteeringTickModulo = 1;
         private static DroneFleetFormationMode s_FleetFormationMode;
         private static bool s_DroneCullingKernelsResolved;
         private static bool s_PhantomDroneKernelResolved;
@@ -671,6 +758,8 @@ namespace Hecton8.Construction
         private static readonly Vector4[] s_CullingPlaneVectors = new Vector4[6];
         // COLD ALLOC: SpatialQueryHit[16] - drone acoustic relay contact scratch buffer - owner: DroneFleetManager
         private static readonly SpatialQueryHit[] s_DroneRelayContacts = new SpatialQueryHit[MaxDroneRelayContacts];
+        // COLD ALLOC: byte[16KB] - editor/cold CSV parser scratch, never touched by fleet Tick.
+        private static readonly byte[] s_DroneSpecsCsvReadBuffer = new byte[DroneSpecsCsvMaxBytes];
         // COLD ALLOC: SubmarineOsEventBridge[1] - static fleet bridge into deferred submarine OS payloads - owner: DroneFleetManager
         private static readonly SubmarineOsEventBridge s_SubmarineOsEventBridge = new SubmarineOsEventBridge();
         // COLD ALLOC: StorageReservationCommitResolvedBridge[1] - static fleet bridge into deferred command queue acknowledgements - owner: DroneFleetManager
@@ -737,6 +826,13 @@ namespace Hecton8.Construction
             s_DockingAbortCount = 0;
             s_DroneBlackBoxCursor = 0;
             s_LastDroneBlackBoxDumpFrame = -1;
+            s_DroneFrameIndex = 0;
+            s_DroneAStarSolvedCount = 0;
+            s_DroneAStarFailureCount = 0;
+            s_DroneAStarIterationCount = 0;
+            s_LastDroneAStarStatus = 0;
+            s_LastDroneAStarAveragePathfindingTimeMs = 0f;
+            s_DroneTasksCompletedCount = 0;
             s_FleetFormationMode = DroneFleetFormationMode.Repair;
             s_DroneCullingCompute = null;
             s_DroneCullingKernelsResolved = false;
@@ -766,7 +862,7 @@ namespace Hecton8.Construction
             s_PhantomVerticalAmplitudePropertyId = 0;
             s_PhantomScalePropertyId = 0;
 
-            DisposeNativeArray(ref s_TaskClaimCounts);
+            ReleaseDroneVaultBuffer(ref s_TaskClaimCounts, ref s_TaskClaimCountsHandle, ref s_TaskClaimCountsVaultBacked, nameof(s_TaskClaimCounts));
         }
 
         internal static HectonDroneFleetSnapshot CurrentSnapshot
@@ -1028,6 +1124,11 @@ namespace Hecton8.Construction
             FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
             RepairTaskCandidate bestTask = default;
             bool hasBestTask = false;
+            DroneTaskNativeMinHeap taskHeap = new DroneTaskNativeMinHeap
+            {
+                Nodes = s_DroneTaskPriorityHeap,
+                Count = 0
+            };
 
             for (int moduleIndex = 0; moduleIndex < scanModuleCount; moduleIndex++)
             {
@@ -1043,7 +1144,7 @@ namespace Hecton8.Construction
                     float distanceSq = (hubPosition - modulePosition).sqrMagnitude;
                     float taskCriticality = ResolveCriticalityWeight(module);
                     float taskScore = ComputeTaskAssignmentScoreFromDistanceSq(distanceSq, taskCriticality);
-                    ConsiderTaskCandidate(new RepairTaskCandidate
+                    RepairTaskCandidate candidate = new RepairTaskCandidate
                     {
                         Kind = DroneFleetTaskKind.RepairModule,
                         Module = module,
@@ -1052,7 +1153,9 @@ namespace Hecton8.Construction
                         Radius = 0f,
                         Score = taskScore,
                         CriticalityWeight = taskCriticality
-                    }, ref bestTask, ref hasBestTask);
+                    };
+                    TryPushTaskPriorityCandidate(ref taskHeap, in candidate);
+                    ConsiderTaskCandidate(in candidate, ref bestTask, ref hasBestTask);
                 }
 
                 if (floraInteractionManager == null ||
@@ -1066,7 +1169,7 @@ namespace Hecton8.Construction
                 float parasiteDistanceSq = (hubPosition - parasiteTarget.Position).sqrMagnitude;
                 float parasiteCriticality = ResolveParasiteCriticalityWeight(module, in parasiteTarget);
                 float parasiteScore = ComputeTaskAssignmentScoreFromDistanceSq(parasiteDistanceSq, parasiteCriticality);
-                ConsiderTaskCandidate(new RepairTaskCandidate
+                RepairTaskCandidate parasiteCandidate = new RepairTaskCandidate
                 {
                     Kind = DroneFleetTaskKind.CutParasite,
                     Module = module,
@@ -1075,7 +1178,15 @@ namespace Hecton8.Construction
                     Radius = parasiteTarget.Radius,
                     Score = parasiteScore,
                     CriticalityWeight = parasiteCriticality
-                }, ref bestTask, ref hasBestTask);
+                };
+                TryPushTaskPriorityCandidate(ref taskHeap, in parasiteCandidate);
+                ConsiderTaskCandidate(in parasiteCandidate, ref bestTask, ref hasBestTask);
+            }
+
+            if (TryResolvePriorityHeapTask(ref taskHeap, manager, out RepairTaskCandidate heapTask))
+            {
+                bestTask = heapTask;
+                hasBestTask = true;
             }
 
             if (hasBestTask)
@@ -1132,43 +1243,70 @@ namespace Hecton8.Construction
                 return;
 
             GlobalSignals.InitializeAllQueues();
+            SignalBus<DroneFleetMockRepairSignal>.Configure(64, maxFrameSignals: 64, lowTierFrameSignals: 16, laneHash: 0x44524D52u);
+            SignalBus<DroneFleetMockRepairSignal>.EnsureInitialized();
+            SignalBus<DroneFleetMockMiningSignal>.Configure(64, maxFrameSignals: 64, lowTierFrameSignals: 16, laneHash: 0x44524D4Eu);
+            SignalBus<DroneFleetMockMiningSignal>.EnsureInitialized();
+            SignalBus<DroneFleetInventoryTransactionSignal>.Configure(64, maxFrameSignals: 64, lowTierFrameSignals: 16, laneHash: 0x4452494Eu);
+            SignalBus<DroneFleetInventoryTransactionSignal>.EnsureInitialized();
             s_DockingSignalLanesConfigured = true;
         }
 
         private static void AllocateHeadlessNativeMemory()
         {
-            s_DroneStates = new NativeArray<HeadlessDroneState>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadlessDroneState>[64] - authoritative real headless drone state pool - owner: DroneFleetManager
-            s_DroneStateBackBuffer = new NativeArray<HeadlessDroneState>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadlessDroneState>[64] - real headless drone write buffer for Burst double buffering - owner: DroneFleetManager
-            s_DroneRenderMatrices = new NativeArray<float4x4>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[64] - indirect real drone render front matrices consumed by renderer - owner: DroneFleetManager
-            s_DroneRenderMatrixBackBuffer = new NativeArray<float4x4>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[64] - indirect real drone render back matrices written by Burst - owner: DroneFleetManager
-            s_DroneRenderInstances = new NativeArray<DroneRenderInstance>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DroneRenderInstance>[64] - real drone matrix and transaction-progress upload staging - owner: DroneFleetManager
-            s_DroneCullingStates = ResolveDroneCullingStatesBuffer(); // COLD ALLOC: NativeArray<DroneCullingStateGpu>[64] - Metal/Vulkan-safe compact drone culling payload - owner: GlobalDataVault/DroneFleetManager
-            s_DronePositionsSoA = new NativeArray<float3>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[64] - SoA drone positions for Burst fleet state - owner: DroneFleetManager
-            s_DroneStateBytes = new NativeArray<byte>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[64] - SoA drone state byte stream, 0 idle / 1 mining / 2 repairing / 3 returning - owner: DroneFleetManager
-            s_DroneBlackBox = new NativeArray<DroneFleetBlackBoxEntry>(DroneFleetBlackBoxFrameCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DroneFleetBlackBoxEntry>[300] - fixed fleet black-box ring buffer - owner: DroneFleetManager
-            s_HeadlessTaskClaimOwners = new NativeArray<int>(HeadlessTaskCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[64] - atomic task claim owners for Burst arbitration - owner: DroneFleetManager
-            s_FleetTelemetryAccumulator = new NativeArray<int>((int)DroneFleetTelemetryAccumulatorSlot.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[6] - Burst fleet telemetry accumulator - owner: DroneFleetManager
-            s_DockingRaycastCommands = new NativeArray<RaycastCommand>(DockingRaycastCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[192] - segmented docking corridor probes - owner: DroneFleetManager
-            s_DockingRaycastHits = new NativeArray<RaycastHit>(DockingRaycastCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[192] - segmented docking corridor probe results - owner: DroneFleetManager
-            s_DockingRaycastSlots = new NativeArray<int>(DockingRaycastCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[192] - segmented docking raycast slot lookup - owner: DroneFleetManager
+            s_DroneStates = ResolveDroneVaultBuffer<HeadlessDroneState>(BufferID.ShinobuDroneFleetStates, HeadlessDroneCapacity, NativeArrayOptions.ClearMemory, ref s_DroneStatesHandle, out s_DroneStatesVaultBacked); // COLD ALLOC: NativeArray<HeadlessDroneState>[64] - authoritative drone state pool - owner: GlobalDataVault/H8Memory fallback
+            s_DroneStateBackBuffer = ResolveDroneVaultBuffer<HeadlessDroneState>(BufferID.ShinobuDroneFleetStateBackBuffer, HeadlessDroneCapacity, NativeArrayOptions.ClearMemory, ref s_DroneStateBackBufferHandle, out s_DroneStateBackBufferVaultBacked); // COLD ALLOC: NativeArray<HeadlessDroneState>[64] - Burst double-buffer write lane - owner: GlobalDataVault/H8Memory fallback
+            s_DroneRenderMatrices = ResolveDroneVaultBuffer<float4x4>(BufferID.ShinobuDroneFleetRenderMatrices, HeadlessDroneCapacity, NativeArrayOptions.ClearMemory, ref s_DroneRenderMatricesHandle, out s_DroneRenderMatricesVaultBacked); // COLD ALLOC: NativeArray<float4x4>[64] - indirect render front matrices - owner: GlobalDataVault/H8Memory fallback
+            s_DroneRenderMatrixBackBuffer = ResolveDroneVaultBuffer<float4x4>(BufferID.ShinobuDroneFleetRenderMatrixBackBuffer, HeadlessDroneCapacity, NativeArrayOptions.ClearMemory, ref s_DroneRenderMatrixBackBufferHandle, out s_DroneRenderMatrixBackBufferVaultBacked); // COLD ALLOC: NativeArray<float4x4>[64] - indirect render back matrices - owner: GlobalDataVault/H8Memory fallback
+            s_DroneRenderInstances = ResolveDroneVaultBuffer<DroneRenderInstance>(BufferID.ShinobuDroneFleetRenderInstances, HeadlessDroneCapacity, NativeArrayOptions.ClearMemory, ref s_DroneRenderInstancesHandle, out s_DroneRenderInstancesVaultBacked); // COLD ALLOC: NativeArray<DroneRenderInstance>[64] - render payload staging - owner: GlobalDataVault/H8Memory fallback
+            s_DroneCullingStates = ResolveDroneCullingStatesBuffer(); // COLD ALLOC: NativeArray<DroneCullingStateGpu>[64] - Metal/Vulkan-safe compact drone culling payload - owner: GlobalDataVault/H8Memory fallback
+            s_DronePositionsSoA = ResolveDroneVaultBuffer<float3>(BufferID.ShinobuDroneFleetPositionsSoA, HeadlessDroneCapacity, NativeArrayOptions.ClearMemory, ref s_DronePositionsSoAHandle, out s_DronePositionsSoAVaultBacked); // COLD ALLOC: NativeArray<float3>[64] - SoA positions for Burst fleet state - owner: GlobalDataVault/H8Memory fallback
+            s_DroneStateBytes = ResolveDroneVaultBuffer<byte>(BufferID.ShinobuDroneFleetStateBytes, HeadlessDroneCapacity, NativeArrayOptions.ClearMemory, ref s_DroneStateBytesHandle, out s_DroneStateBytesVaultBacked); // COLD ALLOC: NativeArray<byte>[64] - compact state stream - owner: GlobalDataVault/H8Memory fallback
+            s_DroneBlackBox = ResolveDroneVaultBuffer<DroneFleetBlackBoxEntry>(BufferID.ShinobuDroneFleetBlackBox, DroneFleetBlackBoxFrameCapacity, NativeArrayOptions.ClearMemory, ref s_DroneBlackBoxHandle, out s_DroneBlackBoxVaultBacked); // COLD ALLOC: NativeArray<DroneFleetBlackBoxEntry>[300] - fixed fleet black-box ring buffer - owner: GlobalDataVault/H8Memory fallback
+            s_DroneTuningConstants = ResolveDroneVaultBuffer<DroneFleetTuningConstants>(BufferID.ShinobuDroneFleetTuningConstants, 1, NativeArrayOptions.ClearMemory, ref s_DroneTuningConstantsHandle, out s_DroneTuningConstantsVaultBacked); // COLD ALLOC: NativeArray<DroneFleetTuningConstants>[1] - runtime tuning DTO - owner: GlobalDataVault/H8Memory fallback
+            s_DroneMacroWaypoints = ResolveDroneVaultBuffer<PathWaypointDTO>(BufferID.ShinobuDroneFleetMacroWaypoints, HeadlessDroneCapacity, NativeArrayOptions.UninitializedMemory, ref s_DroneMacroWaypointsHandle, out s_DroneMacroWaypointsVaultBacked); // COLD ALLOC: NativeArray<PathWaypointDTO>[64] - macro A* first-waypoint lane - owner: GlobalDataVault/H8Memory fallback
+            s_DroneMacroWaypointStates = ResolveDroneVaultBuffer<byte>(BufferID.ShinobuDroneFleetMacroWaypointStates, HeadlessDroneCapacity, NativeArrayOptions.UninitializedMemory, ref s_DroneMacroWaypointStatesHandle, out s_DroneMacroWaypointStatesVaultBacked); // COLD ALLOC: NativeArray<byte>[64] - macro A* waypoint validity lane - owner: GlobalDataVault/H8Memory fallback
+            s_DroneAStarOpenHeap = ResolveDroneVaultBuffer<DroneNativeMinHeapNode>(BufferID.ShinobuDroneFleetAStarOpenHeap, DroneAStarNodeCapacity, NativeArrayOptions.UninitializedMemory, ref s_DroneAStarOpenHeapHandle, out s_DroneAStarOpenHeapVaultBacked); // COLD ALLOC: NativeArray<DroneNativeMinHeapNode>[512] - native min-heap open set - owner: GlobalDataVault/H8Memory fallback
+            s_DroneAStarGCosts = ResolveDroneVaultBuffer<float>(BufferID.ShinobuDroneFleetAStarGCosts, DroneAStarNodeCapacity, NativeArrayOptions.UninitializedMemory, ref s_DroneAStarGCostsHandle, out s_DroneAStarGCostsVaultBacked); // COLD ALLOC: NativeArray<float>[512] - A* g-cost scratch - owner: GlobalDataVault/H8Memory fallback
+            s_DroneAStarCameFrom = ResolveDroneVaultBuffer<int>(BufferID.ShinobuDroneFleetAStarCameFrom, DroneAStarNodeCapacity, NativeArrayOptions.UninitializedMemory, ref s_DroneAStarCameFromHandle, out s_DroneAStarCameFromVaultBacked); // COLD ALLOC: NativeArray<int>[512] - A* parent scratch - owner: GlobalDataVault/H8Memory fallback
+            s_DroneAStarNodeStates = ResolveDroneVaultBuffer<byte>(BufferID.ShinobuDroneFleetAStarNodeStates, DroneAStarNodeCapacity, NativeArrayOptions.UninitializedMemory, ref s_DroneAStarNodeStatesHandle, out s_DroneAStarNodeStatesVaultBacked); // COLD ALLOC: NativeArray<byte>[512] - A* open/closed scratch - owner: GlobalDataVault/H8Memory fallback
+            s_DroneMacroRouteNodes = ResolveDroneVaultBuffer<int>(BufferID.ShinobuDroneFleetMacroRouteNodes, DroneAStarRouteNodeCapacity, NativeArrayOptions.ClearMemory, ref s_DroneMacroRouteNodesHandle, out s_DroneMacroRouteNodesVaultBacked); // COLD ALLOC: NativeArray<int>[512] - fixed NativeList-style macro route node stream - owner: GlobalDataVault/H8Memory fallback
+            s_DroneMacroRouteCounts = ResolveDroneVaultBuffer<byte>(BufferID.ShinobuDroneFleetMacroRouteCounts, HeadlessDroneCapacity, NativeArrayOptions.ClearMemory, ref s_DroneMacroRouteCountsHandle, out s_DroneMacroRouteCountsVaultBacked); // COLD ALLOC: NativeArray<byte>[64] - per-drone macro route node counts - owner: GlobalDataVault/H8Memory fallback
+            s_DroneAStarTelemetry = ResolveDroneVaultBuffer<DroneAStarTelemetry>(BufferID.ShinobuDroneFleetAStarTelemetry, DroneAStarTelemetryCapacity, NativeArrayOptions.ClearMemory, ref s_DroneAStarTelemetryHandle, out s_DroneAStarTelemetryVaultBacked); // COLD ALLOC: NativeArray<DroneAStarTelemetry>[1] - A* solve counters - owner: GlobalDataVault/H8Memory fallback
+            s_HeadlessTaskClaimOwners = ResolveDroneVaultBuffer<int>(BufferID.ShinobuDroneFleetTaskClaimOwners, HeadlessTaskCapacity, NativeArrayOptions.ClearMemory, ref s_HeadlessTaskClaimOwnersHandle, out s_HeadlessTaskClaimOwnersVaultBacked); // COLD ALLOC: NativeArray<int>[64] - atomic task claim owners - owner: GlobalDataVault/H8Memory fallback
+            s_FleetTelemetryAccumulator = ResolveDroneVaultBuffer<int>(BufferID.ShinobuDroneFleetTelemetryAccumulator, (int)DroneFleetTelemetryAccumulatorSlot.Count, NativeArrayOptions.ClearMemory, ref s_FleetTelemetryAccumulatorHandle, out s_FleetTelemetryAccumulatorVaultBacked); // COLD ALLOC: NativeArray<int>[6] - Burst fleet telemetry accumulator - owner: GlobalDataVault/H8Memory fallback
+            s_DockingRaycastCommands = ResolveDroneVaultBuffer<RaycastCommand>(BufferID.ShinobuDroneFleetDockingRaycastCommands, DockingRaycastCapacity, NativeArrayOptions.ClearMemory, ref s_DockingRaycastCommandsHandle, out s_DockingRaycastCommandsVaultBacked); // COLD ALLOC: NativeArray<RaycastCommand>[192] - segmented docking corridor probes - owner: GlobalDataVault/H8Memory fallback
+            s_DockingRaycastHits = ResolveDroneVaultBuffer<RaycastHit>(BufferID.ShinobuDroneFleetDockingRaycastHits, DockingRaycastCapacity, NativeArrayOptions.ClearMemory, ref s_DockingRaycastHitsHandle, out s_DockingRaycastHitsVaultBacked); // COLD ALLOC: NativeArray<RaycastHit>[192] - segmented docking probe results - owner: GlobalDataVault/H8Memory fallback
+            s_DockingRaycastSlots = ResolveDroneVaultBuffer<int>(BufferID.ShinobuDroneFleetDockingRaycastSlots, DockingRaycastCapacity, NativeArrayOptions.ClearMemory, ref s_DockingRaycastSlotsHandle, out s_DockingRaycastSlotsVaultBacked); // COLD ALLOC: NativeArray<int>[192] - segmented docking slot lookup - owner: GlobalDataVault/H8Memory fallback
+            s_DroneTaskPriorityHeap = ResolveDroneVaultBuffer<DroneTaskDTO>(BufferID.ShinobuDroneFleetTaskPriorityHeap, HeadlessTaskCapacity, NativeArrayOptions.ClearMemory, ref s_DroneTaskPriorityHeapHandle, out s_DroneTaskPriorityHeapVaultBacked); // COLD ALLOC: NativeArray<DroneTaskDTO>[64] - task priority min-heap storage - owner: GlobalDataVault/H8Memory fallback
             s_HeadlessTasksByHub = new NativeParallelMultiHashMap<int, HeadlessDroneTask>(HeadlessTaskCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,HeadlessDroneTask>[64] - hub-keyed drone task fanout - owner: DroneFleetManager
             s_HeadlessDroneSpatialHash = new NativeParallelMultiHashMap<int, int>(HeadlessDroneCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[64] - real drone boid spatial hash - owner: DroneFleetManager
             s_DroneServiceCommands = new NativeQueue<DroneServiceCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DroneServiceCommand>[192] - Burst drone service command lane drained on late-frame owner thread - owner: DroneFleetManager
-            RegisterNativeArray(s_DroneStates, nameof(s_DroneStates));
-            RegisterNativeArray(s_DroneStateBackBuffer, nameof(s_DroneStateBackBuffer));
-            RegisterNativeArray(s_DroneRenderMatrices, nameof(s_DroneRenderMatrices));
-            RegisterNativeArray(s_DroneRenderMatrixBackBuffer, nameof(s_DroneRenderMatrixBackBuffer));
-            RegisterNativeArray(s_DroneRenderInstances, nameof(s_DroneRenderInstances));
-            if (!s_DroneCullingStatesVaultBacked)
-                RegisterNativeArray(s_DroneCullingStates, nameof(s_DroneCullingStates));
-            RegisterNativeArray(s_DronePositionsSoA, nameof(s_DronePositionsSoA));
-            RegisterNativeArray(s_DroneStateBytes, nameof(s_DroneStateBytes));
-            RegisterNativeArray(s_DroneBlackBox, nameof(s_DroneBlackBox));
-            RegisterNativeArray(s_HeadlessTaskClaimOwners, nameof(s_HeadlessTaskClaimOwners));
-            RegisterNativeArray(s_FleetTelemetryAccumulator, nameof(s_FleetTelemetryAccumulator));
-            RegisterNativeArray(s_DockingRaycastCommands, nameof(s_DockingRaycastCommands));
-            RegisterNativeArray(s_DockingRaycastHits, nameof(s_DockingRaycastHits));
-            RegisterNativeArray(s_DockingRaycastSlots, nameof(s_DockingRaycastSlots));
+            RegisterNativeArrayIfFallback(s_DroneStates, s_DroneStatesVaultBacked, nameof(s_DroneStates));
+            RegisterNativeArrayIfFallback(s_DroneStateBackBuffer, s_DroneStateBackBufferVaultBacked, nameof(s_DroneStateBackBuffer));
+            RegisterNativeArrayIfFallback(s_DroneRenderMatrices, s_DroneRenderMatricesVaultBacked, nameof(s_DroneRenderMatrices));
+            RegisterNativeArrayIfFallback(s_DroneRenderMatrixBackBuffer, s_DroneRenderMatrixBackBufferVaultBacked, nameof(s_DroneRenderMatrixBackBuffer));
+            RegisterNativeArrayIfFallback(s_DroneRenderInstances, s_DroneRenderInstancesVaultBacked, nameof(s_DroneRenderInstances));
+            RegisterNativeArrayIfFallback(s_DroneCullingStates, s_DroneCullingStatesVaultBacked, nameof(s_DroneCullingStates));
+            RegisterNativeArrayIfFallback(s_DronePositionsSoA, s_DronePositionsSoAVaultBacked, nameof(s_DronePositionsSoA));
+            RegisterNativeArrayIfFallback(s_DroneStateBytes, s_DroneStateBytesVaultBacked, nameof(s_DroneStateBytes));
+            RegisterNativeArrayIfFallback(s_DroneBlackBox, s_DroneBlackBoxVaultBacked, nameof(s_DroneBlackBox));
+            RegisterNativeArrayIfFallback(s_DroneTuningConstants, s_DroneTuningConstantsVaultBacked, nameof(s_DroneTuningConstants));
+            RegisterNativeArrayIfFallback(s_DroneMacroWaypoints, s_DroneMacroWaypointsVaultBacked, nameof(s_DroneMacroWaypoints));
+            RegisterNativeArrayIfFallback(s_DroneMacroWaypointStates, s_DroneMacroWaypointStatesVaultBacked, nameof(s_DroneMacroWaypointStates));
+            RegisterNativeArrayIfFallback(s_DroneAStarOpenHeap, s_DroneAStarOpenHeapVaultBacked, nameof(s_DroneAStarOpenHeap));
+            RegisterNativeArrayIfFallback(s_DroneAStarGCosts, s_DroneAStarGCostsVaultBacked, nameof(s_DroneAStarGCosts));
+            RegisterNativeArrayIfFallback(s_DroneAStarCameFrom, s_DroneAStarCameFromVaultBacked, nameof(s_DroneAStarCameFrom));
+            RegisterNativeArrayIfFallback(s_DroneAStarNodeStates, s_DroneAStarNodeStatesVaultBacked, nameof(s_DroneAStarNodeStates));
+            RegisterNativeArrayIfFallback(s_DroneMacroRouteNodes, s_DroneMacroRouteNodesVaultBacked, nameof(s_DroneMacroRouteNodes));
+            RegisterNativeArrayIfFallback(s_DroneMacroRouteCounts, s_DroneMacroRouteCountsVaultBacked, nameof(s_DroneMacroRouteCounts));
+            RegisterNativeArrayIfFallback(s_DroneAStarTelemetry, s_DroneAStarTelemetryVaultBacked, nameof(s_DroneAStarTelemetry));
+            RegisterNativeArrayIfFallback(s_HeadlessTaskClaimOwners, s_HeadlessTaskClaimOwnersVaultBacked, nameof(s_HeadlessTaskClaimOwners));
+            RegisterNativeArrayIfFallback(s_FleetTelemetryAccumulator, s_FleetTelemetryAccumulatorVaultBacked, nameof(s_FleetTelemetryAccumulator));
+            RegisterNativeArrayIfFallback(s_DockingRaycastCommands, s_DockingRaycastCommandsVaultBacked, nameof(s_DockingRaycastCommands));
+            RegisterNativeArrayIfFallback(s_DockingRaycastHits, s_DockingRaycastHitsVaultBacked, nameof(s_DockingRaycastHits));
+            RegisterNativeArrayIfFallback(s_DockingRaycastSlots, s_DockingRaycastSlotsVaultBacked, nameof(s_DockingRaycastSlots));
+            RegisterNativeArrayIfFallback(s_DroneTaskPriorityHeap, s_DroneTaskPriorityHeapVaultBacked, nameof(s_DroneTaskPriorityHeap));
             RegisterNativeParallelMultiHashMap(s_HeadlessTasksByHub, nameof(s_HeadlessTasksByHub));
             RegisterNativeParallelMultiHashMap(s_HeadlessDroneSpatialHash, nameof(s_HeadlessDroneSpatialHash));
             RegisterNativeQueue(s_DroneServiceCommands, DroneServiceCommandCapacity, nameof(s_DroneServiceCommands));
@@ -1189,24 +1327,42 @@ namespace Hecton8.Construction
             s_TaskVoxelVolumeRefs = new HectonVoxelVolume[HeadlessTaskCapacity]; // COLD ALLOC: HectonVoxelVolume[64] - native task index to managed voxel lookup - owner: DroneFleetManager
             s_TaskKinds = new DroneFleetTaskKind[HeadlessTaskCapacity]; // COLD ALLOC: DroneFleetTaskKind[64] - native task index to managed task kind lookup - owner: DroneFleetManager
             s_PendingLaunches = new PendingDroneLaunch[HeadlessPendingLaunchCapacity]; // COLD ALLOC: PendingDroneLaunch[64] - slow-tick launch queue applied after job completion - owner: DroneFleetManager
+            if (s_DroneTuningConstants.IsCreated && s_DroneTuningConstants.Length > 0)
+                s_DroneTuningConstants[0] = DroneFleetTuningConstants.CreateDefault();
+            if (s_DroneMacroWaypointStates.IsCreated)
+            {
+                for (int i = 0; i < s_DroneMacroWaypointStates.Length; i++)
+                    s_DroneMacroWaypointStates[i] = 0;
+            }
         }
 
         private static void ReleaseHeadlessNativeMemory()
         {
-            DisposeNativeArray(ref s_DroneStates);
-            DisposeNativeArray(ref s_DroneStateBackBuffer);
-            DisposeNativeArray(ref s_DroneRenderMatrices);
-            DisposeNativeArray(ref s_DroneRenderMatrixBackBuffer);
-            DisposeNativeArray(ref s_DroneRenderInstances);
+            ReleaseDroneVaultBuffer(ref s_DroneStates, ref s_DroneStatesHandle, ref s_DroneStatesVaultBacked, nameof(s_DroneStates));
+            ReleaseDroneVaultBuffer(ref s_DroneStateBackBuffer, ref s_DroneStateBackBufferHandle, ref s_DroneStateBackBufferVaultBacked, nameof(s_DroneStateBackBuffer));
+            ReleaseDroneVaultBuffer(ref s_DroneRenderMatrices, ref s_DroneRenderMatricesHandle, ref s_DroneRenderMatricesVaultBacked, nameof(s_DroneRenderMatrices));
+            ReleaseDroneVaultBuffer(ref s_DroneRenderMatrixBackBuffer, ref s_DroneRenderMatrixBackBufferHandle, ref s_DroneRenderMatrixBackBufferVaultBacked, nameof(s_DroneRenderMatrixBackBuffer));
+            ReleaseDroneVaultBuffer(ref s_DroneRenderInstances, ref s_DroneRenderInstancesHandle, ref s_DroneRenderInstancesVaultBacked, nameof(s_DroneRenderInstances));
             ReleaseDroneCullingStatesBuffer();
-            DisposeNativeArray(ref s_DronePositionsSoA);
-            DisposeNativeArray(ref s_DroneStateBytes);
-            DisposeNativeArray(ref s_DroneBlackBox);
-            DisposeNativeArray(ref s_HeadlessTaskClaimOwners);
-            DisposeNativeArray(ref s_FleetTelemetryAccumulator);
-            DisposeNativeArray(ref s_DockingRaycastCommands);
-            DisposeNativeArray(ref s_DockingRaycastHits);
-            DisposeNativeArray(ref s_DockingRaycastSlots);
+            ReleaseDroneVaultBuffer(ref s_DronePositionsSoA, ref s_DronePositionsSoAHandle, ref s_DronePositionsSoAVaultBacked, nameof(s_DronePositionsSoA));
+            ReleaseDroneVaultBuffer(ref s_DroneStateBytes, ref s_DroneStateBytesHandle, ref s_DroneStateBytesVaultBacked, nameof(s_DroneStateBytes));
+            ReleaseDroneVaultBuffer(ref s_DroneBlackBox, ref s_DroneBlackBoxHandle, ref s_DroneBlackBoxVaultBacked, nameof(s_DroneBlackBox));
+            ReleaseDroneVaultBuffer(ref s_DroneTuningConstants, ref s_DroneTuningConstantsHandle, ref s_DroneTuningConstantsVaultBacked, nameof(s_DroneTuningConstants));
+            ReleaseDroneVaultBuffer(ref s_DroneMacroWaypoints, ref s_DroneMacroWaypointsHandle, ref s_DroneMacroWaypointsVaultBacked, nameof(s_DroneMacroWaypoints));
+            ReleaseDroneVaultBuffer(ref s_DroneMacroWaypointStates, ref s_DroneMacroWaypointStatesHandle, ref s_DroneMacroWaypointStatesVaultBacked, nameof(s_DroneMacroWaypointStates));
+            ReleaseDroneVaultBuffer(ref s_DroneAStarOpenHeap, ref s_DroneAStarOpenHeapHandle, ref s_DroneAStarOpenHeapVaultBacked, nameof(s_DroneAStarOpenHeap));
+            ReleaseDroneVaultBuffer(ref s_DroneAStarGCosts, ref s_DroneAStarGCostsHandle, ref s_DroneAStarGCostsVaultBacked, nameof(s_DroneAStarGCosts));
+            ReleaseDroneVaultBuffer(ref s_DroneAStarCameFrom, ref s_DroneAStarCameFromHandle, ref s_DroneAStarCameFromVaultBacked, nameof(s_DroneAStarCameFrom));
+            ReleaseDroneVaultBuffer(ref s_DroneAStarNodeStates, ref s_DroneAStarNodeStatesHandle, ref s_DroneAStarNodeStatesVaultBacked, nameof(s_DroneAStarNodeStates));
+            ReleaseDroneVaultBuffer(ref s_DroneMacroRouteNodes, ref s_DroneMacroRouteNodesHandle, ref s_DroneMacroRouteNodesVaultBacked, nameof(s_DroneMacroRouteNodes));
+            ReleaseDroneVaultBuffer(ref s_DroneMacroRouteCounts, ref s_DroneMacroRouteCountsHandle, ref s_DroneMacroRouteCountsVaultBacked, nameof(s_DroneMacroRouteCounts));
+            ReleaseDroneVaultBuffer(ref s_DroneAStarTelemetry, ref s_DroneAStarTelemetryHandle, ref s_DroneAStarTelemetryVaultBacked, nameof(s_DroneAStarTelemetry));
+            ReleaseDroneVaultBuffer(ref s_HeadlessTaskClaimOwners, ref s_HeadlessTaskClaimOwnersHandle, ref s_HeadlessTaskClaimOwnersVaultBacked, nameof(s_HeadlessTaskClaimOwners));
+            ReleaseDroneVaultBuffer(ref s_FleetTelemetryAccumulator, ref s_FleetTelemetryAccumulatorHandle, ref s_FleetTelemetryAccumulatorVaultBacked, nameof(s_FleetTelemetryAccumulator));
+            ReleaseDroneVaultBuffer(ref s_DockingRaycastCommands, ref s_DockingRaycastCommandsHandle, ref s_DockingRaycastCommandsVaultBacked, nameof(s_DockingRaycastCommands));
+            ReleaseDroneVaultBuffer(ref s_DockingRaycastHits, ref s_DockingRaycastHitsHandle, ref s_DockingRaycastHitsVaultBacked, nameof(s_DockingRaycastHits));
+            ReleaseDroneVaultBuffer(ref s_DockingRaycastSlots, ref s_DockingRaycastSlotsHandle, ref s_DockingRaycastSlotsVaultBacked, nameof(s_DockingRaycastSlots));
+            ReleaseDroneVaultBuffer(ref s_DroneTaskPriorityHeap, ref s_DroneTaskPriorityHeapHandle, ref s_DroneTaskPriorityHeapVaultBacked, nameof(s_DroneTaskPriorityHeap));
             DisposeNativeParallelMultiHashMap(ref s_HeadlessTasksByHub, nameof(s_HeadlessTasksByHub));
             DisposeNativeParallelMultiHashMap(ref s_HeadlessDroneSpatialHash, nameof(s_HeadlessDroneSpatialHash));
             DisposeNativeQueue(ref s_DroneServiceCommands, nameof(s_DroneServiceCommands));
@@ -1231,43 +1387,85 @@ namespace Hecton8.Construction
 
         private static NativeArray<DroneCullingStateGpu> ResolveDroneCullingStatesBuffer()
         {
+            return ResolveDroneVaultBuffer<DroneCullingStateGpu>(
+                BufferID.DroneFleetCullingStates,
+                HeadlessDroneCapacity,
+                NativeArrayOptions.ClearMemory,
+                ref s_DroneCullingStatesHandle,
+                out s_DroneCullingStatesVaultBacked);
+        }
+
+        private static NativeArray<T> ResolveDroneVaultBuffer<T>(
+            BufferID bufferId,
+            int length,
+            NativeArrayOptions options,
+            ref VaultBufferHandle<T> handle,
+            out bool vaultBacked) where T : struct
+        {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault != null)
             {
-                s_DroneCullingStatesVaultBacked = true;
-                return vault.GetBuffer<DroneCullingStateGpu>(
-                    BufferID.DroneFleetCullingStates,
-                    HeadlessDroneCapacity,
+                handle = vault.GetBufferHandle<T>(
+                    bufferId,
+                    length,
                     SystemID.Construction,
-                    NativeArrayOptions.ClearMemory);
+                    options);
+                NativeArray<T> buffer = handle.Resolve(vault);
+                if (buffer.IsCreated)
+                {
+                    vaultBacked = true;
+                    return buffer;
+                }
+
+                handle = default;
             }
 
-            s_DroneCullingStatesVaultBacked = false;
-            return H8Memory.Allocate<DroneCullingStateGpu>(
-                HeadlessDroneCapacity,
+            vaultBacked = false;
+            return H8Memory.Allocate<T>(
+                length,
                 SystemID.Construction,
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
+                options);
         }
 
         private static void ReleaseDroneCullingStatesBuffer()
         {
-            if (!s_DroneCullingStates.IsCreated)
+            ReleaseDroneVaultBuffer(ref s_DroneCullingStates, ref s_DroneCullingStatesHandle, ref s_DroneCullingStatesVaultBacked, nameof(s_DroneCullingStates));
+        }
+
+        private static void RegisterNativeArrayIfFallback<T>(NativeArray<T> array, bool vaultBacked, string label) where T : struct
+        {
+            if (!array.IsCreated || vaultBacked)
+                return;
+
+            RegisterNativeArray(array, label);
+        }
+
+        private static void ReleaseDroneVaultBuffer<T>(
+            ref NativeArray<T> array,
+            ref VaultBufferHandle<T> handle,
+            ref bool vaultBacked,
+            string label) where T : struct
+        {
+            if (!array.IsCreated)
             {
-                s_DroneCullingStatesVaultBacked = false;
+                handle = default;
+                vaultBacked = false;
                 return;
             }
 
-            if (s_DroneCullingStatesVaultBacked)
+            if (vaultBacked)
             {
-                s_DroneCullingStates = default;
-                s_DroneCullingStatesVaultBacked = false;
+                array = default;
+                handle = default;
+                vaultBacked = false;
                 return;
             }
 
-            NativeMemorySentinel.UnregisterNativeArray(s_DroneCullingStates);
-            H8Memory.Release(ref s_DroneCullingStates, SystemID.Construction);
-            s_DroneCullingStatesVaultBacked = false;
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            H8Memory.Release(ref array, SystemID.Construction);
+            handle = default;
+            vaultBacked = false;
         }
 
         private static void TryRegisterHeadlessDriver()
@@ -1328,6 +1526,15 @@ namespace Hecton8.Construction
                 out float phantomFlowStrength,
                 out float phantomFlowVerticalFactor);
 
+            DroneFleetTuningConstants tuning = ResolveDroneTuning();
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            int frameIndex = s_DroneFrameIndex++;
+            int steeringTickModulo = ResolveDroneSteeringTickModulo(tier, in tuning);
+            int aStarSolveBudget = ResolveDroneAStarSolveBudget(tier, in tuning);
+            MockSDFGrid sdfGrid = BuildMockSdfGrid(in tuning);
+            JobHandle macroAStarHandle = ScheduleDroneMacroAStar(frameIndex, aStarSolveBudget, in tuning, in sdfGrid);
+            s_LastDroneSteeringTickModulo = steeringTickModulo;
+
             DroneCognitionJob job = default;
             job.ReadDrones = s_DroneStates;
             job.Drones = s_DroneStateBackBuffer;
@@ -1337,6 +1544,8 @@ namespace Hecton8.Construction
             job.TasksByGrid = s_HeadlessTasksByHub;
             job.DroneSpatialHash = s_HeadlessDroneSpatialHash;
             job.AbyssalFlowVolume = abyssalFlowVolume;
+            job.MacroWaypoints = s_DroneMacroWaypoints;
+            job.MacroWaypointStates = s_DroneMacroWaypointStates;
             job.TaskClaimOwners = s_HeadlessTaskClaimOwners;
             job.TelemetryAccumulator = s_FleetTelemetryAccumulator;
             job.ServiceCommands = s_DroneServiceCommands.AsParallelWriter();
@@ -1367,9 +1576,169 @@ namespace Hecton8.Construction
             job.PhantomFlowVerticalFactor = phantomFlowVerticalFactor;
             job.PhantomFlowEnabled = phantomFlowEnabled ? 1 : 0;
             job.FlowDragCoefficient = DroneFlowDragCoefficient;
-            job.CrossCurrentVisualSlipEnabled = IsLowDockingMathTier(GlobalRegistry.ScalabilityTier) ? 0 : 1;
-            s_HeadlessJobHandle = job.Schedule(HeadlessDroneCapacity, HeadlessDroneCapacity);
+            job.CrossCurrentVisualSlipEnabled = IsLowDockingMathTier(tier) ? 0 : 1;
+            job.SdfGrid = sdfGrid;
+            job.FrameIndex = frameIndex;
+            job.SteeringTickModulo = steeringTickModulo;
+            job.SdfRepulsionStrength = tuning.SdfRepulsionStrength;
+            s_HeadlessJobHandle = job.Schedule(HeadlessDroneCapacity, HeadlessDroneCapacity, macroAStarHandle);
             s_HeadlessJobScheduled = true;
+        }
+
+        private static JobHandle ScheduleDroneMacroAStar(
+            int frameIndex,
+            int solveBudget,
+            in DroneFleetTuningConstants tuning,
+            in MockSDFGrid sdfGrid)
+        {
+            if (!s_DroneMacroWaypoints.IsCreated ||
+                !s_DroneMacroWaypointStates.IsCreated ||
+                !s_DroneAStarOpenHeap.IsCreated ||
+                !s_DroneAStarGCosts.IsCreated ||
+                !s_DroneAStarCameFrom.IsCreated ||
+                !s_DroneAStarNodeStates.IsCreated)
+            {
+                return default;
+            }
+
+            DroneMacroAStarJob job = new DroneMacroAStarJob
+            {
+                Drones = s_DroneStates,
+                Waypoints = s_DroneMacroWaypoints,
+                WaypointStates = s_DroneMacroWaypointStates,
+                OpenHeap = s_DroneAStarOpenHeap,
+                GCosts = s_DroneAStarGCosts,
+                CameFrom = s_DroneAStarCameFrom,
+                NodeStates = s_DroneAStarNodeStates,
+                RouteNodes = s_DroneMacroRouteNodes,
+                RouteNodeCounts = s_DroneMacroRouteCounts,
+                Telemetry = s_DroneAStarTelemetry,
+                SdfGrid = sdfGrid,
+                FrameIndex = frameIndex,
+                MaxSolves = solveBudget,
+                RouteNodeStride = DroneAStarRouteNodeStride,
+                CellSize = Mathf.Max(0.5f, tuning.AStarCellSize)
+            };
+
+            return job.Schedule();
+        }
+
+        private static DroneFleetTuningConstants ResolveDroneTuning()
+        {
+            if (s_DroneTuningConstants.IsCreated && s_DroneTuningConstants.Length > 0)
+                return SanitizeDroneTuning(s_DroneTuningConstants[0]);
+
+            return DroneFleetTuningConstants.CreateDefault();
+        }
+
+        private static DroneFleetTuningConstants SanitizeDroneTuning(DroneFleetTuningConstants tuning)
+        {
+            DroneFleetTuningConstants fallback = DroneFleetTuningConstants.CreateDefault();
+            if (tuning.MaxDroneSpeed <= 0f)
+                tuning.MaxDroneSpeed = fallback.MaxDroneSpeed;
+            if (tuning.BatteryDrainRate <= 0f)
+                tuning.BatteryDrainRate = fallback.BatteryDrainRate;
+            if (tuning.RepairSpeed <= 0f)
+                tuning.RepairSpeed = fallback.RepairSpeed;
+            if (tuning.CargoCapacity <= 0f)
+                tuning.CargoCapacity = fallback.CargoCapacity;
+            if (tuning.MiningHoldSeconds <= 0f)
+                tuning.MiningHoldSeconds = fallback.MiningHoldSeconds;
+            if (tuning.LowTierSteeringHz <= 0f)
+                tuning.LowTierSteeringHz = fallback.LowTierSteeringHz;
+            if (tuning.MidTierSteeringHz <= 0f)
+                tuning.MidTierSteeringHz = fallback.MidTierSteeringHz;
+            if (tuning.HighTierSteeringHz <= 0f)
+                tuning.HighTierSteeringHz = fallback.HighTierSteeringHz;
+            if (tuning.UltraTierSteeringHz <= 0f)
+                tuning.UltraTierSteeringHz = fallback.UltraTierSteeringHz;
+            if (tuning.AStarCellSize <= 0f)
+                tuning.AStarCellSize = fallback.AStarCellSize;
+            if (tuning.LowTierSolveBudget <= 0f)
+                tuning.LowTierSolveBudget = fallback.LowTierSolveBudget;
+            if (tuning.MidTierSolveBudget <= 0f)
+                tuning.MidTierSolveBudget = fallback.MidTierSolveBudget;
+            if (tuning.HighTierSolveBudget <= 0f)
+                tuning.HighTierSolveBudget = fallback.HighTierSolveBudget;
+            if (tuning.UltraTierSolveBudget <= 0f)
+                tuning.UltraTierSolveBudget = fallback.UltraTierSolveBudget;
+
+            tuning.MaxDroneSpeed = Mathf.Clamp(tuning.MaxDroneSpeed, 0.5f, 24f);
+            tuning.BatteryDrainRate = Mathf.Clamp(tuning.BatteryDrainRate, 0.01f, 25f);
+            tuning.SdfRepulsionStrength = Mathf.Clamp(tuning.SdfRepulsionStrength, 0f, 24f);
+            tuning.RepairSpeed = Mathf.Clamp(tuning.RepairSpeed, 0.05f, 8f);
+            tuning.CargoCapacity = Mathf.Clamp(tuning.CargoCapacity, 1f, 64f);
+            tuning.MiningHoldSeconds = Mathf.Clamp(tuning.MiningHoldSeconds, 0.01f, 5f);
+            tuning.LowTierSteeringHz = Mathf.Clamp(tuning.LowTierSteeringHz, 5f, 60f);
+            tuning.MidTierSteeringHz = Mathf.Clamp(tuning.MidTierSteeringHz, 10f, 60f);
+            tuning.HighTierSteeringHz = Mathf.Clamp(tuning.HighTierSteeringHz, 15f, 120f);
+            tuning.UltraTierSteeringHz = Mathf.Clamp(tuning.UltraTierSteeringHz, 15f, 120f);
+            tuning.AStarCellSize = Mathf.Clamp(tuning.AStarCellSize, 1f, 12f);
+            tuning.LowTierSolveBudget = Mathf.Clamp(tuning.LowTierSolveBudget, 1f, HeadlessDroneCapacity);
+            tuning.MidTierSolveBudget = Mathf.Clamp(tuning.MidTierSolveBudget, 1f, HeadlessDroneCapacity);
+            tuning.HighTierSolveBudget = Mathf.Clamp(tuning.HighTierSolveBudget, 1f, HeadlessDroneCapacity);
+            tuning.UltraTierSolveBudget = Mathf.Clamp(tuning.UltraTierSolveBudget, 1f, HeadlessDroneCapacity);
+            return tuning;
+        }
+
+        private static int ResolveDroneSteeringTickModulo(HectonQualityTier tier, in DroneFleetTuningConstants tuning)
+        {
+            float targetHz;
+            if (tier == HectonQualityTier.Ultra)
+                targetHz = tuning.UltraTierSteeringHz;
+            else if (tier == HectonQualityTier.High)
+                targetHz = tuning.HighTierSteeringHz;
+            else if (tier == HectonQualityTier.Mid)
+                targetHz = tuning.MidTierSteeringHz;
+            else
+                targetHz = tuning.LowTierSteeringHz;
+
+            return Mathf.Clamp(Mathf.RoundToInt(60f / Mathf.Max(1f, targetHz)), 1, 12);
+        }
+
+        private static int ResolveDroneAStarSolveBudget(HectonQualityTier tier, in DroneFleetTuningConstants tuning)
+        {
+            float budget;
+            if (tier == HectonQualityTier.Ultra)
+                budget = tuning.UltraTierSolveBudget;
+            else if (tier == HectonQualityTier.High)
+                budget = tuning.HighTierSolveBudget;
+            else if (tier == HectonQualityTier.Mid)
+                budget = tuning.MidTierSolveBudget;
+            else
+                budget = tuning.LowTierSolveBudget;
+
+            return Mathf.Clamp(Mathf.RoundToInt(budget), 1, HeadlessDroneCapacity);
+        }
+
+        private static MockSDFGrid BuildMockSdfGrid(in DroneFleetTuningConstants tuning)
+        {
+            MockSDFGrid grid = MockSDFGrid.CreateDefault();
+            grid.RepulsionDistance = Mathf.Max(0.5f, tuning.AStarCellSize * 0.65f);
+            return grid;
+        }
+
+        private static void ReadDroneAStarTelemetry()
+        {
+            if (!s_DroneAStarTelemetry.IsCreated || s_DroneAStarTelemetry.Length <= 0)
+                return;
+
+            DroneAStarTelemetry telemetry = s_DroneAStarTelemetry[0];
+            s_DroneAStarSolvedCount += telemetry.SolvedCount;
+            s_DroneAStarFailureCount += telemetry.FailedCount;
+            s_DroneAStarIterationCount += telemetry.IterationCount;
+            s_LastDroneAStarStatus = telemetry.LastStatus;
+            int attemptCount = telemetry.SolvedCount + telemetry.FailedCount;
+            s_LastDroneAStarAveragePathfindingTimeMs = EstimateAStarAveragePathfindingTimeMs(telemetry.IterationCount, attemptCount);
+        }
+
+        private static float EstimateAStarAveragePathfindingTimeMs(int iterationCount, int attemptCount)
+        {
+            if (attemptCount <= 0 || iterationCount <= 0)
+                return 0f;
+
+            float averageIterations = iterationCount * math.rcp(math.max(1f, attemptCount));
+            return averageIterations * 0.000045f;
         }
 
         private static void CompleteHeadlessSimulationAndApply()
@@ -1386,9 +1755,22 @@ namespace Hecton8.Construction
                 NativeArray<HeadlessDroneState> swap = s_DroneStates;
                 s_DroneStates = s_DroneStateBackBuffer;
                 s_DroneStateBackBuffer = swap;
+                VaultBufferHandle<HeadlessDroneState> stateHandleSwap = s_DroneStatesHandle;
+                s_DroneStatesHandle = s_DroneStateBackBufferHandle;
+                s_DroneStateBackBufferHandle = stateHandleSwap;
+                bool stateVaultBackedSwap = s_DroneStatesVaultBacked;
+                s_DroneStatesVaultBacked = s_DroneStateBackBufferVaultBacked;
+                s_DroneStateBackBufferVaultBacked = stateVaultBackedSwap;
                 NativeArray<float4x4> matrixSwap = s_DroneRenderMatrices;
                 s_DroneRenderMatrices = s_DroneRenderMatrixBackBuffer;
                 s_DroneRenderMatrixBackBuffer = matrixSwap;
+                VaultBufferHandle<float4x4> matrixHandleSwap = s_DroneRenderMatricesHandle;
+                s_DroneRenderMatricesHandle = s_DroneRenderMatrixBackBufferHandle;
+                s_DroneRenderMatrixBackBufferHandle = matrixHandleSwap;
+                bool matrixVaultBackedSwap = s_DroneRenderMatricesVaultBacked;
+                s_DroneRenderMatricesVaultBacked = s_DroneRenderMatrixBackBufferVaultBacked;
+                s_DroneRenderMatrixBackBufferVaultBacked = matrixVaultBackedSwap;
+                ReadDroneAStarTelemetry();
             }
 
             ApplyPendingControls();
@@ -1898,6 +2280,7 @@ namespace Hecton8.Construction
 
                 if (drone.State == (byte)HeadlessDroneRuntimeState.Completed)
                 {
+                    s_DroneTasksCompletedCount++;
                     PublishPendingDockingHatchOpen(slot, ref drone);
                     PublishDockingComplete(in drone);
                     ClearHeadlessSlot(slot, true);
@@ -1990,6 +2373,10 @@ namespace Hecton8.Construction
                 {
                     ApplyHostileHijackService(slot, ref drone, serviceDt);
                 }
+                else if (s_DroneTaskKindsBySlot[slot] == DroneFleetTaskKind.MineNode)
+                {
+                    ApplyMockMiningService(ref drone, serviceDt);
+                }
                 else if (s_DroneTaskKindsBySlot[slot] == DroneFleetTaskKind.CutParasite)
                 {
                     ApplyParasiteAttackService(slot, ref drone, serviceDt);
@@ -2028,13 +2415,26 @@ namespace Hecton8.Construction
 
         private static void GrantDroneResupply(ref HeadlessDroneState drone, int grantedUnits)
         {
-            drone.SolderUnits += Mathf.Max(1, grantedUnits);
+            int units = Mathf.Max(1, grantedUnits);
+            drone.SolderUnits += units;
             drone.LoadedSolderCapacity = Mathf.Max(drone.LoadedSolderCapacity, drone.SolderUnits);
             drone.TransactionProgress = 1f;
             drone.State = drone.TargetTaskIndex >= 0
                 ? (byte)HeadlessDroneRuntimeState.Travel
                 : (byte)HeadlessDroneRuntimeState.Idle;
             drone.Velocity = float3.zero;
+            DroneFleetInventoryTransactionSignal signal = new DroneFleetInventoryTransactionSignal
+            {
+                DroneId = drone.DroneId,
+                SourceId = drone.HubGridId,
+                DestinationId = drone.DroneId,
+                ItemHash = (int)DroneRepairSparksSignalHash,
+                Quantity = units,
+                Position = drone.Position,
+                Flags = 1u,
+                Reserved0 = 0u
+            };
+            SignalBus<DroneFleetInventoryTransactionSignal>.Push(in signal);
         }
 
         private static void TryQueueStasisWakeRequest(int slot, ref HeadlessDroneState drone)
@@ -2170,6 +2570,16 @@ namespace Hecton8.Construction
             float repairAmount = drone.RepairRatePerSecond * dt;
             float previousIntegrity = target.CurrentIntegrity;
             target.Repair(repairAmount);
+            DroneFleetMockRepairSignal repairSignal = new DroneFleetMockRepairSignal
+            {
+                DroneId = drone.DroneId,
+                TargetModuleId = GetRuntimeId(target),
+                RepairUnits = repairAmount,
+                Position = drone.Position,
+                Flags = 0u,
+                Reserved0 = 0u
+            };
+            SignalBus<DroneFleetMockRepairSignal>.Push(in repairSignal);
             DispatchRepairWeld(slot, in drone, target);
 
             float repaired = Mathf.Max(0f, target.CurrentIntegrity - previousIntegrity);
@@ -2177,6 +2587,35 @@ namespace Hecton8.Construction
 
             if (target.CurrentIntegrity >= recoverableIntegrity && !target.IsFlooded && !target.HasCascadeFailure)
                 ReturnDroneToHub(ref drone);
+        }
+
+        private static void ApplyMockMiningService(ref HeadlessDroneState drone, float dt)
+        {
+            DroneFleetTuningConstants tuning = ResolveDroneTuning();
+            float holdSeconds = Mathf.Max(0.01f, tuning.MiningHoldSeconds);
+            drone.RepairAccumulator = Mathf.Min(holdSeconds, drone.RepairAccumulator + Mathf.Max(0f, dt));
+            drone.TransactionProgress = Mathf.Clamp01(drone.RepairAccumulator / holdSeconds);
+            if (drone.RepairAccumulator < holdSeconds)
+                return;
+
+            int sourceId = drone.TargetModuleId != 0
+                ? drone.TargetModuleId
+                : unchecked((int)math.hash(drone.TargetPosition));
+            DroneFleetInventoryTransactionSignal signal = new DroneFleetInventoryTransactionSignal
+            {
+                DroneId = drone.DroneId,
+                SourceId = sourceId,
+                DestinationId = drone.HubGridId,
+                ItemHash = DroneInventoryCopperHash,
+                Quantity = 1,
+                Position = drone.Position,
+                Flags = 2u,
+                Reserved0 = 0u
+            };
+            SignalBus<DroneFleetInventoryTransactionSignal>.Push(in signal);
+            drone.RepairAccumulator = 0f;
+            drone.TransactionProgress = 1f;
+            ReturnDroneToHub(ref drone);
         }
 
         private static void ApplyParasiteAttackService(int slot, ref HeadlessDroneState drone, float dt)
@@ -2354,6 +2793,7 @@ namespace Hecton8.Construction
                 Flags = 0
             };
             GlobalSignals.Publish(in signal);
+
         }
 
         private static void ApplyPendingLaunches()
@@ -2361,6 +2801,8 @@ namespace Hecton8.Construction
             if (s_PendingLaunchCount <= 0)
                 return;
 
+            DroneFleetTuningConstants tuning = ResolveDroneTuning();
+            int tunedCargoCapacity = Mathf.Max(1, Mathf.RoundToInt(tuning.CargoCapacity));
             for (int i = 0; i < s_PendingLaunchCount; i++)
             {
                 PendingDroneLaunch launch = s_PendingLaunches[i];
@@ -2395,7 +2837,7 @@ namespace Hecton8.Construction
                     TargetTaskIndex = launch.DroneId,
                     TargetModuleId = GetRuntimeId(target),
                     SolderUnits = Mathf.Max(0, launch.LoadedSolderUnits),
-                    LoadedSolderCapacity = Mathf.Max(0, launch.LoadedSolderUnits),
+                    LoadedSolderCapacity = Mathf.Max(tunedCargoCapacity, launch.LoadedSolderUnits),
                     State = (byte)HeadlessDroneRuntimeState.Travel,
                     FactionBit = (byte)HeadlessDroneFactionBit.Friendly,
                     CorridorTight = ResolveCorridorFlag(launch.HomePosition),
@@ -2406,9 +2848,9 @@ namespace Hecton8.Construction
                     AvoidanceHysteresisSeconds = 0f,
                     TransactionProgress = 0f,
                     ServiceRadius = Mathf.Max(HeadlessServiceRadiusMeters, launch.Task.Radius),
-                    MaxSpeed = HeadlessDefaultSpeedMetersPerSecond,
-                    BatteryDrainPerSecond = HeadlessBatteryDrainPercentPerSecond,
-                    RepairRatePerSecond = launch.RepairRatePerSecond,
+                    MaxSpeed = tuning.MaxDroneSpeed,
+                    BatteryDrainPerSecond = tuning.BatteryDrainRate,
+                    RepairRatePerSecond = Mathf.Max(0.01f, launch.RepairRatePerSecond * tuning.RepairSpeed),
                     WeldPowerNormalized = HeadlessWeldPowerNormalized,
                     WeldRangeMeters = HeadlessWeldRangeMeters,
                     Position = ToFloat3(launch.HomePosition),
@@ -2445,13 +2887,17 @@ namespace Hecton8.Construction
             if (taskIndex < 0 || taskIndex >= s_HeadlessTaskCount || taskIndex >= s_TaskModuleRefs.Length)
                 return;
 
+            s_DroneTaskKindsBySlot[slot] = s_TaskKinds[taskIndex];
             BaseModule module = s_TaskModuleRefs[taskIndex];
             if (module == null)
+            {
+                s_TargetModulesByDroneSlot[slot] = null;
+                s_TargetVoxelVolumesByDroneSlot[slot] = null;
                 return;
+            }
 
             s_TargetModulesByDroneSlot[slot] = module;
             s_TargetVoxelVolumesByDroneSlot[slot] = s_TaskVoxelVolumeRefs[taskIndex];
-            s_DroneTaskKindsBySlot[slot] = s_TaskKinds[taskIndex];
             drone.TargetModuleId = GetRuntimeId(module);
         }
 
@@ -2509,7 +2955,13 @@ namespace Hecton8.Construction
                 s_DronePositionsSoA[slot] = drone.Position;
 
             if (s_DroneStateBytes.IsCreated)
-                s_DroneStateBytes[slot] = ResolveDroneSoAState(in drone);
+            {
+                s_DroneStateBytes[slot] = s_DroneTaskKindsBySlot != null &&
+                    s_DroneTaskKindsBySlot[slot] == DroneFleetTaskKind.MineNode &&
+                    drone.State == (byte)HeadlessDroneRuntimeState.Repair
+                    ? (byte)DroneFleetSoaState.Mining
+                    : ResolveDroneSoAState(in drone);
+            }
         }
 
         private static byte ResolveDroneSoAState(in HeadlessDroneState drone)
@@ -2598,6 +3050,7 @@ namespace Hecton8.Construction
 
             int hubCount = Mathf.Min(RepairDroneHub.ActiveHubCount, MaxMainThreadHubScanCount);
             FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            System.ReadOnlySpan<DroneFleetMockMiningSignal> miningSignals = SignalBus<DroneFleetMockMiningSignal>.GetFrameSnapshot();
             int remainingModuleScans = MaxMainThreadTaskScanCount;
             for (int hubIndex = 0; hubIndex < hubCount; hubIndex++)
             {
@@ -2646,7 +3099,53 @@ namespace Hecton8.Construction
 
                 if (remainingModuleScans <= 0)
                     break;
+
+                AppendMockMiningTasksForHub(hubIndex, hubCount, hubKey, miningSignals);
             }
+        }
+
+        private static void AppendMockMiningTasksForHub(
+            int hubIndex,
+            int hubCount,
+            int hubKey,
+            System.ReadOnlySpan<DroneFleetMockMiningSignal> miningSignals)
+        {
+            if (miningSignals.Length <= 0)
+                return;
+
+            for (int i = 0; i < miningSignals.Length && s_HeadlessTaskCount < HeadlessTaskCapacity; i++)
+            {
+                DroneFleetMockMiningSignal signal = miningSignals[i];
+                if (!IsFiniteFloat3(signal.Position) ||
+                    ResolveNearestHubIndex(signal.Position, hubCount) != hubIndex)
+                {
+                    continue;
+                }
+
+                AppendHeadlessMockMiningTask(hubKey, in signal);
+            }
+        }
+
+        private static int ResolveNearestHubIndex(float3 position, int hubCount)
+        {
+            int bestIndex = -1;
+            float bestDistanceSq = float.MaxValue;
+            Vector3 targetPosition = ToVector3(position);
+            for (int i = 0; i < hubCount; i++)
+            {
+                RepairDroneHub hub = RepairDroneHub.GetActiveHubAt(i);
+                if (hub == null || !hub.isActiveAndEnabled)
+                    continue;
+
+                float distanceSq = (hub.DockPosition - targetPosition).sqrMagnitude;
+                if (distanceSq >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = distanceSq;
+                bestIndex = i;
+            }
+
+            return bestIndex;
         }
 
         private static void AppendHeadlessTask(
@@ -2673,7 +3172,35 @@ namespace Hecton8.Construction
                 RequiredFaction = (byte)HeadlessDroneFactionBit.Friendly,
                 Criticality = Mathf.Max(0.1f, criticalityWeight),
                 Radius = Mathf.Max(HeadlessServiceRadiusMeters, radius),
-                Position = ToFloat3(position)
+                Position = ToFloat3(position),
+                ReservedTail = 0
+            });
+            s_HeadlessTaskCount++;
+        }
+
+        private static void AppendHeadlessMockMiningTask(int hubKey, in DroneFleetMockMiningSignal signal)
+        {
+            int taskIndex = s_HeadlessTaskCount;
+            if (taskIndex < 0 || taskIndex >= HeadlessTaskCapacity)
+                return;
+
+            int nodeId = signal.TargetNodeId != 0
+                ? signal.TargetNodeId
+                : unchecked((int)math.hash(signal.Position));
+            s_TaskModuleRefs[taskIndex] = null;
+            s_TaskVoxelVolumeRefs[taskIndex] = null;
+            s_TaskKinds[taskIndex] = DroneFleetTaskKind.MineNode;
+            s_HeadlessTasksByHub.Add(hubKey, new HeadlessDroneTask
+            {
+                TaskIndex = taskIndex,
+                ModuleId = nodeId,
+                HubGridId = hubKey,
+                Kind = (byte)DroneFleetTaskKind.MineNode,
+                RequiredFaction = (byte)HeadlessDroneFactionBit.Friendly,
+                Criticality = 0.1f,
+                Radius = HeadlessServiceRadiusMeters,
+                Position = signal.Position,
+                ReservedTail = 0
             });
             s_HeadlessTaskCount++;
         }
@@ -3576,6 +4103,9 @@ namespace Hecton8.Construction
                 }
             }
 
+            if (s_LastDroneAStarStatus == 2)
+                flags |= 2;
+
             int index = s_DroneBlackBoxCursor;
             if ((uint)index >= (uint)s_DroneBlackBox.Length)
                 index = 0;
@@ -3588,6 +4118,11 @@ namespace Hecton8.Construction
                 Flags = flags,
                 DeltaTime = s_LastHeadlessDeltaTime,
                 DockingAborts = s_DockingAbortCount,
+                PathSolves = s_DroneAStarSolvedCount,
+                PathFailures = s_DroneAStarFailureCount,
+                PathIterations = s_DroneAStarIterationCount,
+                AveragePathfindingTimeMs = s_LastDroneAStarAveragePathfindingTimeMs,
+                TasksCompleted = s_DroneTasksCompletedCount,
                 FirstPosition = firstPosition,
                 BoundsCenter = ToFloat3(s_DroneDrawBounds.center),
                 BoundsExtents = ToFloat3(s_DroneDrawBounds.extents)
@@ -3613,10 +4148,16 @@ namespace Hecton8.Construction
             if (!s_DroneBlackBox.IsCreated)
                 return;
 
+            TryWriteDroneBlackBoxFile(DroneFleetBlackBoxDumpPath);
+            TryWriteDroneBlackBoxFile(DroneFleetBlackBoxH8DumpPath);
+        }
+
+        private static void TryWriteDroneBlackBoxFile(string relativePath)
+        {
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, DroneFleetBlackBoxDumpPath);
+                string dumpPath = Path.Combine(projectRoot, relativePath);
                 string directory = Path.GetDirectoryName(dumpPath);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
@@ -3641,6 +4182,11 @@ namespace Hecton8.Construction
             writer.Write(entry.Flags);
             writer.Write(entry.DeltaTime);
             writer.Write(entry.DockingAborts);
+            writer.Write(entry.PathSolves);
+            writer.Write(entry.PathFailures);
+            writer.Write(entry.PathIterations);
+            writer.Write(entry.AveragePathfindingTimeMs);
+            writer.Write(entry.TasksCompleted);
             WriteFloat3(writer, entry.FirstPosition);
             WriteFloat3(writer, entry.BoundsCenter);
             WriteFloat3(writer, entry.BoundsExtents);
@@ -3651,6 +4197,484 @@ namespace Hecton8.Construction
             writer.Write(value.x);
             writer.Write(value.y);
             writer.Write(value.z);
+        }
+
+        internal static bool TryGetDroneFleetTuningConstants(out DroneFleetTuningConstants constants)
+        {
+            constants = ResolveDroneTuning();
+            return s_DroneTuningConstants.IsCreated;
+        }
+
+        internal static void ApplyDroneFleetTuningConstants(in DroneFleetTuningConstants constants)
+        {
+            EnsureInitialized();
+            if (!s_DroneTuningConstants.IsCreated || s_DroneTuningConstants.Length <= 0)
+                return;
+
+            s_DroneTuningConstants[0] = SanitizeDroneTuning(constants);
+        }
+
+        internal static bool TryGetDroneFleetAutomationStats(out DroneFleetAutomationStats stats)
+        {
+            DroneFleetTuningConstants tuning = ResolveDroneTuning();
+            stats = new DroneFleetAutomationStats
+            {
+                ActiveDrones = CountManagedHeadlessDrones(),
+                PathSolves = s_DroneAStarSolvedCount,
+                PathFailures = s_DroneAStarFailureCount,
+                PathIterations = s_DroneAStarIterationCount,
+                TasksCompleted = s_DroneTasksCompletedCount,
+                LastAStarStatus = s_LastDroneAStarStatus,
+                SteeringTickModulo = s_LastDroneSteeringTickModulo,
+                AveragePathfindingTimeMs = s_LastDroneAStarAveragePathfindingTimeMs,
+                SdfRepulsionStrength = tuning.SdfRepulsionStrength,
+                AStarCellSize = tuning.AStarCellSize
+            };
+
+            return s_DroneStates.IsCreated;
+        }
+
+        internal static int CopyDroneFleetDebugRoutes(DroneFleetDebugRoute[] buffer)
+        {
+            if (buffer == null ||
+                buffer.Length <= 0 ||
+                !s_DroneStates.IsCreated ||
+                s_DroneSlotDroneIds == null ||
+                s_HeadlessJobScheduled)
+            {
+                return 0;
+            }
+
+            DroneFleetTuningConstants tuning = ResolveDroneTuning();
+            MockSDFGrid sdfGrid = BuildMockSdfGrid(in tuning);
+            int count = 0;
+            int limit = Mathf.Min(buffer.Length, HeadlessDroneCapacity);
+            for (int slot = 0; slot < HeadlessDroneCapacity && count < limit; slot++)
+            {
+                if (s_DroneSlotDroneIds[slot] <= 0)
+                    continue;
+
+                HeadlessDroneState drone = s_DroneStates[slot];
+                if (drone.State == (byte)HeadlessDroneRuntimeState.Empty ||
+                    drone.State == (byte)HeadlessDroneRuntimeState.Sacrificed ||
+                    drone.State == (byte)HeadlessDroneRuntimeState.Completed)
+                {
+                    continue;
+                }
+
+                float3 waypoint = drone.TargetPosition;
+                int pathStatus = 0;
+                if (s_DroneMacroWaypoints.IsCreated &&
+                    s_DroneMacroWaypointStates.IsCreated &&
+                    slot < s_DroneMacroWaypoints.Length &&
+                    slot < s_DroneMacroWaypointStates.Length &&
+                    s_DroneMacroWaypointStates[slot] != 0)
+                {
+                    waypoint = s_DroneMacroWaypoints[slot].LocalPosition;
+                    pathStatus = s_DroneMacroWaypointStates[slot];
+                }
+
+                float3 sdfNormal = float3.zero;
+                byte flags = 0;
+                if (sdfGrid.TrySampleRepulsion(drone.Position, out sdfNormal, out _))
+                    flags |= 1;
+
+                int routePointCount = ResolveDebugRoutePoints(
+                    slot,
+                    drone.Position,
+                    tuning.AStarCellSize,
+                    out float3 routePoint0,
+                    out float3 routePoint1,
+                    out float3 routePoint2,
+                    out float3 routePoint3);
+                buffer[count++] = new DroneFleetDebugRoute
+                {
+                    Position = drone.Position,
+                    Target = drone.TargetPosition,
+                    Waypoint = waypoint,
+                    SdfNormal = sdfNormal,
+                    RoutePoint0 = routePoint0,
+                    RoutePoint1 = routePoint1,
+                    RoutePoint2 = routePoint2,
+                    RoutePoint3 = routePoint3,
+                    RoutePointCount = routePointCount,
+                    DroneId = drone.DroneId,
+                    PathStatus = pathStatus,
+                    BatteryPercent = drone.BatteryPercent,
+                    State = drone.State,
+                    Flags = flags,
+                    Reserved0 = 0,
+                    Reserved1 = 0u,
+                    Reserved2 = 0u,
+                    Reserved3 = 0u
+                };
+            }
+
+            return count;
+        }
+
+        private static int ResolveDebugRoutePoints(
+            int slot,
+            float3 origin,
+            float cellSize,
+            out float3 routePoint0,
+            out float3 routePoint1,
+            out float3 routePoint2,
+            out float3 routePoint3)
+        {
+            routePoint0 = origin;
+            routePoint1 = origin;
+            routePoint2 = origin;
+            routePoint3 = origin;
+            if (!s_DroneMacroRouteNodes.IsCreated ||
+                !s_DroneMacroRouteCounts.IsCreated ||
+                slot < 0 ||
+                slot >= s_DroneMacroRouteCounts.Length)
+            {
+                return 0;
+            }
+
+            int nodeCount = math.min(s_DroneMacroRouteCounts[slot], DroneAStarRouteNodeStride);
+            int pointCount = math.min(nodeCount, DroneAStarRouteDebugPointCount);
+            int offset = slot * DroneAStarRouteNodeStride;
+            if (nodeCount <= 0 || offset < 0 || offset >= s_DroneMacroRouteNodes.Length)
+                return 0;
+
+            float cell = Mathf.Max(0.5f, cellSize);
+            for (int pointIndex = 0; pointIndex < pointCount; pointIndex++)
+            {
+                int sourceIndex = nodeCount - 1 - pointIndex;
+                int packedNode = s_DroneMacroRouteNodes[offset + sourceIndex];
+                float3 routePoint = ResolveAStarRoutePoint(packedNode, origin, cell);
+                if (pointIndex == 0)
+                    routePoint0 = routePoint;
+                else if (pointIndex == 1)
+                    routePoint1 = routePoint;
+                else if (pointIndex == 2)
+                    routePoint2 = routePoint;
+                else
+                    routePoint3 = routePoint;
+            }
+
+            return pointCount;
+        }
+
+        private static float3 ResolveAStarRoutePoint(int packedNode, float3 origin, float cell)
+        {
+            int z = packedNode / (DroneAStarGridSide * DroneAStarGridSide);
+            int remainder = packedNode - (z * DroneAStarGridSide * DroneAStarGridSide);
+            int y = remainder / DroneAStarGridSide;
+            int x = remainder - (y * DroneAStarGridSide);
+            float3 coord = new float3(x, y, z) - new float3(DroneAStarGridSide >> 1, DroneAStarGridSide >> 1, DroneAStarGridSide >> 1);
+            return origin + (coord * cell);
+        }
+
+        internal static bool TryAutoApplyDroneSpecsCsv(out int keysApplied)
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            return TryApplyDroneSpecsCsv(Path.Combine(projectRoot, DroneSpecsCsvFileName), out keysApplied);
+        }
+
+        internal static bool TryApplyDroneSpecsCsv(string path, out int keysApplied)
+        {
+            keysApplied = 0;
+            string resolvedPath = string.IsNullOrWhiteSpace(path)
+                ? Path.Combine(Path.GetFullPath(Path.Combine(Application.dataPath, "..")), DroneSpecsCsvFileName)
+                : path;
+
+            if (!File.Exists(resolvedPath))
+                return false;
+
+            int bytesRead;
+            using (FileStream stream = File.OpenRead(resolvedPath))
+            {
+                bytesRead = stream.Read(s_DroneSpecsCsvReadBuffer, 0, s_DroneSpecsCsvReadBuffer.Length);
+            }
+
+            if (bytesRead <= 0)
+                return false;
+
+            DroneFleetTuningConstants tuning = ResolveDroneTuning();
+            int lineStart = 0;
+            for (int i = 0; i <= bytesRead; i++)
+            {
+                if (i < bytesRead && s_DroneSpecsCsvReadBuffer[i] != (byte)'\n')
+                    continue;
+
+                if (TryApplyDroneSpecLine(s_DroneSpecsCsvReadBuffer, lineStart, i, ref tuning))
+                    keysApplied++;
+                lineStart = i + 1;
+            }
+
+            if (keysApplied <= 0)
+                return false;
+
+            ApplyDroneFleetTuningConstants(in tuning);
+            return true;
+        }
+
+        private static bool TryApplyDroneSpecLine(byte[] bytes, int lineStart, int lineEnd, ref DroneFleetTuningConstants tuning)
+        {
+            int start = TrimAsciiLeft(bytes, lineStart, lineEnd);
+            int end = TrimAsciiRight(bytes, start, lineEnd);
+            if (start >= end || bytes[start] == (byte)'#')
+                return false;
+
+            int separator = -1;
+            for (int i = start; i < end; i++)
+            {
+                byte token = bytes[i];
+                if (token == (byte)',' || token == (byte)'=')
+                {
+                    separator = i;
+                    break;
+                }
+            }
+
+            if (separator <= start || separator >= end - 1)
+                return false;
+
+            int keyStart = TrimAsciiLeft(bytes, start, separator);
+            int keyEnd = TrimAsciiRight(bytes, keyStart, separator);
+            int valueStart = TrimAsciiLeft(bytes, separator + 1, end);
+            int valueEnd = TrimAsciiRight(bytes, valueStart, end);
+            if (keyStart >= keyEnd || !TryParseAsciiFloat(bytes, valueStart, valueEnd, out float value))
+                return false;
+
+            return TryApplyDroneSpecKey(bytes, keyStart, keyEnd, value, ref tuning);
+        }
+
+        private static bool TryApplyDroneSpecKey(byte[] bytes, int keyStart, int keyEnd, float value, ref DroneFleetTuningConstants tuning)
+        {
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.MaxDroneSpeed)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "Speed"))
+            {
+                tuning.MaxDroneSpeed = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.BatteryDrainRate)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "BatteryDrain"))
+            {
+                tuning.BatteryDrainRate = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.SdfRepulsionStrength)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "SDF"))
+            {
+                tuning.SdfRepulsionStrength = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.RepairSpeed)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "Repair"))
+            {
+                tuning.RepairSpeed = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.CargoCapacity)) ||
+                AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "Cargo"))
+            {
+                tuning.CargoCapacity = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.MiningHoldSeconds)))
+            {
+                tuning.MiningHoldSeconds = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.LowTierSteeringHz)))
+            {
+                tuning.LowTierSteeringHz = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.MidTierSteeringHz)))
+            {
+                tuning.MidTierSteeringHz = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.HighTierSteeringHz)))
+            {
+                tuning.HighTierSteeringHz = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.UltraTierSteeringHz)))
+            {
+                tuning.UltraTierSteeringHz = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.AStarCellSize)))
+            {
+                tuning.AStarCellSize = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.LowTierSolveBudget)))
+            {
+                tuning.LowTierSolveBudget = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.MidTierSolveBudget)))
+            {
+                tuning.MidTierSolveBudget = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.HighTierSolveBudget)))
+            {
+                tuning.HighTierSolveBudget = value;
+                return true;
+            }
+
+            if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.UltraTierSolveBudget)))
+            {
+                tuning.UltraTierSolveBudget = value;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static int TrimAsciiLeft(byte[] bytes, int start, int end)
+        {
+            while (start < end && IsAsciiWhitespace(bytes[start]))
+                start++;
+
+            return start;
+        }
+
+        private static int TrimAsciiRight(byte[] bytes, int start, int end)
+        {
+            while (end > start && IsAsciiWhitespace(bytes[end - 1]))
+                end--;
+
+            return end;
+        }
+
+        private static bool TryParseAsciiFloat(byte[] bytes, int start, int end, out float value)
+        {
+            value = 0f;
+            if (start >= end)
+                return false;
+
+            int i = start;
+            bool negative = false;
+            if (bytes[i] == (byte)'+' || bytes[i] == (byte)'-')
+            {
+                negative = bytes[i] == (byte)'-';
+                i++;
+            }
+
+            float result = 0f;
+            bool hasDigit = false;
+            while (i < end && IsAsciiDigit(bytes[i]))
+            {
+                result = (result * 10f) + (bytes[i] - (byte)'0');
+                hasDigit = true;
+                i++;
+            }
+
+            if (i < end && bytes[i] == (byte)'.')
+            {
+                i++;
+                float scale = 0.1f;
+                while (i < end && IsAsciiDigit(bytes[i]))
+                {
+                    result += (bytes[i] - (byte)'0') * scale;
+                    scale *= 0.1f;
+                    hasDigit = true;
+                    i++;
+                }
+            }
+
+            int exponent = 0;
+            if (hasDigit && i < end && (bytes[i] == (byte)'e' || bytes[i] == (byte)'E'))
+            {
+                i++;
+                bool exponentNegative = false;
+                if (i < end && (bytes[i] == (byte)'+' || bytes[i] == (byte)'-'))
+                {
+                    exponentNegative = bytes[i] == (byte)'-';
+                    i++;
+                }
+
+                bool hasExponentDigit = false;
+                while (i < end && IsAsciiDigit(bytes[i]))
+                {
+                    exponent = math.min(38, (exponent * 10) + (bytes[i] - (byte)'0'));
+                    hasExponentDigit = true;
+                    i++;
+                }
+
+                if (!hasExponentDigit)
+                    return false;
+
+                if (exponentNegative)
+                    exponent = -exponent;
+            }
+
+            if (!hasDigit || i != end)
+                return false;
+
+            if (exponent != 0)
+                result *= ResolvePow10(exponent);
+
+            value = negative ? -result : result;
+            return math.isfinite(value);
+        }
+
+        private static float ResolvePow10(int exponent)
+        {
+            int steps = math.min(38, math.abs(exponent));
+            float scale = 1f;
+            for (int i = 0; i < steps; i++)
+                scale *= 10f;
+
+            return exponent < 0 ? math.rcp(scale) : scale;
+        }
+
+        private static bool AsciiEqualsIgnoreCase(byte[] bytes, int start, int end, string expected)
+        {
+            int length = end - start;
+            if (length != expected.Length)
+                return false;
+
+            for (int i = 0; i < length; i++)
+            {
+                byte actual = ToAsciiLower(bytes[start + i]);
+                byte target = ToAsciiLower((byte)expected[i]);
+                if (actual != target)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsAsciiWhitespace(byte value)
+        {
+            return value == (byte)' ' ||
+                   value == (byte)'\t' ||
+                   value == (byte)'\r' ||
+                   value == (byte)'\n';
+        }
+
+        private static bool IsAsciiDigit(byte value)
+        {
+            return value >= (byte)'0' && value <= (byte)'9';
+        }
+
+        private static byte ToAsciiLower(byte value)
+        {
+            return value >= (byte)'A' && value <= (byte)'Z' ? (byte)(value + 32) : value;
         }
 
         private static void HandleSubmarineSnapshotUpdated(in HectonSubmarineOsSnapshot snapshot)
@@ -3759,11 +4783,16 @@ namespace Hecton8.Construction
 
             if (!s_TaskClaimCounts.IsCreated || s_TaskClaimCounts.Length < requiredCount)
             {
-                DisposeNativeArray(ref s_TaskClaimCounts);
+                ReleaseDroneVaultBuffer(ref s_TaskClaimCounts, ref s_TaskClaimCountsHandle, ref s_TaskClaimCountsVaultBacked, nameof(s_TaskClaimCounts));
 
                 int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(requiredCount, InitialTaskCapacity));
-                s_TaskClaimCounts = new NativeArray<int>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[nextCapacity] - per-module active-claim locks for fleet dispatch - owner: DroneFleetManager
-                RegisterNativeArray(s_TaskClaimCounts, nameof(s_TaskClaimCounts));
+                s_TaskClaimCounts = ResolveDroneVaultBuffer<int>(
+                    BufferID.ShinobuDroneFleetTaskClaimCounts,
+                    nextCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    ref s_TaskClaimCountsHandle,
+                    out s_TaskClaimCountsVaultBacked); // COLD ALLOC: NativeArray<int>[nextCapacity] - per-module active-claim locks - owner: GlobalDataVault/H8Memory fallback
+                RegisterNativeArrayIfFallback(s_TaskClaimCounts, s_TaskClaimCountsVaultBacked, nameof(s_TaskClaimCounts));
             }
         }
 
@@ -3853,6 +4882,90 @@ namespace Hecton8.Construction
 
             bestTask = candidate;
             hasBestTask = true;
+        }
+
+        private static void TryPushTaskPriorityCandidate(ref DroneTaskNativeMinHeap heap, in RepairTaskCandidate candidate)
+        {
+            if (!heap.Nodes.IsCreated ||
+                candidate.Module == null ||
+                candidate.ModuleIndex < 0 ||
+                !s_TaskClaimCounts.IsCreated ||
+                candidate.ModuleIndex >= s_TaskClaimCounts.Length ||
+                s_TaskClaimCounts[candidate.ModuleIndex] >= DefaultMaxClaimsPerTarget)
+            {
+                return;
+            }
+
+            DroneTaskDTO dto = new DroneTaskDTO
+            {
+                TargetAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(candidate.Position),
+                LocalPosition = ToFloat3(candidate.Position),
+                Priority = ResolveTaskPriority(candidate.Kind),
+                Score = candidate.Score,
+                CriticalityWeight = candidate.CriticalityWeight,
+                Radius = candidate.Radius,
+                ModuleIndex = candidate.ModuleIndex,
+                TaskKind = (int)candidate.Kind,
+                Reserved0 = 0u
+            };
+            heap.TryPush(in dto);
+        }
+
+        private static bool TryResolvePriorityHeapTask(
+            ref DroneTaskNativeMinHeap heap,
+            ConstructionManager manager,
+            out RepairTaskCandidate candidate)
+        {
+            candidate = default;
+            if (manager == null)
+                return false;
+
+            while (heap.TryPop(out DroneTaskDTO dto))
+            {
+                if (dto.ModuleIndex < 0 ||
+                    !s_TaskClaimCounts.IsCreated ||
+                    dto.ModuleIndex >= s_TaskClaimCounts.Length ||
+                    s_TaskClaimCounts[dto.ModuleIndex] >= DefaultMaxClaimsPerTarget)
+                {
+                    continue;
+                }
+
+                BaseModule module = manager.GetSpawnedBaseModuleAt(dto.ModuleIndex);
+                if (module == null || !module.gameObject.activeInHierarchy)
+                    continue;
+
+                DroneFleetTaskKind kind = (DroneFleetTaskKind)dto.TaskKind;
+                if (kind == DroneFleetTaskKind.None)
+                    continue;
+
+                candidate = new RepairTaskCandidate
+                {
+                    Kind = kind,
+                    Module = module,
+                    ModuleIndex = dto.ModuleIndex,
+                    Position = ToVector3(dto.LocalPosition),
+                    Radius = dto.Radius,
+                    Score = dto.Score,
+                    CriticalityWeight = dto.CriticalityWeight
+                };
+                return true;
+            }
+
+            return false;
+        }
+
+        private static float ResolveTaskPriority(DroneFleetTaskKind kind)
+        {
+            if (kind == DroneFleetTaskKind.RepairModule)
+                return 1f;
+
+            if (kind == DroneFleetTaskKind.CutParasite)
+                return 10f;
+
+            if (kind == DroneFleetTaskKind.MineNode)
+                return 10f;
+
+            return 1024f;
         }
 
         private static void ClearClaimCounts(int moduleCount)
@@ -4037,6 +5150,41 @@ namespace Hecton8.Construction
         private static quaternion ToQuaternion(Quaternion value)
         {
             return new quaternion(value.x, value.y, value.z, value.w);
+        }
+    }
+
+    public static class DroneFleetAutomationFacade
+    {
+        public const int MaxDebugRoutes = 64;
+
+        public static bool TryGetTuningConstants(out DroneFleetTuningConstants constants)
+        {
+            return DroneFleetManager.TryGetDroneFleetTuningConstants(out constants);
+        }
+
+        public static void ApplyTuningConstants(in DroneFleetTuningConstants constants)
+        {
+            DroneFleetManager.ApplyDroneFleetTuningConstants(in constants);
+        }
+
+        public static bool TryGetStats(out DroneFleetAutomationStats stats)
+        {
+            return DroneFleetManager.TryGetDroneFleetAutomationStats(out stats);
+        }
+
+        public static int CopyDebugRoutes(DroneFleetDebugRoute[] buffer)
+        {
+            return DroneFleetManager.CopyDroneFleetDebugRoutes(buffer);
+        }
+
+        public static bool TryApplyDroneSpecsCsv(string path, out int keysApplied)
+        {
+            return DroneFleetManager.TryApplyDroneSpecsCsv(path, out keysApplied);
+        }
+
+        public static bool TryAutoApplyDroneSpecsCsv(out int keysApplied)
+        {
+            return DroneFleetManager.TryAutoApplyDroneSpecsCsv(out keysApplied);
         }
     }
 }

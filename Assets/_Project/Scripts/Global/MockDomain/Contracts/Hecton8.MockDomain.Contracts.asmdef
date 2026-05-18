@@ -1,0 +1,17 @@
+{
+    "name": "Hecton8.MockDomain.Contracts",
+    "rootNamespace": "Hecton8.MockDomain.Contracts",
+    "references": [
+        "Hecton8.Global.Contracts",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

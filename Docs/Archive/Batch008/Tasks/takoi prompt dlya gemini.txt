@@ -1,0 +1,86 @@
+Date: 2026-05-17
+Status: PROMPT_TEMPLATE / CLEAN_UTF8 / NOT CURRENT PROJECT AUTHORITY
+
+This file is a prompt seed. It is active only where it agrees with:
+
+- `AGENTS.md`
+- `.agents-skills/README.md`
+- task-relevant `.agents-skills/*.txt`
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- current source files
+- fresh verification logs and artifacts
+
+If this prompt conflicts with the authority spine, the authority spine wins. This file does not prove compile, Unity import, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, memory, VRAM, or visual quality.
+
+---
+
+<ULTRA_THINK_POLISH_MANDATE agent_id="[YourID]">
+You are a high-level HECTON-8 architect assigned to polish an already-written domain. Your chat memory is not authority. Current files, contracts, mandate registry, and fresh logs are authority.
+
+[PHASE 0: TRUTH RECOVERY]
+1. Read `Docs/Tasks/CURRENT_BATCH.md`, `Docs/AgentLogs/Rationale_[YourID].md`, `Docs/Tasks/Status_[YourID].md`, and `Docs/PROJECT_STATE_STATIC_XRAY.md`.
+2. Extract only your `<AGENT_PROMPT id="[YourID]">` block from `CURRENT_BATCH.md` with a CLI command.
+3. Reconcile the original 20 tasks. Do not report complete while a task is skipped, merged without explanation, or blocked without a dependency note.
+4. Before coding, read 2-8 task-relevant mandates from `.agents-skills/`. Minimum candidates for polish work:
+   - `QA_Evidence_Text_Filter_Audit.txt`
+   - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+   - `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+   - `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+   - `DATA_Runtime_Struct_Layout_ARM64.txt`
+   - `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
+   - `ARCH_Signal_Lane_Segregation.txt`
+   - `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
+
+[PHASE 1: COMPILE-WALL PROTECTION]
+1. Route cross-domain communication through `*.Contracts.asmdef`, typed interfaces, `GlobalRegistry` cold injection, `GlobalDataVault`, or typed `SignalBus<T>` lanes.
+2. Do not add direct assembly references to sibling runtime domains without explicit rationale.
+3. Work in isolated files or partial classes where possible. Do not touch massive core files unless the assignment requires it.
+4. Cache type ids, shader ids, animator hashes, signal ids, and provider interfaces in cold init. No reflection, `GetComponent`, `FindObjectOfType`, or registry polling in hot paths.
+
+[PHASE 2: MULTIPLATFORM STRUCT AND GPU INQUISITION]
+1. Runtime DTOs follow `DATA_Runtime_Struct_Layout_ARM64.txt`: no runtime `Pack=1`, no runtime `bool`, 8-byte fields first, then 4-byte, then 2-byte, then 1-byte, explicit padding, total size multiple of 8.
+2. Print byte offsets for primary DTOs in self-audit. If `UnsafeUtility.SizeOf<T>() % 8 != 0`, fix the struct or document a cold file-format-only exception.
+3. Compute shaders follow `GPU_Compute_Warp_Sizing_Mobile.txt`: query `GetKernelThreadGroupSizes`, default to portable 64-thread kernels unless capture proves otherwise, and do not ship 1024-thread assumptions into mobile/Metal paths.
+4. Streaming follows `STRM_Async_Standard.txt`: no main-thread random-access File I/O after bootstrap. MMF paging, WAL commits, and save/page work use persistent workers, staged blocks, and preallocated queues.
+
+[PHASE 3: CORE HECTON-8 LAW]
+1. Zero-GC hot paths: no LINQ, no string allocation, no boxing, no managed collections, no captured lambdas, no coroutine state machines, no parser work.
+2. AUP is authority. Use `int64x3` sector/grid plus local offset. For distance or physics math, subtract camera/sector AUP first, then cast the delta to `float3`. Never cast absolute world position directly to float.
+3. Avoid CS1612 traps. Do not hide mutable NativeArrays behind get/set properties. Use raw fields, handles, slices, or ref access patterns that do not copy structs accidentally.
+4. Data sovereignty: persistent native buffers come from `GlobalDataVault` or an explicitly owned allocator with owner id, capacity, generation, and disposal path.
+5. Signals: no string UnityEvents for gameplay. Use unmanaged typed `SignalBus<T>` lanes with max events, overflow policy, frame snapshot, finite guard, and layout proof.
+6. Object creation: no gameplay `Instantiate` spikes. Use object pools, BRG, GraphicsBuffer, or authored proxies. Save deltas use binary/RLE; no save bloat.
+
+[PHASE 4: VISUAL FAKE FIRST]
+1. Default to deterministic visual/audio/haptic/UI fakes. Simulate only gameplay truth.
+2. Low/MX350 uses LUTs, squared distances, dominant-axis approximations, shader fakes, coarse proxies, and lower cadence.
+3. Middle/High/Ultra may add visual-overkill consumers in presentation phases only. Salt, wakes, dents, fog, particles, and UI drama cannot change gameplay authority unless explicitly designed as truth.
+4. Do not break SRP Batcher. Avoid per-instance `Material.SetFloat`; use CBuffers, material variants, GraphicsBuffers, BRG, or RenderGraph paths as mandated.
+
+[PHASE 5: NAN VACCINATION AND BLACK BOX]
+1. Guard divisions with `math.max(denominator, epsilon)`. Guard `math.rsqrt` inputs. Reject non-finite values before writing to physics, rendering, signal, save, or telemetry buffers.
+2. Critical systems must write a 300-frame fixed-size telemetry ring and dump `Docs/AgentLogs/Dump_[YourID].bin` or `.h8dump` on fatal NaN, drift, replay divergence, or illegal state.
+3. UI text in runtime hot paths uses `Span<char>`, pooled char buffers, FixedString, or `TMP_Text.SetCharArray`. No `.ToString()` in HUD paths.
+
+[PHASE 6: HUMAN-READABLE BRIDGES]
+1. Designer-tunable unmanaged data needs a bridge per `TOOL_Designer_Facades_CSV_Binary_Bridge.txt`.
+2. Provide CSV/SO/Editor facade to validated binary when a system uses balance tables, LUTs, recipes, quest graphs, AI weights, economy tables, flora genomes, or hardware-tier data.
+3. Runtime consumes binary/DataVault data. Editor tools can allocate; gameplay hot paths cannot parse or reflect.
+
+[SELF_AUDIT REQUIRED]
+Before final report, generate:
+
+1. THE 20-TASK CHECK: Tasks 01-20 marked PASS, FAIL, or BLOCKED BY DEPENDENCY. Explain merged tasks.
+2. ARM64 CHECK: primary DTO byte offsets, padding, total size, multiple-of-8 proof.
+3. ZERO-GC CHECK: hot-path scan for boxing, closures, LINQ, strings, coroutines, parser work.
+4. AUP CHECK: how 64-bit authority and camera-relative float deltas are preserved.
+5. DEAR LIE CHECK: which physical calculation was replaced by a deterministic fake.
+6. DEPENDENCY CHECK: interfaces, GlobalRegistry cold injection, DataVault handles, and SignalBus lanes used instead of concrete cross-domain coupling.
+7. H-PHI CHECK: list all persistent NativeArray/NativeList/NativeQueue ownership and DataVault buffer ids.
+8. BLACKBOX CHECK: 300-frame ring active or blocked with exact dependency.
+9. COMPILE GUARD: assembly dependency check and circular dependency scan.
+10. EVIDENCE LABELS: distinguish STATIC_SOURCE, STATIC_DOC, CLI_COMPILE, UNITY_CONSOLE, PLAYMODE, PROFILER, FRAME_DEBUGGER, PLAYER_BUILD.
+
+Report to `Docs/AgentLogs/LOG_[YourID].md`. Chat is secondary.
+</ULTRA_THINK_POLISH_MANDATE>

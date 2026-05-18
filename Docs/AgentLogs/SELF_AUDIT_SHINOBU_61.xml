@@ -1,0 +1,84 @@
+<SELF_AUDIT agent_id="SHINOBU_61" date="2026-05-19" status="LOOP_17_SOURCE_HARDENED_ROSLYN_RECHECK_BLOCKED_BY_CPU_GUARD">
+  <TASK_RECONCILIATION>
+    <TASK id="01" name="BINARY_GRAVEYARD_RECONNAISSANCE" result="PASS">Archive and binary ledger evidence did not prove active apex_predator_curves.h8bin; emergency mock Apex stats hydrate aligned float4 rows on both allocating and allocation-locked vault paths.</TASK>
+    <TASK id="02" name="STATE_MACHINE_ERADICATION_PASS" result="PASS">No OOP predator state classes. ApexBrainJob emits phase bytes from utility scores.</TASK>
+    <TASK id="03" name="CS1612_ENCAPSULATION_PURGE" result="PASS">Hot DTOs use public fields; no get/set properties; vault offers ref state access.</TASK>
+    <TASK id="04" name="ARM64_PADDING_RECONSTRUCTION" result="PASS">Primary and signal DTOs use explicit sizes, no Pack=1; ApexStateDTO is 64 bytes.</TASK>
+    <TASK id="05" name="BLIND_DEPENDENCY_MOCKING" result="PASS">MockPlayerAUP and MockPlayerAupAdvanceJob allow predictive target motion without Player Kinematics.</TASK>
+    <TASK id="06" name="BURST_PREDICTIVE_INTERCEPT_KERNEL" result="PASS">InterceptLocal = targetLocal + targetVelocity * (distance / speed) in AUP-local float3.</TASK>
+    <TASK id="07" name="ACOUSTIC_MEMORY_BANK_ROUTER" result="PASS">Fixed AcousticEchoTap scan selects strongest decayed tap and writes AcousticMemoryHash.</TASK>
+    <TASK id="08" name="SDF_SLITHER_STEERING" result="PASS">Analytic MockWorldSampler SDF samples center/head/mid/tail by quality and produces potential-field repulsion.</TASK>
+    <TASK id="09" name="THE_DEAR_LIE_OCCLUSION_STALKING" result="PASS">Line of sight is a dot product plus distance/SDF/spatial-hash shadow, not raycasts.</TASK>
+    <TASK id="10" name="AGGRO_BUILDUP_AND_TERROR_RADIUS" result="PASS">Aggression integrates over SimulationTickDelta and writes ApexProximitySignal rows/optional queue lanes.</TASK>
+    <TASK id="11" name="CONTINUOUS_SCALABILITY_NODE_EVAL" result="PASS">GlobalQualityWeight interpolates 2..16 octant-lattice nodes and gates mid/tail SDF with math.step plus smooth curves.</TASK>
+    <TASK id="12" name="LEVIATHAN_BREACH_SYNERGY" result="PASS">Strike against WFC-marked target writes MockCombatDamageSignal instead of local deformation physics.</TASK>
+    <TASK id="13" name="AUP_LOCALIZED_IK_TARGETS" result="PASS">Output IK_BiteTarget is local float3, never absolute double3.</TASK>
+    <TASK id="14" name="BIOME_TERRITORIAL_BIAS" result="PASS">Abyssal Trench hash/flag multiplies aggression buildup through unmanaged tuning.</TASK>
+    <TASK id="15" name="FAUNA_SCATTER_BROADCAST" result="PASS">Strike writes GlobalPanicSignal rows/optional queue lanes for ecosystem consumers.</TASK>
+    <TASK id="16" name="ZERO_INIT_OVERHEAD_BYPASS" result="PASS">Vault arrays are preallocated; uninitialized buffers are used where legal; first fallback hydration and spawn clear use UnsafeUtility.MemClear.</TASK>
+    <TASK id="17" name="TELEMETRY_CORTEX_RECORDER" result="PASS">300-frame ApexTelemetryEntry ring plus cold dump helpers for SHINOBU and legacy cortex dump names. ActiveLeviathans is per-row truth, not schedule capacity.</TASK>
+    <TASK id="18" name="APEX_TUNER_EDITOR_WINDOW" result="PASS">Leviathan Cortex Tuner EditorWindow exposes unmanaged tuning sliders and CSV/mock/dump controls.</TASK>
+    <TASK id="19" name="CSV_OVERRIDE_INGESTOR" result="PASS">Cold CSV parser reads into vault byte scratch, hashes ASCII keys, and updates unmanaged tuning.</TASK>
+    <TASK id="20" name="GIZMO_INTERCEPT_VISUALIZER" result="PASS">Editor scene hook draws red intercept sphere, yellow acoustic rings, and desired direction line.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    <ApexStateDTO size="64" alignment_goal="8_or_16_byte_multiple" pack1="false">
+      <FIELD name="AUP" offset="0" size="24" type="double3"/>
+      <FIELD name="Velocity" offset="24" size="12" type="float3"/>
+      <FIELD name="AggressionLevel" offset="36" size="4" type="float"/>
+      <FIELD name="TargetHash" offset="40" size="4" type="uint"/>
+      <FIELD name="AcousticMemoryHash" offset="44" size="4" type="uint"/>
+      <FIELD name="Stamina" offset="48" size="4" type="float"/>
+      <FIELD name="_padAlign0" offset="52" size="4" type="uint"/>
+      <FIELD name="_pad0" offset="56" size="8" type="ulong"/>
+      <MATH>24+12+4+4+4+4+4+8=64 bytes, exactly one L1 cache line.</MATH>
+    </ApexStateDTO>
+    <PARALLEL_ROW_STRIDES>
+      <STRUCT name="MockPlayerAUP" size="128">Written by MockPlayerAupAdvanceJob; padded from 96B to two cache lines.</STRUCT>
+      <STRUCT name="ApexBrainOutputDTO" size="192">Written by ApexBrainJob; padded from 160B to three cache lines.</STRUCT>
+      <STRUCT name="AlphaLeviathanCognitionState" size="192">Written by LeviathanStalkJob; padded from 144B to three cache lines.</STRUCT>
+      <STRUCT name="AlphaLeviathanSteeringOutput" size="128">Written by LeviathanStalkJob; padded from 88B to two cache lines.</STRUCT>
+    </PARALLEL_ROW_STRIDES>
+    <FALSE_SHARING>Concurrent counters were not introduced. Parallel-written rows are now 64-byte stride multiples where SHINOBU_61 or adjacent AI Cognition jobs mutate them. Signal/telemetry rows are 64/128-byte explicit records; ambush scratch stride is 16 float3 nodes per leviathan = 192 bytes, a 64-byte multiple.</FALSE_SHARING>
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    When GlobalQualityWeight is below 0.3, the low-quality flag is set through math.step, ambush evaluation collapses toward 2 octant-lattice nodes, center/head SDF remain authoritative, the midpoint LOS SDF probe is bypassed, midsection starts only after quality 0.25, and tail sampling remains disabled until quality 0.55. Node density uses math.lerp from 2 to 16 through a smooth polynomial curve; stale high-quality nodes are cleared when evaluated count drops. Acoustic memory now lerps from 4 evaluated taps to 32 taps through the same quality curve. Scheduler cadence uses math.lerp from 5 Hz to 60 Hz through the same quality continuum; there is no IsLowEnd branch.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS private_persistent_native_arrays="0">
+    <BUFFER id="70609" name="ApexStateDTO"/>
+    <BUFFER id="70610" name="MockPlayerAUP"/>
+    <BUFFER id="70611" name="AcousticEchoTap"/>
+    <BUFFER id="70612" name="ApexBrainTuning"/>
+    <BUFFER id="70613" name="ApexEmergencyStats"/>
+    <BUFFER id="70614" name="MockWorldSampler"/>
+    <BUFFER id="70615" name="ApexBrainOutputDTO"/>
+    <BUFFER id="70616" name="ApexProximitySignal"/>
+    <BUFFER id="70617" name="MockCombatDamageSignal"/>
+    <BUFFER id="70618" name="GlobalPanicSignal"/>
+    <BUFFER id="70619" name="ApexInfluenceNode"/>
+    <BUFFER id="70626" name="ApexTelemetryEntry"/>
+    <BUFFER id="70627" name="TelemetryCursor"/>
+    <BUFFER id="70628" name="CsvScratch"/>
+    <BUFFER id="70629" name="AmbushNodeScratch"/>
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <NO_ALIAS>NativeArray fields in ApexBrainJob use NoAlias where they are separate vault buffers; optional parallel write surfaces use NativeQueue ParallelWriter lanes with container safety disabled because access is gated by EnableSignalQueueWrites. Loop 16 added the required three-paragraph safety justifications at each NativeDisableContainerSafetyRestriction declaration.</NO_ALIAS>
+    <JOB input="MockPlayerAupAdvanceJob">Consumes prior simulation dependency; outputs updated MockPlayerAUP dependency; Burst FloatMode is Deterministic for rollback safety.</JOB>
+    <JOB input="ApexBrainJob">Consumes vault buffer dependency and optional signal queue writers; outputs ApexBrain JobHandle. Caller owns chaining and must not Complete mid-frame. Dormant/faulted rows clear their ambush scratch spans.</JOB>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    AI.Cognition runtime asmdef references Core.Contracts, Core.Memory, Burst, Collections, Jobs, and Mathematics only. It does not reference sibling runtime domains or Hecton8.Core.
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    The expensive truth would be body raycast or capsule-fit cave validation per leviathan, O(rays * geometry query cost). SHINOBU_61 replaces it with analytic SDF samples plus dot-product visibility and spatial-hash canyon bias, O(nodes + evaluated_acoustic_taps) with nodes continuously bounded to 2..16 and acoustic taps continuously bounded to 4..32. Loop 15 adds one quality-gated midpoint SDF line probe for rock-between-prey cases; low quality bypasses it. Loop 10 removed per-node trigonometry: ambush candidates now use a fixed octant lattice plus spatial-hash jitter.
+  </DEAR_LIE_CONFIRMATION>
+  <LEGACY_ASSEMBLY_HYGIENE>
+    Loop 15 audited adjacent legacy AI Cognition files because they share the same runtime assembly and can poison the compile-wall/ARM64 audit. Remaining Pack=1 declarations were removed. Loop 16 then padded parallel-written legacy rows for false-sharing prevention: AlphaLeviathanTelemetryEntry is explicit 64B; AlphaLeviathanAup is explicit 48B; AlphaLeviathanCognitionState is explicit 192B; AlphaLeviathanSensoryStimulus is explicit 176B read-only in LeviathanStalkJob; AlphaLeviathanSteeringOutput is explicit 128B. AlphaLeviathan vault wrapper structs no longer expose IsCreated as struct properties. LeviathanStalkJob now uses Burst CompileSynchronously=true, FloatMode.Deterministic, FloatPrecision.Standard and NoAlias NativeArray fields.
+  </LEGACY_ASSEMBLY_HYGIENE>
+  <NAN_VACCINATION>
+    Loop 16 adds WriteFaultRow and returns immediately for non-finite state/target AUP or velocity. Loop 17 routes computed SDF/LOS faults through the same WriteFaultRow path and returns before biome, aggro, ambush-node scoring, signal construction, telemetry construction, or HashSpatial can process poisoned values. The normal finite path no longer carries dead faulted selects.
+  </NAN_VACCINATION>
+  <VERIFICATION>
+    Runtime Roslyn/Bee compile passed in Loop 12 before the acoustic-bank, Loop 15, Loop 16, and Loop 17 source edits. Those edits supersede the Loop 12 compile proof. Static forbidden API scan after Loop 17 found no math.sincos, FloatMode.Fast, NavMesh/Physics casts, Update(), hot DTO properties, Pack=1, Sequential, UnityEngine.Random, Time.deltaTime, JobHandle.Complete, LINQ, foreach, or runtime private native allocation in Assets/_Project/Scripts/AI/Cognition. Runtime asmdef reference scan still shows only Core.Contracts and Core.Memory plus Unity packages; editor-only tooling references Hecton8.Core separately. New targeted Roslyn recheck remains blocked by AGENTS CPU/process guard; no dotnet build was launched. Unity Play Mode, Burst Inspector, profiler, GCMonitor, and console proof are pending.
+  </VERIFICATION>
+</SELF_AUDIT>

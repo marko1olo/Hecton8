@@ -1,0 +1,15 @@
+# LOG_DOC_GLOBAL_DOCS_REFRESH
+
+## 2026-05-18 R10 Long-Tail Interior Local
+
+What was wrong: R10 had been interrupted after active docs referenced `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`; the report was missing. R9 and partial-R10 source counters were stale under concurrent source churn. Active long-tail docs still contained May 4/May 6 "current project truth" read-order wording. The current workspace also lost DOC_GLOBAL status/rationale/log files and `Docs/Tasks/CURRENT_BATCH.md` during validation.
+
+What was done: Re-read authority files and mandates, recaptured current static counters (`1739 / 1686 / 1722` C# files, `1134113 / 1115245 / 1130062` physical lines, `296` interface hits, `63` direct registry interfaces, `107` first-party asmdefs), regenerated the dependency atlas, patched active root/governance/global/X-Ray/AI/Flora/Scatter/Archivarius/Reports docs, created `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, and recreated DOC_GLOBAL status/rationale/log evidence.
+
+Cinematic Cheats used: Documentation-only pass. No physical simulation or visual system changed. Evidence wording was downgraded where static docs were pretending to be runtime proof.
+
+Exact Microseconds saved: 0 us/frame claimed. Process-only saving: removed stale proof/counter claims that would otherwise waste verification time. No runtime performance gain is claimed.
+
+Validation: atlas generation exit `0`; atlas unit tests `9` OK; AST parse `3` OK; JSON parse `4` OK; Modding validator `PASS`; R10 authored Markdown boundary scan `37 / 37`, missing `0`; AtlasCheck still fails with `references=6456 missing=60`.
+
+Blockers: AtlasCheck remains red on RealtimeCSG vendor image references and missing workspace evidence files `Docs/AgentLogs/LOG_SHINOBU_06.md`, `Docs/AgentLogs/Rationale_SHINOBU_32.md`, and `Docs/Tasks/CURRENT_BATCH.md`. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, save/load, or visual proof was run.

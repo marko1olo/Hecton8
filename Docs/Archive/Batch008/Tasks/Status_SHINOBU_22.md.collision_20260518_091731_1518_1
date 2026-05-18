@@ -1,0 +1,35 @@
+Date: 2026-05-18
+Agent: SHINOBU_22
+Domain: DIEGETIC_TOOL_KINEMATICS
+Status: ACTIVE AFTER BATCH008 ARCHIVE / CORE TASKS COMPLETE / POLISH LOOP 9 IN PROGRESS / RUNTIME PROOF PENDING
+
+Source memory:
+- Previous active status was archived by batch hygiene to `Docs/Archive/Batch008/Tasks/Status_SHINOBU_22.md`.
+- Previous rationale/log were archived to `Docs/Archive/Batch008/AgentLogs/`.
+- Current user explicitly ordered SHINOBU_22 to keep working after the archive move.
+
+Mandates re-read before Loop 9 coding:
+- AGENTS.md
+- Docs/Actual Domains of Project.txt
+- Docs/PROJECT_STATE_STATIC_XRAY.md
+- .agents-skills/CORE_Tools_Equipment_Interaction_Raycast_Heat.txt
+- .agents-skills/ANIM_Contextual_Physical_IK.txt
+- .agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt
+- .agents-skills/ARCH_Signal_Lane_Segregation.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- .agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+- .agents-skills/MATH_AUP_Determinism_Sync.txt
+- .agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt
+- .agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt
+
+## Loop 9 - Post-Archive Titanium Polish
+- [x] CURRENT_BATCH recovery after archive move
+  DOD: Active `Docs/Tasks/CURRENT_BATCH.md` was moved/deleted by batch hygiene; located archived SHINOBU_22 memory under `Docs/Archive/Batch008/`. Rejected: relying on chat memory. Estimate: 0 runtime us.
+- [x] Padding truth correction
+  DOD: Removed live flag/frame-seed storage from `ToolStateDTO._pad0/_pad1`; state flags now persist through existing vault-owned `ToolScreenExportDTO.StateFlags`. Rejected: reporting padding as padding while using it as hidden state. Estimate: ARM64 contract integrity, no frame claim.
+- [x] LOD hysteresis added
+  DOD: Added a 2.0 second latched LOD state before frame inputs write `SystemHealthIndex`, preventing Low/Middle/High/Ultra flicker. Rejected: immediate per-frame Math LOD flips. Estimate: prevents visual/IK thrash; scalar branch only.
+- [x] CSV watcher orphan fix
+  DOD: `StopCsvWatcher()` no longer drops the thread reference if the background watcher is still alive after the join window; `StartCsvWatcher()` reuses/clears dead refs safely. Rejected: spawning a second watcher while the old one still owns fixed buffers. Estimate: cold lifecycle only.
+- [ ] Fresh verification R5
+  DOD pending: rerun static forbidden scans, targeted dotnet build, and Unity batchmode if available. Rejected: stale R4 proof.

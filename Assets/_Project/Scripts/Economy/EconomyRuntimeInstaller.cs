@@ -26,6 +26,9 @@ namespace Hecton8.Economy
             if (runtimeRoot.GetComponent<ResourceScarcityDirector>() == null)
                 runtimeRoot.AddComponent<ResourceScarcityDirector>();
 
+            if (runtimeRoot.GetComponent<TradeMarauderDirector>() == null)
+                runtimeRoot.AddComponent<TradeMarauderDirector>();
+
             if (runtimeRoot.GetComponent<Hecton8.World.EnvironmentalStrainManager>() == null)
                 runtimeRoot.AddComponent<Hecton8.World.EnvironmentalStrainManager>();
         }

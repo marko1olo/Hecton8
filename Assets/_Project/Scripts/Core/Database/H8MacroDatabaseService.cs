@@ -67,7 +67,7 @@ namespace Hecton8.Core.Database
         private byte _compactionFlags;
         private double _sectorSizeRcp = 1.0d / 512.0d;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         private struct SectorCoord64
         {
             public long X;
@@ -82,7 +82,7 @@ namespace Hecton8.Core.Database
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential, Size = 48)]
         private struct HydrationCandidate
         {
             public ulong SectorHash;
@@ -855,8 +855,7 @@ namespace Hecton8.Core.Database
                     _sectorCoordWindowScratch.Dispose();
                 if (_asyncHydrateScratch.IsCreated)
                     _asyncHydrateScratch.Dispose();
-                if (_blackBox.IsCreated)
-                    _blackBox.Dispose();
+                DisposeBlackBox();
                 if (_dirtyPayloads.IsCreated)
                     _dirtyPayloads.Dispose();
                 if (_dirtyPayloadKeys.IsCreated)
@@ -2115,6 +2114,11 @@ namespace Hecton8.Core.Database
                     BlackBoxFrameCount,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory);
+                NativeMemoryTrackingBridge.RegisterNativeArray(
+                    _blackBox,
+                    nameof(H8MacroDatabaseService),
+                    nameof(_blackBox),
+                    NativeMemoryBridgeLifetime.Session);
             }
 
             if (!_dirtyPayloads.IsCreated)
@@ -2137,6 +2141,16 @@ namespace Hecton8.Core.Database
                     math.max(_config.NativeCacheCapacity * 2, _config.MaxQuerySectors),
                     Allocator.Persistent);
             }
+        }
+
+        private void DisposeBlackBox()
+        {
+            if (!_blackBox.IsCreated)
+                return;
+
+            NativeMemoryTrackingBridge.UnregisterNativeArray(_blackBox, nameof(H8MacroDatabaseService), nameof(_blackBox));
+            _blackBox.Dispose();
+            _blackBox = default;
         }
 
         private int FlushDirtyPayloadsLocked()

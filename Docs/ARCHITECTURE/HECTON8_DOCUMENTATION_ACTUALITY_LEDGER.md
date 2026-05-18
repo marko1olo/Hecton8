@@ -1,8 +1,22 @@
 # HECTON-8 Documentation Actuality Ledger
 
-Date: 2026-05-17
+Date: 2026-05-19
 Owner lane: SUBNAUTICA_RESEARCHER
-Status: ACTIVE SOURCE-OF-TRUTH OVERLAY / STATIC_DOC + STATIC_SOURCE + WEB_REFERENCE
+Status: ACTIVE SOURCE-OF-TRUTH OVERLAY / R24 DOC_GLOBAL ROOT-ARCH BOUNDARY / STATIC_DOC + STATIC_SOURCE + WEB_REFERENCE
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Purpose
 
@@ -13,13 +27,19 @@ documents are legacy snapshots, and which claims require implementation or runti
 Use this file before trusting older save, content-pipeline, Subnautica, Subnautica 2, modding,
 or co-op reports.
 
-Machine-readable companion:
+Current DOC_GLOBAL boundary:
+
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`
+- `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`
+- `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`
+
+Historical machine-readable R4 companion:
 
 - `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`
 
 ## Inventory Boundary
 
-2026-05-17 PowerShell inventory of `Docs` with `*.md`, `*.txt`, and `*.json`:
+Historical 2026-05-17 PowerShell inventory of `Docs` with `*.md`, `*.txt`, and `*.json`; do not use these numbers as current R24 counts unless recaptured:
 
 - Total scanned docs: 3032.
 - Live docs under active/reference locations: 414.
@@ -110,6 +130,12 @@ Current facts:
 - `Assets/AddressableAssetsData` is empty.
 - Authored `ContentAssetHashMap`, `ContentVfxPrewarmManifest`, `ObjectBatchBase`, and `VisibilityProxyBase` payload scans in the latest research pass found zero concrete production assets.
 - `Data/Balance/*.csv` uses `Id` columns; the monolith compiler's Balance CSV path requires hash-pair compatibility such as `hash32`.
+- `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` is the current generated-binary payload authority. Its 2026-05-18 recheck found 47 product/generated target binary files, while the broad hygiene verifier sees 65 `.bin` / `.h8bin` files because it also scans Bakery editor/plugin fixtures.
+- `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md` records the DOC_GLOBAL R14 documentation pass that demoted pre-Batch008 binary-hygiene PASS rows in active docs.
+- Statically proven main-runtime payloads are only `Data/Audio/Acoustic_LUT.bin` and `Data/Visuals/Water_Extinction_Matrix.bin`.
+- `Data/Balance/Baked/Babel_Dictionary.h8bin` is the only misaligned product payload in the current recheck: 1295 bytes, 16-byte remainder 15.
+- `Data/Balance/Baked/H8StaticData.bin` and `Data/Balance/Baked/Babel_Dictionary.h8bin` are small balance-store artifacts. They are not the absent StreamingAssets DataMonolith `static_data.h8bin`.
+- `Data/Lore/Encyclopedia.h8bin` is an `H8LR` raw UTF-8 lore blob and is not read by current `LoreMmfEncyclopedia`, which expects an `H8LE` index plus separate payload stream.
 
 Current architecture split:
 
@@ -121,6 +147,7 @@ Current architecture split:
 Required next action:
 
 - Make `static_data.h8bin` mandatory for production builds.
+- Rebake `Data/Balance/Baked/Babel_Dictionary.h8bin` through its owning baker before any runtime wiring.
 - Generate or author minimal `Core`, `High_Res`, and `Overkill` Unity object asset groups only where needed.
 - Generate hash maps, VFX prewarm manifests, object batches, visibility/physics proxies, and freshness reports.
 - Keep stock Unity Addressables out of the immutable world/static-data truth path.

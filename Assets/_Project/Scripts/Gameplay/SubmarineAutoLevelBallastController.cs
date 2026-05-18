@@ -19,7 +19,6 @@ using UnityEngine;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(SubmarineCoreDirector))]
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Submarine Auto-Level Ballast Controller")]
     public sealed class SubmarineAutoLevelBallastController : MonoBehaviour,
@@ -36,7 +35,7 @@ namespace Hecton8.Gameplay
         IScalabilityChangedEventListener,
         ISubmarineState
     {
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct PidJobOutput
         {
             [FieldOffset(0)] public float3 TorqueWorld;
@@ -48,7 +47,7 @@ namespace Hecton8.Gameplay
             [FieldOffset(64)] public uint Flags;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 128)]
+        [StructLayout(LayoutKind.Explicit, Size = 128)]
         private struct SubmarinePidTelemetryEntry
         {
             [FieldOffset(0)] public int Frame;
@@ -69,7 +68,7 @@ namespace Hecton8.Gameplay
             [FieldOffset(116)] public byte CriticalFloodActive;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct DynamicFloodMassOutput
         {
             [FieldOffset(0)] public float3 DynamicCenterOfMassLocal;
@@ -82,7 +81,7 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct SubmarineAutoLevelPidJob : IJob
         {
             public quaternion CurrentRotation;
@@ -222,7 +221,7 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct SubmarineMassSolverJob : IJob
         {
             [ReadOnly] public NativeArray<float> RoomWaterLevels;

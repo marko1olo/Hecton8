@@ -1,0 +1,55 @@
+# SHINOBU_23 Status - Quest DAG And Event Resolver
+
+Date: 2026-05-18
+Domain: ECHELON 8 / AUP Narrative Triggers + Quest DAG Resolver
+Prompt: `Docs/Tasks/CURRENT_BATCH.md` / `<AGENT_PROMPT id="SHINOBU_23">`
+Verification Status: PENDING VERIFICATION
+
+## Mandates Read
+- `PROG_Quest_State_Graph_Logic.txt`
+- `DATA_Runtime_Struct_Layout_ARM64.txt`
+- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
+- `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
+- `ARCH_Signal_Lane_Segregation.txt`
+- `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
+- `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
+- `TOOL_Designer_Facades_CSV_Binary_Bridge.txt`
+
+## 20-Task Matrix
+- [x] Task 01 - BINARY_GRAVEYARD_RECONNAISSANCE: OSHINO `H8QG` binary loader plus deterministic emergency mock DAG. Rejected hard-fail on missing data. Hot estimate: 0 us, cold boot only.
+- [x] Task 02 - STRING_BASED_LOGIC_ERADICATION: runtime truth is Vault `NativeArray<ulong>` masks. Rejected legacy string quest polling. Estimate: bitwise AND per candidate.
+- [x] Task 03 - CS1612_ENCAPSULATION_PURGE: direct DTO fields and `UnsafeUtility.ArrayElementAsRef<ulong>`. Rejected properties over native masks. Estimate: removes copy mutation risk.
+- [x] Task 04 - ARM64_PADDING_RECONSTRUCTION: `QuestNodeDTO` 32B, `TriggerVolumeDTO` 40B, telemetry 48B, no runtime `Pack=1`. Rejected packed runtime structs. Estimate: avoids ARM64 unaligned reads.
+- [x] Task 05 - BLIND_DEPENDENCY_MOCKING: mock story/player/item signals and Burst mock producer. Rejected concrete player/inventory dependency. Estimate: 0 us unless test mock scheduled.
+- [x] Task 06 - BITWISE_DAG_RESOLVER_KERNEL: Burst job evaluates masks and atomic OR completion. Rejected ScriptableObject traversal. Estimate: O(1) per candidate.
+- [x] Task 07 - SPATIAL_TRIGGER_HASH_GRID: 100m AUP `NativeParallelMultiHashMap<int,int>` now inserts all radius-overlapped cells and queries current player cell. Rejected O(N) trigger scan. Estimate: bounded by local cell occupancy.
+- [x] Task 08 - INVENTORY_PREREQUISITE_LINK: SoA required item hashes/quantities and player item snapshot arrays. Rejected `List.Contains` and item names. Estimate: node-local linear scan only.
+- [x] Task 09 - CASCADING_STATE_PROPAGATION: fixed-point passes capped at 5; no-trigger path now budgeted by cursor. Rejected recursion/coroutines. Estimate: bounded no-trigger work per pass.
+- [x] Task 10 - THE_DEAR_LIE_TIMED_EVENTS: `ulong TargetTimestamp` compare. Rejected Timeline/coroutines. Estimate: one branch.
+- [x] Task 11 - STATE_SIGNAL_EMISSION: old/new XOR emits typed `StateChangedSignal`. Rejected UnityEvents/string events. Estimate: O(state chunks).
+- [x] Task 12 - RLE_SAVE_STATE_COMPRESSION: packed save copy via `UnsafeUtility.MemCpy`. Rejected JSON/string flags. Estimate: 960 bytes at default 120 chunks.
+- [x] Task 13 - HARDWARE_LOD_TICK_DILATION: health pressure drops resolver cadence to every 15 frames. Rejected always-60Hz on toaster. Estimate: ~93% schedule reduction under pressure.
+- [x] Task 14 - AUP_PRECISION_TRIGGER_MATH: subtract double AUPs before float distance; cell conversion range-checked. Rejected absolute float cast. Estimate: correctness guard.
+- [x] Task 15 - FACTION_REPUTATION_TENSORS: Vault `NativeArray<float>` with threshold checks and CAS delta. Rejected managed faction dictionary. Estimate: completion-only CAS.
+- [x] Task 16 - ZERO_INIT_OVERHEAD_BYPASS: spatial hash allocated once and cleared/reused. Rejected per-frame allocation. Estimate: allocator spikes removed.
+- [x] Task 17 - TELEMETRY_DEADLOCK_RECORDER: 300-frame blackbox now has 48B entries, cell/state hash, candidate count, `.bin/.h8dump`, MMF header, chronological payload. Rejected raw blob with no cursor/header. Estimate: cold fault path.
+- [x] Task 18 - DAG_VISUALIZER_EDITOR_WINDOW: EditorWindow and `node_names.csv`. Rejected runtime UI names. Estimate: 0 us player.
+- [x] Task 19 - CSV_OVERRIDE_INGESTOR: span parser and timestamp monitor; mutation blocked while resolver job is live. Rejected JSON/reflection and active-buffer mutation. Estimate: cold/editor.
+- [x] Task 20 - LIVE_STATE_TOGGLE_DEBUGGER: editor force-complete flips unmanaged mask and emits signal; blocked while resolver job is live. Rejected play-through-only debugging. Estimate: editor-only.
+
+## Latest Iteration
+- Loop 7: Sub-agent static audit found OSHINO slot loss, center-cell-only spatial indexing, raw blackbox dump, AUP cell overflow risk, and missing 10k fixture. Fixed in SHINOBU domain.
+- Loop 8: Added 10,000-trigger candidate-bound edit test and telemetry dump header test. Tests compile in isolated source-backed probe; Unity import blocked by existing Unity lock.
+
+## Verification
+- `python Tools/VerifyQuestDagBinaryIndependent.py --graph Data/Narrative/First_Hour_Quests.json --binary Data/Narrative/First_Hour_Quests.h8qdag.bin --report Docs/AgentLogs/VerifyQuestDagBinaryIndependent_SHINOBU_23.json`: exit 0.
+- Static hot-path scan scoped to `QuestDag*.cs`: only allowed `Complete()` remains in `CompleteScheduled()` end-frame fence.
+- `git diff --check` scoped to SHINOBU files: exit 0, with pre-existing CRLF warning on `H8Memory.cs`.
+- Isolated Roslyn probe compile of `QuestDagRuntimeTypes.cs`, `QuestDagResolverRuntime.cs`, `QuestDagDataLoading.cs`, `QuestDagMockSignalJobs.cs`: exit 0.
+- Isolated Roslyn probe compile of `QuestDagResolverEditTests.cs` against the probe assembly: exit 0.
+- Unity batchmode R5 did not import: existing Unity process `56708` holds `Temp/UnityLockfile`; log exits before compilation. No Unity/Profiler/GCMonitor runtime proof exists.
+
+## Blockers
+- Active `Docs/Tasks/CURRENT_BATCH.md` is currently deleted in the worktree by another change; prompt was recovered earlier and archived copy remains under `Docs/Archive/Batch008`.
+- `BufferID` enum has 10 pre-existing non-Quest collisions (`HullIntegrity*` / `VerletCable*` 575-584). QuestDag IDs 70150-70165 are unique. This is an integrator/core-memory defect outside SHINOBU_23 scope.

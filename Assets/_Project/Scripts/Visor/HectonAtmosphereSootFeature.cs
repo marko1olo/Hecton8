@@ -1,5 +1,7 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -23,6 +25,7 @@ namespace Hecton8.Visor
         private const float ActiveSootIntensityEpsilon = 0.001f;
         private const float DefaultMaximumSootRadius = 0.82f;
         private const float DefaultSootCenter01 = 0.5f;
+        private const int SootGlobalsStrideBytes = 32;
 
         private static readonly Vector4 DefaultSootCenter = new Vector4(DefaultSootCenter01, DefaultSootCenter01, 0f, 0f);
         private static Vector4 s_runtimeSootParams;
@@ -72,10 +75,9 @@ namespace Hecton8.Visor
             private FeatureSettings _settings;
             private Material _material;
             private RuntimeState _runtimeState;
-            private Material _appliedMaterial;
-            private Vector4 _appliedSootParams;
-            private Vector4 _appliedSootCenter;
-            private bool _materialStateApplied;
+            private GraphicsBuffer _sootGlobalsBuffer;
+            private SootGlobalsDTO _lastSootGlobals;
+            private bool _hasSootGlobals;
 
             public SootPass()
             {
@@ -91,6 +93,7 @@ namespace Hecton8.Visor
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
+                EnsureSootGlobalsBuffer();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -125,7 +128,8 @@ namespace Hecton8.Visor
                 destinationDesc.autoGenerateMips = false;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
-                ApplyMaterialParametersIfChanged(_material, _settings, _runtimeState);
+                if (!UpdateSootGlobals(_settings, _runtimeState))
+                    return;
 
                 renderGraph.AddBlitPass(
                     new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
@@ -134,7 +138,35 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private void ApplyMaterialParametersIfChanged(Material material, FeatureSettings settings, RuntimeState runtimeState)
+            public void Dispose()
+            {
+                _sootGlobalsBuffer?.Release();
+                _sootGlobalsBuffer = null;
+                _hasSootGlobals = false;
+            }
+
+            private bool EnsureSootGlobalsBuffer()
+            {
+                if (!SystemInfo.supportsSetConstantBuffer)
+                {
+                    Dispose();
+                    return false;
+                }
+
+                if (_sootGlobalsBuffer != null && _sootGlobalsBuffer.IsValid())
+                    return true;
+
+                _sootGlobalsBuffer?.Release();
+                _sootGlobalsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    SootGlobalsStrideBytes);
+                _hasSootGlobals = false;
+                return _sootGlobalsBuffer.IsValid();
+            }
+
+            private bool UpdateSootGlobals(FeatureSettings settings, RuntimeState runtimeState)
             {
                 Vector4 sootParams = new Vector4(
                     math.saturate(runtimeState.Intensity),
@@ -147,27 +179,48 @@ namespace Hecton8.Visor
                     math.max(1f, runtimeState.Aspect),
                     math.saturate(runtimeState.Center.x) * math.max(1f, runtimeState.Aspect));
 
-                if (_materialStateApplied &&
-                    ReferenceEquals(_appliedMaterial, material) &&
-                    Vector4Equals(_appliedSootParams, sootParams) &&
-                    Vector4Equals(_appliedSootCenter, sootCenter))
+                if (!EnsureSootGlobalsBuffer())
+                    return false;
+
+                SootGlobalsDTO globals = new SootGlobalsDTO(sootParams, sootCenter);
+                if (_hasSootGlobals && SootGlobalsEqual(in _lastSootGlobals, in globals))
                 {
-                    return;
+                    Shader.SetGlobalConstantBuffer(ShaderConstants.SootGlobalsBufferId, _sootGlobalsBuffer, 0, SootGlobalsStrideBytes);
+                    return true;
                 }
 
-                material.SetVector(ShaderConstants.SootParamsId, sootParams);
-                material.SetVector(ShaderConstants.SootCenterId, sootCenter);
-                _appliedMaterial = material;
-                _appliedSootParams = sootParams;
-                _appliedSootCenter = sootCenter;
-                _materialStateApplied = true;
+                NativeArray<SootGlobalsDTO> mapped = _sootGlobalsBuffer.LockBufferForWrite<SootGlobalsDTO>(0, 1);
+                mapped[0] = globals;
+                _sootGlobalsBuffer.UnlockBufferAfterWrite<SootGlobalsDTO>(1);
+                _lastSootGlobals = globals;
+                _hasSootGlobals = true;
+                Shader.SetGlobalConstantBuffer(ShaderConstants.SootGlobalsBufferId, _sootGlobalsBuffer, 0, SootGlobalsStrideBytes);
+                return true;
+            }
+
+            private static bool SootGlobalsEqual(in SootGlobalsDTO left, in SootGlobalsDTO right)
+            {
+                return Vector4Equals(left.SootParams, right.SootParams) &&
+                       Vector4Equals(left.SootCenter, right.SootCenter);
+            }
+
+            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = SootGlobalsStrideBytes)]
+            private struct SootGlobalsDTO
+            {
+                public Vector4 SootParams;
+                public Vector4 SootCenter;
+
+                public SootGlobalsDTO(Vector4 sootParams, Vector4 sootCenter)
+                {
+                    SootParams = sootParams;
+                    SootCenter = sootCenter;
+                }
             }
         }
 
         private static class ShaderConstants
         {
-            internal static readonly int SootParamsId = Shader.PropertyToID("_HectonAtmosphereSootParams");
-            internal static readonly int SootCenterId = Shader.PropertyToID("_HectonAtmosphereSootCenter");
+            internal static readonly int SootGlobalsBufferId = Shader.PropertyToID("HectonAtmosphereSootGlobals");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings(); // COLD ALLOC: FeatureSettings[1] - serialized soot overlay renderer settings - owner: HectonAtmosphereSootFeature
@@ -257,6 +310,7 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
+            _pass?.Dispose();
             CoreUtils.Destroy(_material);
             _material = null;
         }

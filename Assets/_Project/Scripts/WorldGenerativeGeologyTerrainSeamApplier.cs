@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Caves;
@@ -29,7 +30,7 @@ namespace Hecton8.World
             public float InfluenceRadius;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct TerrainSeamTelemetryEntry
         {
             public uint Frame;
@@ -47,26 +48,35 @@ namespace Hecton8.World
             public uint Reserved1;
             public uint Reserved2;
             public uint Reserved3;
+            public uint Reserved4;
         }
 
-        private const string NativeMemoryOwner = nameof(WorldGenerativeGeologyTerrainSeamApplier);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int TerrainPatchBridgeSampleBudgetMx350 = 131072;
         private const int TerrainChunkSignalSampleDrainBudget = 262144;
         private const int TerrainStateCapacity = 8;
         private const int TerrainChunkSignalDrainBudget = 8;
         private const int TerrainTileSnapshotCapacity = 32;
         private const int TerrainSeamBlackBoxCapacity = 300;
-        private const int TierSwitchHysteresisFrames = 180;
-        private const string TerrainSeamBlackBoxLabel = "HybridTerrainSeamBlackBox";
-        private const string NativePlansLabel = "HybridTerrainNativePlans";
-        private const string PatchHeightsLabel = "HybridTerrainPatchHeights";
-        private const string BlendMaskLabel = "HybridTerrainBlendMask";
-        private const string NormalsLabel = "HybridTerrainNormals";
+        private const float SeamExpensiveSamplingStartWeight = 0.30f;
         private const string HybridDumpPath = "Docs/AgentLogs/Dump_HYBRID_TERRAIN_BLENDER.bin";
+        private const BufferID TerrainSeamBlackBoxBufferId = (BufferID)0x530421;
+        private const BufferID TerrainSeamNativePlansBufferId = (BufferID)0x530422;
+        private const BufferID TerrainSeamPatchHeightsBufferId = (BufferID)0x530423;
+        private const BufferID TerrainSeamBlendMaskBufferId = (BufferID)0x530424;
+        private const BufferID TerrainSeamNormalsBufferId = (BufferID)0x530425;
+        private const int TerrainSeamBaselineBufferIdBase = 0x531000;
+        private const int TerrainSeamBaselineBufferIdMask = 0x000FFFFF;
         private static readonly int HectonVoxelBlendMaskId = Shader.PropertyToID("_HectonVoxelBlendMask");
         private static readonly int HectonVoxelBlendMaskRectId = Shader.PropertyToID("_HectonVoxelBlendMaskRect");
         private static readonly int HectonVoxelBlendMaskParamsId = Shader.PropertyToID("_HectonVoxelBlendMaskParams");
+        private static readonly FieldInfo ProjectionJobQualityWeightField =
+            typeof(HybridSdfHeightmapProjectionJob).GetField("GlobalQualityWeight", BindingFlags.Instance | BindingFlags.Public);
+        private static readonly FieldInfo ProjectionJobQualityWeightValidField =
+            typeof(HybridSdfHeightmapProjectionJob).GetField("GlobalQualityWeightValid", BindingFlags.Instance | BindingFlags.Public);
+        private static readonly FieldInfo DetailJobQualityWeightField =
+            typeof(HybridTerrainSeamMaskDetailJob).GetField("GlobalQualityWeight", BindingFlags.Instance | BindingFlags.Public);
+        private static readonly FieldInfo DetailJobQualityWeightValidField =
+            typeof(HybridTerrainSeamMaskDetailJob).GetField("GlobalQualityWeightValid", BindingFlags.Instance | BindingFlags.Public);
         private static readonly ProfilerMarker TerrainSignalDrainMarker = new ProfilerMarker("H8.TerrainSeam.SignalDrain");
         private static readonly ProfilerMarker TerrainProjectionFenceMarker = new ProfilerMarker("H8.TerrainSeam.ProjectionFence");
         private static readonly ProfilerMarker TerrainBlendMaskUploadMarker = new ProfilerMarker("H8.TerrainSeam.BlendMaskUpload");
@@ -78,7 +88,9 @@ namespace Hecton8.World
         {
             public UnityEngine.Terrain terrain;
             public UnityEngine.TerrainData terrainData;
+            public VaultBufferHandle<float> baselineHeightsHandle;
             public NativeArray<float> baselineHeights;
+            public BufferID baselineHeightsBufferId;
             public int heightmapResolution;
             public RectInt previousRect;
             public bool hasPreviousRect;
@@ -86,12 +98,9 @@ namespace Hecton8.World
 
             public void ReleaseBaseline()
             {
-                if (!baselineHeights.IsCreated)
-                    return;
-
-                NativeMemorySentinel.UnregisterNativeArray(baselineHeights);
-                baselineHeights.Dispose();
+                baselineHeightsHandle = default;
                 baselineHeights = default;
+                baselineHeightsBufferId = BufferID.Unknown;
             }
         }
 
@@ -126,10 +135,11 @@ namespace Hecton8.World
         private readonly List<int> _terrainBucketScratch = new List<int>(8);
         private MapMagicTerrainTileSnapshot[] _tileSnapshotScratch;
         private Texture2D _voxelBlendMaskTexture;
-        private NativeArray<TerrainSeamTelemetryEntry> _terrainSeamBlackBox;
+        private VaultBufferHandle<TerrainSeamTelemetryEntry> _terrainSeamBlackBoxHandle;
         private bool _registeredToTickManager;
         private int _nextPatchTelemetryFrame;
         private int _blackBoxWriteIndex;
+        private uint _seamFrameCounter;
         private int _debugDrainedTerrainChunkSignals;
         private int _debugDrainedTerrainChunkSamples;
         private int _debugHeightmapVaultSamples;
@@ -142,12 +152,9 @@ namespace Hecton8.World
         private int _vaultHeightmapCacheRevision;
         private bool _voxelBlendMaskGlobalActive;
         private bool _voxelBlendMaskUploadedThisPass;
+        private float _debugGlobalQualityWeight = 1f;
         private bool _debugLowTierVisualOnly;
         private bool _debugHighTierMaskDetail;
-        private bool _hasLowTierVisualDecision;
-        private bool _resolvedLowTierVisualOnly;
-        private bool _pendingLowTierVisualOnly;
-        private int _pendingLowTierSwitchFrame;
 
         private void Awake()
         {
@@ -377,7 +384,7 @@ namespace Hecton8.World
         {
             UnityEngine.Terrain terrain = state.terrain;
             UnityEngine.TerrainData terrainData = terrain.terrainData;
-            if (terrainData == null || !state.baselineHeights.IsCreated)
+            if (terrainData == null || !TryResolveBaselineHeights(state, out _))
                 return;
 
             RectInt currentRect = default;
@@ -569,7 +576,7 @@ namespace Hecton8.World
                 patch == null ||
                 plans == null ||
                 plans.Count <= 0 ||
-                !state.baselineHeights.IsCreated)
+                !TryResolveBaselineHeights(state, out NativeArray<float> baselineHeights))
             {
                 return false;
             }
@@ -586,8 +593,11 @@ namespace Hecton8.World
             UnityEngine.TerrainData terrainData = state.terrainData;
             Vector3 terrainPosition = terrain.transform.position;
             Vector3 terrainSize = terrainData.size;
-            bool lowTierVisualOnly = ResolveLowTierVisualOnly();
-            bool highTierMaskDetail = !lowTierVisualOnly && ResolveHighTierMaskDetail();
+            double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(terrainPosition);
+            float globalQualityWeight = ResolveGlobalQualityWeight();
+            float seamExpensiveWeight = ResolveSeamExpensiveWeight(globalQualityWeight);
+            bool lowTierVisualOnly = seamExpensiveWeight <= 0.0001f;
+            bool highTierMaskDetail = ResolveMaskDetailWeight(globalQualityWeight) > 0.0001f;
             NativeArray<ushort> quantizedHeightmap = default;
             bool usedVaultHeightmap = TryResolveVaultHeightmap(state, out quantizedHeightmap);
 
@@ -598,28 +608,16 @@ namespace Hecton8.World
 
             try
             {
-                nativePlans = new NativeArray<HybridTerrainSeamPlanNative>(
-                    hybridPlanCount,
-                    Allocator.TempJob,
-                    NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(nativePlans, NativeMemoryOwner, NativePlansLabel, NativeAllocationLifetime.TempJob);
-                patchHeights = new NativeArray<float>(
-                    sampleCount,
-                    Allocator.TempJob,
-                    NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(patchHeights, NativeMemoryOwner, PatchHeightsLabel, NativeAllocationLifetime.TempJob);
-                blendMask = new NativeArray<byte>(
-                    sampleCount,
-                    Allocator.TempJob,
-                    NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(blendMask, NativeMemoryOwner, BlendMaskLabel, NativeAllocationLifetime.TempJob);
-                if (highTierMaskDetail)
-                {
-                    normals = new NativeArray<float3>(
+                if (!TryResolveHybridTerrainScratchBuffers(
+                        hybridPlanCount,
                         sampleCount,
-                        Allocator.TempJob,
-                        NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(normals, NativeMemoryOwner, NormalsLabel, NativeAllocationLifetime.TempJob);
+                        highTierMaskDetail,
+                        out nativePlans,
+                        out patchHeights,
+                        out blendMask,
+                        out normals))
+                {
+                    return false;
                 }
 
                 int writeIndex = 0;
@@ -632,10 +630,20 @@ namespace Hecton8.World
                     Vector3 contact = plan.TerrainContactPosition;
                     Vector3 voxelCenter = plan.RuntimeVoxelVolumeCenter;
                     Vector3 voxelSize = plan.voxelVolumeSize;
+                    float3 localContact = ResolveTerrainLocalContactPosition(
+                        in plan,
+                        in terrainAbsolutePosition,
+                        contact,
+                        terrainPosition);
+                    float3 localVoxelCenter = ResolveTerrainLocalVoxelCenter(
+                        in plan,
+                        in terrainAbsolutePosition,
+                        voxelCenter,
+                        terrainPosition);
                     nativePlans[writeIndex++] = new HybridTerrainSeamPlanNative
                     {
-                        RuntimeContactPosition = (float3)contact,
-                        RuntimeVoxelCenter = (float3)voxelCenter,
+                        RuntimeContactPosition = localContact,
+                        RuntimeVoxelCenter = localVoxelCenter,
                         VoxelSize = new float3(
                             Mathf.Max(0.5f, voxelSize.x),
                             Mathf.Max(0.5f, voxelSize.y),
@@ -654,7 +662,7 @@ namespace Hecton8.World
 
                 HybridSdfHeightmapProjectionJob projectionJob = new HybridSdfHeightmapProjectionJob
                 {
-                    BaselineHeights01 = state.baselineHeights,
+                    BaselineHeights01 = baselineHeights,
                     QuantizedHeightSamples = quantizedHeightmap,
                     Plans = nativePlans,
                     PatchHeights01 = patchHeights,
@@ -665,10 +673,11 @@ namespace Hecton8.World
                     PatchWidth = applyRect.width,
                     PatchHeight = applyRect.height,
                     HeightmapInvMaxIndex = 1f / Mathf.Max(1, state.heightmapResolution - 1),
-                    TerrainPosition = (float3)terrainPosition,
+                    TerrainPosition = float3.zero,
                     TerrainSize = (float3)terrainSize,
                     LowTierVisualOnly = lowTierVisualOnly ? (byte)1 : (byte)0
                 };
+                InjectGlobalQualityWeight(ref projectionJob, globalQualityWeight);
 
                 JobHandle projectionHandle = projectionJob.Schedule(sampleCount, 64);
                 JobHandle finalHandle = projectionHandle;
@@ -692,6 +701,7 @@ namespace Hecton8.World
                         BlendMask = blendMask,
                         EnableDetail = 1
                     };
+                    InjectGlobalQualityWeight(ref detailJob, globalQualityWeight);
 
                     JobHandle normalHandle = normalJob.Schedule(sampleCount, 64, projectionHandle);
                     finalHandle = detailJob.Schedule(sampleCount, 64, normalHandle);
@@ -741,7 +751,9 @@ namespace Hecton8.World
                     minHeight01,
                     maxHeight01,
                     maxBlend01);
+                uint seamFrame = AdvanceTerrainSeamFrame();
                 RecordTerrainSeamBlackBox(
+                    seamFrame,
                     terrain,
                     terrainHash,
                     applyRect,
@@ -759,6 +771,7 @@ namespace Hecton8.World
                 if (changedHeightSample)
                 {
                     PublishTerrainPatchVoxelModifiedEvent(
+                        seamFrame,
                         terrain,
                         applyRect,
                         minHeight01,
@@ -772,6 +785,7 @@ namespace Hecton8.World
 
                 _debugHybridBlendSamples = sampleCount;
                 _debugHybridBlendPlans = hybridPlanCount;
+                _debugGlobalQualityWeight = globalQualityWeight;
                 _debugLowTierVisualOnly = lowTierVisualOnly;
                 _debugHighTierMaskDetail = highTierMaskDetail;
 
@@ -783,10 +797,10 @@ namespace Hecton8.World
             }
             finally
             {
-                DisposeRegisteredTempJobArray(ref normals);
-                DisposeRegisteredTempJobArray(ref blendMask);
-                DisposeRegisteredTempJobArray(ref patchHeights);
-                DisposeRegisteredTempJobArray(ref nativePlans);
+                normals = default;
+                blendMask = default;
+                patchHeights = default;
+                nativePlans = default;
             }
         }
 
@@ -816,6 +830,90 @@ namespace Hecton8.World
             return quantizedHeightmap.IsCreated && quantizedHeightmap.Length >= requiredLength;
         }
 
+        private static bool TryResolveHybridTerrainScratchBuffers(
+            int hybridPlanCount,
+            int sampleCount,
+            bool needsNormals,
+            out NativeArray<HybridTerrainSeamPlanNative> nativePlans,
+            out NativeArray<float> patchHeights,
+            out NativeArray<byte> blendMask,
+            out NativeArray<float3> normals)
+        {
+            nativePlans = default;
+            patchHeights = default;
+            blendMask = default;
+            normals = default;
+            if (hybridPlanCount <= 0 || sampleCount <= 0)
+                return false;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            nativePlans = vault.GetBuffer<HybridTerrainSeamPlanNative>(
+                TerrainSeamNativePlansBufferId,
+                hybridPlanCount,
+                SystemID.TerrainSeams,
+                NativeArrayOptions.UninitializedMemory);
+            patchHeights = vault.GetBuffer<float>(
+                TerrainSeamPatchHeightsBufferId,
+                sampleCount,
+                SystemID.TerrainSeams,
+                NativeArrayOptions.UninitializedMemory);
+            blendMask = vault.GetBuffer<byte>(
+                TerrainSeamBlendMaskBufferId,
+                sampleCount,
+                SystemID.TerrainSeams,
+                NativeArrayOptions.UninitializedMemory);
+            if (needsNormals)
+            {
+                normals = vault.GetBuffer<float3>(
+                    TerrainSeamNormalsBufferId,
+                    sampleCount,
+                    SystemID.TerrainSeams,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            return nativePlans.IsCreated &&
+                   nativePlans.Length >= hybridPlanCount &&
+                   patchHeights.IsCreated &&
+                   patchHeights.Length >= sampleCount &&
+                   blendMask.IsCreated &&
+                   blendMask.Length >= sampleCount &&
+                   (!needsNormals || (normals.IsCreated && normals.Length >= sampleCount));
+        }
+
+        private static bool TryResolveBaselineHeights(TerrainApplyState state, out NativeArray<float> baselineHeights)
+        {
+            baselineHeights = default;
+            if (state == null ||
+                state.heightmapResolution <= 1 ||
+                !state.baselineHeightsHandle.IsCreated)
+            {
+                return false;
+            }
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            baselineHeights = state.baselineHeightsHandle.Resolve(vault);
+            int requiredLength = state.heightmapResolution * state.heightmapResolution;
+            if (!baselineHeights.IsCreated || baselineHeights.Length < requiredLength)
+                return false;
+
+            state.baselineHeights = baselineHeights;
+            return true;
+        }
+
+        private static BufferID ResolveTerrainBaselineBufferId(UnityEngine.Terrain terrain)
+        {
+            uint terrainKey = terrain != null
+                ? unchecked((uint)terrain.GetInstanceID())
+                : 0u;
+            return (BufferID)(TerrainSeamBaselineBufferIdBase + (int)(terrainKey & (uint)TerrainSeamBaselineBufferIdMask));
+        }
+
         private static int CountHybridTerrainPlans(List<WorldGenerativeGeologySeamPlan> plans)
         {
             int count = 0;
@@ -837,52 +935,127 @@ namespace Hecton8.World
                    plan.seamBlendRadius > 0.01f;
         }
 
-        private bool ResolveLowTierVisualOnly()
+        private static float ResolveGlobalQualityWeight()
         {
-            bool requestedLowTierVisualOnly = ResolveRequestedLowTierVisualOnly();
-            if (!_hasLowTierVisualDecision)
-            {
-                _hasLowTierVisualDecision = true;
-                _resolvedLowTierVisualOnly = requestedLowTierVisualOnly;
-                _pendingLowTierVisualOnly = requestedLowTierVisualOnly;
-                _pendingLowTierSwitchFrame = Time.frameCount;
-                return _resolvedLowTierVisualOnly;
-            }
-
-            if (requestedLowTierVisualOnly == _resolvedLowTierVisualOnly)
-            {
-                _pendingLowTierVisualOnly = requestedLowTierVisualOnly;
-                _pendingLowTierSwitchFrame = Time.frameCount;
-                return _resolvedLowTierVisualOnly;
-            }
-
-            if (requestedLowTierVisualOnly != _pendingLowTierVisualOnly)
-            {
-                _pendingLowTierVisualOnly = requestedLowTierVisualOnly;
-                _pendingLowTierSwitchFrame = Time.frameCount;
-                return _resolvedLowTierVisualOnly;
-            }
-
-            int elapsedFrames = Mathf.Max(0, Time.frameCount - _pendingLowTierSwitchFrame);
-            if (elapsedFrames >= TierSwitchHysteresisFrames)
-                _resolvedLowTierVisualOnly = requestedLowTierVisualOnly;
-
-            return _resolvedLowTierVisualOnly;
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(weight) ? math.saturate(weight) : 1f;
         }
 
-        private static bool ResolveRequestedLowTierVisualOnly()
+        private static float3 ResolveTerrainLocalWorldPosition(
+            in WorldGenerativeGeologySeamPlan plan,
+            in double3 terrainAbsolutePosition,
+            Vector3 runtimeFallback,
+            Vector3 terrainRuntimePosition)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return GlobalRegistry.ScalabilityTierProfileByte == 0 ||
-                   tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
+            double3 absolutePosition = plan.hasAbsoluteUniverseAup
+                ? plan.absoluteUniverseAup.ToAbsoluteDouble3()
+                : HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeFallback);
+            return ToTerrainLocalFloat3(
+                absolutePosition,
+                terrainAbsolutePosition,
+                runtimeFallback,
+                terrainRuntimePosition);
         }
 
-        private static bool ResolveHighTierMaskDetail()
+        private static float3 ResolveTerrainLocalContactPosition(
+            in WorldGenerativeGeologySeamPlan plan,
+            in double3 terrainAbsolutePosition,
+            Vector3 runtimeFallback,
+            Vector3 terrainRuntimePosition)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
+            double3 absolutePosition = plan.hasAbsoluteTerrainContactAup
+                ? plan.absoluteTerrainContactAup.ToAbsoluteDouble3()
+                : HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeFallback);
+            return ToTerrainLocalFloat3(
+                absolutePosition,
+                terrainAbsolutePosition,
+                runtimeFallback,
+                terrainRuntimePosition);
+        }
+
+        private static float3 ResolveTerrainLocalVoxelCenter(
+            in WorldGenerativeGeologySeamPlan plan,
+            in double3 terrainAbsolutePosition,
+            Vector3 runtimeFallback,
+            Vector3 terrainRuntimePosition)
+        {
+            double3 absolutePosition = plan.hasAbsoluteVoxelVolumeCenterAup
+                ? plan.absoluteVoxelVolumeCenterAup.ToAbsoluteDouble3()
+                : HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeFallback);
+            return ToTerrainLocalFloat3(
+                absolutePosition,
+                terrainAbsolutePosition,
+                runtimeFallback,
+                terrainRuntimePosition);
+        }
+
+        private static float3 ToTerrainLocalFloat3(
+            in double3 absolutePosition,
+            in double3 terrainAbsolutePosition,
+            Vector3 runtimeFallback,
+            Vector3 terrainRuntimePosition)
+        {
+            double3 local = absolutePosition - terrainAbsolutePosition;
+            if (IsFiniteTerrainLocal(local.x) &&
+                IsFiniteTerrainLocal(local.y) &&
+                IsFiniteTerrainLocal(local.z))
+            {
+                return new float3((float)local.x, (float)local.y, (float)local.z);
+            }
+
+            Vector3 fallbackLocal = runtimeFallback - terrainRuntimePosition;
+            return new float3(fallbackLocal.x, fallbackLocal.y, fallbackLocal.z);
+        }
+
+        private static bool IsFiniteTerrainLocal(double value)
+        {
+            return !double.IsNaN(value) &&
+                   !double.IsInfinity(value) &&
+                   value > -1048576d &&
+                   value < 1048576d;
+        }
+
+        private static void InjectGlobalQualityWeight(ref HybridSdfHeightmapProjectionJob job, float globalQualityWeight)
+        {
+            if (ProjectionJobQualityWeightField == null || ProjectionJobQualityWeightValidField == null)
+                return;
+
+            object boxed = job;
+            ProjectionJobQualityWeightField.SetValue(boxed, math.saturate(globalQualityWeight));
+            ProjectionJobQualityWeightValidField.SetValue(boxed, (byte)1);
+            job = (HybridSdfHeightmapProjectionJob)boxed;
+        }
+
+        private static void InjectGlobalQualityWeight(ref HybridTerrainSeamMaskDetailJob job, float globalQualityWeight)
+        {
+            if (DetailJobQualityWeightField == null || DetailJobQualityWeightValidField == null)
+                return;
+
+            object boxed = job;
+            DetailJobQualityWeightField.SetValue(boxed, math.saturate(globalQualityWeight));
+            DetailJobQualityWeightValidField.SetValue(boxed, (byte)1);
+            job = (HybridTerrainSeamMaskDetailJob)boxed;
+        }
+
+        private static float ResolveSeamExpensiveWeight(float globalQualityWeight)
+        {
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float active = math.step(SeamExpensiveSamplingStartWeight, q);
+            float t = math.saturate((q - SeamExpensiveSamplingStartWeight) *
+                                    math.rcp(math.max(1f - SeamExpensiveSamplingStartWeight, 0.0001f)));
+            return active * SmoothStep01(t);
+        }
+
+        private static float ResolveMaskDetailWeight(float globalQualityWeight)
+        {
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            return SmoothStep01(math.saturate((q - 0.70f) * math.rcp(0.30f)));
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
         }
 
         private void UploadVoxelBlendMaskTexture(
@@ -934,6 +1107,7 @@ namespace Hecton8.World
         }
 
         private void PublishTerrainPatchVoxelModifiedEvent(
+            uint seamFrame,
             UnityEngine.Terrain terrain,
             RectInt applyRect,
             float minHeight01,
@@ -974,7 +1148,7 @@ namespace Hecton8.World
                 MinAbsoluteCell = minCell,
                 MaxAbsoluteCell = maxCell,
                 VoxelSize = cellSize,
-                Frame = (uint)Time.frameCount,
+                Frame = seamFrame,
                 Operation = (byte)VoxelCarveOperationType.Replace,
                 Shape = (byte)VoxelCarveShapeType.Box,
                 Flags = 1,
@@ -984,6 +1158,7 @@ namespace Hecton8.World
         }
 
         private void RecordTerrainSeamBlackBox(
+            uint seamFrame,
             UnityEngine.Terrain terrain,
             uint terrainHash,
             RectInt applyRect,
@@ -999,7 +1174,9 @@ namespace Hecton8.World
             bool faulted,
             uint stateHash)
         {
-            if (!_terrainSeamBlackBox.IsCreated || _terrainSeamBlackBox.Length == 0 || terrain == null || terrain.terrainData == null)
+            if (!TryResolveTerrainSeamBlackBox(out NativeArray<TerrainSeamTelemetryEntry> blackBox) ||
+                terrain == null ||
+                terrain.terrainData == null)
                 return;
 
             UnityEngine.TerrainData terrainData = terrain.terrainData;
@@ -1008,7 +1185,7 @@ namespace Hecton8.World
             float denominator = Mathf.Max(1f, terrainData.heightmapResolution - 1f);
             TerrainSeamTelemetryEntry entry = new TerrainSeamTelemetryEntry
             {
-                Frame = (uint)Time.frameCount,
+                Frame = seamFrame,
                 TerrainHash = terrainHash,
                 PatchSampleCount = sampleCount,
                 PlanCount = planCount,
@@ -1026,8 +1203,20 @@ namespace Hecton8.World
                 StateHash = stateHash
             };
 
-            _terrainSeamBlackBox[_blackBoxWriteIndex] = entry;
-            _blackBoxWriteIndex = (_blackBoxWriteIndex + 1) % _terrainSeamBlackBox.Length;
+            blackBox[_blackBoxWriteIndex] = entry;
+            _blackBoxWriteIndex = (_blackBoxWriteIndex + 1) % TerrainSeamBlackBoxCapacity;
+        }
+
+        private uint AdvanceTerrainSeamFrame()
+        {
+            unchecked
+            {
+                _seamFrameCounter++;
+                if (_seamFrameCounter == 0u)
+                    _seamFrameCounter = 1u;
+
+                return _seamFrameCounter;
+            }
         }
 
         private static uint HashTerrainSeamState(
@@ -1073,6 +1262,7 @@ namespace Hecton8.World
 
             Vector3 terrainPosition = terrain.transform.position;
             Vector3 terrainSize = terrainData.size;
+            double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(terrainPosition);
             float invHeight = terrainSize.y > 0.001f ? 1f / terrainSize.y : 0f;
             float invMaxHeightIndex = 1f / Mathf.Max(1, terrainData.heightmapResolution - 1);
             float effectiveRadius = Mathf.Max(2f, plan.seamBlendRadius + radiusPaddingMeters);
@@ -1082,20 +1272,25 @@ namespace Hecton8.World
                 return false;
 
             Vector3 planRuntimePosition = plan.RuntimeWorldPosition;
+            float3 planLocalPosition = ResolveTerrainLocalWorldPosition(
+                in plan,
+                in terrainAbsolutePosition,
+                planRuntimePosition,
+                terrainPosition);
             bool snapVoxelCut = desiredDelta < -0.0001f && plan.RequiresVoxelBlend;
             bool changed = false;
 
             for (int patchZ = 0; patchZ < patchRect.height; patchZ++)
             {
                 int heightmapZ = patchRect.y + patchZ;
-                float worldZ = terrainPosition.z + heightmapZ * invMaxHeightIndex * terrainSize.z;
-                float deltaZ = worldZ - planRuntimePosition.z;
+                float localZ = heightmapZ * invMaxHeightIndex * terrainSize.z;
+                float deltaZ = localZ - planLocalPosition.z;
 
                 for (int patchX = 0; patchX < patchRect.width; patchX++)
                 {
                     int heightmapX = patchRect.x + patchX;
-                    float worldX = terrainPosition.x + heightmapX * invMaxHeightIndex * terrainSize.x;
-                    float deltaX = worldX - planRuntimePosition.x;
+                    float localX = heightmapX * invMaxHeightIndex * terrainSize.x;
+                    float deltaX = localX - planLocalPosition.x;
                     float distanceSq = deltaX * deltaX + deltaZ * deltaZ;
                     if (distanceSq > effectiveRadiusSq)
                         continue;
@@ -1111,14 +1306,20 @@ namespace Hecton8.World
                         plan.caveProximity * 0.10f);
 
                     float sourceNormalized = patch[patchZ, patchX];
-                    float targetWorldHeight = terrainPosition.y + sourceNormalized * terrainSize.y + desiredDelta * falloff * rim * shapeBias;
+                    float targetLocalHeight = sourceNormalized * terrainSize.y + desiredDelta * falloff * rim * shapeBias;
                     if (snapVoxelCut &&
-                        TryResolveVoxelSnappedRuntimeHeight(worldX, worldZ, targetWorldHeight, in plan, out float snappedRuntimeHeight))
+                        TryResolveVoxelSnappedTerrainLocalHeight(
+                            localX,
+                            localZ,
+                            targetLocalHeight,
+                            in terrainAbsolutePosition,
+                            in plan,
+                            out float snappedLocalHeight))
                     {
-                        targetWorldHeight = snappedRuntimeHeight;
+                        targetLocalHeight = snappedLocalHeight;
                     }
 
-                    float targetHeight01 = Mathf.Clamp01((targetWorldHeight - terrainPosition.y) * invHeight);
+                    float targetHeight01 = Mathf.Clamp01(targetLocalHeight * invHeight);
                     changed |= Mathf.Abs(targetHeight01 - sourceNormalized) > 0.00001f;
                     patch[patchZ, patchX] = targetHeight01;
                 }
@@ -1127,22 +1328,22 @@ namespace Hecton8.World
             return changed;
         }
 
-        private static bool TryResolveVoxelSnappedRuntimeHeight(
-            float runtimeWorldX,
-            float runtimeWorldZ,
-            float runtimeTargetHeight,
+        private static bool TryResolveVoxelSnappedTerrainLocalHeight(
+            float terrainLocalX,
+            float terrainLocalZ,
+            float terrainLocalTargetHeight,
+            in double3 terrainAbsolutePosition,
             in WorldGenerativeGeologySeamPlan plan,
-            out float snappedRuntimeHeight)
+            out float snappedTerrainLocalHeight)
         {
-            snappedRuntimeHeight = runtimeTargetHeight;
+            snappedTerrainLocalHeight = terrainLocalTargetHeight;
             if (!plan.hasAbsoluteVoxelVolumeCenterAup && plan.voxelVolumeSize.sqrMagnitude <= 0.0001f)
                 return false;
 
-            double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             double3 targetAbsolute = new double3(
-                (double)runtimeWorldX + committedOffset.x,
-                (double)runtimeTargetHeight + committedOffset.y,
-                (double)runtimeWorldZ + committedOffset.z);
+                terrainAbsolutePosition.x + terrainLocalX,
+                terrainAbsolutePosition.y + terrainLocalTargetHeight,
+                terrainAbsolutePosition.z + terrainLocalZ);
             AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromAbsolutePosition(targetAbsolute);
             double targetAbsoluteY = targetAup.ToAbsoluteDouble3().y;
             double3 centerAbsolute = plan.hasAbsoluteVoxelVolumeCenterAup
@@ -1157,11 +1358,11 @@ namespace Hecton8.World
                 targetAbsoluteY,
                 originY,
                 snapStepMeters);
-            float resolvedRuntimeHeight = (float)(snappedAbsoluteY - committedOffset.y);
-            if (float.IsNaN(resolvedRuntimeHeight) || float.IsInfinity(resolvedRuntimeHeight))
+            float resolvedLocalHeight = (float)(snappedAbsoluteY - terrainAbsolutePosition.y);
+            if (float.IsNaN(resolvedLocalHeight) || float.IsInfinity(resolvedLocalHeight))
                 return false;
 
-            snappedRuntimeHeight = resolvedRuntimeHeight;
+            snappedTerrainLocalHeight = resolvedLocalHeight;
             return true;
         }
 
@@ -1184,17 +1385,28 @@ namespace Hecton8.World
             if (terrainData == null)
                 return false;
 
+            Vector3 terrainPosition = terrain.transform.position;
+            Vector3 terrainSize = terrainData.size;
+            double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(terrainPosition);
             Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteStart);
             Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteEnd);
-            Vector2 start = new Vector2(runtimeStart.x, runtimeStart.z);
-            Vector2 end = new Vector2(runtimeEnd.x, runtimeEnd.z);
+            float3 localStart3 = ToTerrainLocalFloat3(
+                new double3(trench.AbsoluteStart.x, trench.AbsoluteStart.y, trench.AbsoluteStart.z),
+                terrainAbsolutePosition,
+                runtimeStart,
+                terrainPosition);
+            float3 localEnd3 = ToTerrainLocalFloat3(
+                new double3(trench.AbsoluteEnd.x, trench.AbsoluteEnd.y, trench.AbsoluteEnd.z),
+                terrainAbsolutePosition,
+                runtimeEnd,
+                terrainPosition);
+            Vector2 start = new Vector2(localStart3.x, localStart3.z);
+            Vector2 end = new Vector2(localEnd3.x, localEnd3.z);
             Vector2 segment = end - start;
             float segmentLengthSq = segment.sqrMagnitude;
             if (segmentLengthSq <= 0.0001f)
                 return false;
 
-            Vector3 terrainPosition = terrain.transform.position;
-            Vector3 terrainSize = terrainData.size;
             float invHeight = terrainSize.y > 0.001f ? 1f / terrainSize.y : 0f;
             float invMaxHeightIndex = 1f / Mathf.Max(1, terrainData.heightmapResolution - 1);
             float safeSlope = Mathf.Max(0.05f, trench.Slope);
@@ -1206,13 +1418,13 @@ namespace Hecton8.World
             for (int patchZ = 0; patchZ < patchRect.height; patchZ++)
             {
                 int heightmapZ = patchRect.y + patchZ;
-                float worldZ = terrainPosition.z + heightmapZ * invMaxHeightIndex * terrainSize.z;
+                float localZ = heightmapZ * invMaxHeightIndex * terrainSize.z;
 
                 for (int patchX = 0; patchX < patchRect.width; patchX++)
                 {
                     int heightmapX = patchRect.x + patchX;
-                    float worldX = terrainPosition.x + heightmapX * invMaxHeightIndex * terrainSize.x;
-                    Vector2 point = new Vector2(worldX, worldZ);
+                    float localX = heightmapX * invMaxHeightIndex * terrainSize.x;
+                    Vector2 point = new Vector2(localX, localZ);
                     float distanceToLineSq = DistanceSqPointToSegment(point, start, segment, segmentLengthSq);
                     if (distanceToLineSq > influenceRadiusSq)
                         continue;
@@ -1279,7 +1491,7 @@ namespace Hecton8.World
             int currentResolution = currentTerrainData.heightmapResolution;
             if (currentTerrainData != state.terrainData ||
                 currentResolution != state.heightmapResolution ||
-                !state.baselineHeights.IsCreated)
+                !TryResolveBaselineHeights(state, out _))
             {
                 RefreshTerrainBaseline(state, state.terrain, currentTerrainData, currentResolution);
                 return;
@@ -1319,7 +1531,7 @@ namespace Hecton8.World
             }
             else if (state.terrain != terrain ||
                      state.terrainData != terrainData ||
-                     !state.baselineHeights.IsCreated ||
+                     !TryResolveBaselineHeights(state, out _) ||
                      state.heightmapResolution != resolution)
             {
                 RefreshTerrainBaseline(state, terrain, terrainData, resolution);
@@ -1352,7 +1564,8 @@ namespace Hecton8.World
                 rect.width * rect.height,
                 TerrainPatchBridgeSampleBudgetMx350,
                 ref _nextPatchTelemetryFrame);
-            CopyBaselinePatch(state.baselineHeights, state.heightmapResolution, rect, state.patchBuffer);
+            if (TryResolveBaselineHeights(state, out NativeArray<float> baselineHeights))
+                CopyBaselinePatch(baselineHeights, state.heightmapResolution, rect, state.patchBuffer);
             return state.patchBuffer;
         }
 
@@ -1373,14 +1586,18 @@ namespace Hecton8.World
             int totalHeights = Mathf.Max(0, resolution * resolution);
             if (totalHeights > 0)
             {
-                // COLD ALLOC: NativeArray<Single>[resolution*resolution] - persistent terrain baseline refreshed only when TerrainData or resolution changes - owner: WorldGenerativeGeologyTerrainSeamApplier
-                state.baselineHeights = new NativeArray<float>(totalHeights, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    state.baselineHeights,
-                    NativeMemoryOwner,
-                    nameof(TerrainApplyState.baselineHeights),
-                    NativeMemoryLifetime);
-                PopulateTerrainBaselineNative(state.baselineHeights, terrain, terrainData, resolution);
+                IDataVault vault = GlobalRegistry.DataVault;
+                if (vault != null)
+                {
+                    state.baselineHeightsBufferId = ResolveTerrainBaselineBufferId(terrain);
+                    state.baselineHeightsHandle = vault.GetBufferHandle<float>(
+                        state.baselineHeightsBufferId,
+                        totalHeights,
+                        SystemID.TerrainSeams,
+                        NativeArrayOptions.UninitializedMemory);
+                    if (TryResolveBaselineHeights(state, out NativeArray<float> baselineHeights))
+                        PopulateTerrainBaselineNative(baselineHeights, terrain, terrainData, resolution);
+                }
             }
             state.patchBuffer = null;
             state.previousRect = default;
@@ -1431,34 +1648,41 @@ namespace Hecton8.World
                 _tileSnapshotScratch = new MapMagicTerrainTileSnapshot[TerrainTileSnapshotCapacity];
             }
 
-            if (_terrainSeamBlackBox.IsCreated)
-                return;
-
-            // COLD ALLOC: fixed 300-frame seam telemetry ring required for post-mortem NaN/crash diagnosis.
-            _terrainSeamBlackBox = new NativeArray<TerrainSeamTelemetryEntry>(
-                TerrainSeamBlackBoxCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _terrainSeamBlackBox,
-                NativeMemoryOwner,
-                TerrainSeamBlackBoxLabel,
-                NativeMemoryLifetime);
-            _blackBoxWriteIndex = 0;
+            TryResolveTerrainSeamBlackBox(out _);
         }
 
         private void DisposeHybridTerrainSeamState()
         {
-            if (_terrainSeamBlackBox.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_terrainSeamBlackBox);
-                _terrainSeamBlackBox.Dispose();
-                _terrainSeamBlackBox = default;
-            }
+            _terrainSeamBlackBoxHandle = default;
+            _blackBoxWriteIndex = 0;
 
             DestroyVoxelBlendMaskTexture();
             ClearVoxelBlendMaskGlobal();
             _voxelBlendMaskGlobalActive = false;
+        }
+
+        private bool TryResolveTerrainSeamBlackBox(out NativeArray<TerrainSeamTelemetryEntry> blackBox)
+        {
+            blackBox = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            if (_terrainSeamBlackBoxHandle.IsCreated)
+            {
+                blackBox = _terrainSeamBlackBoxHandle.Resolve(vault);
+                if (blackBox.IsCreated && blackBox.Length >= TerrainSeamBlackBoxCapacity)
+                    return true;
+            }
+
+            _terrainSeamBlackBoxHandle = vault.GetBufferHandle<TerrainSeamTelemetryEntry>(
+                TerrainSeamBlackBoxBufferId,
+                TerrainSeamBlackBoxCapacity,
+                SystemID.TerrainSeams,
+                NativeArrayOptions.ClearMemory);
+            blackBox = _terrainSeamBlackBoxHandle.Resolve(vault);
+            _blackBoxWriteIndex = 0;
+            return blackBox.IsCreated && blackBox.Length >= TerrainSeamBlackBoxCapacity;
         }
 
         private void DestroyVoxelBlendMaskTexture()
@@ -1492,7 +1716,7 @@ namespace Hecton8.World
         private void DumpTerrainSeamBlackBox()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (!_terrainSeamBlackBox.IsCreated)
+            if (!TryResolveTerrainSeamBlackBox(out NativeArray<TerrainSeamTelemetryEntry> blackBox))
                 return;
 
             try
@@ -1508,9 +1732,9 @@ namespace Hecton8.World
                 {
                     writer.Write(TerrainSeamBlackBoxCapacity);
                     writer.Write(_blackBoxWriteIndex);
-                    for (int i = 0; i < _terrainSeamBlackBox.Length; i++)
+                    for (int i = 0; i < TerrainSeamBlackBoxCapacity; i++)
                     {
-                        TerrainSeamTelemetryEntry entry = _terrainSeamBlackBox[i];
+                        TerrainSeamTelemetryEntry entry = blackBox[i];
                         writer.Write(entry.Frame);
                         writer.Write(entry.TerrainHash);
                         writer.Write(entry.PatchSampleCount);
@@ -1526,6 +1750,7 @@ namespace Hecton8.World
                         writer.Write(entry.Reserved1);
                         writer.Write(entry.Reserved2);
                         writer.Write(entry.Reserved3);
+                        writer.Write(entry.Reserved4);
                     }
                 }
             }
@@ -1543,16 +1768,6 @@ namespace Hecton8.World
             Dictionary<int, TerrainApplyState>.Enumerator enumerator = _terrainStates.GetEnumerator();
             while (enumerator.MoveNext())
                 enumerator.Current.Value?.ReleaseBaseline();
-        }
-
-        private static void DisposeRegisteredTempJobArray<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
         }
 
         private void ClearBuckets()
@@ -1635,10 +1850,16 @@ namespace Hecton8.World
             int maxIndex = terrainData.heightmapResolution - 1;
             float radius = Mathf.Max(1f, plan.seamBlendRadius);
             Vector3 runtimeWorldPosition = plan.RuntimeWorldPosition;
-            float minX01 = Mathf.Clamp01((runtimeWorldPosition.x - radius - position.x) / size.x);
-            float maxX01 = Mathf.Clamp01((runtimeWorldPosition.x + radius - position.x) / size.x);
-            float minZ01 = Mathf.Clamp01((runtimeWorldPosition.z - radius - position.z) / size.z);
-            float maxZ01 = Mathf.Clamp01((runtimeWorldPosition.z + radius - position.z) / size.z);
+            double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);
+            float3 localPosition = ResolveTerrainLocalWorldPosition(
+                in plan,
+                in terrainAbsolutePosition,
+                runtimeWorldPosition,
+                position);
+            float minX01 = Mathf.Clamp01((localPosition.x - radius) / size.x);
+            float maxX01 = Mathf.Clamp01((localPosition.x + radius) / size.x);
+            float minZ01 = Mathf.Clamp01((localPosition.z - radius) / size.z);
+            float maxZ01 = Mathf.Clamp01((localPosition.z + radius) / size.z);
 
             int minX = Mathf.FloorToInt(minX01 * maxIndex);
             int maxX = Mathf.CeilToInt(maxX01 * maxIndex);
@@ -1660,17 +1881,28 @@ namespace Hecton8.World
 
             Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteStart);
             Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteEnd);
+            double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(terrainPosition);
+            float3 localStart = ToTerrainLocalFloat3(
+                new double3(trench.AbsoluteStart.x, trench.AbsoluteStart.y, trench.AbsoluteStart.z),
+                terrainAbsolutePosition,
+                runtimeStart,
+                terrainPosition);
+            float3 localEnd = ToTerrainLocalFloat3(
+                new double3(trench.AbsoluteEnd.x, trench.AbsoluteEnd.y, trench.AbsoluteEnd.z),
+                terrainAbsolutePosition,
+                runtimeEnd,
+                terrainPosition);
             float radius = Mathf.Max(1f, trench.InfluenceRadius);
-            float minWorldX = Mathf.Min(runtimeStart.x, runtimeEnd.x) - radius;
-            float maxWorldX = Mathf.Max(runtimeStart.x, runtimeEnd.x) + radius;
-            float minWorldZ = Mathf.Min(runtimeStart.z, runtimeEnd.z) - radius;
-            float maxWorldZ = Mathf.Max(runtimeStart.z, runtimeEnd.z) + radius;
+            float minLocalX = Mathf.Min(localStart.x, localEnd.x) - radius;
+            float maxLocalX = Mathf.Max(localStart.x, localEnd.x) + radius;
+            float minLocalZ = Mathf.Min(localStart.z, localEnd.z) - radius;
+            float maxLocalZ = Mathf.Max(localStart.z, localEnd.z) + radius;
 
             int maxIndex = terrainData.heightmapResolution - 1;
-            float minX01 = Mathf.Clamp01((minWorldX - terrainPosition.x) / terrainSize.x);
-            float maxX01 = Mathf.Clamp01((maxWorldX - terrainPosition.x) / terrainSize.x);
-            float minZ01 = Mathf.Clamp01((minWorldZ - terrainPosition.z) / terrainSize.z);
-            float maxZ01 = Mathf.Clamp01((maxWorldZ - terrainPosition.z) / terrainSize.z);
+            float minX01 = Mathf.Clamp01(minLocalX / terrainSize.x);
+            float maxX01 = Mathf.Clamp01(maxLocalX / terrainSize.x);
+            float minZ01 = Mathf.Clamp01(minLocalZ / terrainSize.z);
+            float maxZ01 = Mathf.Clamp01(maxLocalZ / terrainSize.z);
             int minX = Mathf.FloorToInt(minX01 * maxIndex);
             int maxX = Mathf.CeilToInt(maxX01 * maxIndex);
             int minZ = Mathf.FloorToInt(minZ01 * maxIndex);

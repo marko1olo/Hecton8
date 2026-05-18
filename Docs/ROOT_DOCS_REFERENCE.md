@@ -1,7 +1,21 @@
 # Root Docs Reference
 
-Date: 2026-05-17
+Date: 2026-05-19
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Purpose: explain what still remains in repository root versus `Docs/` after the current documentation cleanup.
 
@@ -29,9 +43,12 @@ Former root compute drift:
 
 - `COMPUTE_AUDIT_BRIEF.md` moved to `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md` during the 2026-05-17 R3 documentation integration pass. Do not treat it as a root authority anchor.
 
-Latest broad documentation refresh:
+Latest DOC_GLOBAL documentation boundary:
 
-- `Docs/Reports/2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md`
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`
+- `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`
+- `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`
+- Historical broad refresh: `Docs/Reports/2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md`
 
 The May 15 three-anchor root state is again the current filesystem target after the R3 compute-brief move.
 
@@ -147,20 +164,20 @@ Root `TERRAIN_AND_BIOME_REALITY_MAP.md` is not active authority; use `Docs/Repor
 Root `BROKEN_PREFABS.md` is not active authority; it is a generated snapshot and must be summarized in a dated `Docs/Reports/` file before citation.
 Root `.log` files were moved to dated bundles under `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_*/`.
 `.codex-artifacts/**` remains evidence artifact storage, not documentation authority.
-Latest documentation synchronization pass: `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`.
+Historical documentation synchronization pass: `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`; current DOC_GLOBAL orientation starts at R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9.
 Latest final-inquisition proof boundary: `Docs/Reports/2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md`.
-Latest Project Atlas/source-count synchronization pass: `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`.
+Historical Project Atlas/source-count synchronization pass: `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`; rerun current source/atlas counters before using exact values.
 Latest documentation sweep: `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
 Latest documentation sorting map: `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`.
 Latest header/archive queue: `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`.
-Current root text scan saw `5` root `.md` files and `0` root `.txt`/`.log` files; only the three anchors listed above are active documentation authority.
+At the 2026-05-07 check, root text scan saw `5` root `.md` files and `0` root `.txt`/`.log` files; only the three anchors listed above were active documentation authority.
 
 ## 2026-05-11 Check
 
 Root documentation anchors remain `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
 Root `TERRAIN_AND_BIOME_REALITY_MAP.md` is still not active authority; use `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
 Root `BROKEN_PREFABS.md` is still not active authority; it is a generated snapshot and must be summarized in a dated `Docs/Reports/` file before citation.
-Current root text scan saw `5` root `.md` files and `0` root `.txt`/`.log` files.
+At the 2026-05-11 check, root text scan saw `5` root `.md` files and `0` root `.txt`/`.log` files.
 Latest documentation/data continuation: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
 Latest `.agents-skills` doctrine update: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
 Latest active documentation manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
@@ -169,14 +186,19 @@ Current Unity MCP proof was not run in the May 11 continuation; older MCP editor
 
 ## 2026-05-13 R2 Check
 
-Latest documentation counter/missing-artifact override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
+Historical broad counter/missing-artifact override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`; current DOC_GLOBAL correction layer starts at R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9.
 The May 11 active manifest remains the latest machine-readable manifest, but its numeric counters are historical where May 13 R2 conflicts.
 Current direct `Docs/` root has `11` markdown files plus `Actual Domains of Project.txt`.
-Current root text scan sees `6` root `.md`, `3` root `.log`, `3` root `.json`, and `0` root `.txt`.
+At the 2026-05-13 R2 check, root text scan saw `6` root `.md`, `3` root `.log`, `3` root `.json`, and `0` root `.txt`.
+
+## 2026-05-17 R5 Check
+
+Current root markdown scan sees exactly `3` root `.md` files: `AGENTS.md`, `BUILD_PLAYTEST_ISSUES.md`, and `MASTER_RELEASE_WORK_PLAN.md`.
+No root `.txt`, `.log`, or `.json` authority file is promoted by this R5 pass.
 
 ## 2026-05-13 R9 Check
 
-Latest root-governance override remains `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`; R9 adds mirror/atlas boundary cleanup to that same report.
+Latest DOC_GLOBAL correction is `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`. R22 remains the current source-counter/validation boundary; R21/R20/R19/R18/R17/R16/R15 remain subordinate source-counter/report-index, proof-residue, Marketing/EventBus/counter, R4, report-vault, and navigation correction layers; May 13/R9 are historical where newer layers conflict.
 
 Current root scan:
 

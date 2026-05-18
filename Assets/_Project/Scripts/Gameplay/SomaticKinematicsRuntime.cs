@@ -1,0 +1,1986 @@
+using System;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Hecton8.Core.Contracts.Signals
+{
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public partial struct ShinobuPlayerExertionSignal : ISignal
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint SourceId;
+        [FieldOffset(8)] public float StrokeMagnitude;
+        [FieldOffset(12)] public float AgainstCurrent01;
+        [FieldOffset(16)] public float Stamina01;
+        [FieldOffset(20)] public byte Flags;
+        [FieldOffset(21)] public byte Reserved0;
+        [FieldOffset(22)] public ushort Reserved1;
+        [FieldOffset(24)] public ulong Reserved2;
+    }
+}
+
+namespace Hecton8.Gameplay
+{
+    [StructLayout(LayoutKind.Explicit, Size = 160)]
+    public struct PlayerStateDTO
+    {
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public double3 SectorOriginAUP;
+        [FieldOffset(48)] public float3 Velocity;
+        [FieldOffset(60)] public float3 LocalPosition;
+        [FieldOffset(72)] public float3 RequestedThrust;
+        [FieldOffset(84)] public float3 SdfPushOut;
+        [FieldOffset(96)] public float3 AbyssalCurrent;
+        [FieldOffset(108)] public float PlayerRadius;
+        [FieldOffset(112)] public float Stamina01;
+        [FieldOffset(116)] public float FatigueWindow;
+        [FieldOffset(120)] public float SurfaceSubmersion01;
+        [FieldOffset(124)] public float LostKineticEnergy;
+        [FieldOffset(128)] public uint Frame;
+        [FieldOffset(132)] public uint Flags;
+        [FieldOffset(136)] public uint StableId;
+        [FieldOffset(140)] public uint ShiftFrameId;
+        [FieldOffset(144)] public ulong Padding0;
+        [FieldOffset(152)] public ulong Padding1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 208)]
+    public struct PlayerKinematicState
+    {
+        [FieldOffset(0)] public double3 Aup;
+        [FieldOffset(24)] public double3 SectorOriginAup;
+        [FieldOffset(48)] public float3 LocalPosition;
+        [FieldOffset(60)] public float3 Velocity;
+        [FieldOffset(72)] public float3 RequestedThrust;
+        [FieldOffset(84)] public float3 SdfPushOut;
+        [FieldOffset(96)] public float3 AbyssalCurrent;
+        [FieldOffset(108)] public float3 LastValidLocalPosition;
+        [FieldOffset(120)] public float3 HeadForward;
+        [FieldOffset(132)] public float3 ControllerForward;
+        [FieldOffset(144)] public float PlayerRadius;
+        [FieldOffset(148)] public float Stamina01;
+        [FieldOffset(152)] public float FatigueWindow;
+        [FieldOffset(156)] public float SurfaceSubmersion01;
+        [FieldOffset(160)] public float LastPushOutMeters;
+        [FieldOffset(164)] public float LastLostKineticEnergy;
+        [FieldOffset(168)] public float LastAcousticMagnitude;
+        [FieldOffset(172)] public float LastHapticMagnitude;
+        [FieldOffset(176)] public uint Frame;
+        [FieldOffset(180)] public uint Flags;
+        [FieldOffset(184)] public uint StableId;
+        [FieldOffset(188)] public uint ShiftFrameId;
+        [FieldOffset(192)] public ulong Padding0;
+        [FieldOffset(200)] public ulong Padding1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct PlayerBoundingSphere
+    {
+        [FieldOffset(0)] public float3 CenterLocal;
+        [FieldOffset(12)] public float Radius;
+        [FieldOffset(16)] public float3 PreviousCenterLocal;
+        [FieldOffset(28)] public uint Flags;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SomaticHandStrokeSample
+    {
+        [FieldOffset(0)] public float3 TargetLocal;
+        [FieldOffset(12)] public float Timestamp;
+        [FieldOffset(16)] public float3 RelativeToHead;
+        [FieldOffset(28)] public float DeltaMeters;
+        [FieldOffset(32)] public float3 PhysicalLocal;
+        [FieldOffset(44)] public uint Frame;
+        [FieldOffset(48)] public byte HandIndex;
+        [FieldOffset(49)] public byte HasTracking;
+        [FieldOffset(50)] public ushort Reserved0;
+        [FieldOffset(52)] public uint Reserved1;
+        [FieldOffset(56)] public ulong Reserved2;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    public struct SomaticKinematicsTuningData
+    {
+        [FieldOffset(0)] public float BaseDrag;
+        [FieldOffset(4)] public float StrokeMultiplier;
+        [FieldOffset(8)] public float SeaglideAcceleration;
+        [FieldOffset(12)] public float SurfaceBuoyancy;
+        [FieldOffset(16)] public float CurrentAcceleration;
+        [FieldOffset(20)] public float CurrentFatigueScale;
+        [FieldOffset(24)] public float SdfGradientEpsilon;
+        [FieldOffset(28)] public float PlayerRadius;
+        [FieldOffset(32)] public float SeaLevelY;
+        [FieldOffset(36)] public float Gravity;
+        [FieldOffset(40)] public float SurfaceBlendMeters;
+        [FieldOffset(44)] public float ChestOffsetY;
+        [FieldOffset(48)] public float StealthDeltaThreshold;
+        [FieldOffset(52)] public float HapticPushThreshold;
+        [FieldOffset(56)] public float MassKilograms;
+        [FieldOffset(60)] public float GyroDamping;
+        [FieldOffset(64)] public float MaxSpeed;
+        [FieldOffset(68)] public int MaxCcdSteps;
+        [FieldOffset(72)] public int DragLutCount;
+        [FieldOffset(76)] public uint Flags;
+        [FieldOffset(80)] public ulong Padding0;
+        [FieldOffset(88)] public ulong Padding1;
+
+        public static SomaticKinematicsTuningData CreateEmergency()
+        {
+            SomaticKinematicsTuningData tuning = default;
+            tuning.BaseDrag = 1.65f;
+            tuning.StrokeMultiplier = 4.2f;
+            tuning.SeaglideAcceleration = 7.5f;
+            tuning.SurfaceBuoyancy = 11.0f;
+            tuning.CurrentAcceleration = 1.35f;
+            tuning.CurrentFatigueScale = 0.75f;
+            tuning.SdfGradientEpsilon = 0.08f;
+            tuning.PlayerRadius = 0.38f;
+            tuning.SeaLevelY = 0.0f;
+            tuning.Gravity = HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
+            tuning.SurfaceBlendMeters = 1.2f;
+            tuning.ChestOffsetY = 0.45f;
+            tuning.StealthDeltaThreshold = 0.035f;
+            tuning.HapticPushThreshold = 0.045f;
+            tuning.MassKilograms = 82.0f;
+            tuning.GyroDamping = 7.0f;
+            tuning.MaxSpeed = 10.0f;
+            tuning.MaxCcdSteps = 8;
+            tuning.DragLutCount = SomaticKinematicsRuntime.DragLutCapacity;
+            tuning.Flags = 1u;
+            return tuning;
+        }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    public struct SomaticKinematicsFrameInput
+    {
+        [FieldOffset(0)] public float3 HeadLocalPosition;
+        [FieldOffset(12)] public float DeltaTime;
+        [FieldOffset(16)] public float3 HeadForward;
+        [FieldOffset(28)] public float SeaglideInput01;
+        [FieldOffset(32)] public float3 ControllerForward;
+        [FieldOffset(44)] public float TimeSeconds;
+        [FieldOffset(48)] public float3 LeftHandLocal;
+        [FieldOffset(60)] public uint FrameIndex;
+        [FieldOffset(64)] public float3 RightHandLocal;
+        [FieldOffset(76)] public byte LeftTracked;
+        [FieldOffset(77)] public byte RightTracked;
+        [FieldOffset(78)] public byte SeaglideActive;
+        [FieldOffset(79)] public byte LowTier;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    public struct SomaticKinematicsFrameContext
+    {
+        [FieldOffset(0)] public double3 SectorOriginAup;
+        [FieldOffset(24)] public float3 AbyssalCurrent;
+        [FieldOffset(36)] public float SystemStress01;
+        [FieldOffset(40)] public byte ThermalThrottle;
+        [FieldOffset(41)] public byte Reserved0;
+        [FieldOffset(42)] public ushort Reserved1;
+        [FieldOffset(44)] public uint Reserved2;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    public struct SomaticKinematicSignalScratch
+    {
+        [FieldOffset(0)] public float3 PreviousLocalPosition;
+        [FieldOffset(12)] public float ExertionDelta;
+        [FieldOffset(16)] public float3 ResolvedLocalPosition;
+        [FieldOffset(28)] public float AcousticMagnitude;
+        [FieldOffset(32)] public float3 ResolvedVelocity;
+        [FieldOffset(44)] public float HapticAmplitude;
+        [FieldOffset(48)] public float3 SdfPushOut;
+        [FieldOffset(60)] public float LostKineticEnergy;
+        [FieldOffset(64)] public float AgainstCurrent01;
+        [FieldOffset(68)] public uint Frame;
+        [FieldOffset(72)] public uint Flags;
+        [FieldOffset(76)] public byte HapticHandIndex;
+        [FieldOffset(77)] public byte Reserved0;
+        [FieldOffset(78)] public ushort Reserved1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    public struct SomaticKinematicBlackBoxEntry
+    {
+        [FieldOffset(0)] public double3 Aup;
+        [FieldOffset(24)] public float3 LocalPosition;
+        [FieldOffset(36)] public float3 Velocity;
+        [FieldOffset(48)] public float3 RequestedThrust;
+        [FieldOffset(60)] public float3 SdfPushOut;
+        [FieldOffset(72)] public uint Frame;
+        [FieldOffset(76)] public uint Flags;
+        [FieldOffset(80)] public float AcousticMagnitude;
+        [FieldOffset(84)] public float LostKineticEnergy;
+        [FieldOffset(88)] public uint StateHash;
+        [FieldOffset(92)] public uint Reserved;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public partial struct MockSDFCollisionPlane
+    {
+        [FieldOffset(0)] public float HeightY;
+        [FieldOffset(4)] public float SlopeX;
+        [FieldOffset(8)] public float SlopeZ;
+        [FieldOffset(12)] public float Padding0;
+        [FieldOffset(16)] public float3 Padding1;
+        [FieldOffset(28)] public uint Flags;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float SampleDistance(float3 position)
+        {
+            return position.y - (HeightY + (position.x * SlopeX) + (position.z * SlopeZ));
+        }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public partial struct MockWorldSampler
+    {
+        [FieldOffset(0)] public MockSDFCollisionPlane Plane;
+        [FieldOffset(32)] public float3 CaveCenter;
+        [FieldOffset(44)] public float CaveRadius;
+        [FieldOffset(48)] public float3 Padding0;
+        [FieldOffset(60)] public uint Flags;
+
+        public static MockWorldSampler Create(float3 center)
+        {
+            MockWorldSampler sampler = default;
+            sampler.Plane.HeightY = -0.4f;
+            sampler.Plane.SlopeX = 0.025f;
+            sampler.Plane.SlopeZ = -0.015f;
+            sampler.CaveCenter = center;
+            sampler.CaveRadius = 240.0f;
+            sampler.Flags = 1u;
+            return sampler;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float SampleDistance(float3 position)
+        {
+            float planeDistance = Plane.SampleDistance(position);
+            float caveDistance = CaveRadius - math.length(position - CaveCenter);
+            return math.min(planeDistance, caveDistance);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float3 SampleNormalTetra(float3 position, float epsilon)
+        {
+            float e = math.max(0.005f, epsilon);
+            float3 k0 = new float3(1f, -1f, -1f);
+            float3 k1 = new float3(-1f, -1f, 1f);
+            float3 k2 = new float3(-1f, 1f, -1f);
+            float3 k3 = new float3(1f, 1f, 1f);
+            float3 gradient =
+                (k0 * SampleDistance(position + (k0 * e))) +
+                (k1 * SampleDistance(position + (k1 * e))) +
+                (k2 * SampleDistance(position + (k2 * e))) +
+                (k3 * SampleDistance(position + (k3 * e)));
+            float lengthSq = math.lengthsq(gradient);
+            return lengthSq > 0.0000001f ? gradient * math.rsqrt(lengthSq) : new float3(0f, 1f, 0f);
+        }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public partial struct MockFluidDensityLUT
+    {
+        [FieldOffset(0)] public float BaseDrag;
+        [FieldOffset(4)] public float MediumSpeedDrag;
+        [FieldOffset(8)] public float HighSpeedDrag;
+        [FieldOffset(12)] public float MaxSpeedSq;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float Evaluate(float speedSq)
+        {
+            float t = math.saturate(speedSq * math.rcp(math.max(0.25f, MaxSpeedSq)));
+            float eased = t * t * (3.0f - (2.0f * t));
+            return math.lerp(BaseDrag, math.lerp(MediumSpeedDrag, HighSpeedDrag, t), eased);
+        }
+    }
+
+    [BurstCompile]
+    public struct SomaticKinematicsJob : IJob
+    {
+        public NativeArray<PlayerKinematicState> State;
+        public NativeArray<PlayerBoundingSphere> BoundingSphere;
+        public NativeArray<SomaticHandStrokeSample> HandHistory;
+        [ReadOnly] public NativeArray<float> DragLut;
+        [ReadOnly] public NativeArray<SomaticKinematicsTuningData> Tuning;
+        public NativeArray<SomaticKinematicSignalScratch> SignalScratch;
+        public NativeArray<SomaticKinematicBlackBoxEntry> BlackBox;
+        public NativeArray<int> BlackBoxCursor;
+        public SomaticKinematicsFrameInput Input;
+        public SomaticKinematicsFrameContext Context;
+        public MockWorldSampler WorldSampler;
+
+        public void Execute()
+        {
+            if (!State.IsCreated || State.Length == 0 || !BoundingSphere.IsCreated || BoundingSphere.Length == 0)
+                return;
+
+            SomaticKinematicsTuningData tuning = Tuning.IsCreated && Tuning.Length > 0
+                ? Tuning[0]
+                : SomaticKinematicsTuningData.CreateEmergency();
+            SanitizeTuning(ref tuning);
+            PlayerKinematicState state = State[0];
+            SomaticKinematicsFrameInput input = SanitizeFrameInput(Input, state.LastValidLocalPosition);
+            Input = input;
+            PlayerBoundingSphere sphere = BoundingSphere[0];
+            float dt = math.clamp(input.DeltaTime, 0.001f, 0.05f);
+            float radius = SanitizePositive(math.select(state.PlayerRadius, tuning.PlayerRadius, state.PlayerRadius <= 0.01f), 0.38f);
+
+            double3 sector = Context.SectorOriginAup;
+            state.SectorOriginAup = sector;
+            float3 local = (float3)(state.Aup - sector);
+            if (!IsFinite(local))
+                local = input.HeadLocalPosition;
+            local = SnapMillimeter(local);
+
+            float3 previousLocal = SanitizeFinite(sphere.CenterLocal, local);
+            sphere.PreviousCenterLocal = previousLocal;
+            sphere.CenterLocal = local;
+            sphere.Radius = radius;
+
+            float3 velocity = SanitizeFinite(state.Velocity, float3.zero);
+            float3 headForward = NormalizeSafe(input.HeadForward, new float3(0f, 0f, 1f));
+            float3 controllerForward = NormalizeSafe(input.ControllerForward, headForward);
+            float stamina01 = math.saturate(math.select(state.Stamina01, 1.0f, state.Stamina01 <= 0.0f));
+
+            UpdateHandHistory(in input, headForward);
+            float againstCurrent01 = ResolveAgainstCurrent01(headForward, Context.AbyssalCurrent);
+            float exertion = 0f;
+            float3 requestedThrust = ResolveRequestedThrust(in input, headForward, controllerForward, stamina01, tuning, ref exertion);
+            velocity += requestedThrust * dt;
+            ApplyAbyssalCurrent(ref velocity, Context.AbyssalCurrent, dt, tuning);
+            ApplyHydrodynamicDrag(ref velocity, dt, tuning);
+            ApplySurfaceBuoyancy(ref velocity, local, dt, tuning, ref state);
+            velocity = ClampSpeed(velocity, tuning.MaxSpeed);
+
+            float3 sdfPushOut = float3.zero;
+            float lostEnergy = 0f;
+            byte hitHand = 255;
+            IntegrateCcd(ref local, ref velocity, radius, dt, tuning, ref sdfPushOut, ref lostEnergy, ref hitHand);
+            float safeExertion = math.isfinite(exertion) ? math.clamp(exertion, 0f, 8f) : 0f;
+            float safeAgainstCurrent01 = math.saturate(againstCurrent01);
+
+            bool invalid = !IsFinite(local) || !IsFinite(velocity) || !IsFinite(requestedThrust) || !IsFinite(sdfPushOut);
+            if (invalid)
+            {
+                local = SanitizeFinite(state.LastValidLocalPosition, float3.zero);
+                velocity = float3.zero;
+                requestedThrust = float3.zero;
+                sdfPushOut = float3.zero;
+                safeExertion = 0f;
+                safeAgainstCurrent01 = 0f;
+                state.Flags |= SomaticKinematicsRuntime.StateFlagNonFinite;
+            }
+            else
+            {
+                state.LastValidLocalPosition = local;
+            }
+
+            double3 committedAup = sector + (double3)SnapMillimeter(local);
+            state.Aup = committedAup;
+            state.LocalPosition = local;
+            state.Velocity = velocity;
+            state.RequestedThrust = requestedThrust;
+            state.SdfPushOut = sdfPushOut;
+            state.AbyssalCurrent = Context.AbyssalCurrent;
+            state.HeadForward = headForward;
+            state.ControllerForward = controllerForward;
+            state.PlayerRadius = radius;
+            state.Stamina01 = stamina01;
+            state.FatigueWindow += safeExertion * (1.0f + safeAgainstCurrent01 * tuning.CurrentFatigueScale);
+            state.LastPushOutMeters = math.length(sdfPushOut);
+            state.LastLostKineticEnergy = lostEnergy;
+            state.LastAcousticMagnitude = ResolveAcousticMagnitude(local, previousLocal, velocity, tuning);
+            state.LastHapticMagnitude = ResolveHapticAmplitude(state.LastPushOutMeters, lostEnergy, tuning);
+            state.Frame = input.FrameIndex;
+
+            sphere.CenterLocal = local;
+            BoundingSphere[0] = sphere;
+            State[0] = state;
+            WriteSignalScratch(previousLocal, local, velocity, requestedThrust, sdfPushOut, safeExertion, lostEnergy, safeAgainstCurrent01, hitHand, state);
+            WriteBlackBox(in state);
+        }
+
+        private static SomaticKinematicsFrameInput SanitizeFrameInput(SomaticKinematicsFrameInput input, float3 fallbackLocal)
+        {
+            fallbackLocal = SanitizeFinite(fallbackLocal, float3.zero);
+            input.HeadLocalPosition = SanitizeFinite(input.HeadLocalPosition, fallbackLocal);
+            input.HeadForward = NormalizeSafe(input.HeadForward, new float3(0f, 0f, 1f));
+            input.ControllerForward = NormalizeSafe(input.ControllerForward, input.HeadForward);
+            bool leftFinite = IsFinite(input.LeftHandLocal);
+            bool rightFinite = IsFinite(input.RightHandLocal);
+            input.LeftHandLocal = leftFinite ? input.LeftHandLocal : input.HeadLocalPosition;
+            input.RightHandLocal = rightFinite ? input.RightHandLocal : input.HeadLocalPosition;
+            input.DeltaTime = math.isfinite(input.DeltaTime) ? math.clamp(input.DeltaTime, 0.001f, 0.05f) : 0.0166667f;
+            input.TimeSeconds = math.isfinite(input.TimeSeconds) ? math.max(0f, input.TimeSeconds) : 0f;
+            input.SeaglideInput01 = math.isfinite(input.SeaglideInput01) ? math.saturate(input.SeaglideInput01) : 0f;
+            if (input.LeftTracked != 0 && !leftFinite)
+                input.LeftTracked = 0;
+            if (input.RightTracked != 0 && !rightFinite)
+                input.RightTracked = 0;
+            return input;
+        }
+
+        private void UpdateHandHistory(in SomaticKinematicsFrameInput input, float3 headForward)
+        {
+            if (!HandHistory.IsCreated || HandHistory.Length < SomaticKinematicsRuntime.HandHistoryCapacity)
+                return;
+
+            int slot = (int)(input.FrameIndex % 3u);
+            WriteHandSample(slot, 0, input.LeftHandLocal, input.HeadLocalPosition, input.LeftTracked, input.TimeSeconds, input.FrameIndex);
+            WriteHandSample(slot, 1, input.RightHandLocal, input.HeadLocalPosition, input.RightTracked, input.TimeSeconds, input.FrameIndex);
+        }
+
+        private void WriteHandSample(int slot, int hand, float3 handLocal, float3 headLocal, byte tracked, float timeSeconds, uint frame)
+        {
+            headLocal = SanitizeFinite(headLocal, float3.zero);
+            bool handFinite = IsFinite(handLocal);
+            handLocal = handFinite ? handLocal : headLocal;
+            if (!handFinite)
+                tracked = 0;
+
+            int index = (hand * 3) + slot;
+            SomaticHandStrokeSample sample = default;
+            sample.TargetLocal = handLocal;
+            sample.PhysicalLocal = handLocal;
+            sample.RelativeToHead = handLocal - headLocal;
+            sample.Timestamp = timeSeconds;
+            sample.Frame = frame;
+            sample.HandIndex = (byte)hand;
+            sample.HasTracking = tracked;
+            int previousSlot = (slot + 2) % 3;
+            SomaticHandStrokeSample previous = HandHistory[(hand * 3) + previousSlot];
+            if (tracked != 0 && previous.HasTracking != 0)
+            {
+                float3 delta = SanitizeFinite(sample.RelativeToHead - previous.RelativeToHead, float3.zero);
+                float lengthSq = math.lengthsq(delta);
+                sample.DeltaMeters = math.isfinite(lengthSq) ? math.sqrt(math.max(0f, lengthSq)) : 0f;
+            }
+            else
+            {
+                sample.DeltaMeters = 0f;
+            }
+            HandHistory[index] = sample;
+        }
+
+        private float3 ResolveRequestedThrust(
+            in SomaticKinematicsFrameInput input,
+            float3 headForward,
+            float3 controllerForward,
+            float stamina01,
+            SomaticKinematicsTuningData tuning,
+            ref float exertion)
+        {
+            float3 thrust = float3.zero;
+            if (input.SeaglideActive != 0)
+            {
+                float input01 = math.saturate(input.SeaglideInput01);
+                exertion = input01 * 0.05f;
+                return controllerForward * (input01 * tuning.SeaglideAcceleration);
+            }
+
+            if (!HandHistory.IsCreated || HandHistory.Length < SomaticKinematicsRuntime.HandHistoryCapacity)
+                return thrust;
+
+            int slot = (int)(input.FrameIndex % 3u);
+            int previousSlot = (slot + 2) % 3;
+            thrust += ResolveHandStroke(0, slot, previousSlot, headForward, tuning, ref exertion);
+            thrust += ResolveHandStroke(1, slot, previousSlot, headForward, tuning, ref exertion);
+            float staminaMultiplier = stamina01 <= 0.001f ? 0.2f : 1.0f;
+            return thrust * staminaMultiplier;
+        }
+
+        private float3 ResolveHandStroke(int hand, int slot, int previousSlot, float3 headForward, SomaticKinematicsTuningData tuning, ref float exertion)
+        {
+            SomaticHandStrokeSample current = HandHistory[(hand * 3) + slot];
+            SomaticHandStrokeSample previous = HandHistory[(hand * 3) + previousSlot];
+            if (current.HasTracking == 0 || previous.HasTracking == 0)
+                return float3.zero;
+
+            float3 delta = SanitizeFinite(current.RelativeToHead - previous.RelativeToHead, float3.zero);
+            float backwardMeters = math.max(0f, -math.dot(delta, headForward));
+            float lengthSq = math.lengthsq(delta);
+            float deltaMeters = math.isfinite(lengthSq) ? math.sqrt(math.max(0f, lengthSq)) : 0f;
+            exertion += math.min(deltaMeters, 4.0f);
+            return headForward * (backwardMeters * tuning.StrokeMultiplier);
+        }
+
+        private void ApplyAbyssalCurrent(ref float3 velocity, float3 current, float dt, SomaticKinematicsTuningData tuning)
+        {
+            if (!IsFinite(current))
+                return;
+
+            float blend = math.saturate(tuning.CurrentAcceleration * dt);
+            velocity += (current - velocity) * blend * 0.35f;
+        }
+
+        private void ApplyHydrodynamicDrag(ref float3 velocity, float dt, SomaticKinematicsTuningData tuning)
+        {
+            float speedSq = math.lengthsq(velocity);
+            if (!math.isfinite(speedSq) || speedSq <= 0.000001f)
+                return;
+
+            float drag = SampleDrag(speedSq, tuning);
+            velocity *= math.rcp(math.max(0.0001f, 1.0f + (drag * dt)));
+        }
+
+        private float SampleDrag(float speedSq, SomaticKinematicsTuningData tuning)
+        {
+            if (DragLut.IsCreated && DragLut.Length > 1)
+            {
+                int count = math.min(DragLut.Length, math.max(2, tuning.DragLutCount));
+                float maxSpeedSq = math.max(1.0f, tuning.MaxSpeed * tuning.MaxSpeed);
+                float scaled = math.saturate(speedSq * math.rcp(maxSpeedSq)) * (count - 1);
+                int lo = (int)math.floor(scaled);
+                int hi = math.min(lo + 1, count - 1);
+                float t = scaled - lo;
+                return math.max(0f, math.lerp(DragLut[lo], DragLut[hi], t));
+            }
+
+            MockFluidDensityLUT mock = default;
+            mock.BaseDrag = tuning.BaseDrag;
+            mock.MediumSpeedDrag = tuning.BaseDrag * 1.35f;
+            mock.HighSpeedDrag = tuning.BaseDrag * 2.25f;
+            mock.MaxSpeedSq = tuning.MaxSpeed * tuning.MaxSpeed;
+            return mock.Evaluate(speedSq);
+        }
+
+        private void ApplySurfaceBuoyancy(ref float3 velocity, float3 local, float dt, SomaticKinematicsTuningData tuning, ref PlayerKinematicState state)
+        {
+            float blendDistance = math.max(0.1f, tuning.SurfaceBlendMeters);
+            float aboveSurface = local.y - tuning.SeaLevelY;
+            float breach01 = math.saturate(aboveSurface / blendDistance);
+            float chestDepth = tuning.SeaLevelY - (local.y + tuning.ChestOffsetY);
+            float submerged01 = math.saturate(chestDepth / blendDistance);
+            velocity.y -= tuning.Gravity * breach01 * dt;
+            velocity.y += tuning.SurfaceBuoyancy * submerged01 * dt;
+            state.SurfaceSubmersion01 = submerged01;
+        }
+
+        private void IntegrateCcd(
+            ref float3 local,
+            ref float3 velocity,
+            float radius,
+            float dt,
+            SomaticKinematicsTuningData tuning,
+            ref float3 sdfPushOut,
+            ref float lostEnergy,
+            ref byte hitHand)
+        {
+            float speedSq = math.lengthsq(velocity);
+            float speed = math.isfinite(speedSq) ? math.sqrt(math.max(0f, speedSq)) : 0f;
+            int steps = math.max(1, (int)math.ceil(speed * math.rcp(math.max(0.05f, radius))));
+            steps = math.min(steps, math.max(1, tuning.MaxCcdSteps));
+            if (Input.LowTier != 0 || Context.ThermalThrottle != 0)
+                steps = 1;
+
+            float stepDt = dt * math.rcp(steps);
+            for (int i = 0; i < steps; i++)
+            {
+                float3 candidate = local + (velocity * stepDt);
+                float distance = WorldSampler.SampleDistance(candidate);
+                if (distance < radius)
+                {
+                    float3 normal = WorldSampler.SampleNormalTetra(candidate, tuning.SdfGradientEpsilon);
+                    float push = math.max(0f, radius - distance);
+                    float3 pushVector = normal * push;
+                    candidate += pushVector;
+                    sdfPushOut += pushVector;
+                    float intoWall = math.min(0f, math.dot(velocity, normal));
+                    if (intoWall < 0f)
+                    {
+                        lostEnergy += 0.5f * math.max(1f, tuning.MassKilograms) * intoWall * intoWall;
+                        velocity -= normal * intoWall;
+                        hitHand = ResolveImpactHand();
+                    }
+                }
+
+                local = candidate;
+            }
+        }
+
+        private byte ResolveImpactHand()
+        {
+            if (!HandHistory.IsCreated || HandHistory.Length < SomaticKinematicsRuntime.HandHistoryCapacity)
+                return 255;
+
+            int slot = (int)(Input.FrameIndex % 3u);
+            float left = HandHistory[slot].DeltaMeters;
+            float right = HandHistory[3 + slot].DeltaMeters;
+            return right > left ? (byte)1 : (byte)0;
+        }
+
+        private void WriteSignalScratch(
+            float3 previousLocal,
+            float3 resolvedLocal,
+            float3 velocity,
+            float3 requestedThrust,
+            float3 sdfPushOut,
+            float exertion,
+            float lostEnergy,
+            float againstCurrent01,
+            byte hitHand,
+            PlayerKinematicState state)
+        {
+            if (!SignalScratch.IsCreated || SignalScratch.Length == 0)
+                return;
+
+            SomaticKinematicSignalScratch scratch = default;
+            scratch.PreviousLocalPosition = previousLocal;
+            scratch.ResolvedLocalPosition = resolvedLocal;
+            scratch.ResolvedVelocity = velocity;
+            scratch.SdfPushOut = sdfPushOut;
+            scratch.ExertionDelta = exertion;
+            scratch.AcousticMagnitude = state.LastAcousticMagnitude;
+            scratch.HapticAmplitude = state.LastHapticMagnitude;
+            scratch.LostKineticEnergy = lostEnergy;
+            scratch.AgainstCurrent01 = againstCurrent01;
+            scratch.Frame = Input.FrameIndex;
+            scratch.HapticHandIndex = hitHand;
+            if (state.LastAcousticMagnitude > 0f)
+                scratch.Flags |= SomaticKinematicsRuntime.SignalFlagAcoustic;
+            if (state.LastHapticMagnitude > 0f)
+                scratch.Flags |= SomaticKinematicsRuntime.SignalFlagHaptic;
+            if ((state.Flags & SomaticKinematicsRuntime.StateFlagNonFinite) != 0u)
+                scratch.Flags |= SomaticKinematicsRuntime.SignalFlagFault;
+            SignalScratch[0] = scratch;
+        }
+
+        private void WriteBlackBox(in PlayerKinematicState state)
+        {
+            if (!BlackBox.IsCreated || BlackBox.Length == 0 || !BlackBoxCursor.IsCreated || BlackBoxCursor.Length == 0)
+                return;
+
+            int cursor = BlackBoxCursor[0];
+            int index = PositiveModulo(cursor, BlackBox.Length);
+            SomaticKinematicBlackBoxEntry entry = default;
+            entry.Aup = state.Aup;
+            entry.LocalPosition = state.LocalPosition;
+            entry.Velocity = state.Velocity;
+            entry.RequestedThrust = state.RequestedThrust;
+            entry.SdfPushOut = state.SdfPushOut;
+            entry.Frame = state.Frame;
+            entry.Flags = state.Flags;
+            entry.AcousticMagnitude = state.LastAcousticMagnitude;
+            entry.LostKineticEnergy = state.LastLostKineticEnergy;
+            entry.StateHash = HashState(in state);
+            entry.Reserved = state.ShiftFrameId;
+            BlackBox[index] = entry;
+            BlackBoxCursor[0] = cursor + 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int PositiveModulo(int value, int length)
+        {
+            int modulo = value % length;
+            return modulo < 0 ? modulo + length : modulo;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint HashState(in PlayerKinematicState state)
+        {
+            uint hash = 2166136261u;
+            hash = Mix(hash, math.asuint(state.LocalPosition.x));
+            hash = Mix(hash, math.asuint(state.LocalPosition.y));
+            hash = Mix(hash, math.asuint(state.LocalPosition.z));
+            hash = Mix(hash, math.asuint(state.Velocity.x));
+            hash = Mix(hash, math.asuint(state.Velocity.y));
+            hash = Mix(hash, math.asuint(state.Velocity.z));
+            hash = Mix(hash, state.Frame);
+            hash = Mix(hash, state.Flags);
+            return hash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Mix(uint hash, uint value)
+        {
+            return (hash ^ value) * 16777619u;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveAgainstCurrent01(float3 headForward, float3 current)
+        {
+            float currentSq = math.lengthsq(current);
+            if (currentSq <= 0.0001f || !math.isfinite(currentSq))
+                return 0f;
+            float3 currentDir = current * math.rsqrt(currentSq);
+            return math.saturate(-math.dot(headForward, currentDir));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ClampSpeed(float3 velocity, float maxSpeed)
+        {
+            float speedSq = math.lengthsq(velocity);
+            float limit = math.max(0.5f, maxSpeed);
+            float limitSq = limit * limit;
+            return speedSq > limitSq ? velocity * (limit * math.rsqrt(speedSq)) : velocity;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveAcousticMagnitude(float3 local, float3 previousLocal, float3 velocity, SomaticKinematicsTuningData tuning)
+        {
+            float delta = math.length(local - previousLocal);
+            if (delta <= tuning.StealthDeltaThreshold)
+                return 0f;
+
+            float jerkLie = math.length(velocity) * math.max(0f, delta - tuning.StealthDeltaThreshold);
+            return math.saturate(jerkLie * 0.45f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveHapticAmplitude(float pushOut, float lostEnergy, SomaticKinematicsTuningData tuning)
+        {
+            if (pushOut <= tuning.HapticPushThreshold && lostEnergy <= 0.001f)
+                return 0f;
+
+            return math.saturate((pushOut * 7.5f) + (lostEnergy * 0.0025f));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 SnapMillimeter(float3 value)
+        {
+            return math.round(value * HectonPhysicsContract.DeterministicMillimeterScale) *
+                   HectonPhysicsContract.DeterministicInvMillimeterScale;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFinite(float3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 SanitizeFinite(float3 value, float3 fallback)
+        {
+            return IsFinite(value) ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizePositive(float value, float fallback)
+        {
+            return math.isfinite(value) && value > 0f ? value : fallback;
+        }
+
+        private static void SanitizeTuning(ref SomaticKinematicsTuningData tuning)
+        {
+            SomaticKinematicsTuningData fallback = SomaticKinematicsTuningData.CreateEmergency();
+            tuning.BaseDrag = SanitizeRange(tuning.BaseDrag, fallback.BaseDrag, 0.01f, 8.0f);
+            tuning.StrokeMultiplier = SanitizeRange(tuning.StrokeMultiplier, fallback.StrokeMultiplier, 0.1f, 30.0f);
+            tuning.SeaglideAcceleration = SanitizeRange(tuning.SeaglideAcceleration, fallback.SeaglideAcceleration, 0.1f, 40.0f);
+            tuning.SurfaceBuoyancy = SanitizeRange(tuning.SurfaceBuoyancy, fallback.SurfaceBuoyancy, 0.1f, 40.0f);
+            tuning.CurrentAcceleration = SanitizeRange(tuning.CurrentAcceleration, fallback.CurrentAcceleration, 0.0f, 10.0f);
+            tuning.CurrentFatigueScale = SanitizeRange(tuning.CurrentFatigueScale, fallback.CurrentFatigueScale, 0.0f, 4.0f);
+            tuning.SdfGradientEpsilon = SanitizeRange(tuning.SdfGradientEpsilon, fallback.SdfGradientEpsilon, 0.005f, 0.5f);
+            tuning.PlayerRadius = SanitizeRange(tuning.PlayerRadius, fallback.PlayerRadius, 0.1f, 2.0f);
+            tuning.SeaLevelY = SanitizeRange(tuning.SeaLevelY, fallback.SeaLevelY, -100000.0f, 100000.0f);
+            tuning.Gravity = SanitizeRange(tuning.Gravity, fallback.Gravity, 0.0f, 30.0f);
+            tuning.SurfaceBlendMeters = SanitizeRange(tuning.SurfaceBlendMeters, fallback.SurfaceBlendMeters, 0.1f, 10.0f);
+            tuning.ChestOffsetY = SanitizeRange(tuning.ChestOffsetY, fallback.ChestOffsetY, 0.0f, 2.0f);
+            tuning.StealthDeltaThreshold = SanitizeRange(tuning.StealthDeltaThreshold, fallback.StealthDeltaThreshold, 0.0f, 2.0f);
+            tuning.HapticPushThreshold = SanitizeRange(tuning.HapticPushThreshold, fallback.HapticPushThreshold, 0.0f, 2.0f);
+            tuning.MassKilograms = SanitizeRange(tuning.MassKilograms, fallback.MassKilograms, 1.0f, 300.0f);
+            tuning.GyroDamping = SanitizeRange(tuning.GyroDamping, fallback.GyroDamping, 0.0f, 30.0f);
+            tuning.MaxSpeed = SanitizeRange(tuning.MaxSpeed, fallback.MaxSpeed, 0.5f, 80.0f);
+            tuning.MaxCcdSteps = SanitizeRange(tuning.MaxCcdSteps, fallback.MaxCcdSteps, 1, 32);
+            tuning.DragLutCount = SanitizeRange(tuning.DragLutCount, fallback.DragLutCount, 2, SomaticKinematicsRuntime.DragLutCapacity);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeRange(float value, float fallback, float min, float max)
+        {
+            float resolved = math.isfinite(value) ? value : fallback;
+            return math.clamp(resolved, min, max);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeRange(int value, int fallback, int min, int max)
+        {
+            int resolved = value > 0 ? value : fallback;
+            return math.min(max, math.max(min, resolved));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 NormalizeSafe(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return math.isfinite(lengthSq) && lengthSq > 0.000001f ? value * math.rsqrt(lengthSq) : fallback;
+        }
+    }
+
+    [DisallowMultipleComponent]
+    [AddComponentMenu("Hecton8/Gameplay/Somatic Kinematics Runtime")]
+    public sealed class SomaticKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    {
+        public const int BlackBoxCapacity = 300;
+        public const int DragLutCapacity = 16;
+        public const int HandHistoryCapacity = 6;
+        public const int CsvScratchCapacity = 32768;
+        public const uint StateFlagNonFinite = 1u << 0;
+        public const uint StateFlagLowTier = 1u << 1;
+        public const uint StateFlagSeaglide = 1u << 2;
+        public const uint SignalFlagAcoustic = 1u << 0;
+        public const uint SignalFlagHaptic = 1u << 1;
+        public const uint SignalFlagFault = 1u << 2;
+
+        private const uint AcousticKinematicSoundHash = 0x53484E4Fu;
+        private const int ShinobuExertionSignalCapacity = 32;
+        private const uint ShinobuExertionSignalLaneHash = 0x53484558u;
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_06.h8dump";
+        private const string CsvOverrideFileName = "kinematic_overrides.csv";
+
+        private VaultBufferHandle<PlayerKinematicState> _stateHandle;
+        private VaultBufferHandle<PlayerBoundingSphere> _sphereHandle;
+        private VaultBufferHandle<SomaticHandStrokeSample> _handHistoryHandle;
+        private VaultBufferHandle<SomaticKinematicsTuningData> _tuningHandle;
+        private VaultBufferHandle<float> _dragLutHandle;
+        private VaultBufferHandle<SomaticKinematicSignalScratch> _signalScratchHandle;
+        private VaultBufferHandle<SomaticKinematicBlackBoxEntry> _blackBoxHandle;
+        private VaultBufferHandle<int> _blackBoxCursorHandle;
+        private VaultBufferHandle<byte> _csvScratchHandle;
+        private JobHandle _pendingJob;
+        private IDataVault _dataVault;
+        private IWeatherService _weatherService;
+        private IVRSomaticProvider _somaticProvider;
+        private Transform _cachedTransform;
+        private SomaticKinematicsFrameInput _frameInput;
+        private SomaticKinematicsFrameContext _frameContext;
+        private MockWorldSampler _mockWorldSampler;
+        private HectonQualityTier _cachedTier = HectonQualityTier.Unknown;
+        private float _slowExertionAccumulator;
+        private float _slowAgainstCurrentAccumulator;
+        private uint _sourceId;
+        private uint _fixedFrameSequence;
+        private uint _kccVelocitySequence;
+        private string _projectRoot;
+        private string _csvOverridePath;
+        private long _csvLastWriteTicks;
+        private byte _seaglideActive;
+        private float _seaglideInput01;
+        private float3 _seaglideForward;
+        private bool _registeredFixed;
+        private bool _registeredPostFixed;
+        private bool _registeredSlow;
+        private bool _registeredOriginShift;
+        private bool _registeredHotSwap;
+        private bool _registeredScalability;
+        private bool _jobPending;
+        private bool _buffersLocked;
+        private bool _dumpWritten;
+        private bool _legacyScanAttempted;
+        private static bool s_signalLanesConfigured;
+
+        private void Awake()
+        {
+            _cachedTransform = transform;
+            _sourceId = unchecked((uint)GetInstanceID());
+            EnsureSignalLanesReady();
+            _cachedTier = GlobalRegistry.ScalabilityTier;
+            RebindServices();
+            ResolveColdPaths();
+            EnsureNativeState(true);
+        }
+
+        private void OnEnable()
+        {
+            EnsureSignalLanesReady();
+            RebindServices();
+            EnsureNativeState(true);
+            RegisterRuntime();
+        }
+
+        private void OnDisable()
+        {
+            CompletePendingJob(true);
+            UnregisterRuntime();
+            ReleaseViews();
+        }
+
+        private void OnDestroy()
+        {
+            CompletePendingJob(true);
+            UnregisterRuntime();
+            ReleaseViews();
+        }
+
+        public unsafe ref PlayerKinematicState GetStateRef()
+        {
+            if (!EnsureNativeState(false) || _dataVault == null)
+                FatalMemoryException.ThrowStaleVaultHandle();
+
+            return ref _stateHandle.GetElementAsRef(_dataVault, 0);
+        }
+
+        public void SetSeaglideState(bool active, float analog01, float3 controllerForward)
+        {
+            _seaglideActive = active ? (byte)1 : (byte)0;
+            _seaglideInput01 = math.saturate(analog01);
+            _seaglideForward = NormalizeSafe(controllerForward, new float3(0f, 0f, 1f));
+        }
+
+        public void FixedTick(float fixedDeltaTime)
+        {
+            if (_jobPending || !EnsureNativeState(false))
+                return;
+
+            if (!TryLockSimulationBuffers())
+                return;
+
+            if (!ResolveSimulationBuffers(
+                    out NativeArray<PlayerKinematicState> state,
+                    out NativeArray<PlayerBoundingSphere> sphere,
+                    out NativeArray<SomaticHandStrokeSample> handHistory,
+                    out NativeArray<SomaticKinematicsTuningData> tuning,
+                    out NativeArray<float> dragLut,
+                    out NativeArray<SomaticKinematicSignalScratch> signalScratch,
+                    out NativeArray<SomaticKinematicBlackBoxEntry> blackBox,
+                    out NativeArray<int> blackBoxCursor))
+            {
+                UnlockSimulationBuffers();
+                return;
+            }
+
+            BuildFrameInput(fixedDeltaTime, NextSequence(ref _fixedFrameSequence));
+            SomaticKinematicsJob job = new SomaticKinematicsJob
+            {
+                State = state,
+                BoundingSphere = sphere,
+                HandHistory = handHistory,
+                DragLut = dragLut,
+                Tuning = tuning,
+                SignalScratch = signalScratch,
+                BlackBox = blackBox,
+                BlackBoxCursor = blackBoxCursor,
+                Input = _frameInput,
+                Context = _frameContext,
+                WorldSampler = _mockWorldSampler
+            };
+            _pendingJob = job.Schedule();
+            H8Memory.RegisterActiveJob(SystemID.GameplayPlayer, _pendingJob);
+            _jobPending = true;
+        }
+
+        public void PostFixedTick(float fixedDeltaTime)
+        {
+            if (!CompletePendingJob(false))
+                return;
+
+            PublishCompletedFrame();
+        }
+
+        public void SlowTick()
+        {
+            if (!EnsureNativeState(true))
+                return;
+
+            TryApplyCsvOverrides();
+            PublishExertionSignal();
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            CompletePendingJob(true);
+            if (!ResolveStateBuffer(out NativeArray<PlayerKinematicState> stateBuffer))
+                return;
+
+            PlayerKinematicState state = stateBuffer[0];
+            state.SectorOriginAup = shiftData.NewTotalOffsetDouble;
+            state.LocalPosition = (float3)(state.Aup - state.SectorOriginAup);
+            state.LocalPosition = SanitizeFinite(state.LocalPosition, state.LastValidLocalPosition);
+            state.ShiftFrameId = shiftData.Sequence;
+            state.Frame = shiftData.Frame >= 0 ? unchecked((uint)shiftData.Frame) : state.Frame;
+            stateBuffer[0] = state;
+
+            if (ResolveSphereBuffer(out NativeArray<PlayerBoundingSphere> sphereBuffer))
+            {
+                PlayerBoundingSphere sphere = sphereBuffer[0];
+                sphere.CenterLocal = state.LocalPosition;
+                sphere.PreviousCenterLocal = state.LocalPosition;
+                sphereBuffer[0] = sphere;
+            }
+
+            PublishOriginShiftFence(in state, in shiftData);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                CompletePendingJob(true);
+                ReleaseViews();
+                _dataVault = currentService as IDataVault;
+                EnsureNativeState(true);
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Weather ||
+                serviceSlot == GlobalRegistryServiceSlot.VRSomaticProvider)
+            {
+                RebindServices();
+            }
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _cachedTier = payload.CurrentQualityTier;
+        }
+
+        private void PublishOriginShiftFence(in PlayerKinematicState state, in OriginShiftEventData shiftData)
+        {
+            SyncFenceSignal fence = default;
+            fence.PositionAup = Hecton8.World.AbsoluteUniversePosition.FromAbsolutePosition(state.Aup);
+            fence.RuntimePosition = state.LocalPosition;
+            fence.Velocity = SanitizeFinite(state.Velocity, float3.zero);
+            fence.Rotation = quaternion.identity;
+            fence.StateHash = state.StableId ^ state.Frame ^ state.ShiftFrameId;
+            fence.Frame = shiftData.Frame >= 0 ? unchecked((uint)shiftData.Frame) : state.Frame;
+            fence.SourceId = _sourceId;
+            fence.Sequence = shiftData.Sequence;
+            fence.Flags = shiftData.IsSafeTeleport ? (byte)1 : (byte)0;
+            SignalBus<SyncFenceSignal>.Push(in fence);
+        }
+
+        internal static void EnsureOnPlayerRoot(GameObject playerRoot)
+        {
+            if (playerRoot == null)
+                return;
+
+            if (!playerRoot.TryGetComponent(out SomaticKinematicsRuntime _))
+                playerRoot.AddComponent<SomaticKinematicsRuntime>(); // COLD ALLOC: SomaticKinematicsRuntime[1] - SHINOBU math KCC bridge attached to player root - owner: SHINOBU_06
+        }
+
+        private void RegisterRuntime()
+        {
+            if (!_registeredFixed)
+                _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+            if (!_registeredPostFixed)
+                _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Player);
+            if (!_registeredSlow)
+                _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
+            if (!_registeredOriginShift)
+            {
+                HectonFloatingOrigin.RegisterListener(this);
+                _registeredOriginShift = true;
+            }
+            if (!_registeredHotSwap)
+            {
+                GlobalRegistry.RegisterHotSwapListener(this);
+                _registeredHotSwap = true;
+            }
+            if (!_registeredScalability)
+            {
+                ScalabilityEvents.Register(this);
+                _registeredScalability = true;
+            }
+        }
+
+        private void UnregisterRuntime()
+        {
+            if (_registeredFixed)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+                _registeredFixed = false;
+            }
+            if (_registeredPostFixed)
+            {
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Player);
+                _registeredPostFixed = false;
+            }
+            if (_registeredSlow)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                _registeredSlow = false;
+            }
+            if (_registeredOriginShift)
+            {
+                HectonFloatingOrigin.UnregisterListener(this);
+                _registeredOriginShift = false;
+            }
+            if (_registeredHotSwap)
+            {
+                GlobalRegistry.UnregisterHotSwapListener(this);
+                _registeredHotSwap = false;
+            }
+            if (_registeredScalability)
+            {
+                ScalabilityEvents.Unregister(this);
+                _registeredScalability = false;
+            }
+        }
+
+        private static void EnsureSignalLanesReady()
+        {
+            if (s_signalLanesConfigured)
+                return;
+
+            SignalBus<ShinobuPlayerExertionSignal>.Configure(
+                ShinobuExertionSignalCapacity,
+                maxFrameSignals: ShinobuExertionSignalCapacity,
+                lowTierFrameSignals: 8,
+                laneHash: ShinobuExertionSignalLaneHash);
+            s_signalLanesConfigured = true;
+        }
+
+        private bool EnsureNativeState(bool allowColdInitialization)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            _dataVault = vault;
+            if (!_stateHandle.IsCreated)
+            {
+                if (!allowColdInitialization)
+                    return false;
+
+                AllocateVaultBuffers(vault);
+            }
+
+            if (!_stateHandle.IsCreated)
+                return false;
+
+            if (!_legacyScanAttempted && allowColdInitialization)
+            {
+                _legacyScanAttempted = true;
+                LoadLegacyOrEmergencyKinematics();
+            }
+
+            return true;
+        }
+
+        private void AllocateVaultBuffers(IDataVault vault)
+        {
+            _stateHandle = vault.GetBufferHandle<PlayerKinematicState>(BufferID.ShinobuSomaticKinematicState, 1, SystemID.GameplayPlayer);
+            _sphereHandle = vault.GetBufferHandle<PlayerBoundingSphere>(BufferID.ShinobuSomaticBoundingSphere, 1, SystemID.GameplayPlayer);
+            _handHistoryHandle = vault.GetBufferHandle<SomaticHandStrokeSample>(BufferID.ShinobuSomaticHandStrokeHistory, HandHistoryCapacity, SystemID.GameplayPlayer);
+            _tuningHandle = vault.GetBufferHandle<SomaticKinematicsTuningData>(BufferID.ShinobuSomaticTuning, 1, SystemID.GameplayPlayer);
+            _dragLutHandle = vault.GetBufferHandle<float>(BufferID.ShinobuSomaticDragLut, DragLutCapacity, SystemID.GameplayPlayer);
+            _signalScratchHandle = vault.GetBufferHandle<SomaticKinematicSignalScratch>(BufferID.ShinobuSomaticSignalScratch, 1, SystemID.GameplayPlayer);
+            _blackBoxHandle = vault.GetBufferHandle<SomaticKinematicBlackBoxEntry>(BufferID.ShinobuSomaticBlackBox, BlackBoxCapacity, SystemID.GameplayPlayer);
+            _blackBoxCursorHandle = vault.GetBufferHandle<int>(BufferID.ShinobuSomaticBlackBoxCursor, 1, SystemID.GameplayPlayer);
+            _csvScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuSomaticCsvScratch, CsvScratchCapacity, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory);
+            InitializeBuffersIfCold(vault);
+        }
+
+        private void InitializeBuffersIfCold(IDataVault vault)
+        {
+            NativeArray<PlayerKinematicState> stateBuffer = _stateHandle.Resolve(vault);
+            if (!stateBuffer.IsCreated || stateBuffer.Length == 0)
+                return;
+
+            float3 localPosition = _cachedTransform != null
+                ? ToFloat3(_cachedTransform.position)
+                : float3.zero;
+            double3 sector = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            PlayerKinematicState state = stateBuffer[0];
+            if (state.PlayerRadius <= 0.01f || !math.all(math.isfinite(state.LocalPosition)))
+            {
+                state.LocalPosition = localPosition;
+                state.LastValidLocalPosition = localPosition;
+                state.Aup = sector + (double3)localPosition;
+                state.SectorOriginAup = sector;
+                state.PlayerRadius = SomaticKinematicsTuningData.CreateEmergency().PlayerRadius;
+                state.Stamina01 = 1.0f;
+                state.StableId = _sourceId;
+                stateBuffer[0] = state;
+            }
+
+            NativeArray<PlayerBoundingSphere> sphereBuffer = _sphereHandle.Resolve(vault);
+            if (sphereBuffer.IsCreated && sphereBuffer.Length > 0 && sphereBuffer[0].Radius <= 0.01f)
+            {
+                PlayerBoundingSphere sphere = default;
+                sphere.CenterLocal = state.LocalPosition;
+                sphere.PreviousCenterLocal = state.LocalPosition;
+                sphere.Radius = state.PlayerRadius;
+                sphereBuffer[0] = sphere;
+            }
+
+            NativeArray<SomaticKinematicsTuningData> tuningBuffer = _tuningHandle.Resolve(vault);
+            if (tuningBuffer.IsCreated && tuningBuffer.Length > 0 && tuningBuffer[0].PlayerRadius <= 0.01f)
+                tuningBuffer[0] = SomaticKinematicsTuningData.CreateEmergency();
+
+            NativeArray<float> dragLut = _dragLutHandle.Resolve(vault);
+            if (dragLut.IsCreated && dragLut.Length >= DragLutCapacity && dragLut[0] <= 0f)
+                FillEmergencyDragLut(dragLut, tuningBuffer.IsCreated ? tuningBuffer[0].BaseDrag : 1.65f);
+
+            _mockWorldSampler = MockWorldSampler.Create(state.LocalPosition);
+        }
+
+        private bool ResolveSimulationBuffers(
+            out NativeArray<PlayerKinematicState> state,
+            out NativeArray<PlayerBoundingSphere> sphere,
+            out NativeArray<SomaticHandStrokeSample> handHistory,
+            out NativeArray<SomaticKinematicsTuningData> tuning,
+            out NativeArray<float> dragLut,
+            out NativeArray<SomaticKinematicSignalScratch> signalScratch,
+            out NativeArray<SomaticKinematicBlackBoxEntry> blackBox,
+            out NativeArray<int> blackBoxCursor)
+        {
+            state = default;
+            sphere = default;
+            handHistory = default;
+            tuning = default;
+            dragLut = default;
+            signalScratch = default;
+            blackBox = default;
+            blackBoxCursor = default;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            state = _stateHandle.Resolve(vault);
+            sphere = _sphereHandle.Resolve(vault);
+            handHistory = _handHistoryHandle.Resolve(vault);
+            tuning = _tuningHandle.Resolve(vault);
+            dragLut = _dragLutHandle.Resolve(vault);
+            signalScratch = _signalScratchHandle.Resolve(vault);
+            blackBox = _blackBoxHandle.Resolve(vault);
+            blackBoxCursor = _blackBoxCursorHandle.Resolve(vault);
+
+            return state.IsCreated &&
+                   state.Length > 0 &&
+                   sphere.IsCreated &&
+                   sphere.Length > 0 &&
+                   handHistory.IsCreated &&
+                   handHistory.Length >= HandHistoryCapacity &&
+                   tuning.IsCreated &&
+                   tuning.Length > 0 &&
+                   dragLut.IsCreated &&
+                   dragLut.Length > 1 &&
+                   signalScratch.IsCreated &&
+                   signalScratch.Length > 0 &&
+                   blackBox.IsCreated &&
+                   blackBox.Length >= BlackBoxCapacity &&
+                   blackBoxCursor.IsCreated &&
+                   blackBoxCursor.Length > 0;
+        }
+
+        private bool ResolveStateBuffer(out NativeArray<PlayerKinematicState> state)
+        {
+            state = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            state = _stateHandle.Resolve(vault);
+            return state.IsCreated && state.Length > 0;
+        }
+
+        private bool ResolveSphereBuffer(out NativeArray<PlayerBoundingSphere> sphere)
+        {
+            sphere = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            sphere = _sphereHandle.Resolve(vault);
+            return sphere.IsCreated && sphere.Length > 0;
+        }
+
+        private bool ResolveTuningBuffers(out NativeArray<SomaticKinematicsTuningData> tuning, out NativeArray<float> dragLut)
+        {
+            tuning = default;
+            dragLut = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            tuning = _tuningHandle.Resolve(vault);
+            dragLut = _dragLutHandle.Resolve(vault);
+            return tuning.IsCreated && tuning.Length > 0 && dragLut.IsCreated;
+        }
+
+        private bool ResolveBlackBoxBuffers(out NativeArray<SomaticKinematicBlackBoxEntry> blackBox, out NativeArray<int> cursor)
+        {
+            blackBox = default;
+            cursor = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            blackBox = _blackBoxHandle.Resolve(vault);
+            cursor = _blackBoxCursorHandle.Resolve(vault);
+            return blackBox.IsCreated && blackBox.Length > 0 && cursor.IsCreated && cursor.Length > 0;
+        }
+
+        private bool ResolveCsvScratch(out NativeArray<byte> scratch)
+        {
+            scratch = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            scratch = _csvScratchHandle.Resolve(vault);
+            return scratch.IsCreated && scratch.Length > 0;
+        }
+
+        private bool TryLockSimulationBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || _buffersLocked)
+                return false;
+
+            if (!vault.TryLockBuffer(BufferID.ShinobuSomaticKinematicState, SystemID.GameplayPlayer))
+                return false;
+            if (!vault.TryLockBuffer(BufferID.ShinobuSomaticBoundingSphere, SystemID.GameplayPlayer))
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuSomaticKinematicState, SystemID.GameplayPlayer);
+                return false;
+            }
+
+            _buffersLocked = true;
+            if (!vault.TryLockBuffer(BufferID.ShinobuSomaticHandStrokeHistory, SystemID.GameplayPlayer) ||
+                !vault.TryLockBuffer(BufferID.ShinobuSomaticTuning, SystemID.GameplayPlayer) ||
+                !vault.TryLockBuffer(BufferID.ShinobuSomaticDragLut, SystemID.GameplayPlayer) ||
+                !vault.TryLockBuffer(BufferID.ShinobuSomaticSignalScratch, SystemID.GameplayPlayer) ||
+                !vault.TryLockBuffer(BufferID.ShinobuSomaticBlackBox, SystemID.GameplayPlayer) ||
+                !vault.TryLockBuffer(BufferID.ShinobuSomaticBlackBoxCursor, SystemID.GameplayPlayer))
+            {
+                UnlockSimulationBuffers();
+                return false;
+            }
+
+            return true;
+        }
+
+        private void UnlockSimulationBuffers()
+        {
+            if (!_buffersLocked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuSomaticBlackBoxCursor, SystemID.GameplayPlayer);
+                vault.TryUnlockBuffer(BufferID.ShinobuSomaticBlackBox, SystemID.GameplayPlayer);
+                vault.TryUnlockBuffer(BufferID.ShinobuSomaticSignalScratch, SystemID.GameplayPlayer);
+                vault.TryUnlockBuffer(BufferID.ShinobuSomaticDragLut, SystemID.GameplayPlayer);
+                vault.TryUnlockBuffer(BufferID.ShinobuSomaticTuning, SystemID.GameplayPlayer);
+                vault.TryUnlockBuffer(BufferID.ShinobuSomaticHandStrokeHistory, SystemID.GameplayPlayer);
+                vault.TryUnlockBuffer(BufferID.ShinobuSomaticBoundingSphere, SystemID.GameplayPlayer);
+                vault.TryUnlockBuffer(BufferID.ShinobuSomaticKinematicState, SystemID.GameplayPlayer);
+            }
+
+            _buffersLocked = false;
+        }
+
+        private void BuildFrameInput(float fixedDeltaTime, uint fixedFrame)
+        {
+            if (_cachedTransform == null)
+                _cachedTransform = transform;
+
+            IVRSomaticProvider provider = _somaticProvider;
+            Vector3 headPosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
+            Quaternion headRotation = _cachedTransform != null ? _cachedTransform.rotation : Quaternion.identity;
+            float oxygen01 = 1.0f;
+            if (provider != null && provider.IsActive)
+            {
+                VRSomaticSnapshot snapshot = provider.CurrentSnapshot;
+                headPosition = snapshot.HeadRuntimePosition;
+                headRotation = snapshot.HeadRuntimeRotation;
+                oxygen01 = math.isfinite(snapshot.Oxygen01) ? math.saturate(snapshot.Oxygen01) : 1.0f;
+            }
+
+            float3 headLocal = SanitizeFinite(ToFloat3(headPosition), float3.zero);
+            float3 headForward = NormalizeSafe(Forward(headRotation), new float3(0f, 0f, 1f));
+            float3 leftHand = headLocal + new float3(-0.22f, -0.18f, 0.32f);
+            float3 rightHand = headLocal + new float3(0.22f, -0.18f, 0.32f);
+            byte leftTracked = 0;
+            byte rightTracked = 0;
+            if (provider != null && provider.TryGetHandPose(0, out VRSomaticHandPose leftPose))
+            {
+                float3 rawLeft = ToFloat3(leftPose.TargetRuntimePosition);
+                bool finite = math.all(math.isfinite(rawLeft));
+                leftHand = finite ? rawLeft : leftHand;
+                leftTracked = leftPose.IsTracked && finite ? (byte)1 : (byte)0;
+            }
+            if (provider != null && provider.TryGetHandPose(1, out VRSomaticHandPose rightPose))
+            {
+                float3 rawRight = ToFloat3(rightPose.TargetRuntimePosition);
+                bool finite = math.all(math.isfinite(rawRight));
+                rightHand = finite ? rawRight : rightHand;
+                rightTracked = rightPose.IsTracked && finite ? (byte)1 : (byte)0;
+            }
+
+            float3 controllerForward = _seaglideActive != 0
+                ? NormalizeSafe(_seaglideForward, headForward)
+                : NormalizeSafe(rightHand - headLocal, headForward);
+            double3 sector = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            float3 flow = ResolveAbyssalFlow(headLocal);
+
+            HectonQualityTier tier = _cachedTier;
+            byte lowTier = tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350 ? (byte)1 : (byte)0;
+            _frameInput.HeadLocalPosition = headLocal;
+            _frameInput.DeltaTime = math.isfinite(fixedDeltaTime) ? math.clamp(fixedDeltaTime, 0.001f, 0.05f) : 0.0166667f;
+            _frameInput.HeadForward = headForward;
+            _frameInput.SeaglideInput01 = _seaglideInput01;
+            _frameInput.ControllerForward = controllerForward;
+            _frameInput.TimeSeconds = math.isfinite(Time.unscaledTime) ? math.max(0f, Time.unscaledTime) : 0f;
+            _frameInput.LeftHandLocal = leftHand;
+            _frameInput.RightHandLocal = rightHand;
+            _frameInput.FrameIndex = fixedFrame;
+            _frameInput.LeftTracked = leftTracked;
+            _frameInput.RightTracked = rightTracked;
+            _frameInput.SeaglideActive = _seaglideActive;
+            _frameInput.LowTier = lowTier;
+            _frameContext.SectorOriginAup = sector;
+            _frameContext.AbyssalCurrent = flow;
+            _frameContext.SystemStress01 = lowTier != 0 ? 0.75f : 0.1f;
+            _frameContext.ThermalThrottle = lowTier;
+
+            if (ResolveStateBuffer(out NativeArray<PlayerKinematicState> stateBuffer))
+            {
+                PlayerKinematicState state = stateBuffer[0];
+                state.Stamina01 = math.max(0f, oxygen01);
+                if (lowTier != 0)
+                    state.Flags |= StateFlagLowTier;
+                if (_seaglideActive != 0)
+                    state.Flags |= StateFlagSeaglide;
+                else
+                    state.Flags &= ~StateFlagSeaglide;
+                stateBuffer[0] = state;
+            }
+        }
+
+        private float3 ResolveAbyssalFlow(float3 localPosition)
+        {
+            float3 flow = float3.zero;
+            IWeatherService weather = _weatherService;
+            if (weather != null && weather.IsInitialized)
+                flow = ToFloat3(weather.GlobalCurrentVector);
+
+            if (!math.all(math.isfinite(flow)) || math.lengthsq(flow) <= 0.0001f)
+            {
+                float stripe = math.frac((localPosition.x * 0.013f) + (localPosition.z * 0.007f));
+                float triangle = math.abs((stripe * 2.0f) - 1.0f);
+                flow = new float3((triangle - 0.5f) * 0.18f, 0f, (0.5f - triangle) * 0.12f);
+            }
+
+            return SanitizeFinite(flow, float3.zero);
+        }
+
+        private bool CompletePendingJob(bool forceComplete)
+        {
+            if (!_jobPending)
+                return false;
+
+            if (!Hecton8.World.DispatcherJobSwap.TryComplete(ref _pendingJob, forceComplete))
+                return false;
+
+            _jobPending = false;
+            UnlockSimulationBuffers();
+            return true;
+        }
+
+        private void PublishCompletedFrame()
+        {
+            if (!ResolveStateBuffer(out NativeArray<PlayerKinematicState> stateBuffer))
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            NativeArray<SomaticKinematicSignalScratch> scratchBuffer = _signalScratchHandle.Resolve(vault);
+            if (!scratchBuffer.IsCreated || scratchBuffer.Length == 0)
+                return;
+
+            PlayerKinematicState state = stateBuffer[0];
+            SomaticKinematicSignalScratch scratch = scratchBuffer[0];
+            _slowExertionAccumulator += scratch.ExertionDelta;
+            _slowAgainstCurrentAccumulator += scratch.AgainstCurrent01;
+            Hecton8.World.AbsoluteUniversePosition aup = Hecton8.World.AbsoluteUniversePosition.FromAbsolutePosition(state.Aup);
+            byte flags = (state.Flags & StateFlagLowTier) != 0u ? KccVelocitySignal.FlagLowTier : (byte)0;
+
+            KccVelocitySignal velocitySignal = default;
+            velocitySignal.BodyAup = aup;
+            velocitySignal.Velocity = SanitizeFinite(state.Velocity, float3.zero);
+            velocitySignal.PlanarSpeedSq = math.lengthsq(new float2(velocitySignal.Velocity.x, velocitySignal.Velocity.z));
+            velocitySignal.Frame = state.Frame;
+            velocitySignal.SourceId = _sourceId;
+            velocitySignal.Sequence = NextSequence(ref _kccVelocitySequence);
+            velocitySignal.Flags = flags;
+            SignalBus<KccVelocitySignal>.Push(in velocitySignal);
+
+            if ((scratch.Flags & SignalFlagAcoustic) != 0u)
+            {
+                MovementAcousticSignal movement = default;
+                movement.PositionAup = aup;
+                movement.Volume = scratch.AcousticMagnitude;
+                movement.VelocitySq = math.lengthsq(velocitySignal.Velocity);
+                movement.SourceId = _sourceId;
+                movement.LocomotionMode = state.PlayerRadius > 0.01f ? (byte)1 : (byte)0;
+                movement.SurfaceMode = state.SurfaceSubmersion01 <= 0.001f ? (byte)1 : (byte)0;
+                movement.Flags = state.LastPushOutMeters > 0.001f ? (byte)1 : (byte)0;
+                GlobalSignals.Publish(in movement);
+            }
+
+            if ((scratch.Flags & SignalFlagHaptic) != 0u)
+            {
+                HapticRequest canonicalHaptic = default;
+                canonicalHaptic.Intensity01 = scratch.HapticAmplitude;
+                canonicalHaptic.DurationSeconds = math.lerp(0.035f, 0.12f, scratch.HapticAmplitude);
+                canonicalHaptic.Frequency01 = scratch.HapticAmplitude;
+                canonicalHaptic.SourceHash = AcousticKinematicSoundHash;
+                canonicalHaptic.Frame = state.Frame;
+                canonicalHaptic.Channel = HapticRequest.ChannelCollision;
+                canonicalHaptic.Flags = HapticRequest.FlagLightThud;
+                GlobalSignals.Publish(in canonicalHaptic);
+            }
+
+            if ((scratch.Flags & SignalFlagFault) != 0u)
+                DumpBlackBoxOnce();
+        }
+
+        private void PublishExertionSignal()
+        {
+            if (_slowExertionAccumulator <= 0.0001f && _slowAgainstCurrentAccumulator <= 0.0001f)
+                return;
+
+            ShinobuPlayerExertionSignal exertion = default;
+            PlayerKinematicState state = ResolveStateBuffer(out NativeArray<PlayerKinematicState> stateBuffer)
+                ? stateBuffer[0]
+                : default;
+            exertion.Frame = state.Frame != 0u ? state.Frame : _fixedFrameSequence;
+            exertion.SourceId = _sourceId;
+            exertion.StrokeMagnitude = math.isfinite(_slowExertionAccumulator) ? math.max(0f, _slowExertionAccumulator) : 0f;
+            exertion.AgainstCurrent01 = math.isfinite(_slowAgainstCurrentAccumulator) ? math.saturate(_slowAgainstCurrentAccumulator) : 0f;
+            exertion.Stamina01 = state.PlayerRadius > 0.01f ? math.saturate(state.Stamina01) : 1.0f;
+            SignalBus<ShinobuPlayerExertionSignal>.Push(in exertion);
+            _slowExertionAccumulator = 0f;
+            _slowAgainstCurrentAccumulator = 0f;
+        }
+
+        private void LoadLegacyOrEmergencyKinematics()
+        {
+            SomaticKinematicsTuningData tuning = GenerateEmergencyMockKinematics();
+            try
+            {
+                if (TryReadLegacyBinary(ref tuning))
+                    ApplyTuning(in tuning);
+                else
+                    ApplyTuning(in tuning);
+            }
+            catch (Exception)
+            {
+                tuning = GenerateEmergencyMockKinematics();
+                ApplyTuning(in tuning);
+            }
+        }
+
+        public SomaticKinematicsTuningData GenerateEmergencyMockKinematics()
+        {
+            SomaticKinematicsTuningData tuning = SomaticKinematicsTuningData.CreateEmergency();
+            return tuning;
+        }
+
+        private bool TryReadLegacyBinary(ref SomaticKinematicsTuningData tuning)
+        {
+            if (string.IsNullOrEmpty(_projectRoot))
+                return false;
+
+            if (TryReadLegacyBinaryAt(Path.Combine(_projectRoot, "StreamingAssets", "hydro_drag_constants.bin"), ref tuning))
+                return true;
+            if (TryReadLegacyBinaryAt(Path.Combine(_projectRoot, "Assets", "StreamingAssets", "hydro_drag_constants.bin"), ref tuning))
+                return true;
+            if (TryReadLegacyBinaryAt(Path.Combine(_projectRoot, "StreamingAssets", "vr_comfort_profiles.h8bin"), ref tuning))
+                return true;
+            if (TryReadLegacyBinaryAt(Path.Combine(_projectRoot, "Assets", "StreamingAssets", "vr_comfort_profiles.h8bin"), ref tuning))
+                return true;
+
+            string archiveRoot = Path.Combine(_projectRoot, "Docs", "Archive");
+            if (!Directory.Exists(archiveRoot))
+                return false;
+
+            string[] files = Directory.GetFiles(archiveRoot, "*.bin", SearchOption.AllDirectories);
+            for (int i = 0; i < files.Length; i++)
+            {
+                string file = files[i];
+                string name = Path.GetFileName(file);
+                if (name == "hydro_drag_constants.bin" || name == "vr_comfort_profiles.h8bin")
+                    return TryReadLegacyBinaryAt(file, ref tuning);
+            }
+
+            return false;
+        }
+
+        private static bool TryReadLegacyBinaryAt(string path, ref SomaticKinematicsTuningData tuning)
+        {
+            if (!File.Exists(path))
+                return false;
+
+            Span<byte> span = stackalloc byte[16];
+            int read;
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))
+            {
+                read = stream.Read(span);
+            }
+
+            if (read < 16)
+                return false;
+
+            float baseDrag = ReadFloat32LittleEndian(span, 0);
+            float stroke = ReadFloat32LittleEndian(span, 4);
+            float seaglide = ReadFloat32LittleEndian(span, 8);
+            float buoyancy = ReadFloat32LittleEndian(span, 12);
+            if (!math.isfinite(baseDrag) || !math.isfinite(stroke) || !math.isfinite(seaglide) || !math.isfinite(buoyancy))
+                return false;
+
+            tuning.BaseDrag = math.clamp(baseDrag, 0.05f, 8.0f);
+            tuning.StrokeMultiplier = math.clamp(stroke, 0.1f, 20.0f);
+            tuning.SeaglideAcceleration = math.clamp(seaglide, 0.1f, 30.0f);
+            tuning.SurfaceBuoyancy = math.clamp(buoyancy, 0.1f, 30.0f);
+            tuning.Flags |= 2u;
+            return true;
+        }
+
+        private void ApplyTuning(in SomaticKinematicsTuningData tuning)
+        {
+            if (!ResolveTuningBuffers(out NativeArray<SomaticKinematicsTuningData> tuningBuffer, out NativeArray<float> dragLut))
+                return;
+
+            tuningBuffer[0] = tuning;
+            FillEmergencyDragLut(dragLut, tuning.BaseDrag);
+        }
+
+        private static void FillEmergencyDragLut(NativeArray<float> dragLut, float baseDrag)
+        {
+            if (!dragLut.IsCreated)
+                return;
+
+            float safeBase = math.isfinite(baseDrag) ? math.max(0.01f, baseDrag) : 1.65f;
+            for (int i = 0; i < dragLut.Length; i++)
+            {
+                float t = dragLut.Length > 1 ? i * math.rcp(dragLut.Length - 1) : 0f;
+                float eased = t * t * (3f - (2f * t));
+                dragLut[i] = math.lerp(safeBase, safeBase * 2.35f, eased);
+            }
+        }
+
+        private unsafe void TryApplyCsvOverrides()
+        {
+            if (_jobPending || string.IsNullOrEmpty(_csvOverridePath))
+                return;
+
+            if (!ResolveTuningBuffers(out NativeArray<SomaticKinematicsTuningData> tuningBuffer, out NativeArray<float> dragLut) ||
+                !ResolveCsvScratch(out NativeArray<byte> csvScratch))
+                return;
+
+            try
+            {
+                if (!File.Exists(_csvOverridePath))
+                    return;
+
+                long ticks = File.GetLastWriteTimeUtc(_csvOverridePath).Ticks;
+                if (ticks == 0L || ticks == _csvLastWriteTicks)
+                    return;
+
+                int read = 0;
+                using (FileStream stream = new FileStream(_csvOverridePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan))
+                {
+                    long length = stream.Length;
+                    if (length <= 0L || length > csvScratch.Length)
+                        return;
+
+                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(csvScratch);
+                    Span<byte> bytes = new Span<byte>(ptr, (int)length);
+                    while (read < bytes.Length)
+                    {
+                        int count = stream.Read(bytes.Slice(read));
+                        if (count <= 0)
+                            break;
+                        read += count;
+                    }
+
+                    if (read <= 0)
+                        return;
+
+                    SomaticKinematicsTuningData tuning = tuningBuffer[0];
+                    ParseCsvOverrides(bytes.Slice(0, read), ref tuning);
+                    tuningBuffer[0] = tuning;
+                    FillEmergencyDragLut(dragLut, tuning.BaseDrag);
+                }
+                _csvLastWriteTicks = ticks;
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        private static void ParseCsvOverrides(ReadOnlySpan<byte> bytes, ref SomaticKinematicsTuningData tuning)
+        {
+            int start = 0;
+            for (int i = 0; i <= bytes.Length; i++)
+            {
+                if (i < bytes.Length && bytes[i] != (byte)'\n' && bytes[i] != (byte)'\r')
+                    continue;
+
+                ReadOnlySpan<byte> line = Trim(bytes.Slice(start, i - start));
+                ApplyCsvLine(line, ref tuning);
+                while (i + 1 < bytes.Length && (bytes[i + 1] == (byte)'\n' || bytes[i + 1] == (byte)'\r'))
+                    i++;
+                start = i + 1;
+            }
+        }
+
+        private static void ApplyCsvLine(ReadOnlySpan<byte> line, ref SomaticKinematicsTuningData tuning)
+        {
+            if (line.Length == 0 || line[0] == (byte)'#')
+                return;
+
+            int separator = -1;
+            for (int i = 0; i < line.Length; i++)
+            {
+                byte b = line[i];
+                if (b == (byte)',' || b == (byte)'=' || b == (byte)';')
+                {
+                    separator = i;
+                    break;
+                }
+            }
+
+            if (separator <= 0)
+                return;
+
+            ReadOnlySpan<byte> key = Trim(line.Slice(0, separator));
+            ReadOnlySpan<byte> valueSpan = Trim(line.Slice(separator + 1));
+            if (!TryParseFloat(valueSpan, out float value))
+                return;
+
+            uint hash = HashKey(key);
+            if (hash == 0x37831E0Au)
+                tuning.BaseDrag = math.clamp(value, 0.01f, 8.0f);
+            else if (hash == 0x48A72356u)
+                tuning.StrokeMultiplier = math.clamp(value, 0.1f, 30.0f);
+            else if (hash == 0x06F7AA95u)
+                tuning.SeaglideAcceleration = math.clamp(value, 0.1f, 40.0f);
+            else if (hash == 0xD4440F8Au)
+                tuning.SurfaceBuoyancy = math.clamp(value, 0.1f, 40.0f);
+        }
+
+        private static ReadOnlySpan<byte> Trim(ReadOnlySpan<byte> span)
+        {
+            int start = 0;
+            int end = span.Length - 1;
+            while (start <= end && span[start] <= 32)
+                start++;
+            while (end >= start && span[end] <= 32)
+                end--;
+            return start <= end ? span.Slice(start, end - start + 1) : ReadOnlySpan<byte>.Empty;
+        }
+
+        private static uint HashKey(ReadOnlySpan<byte> key)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < key.Length; i++)
+            {
+                byte b = key[i];
+                if (b >= (byte)'A' && b <= (byte)'Z')
+                    b = (byte)(b + 32);
+                if ((b < (byte)'a' || b > (byte)'z') && (b < (byte)'0' || b > (byte)'9'))
+                    continue;
+                hash = (hash ^ b) * 16777619u;
+            }
+            return hash;
+        }
+
+        private static bool TryParseFloat(ReadOnlySpan<byte> span, out float value)
+        {
+            value = 0f;
+            if (span.Length == 0)
+                return false;
+
+            int i = 0;
+            float sign = 1f;
+            if (span[i] == (byte)'-')
+            {
+                sign = -1f;
+                i++;
+            }
+            else if (span[i] == (byte)'+')
+            {
+                i++;
+            }
+
+            float integer = 0f;
+            bool any = false;
+            while (i < span.Length && span[i] >= (byte)'0' && span[i] <= (byte)'9')
+            {
+                integer = (integer * 10f) + (span[i] - (byte)'0');
+                i++;
+                any = true;
+            }
+
+            float fraction = 0f;
+            float scale = 1f;
+            if (i < span.Length && span[i] == (byte)'.')
+            {
+                i++;
+                while (i < span.Length && span[i] >= (byte)'0' && span[i] <= (byte)'9')
+                {
+                    fraction = (fraction * 10f) + (span[i] - (byte)'0');
+                    scale *= 10f;
+                    i++;
+                    any = true;
+                }
+            }
+
+            if (!any)
+                return false;
+
+            value = sign * (integer + (fraction * math.rcp(math.max(1f, scale))));
+            return math.isfinite(value);
+        }
+
+        private unsafe void DumpBlackBoxOnce()
+        {
+            if (_dumpWritten || !ResolveBlackBoxBuffers(out NativeArray<SomaticKinematicBlackBoxEntry> blackBox, out NativeArray<int> blackBoxCursor))
+                return;
+
+            try
+            {
+                string path = ResolveProjectPath(DumpRelativePath);
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+                SomaticBlackBoxDumpHeader header = default;
+                header.Magic = 0x53484E36u;
+                header.Version = 1u;
+                header.EntryCount = (uint)blackBox.Length;
+                header.EntryBytes = (uint)UnsafeUtility.SizeOf<SomaticKinematicBlackBoxEntry>();
+                header.Cursor = (uint)blackBoxCursor[0];
+                header.Frame = _fixedFrameSequence;
+                stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<SomaticBlackBoxDumpHeader>()));
+                void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
+                stream.Write(new ReadOnlySpan<byte>(ptr, blackBox.Length * UnsafeUtility.SizeOf<SomaticKinematicBlackBoxEntry>()));
+                stream.Flush(true);
+                _dumpWritten = true;
+            }
+            catch (Exception)
+            {
+                _dumpWritten = false;
+            }
+        }
+
+        private void RebindServices()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+            _weatherService = GlobalRegistry.Weather;
+            _somaticProvider = GlobalRegistry.VRSomatic;
+        }
+
+        private void ResolveColdPaths()
+        {
+            _projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
+            _csvOverridePath = Path.Combine(_projectRoot, CsvOverrideFileName);
+        }
+
+        private string ResolveProjectPath(string relativePath)
+        {
+            if (string.IsNullOrEmpty(_projectRoot))
+                ResolveColdPaths();
+            return Path.GetFullPath(Path.Combine(_projectRoot, relativePath));
+        }
+
+        private void ReleaseViews()
+        {
+            UnlockSimulationBuffers();
+            _stateHandle = default;
+            _sphereHandle = default;
+            _handHistoryHandle = default;
+            _tuningHandle = default;
+            _dragLutHandle = default;
+            _signalScratchHandle = default;
+            _blackBoxHandle = default;
+            _blackBoxCursorHandle = default;
+            _csvScratchHandle = default;
+            _jobPending = false;
+            _pendingJob = default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ToFloat3(Vector3 value)
+        {
+            return new float3(value.x, value.y, value.z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 Forward(Quaternion rotation)
+        {
+            quaternion q = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
+            return math.mul(q, new float3(0f, 0f, 1f));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 NormalizeSafe(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return math.isfinite(lengthSq) && lengthSq > 0.000001f ? value * math.rsqrt(lengthSq) : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 SanitizeFinite(float3 value, float3 fallback)
+        {
+            return math.all(math.isfinite(value)) ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFinite(float3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static uint NextSequence(ref uint sequence)
+        {
+            unchecked
+            {
+                sequence++;
+                if (sequence == 0u)
+                    sequence = 1u;
+            }
+
+            return sequence;
+        }
+
+        private static float ReadFloat32LittleEndian(ReadOnlySpan<byte> span, int offset)
+        {
+            if (span.Length < offset + 4)
+                return 0f;
+
+            int raw = span[offset] |
+                      (span[offset + 1] << 8) |
+                      (span[offset + 2] << 16) |
+                      (span[offset + 3] << 24);
+            return BitConverter.Int32BitsToSingle(raw);
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        private struct SomaticBlackBoxDumpHeader
+        {
+            [FieldOffset(0)] public uint Magic;
+            [FieldOffset(4)] public uint Version;
+            [FieldOffset(8)] public uint EntryCount;
+            [FieldOffset(12)] public uint EntryBytes;
+            [FieldOffset(16)] public uint Cursor;
+            [FieldOffset(20)] public uint Frame;
+            [FieldOffset(24)] public ulong Reserved;
+        }
+    }
+}

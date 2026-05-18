@@ -1,3 +1,189 @@
+using System.Runtime.InteropServices;
+using UnityEngine.Scripting;
+
+namespace Hecton8.Core.Contracts.Signals
+{
+    /// <summary>
+    /// Marker for unmanaged signal-lane payloads. Implemented only by blittable structs.
+    /// </summary>
+    [Preserve]
+    public interface ISignal
+    {
+    }
+
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    public struct FrameTimeSignal : ISignal
+    {
+        public uint Frame;
+        public float CurrentFrameTimeMs;
+        public float FrameTimeEwmaMs;
+        public float TargetFrameTimeMs;
+        public float JitterSigmaMs;
+        public byte PressureLevel;
+        public byte Flags;
+        public ushort Reserved;
+        public uint Sequence;
+        private uint _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct KillSwitchSignal : ISignal
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] private uint _pad0;
+        [FieldOffset(8)] public ulong PreviousMask;
+        [FieldOffset(16)] public ulong CurrentMask;
+        [FieldOffset(24)] public float SystemHealthIndex01;
+        [FieldOffset(28)] public byte PreviousLevel;
+        [FieldOffset(29)] public byte CurrentLevel;
+        [FieldOffset(30)] public ushort Flags;
+    }
+
+    /// <summary>
+    /// Last flushed state for one typed signal lane.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    public struct SignalLaneTelemetry
+    {
+        public uint LaneHash;
+        public int QueuedBeforeFlush;
+        public int SnapshotCount;
+        public int DroppedCount;
+        public byte Flags;
+        public byte Reserved0;
+        public ushort Reserved1;
+        public uint Reserved2;
+        public ulong Reserved3;
+    }
+
+    /// <summary>Procedural instance culling overload signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct CullingOverloadSignal : ISignal
+    {
+        [FieldOffset(0)] public int VisibleInstances;
+        [FieldOffset(4)] public int CulledInstances;
+        [FieldOffset(8)] public int SourceInstances;
+        [FieldOffset(12)] public uint Frame;
+        [FieldOffset(16)] public float CullDistanceMeters;
+        [FieldOffset(20)] public float VramUsedMb;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint SourceHash;
+    }
+
+    /// <summary>Async persistence save request lane payload. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct SaveRequestSignal : ISignal
+    {
+        public const byte ManualSlotFlag = 1 << 0;
+
+        [FieldOffset(0)] public uint SourceHash;
+        [FieldOffset(4)] public uint OperationId;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public byte SlotIndex;
+        [FieldOffset(13)] public byte Flags;
+        [FieldOffset(14)] private ushort _pad0;
+        [FieldOffset(16)] private uint _pad1;
+        [FieldOffset(20)] private uint _pad2;
+        [FieldOffset(24)] private ulong _pad3;
+    }
+
+    /// <summary>Async persistence completion lane payload. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct SaveCompletedSignal : ISignal
+    {
+        [FieldOffset(0)] public uint SlotHash;
+        [FieldOffset(4)] public uint OperationId;
+        [FieldOffset(8)] public uint DurationMilliseconds;
+        [FieldOffset(12)] public uint CompressedSizeBytes;
+        [FieldOffset(16)] public uint Frame;
+        [FieldOffset(20)] public byte Result;
+        [FieldOffset(21)] public byte Flags;
+        [FieldOffset(22)] private ushort _pad0;
+        [FieldOffset(24)] private uint _pad1;
+        [FieldOffset(28)] private uint _pad2;
+    }
+
+    /// <summary>Async persistence status lane payload for diegetic save indicators. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct SaveStatusSignal : ISignal
+    {
+        public const byte Queued = 0;
+        public const byte InProgress = 1;
+        public const byte Completed = 2;
+        public const byte Failed = 3;
+        public const byte Rejected = 4;
+
+        [FieldOffset(0)] public uint SlotHash;
+        [FieldOffset(4)] public uint OperationId;
+        [FieldOffset(8)] public float Progress01;
+        [FieldOffset(12)] public uint Frame;
+        [FieldOffset(16)] public byte State;
+        [FieldOffset(17)] public byte Flags;
+        [FieldOffset(18)] private ushort _pad0;
+        [FieldOffset(20)] private uint _pad1;
+        [FieldOffset(24)] private ulong _pad2;
+    }
+
+    /// <summary>Global time sync signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct GlobalTimeSyncSignal : ISignal
+    {
+        [FieldOffset(0)] public double WorldSeconds;
+        [FieldOffset(8)] public float TimeScale;
+        [FieldOffset(12)] public float MoonPhase01;
+        [FieldOffset(16)] public uint Sequence;
+        [FieldOffset(20)] public byte Flags;
+        [FieldOffset(21)] private byte _pad0;
+        [FieldOffset(22)] private ushort _pad1;
+        [FieldOffset(24)] private ulong _pad2;
+    }
+
+    /// <summary>Authoritative dispatcher time-dilation signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct TimeDilationSignal : ISignal
+    {
+        [FieldOffset(0)] public float Scalar;
+        [FieldOffset(4)] public float UnscaledDeltaTime;
+        [FieldOffset(8)] public uint Sequence;
+        [FieldOffset(12)] public uint Frame;
+        [FieldOffset(16)] public uint ReasonHash;
+        [FieldOffset(20)] public byte Flags;
+        [FieldOffset(21)] private byte _pad0;
+        [FieldOffset(22)] private ushort _pad1;
+        [FieldOffset(24)] private ulong _pad2;
+    }
+
+    /// <summary>Simulation pause request signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct SimulationPauseSignal : ISignal
+    {
+        [FieldOffset(0)] public uint SourceHash;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public uint Sequence;
+        [FieldOffset(12)] public byte Paused;
+        [FieldOffset(13)] public byte Flags;
+        [FieldOffset(14)] private ushort _pad0;
+        [FieldOffset(16)] public float RestoreScalar;
+        [FieldOffset(20)] private uint _pad1;
+        [FieldOffset(24)] private ulong _pad2;
+    }
+
+    /// <summary>Cheap bullet-time post-process control signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct BulletTimeVisualSignal : ISignal
+    {
+        [FieldOffset(0)] public float Intensity01;
+        [FieldOffset(4)] public float Scalar;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public uint Sequence;
+        [FieldOffset(16)] public uint QualityTier;
+        [FieldOffset(20)] public byte Flags;
+        [FieldOffset(21)] private byte _pad0;
+        [FieldOffset(22)] private ushort _pad1;
+        [FieldOffset(24)] private ulong _pad2;
+    }
+}
+
 namespace Hecton8.Core.Contracts
 {
     public static class HectonSignalLaneContract

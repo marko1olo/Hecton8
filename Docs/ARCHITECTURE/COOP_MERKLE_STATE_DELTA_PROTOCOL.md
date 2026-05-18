@@ -2,7 +2,22 @@
 
 Date: 2026-05-17
 Agent: NET_SYNC_MERKLE_ARCHITECT
-Status: STATIC DESIGN VERIFIED / RUNTIME PENDING
+Status: STATIC DESIGN REVIEWED / RUNTIME PENDING
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Scope: Co-op state divergence detection, sparse state repair, binary packet layout, cache ownership, and deterministic hashing.
 
 ## Prompt Boundary
@@ -18,7 +33,7 @@ Scope: Co-op state divergence detection, sparse state repair, binary packet layo
 5. NETWORK SIMULATOR: Write Tools/NetJitterSim.py. Simulate 200ms latency and 5% packet loss.
 6. SELF-AUDIT LOOP 1: Verify MasterStateHash consistency; float math in hash is a crime.
 7. DATA EXPORT: Generate Docs/Modding/Net_Protocol_v1.md.
-STATUS: MUST BE "NETWORK PROTOCOL READY".
+STATUS: archived prompt requested the old ready label; current authority records this as OFFLINE STATIC/SIM PASSED, UNITY RUNTIME PENDING.
 </AGENT_PROMPT>
 ```
 
@@ -48,7 +63,7 @@ Task count in active XML: `0`. Task count in archived XML: `7`.
 - `Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs` already uses XXHash3-style 64-bit state hashing and save-domain separation.
 - `Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs` and `Assets/_Project/Scripts/Core/DodReplayRecorder.cs` are the closest deterministic validation references.
 - `Docs/PROJECT_ATLAS.md` defines the 85-domain architecture and states that `Hecton8.Core` must not absorb new domain dependencies.
-- Active binary payload scan outside generated/cache directories currently finds `46` `.bin` / `.h8bin` files and all are 16-byte aligned. This is verifier-owned, not a chat-only claim.
+- Superseded binary-payload actuality: `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` is current authority. The 2026-05-18 recheck finds 47 product/generated target files and one misaligned product payload, `Data/Balance/Baked/Babel_Dictionary.h8bin`; the broad hygiene verifier sees 65 `.bin` / `.h8bin` files because it also scans Bakery editor/plugin fixtures.
 
 ## Non-Goals
 
@@ -456,31 +471,31 @@ When staging fills:
 
 ## Data Truth Audit
 
-Math audit: no physical LUTs or matrices are created by this protocol. All protocol constants are structural and derived from binary/cache constraints: 16-byte alignment, 64-byte header, 32/64-byte records, 16-way tree fanout, 4096 leaves from `16^3`, and 1200-byte datagram ceiling. Cross-domain guards passed for `VerifyOpticsBaker.py` (`OPTICS_LUT_VERIFIED`, little-endian `<e`, 393216 bytes, FNV collisions `0`) and `VerifySabineBaker.py` (`SABINE_LUT_VERIFIED`, little-endian `<ff`/`<ffff`, 524288 bytes, tiers `high,middle,rtx_overkill,toaster_i3`, math audit `Sabine+Thorp+BeerLambert+HydrostaticPressure`).
+Math audit: no physical LUTs or matrices are created by this protocol. All protocol constants are structural and derived from binary/cache constraints: 16-byte alignment, 64-byte header, 32/64-byte records, 16-way tree fanout, 4096 leaves from `16^3`, and 1200-byte datagram ceiling. Historical tool output tokens reported `OPTICS_LUT_VERIFIED` for `VerifyOpticsBaker.py` and `SABINE_LUT_VERIFIED` for `VerifySabineBaker.py` with little-endian formats, byte sizes, tier names, and collision/math summaries; current verification requires linked artifact path, command, timestamp, and rerun status before using those tokens as present proof.
 
-Economy audit: no recipe, loot, inventory quantity, barter, or resource-generation data is created. Infinite resource loop risk is unchanged by this document. The protocol can sync economy leaves, but it does not author economy values. Current cross-domain guards passed: `CraftingEconomyMonteCarlo.py --steps 1000000` returned `profit_steps=0`, `max_value_delta_milli_units=-1000`, `max_mass_delta_mg=-400000`, `max_energy_delta_mwh=-133000`; `Tools/Economy/DataTruthInquisition.py --root .` returned `status=PASS`, `monte_carlo_steps=1539943`, `recipe_cycles=0`, `binary_unaligned=0`, `binary_endian_unknown=0`, `struct_format_failures=0`, and `fnv_collisions=0`.
+Economy audit: no recipe, loot, inventory quantity, barter, or resource-generation data is created. Infinite resource loop risk is unchanged by this document. The protocol can sync economy leaves, but it does not author economy values. Historical 2026-05-17 cross-domain guards passed: `CraftingEconomyMonteCarlo.py --steps 1000000` returned `profit_steps=0`, `max_value_delta_milli_units=-1000`, `max_mass_delta_mg=-400000`, `max_energy_delta_mwh=-133000`; `Tools/Economy/DataTruthInquisition.py --root .` returned `status=PASS`, `monte_carlo_steps=1539943`, `recipe_cycles=0`, historical binary unaligned count `0`, `binary_endian_unknown=0`, `struct_format_failures=0`, and `fnv_collisions=0`. Binary hygiene in that row is superseded by Batch008 RECHECK2: current global binary hygiene is `BINARY_HYGIENE_FAILED`, `binaryCount=65`, `misalignedCount=16`, with one product misalignment in `Data/Balance/Baked/Babel_Dictionary.h8bin` and 15 Bakery editor/plugin fixture misalignments.
 
 Lore audit: wire names use industrial state terms: root seal, repair request, sector ledger, black box, staging page. Sterile transport names are absent from the protocol. Cross-domain guard passed: `VerifyLore.py --check` returned `CHECK OK`, `entries=2`, `alignment=16`, `endian=<`.
 
-H-Phi/Data Sovereignty audit: this design adds no local native allocations and no Unity-object truth stores. The design-level protocol model is `7` DataVault buffer families, `4` future typed signal lanes, `0` direct concrete cross-domain references, `0` hot registry polls, and `0` runtime JSON paths. Source H-Phi counters are not changed until runtime code exists; the design increases the future Data Sovereignty target by making every steady-state buffer vault-owned. Current-disk data checks passed: `VerifyMetricPhiDataTruth.py` reported `checks=37 failed=0`, `binary_files=46 unaligned=0`, `struct_format_sites=133 endian_failures=0`; `VerifyDataInquisition.py` reported `binaries=46 aligned16=true`, `manifests=11`, `structFormats=273`, `monteCarloSteps=1000000`, `hashCollisions=0`, `atlasDomains=85`; canonical `RunMetricPhiVerifySweep.py` report records `VERIFY_SWEEP_PASS`, `totalCommands=35`, `requiredFailures=0`, and `selfCheckPending=false`. The H-Phi sidecar records `4901` eligible files, `1,704,372` lines, `DataSovereignty=0.019743027`, and `StrictLocalNativeArraySovereignty=0.089045936`; runtime sovereignty did not improve in this offline pass. `HectonPhiAudit.ps1 -Summary -Json -CoreGraphOnly` completed as `STATIC_SOURCE`; the full all-surface H-Phi run is not counted as proof.
+H-Phi/Data Sovereignty audit: this design adds no local native allocations and no Unity-object truth stores. The design-level protocol model is `7` DataVault buffer families, `4` future typed signal lanes, `0` direct concrete cross-domain references, `0` hot registry polls, and `0` runtime JSON paths. Source H-Phi counters are not changed until runtime code exists; the design increases the future Data Sovereignty target by making every steady-state buffer vault-owned. Archived 2026-05-17 data checks reported `VerifyMetricPhiDataTruth.py` as `checks=37 failed=0`, historical binary file count `46`, historical unaligned count `0`, `struct_format_sites=133 endian_failures=0`; `VerifyDataInquisition.py` as `binaries=46 aligned16=true`, `manifests=11`, `structFormats=273`, `monteCarloSteps=1000000`, `hashCollisions=0`, `atlasDomains=85`; canonical `RunMetricPhiVerifySweep.py` as a historical verify-sweep pass, `totalCommands=35`, `requiredFailures=0`, and `selfCheckPending=false`. These archived binary counts are superseded by `BINARY_PAYLOAD_INTEGRATION_LEDGER.md`, which records 47 product/generated target files and one misaligned product payload on 2026-05-18. The H-Phi sidecar records `4901` eligible files, `1,704,372` lines, `DataSovereignty=0.019743027`, and `StrictLocalNativeArraySovereignty=0.089045936`; runtime sovereignty did not improve in this offline pass. `HectonPhiAudit.ps1 -Summary -Json -CoreGraphOnly` completed as `STATIC_SOURCE`; the full all-surface H-Phi run is not counted as proof.
 
-Binary/cache audit: all packet structs are verifier-checked for little-endian `<` packing and 16-byte size alignment. The verifier also scans active `.bin` / `.h8bin` payloads outside ignored generated directories and fails on any file whose byte size is not divisible by `16`.
+Binary/cache audit: all packet structs are verifier-checked for little-endian `<` packing and 16-byte size alignment. The verifier also scans active `.bin` / `.h8bin` payloads outside ignored generated directories and fails on any file whose byte size is not divisible by `16`. As of Batch008 RECHECK2, that global verifier is red on 16 misaligned files; network design remains static only until payload hygiene is fixed and Unity transport/runtime proof exists.
 
-Network gate cache audit: `NetProtocolGate.py` initially failed on stale generated `.pyc` files. The generated bytecode was deleted under the verified `C:\Hecton8\Tools` tree, `NetProtocolGate.py` was rerun with `PYTHONDONTWRITEBYTECODE=1` and `python -B`, and it returned `NETWORK PROTOCOL READY` with `3` scenarios and `8` unit tests. NET-owned gate bytecode is self-cleaned by the gate. The later broad `Tools` cache readback reported `CACHE_FILES_LEFT=0` and `PYCACHE_DIRS_LEFT=0`; stable global cache-zero still requires unrelated Python writers to stay idle or run bytecode-disabled.
+Network gate cache audit: `NetProtocolGate.py` initially failed on stale generated `.pyc` files. The generated bytecode was deleted under the verified `C:\Hecton8\Tools` tree, `NetProtocolGate.py` was rerun with `PYTHONDONTWRITEBYTECODE=1` and `python -B`, and it returned an offline static/simulation pass with `3` scenarios and `8` unit tests. NET-owned gate bytecode is self-cleaned by the gate. The later broad `Tools` cache readback reported `CACHE_FILES_LEFT=0` and `PYCACHE_DIRS_LEFT=0`; stable global cache-zero still requires unrelated Python writers to stay idle or run bytecode-disabled.
 
-Jitter simulation audit: `Tools/NetJitterSim.py` ran a deterministic lockstep stress case and wrote `Docs/AgentLogs/NetJitterSim_NET_SYNC_MERKLE_ARCHITECT.json`. Scenario: `4` clients, `600` ticks, `20 ms` tick, `200 ms` latency, `80 ms` jitter, `8%` loss, `24` redundant input records, `96` tick rollback window. Result: `NETWORK PROTOCOL READY`, `sent_packets=7848`, `lost_packets=672`, `delivered_packets=7176`, `rollback.events=245`, `rollback.max_depth_ticks=3`, `master_state_hash_mismatches=0`, `input_ring_mismatches=0`, `missing_actual_inputs=0`, `float_hash_audit=PASS`. This is an offline Python proof only; Unity transport, GC, profiler, and player-build proof remain pending.
+Jitter simulation audit: `Tools/NetJitterSim.py` historically ran a deterministic lockstep stress case. The active `Docs/AgentLogs/NetJitterSim_NET_SYNC_MERKLE_ARCHITECT.json` path is absent in the R21 filesystem check; the archived payload exists at `Docs/Archive/Batch007/AgentLogs/NetJitterSim_NET_SYNC_MERKLE_ARCHITECT.json`. Scenario text from that archived run: `4` clients, `600` ticks, `20 ms` tick, `200 ms` latency, `80 ms` jitter, `8%` loss, `24` redundant input records, `96` tick rollback window, `sent_packets=7848`, `lost_packets=672`, `delivered_packets=7176`, `rollback.events=245`, `rollback.max_depth_ticks=3`, `master_state_hash_mismatches=0`, `input_ring_mismatches=0`, `missing_actual_inputs=0`, `float_hash_audit=PASS`. This is archived offline Python evidence only; rerun the tool and restore/link a fresh active artifact before using pass language as current. Unity transport, GC, profiler, and player-build proof remain pending.
 
-Latest static verifier output:
+Historical static verifier output from the archived/offline pass:
 
 ```text
-NET_SYNC_MERKLE_PROTOCOL_VERIFY=PASS
+NET_SYNC_MERKLE_PROTOCOL_VERIFY=HISTORICAL_OFFLINE_PASS_ACTIVE_ARTIFACT_REQUIRED
 STRUCT_COUNT=6
 DOMAIN_LABELS=85
 FNV_LABELS=107
-BINARY_PAYLOADS_ALIGNED=46
+BINARY_PAYLOADS_ALIGNED=SUPERSEDED_BY_BINARY_PAYLOAD_INTEGRATION_LEDGER
 DATAGRAM_CEILING=1200
 HEADER_CRC16_SAMPLE=0x220C
-JITTER_SIM_STATUS=NETWORK PROTOCOL READY
+JITTER_SIM_STATUS=HISTORICAL_OFFLINE_SIM_PASS
 JITTER_SIM_LOST_PACKETS=672
 JITTER_SIM_ROLLBACK_MAX_DEPTH=3
 ```
@@ -509,11 +524,11 @@ The verifier checks:
 - packet fit examples stay below the 1200-byte datagram ceiling
 - FNV-1a 64 hashes have zero collisions across protocol labels and current domain labels
 - active `.bin` / `.h8bin` payloads outside generated directories are 16-byte aligned
-- the latest jitter simulation report exists and reports `NETWORK PROTOCOL READY`
+- the latest jitter simulation report exists in the expected current path, or this document must explicitly link an archived historical artifact and mark the current pass as artifact-required
 - `Docs/PROJECT_ATLAS.md` still exposes the 85-domain map
 - the protocol's design-level H-Phi model keeps data in DataVault buffers and typed signal lanes
 - this document contains the required AUP, DataVault, SignalBus, zero-GC, and runtime-pending boundaries
 
-Runtime proof still requires Unity import, Console, Play Mode, GCMonitor, profiler, save/load interaction, Unity transport packet fuzzing, and player-build validation. Offline Python jitter simulation has passed and is now verifier-gated.
+Runtime proof still requires Unity import, Console, Play Mode, GCMonitor, profiler, save/load interaction, Unity transport packet fuzzing, and player-build validation. The archived offline Python jitter simulation text is useful evidence, but the active current verifier artifact must be rerun or restored before current pass language is allowed.
 
-STATUS: STATIC DESIGN VERIFIED / RUNTIME PENDING
+STATUS: STATIC DESIGN REVIEWED / RUNTIME PENDING

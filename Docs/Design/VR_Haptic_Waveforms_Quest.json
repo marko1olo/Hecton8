@@ -1,7 +1,7 @@
 {
   "schema": "hecton8.vr_haptic_waveforms.v1",
   "owner": "SOMATIC_COMFORT_ANALYST",
-  "status": "COMFORT DEFINED",
+  "status": "STATIC_HAPTIC_WAVEFORMS_DEFINED_PENDING_RUNTIME_VERIFICATION",
   "verificationStatus": "PENDING_RUNTIME_VERIFICATION",
   "runtimeContract": "ToolHapticsRuntime.HapticCommand",
   "waveformCount": 10,

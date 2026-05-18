@@ -2,7 +2,8 @@
     "name": "Hecton8.Input.Determinism",
     "rootNamespace": "Hecton8.Input.Determinism",
     "references": [
-        "Hecton8.Core.Contracts"
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

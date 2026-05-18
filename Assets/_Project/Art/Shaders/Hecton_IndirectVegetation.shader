@@ -94,6 +94,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             #define HECTON_ABYSS_SUN_ABSOLUTE_DEPTH 600.0
             #define HECTON_ABYSS_LIGHT_EXTINCTION_START_DEPTH 1000.0
             #define HECTON_ABYSS_LIGHT_EXTINCTION_FULL_DEPTH 1600.0
+            #define HECTON_BIOLUM_GPU_COLOR_CAPACITY 50000
 #if defined(_QUALITY_MX350)
             #define HECTON_VEGETATION_ADDITIONAL_LIGHT_CAP 2u
 #else
@@ -183,6 +184,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             StructuredBuffer<float2> _MarineSnowFlowField;
             StructuredBuffer<float4> _AbyssalFlowFieldResult;
             StructuredBuffer<float4> _PredatorAUPBuffer;
+            StructuredBuffer<uint> _BiolumGpuColorBuffer;
             float4 _ChunkWorldOffset;
             float4 _GlobalFloatingOffset;
             StructuredBuffer<FloraInteractionPointGpuData> _HectonFloraInteractionPoints;
@@ -293,7 +295,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half growth01 : TEXCOORD18;
                 half health01 : TEXCOORD19;
                 half geneticTraits : TEXCOORD20;
-                half spatialPulseOffset : TEXCOORD21;
+                half2 biolumPulseData : TEXCOORD21; // x = spatial pulse offset, y = four-state sync group.
             };
 
             float2 HectonDecodePackedPresentation(float packedPresentationAlpha)
@@ -302,6 +304,29 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float biolumByte = fmod(packedValue, 256.0);
                 float damageByte = floor(packedValue * 0.00390625);
                 return float2(biolumByte, damageByte) * 0.0039215686;
+            }
+
+            half4 DecodeBiolumRgb10A2(uint packedColor)
+            {
+                half r = (half)((packedColor & 1023u) * (1.0 / 1023.0));
+                half g = (half)(((packedColor >> 10) & 1023u) * (1.0 / 1023.0));
+                half b = (half)(((packedColor >> 20) & 1023u) * (1.0 / 1023.0));
+                half a = (half)(((packedColor >> 30) & 3u) * (1.0 / 3.0));
+                return half4(r, g, b, a);
+            }
+
+            half4 ResolveSyncedBiolumColor(uint sourceInstanceIndex, half4 authoredBiolumColor)
+            {
+                float packedBufferCountRaw = isfinite(_GlobalBiolumParams.w) ? _GlobalBiolumParams.w : 0.0;
+                uint packedBufferCount = (uint)min(max((int)floor(packedBufferCountRaw), 0), HECTON_BIOLUM_GPU_COLOR_CAPACITY);
+                float individualWeightRaw = isfinite(_GlobalBiolumClock.w) ? _GlobalBiolumClock.w : 0.0;
+                half individualWeight = saturate((half)individualWeightRaw);
+                if (individualWeight <= 0.001h || sourceInstanceIndex >= packedBufferCount)
+                    return authoredBiolumColor;
+
+                half4 syncedBiolumColor = DecodeBiolumRgb10A2(_BiolumGpuColorBuffer[sourceInstanceIndex]);
+                half syncedGate = step(0.001h, syncedBiolumColor.a);
+                return lerp(authoredBiolumColor, syncedBiolumColor, individualWeight * syncedGate);
             }
 
             uint MathHashUint3(uint3 value)
@@ -1334,20 +1359,20 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return float4(0.0, 0.0, 0.0, 0.0);
             }
 
-            half4 ResolveIndirectVegetationGlobalBiolum(float3 positionWS)
+            half4 ResolveIndirectVegetationGlobalBiolum(float3 positionWS, half biolumSyncGroup)
             {
                 if (!all(isfinite(positionWS)))
                     return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
                 float4 safeParams = all(isfinite(_GlobalBiolumParams)) ? _GlobalBiolumParams : float4(0.0, 0.0, 0.0, 0.0);
-                float4 safeAupOffset = all(isfinite(_GlobalBiolumAupOffset)) ? _GlobalBiolumAupOffset : float4(0.0, 0.0, 0.0, 0.0);
                 float safeClock = isfinite(_GlobalBiolumClock.x) ? _GlobalBiolumClock.x : 0.0;
                 int activeCount = min(max((int)floor(SanitizeNonNegativeFinite(safeParams.x)), 0), 16);
                 if (activeCount <= 0)
                     return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
-                float selector = frac(abs(positionWS.x * 0.033 + positionWS.z * 0.051 + safeAupOffset.x * 0.0015 + safeAupOffset.z * 0.0014));
-                int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
+                float groupRaw = floor(SanitizeNonNegativeFinite((float)biolumSyncGroup));
+                int stateIndex = min((int)fmod(groupRaw, (float)activeCount), activeCount - 1);
+                float selector = (groupRaw + 0.5) / max((float)activeCount, 1.0);
                 float4 stateRaw = _GlobalBiolumStates[stateIndex];
                 float4 state = all(isfinite(stateRaw)) ? stateRaw : float4(0.0, 0.0, 0.0, 0.0);
                 half strobe = saturate((half)SanitizeNonNegativeFinite(safeParams.z));
@@ -1524,7 +1549,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     return half3(0.0h, 0.0h, 0.0h);
 
                 float3 sporeCell = floor(input.positionWS * 2.25 + float3(0.0, _Time.y * 0.85, 0.0));
-                half sporeSeed = (half)Hash31(sporeCell + input.spatialPulseOffset);
+                half sporeSeed = (half)Hash31(sporeCell + input.biolumPulseData.x);
                 half screenSeed = (half)InterleavedGradientNoise(input.positionCS.xy + sporeSeed * 43.0h);
                 half sparkleGate = step(0.965h, sporeSeed) * step(0.58h, screenSeed);
                 half pulse = 0.45h + 0.55h * (0.5h + 0.5h * (half)FastSinApprox(_Time.y * 4.7h + sporeSeed * 6.28318h));
@@ -1865,14 +1890,21 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 output.parasiteMask = parasiteMask;
                 output.runtimeState = instanceData.RuntimeState;
                 output.pulseFrequency = max(0.01, instanceData.PulseFrequency);
-                output.biolumColor = half4(instanceData.BioluminescenceColor.rgb, saturate(packedPresentation.x * lerp(1.0, 1.28, scatterVisualPayload.w)));
+                half4 authoredBiolumColor = half4(instanceData.BioluminescenceColor.rgb, saturate(packedPresentation.x * lerp(1.0, 1.28, scatterVisualPayload.w)));
+                output.biolumColor = ResolveSyncedBiolumColor(sourceInstanceIndex, authoredBiolumColor);
                 output.flowMagnitude = saturate(flowMagnitude + scatterVisualPayload.z * 0.18);
                 output.biomeLayer = biomeLayer;
                 output.cascadeSeed = _HectonFloraPhaseSeeds[sourceInstanceIndex];
                 output.growth01 = growth01;
                 output.health01 = normalizedHealth;
                 output.geneticTraits = geneticTraits;
-                output.spatialPulseOffset = (half)ResolveSpatialHashPulseOffset(stableAupSeed);
+                half spatialPulseOffset = (half)ResolveSpatialHashPulseOffset(stableAupSeed);
+                float safeTemplateIndex = isfinite(instanceData.TemplateIndex) ? instanceData.TemplateIndex : -1.0;
+                float safeVariation = isfinite(instanceData.Variation) ? saturate(instanceData.Variation) : 0.0;
+                float templateSyncSeed = round(safeTemplateIndex);
+                float fallbackSyncSeed = round(instanceType * 17.0 + safeVariation * 1024.0);
+                half biolumSyncGroup = (half)fmod(abs(templateSyncSeed >= 0.0 ? templateSyncSeed : fallbackSyncSeed), 4.0);
+                output.biolumPulseData = half2(spatialPulseOffset, biolumSyncGroup);
                 return output;
             }
 
@@ -2025,7 +2057,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half agitatedWeight = saturate(1.0h - abs(input.runtimeState - 1.0h));
                 half dyingWeight = saturate(1.0h - abs(input.runtimeState - 2.0h));
                 half agePulseSpeed = lerp(2.65h, 0.72h, growthVisible01);
-                half pulsePhase = (_Time.y * max(0.01h, input.pulseFrequency) * agePulseSpeed * 6.28318h) + input.spatialPulseOffset + input.heightMask * 3.1h;
+                half pulsePhase = (_Time.y * max(0.01h, input.pulseFrequency) * agePulseSpeed * 6.28318h) + input.biolumPulseData.x + input.heightMask * 3.1h;
                 half seedlingPulse = lerp(0.68h, 1.34h, 0.5h + 0.5h * (half)FastSinApprox(pulsePhase));
                 half maturePulse = lerp(0.84h, 1.22h, 0.5h + 0.5h * (half)FastSinApprox(pulsePhase * 0.42h));
                 half pulseStrength = lerp(seedlingPulse, maturePulse, smoothstep(0.58h, 1.0h, growthVisible01));
@@ -2052,7 +2084,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half flashlightPhotophobia = HectonCoreLitResolveFlashlightPhotophobia(input.positionWS);
                 half emitsLightTrait = HasGeneticTrait(input.geneticTraits, 4.0h);
                 half geneticEmissionGate = lerp(1.0h, emitsLightTrait, traitBytePresent);
-                half4 globalBiolumState = ResolveIndirectVegetationGlobalBiolum(input.positionWS);
+                half4 globalBiolumState = ResolveIndirectVegetationGlobalBiolum(input.positionWS, input.biolumPulseData.y);
                 half authoredBiolumGate = step(0.001h, input.biolumColor.a);
                 half globalBiolumMask = step(0.001h, globalBiolumState.w) * authoredBiolumGate;
                 half3 biolumColor = lerp(input.biolumColor.rgb, globalBiolumState.rgb, globalBiolumMask);

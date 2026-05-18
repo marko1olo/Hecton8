@@ -5,8 +5,14 @@
     <type fullname="Hecton8.Core.Contracts.Signals.ISignal" preserve="all" />
     <type fullname="Hecton8.Core.Contracts.Signals.IInitializable" preserve="all" />
     <type fullname="Hecton8.Core.Contracts.Signals.ISignalSnapshotTransformer`1" preserve="all" />
+    <type fullname="Hecton8.Core.Contracts.Signals.ISignalSnapshotFilter`1" preserve="all" />
     <type fullname="Hecton8.Core.Contracts.Signals.SignalBusRegistry" preserve="all" />
     <type fullname="Hecton8.Core.Contracts.Signals.SignalBus`1" preserve="all" />
+    <type fullname="Hecton8.Core.Contracts.Signals.SignalBusAotPreserve" preserve="all" />
+    <type fullname="Hecton8.Core.Contracts.Signals.SignalWardenMockDamageSignal" preserve="all" />
+    <type fullname="Hecton8.Core.Contracts.Signals.MockPlayerFootstepSignal" preserve="all" />
+    <type fullname="Hecton8.Core.Contracts.Signals.MacroCollisionSignal" preserve="all" />
+    <type fullname="Hecton8.Core.Contracts.Signals.WakeRequestSignal" preserve="all" />
   </assembly>
   <assembly fullname="Unity.Collections" preserve="nothing">
     <type fullname="Unity.Collections.NativeArray`1" preserve="all" />

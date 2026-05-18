@@ -1,8 +1,16 @@
 # HECTON-8 â€” ITEM ASSET GUID AUDIT
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
 
-**Status:** ETA SURGERY_PREPPED
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+
+**Status:** HISTORICAL STATIC GUID SNAPSHOT / PENDING VERIFICATION
 **Purpose:** Hardcoded fallback table for Agent Gamma Addressables pre-warm queue.
 **Scope:** `Assets/_Project/Prefabs/Items/Tools/*.prefab`
 **Date:** 2026-04-28
@@ -64,4 +72,4 @@ internal static class ItemAssetGuidFallbacks
 - Total scanned: **12 prefabs**.
 - Missing categories: Consumables, Materials, DataShards â€” no world prefabs found in current directory tree.
 
-**STATUS:** ETA SURGERY_PREPPED
+**STATUS:** HISTORICAL STATIC GUID SNAPSHOT / PENDING VERIFICATION

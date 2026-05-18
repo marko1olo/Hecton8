@@ -1,0 +1,134 @@
+# SHINOBU_23 Status - Quest DAG And Event Resolver
+
+Date: 2026-05-18
+Domain: ECHELON 8 / AUP Narrative Triggers + Quest DAG Resolver
+Prompt Source: `Docs/Archive/Batch008/Tasks/CURRENT_BATCH.md` / `<AGENT_PROMPT id="SHINOBU_23">`
+Verification Status: PENDING VERIFICATION
+
+## Hygiene Boundary
+- [HYGIENE_VIOLATION] Active `Docs/Tasks/Status_SHINOBU_23.md`, `Docs/AgentLogs/Rationale_SHINOBU_23.md`, and `Docs/AgentLogs/LOG_SHINOBU_23.md` were absent at session resume. `Docs/Tasks/CURRENT_BATCH.md` existed and was used to re-extract `<AGENT_PROMPT id="SHINOBU_23">`; Batch008 archive was used as historical status/rationale baseline.
+- Active SHINOBU_23 tracking files were recreated for this continued polish pass.
+
+## Mandates Read
+- `PROG_Quest_State_Graph_Logic.txt`
+- `DATA_Runtime_Struct_Layout_ARM64.txt`
+- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
+- `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
+- `ARCH_Signal_Lane_Segregation.txt`
+- `DATA_Inventory_Resources_Items_SOA_Layout.txt`
+- `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
+
+## 20-Task Matrix
+- [x] Task 01 - BINARY_GRAVEYARD_RECONNAISSANCE
+  - DOD: OSHINO binary loader plus `GenerateEmergencyMockDAG()` exist. Fallback is deterministic and vault-backed.
+  - Rejected: hard-failing on missing narrative binary.
+  - Estimate: 0 us hot path; cold import only.
+- [x] Task 02 - STRING_BASED_LOGIC_ERADICATION
+  - DOD: SHINOBU_23 resolver state is `NativeArray<ulong>` masks in `GlobalDataVault`.
+  - Rejected: `Dictionary<string,bool>` and string quest polling in the new resolver.
+  - Estimate: replaces managed lookup with bitwise AND. Measured proof absent.
+  - Boundary: legacy `QuestManager/QuestStateManager` managed compatibility code still exists outside `QuestDag*`; production switchover is PENDING INTEGRATION.
+- [x] Task 03 - CS1612_ENCAPSULATION_PURGE
+  - DOD: DTOs expose fields; `QuestDagVault.GetStateMaskRef()` uses `UnsafeUtility.ArrayElementAsRef<ulong>()`.
+  - Rejected: `{ get; set; }` wrappers around NativeArray-backed state.
+  - Estimate: removes stack-copy mutation hazards.
+- [x] Task 04 - ARM64_PADDING_RECONSTRUCTION
+  - DOD: `QuestNodeDTO` 32B, `TriggerVolumeDTO` 40B, `QuestNodeRuntimeDTO` 40B, `QuestDagTelemetryEntry` 48B. No `Pack=1` remains in `Assets/_Project/Scripts/Quest`.
+  - Rejected: packed runtime structs and 36B trigger records.
+  - Estimate: ARM64 alignment guard; not a measured speed claim.
+- [x] Task 05 - BLIND_DEPENDENCY_MOCKING
+  - DOD: mock story/player/item signals and `MockQuestSignalPushJob` exist.
+  - Rejected: direct Player/Inventory concrete dependencies.
+  - Estimate: no production hot-path cost unless mock job is scheduled.
+- [x] Task 06 - BITWISE_DAG_RESOLVER_KERNEL
+  - DOD: Burst `GraphResolverJob` evaluates prerequisites with `ulong` bit tests and atomic OR.
+  - Rejected: ScriptableObject/string traversal in frame logic.
+  - Estimate: O(1) per candidate; profiler proof absent.
+- [x] Task 07 - SPATIAL_TRIGGER_HASH_GRID
+  - DOD: triggers are inserted into bounded 100m AUP hash cells with `SpatialHashMaxInsertedCellRadius = 1`; resolver queries same + adjacent 27 player cells.
+  - Rejected: O(N) 10,000 trigger scan and unbounded radius-expanded hash spam.
+  - Estimate: build entries are capped at 27 per trigger; measured timing absent.
+- [x] Task 08 - INVENTORY_PREREQUISITE_LINK
+  - DOD: required item hashes/quantities and player item mirrors are flat SoA arrays.
+  - Rejected: `List.Contains`, item names, and inventory concrete calls.
+  - Estimate: node-local integer loops only.
+- [x] Task 09 - CASCADING_STATE_PROPAGATION
+  - DOD: fixed-point loop capped at 5 iterations; no-trigger cascade is vault-indexed and budgeted by `QuestDagNoTriggerNodeIndices`.
+  - Rejected: recursion/coroutines and full all-node scans every tick.
+  - Estimate: bounded cascade; timing proof absent.
+- [x] Task 10 - THE_DEAR_LIE_TIMED_EVENTS
+  - DOD: delayed narrative uses `ulong TargetTimestamp` compare.
+  - Rejected: coroutine/timeline scheduler state.
+  - Estimate: one branch per candidate.
+- [x] Task 11 - STATE_SIGNAL_EMISSION
+  - DOD: old/new XOR emits typed `StateChangedSignal` via `SignalBus<StateChangedSignal>`.
+  - Rejected: UnityEvents and string event names.
+  - Estimate: O(state chunk count), default 120 ulongs.
+- [x] Task 12 - RLE_SAVE_STATE_COMPRESSION
+  - DOD: packed save copy uses `UnsafeUtility.MemCpy`.
+  - Rejected: JSON/string flag serialization.
+  - Estimate: default 960B mask copy.
+- [x] Task 13 - HARDWARE_LOD_TICK_DILATION
+  - DOD: sustained health pressure >0.85 dilates resolver to every 15 frames with hysteresis.
+  - Rejected: immediate LOD flipping or permanent 60Hz polling on low tier.
+  - Estimate: low-tier schedule frequency reduction, not runtime-measured.
+- [x] Task 14 - AUP_PRECISION_TRIGGER_MATH
+  - DOD: trigger checks subtract `double3 PlayerAUP - Trigger.AUP`, then cast local delta to `float3`.
+  - Rejected: absolute float position math.
+  - Estimate: correctness guard against 100km jitter.
+- [x] Task 15 - FACTION_REPUTATION_TENSORS
+  - DOD: faction standings are vault-backed floats with threshold and atomic CAS delta support.
+  - Rejected: managed faction dictionaries.
+  - Estimate: CAS only on completion.
+- [x] Task 16 - ZERO_INIT_OVERHEAD_BYPASS
+  - DOD: spatial hash is allocated once, cleared/rebuilt only when dirty by version/trigger-count.
+  - Rejected: per-frame allocate/dispose and per-tick rebuild when data is unchanged.
+  - Estimate: removes allocator/rebuild pressure; profiler proof absent.
+- [x] Task 17 - TELEMETRY_DEADLOCK_RECORDER
+  - DOD: 300-frame telemetry ring dumps `.bin` and `.h8dump` on fixed-point cap.
+  - Rejected: log-only deadlock reports.
+  - Estimate: fixed 14.4KB telemetry ring, no hot string logging.
+- [x] Task 18 - DAG_VISUALIZER_EDITOR_WINDOW
+  - DOD: `NarrativeDagInspectorWindow` reads `node_names.csv` and shows mask-derived state.
+  - Rejected: runtime UI binding.
+  - Estimate: editor-only.
+- [x] Task 19 - CSV_OVERRIDE_INGESTOR
+  - DOD: span parser applies `quest_logic_overrides.csv` into unmanaged arrays.
+  - Rejected: JSON/reflection/LINQ parser.
+  - Estimate: cold/editor or slow-path file read; parser is span-only.
+- [x] Task 20 - LIVE_STATE_TOGGLE_DEBUGGER
+  - DOD: editor force-complete flips unmanaged state and emits `StateChangedSignal`.
+  - Rejected: gameplay-only objective testing.
+  - Estimate: editor-only.
+
+## Iteration Log
+- Loop 0: Extracted SHINOBU_23 prompt from active `Docs/Tasks/CURRENT_BATCH.md`; Batch008 archive supplied missing historical status/rationale context.
+- Loop 1: Re-read archived status/rationale/log and project x-ray; confirmed active tracking gap.
+- Loop 2: Re-read current SHINOBU_23 source and verified vault buffers, DTO layout, blackbox paths, CSV/editor bridge.
+- Loop 3: Found spatial-hash semantic mismatch: same-cell read was too narrow. Current source uses bounded radius insertion capped to adjacent cells and 27-cell resolver query.
+- Loop 4: Removed `Pack=1` from legacy `QuestSaveHeader` after confirming natural layout stays 64B with timestamp at offset 16.
+- Loop 5: Added editor test asserts for `QuestSaveHeader` size and timestamp offset.
+- Loop 6: Static scan confirmed no `Pack=1` in `Assets/_Project/Scripts/Quest`.
+- Loop 7: Unity R5 batchmode import compiled SHINOBU_23 files through Bee response; no SHINOBU_23-specific errors found. Global compile still fails outside this domain.
+- Loop 8: Verified the persisted spatial hash budget is now `27`, not `1`; added a two-cell radius-overlap edit test and recompiled SHINOBU runtime/tests through isolated Roslyn probes.
+- Loop 9: Unity R6 batchmode import included SHINOBU_23 files again with no SHINOBU_23 compiler errors. Global compile still fails outside this domain.
+
+## Verification
+- `Logs/SHINOBU_23_UnityImport_20260518_R5.log`: includes `NarrativeDagInspectorWindow.cs`, `QuestDagDataLoading.cs`, `QuestDagMockSignalJobs.cs`, `QuestDagResolverRuntime.cs`, `QuestDagRuntimeTypes.cs`, and `QuestRuntimeTypes.cs`.
+- R5 targeted error scan: no `QuestDag*`, `NarrativeDag*`, `QuestRuntimeTypes*`, or `QuestDagResolverEditTests*` compile errors.
+- R5 global blockers outside this task: `Audio/Editor/SabineReverbDspTunerWindow.cs` references missing `Hecton8.Environment.NewLine`; `UI/TerminalOS/TerminalOsRuntime.cs` references missing `Hecton8.Graphics.RenderMeshPrimitives`.
+- `Logs/SHINOBU_23_UnityImport_20260518_R6.log`: includes SHINOBU_23 source files in Bee response; no `QuestDag*` or `NarrativeDagInspector*` compiler errors found.
+- R6 global blockers outside this task: `Audio/Editor/SabineReverbDspTunerWindow.cs(199-204)` missing `Hecton8.Environment.NewLine`; `UI/TerminalOS/TerminalOsRuntime.cs` missing private terminal fields and `Hecton8.Graphics.RenderMeshPrimitives`.
+- Independent OSHINO verifier exited 0 for `Data/Narrative/First_Hour_Quests.h8qdag.bin`.
+- Isolated Roslyn runtime probe exited 0 for both dump writer branches: fallback/no Unity defines and `UNITY_EDITOR;UNITY_STANDALONE`.
+- Isolated Roslyn edit-test probe exited 0 without duplicate `QuestRuntimeTypes.cs` source.
+- Static hot-path scan scoped to SHINOBU_23 files finds only `_scheduledHandle.Complete()` inside explicit `CompleteScheduled()` end-of-frame hook.
+- Static SHINOBU_23 scan finds `MemoryMappedFiles` only behind `UNITY_STANDALONE || UNITY_EDITOR`; non-Editor/Standalone dump path writes header/payload through `FileStream.Write(ReadOnlySpan<byte>)`.
+- Static Quest namespace scan finds no remaining `Pack=1`.
+- `git diff --check` scoped to touched files exits 0; Git warns that `H8Memory.cs` and `QuestRuntimeTypes.cs` line endings will normalize to CRLF.
+
+## Residual Risk
+- No Play Mode, profiler, GCMonitor, player build, Burst inspector, IL2CPP, or 10,000-trigger timing benchmark was produced.
+- Legacy `QuestManager/QuestStateManager` still expose managed/string compatibility APIs. SHINOBU_23 resolver hot path is separate and clean; full production routing remains PENDING INTEGRATION.
+- R5/R6 are Unity import/compile boundaries only, not runtime proof.

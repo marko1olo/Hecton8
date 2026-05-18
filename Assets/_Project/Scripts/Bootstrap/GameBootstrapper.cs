@@ -305,6 +305,8 @@ namespace Hecton8.Bootstrap
         [SerializeField] private ShaderVariantCollection[] shaderVariantCollections;
         [Tooltip("Analytical caustics compute shader injected into the caustics service during visual runtime bootstrap.")]
         [SerializeField] private ComputeShader analyticalCausticsCompute;
+        [Tooltip("Optional human-authored GlobalDataVault sizing facade. If absent, legacy binary archaeology or mock config drives the vault.")]
+        [SerializeField] private VaultConfigurationAsset vaultConfigurationAsset;
         [SerializeField] private uint expectedBiosRegistryFnv1a;
 #if UNITY_ADDRESSABLES_EXIST
         [Tooltip("Addressable groups loaded sequentially before dependent services consume them.")]
@@ -1501,13 +1503,19 @@ namespace Hecton8.Bootstrap
             }
         }
 
-        private static void InitializeBootstrapAllocators()
+        private void InitializeBootstrapAllocators()
         {
-            long vaultArenaLimitBytes = GlobalDataVault.ResolveArenaCapacityLimit(GlobalRegistry.ScalabilityTierProfileByte);
+            byte scalabilityProfile = GlobalRegistry.ScalabilityTierProfileByte;
+            VaultMemoryLayoutConfig memoryLayoutConfig = vaultConfigurationAsset != null
+                ? vaultConfigurationAsset.BuildRuntimeConfig(scalabilityProfile)
+                : VaultMemoryMath.BuildMockConfig(scalabilityProfile);
+            long vaultArenaLimitBytes = memoryLayoutConfig.ArenaLimitBytes > 0L
+                ? memoryLayoutConfig.ArenaLimitBytes
+                : GlobalDataVault.ResolveArenaCapacityLimit(scalabilityProfile);
             H8Memory.Initialize(poolCapBytes: vaultArenaLimitBytes);
             H8Memory.ConfigurePoolCap(vaultArenaLimitBytes);
             InstallH8MemoryFatalDumpHook();
-            EnsureGlobalDataVaultRegistered(vaultArenaLimitBytes);
+            EnsureGlobalDataVaultRegistered(vaultArenaLimitBytes, memoryLayoutConfig.BufferCapacity, in memoryLayoutConfig, vaultConfigurationAsset != null);
             NativeArenaAllocator.Initialize();
         }
 
@@ -1562,13 +1570,32 @@ namespace Hecton8.Bootstrap
                 condition.IndexOf("nan", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private static void EnsureGlobalDataVaultRegistered(long arenaCapacityLimitBytes)
+        private static void EnsureGlobalDataVaultRegistered(
+            long arenaCapacityLimitBytes,
+            int bufferCapacity,
+            in VaultMemoryLayoutConfig authoredConfig,
+            bool hasAuthoredConfig)
         {
             if (_globalDataVault == null)
-                _globalDataVault = GlobalDataVault.Create(arenaCapacityLimitBytes: arenaCapacityLimitBytes);
+                _globalDataVault = GlobalDataVault.Create(bufferCapacity, arenaCapacityLimitBytes);
 
             if (!ReferenceEquals(GlobalRegistry.DataVault, _globalDataVault))
                 GlobalRegistry.RegisterDataVault(_globalDataVault);
+
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            VaultLegacyBinaryArchaeology.TryBootstrapMemoryLayout(
+                _globalDataVault,
+                projectRoot,
+                GlobalRegistry.ScalabilityTierProfileByte,
+                out _);
+            if (hasAuthoredConfig)
+                VaultLegacyBinaryArchaeology.WriteMemoryLayoutConfig(_globalDataVault, in authoredConfig);
+
+            if (!string.IsNullOrEmpty(projectRoot))
+            {
+                string overrideCsvPath = Path.Combine(projectRoot, "memory_overrides.csv");
+                VaultLegacyBinaryArchaeology.TryApplyMemoryOverridesCsv(_globalDataVault, overrideCsvPath);
+            }
 
             PreallocateDataVaultPrimaryBuffers(_globalDataVault);
         }

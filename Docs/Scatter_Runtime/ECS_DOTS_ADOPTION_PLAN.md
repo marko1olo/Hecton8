@@ -1,26 +1,41 @@
-﻿# ECS / DOTS Adoption Plan
+# ECS / DOTS Adoption Plan
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Verification: `PENDING VERIFICATION`
 
 This document defines where ECS / DOTS is worth introducing in HECTON-8, where it is not, and in what order the work should happen.
 
 2026-05-01 trust note:
 
-- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as current project truth.
-- Current project truth: DOTS/Entities is an optional placeholder seam, not production architecture.
+- Read current stable docs plus `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, and `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md` before treating the May 4 / May 1 reports below as current context.
+- Current R10 source/package boundary: DOTS/Entities is an optional placeholder seam, not production architecture.
 - Current `Packages/manifest.json` does not declare `com.unity.entities`.
 - `Assets/_Project/Scripts/World/Dots` exists, but the asmdef is define-gated and the backend code is a fallback placeholder.
 - This document contains historical implementation notes and planning gates; source and profiler proof must be rechecked before any live ownership change.
 - Do not treat old compile-green notes as current console proof.
 
-## Implementation Status
+## Historical Implementation Notes
 
-The following first-party groundwork is already landed in code:
+The following first-party groundwork was reported as landed in the historical pass. It is source-orientation only until current source, Unity import, Console, Play Mode, profiler, and GCMonitor proof are rerun:
 
 - scatter runtime profiler markers around tick / slow tick / dispatch / sampling / processing / reconcile phases
-- batch Unity compile proof after asmdef baseline repair:
+- historical batch Unity compile note after asmdef baseline repair:
   - `*** Tundra build success`
   - `ExitCode: 0`
 - shared scatter simulation contracts:
@@ -247,7 +262,7 @@ Key files:
 - `Assets/_Project/Scripts/SaveManager.cs`
 - `Assets/_Project/Scripts/UI/*`
 - `Assets/_Project/Scripts/Visor/*`
-- `Assets/_Project/Scripts/HectonBaseAI.cs`
+- legacy `HectonBaseAI` path is absent in the current tree; re-scan current fauna/AI owners before using this tier list
 
 ## Tier B: Keep Hybrid, Do Not Convert To Entities Yet
 
@@ -464,7 +479,7 @@ What should move to ECS:
 What should not move:
 
 - actual active creatures
-- `HectonBaseAI`
+- legacy `HectonBaseAI` owner name; current source owner must be re-scanned before conversion decisions
 - `Rigidbody` locomotion
 - per-creature obstacle avoidance
 - attack / threat / stimulus logic
@@ -515,11 +530,11 @@ This is a strong third-phase candidate.
 
 ## Tier D: Avoid For Now
 
-## `HectonBaseAI`
+## Legacy `HectonBaseAI`
 
 File:
 
-- `Assets/_Project/Scripts/HectonBaseAI.cs`
+- `Assets/_Project/Scripts/HectonBaseAI.cs` is absent in the current tree; current fauna/AI owner paths must be re-scanned before using this avoid-list.
 
 Reason to avoid:
 

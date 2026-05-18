@@ -1,0 +1,172 @@
+#pragma kernel KTerminalBlit
+
+struct TerminalStateDTO
+{
+    uint TerminalHash;
+    uint BackgroundColor;
+    float Value1;
+    float Value2;
+    uint4 TextA;
+    uint4 TextB;
+};
+
+struct ScreenCommandDTO
+{
+    uint FontAtlasUV_Packed;
+    float2 Position;
+    float Scale;
+};
+
+RWTexture2DArray<float4> _TerminalTextureArray;
+StructuredBuffer<TerminalStateDTO> _TerminalStates;
+StructuredBuffer<ScreenCommandDTO> _ScreenCommands;
+StructuredBuffer<int> _DirtyTerminalIndices;
+StructuredBuffer<float4> _GlyphUvs;
+Texture2D<float> _FontSdfAtlas;
+SamplerState sampler_FontSdfAtlas;
+
+int _TerminalResolutionX;
+int _TerminalResolutionY;
+int _DirtyTerminalCount;
+int _FontAtlasReady;
+float _TimeSeed;
+float _HectonDiegeticGlitchQualityWeight;
+
+float Hash11(float value)
+{
+    return frac(sin(value * 17.371 + 0.173) * 43758.5453);
+}
+
+uint ReadTextWord(TerminalStateDTO state, uint wordIndex)
+{
+    return wordIndex < 4u ? state.TextA[wordIndex] : state.TextB[wordIndex - 4u];
+}
+
+uint ReadTextByte(TerminalStateDTO state, uint byteIndex)
+{
+    uint word = ReadTextWord(state, byteIndex >> 2u);
+    uint shift = (byteIndex & 3u) * 8u;
+    return (word >> shift) & 255u;
+}
+
+uint FixedStringLength(TerminalStateDTO state)
+{
+    uint low = ReadTextByte(state, 0u);
+    uint high = ReadTextByte(state, 1u);
+    return min(low | (high << 8u), 30u);
+}
+
+float3 UnpackRgb(uint packed)
+{
+    float r = (float)(packed & 255u) * (1.0 / 255.0);
+    float g = (float)((packed >> 8u) & 255u) * (1.0 / 255.0);
+    float b = (float)((packed >> 16u) & 255u) * (1.0 / 255.0);
+    return float3(r, g, b);
+}
+
+float SegmentDistance(float2 p, float2 a, float2 b)
+{
+    float2 pa = p - a;
+    float2 ba = b - a;
+    float h = saturate(dot(pa, ba) / max(dot(ba, ba), 0.0001));
+    return length(pa - ba * h);
+}
+
+float ProceduralGlyphSdf(uint ascii, float2 glyphUv, float4 atlasUv)
+{
+    if (ascii <= 32u)
+        return 0.0;
+
+    float2 p = saturate(glyphUv);
+    uint bits = ascii * 1103515245u + 12345u;
+    float d = 1.0;
+    if ((bits & 1u) != 0u) d = min(d, SegmentDistance(p, float2(0.18, 0.84), float2(0.82, 0.84)));
+    if ((bits & 2u) != 0u) d = min(d, SegmentDistance(p, float2(0.18, 0.50), float2(0.82, 0.50)));
+    if ((bits & 4u) != 0u) d = min(d, SegmentDistance(p, float2(0.18, 0.16), float2(0.82, 0.16)));
+    if ((bits & 8u) != 0u) d = min(d, SegmentDistance(p, float2(0.18, 0.18), float2(0.18, 0.82)));
+    if ((bits & 16u) != 0u) d = min(d, SegmentDistance(p, float2(0.82, 0.18), float2(0.82, 0.82)));
+    if ((bits & 32u) != 0u) d = min(d, SegmentDistance(p, float2(0.24, 0.78), float2(0.76, 0.22)));
+    if ((bits & 64u) != 0u) d = min(d, SegmentDistance(p, float2(0.24, 0.22), float2(0.76, 0.78)));
+    if ((bits & 128u) != 0u) d = min(d, abs(length(p - 0.5) - 0.28));
+
+    float fallbackAlpha = smoothstep(0.055, 0.015, d);
+    if (_FontAtlasReady != 0)
+    {
+        float2 atlasSampleUv = lerp(atlasUv.xy, atlasUv.zw, p);
+        float sampled = _FontSdfAtlas.SampleLevel(sampler_FontSdfAtlas, atlasSampleUv, 0).r;
+        return smoothstep(0.46, 0.54, sampled);
+    }
+
+    return fallbackAlpha;
+}
+
+float DrawFixedLine(TerminalStateDTO state, ScreenCommandDTO command, float2 uv)
+{
+    uint lengthBytes = FixedStringLength(state);
+    if (lengthBytes == 0u)
+        return 0.0;
+
+    float scale = max(command.Scale, 0.01);
+    float glyphWidth = scale * 0.58;
+    float2 rel = uv - command.Position;
+    if (rel.x < 0.0 || rel.y < 0.0 || rel.y > scale)
+        return 0.0;
+
+    uint charIndex = (uint)floor(rel.x / glyphWidth);
+    if (charIndex >= lengthBytes || charIndex >= 30u)
+        return 0.0;
+
+    float2 glyphUv = float2(frac(rel.x / glyphWidth), saturate(rel.y / scale));
+    float glitchIntensity = saturate(state.Value2);
+    if (glitchIntensity > 0.0001)
+    {
+        float lane = floor(uv.y * lerp(42.0, 100.0, glitchIntensity));
+        float tear = (Hash11(lane + _TimeSeed * 23.0 + (float)state.TerminalHash) - 0.5) * glitchIntensity;
+        float gate = step(frac(uv.y * 100.0 + _TimeSeed * 7.0), glitchIntensity);
+        glyphUv.x = frac(glyphUv.x + (tear * 0.35 + glitchIntensity * 0.1) * gate);
+    }
+
+    uint ascii = ReadTextByte(state, 2u + charIndex);
+    float4 atlasUv = _GlyphUvs[ascii & 255u];
+    return ProceduralGlyphSdf(ascii, glyphUv, atlasUv);
+}
+
+[numthreads(8, 8, 1)]
+void KTerminalBlit(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    if (dispatchThreadID.x >= (uint)_TerminalResolutionX ||
+        dispatchThreadID.y >= (uint)_TerminalResolutionY ||
+        dispatchThreadID.z >= (uint)_DirtyTerminalCount)
+        return;
+
+    int terminalIndex = _DirtyTerminalIndices[dispatchThreadID.z];
+    TerminalStateDTO state = _TerminalStates[terminalIndex];
+    ScreenCommandDTO command = _ScreenCommands[terminalIndex];
+    float2 resolution = max(float2(_TerminalResolutionX, _TerminalResolutionY), float2(1.0, 1.0));
+    float2 uv = (float2(dispatchThreadID.xy) + 0.5) / resolution;
+
+    float3 background = UnpackRgb(state.BackgroundColor) * 0.72;
+    float scanline = lerp(0.86, 1.0, step(0.5, frac((float)dispatchThreadID.y * 0.5)));
+    float3 color = background * scanline;
+
+    if (uv.x < saturate(state.Value1) && uv.y < 0.2)
+    {
+        float edge = smoothstep(0.0, 0.025, uv.y) * (1.0 - smoothstep(0.175, 0.2, uv.y));
+        float3 barColor = lerp(float3(0.02, 0.45, 0.13), float3(0.32, 1.0, 0.58), step(0.45, state.Value1));
+        color = lerp(color, barColor, edge);
+    }
+
+    float textAlpha = DrawFixedLine(state, command, uv);
+    float qualityWeight = saturate(_HectonDiegeticGlitchQualityWeight);
+    float qualityCurve = qualityWeight * qualityWeight * (3.0 - 2.0 * qualityWeight);
+    float terminalQuality = qualityCurve;
+    float3 terminalGreen = lerp(float3(0.32, 0.95, 0.55), float3(0.46, 1.0, 0.66), terminalQuality);
+    float colorGlitchIntensity = saturate(state.Value2);
+    float colorGlitch = step(1.0 - colorGlitchIntensity, Hash11(uv.y * lerp(96.0, 180.0, colorGlitchIntensity) + _TimeSeed * 31.0 + (float)terminalIndex));
+    terminalGreen = lerp(terminalGreen, float3(1.0, 0.35, 0.22), colorGlitch * colorGlitchIntensity);
+
+    color = lerp(color, terminalGreen, textAlpha);
+    float vignette = smoothstep(0.0, 0.18, uv.x) * smoothstep(0.0, 0.18, uv.y) *
+        smoothstep(0.0, 0.18, 1.0 - uv.x) * smoothstep(0.0, 0.18, 1.0 - uv.y);
+    _TerminalTextureArray[uint3(dispatchThreadID.xy, (uint)terminalIndex)] = float4(color * lerp(0.62, 1.0, vignette), 1.0);
+}

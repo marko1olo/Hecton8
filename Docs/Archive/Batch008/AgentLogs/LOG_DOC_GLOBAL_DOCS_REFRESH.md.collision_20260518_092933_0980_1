@@ -1,0 +1,15 @@
+# LOG_DOC_GLOBAL_DOCS_REFRESH
+
+## 2026-05-18 R10 Long-Tail Interior Local
+
+What was wrong: Active docs referenced `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, but the report was missing. R9 and partial-R10 counters were stale. Some active long-tail docs still pointed at May 4/May 6 reports as current truth. DOC_GLOBAL evidence files and `Docs/Tasks/CURRENT_BATCH.md` were absent during validation.
+
+What was done: Recaptured counters (`1739 / 1686 / 1722` C# files, `1134113 / 1115245 / 1130062` physical lines, `296` interface hits, `63` direct registry interfaces, `107` asmdefs), regenerated atlas, patched active root/governance/global/X-Ray/AI/Flora/Scatter/Archivarius/Reports docs, wrote `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, and recreated DOC_GLOBAL status/rationale/log evidence.
+
+Cinematic Cheats used: Documentation-only pass. No simulation changed. Static proof words were downgraded where they exceeded evidence.
+
+Exact Microseconds saved: 0 us/frame claimed. No runtime performance claim.
+
+Validation: atlas generation exit `0`; atlas tests `9` OK; AST parse `3` OK; JSON parse `4` OK; Modding validator `PASS`; R10 Markdown boundary scan `37 / 37`; AtlasCheck red with `references=6456 missing=60`.
+
+Blockers: Missing RealtimeCSG vendor references and missing workspace evidence files `Docs/AgentLogs/LOG_SHINOBU_06.md`, `Docs/AgentLogs/Rationale_SHINOBU_32.md`, `Docs/Tasks/CURRENT_BATCH.md`. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, save/load, or visual proof was run.

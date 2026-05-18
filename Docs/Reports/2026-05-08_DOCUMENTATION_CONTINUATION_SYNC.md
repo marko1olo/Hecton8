@@ -1,6 +1,13 @@
-﻿# 2026-05-08 Documentation Continuation Sync
+﻿<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-18 R22 Static Actuality Boundary
+
+This document is active only where it agrees with `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, current source files, and fresh verification artifacts.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, platform run, campaign telemetry, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older `PASS` / `VERIFIED` labels inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+# 2026-05-08 Documentation Continuation Sync
 Date: 2026-05-09
-Status: PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)
+Status: HISTORICAL R186 DOTNET BUILD SNAPSHOT / UNITY RUNTIME PROOF ABSENT
 Scope: broad documentation authority refresh after local midnight source churn and R31-R186 compile gates
 
 Mandates followed:
@@ -366,6 +373,6 @@ Cadence: this continuation did not add new waits, coroutines, or gameplay-loop a
 
 Correctness: active documentation now points at the current 2026-05-09 local evidence boundary and records that source churn invalidated May 7/May 8 source-count/build-blocker statements plus R129-R185 snapshots. The latest completed compile gate is `2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log`, which passed with `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, and `CS_WRITES_AFTER_END=0`. Unity console and Play Mode proof remain absent.
 
-Status: PENDING FINAL UNITY PROOF (R186 DOTNET BUILD PASSED / UNITY MCP BLOCKED)
+Status: HISTORICAL R186 DOTNET BUILD SNAPSHOT / UNITY RUNTIME PROOF ABSENT
 
 

@@ -1,0 +1,95 @@
+# SHINOBU_23 Rationale - Quest DAG And Event Resolver
+
+Date: 2026-05-18
+Status: PENDING VERIFICATION
+
+## Decision 00 - Rehydrate From Archived Truth
+Problem: Active SHINOBU_23 status/rationale/log files were missing after batch cleanup, while the user ordered continued work against SHINOBU_23.
+Solution: Re-extract the SHINOBU_23 XML from active `Docs/Tasks/CURRENT_BATCH.md`, use `Docs/Archive/Batch008` as historical status/rationale baseline, recreate active SHINOBU_23 status/rationale/log, and record the hygiene boundary explicitly.
+Rejected Alternatives: Silently use chat memory, or rely only on archived status without checking the active batch prompt.
+Scalability potential: Documentation continuity prevents future agents from redoing compile-heavy discovery.
+Hardware Impact: No runtime impact; protects iteration time.
+
+## Decision 01 - Ulong Masks As Narrative Truth
+Problem: String and dictionary quest checks are the known hitch source.
+Solution: SHINOBU_23 resolver truth lives in `GlobalDataVault` as `NativeArray<ulong>` masks, with node/runtime/trigger/item/faction/telemetry arrays resolved through vault handles.
+Rejected Alternatives: Extending `QuestManager` string APIs into the new resolver, enums with string conversion, or ScriptableObject graph traversal per frame.
+Scalability potential: Low uses 4Hz dilation; Middle/High/Ultra keep the same bit truth and can spend saved CPU on downstream presentation.
+Hardware Impact: Expected reduction from managed lookup class to integer bit tests. Measured proof absent.
+
+## Decision 02 - Transient Spatial Hash, Vault-Owned Truth
+Problem: H-Phi forbids local ownership of persistent NativeArrays, but trigger culling needs a fast spatial index.
+Solution: Quest truth arrays stay in the vault. The resolver owns only a transient `NativeParallelMultiHashMap<int,int>` scratch index registered with `NativeMemorySentinel`.
+Rejected Alternatives: Private persistent quest NativeArrays or managed dictionaries.
+Scalability potential: Same truth for all tiers; only cadence and candidate volume change.
+Hardware Impact: Avoids 10,000-trigger linear checks when local density is bounded.
+
+## Decision 03 - Spatial Hash Contract Correction
+Problem: Previous polish risked same-cell-only trigger reads. That is too narrow for the prompt's same/adjacent-cell contract and for triggers whose radius crosses a cell boundary.
+Solution: Keep bounded radius insertion, capped by `SpatialHashMaxInsertedCellRadius = 1`, and query the player's same plus 26 adjacent cells before exact AUP-local radius checks.
+Rejected Alternatives: O(N) trigger scan, unbounded per-trigger radius cell spam, center-cell-only false negatives, or relying on Unity trigger colliders.
+Scalability potential: Low tier gets capped hash insertion and local candidate reads; Middle/High/Ultra can afford richer downstream signals without bloating gameplay truth.
+Hardware Impact: Spatial hash insertion is bounded to at most 27 entries per trigger and resolver reads 27 cells. Measured microseconds absent.
+
+## Decision 04 - Alignment Law Cleanup
+Problem: Quest namespace still had `[StructLayout(Pack=1)]` on `QuestSaveHeader`. The actual field order was already naturally aligned, but the attribute violated runtime layout policy.
+Solution: Remove `Pack=1`, keep `Size=64`, add editor test proof for `UnsafeUtility.SizeOf<QuestSaveHeader>() == 64` and `Timestamp` offset 16.
+Rejected Alternatives: Defending `Pack=1` as file-format-only while the broader Quest scan still flags it.
+Scalability potential: ARM64/Quest/Android path stays natural-aligned.
+Hardware Impact: Avoids packed-layout precedent and potential IL2CPP/ARM64 layout traps.
+
+## Decision 05 - Fixed-Point Without Infinite Loops
+Problem: Cascading quest unlocks can cycle when OSHINO data is bad.
+Solution: Resolver loops to a fixed point with max 5 iterations, writes deadlock flags, and dumps 300-frame blackbox on the cap.
+Rejected Alternatives: recursive quest activation, coroutines, or unchecked while loops.
+Scalability potential: Low tier can time-slice no-trigger nodes; stronger tiers can raise authored density without changing truth format.
+Hardware Impact: Bounded execution protects frame time. Timing proof absent.
+
+## Decision 06 - Dear Lie Timing
+Problem: Delayed story beats usually become coroutine/timeline objects and pull presentation into game-state truth.
+Solution: Store `ulong TargetTimestamp` and compare it in the Burst job. Presentation consumes `StateChangedSignal` elsewhere.
+Rejected Alternatives: Timeline references, cutscene objects, string event IDs, coroutine waits.
+Scalability potential: Low sees delayed bit flips; Ultra spends presentation budget on richer radio/visor/hologram effects outside the resolver.
+Hardware Impact: One integer compare replaces scheduler objects.
+
+## Decision 07 - Blackbox Before Logs
+Problem: "Unknown quest loop" is not acceptable.
+Solution: `QuestDagTelemetryEntry[300]` records compute ms, bits, frame, evaluated nodes, iteration flags, deadlock hash, player cell hash, state hash, and candidate count. Fatal fixed-point state dumps `.bin` and `.h8dump`.
+Rejected Alternatives: `Debug.Log` strings or crash-only prose.
+Scalability potential: Same ring across tiers; Ultra can add external visualization without mutating gameplay DTOs.
+Hardware Impact: 48B * 300 = 14.4KB fixed vault storage.
+
+## Decision 08 - Compile Boundary Discipline
+Problem: Generated `.csproj` coverage was unreliable for new Unity files, while full Unity import still fails on unrelated domains.
+Solution: Use Unity batchmode logs as inclusion evidence and filter errors by SHINOBU_23 paths. Do not edit audio/UI/save blockers from the Quest DAG domain.
+Rejected Alternatives: Hand-edit generated projects or fix-forward unrelated compile blockers.
+Scalability potential: Protects 40-agent parallel work from compile-wall coupling.
+Hardware Impact: Build-time hygiene only.
+
+## Decision 09 - Legacy Quest Facade Boundary
+Problem: `QuestManager/QuestStateManager` still contain managed dictionaries, lists, and string compatibility APIs.
+Solution: Keep SHINOBU_23 as a separate Burst/vault resolver hot path and record the legacy facade as PENDING INTEGRATION, not as SHINOBU_23 hot-path proof.
+Rejected Alternatives: Broad refactor of load-bearing legacy quest/save/UI code during a narrow resolver task.
+Scalability potential: Low tier can route production triggers through SHINOBU_23 once integrator wires bootstrap; legacy remains cold compatibility until removed.
+Hardware Impact: Prevents risky regressions now; real hitch removal requires production routing proof later.
+
+## Decision 10 - CSV And Editor Human Bridge
+Problem: Designers need to alter quest logic without recompiling C#.
+Solution: Editor-only `NarrativeDagInspectorWindow` reads `node_names.csv`, applies `quest_logic_overrides.csv`, and force-completes nodes through unmanaged masks/signals.
+Rejected Alternatives: runtime name dictionaries, JSON/reflection parsers, or UI-bound quest authoring.
+Scalability potential: Low runtime remains hash-only; higher tiers can use richer presentation data outside resolver truth.
+Hardware Impact: Editor/cold path only.
+
+## Decision 11 - Cross-Platform Dump Writer Guard
+Problem: `System.IO.MemoryMappedFiles` is acceptable for Editor/Standalone post-mortem dumps but creates avoidable platform risk for Android/Quest.
+Solution: Guard MMF with `UNITY_STANDALONE || UNITY_EDITOR` and provide an unsafe `FileStream.Write(ReadOnlySpan<byte>)` fallback that writes the same header and chronological payload without `byte[]`.
+Rejected Alternatives: `File.WriteAllBytes`, always-MMF, or removing MMF everywhere. `WriteAllBytes` allocates; always-MMF risks mobile compile; removing MMF weakens the desktop forensic path.
+Scalability potential: Mobile gets compile-safe fatal dumps; desktop keeps MMF.
+Hardware Impact: Fatal path only; 0 frame-loop cost.
+
+## Decision 12 - R6 Compile Boundary
+Problem: R5 was not enough after the spatial capacity and dump-guard changes.
+Solution: Run isolated Roslyn runtime probes for both platform branches, compile the edit-test source, rerun OSHINO binary verification, and run Unity R6 batchmode import. Record global compile blockers without crossing the domain boundary.
+Rejected Alternatives: Claiming old R5 evidence after code changed, or fixing Audio/TerminalOS from the Quest DAG domain.
+Scalability potential: Protects compile graph isolation during 40-agent parallel work.
+Hardware Impact: Build-time evidence only.

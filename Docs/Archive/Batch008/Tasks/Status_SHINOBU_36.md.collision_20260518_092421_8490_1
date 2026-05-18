@@ -1,0 +1,32 @@
+# SHINOBU_36 Status
+
+Date: 2026-05-18
+Domain: INPUT_DETERMINISM_AND_HAPTICS
+Status: PENDING UNITY VERIFICATION - DOTNET TARGETS GREEN
+
+## Current Truth
+
+- `Docs/Tasks/CURRENT_BATCH.md` is absent after batch hygiene; prior SHINOBU_36 files are archived under `Docs/Archive/Batch008`.
+- User explicitly ordered continuation: `WORK FURTHER`.
+- Active state files were deleted twice by external cleanup while this continuation was running; this file is the current active trail.
+
+## Continuation Checklist
+
+- [x] Active memory restored. DOD: active Status/Rationale recreated after archive cleanup. Rejected: chat-only memory. Estimate: 0 us runtime.
+- [x] Core compile wall cleared. DOD: sequential `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` passed. Rejected: parallel Core/Editor build because it locked `Temp/obj/Hecton8.Core.dll`. Estimate: 0 us runtime.
+- [x] Input compile verified. DOD: sequential `dotnet build Hecton8.Input.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` passed. Rejected: relying on old report. Estimate: 0 us runtime.
+- [x] Editor compile verified. DOD: sequential `dotnet build Hecton8.Editor.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` passed. Rejected: uncompiled editor facade. Estimate: 0 us runtime.
+- [x] Full Assembly-CSharp wall classified. DOD: `dotnet build Assembly-CSharp.csproj ...` fails before first-party input code in `RealtimeCSG.csproj` on missing vendor source files under `Assets/RealtimeCSG`. Rejected: editing third-party package stubs. Estimate: 0 us runtime.
+- [x] All boolean input bits packed. DOD: `PlayerInputAction` now covers Jump, Interact, Primary, Secondary, Sprint, Dash, PDA, Inventory, Cancel, TabNext, TabPrevious, ToolSlot1-4, Flashlight, Pause; `InputDispatcher.BuildPolledButtonMask()` writes those bits. Rejected: only gameplay-fire bits. Estimate: sub-us bit OR chain.
+- [x] UI button mask gap closed. DOD: `CaptureState` builds the button mask whenever `InputManager` exists; move/look/vertical remain gated by Player map. Rejected: UI buttons invisible when player map disabled. Estimate: 0 us added beyond cached action poll.
+- [x] Static legacy scan completed. DOD: no `Input.GetKey/GetAxis/GetButton` in `Assets/_Project/Scripts`; `Event.current` remains only in editor/debug files outside SHINOBU authority. Rejected: legacy input authority. Estimate: desync vector removed.
+- [x] Callback scan completed. DOD: no `.performed +=` or `.canceled +=` subscriptions in `Assets/_Project/Scripts/Input` or `InputDispatcher.cs`. Rejected: InputSystem callback authority. Estimate: avoids callback order divergence.
+- [x] DTO Pack=1 scan completed. DOD: no `Pack=1` in `InputDeterminismDtos.cs`, `PlayerInputState.cs`, or `InputDispatcher.cs`. Rejected: byte-packed runtime DTOs. Estimate: avoids ARM64 misaligned access stalls.
+
+## Verification State
+
+- DOTNET: `Hecton8.Core.csproj` passed.
+- DOTNET: `Hecton8.Input.csproj` passed.
+- DOTNET: `Hecton8.Editor.csproj` passed.
+- DOTNET: `Assembly-CSharp.csproj` blocked by missing third-party RealtimeCSG source files, not SHINOBU input code.
+- UNITY: not run in Editor/Play Mode; runtime GC and device haptics remain PENDING UNITY VERIFICATION.

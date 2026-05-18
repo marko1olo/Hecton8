@@ -21,7 +21,7 @@ Shader "Hidden/Hecton8/StochasticSSR"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
-        CBUFFER_START(UnityPerMaterial)
+        CBUFFER_START(HectonStochasticSsrGlobals)
             float4 _HectonSsrInputSize; // xy=input pixels, zw=input texel size
             float4 _HectonSsrParamsA; // x=max pixel offset, y=depth fade meters, z=intensity, w=edge fade
             float4 _HectonSsrParamsB; // x=noise modulation, y/z/w=reserved

@@ -1,11 +1,30 @@
 
+Date: 2026-05-17
+Status: Smena arhitektury HUD i stabilizatsiya sredy.
+
 Beklog istoriya izmeneniy
 
 TEHNIChESKIY OTChET SESSII (10.03.2026)
 Proekt: Submerge (ex. HECTON-8)
 Tselevoe zhelezo: NVIDIA MX350 (2GB VRAM) / Core i5
-Date: 2026-05-17
-Status: Smena arhitektury HUD i stabilizatsiya sredy.
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+R11 Legacy Evidence Boundary:
+Feature Complete, Zero GC, 0 bytes, Easy Save/ES3, passed, and ready/done wording below is historical backlog prose only. Current completeness and runtime cleanliness remain PENDING VERIFICATION until compile/import, Unity Console, Play Mode, profiler/GCMonitor, save/load, player-build, and current source/scene artifacts are linked.
+
 1. Globalnaya sreda i relef (Environment Sync)
 Sinhronizatsiya vysot: Uroven morya zafiksirovan na otmetke 5000 (soglasno grafu MapMagic). Znachenie propisano v inspektorah na obekte [MANAGERS] dlya skriptov: HectonAtmosphereManager, HectonFluidEngine, HectonSurvivalSystem.
 Logika teksturirovaniya: V biome pikov (Biome_Peak) ispravlena noda SLOPE. Diapazon izmenen s 7.5-15 na 0-15 gradusov. Eto ubralo defoltnyy pesok s ploskih vershin plato i zamenilo ego na skalu.

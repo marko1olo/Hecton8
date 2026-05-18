@@ -9,11 +9,11 @@ using UnityEngine;
 namespace Hecton8.Core.Content
 {
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public struct ContentLoreBlockIndex
     {
-        public uint Hash;
         public long Offset;
+        public uint Hash;
         public int Length;
     }
 

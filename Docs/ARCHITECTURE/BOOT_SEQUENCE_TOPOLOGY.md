@@ -1,7 +1,22 @@
 # Boot Sequence Topology
 
 Date: 2026-05-12
-Status: SOURCE VERIFIED / RUNTIME PENDING
+Status: STATIC_SOURCE REVIEWED / RUNTIME PENDING
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Owner Source: `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`
 
 ## Six-Stage Lifecycle
@@ -17,7 +32,7 @@ This is the documentation contract. The current implementation still has legacy 
 | Stage | Source Owner | Required Work | Hard Rule |
 |---:|---|---|---|
 | 1 | allocators / memory sentinels | persistent native memory, arena, budget trackers | allocate cold, never in hot tick |
-| 2 | `GlobalSignals` | create 33 persistent signal queues and prewarm them | no listener callbacks during publish |
+| 2 | `GlobalSignals` | prewarm source-observed native signal queues: R24 scan sees `73` direct `CreateQueue(...)` slots, `133` typed `SignalBus<T>.EnsureInitialized()` lanes, plus `DebugSignal` | no listener callbacks during publish |
 | 3 | platform I/O | persistent path, FileStream save I/O, native bridges | no MMF claims without source proof |
 | 4 | `H8StaticDataArena` | load `.h8bin` into persistent native arena | validate header, directory, checksum |
 | 5 | registry services | Kahn-sorted bootstrap nodes and GlobalRegistry service slots | no singleton self-wiring |
@@ -59,7 +74,7 @@ No presentation system can be treated as authoritative state. Presentation can r
 |---|---|
 | "Single clean bootstrap sovereign" | false; bootstrap authority still spans `GameBootstrapper`, `SceneBootstrap`, and legacy owner surfaces |
 | "FileStream everywhere" | false for Data Monolith; `H8StaticDataArena` still uses boot-only `File.ReadAllBytes` staging |
-| "Five artery event bus" | stale; current source has 33 typed `GlobalSignals` lanes |
+| "Five artery event bus" | stale; R24 static source scan sees `73` direct native queue slots, `133` typed `SignalBus<T>` lanes, and `DebugSignal`; rerun before exact use |
 
 ## Verification Required
 
@@ -71,4 +86,4 @@ Still pending:
 - frame-time proof for service initialization
 - no post-boot managed allocation trace
 
-STATUS: SOURCE VERIFIED / RUNTIME PENDING
+STATUS: STATIC_SOURCE REVIEWED / RUNTIME PENDING

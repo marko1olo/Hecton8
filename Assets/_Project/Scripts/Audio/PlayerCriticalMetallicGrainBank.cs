@@ -19,6 +19,14 @@ namespace Hecton8.Audio
                 grainBank[i] = GenerateCheapMetallicSample(i, invLengthMinusOne);
         }
 
+        /// <summary>
+        /// Explicit emergency fallback entry point for no-file granular synth initialization.
+        /// </summary>
+        public static void GenerateEmergencyMockGrains(NativeArray<float> grainBank)
+        {
+            Generate(grainBank);
+        }
+
         private static float GenerateCheapMetallicSample(int index, float invLengthMinusOne)
         {
             float t = index * invLengthMinusOne;

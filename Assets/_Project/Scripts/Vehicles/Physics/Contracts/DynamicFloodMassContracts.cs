@@ -10,23 +10,38 @@ namespace Hecton8.Vehicles.Physics.Contracts
         public const float CriticalFloodMassBaseRatio = 0.4f;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+    /// <summary>One compartment flood sample. Size: 64 bytes, one L1 cache line.</summary>
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct DynamicFloodRoomMassSample
     {
-        [FieldOffset(0)] public float WaterLevel01;
-        [FieldOffset(4)] public float VolumeM3;
-        [FieldOffset(8)] public float3 LocalAup;
+        public float3 LocalAup;
+        public float WaterLevel01;
+        public float VolumeM3;
+        private int _pad0;
+        private long _pad1;
+        private long _pad2;
+        private long _pad3;
+        private long _pad4;
+        private long _pad5;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
+    /// <summary>Flood mass solve output. Size: 128 bytes, two L1 cache lines.</summary>
+    [StructLayout(LayoutKind.Sequential, Size = 128)]
     public struct DynamicFloodMassSolveResult
     {
-        [FieldOffset(0)] public float3 DynamicCenterOfMassLocal;
-        [FieldOffset(12)] public float3 DynamicCenterOfMassOffsetLocal;
-        [FieldOffset(24)] public float3 InertiaTensorMultiplier;
-        [FieldOffset(40)] public double3 GlobalPivotAnchor;
-        [FieldOffset(64)] public float TotalWaterMassKg;
-        [FieldOffset(68)] public float AngularDragMultiplier;
-        [FieldOffset(72)] public uint Flags;
+        public double3 GlobalPivotAnchor;
+        public float3 DynamicCenterOfMassLocal;
+        public float3 DynamicCenterOfMassOffsetLocal;
+        public float3 InertiaTensorMultiplier;
+        public float TotalWaterMassKg;
+        public float AngularDragMultiplier;
+        public uint Flags;
+        private uint _pad0;
+        private long _pad1;
+        private long _pad2;
+        private long _pad3;
+        private long _pad4;
+        private long _pad5;
+        private long _pad6;
     }
 }

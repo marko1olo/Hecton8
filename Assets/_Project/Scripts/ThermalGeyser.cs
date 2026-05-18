@@ -1,5 +1,4 @@
 using Hecton8.Core;
-using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.World;
@@ -9,8 +8,8 @@ using UnityEngine;
 namespace Hecton8.Caves
 {
     /// <summary>
-    /// Cave-owned eruptive geyser hazard. Alternates between idle and eruption windows, injects a local updraft,
-    /// and applies cavitation stress to the scooter plus hanging collapse chunks.
+    /// Cave-authored geyser marker. Physical lift is delegated to VolcanicUpdraftDirector;
+    /// this component only supplies authored cadence and mineral-drop flavor.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CurrentVolume))]
@@ -18,28 +17,18 @@ namespace Hecton8.Caves
     {
         private const float MinimumCylinderHeightMeters = 1f;
         private const float EruptionCylinderHeightMultiplier = 2.25f;
-        private const float CavitationCylinderHeightMultiplier = 1.5f;
         private const float DefaultMineralEjectionIntervalSeconds = 600f;
         private const int MinimumEjectedMineralCount = 3;
         private const int MaximumEjectedMineralCount = 5;
 
-        [Header("── Runtime Wiring ──────────────────")]
+        [Header("Runtime Wiring")]
         [SerializeField]
-        [Tooltip("Local current volume driven by the geyser cycle.")]
+        [Tooltip("Authoring-only current-volume marker. Runtime lift is handled by VolcanicUpdraftDirector.")]
         private CurrentVolume currentVolume;
-
-        [SerializeField]
-        [Tooltip("Optional player override for isolated cave testing without bootstrap.")]
-        private Transform playerTransformOverride;
-
-        [Header("── Query Settings ──────────────────")]
-        [SerializeField]
-        [Tooltip("Layers sampled when applying eruption shock and cavitation to nearby rigidbodies.")]
-        private LayerMask affectedLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Header("Mineral Ejection")]
         [SerializeField]
-        [Tooltip("Low-tier mineral item emitted as physical loot during long-lived geyser activity.")]
+        [Tooltip("Low-tier mineral item emitted as loot during long-lived geyser activity.")]
         private ItemData ejectedMineralItem;
 
         [SerializeField, Range(60f, 1800f)]
@@ -47,7 +36,7 @@ namespace Hecton8.Caves
         private float mineralEjectionIntervalSeconds = DefaultMineralEjectionIntervalSeconds;
 
         [SerializeField, Range(0.1f, 30f)]
-        [Tooltip("Impulse magnitude stored on ejected item records and applied when their Rigidbody hydrates.")]
+        [Tooltip("Impulse magnitude stored on ejected item records when loot hydrates.")]
         private float mineralEjectionImpulse = 8f;
 
         private float _quietDuration = 10f;
@@ -55,23 +44,15 @@ namespace Hecton8.Caves
         private float _eruptionRadius = 4f;
         private float _cavitationRadius = 6f;
         private float _updraftStrength = 500f;
-        private float _cavitationDragMultiplier = 2f;
-        private float _cavitationSinkAcceleration = 12f;
-        private float _chunkThermalDamagePerSecond = 2f;
         private float _phaseTimer;
         private bool _isErupting;
         private bool _registeredTick;
         private bool _registeredFixedTick;
-        private Transform _playerTransform;
-        private Rigidbody _playerRigidbody;
-        private HectonPlayerMovement _playerMovement;
         private float _mineralEjectionTimer = DefaultMineralEjectionIntervalSeconds;
         private uint _mineralEjectionSeed;
-        private readonly Collider[] _affectedColliders = new Collider[24]; // COLD ALLOC: Collider[24] — bounded geyser influence query buffer — owner: ThermalGeyser
+        private uint _volcanicVentSourceHash;
+        private VolcanicUpdraftDirector _volcanicDirector;
 
-        /// <summary>
-        /// Configures the geyser from cave dressing data.
-        /// </summary>
         internal void Configure(ThermalGeyserConfig config, float globalIntensity)
         {
             if (config == null)
@@ -82,20 +63,14 @@ namespace Hecton8.Caves
             _eruptionRadius = Mathf.Max(0.5f, config.eruptionRadius);
             _cavitationRadius = Mathf.Max(_eruptionRadius, config.cavitationRadius);
             _updraftStrength = Mathf.Max(0f, config.updraftStrength * Mathf.Max(0.1f, globalIntensity));
-            _cavitationDragMultiplier = Mathf.Max(1f, config.cavitationDragMultiplier);
-            _cavitationSinkAcceleration = Mathf.Max(0f, config.cavitationSinkAcceleration);
-            _chunkThermalDamagePerSecond = Mathf.Max(0f, config.chunkThermalDamagePerSecond);
 
             ResolveRuntimeWiring();
-            ConfigureCurrentVolume(isErupting: false);
+            ConfigureCurrentVolume();
             _phaseTimer = _quietDuration;
             _isErupting = false;
             _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
         }
 
-        /// <summary>
-        /// Advances the authored eruption cadence.
-        /// </summary>
         public void Tick(float dt)
         {
             float safeDt = Mathf.Max(0f, dt);
@@ -107,108 +82,15 @@ namespace Hecton8.Caves
 
             _isErupting = !_isErupting;
             _phaseTimer = _isErupting ? _eruptionDuration : _quietDuration;
-            ConfigureCurrentVolume(_isErupting);
+            ConfigureCurrentVolume();
         }
 
-        /// <summary>
-        /// Applies physical eruption and cavitation effects during the fixed-step phase.
-        /// </summary>
         public void FixedTick(float fdt)
         {
-            if (!_isErupting || fdt <= 0f)
+            if (fdt <= 0f)
                 return;
 
-            ResolvePlayerContext();
-
-            Vector3 origin = transform.position;
-            float eruptionHeight = math.max(MinimumCylinderHeightMeters, _eruptionRadius * EruptionCylinderHeightMultiplier);
-            float cavitationHeight = math.max(eruptionHeight, _cavitationRadius * CavitationCylinderHeightMultiplier);
-            float eruptionRadiusSq = _eruptionRadius * _eruptionRadius;
-            float cavitationRadiusSq = _cavitationRadius * _cavitationRadius;
-            bool playerBodyAffectedByOverlap = false;
-            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
-                origin,
-                _cavitationRadius,
-                _affectedColliders,
-                affectedLayers,
-                QueryTriggerInteraction.Ignore);
-
-            for (int i = 0; i < hitCount; i++)
-            {
-                Collider hitCollider = _affectedColliders[i];
-                if (hitCollider == null)
-                    continue;
-
-                Rigidbody body = hitCollider.attachedRigidbody;
-                if (body != null && _playerRigidbody != null && ReferenceEquals(body, _playerRigidbody))
-                    playerBodyAffectedByOverlap = true;
-
-                Vector3 point = body != null ? body.worldCenterOfMass : hitCollider.bounds.center;
-                Vector3 horizontal = point - origin;
-                horizontal.y = 0f;
-                float horizontalDistanceSq = (horizontal.x * horizontal.x) + (horizontal.z * horizontal.z);
-                float verticalOffset = point.y - origin.y;
-                if (horizontalDistanceSq > cavitationRadiusSq || verticalOffset < 0f || verticalOffset > cavitationHeight)
-                    continue;
-
-                float eruptionT = EvaluateCylinderAttenuationSq(horizontalDistanceSq, eruptionRadiusSq, verticalOffset, eruptionHeight);
-                float cavitationT = EvaluateCylinderAttenuationSq(horizontalDistanceSq, cavitationRadiusSq, verticalOffset, cavitationHeight);
-
-                if (body != null)
-                {
-                    if (eruptionT > 0f)
-                        PhysicsForceRouter.QueueForce(
-                            body,
-                            Vector3.up * (_updraftStrength * eruptionT),
-                            ForceMode.Acceleration);
-
-                    if (cavitationT > 0f)
-                        PhysicsForceRouter.QueueForce(
-                            body,
-                            Vector3.down * (_cavitationSinkAcceleration * cavitationT),
-                            ForceMode.Acceleration);
-                }
-
-                if (hitCollider.TryGetComponent(out SargassumCollapseChunk chunk))
-                    chunk.ApplyThermalGeyserDamage(_chunkThermalDamagePerSecond * cavitationT * fdt);
-            }
-
-            if (_playerMovement != null && _playerTransform != null)
-            {
-                Vector3 playerOffset = _playerTransform.position - origin;
-                float playerDistanceSq = (playerOffset.x * playerOffset.x) + (playerOffset.z * playerOffset.z);
-                float playerVerticalOffset = playerOffset.y;
-                if (playerDistanceSq <= cavitationRadiusSq && playerVerticalOffset >= 0f && playerVerticalOffset <= cavitationHeight)
-                {
-                    float eruptionT = EvaluateCylinderAttenuationSq(playerDistanceSq, eruptionRadiusSq, playerVerticalOffset, eruptionHeight);
-                    float cavitationT = EvaluateCylinderAttenuationSq(playerDistanceSq, cavitationRadiusSq, playerVerticalOffset, cavitationHeight);
-
-                    if (!playerBodyAffectedByOverlap && eruptionT > 0f && _playerRigidbody != null)
-                        PhysicsForceRouter.QueueForce(
-                            _playerRigidbody,
-                            Vector3.up * (_updraftStrength * eruptionT),
-                            ForceMode.Acceleration);
-
-                    if (cavitationT > 0f)
-                    {
-                        _playerMovement.ApplyEnvironmentalDrag(math.lerp(1f, _cavitationDragMultiplier, cavitationT));
-                        if (!playerBodyAffectedByOverlap && _playerRigidbody != null)
-                            PhysicsForceRouter.QueueForce(
-                                _playerRigidbody,
-                                Vector3.down * (_cavitationSinkAcceleration * cavitationT),
-                                ForceMode.Acceleration);
-                    }
-                }
-            }
-        }
-
-        private static float EvaluateCylinderAttenuationSq(float radialDistanceSq, float radiusSq, float verticalOffset, float height)
-        {
-            float safeRadiusSq = math.max(0.0001f, radiusSq);
-            float safeHeight = math.max(0.01f, height);
-            float radialFactor = 1f - math.saturate(radialDistanceSq / safeRadiusSq);
-            float verticalFactor = 1f - math.saturate(verticalOffset / safeHeight);
-            return radialFactor * verticalFactor;
+            SubmitVolcanicDirectorVent();
         }
 
         private static uint Mix(uint hash, uint value)
@@ -229,12 +111,19 @@ namespace Hecton8.Caves
         {
             ResolveRuntimeWiring();
             _mineralEjectionSeed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ 0x9E3779B9u;
+            _volcanicVentSourceHash = Mix(_mineralEjectionSeed, VolcanicUpdraftVault.SourceHash);
             _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
         }
 
         private void OnEnable()
         {
+            ResolveRuntimeWiring();
             TryRegister();
+        }
+
+        private void Start()
+        {
+            ResolveRuntimeWiring();
         }
 
         private void OnDisable()
@@ -289,36 +178,11 @@ namespace Hecton8.Caves
         {
             if (currentVolume == null)
                 TryGetComponent(out currentVolume);
+
+            _volcanicDirector = VolcanicUpdraftDirector.ActiveRuntimeInstance;
         }
 
-        private void ResolvePlayerContext()
-        {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                runtimeContext.IsBound)
-            {
-                _playerTransform = runtimeContext.PlayerTransform != null ? runtimeContext.PlayerTransform : playerTransformOverride;
-                _playerRigidbody = runtimeContext.PlayerRigidbody;
-                _playerMovement = runtimeContext.PlayerMovement;
-                return;
-            }
-
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext != null && playerContext.IsInitialized)
-            {
-                _playerTransform = playerContext.PlayerTransform != null ? playerContext.PlayerTransform : playerTransformOverride;
-                _playerRigidbody = playerContext.PlayerRigidbody;
-                _playerMovement = playerContext.PlayerMovement;
-                return;
-            }
-
-            Transform runtimePlayer = BootstrapState.CurrentPlayerTransform;
-            _playerTransform = runtimePlayer != null ? runtimePlayer : playerTransformOverride;
-            if (_playerTransform == null)
-                return;
-        }
-
-        private void ConfigureCurrentVolume(bool isErupting)
+        private void ConfigureCurrentVolume()
         {
             if (currentVolume == null)
                 return;
@@ -330,9 +194,32 @@ namespace Hecton8.Caves
             currentVolume.ApplySemanticFlowPreset(
                 CurrentVolume.FlowPattern.Updraft,
                 Vector3.up,
-                isErupting ? _updraftStrength : 0f,
+                0f,
                 1f,
                 0f);
+        }
+
+        private void SubmitVolcanicDirectorVent()
+        {
+            VolcanicUpdraftDirector director = _volcanicDirector;
+            if (director == null)
+                return;
+
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            float eruptionHeight = math.max(MinimumCylinderHeightMeters, _eruptionRadius * EruptionCylinderHeightMultiplier);
+            float active01 = _isErupting ? 1f : 0f;
+            float timer01 = _eruptionDuration > 0.0001f
+                ? math.saturate(1f - (_phaseTimer / math.max(0.0001f, _eruptionDuration)))
+                : active01;
+
+            director.TryUpsertAuthoredVent(
+                _volcanicVentSourceHash,
+                aup.ToAbsoluteDouble3(),
+                math.max(0.5f, _eruptionRadius),
+                _updraftStrength * active01,
+                eruptionHeight,
+                active01,
+                timer01);
         }
 
         private void TryRegister()

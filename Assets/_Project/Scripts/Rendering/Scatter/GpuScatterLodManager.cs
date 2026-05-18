@@ -19,7 +19,7 @@ namespace Hecton8.Rendering.Scatter
     /// <summary>
     /// Public metadata payload consumed by the indirect flora shader and the scatter DataVault seam.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = Stride)]
+    [StructLayout(LayoutKind.Sequential, Size = Stride)]
     public struct GpuScatterFloraInstanceData
     {
         /// <summary>GPU stride in bytes.</summary>
@@ -127,7 +127,7 @@ namespace Hecton8.Rendering.Scatter
         private const int VisibleCountReadbackFrameStride = 60;
         private const int IndirectArgsInstanceCountIndex = 1;
         private const int MissingRegistryRefreshStrideFrames = 120;
-        private const uint MetalMaxThreadsPerThreadGroup = 1024u;
+        private const uint MetalMaxThreadsPerThreadGroup = 512u;
         private const float DefaultFallbackAspect = 1.7777778f;
         private const float CullingHysteresisMeters = 5f;
         private const float CullingHysteresisSeconds = 2f;
@@ -2103,7 +2103,7 @@ namespace Hecton8.Rendering.Scatter
 
         private static int Matrix4x4StrideBytes => 64;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = ScatterFrameConstantsStrideBytes)]
+        [StructLayout(LayoutKind.Sequential, Size = ScatterFrameConstantsStrideBytes)]
         private struct ScatterFrameConstants
         {
             public Vector4 Params0;
@@ -2119,7 +2119,7 @@ namespace Hecton8.Rendering.Scatter
             public Vector4 FrustumPlane5;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = ScatterBlackBoxEntryStrideBytes)]
+        [StructLayout(LayoutKind.Sequential, Size = ScatterBlackBoxEntryStrideBytes)]
         private struct ScatterBlackBoxEntry
         {
             public int Frame;

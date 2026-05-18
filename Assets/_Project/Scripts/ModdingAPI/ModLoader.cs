@@ -483,6 +483,12 @@ namespace Hecton8.Modding
                 return;
             }
 
+            if (ShouldForceFutureCommandEnvelopeOnly())
+            {
+                DisableCandidate(candidate, "Managed mod entry disabled. UGC commands must use 64-byte FutureCommandEnvelope packets.");
+                return;
+            }
+
             try
             {
                 if (!TryCreateRegisteredManagedMod(candidate.Metadata.Id, out IHectonMod modInstance, out string failureReason))
@@ -548,6 +554,11 @@ namespace Hecton8.Modding
             }
 
             return requiredApiVersion;
+        }
+
+        private static bool ShouldForceFutureCommandEnvelopeOnly()
+        {
+            return true;
         }
 
         private static void DisableCandidate(ModCandidate candidate, string reason)

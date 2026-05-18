@@ -1,0 +1,135 @@
+# SHINOBU_14 Rationale
+
+Agent: SHINOBU_14
+Domain: ECHELON 3 FLORA, FAUNA & BIOTA / Ecosystem Population Balancer
+
+## Decision 000 - Recover Active Agent Memory
+
+Problem: The active project did not contain `Docs/Tasks/Status_SHINOBU_14.md` or `Docs/AgentLogs/Rationale_SHINOBU_14.md`; prior chat/log memory is not authoritative under the anti-amnesia protocol.
+
+Solution: Recreate active status and rationale files before further code changes, using the extracted SHINOBU_14 prompt and active repository state as the only truth.
+
+Rejected Alternatives: Relying on archived combined logs or prior chat claims was rejected because those files are not the active contract for this workspace.
+
+Scalability potential: This decision does not alter runtime scalability; it prevents false completion reports and compile-wall drift.
+
+Hardware Impact: 0 microseconds runtime impact; avoids wasted developer iteration time caused by unverifiable reports.
+
+## Mandates Selected For This Pass
+
+- AI_Flocking_Boids_Swarm_SpatialHash_Logic
+- OPT_Zero_GC_Policy_AllocFree_Mandate
+- OPT_Native_Memory_Collections_JobSystem_Protocol
+- MATH_AUP_Determinism_Sync
+- ARCH_Global_Registry_ServiceLocator_DI_Init
+- ARCH_Signal_Lane_Segregation
+- OPT_Performance_Budgets_FrameTime_VRAM_Limits
+- DBG_Telemetry_Crash_Reporting_PostMortem
+
+## Decision 001 - Vault Spatial Hash Over Class-Owned NativeMultiHashMap
+
+Problem: The XML asked for `NativeMultiHashMap<int,int>`, but the H-Phi mandate forbids private persistent NativeCollections in the runtime owner. A class-owned hash map would satisfy the algorithm but violate DataVault sovereignty.
+
+Solution: Use vault-owned `ShinobuSpatialHashBucketHeads` and `ShinobuSpatialHashNext` integer buffers. `BuildVaultSpatialHashJob` rebuilds bucket heads every frame and `BurstBoidBehaviorSolverJob` queries 27 neighbor buckets from read-only snapshots.
+
+Rejected Alternatives: A private `NativeMultiHashMap` was rejected because it would create local data ownership. Full all-pairs checks were rejected because 5000 entities produce 25,000,000 distance checks per frame.
+
+Scalability potential: Minimal/Low use the same layout with stress-based boid skipping. Middle/High/Ultra can consume the saved CPU for denser visual fish render payloads through BRG/GraphicsBuffer without changing gameplay truth.
+
+Hardware Impact: Static estimate only. Bounded hash lookup replaces all-pairs work; worst bucket collision is now capped at 64 chain steps per bucket and overflows are visible in telemetry. No profiler microsecond claim is made.
+
+## Decision 002 - Chain Cap and Overflow Telemetry
+
+Problem: The original vault linked-list hash could still degrade if many boids collided into one bucket. The solver had a `guard < Count` condition, which was logically safe but not frame-budget safe under hostile clustering.
+
+Solution: Added `MaxSpatialHashChainSteps = 64`, rejected insertions beyond the chain cap, incremented `CounterSpatialHashOverflow`, and capped solver traversal with the same bound.
+
+Rejected Alternatives: Increasing bucket count alone was rejected because collisions still need a deterministic hard stop. Sorting every frame was rejected for this pass because it adds broader code and compile-wall risk.
+
+Scalability potential: Low tier keeps deterministic capping. Higher tiers can raise the cap or add a sorted-cell pass after profiler proof.
+
+Hardware Impact: Prevents pathological O(N^2) collision-chain behavior on mobile CPU. Exact microseconds require profiler/device evidence.
+
+## Decision 003 - Dear-Lie Flora Field Instead Of Hot-Path Trig
+
+Problem: `MockFloraSpawner.SampleFloraMass()` used `math.sin` from the boid solver hot path. That is unnecessary physical polish for a mock nutritional field.
+
+Solution: Replaced sine with a deterministic triangle-wave/fract field keyed by local position and species hash.
+
+Rejected Alternatives: Keeping sine was rejected because low-tier math LOD should use simple scalar fakes. A texture/LUT was rejected here because the code path already uses unmanaged math and has no texture dependency.
+
+Scalability potential: Low/Middle use the triangle fake. High/Ultra visual flora density can still be improved by renderer-side effects without changing biomass truth.
+
+Hardware Impact: Removes one trig evaluation per active boid feed sample. Exact microseconds are not claimed without Burst profiler data.
+
+## Decision 004 - Explicit Telemetry Tail Padding
+
+Problem: `ShinobuTelemetryEntry` declared `Size=64` but fields stopped at byte 59. The CLR would honor the size, but the forensic layout report needed an explicit visible tail field.
+
+Solution: Added `Pad0` at byte offset 60 to make the 64-byte cache-line payload explicit.
+
+Rejected Alternatives: Relying on implicit tail padding was rejected because the user explicitly requested byte-layout proof.
+
+Scalability potential: No gameplay scalability change; telemetry remains a fixed 300-entry ring.
+
+Hardware Impact: 0 runtime microseconds; improves layout auditability and ARM64 review quality.
+
+## Decision 005 - AUP Authority Comes From PlayerStateSignal
+
+Problem: The runtime was accepting `CameraPositionSignal.Position` as input for `_cameraAup` reconstruction. That signal is camera-local `float3`, not universe-authoritative state, and would reintroduce large-world float jitter.
+
+Solution: Read `PlayerStateSignal.PositionAup` first and only use `CameraPositionSignal` for local camera position/forward vectors. `IsFiniteAup()` rejects invalid AUP rows before they become the flocking center.
+
+Rejected Alternatives: `AbsoluteUniversePosition.FromRuntimePosition(signal.Position)` was rejected because it converts a local float into a fake absolute coordinate.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same authoritative double coordinate chain; visual tiers can vary render density without touching simulation truth.
+
+Hardware Impact: No claimed microseconds. This prevents precision drift and downstream NaN repair work in large 100km worlds.
+
+## Decision 006 - Macro Biomass Hash Index Instead Of N*S Scans
+
+Problem: The cold macro pass used linear sector lookup per entity and linear carnivore scans per starving sector. That produced `EntityCount * SectorCount` and `SectorCount * EntityCount` behavior in the exact system meant to save CPU.
+
+Solution: Reused vault-owned `ShinobuSpatialHashBucketHeads` and enlarged `ShinobuSpatialHashNext` to `entityCapacity + sectorCapacity`. During ColdTick, the buffers become a sector-hash index plus per-sector carnivore chains. Sector creation is monotonic and starvation tombstoning walks only carnivores already linked to that sector.
+
+Rejected Alternatives: Private dictionaries/NativeMultiHashMap were rejected by H-Phi data sovereignty. Sorting sector keys every ColdTick was rejected as wider compile-wall risk for this pass.
+
+Scalability potential: Low tiers keep the hard cap and deterministic chains. Higher tiers can increase sector capacity or feed richer visual biomass without changing the macro truth.
+
+Hardware Impact: Static estimate only. Eliminates two macro-path scan products; exact microseconds require profiler capture after the external `LocRegistry.cs` compile wall is cleared.
+
+## Decision 007 - Render Payload NaN Quarantine
+
+Problem: Invalid entity math could still reach the render matrices because `BuildShinobuRenderPayloadJob` only checked active/hydrated flags.
+
+Solution: Reject rows flagged `EntityFlagInvalidMath` and finite-check position, velocity, biomass, and the final TRS matrix before writing BRG payload data.
+
+Rejected Alternatives: Letting GPU consumers discover bad matrices was rejected because one NaN can poison culling/render paths.
+
+Scalability potential: Low tiers avoid expensive recovery from broken render payloads. Higher tiers keep the same gameplay truth while consuming safe matrices for denser visuals.
+
+Hardware Impact: Adds bounded scalar checks per render row; prevents catastrophic NaN propagation. No microsecond claim without profiler proof.
+
+## Decision 008 - Blackbox Dump Format v2
+
+Problem: The dump header declared a 64-byte telemetry entry, but the writer emitted only 60 bytes because `Pad0` was omitted. The telemetry cursor also normalized after index calculation.
+
+Solution: Dump version moved to 2, the header writes `UnsafeUtility.SizeOf<ShinobuTelemetryEntry>()`, `Pad0` is serialized, and cursor overflow is normalized before selecting the ring slot.
+
+Rejected Alternatives: Leaving implicit padding out of the file was rejected because post-mortem tooling would desynchronize entry boundaries.
+
+Scalability potential: No visual-tier impact; the blackbox remains a fixed 300-frame ring.
+
+Hardware Impact: Fault-path only. Main-frame cost is unchanged outside crash/overflow conditions.
+
+## Decision 009 - Compile Wall Is External To SHINOBU
+
+Problem: Current full project build fails in `Assets/_Project/Scripts/LocRegistry.cs` with missing Babel async helpers/flags and bad `AbortBabelDictionaryStage` calls. This file is outside SHINOBU_14 domain and already modified in the shared workspace.
+
+Solution: Do not edit localization code from the ecosystem task. Record the compile wall and keep SHINOBU validation to static scans plus compiler evidence that no SHINOBU errors were reported before the external failure.
+
+Rejected Alternatives: Fixing `LocRegistry.cs` here was rejected as cross-domain sabotage under the domain boundary rule.
+
+Scalability potential: None for runtime ecology; protects parallel-agent isolation.
+
+Hardware Impact: 0 runtime microseconds; prevents unrelated rebuild churn.

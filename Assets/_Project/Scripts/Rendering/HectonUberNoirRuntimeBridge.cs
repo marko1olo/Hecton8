@@ -23,7 +23,9 @@ namespace Hecton8.Core
         private const float StressRecoveryThreshold = 0.72f;
         private const uint DumpMagic = 0x55424E52u; // UBNR
         private const string IntegratorDumpFileName = "Dump_UBER_NOIR_INTEGRATOR.bin";
+        private const string IntegratorH8DumpFileName = "Dump_UBER_NOIR_INTEGRATOR.h8dump";
         private const string ExtinctionDumpFileName = "Dump_EXTINCTION_LUT_SAMPLER.bin";
+        private const string ExtinctionH8DumpFileName = "Dump_EXTINCTION_LUT_SAMPLER.h8dump";
 
         private const uint FeaturePom = 1u << 0;
         private const uint FeatureAnalyticalCaustics = 1u << 1;
@@ -53,11 +55,13 @@ namespace Hecton8.Core
         private bool _dumpedFault;
 
         /// <summary>
-        /// Fixed-size Pack=1 shader feature telemetry entry for ARM64/Quest-safe DataVault storage.
+        /// Fixed-size shader feature telemetry entry for ARM64/Quest-safe DataVault storage.
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = TelemetryEntrySizeBytes)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = TelemetryEntrySizeBytes)]
         public struct UberNoirShaderTelemetryEntry
         {
+            public const int SizeBytes = TelemetryEntrySizeBytes;
+
             public uint Frame;
             public uint FeatureMask;
             public float SystemStress01;
@@ -280,29 +284,47 @@ namespace Hecton8.Core
                 return;
             }
 
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
+            string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
+            Span<UberNoirShaderTelemetryEntry> snapshot = stackalloc UberNoirShaderTelemetryEntry[TelemetryCapacity];
+            int telemetryCursor = _telemetryCursor;
+            int entryCount = 0;
             try
             {
-                var ring = _telemetryHandle.Resolve(vault);
+                NativeArray<UberNoirShaderTelemetryEntry> ring = _telemetryHandle.Resolve(vault);
                 if (!ring.IsCreated || ring.Length < TelemetryCapacity)
                 {
                     WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
                     return;
                 }
 
-                _dumpedFault = true;
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(logDirectory);
-                WriteBlackBoxFile(Path.Combine(logDirectory, IntegratorDumpFileName), reasonFlags, _telemetryCursor, ring);
-                WriteBlackBoxFile(Path.Combine(logDirectory, ExtinctionDumpFileName), reasonFlags, _telemetryCursor, ring);
+                entryCount = math.min(TelemetryCapacity, ring.Length);
+                telemetryCursor = _telemetryCursor;
+                for (int i = 0; i < entryCount; i++)
+                    snapshot[i] = ring[i];
             }
             catch (Exception)
             {
                 _dumpedFault = false;
+                return;
             }
             finally
             {
                 vault.TryUnlockBuffer(BufferID.ShaderFeatureTelemetryRing, SystemID.GraphicsScalability);
+            }
+
+            try
+            {
+                _dumpedFault = true;
+                Directory.CreateDirectory(logDirectory);
+                WriteBlackBoxFile(Path.Combine(logDirectory, IntegratorDumpFileName), reasonFlags, telemetryCursor, snapshot, entryCount);
+                WriteBlackBoxFile(Path.Combine(logDirectory, IntegratorH8DumpFileName), reasonFlags, telemetryCursor, snapshot, entryCount);
+                WriteBlackBoxFile(Path.Combine(logDirectory, ExtinctionDumpFileName), reasonFlags, telemetryCursor, snapshot, entryCount);
+                WriteBlackBoxFile(Path.Combine(logDirectory, ExtinctionH8DumpFileName), reasonFlags, telemetryCursor, snapshot, entryCount);
+            }
+            catch (Exception)
+            {
+                _dumpedFault = false;
             }
         }
 
@@ -318,7 +340,9 @@ namespace Hecton8.Core
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
                 WriteEmptyBlackBoxFile(Path.Combine(logDirectory, IntegratorDumpFileName), reasonFlags, _telemetryCursor);
+                WriteEmptyBlackBoxFile(Path.Combine(logDirectory, IntegratorH8DumpFileName), reasonFlags, _telemetryCursor);
                 WriteEmptyBlackBoxFile(Path.Combine(logDirectory, ExtinctionDumpFileName), reasonFlags, _telemetryCursor);
+                WriteEmptyBlackBoxFile(Path.Combine(logDirectory, ExtinctionH8DumpFileName), reasonFlags, _telemetryCursor);
             }
             catch (Exception)
             {
@@ -330,11 +354,11 @@ namespace Hecton8.Core
             string dumpPath,
             uint reasonFlags,
             int telemetryCursor,
-            NativeArray<UberNoirShaderTelemetryEntry> ring)
+            ReadOnlySpan<UberNoirShaderTelemetryEntry> ring,
+            int entryCount)
         {
             using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
             using BinaryWriter writer = new BinaryWriter(stream);
-            int entryCount = math.min(TelemetryCapacity, ring.Length);
             int wrappedCursor = telemetryCursor % math.max(entryCount, 1);
             writer.Write(DumpMagic);
             writer.Write(reasonFlags);

@@ -1,7 +1,15 @@
-﻿# Owner Deep Dive â€” World, Gameplay, UI
+# Owner Deep Dive â€” World, Gameplay, UI
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 Purpose:
 - identify the runtime owners that actually define HECTON-8
@@ -12,7 +20,7 @@ Purpose:
 ### `HectonMapMagicVegetationBridge`
 
 Static shape:
-- file length: ~15,739 lines
+- file length: historical `~15,739`; R18 static line count `6,270`
 - interfaces: `ITickable`, `ISlowTickable`, `IOriginShiftListener`
 - native references: `442`
 - job barrier calls: `12`
@@ -39,7 +47,7 @@ Read:
 ### `WorldProceduralScatterDirector`
 
 Static shape:
-- file length: ~11,673 lines
+- file length: historical `~11,673`; R18 static line count `10,620`
 - interfaces: `ITickable`, `ISlowTickable`, `IUpdatable`, `ISceneBootstrapEventListener`, `IWorldGenService`
 - registry references: `11`
 - partial class split across many files
@@ -66,7 +74,7 @@ Read:
 ### `HectonPlayerMovement`
 
 Static shape:
-- file length: ~9,099 lines
+- file length: historical `~9,099`; R18 static line count `11,818`
 - interfaces: `IUpdatable`, `IFixedTickable`, `IOriginShiftListener`
 - registry references: `15`
 - no coroutine residue in the file
@@ -92,7 +100,7 @@ Read:
 ### `PlayerInventory`
 
 Static shape:
-- file length: ~1,925 lines
+- file length: historical `~1,925`; R18 static line count `4,949`
 - interfaces: `ISaveable`, `ISlowTickable`
 - native references: `52`
 - save integration via `GlobalRegistry.Save`
@@ -118,7 +126,7 @@ Read:
 ### `SuitHUDV4CanvasOverlay`
 
 Static shape:
-- file length: ~5,401 lines
+- file length: historical `~5,401`; R18 static line count `6,394`
 - interfaces: `ITickable`, `IUpdatable`, `ISlowTickable`, `IOriginShiftListener`, `IUIService`, `ISceneBootstrapEventListener`
 - registry references: `18`
 - contains native `LateUpdate` usage in file

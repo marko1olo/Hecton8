@@ -1,7 +1,21 @@
-﻿# Dispatch Pipeline
+# Dispatch Pipeline
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Scope
 This document is the authoritative handoff for future agents touching `SystemDispatcher`, `PhysicsApplySystem`, late-frame job ownership recovery, and structural command draining.
@@ -12,6 +26,23 @@ Current-state boundary:
 - It is not proof that all current sources comply.
 - `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` supersedes the older literal `.Complete()` call-site list. Current strict grep finds dispatcher request completion callbacks in `ItemCatalog.cs` / `AssetLifecycleGovernor.cs` and one explicit `JobHandle.Complete()` in `World/DispatcherJobSwap.cs`.
 - Any future edit must keep job barriers inside explicit dispatcher-owned swap windows or document why the owner is a permitted end-window.
+
+## 2026-05-18 SHINOBU_40 Master Dispatcher Addendum
+
+Evidence class: STATIC_SOURCE / CLI_COMPILE_BLOCKED_BY_EXTERNAL_DEPENDENCY.
+
+`SystemDispatcher` now exposes a master-dispatcher contract for cross-domain integration without direct domain references:
+
+- `IDispatcherSystem` registers through `GlobalRegistry.TryRegisterDispatcherSystem`.
+- `IDispatcherFixedSystem` registers through `GlobalRegistry.TryRegisterDispatcherFixedSystem`.
+- Boot topology uses Kahn sorting over stable system hashes and fails fast with `FatalArchitectureException` on cycles.
+- Dispatcher timing is the 16-byte `DispatcherTimingDTO`: `FrameDelta`, `FixedDelta`, `TimeScale`, `ActiveBucketMask`.
+- SIMULATION job handles are stored in DataVault-backed dispatcher buffers, combined once, and completed once at POST_SIMULATION start.
+- 64-bucket time slicing uses `Time.frameCount & 63`; `byte.MaxValue` means always active.
+- A 300-frame dispatcher pipeline ring records PreSim, SimWait, PostSim, and VisualSync timings and dumps `Docs/AgentLogs/Dump_SYSTEM_DISPATCHER.bin` when SimWait exceeds 8 ms.
+- `Execution Pipeline X-Ray` is an Editor-only facade for phase bars and the 64-cell bucket grid.
+
+Current verification boundary: focused `Hecton8.Core.csproj` compile is blocked by external `GlobalPhysicsStateManager.cs` missing `WakeRequestSignal`; no SHINOBU_40 file appeared in the compiler errors. This is not Play Mode, profiler, GC, or runtime proof.
 
 ## Core Rule
 `Tick()` and `FixedTick()` may schedule jobs and read already-published front buffers.

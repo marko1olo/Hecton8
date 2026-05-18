@@ -6,7 +6,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Absolute macro-ecology swarm DTO. Coordinates are 50 m biomass macro-cells, not shifted runtime transforms.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct MacroSwarm
     {
         [FieldOffset(0)] public uint HashId;
@@ -23,7 +23,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Arrival packet emitted by the Burst travel pass and consumed by the ecology owner in the late-frame swap window.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct MacroSwarmArrival
     {
         [FieldOffset(0)] public int2 TargetSectorAup;

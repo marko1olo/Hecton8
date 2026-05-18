@@ -1,0 +1,144 @@
+# LOG_SHINOBU_37
+
+## 2026-05-18 - Physics Culling And LOD Overseer
+
+Status: PENDING UNITY RUNTIME VERIFICATION
+
+What was wrong:
+- Existing global physics culling did not have the mandated 40-byte DTO lane, spatial hash candidate window, changed-index queue, frozen velocity preservation, frustum rejection, editor tuner, CSV override, or task-specific blackbox dump.
+- Far-body sleep used velocity dampening instead of the requested Dear Lie freeze/restore.
+- Main-thread result handling still had broad scan behavior and old dump naming.
+
+What was done:
+- Added `PhysicsCullingDTO` explicit 40-byte layout and vault lanes for DTOs, frozen velocities, state ages, candidate indices, candidate masks, telemetry, tuning, mock seismic signals, and wake mirrors.
+- Added `NativeParallelMultiHashMap<int,int>` 50m spatial hash and 9-cell camera candidate window.
+- Added `PhysicsDistanceCullingJobShinobu37` Burst kernel: AUP-relative distance, frustum planes, hardware radius sq scale, hysteresis, exemption bit, kinematic/mesh commands, and changed-index queue.
+- Added collider disable/restore for distance sleep and removed obsolete velocity dampening.
+- Added targeted 16-byte wake payload, existing global wake signal routing, and mock seismic shockwave wake job.
+- Added 300-frame `PhysicsCullingFrameTelemetry` and `Docs/AgentLogs/Dump_PHYSICS_CULLING.bin` dump on state-sync >1ms.
+- Added `Physics Culling Tuner` EditorWindow, vault sliders, CSV byte-span parser, and SceneView gizmo X-Ray.
+
+Cinematic cheats used:
+- Offscreen falling bodies are frozen, colliders disabled, and solver work removed. On wake, stored velocity is restored.
+- Low/MX350 radius sq scale is 0.25. It trades far-body physics truth for frame budget.
+- Frustum culling uses dot-plane rejection and a 20m+ inner sphere instead of raycasts.
+
+Struct layout:
+- `PhysicsCullingDTO` total 40 bytes: 0 `double3 AUP`, 24 `int InstanceId`, 28 `float ActivationRadiusSq`, 32 `byte IsAsleep`, 33-35 padding, 36 `uint _pad3/CullingFlags`.
+- `FrozenVelocityDTO` total 32 bytes: 0 `float3 LinearVelocity`, 12 `float3 AngularVelocity`, 24 `byte HasVelocity`, 25-27 padding, 28 `uint`.
+- `PhysicsCullingTargetWakeRequestSignal` total 16 bytes: 0 `uint TargetInstanceId`, 4 `float3 ImpulseVector`.
+
+Exact microseconds saved:
+- Runtime profiler was not run; exact savings are not claimed.
+- Expected hot-path savings are proportional to culled solver/broadphase bodies: 100-500 us/frame in dense debris from removing prefab/per-object distance sleep, 50-1000 us/frame during stable culling from changed-index sync instead of broad Unity API mutation, and 10-200 us/event from targeted wake instead of radius wake-all.
+
+Verification:
+- Full root build is externally blocked by missing RealtimeCSG source files/package Temp artifacts.
+- Isolated `Assembly-CSharp.csproj` compile with staged `Library/ScriptAssemblies` metadata passed: 0 warnings, 0 errors.
+- Isolated `Assembly-CSharp-Editor.csproj` compile passed: 0 warnings, 0 errors.
+- `git diff --check` passed with line-ending warnings only.
+- Static anti-bloat scan of touched files found no `FindObject*`, `Vector3.Distance`, `foreach`, `.ToString()`, `Pack=1`, private `NativeArray`, 1024 compute thread markers, or `Material.SetFloat`.
+
+<SELF_AUDIT>
+  <TASK_CHECK>01 PASS, 02 PASS, 03 PASS, 04 PASS with existing-signal compatibility note, 05 PASS, 06 PASS, 07 PASS, 08 PASS, 09 PASS, 10 PASS, 11 PASS, 12 PASS, 13 PASS, 14 PASS via SoA hysteresis to preserve DTO stride, 15 PASS, 16 PASS, 17 PASS, 18 PASS, 19 PASS, 20 PASS.</TASK_CHECK>
+  <ARM64_CHECK>Primary DTO is explicit 40 bytes and has no Pack=1. Runtime culling structs touched in `GlobalPhysicsStateManager` no longer use Pack=1.</ARM64_CHECK>
+  <ZERO_GC_CHECK>Tick hot paths use indexed loops, vault arrays, native queues/hash maps, and byte-span parser. No hidden closures/LINQ/string split in culling tick path.</ZERO_GC_CHECK>
+  <AUP_CHECK>Distance/frustum math subtracts camera double3 AUP before float3 conversion.</AUP_CHECK>
+  <DEAR_LIE_CHECK>Falling rocks are suspended offscreen by freezing velocity, disabling colliders, and sleeping the Rigidbody.</DEAR_LIE_CHECK>
+  <DEPENDENCY_CHECK>GlobalRegistry interface and SignalBus are used; no direct seismic/torpedo/submarine dependency added.</DEPENDENCY_CHECK>
+</SELF_AUDIT>
+
+## 2026-05-18 - Ultra Polish R3 / Task 01 And Blackbox Correction
+
+Status: PENDING UNITY RUNTIME VERIFICATION
+
+What was wrong:
+- Task 01 was still paper-thin: source initialized emergency radii but did not actually scan `Docs/Archive` / `StreamingAssets` for `physics_culling_radii.h8bin`.
+- Blackbox dump path covered the XML-required `.bin`, but fatal/NaN states did not emit the `.h8dump` mirror required by the broader Blackbox mandate.
+- A transient Core compile probe surfaced external `VRSomaticProvider`/duplicate contract churn before stabilizing; this had to be rechecked instead of reported from stale evidence.
+
+What was done:
+- Added cold legacy radii scan for `physics_culling_radii.h8bin` under `Docs/Archive` and `StreamingAssets`.
+- Added 64-byte raw header parsing. Primary offsets: debris 8, vehicle 12, frustum 16, hysteresis 20, mock shockwave 24. Fallback old constant offsets: debris 0, vehicle 4, frustum 8, hysteresis 12.
+- Added finite/range validation and clamps before writing the `PhysicsCullingTuningDTO` vault lane. Missing/corrupt files route to `GenerateEmergencyMockRadii()`.
+- Kept `Dump_PHYSICS_CULLING.bin` for Task 17 sync-spike dumps and added `Dump_PHYSICS_CULLING.h8dump` mirror only for fatal/NaN reasons.
+- Ran Core graph H-Phi audit and compile gates again.
+
+Cinematic cheats used:
+- Same offscreen physics lie: frozen velocity + disabled colliders + `Rigidbody.Sleep`.
+- Legacy radii only tune the lie; they do not add simulation truth.
+
+Exact microseconds saved:
+- No Unity profiler run. No exact runtime claim.
+- Loader is cold path only, expected 0 us player hot-path cost.
+- `.h8dump` mirror adds I/O only on fatal/NaN reasons, not every sync-spike dump.
+
+Struct layout:
+- `PhysicsCullingDTO`: 40 bytes, offsets unchanged.
+- `FrozenVelocityDTO`: 32 bytes, offsets unchanged.
+- `PhysicsCullingDebugBody`: 40 bytes, offsets unchanged.
+
+Verification:
+- `dotnet build Assembly-CSharp.csproj -m:1 /nr:false /p:UseSharedCompilation=false /p:BuildProjectReferences=false /clp:ErrorsOnly`: 0 warnings, 0 errors.
+- `dotnet build Assembly-CSharp-Editor.csproj -m:1 /nr:false /p:UseSharedCompilation=false /p:BuildProjectReferences=false /clp:ErrorsOnly`: 0 warnings, 0 errors.
+- `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal /clp:Summary`: 0 warnings, 0 errors.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: passed static graph audit; Core asmdef debt remains 25, generated project debt 10, source bridge debt 15, compile bridge debt 9, replacement debt 6.
+- Touched-file forbidden scan remained empty for `FindObject*`, `GameObject.Find`, `Vector3.Distance`, `foreach`, `.ToString()`, `Pack=1`, local `NativeArray`, `Material.SetFloat`, `renderer.material`, and 1024-thread compute markers.
+
+<SELF_AUDIT>
+  <TASK_CHECK>01 PASS with actual h8bin scanner/parser, 02 PASS, 03 PASS, 04 PASS, 05 PASS, 06 PASS, 07 PASS, 08 PASS, 09 PASS, 10 PASS, 11 PASS, 12 PASS, 13 PASS, 14 PASS, 15 PASS, 16 PASS, 17 PASS with `.bin` plus fatal `.h8dump`, 18 PASS, 19 PASS, 20 PASS.</TASK_CHECK>
+  <ARM64_CHECK>Primary DTO remains explicit 40 bytes: 0 double3, 24 int, 28 float, 32 byte, 33-35 pads, 36 uint flags/pad.</ARM64_CHECK>
+  <ZERO_GC_CHECK>No hot-path scene search/LINQ/string formatting in touched culling code. Legacy h8bin and CSV reads are cold/editor-dev paths.</ZERO_GC_CHECK>
+  <AUP_CHECK>Distance/frustum math remains camera-relative before float cast.</AUP_CHECK>
+  <DEAR_LIE_CHECK>Low tier fakes offscreen gravity by freezing velocity and disabling colliders before sleeping rigidbodies.</DEAR_LIE_CHECK>
+  <DEPENDENCY_CHECK>No direct sibling-domain coupling added; existing GlobalRegistry and signal routes are preserved.</DEPENDENCY_CHECK>
+  <BLACKBOX_CHECK>300-frame ring active; sync spikes dump `.bin`, fatal/NaN culling states also dump `.h8dump`.</BLACKBOX_CHECK>
+</SELF_AUDIT>
+
+## 2026-05-18 - Ultra Polish R2 / Spatial Hash And Dear Lie Audit
+
+Status: PENDING UNITY RUNTIME VERIFICATION
+
+What was wrong:
+- Active Batch008 task/log files had been archived out of `Docs/Tasks` and `Docs/AgentLogs`; working evidence had to be restored before continuing.
+- The `SHINOBU_37` XML tag is line-wrapped after `role`, so narrow `<AGENT_PROMPT id="SHINOBU_37">` regex extraction fails. Relaxed CLI extraction confirms the 20-task prompt.
+- The spatial hash candidate path existed but rebuilt every 0.1s culling pass, not the mandated 1Hz cadence.
+- Frozen velocity could remain unapplied if sleep restored while the body was still kinematic and the kinematic cull restored later.
+- CSV override polling was editor/development-only but still checked the filesystem every 0.1s.
+
+What was done:
+- Restored active `CURRENT_BATCH.md`, `POLISH.txt`, `Status_SHINOBU_37.md`, `Rationale_SHINOBU_37.md`, and `LOG_SHINOBU_37.md` from `Docs/Archive/Batch008`.
+- Added dirty/count invalidation plus `PhysicsCullingSpatialHashRebuildIntervalSeconds = 1f`; per-pass work now clears only candidate masks and consumes the 9-cell hash window.
+- Converted `RestoreDistanceKinematicCull` into an instance helper with `bodyIndex`; after original dynamic mode is restored, it applies any stranded `FrozenVelocityDTO`.
+- Throttled CSV override timestamp checks to `PhysicsCullingCsvPollIntervalSeconds = 1f` under `UNITY_EDITOR || DEVELOPMENT_BUILD`.
+- Converted `PhysicsCullingDebugBody` to explicit 40-byte layout for the editor X-Ray bridge.
+
+Cinematic cheats used:
+- Same Dear Lie remains: offscreen bodies freeze velocity, disable colliders, sleep, and later restore velocity. The polish prevents nested kinematic culling from breaking that illusion.
+- Spatial hash maintenance is a cold 1Hz approximation; exact cell membership between rebuilds is intentionally not simulated every culling pass.
+
+Exact microseconds saved:
+- Not measured in Unity Profiler. No exact runtime claim.
+- Expected saving: removes nine of ten spatial-hash rebuild loops and nine of ten dev CSV timestamp checks relative to the 0.1s culling cadence. Solver/broadphase savings remain dependent on actual culled Rigidbody counts.
+
+Struct layout:
+- `PhysicsCullingDTO`: 40 bytes, offsets unchanged.
+- `PhysicsCullingDebugBody`: 40 bytes: 0 `double3 Aup`, 24 `float AgeSeconds`, 28 `int InstanceId`, 32 `byte IsAsleep`, 33 `byte IsHysteresisLocked`, 34-35 padding, 36 `uint`.
+
+Verification:
+- First no-deps runtime build exposed only missing staged metadata DLLs in `Temp/bin/Debug`.
+- After copying current `Library/ScriptAssemblies/*.dll`, `dotnet build Assembly-CSharp.csproj -m:1 /nr:false /p:UseSharedCompilation=false /p:BuildProjectReferences=false /clp:ErrorsOnly` passed: 0 warnings, 0 errors.
+- `dotnet build Assembly-CSharp-Editor.csproj -m:1 /nr:false /p:UseSharedCompilation=false /p:BuildProjectReferences=false /clp:ErrorsOnly` passed: 0 warnings, 0 errors.
+- `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` passed: 0 warnings, 0 errors.
+- Static touched-file scan found no `FindObject*`, `GameObject.Find`, `Vector3.Distance`, `foreach`, `.ToString()`, `Pack=1`, local `NativeArray`, `Material.SetFloat`, `renderer.material`, or 1024-thread compute markers.
+- `git diff --check` reported only LF->CRLF warnings.
+
+<SELF_AUDIT>
+  <TASK_CHECK>01 PASS, 02 PASS, 03 PASS, 04 PASS with compatible 16-byte targeted wake payload, 05 PASS, 06 PASS, 07 PASS after 1Hz dirty-gated spatial hash correction, 08 PASS, 09 PASS after kinematic restore correction, 10 PASS, 11 PASS, 12 PASS, 13 PASS, 14 PASS via SoA hysteresis, 15 PASS, 16 PASS, 17 PASS, 18 PASS, 19 PASS with 1Hz dev polling, 20 PASS.</TASK_CHECK>
+  <ARM64_CHECK>Primary and debug DTOs are explicit 40-byte layouts; no `Pack=1` remains in touched files.</ARM64_CHECK>
+  <ZERO_GC_CHECK>Runtime culling tick uses indexed loops, vault arrays, NativeQueue, NativeParallelMultiHashMap, and no scene search. CSV bridge is editor/development-only and byte-span parsed.</ZERO_GC_CHECK>
+  <AUP_CHECK>Spatial hash and frustum/distance checks subtract camera AUP before float math.</AUP_CHECK>
+  <DEAR_LIE_CHECK>Physical fall is faked by freeze/sleep/collider-disable; nested kinematic restoration now preserves the frozen velocity handoff.</DEAR_LIE_CHECK>
+  <DEPENDENCY_CHECK>GlobalRegistry and typed signals/routes are preserved; no direct seismic/torpedo/submarine dependency added.</DEPENDENCY_CHECK>
+  <BLACKBOX_CHECK>300-frame telemetry ring remains active and dumps `Docs/AgentLogs/Dump_PHYSICS_CULLING.bin` on state-sync >1ms.</BLACKBOX_CHECK>
+</SELF_AUDIT>

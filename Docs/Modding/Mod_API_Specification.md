@@ -1,7 +1,22 @@
 # HECTON-8 Mod API Specification
 
 Date: 2026-05-17
-Status: MOD API DEFINED / PENDING RUNTIME VERIFICATION  
+Status: MOD API DEFINED / STATIC VALIDATOR PASSING / PENDING RUNTIME VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Evidence class: STATIC_SOURCE / STATIC_DOC  
 Owner prompt: MODDING_API_SCHEMA_BUILDER  
 Companion schema: `Docs/Modding/Signal_Schema.json`
@@ -15,7 +30,7 @@ Source-backed mod surfaces:
 - `HectonAPI.Events.SubscribeProjected(Action<ModEventDto>)` for selected `SignalBus<T>` projections.
 - `HectonAPI.Events.SubscribeNative(HectonNativeEventHandler)` for immutable byte copies from approved NativeQueue event lanes.
 - `HectonAPI.Events.Subscribe<TPayload>(HectonUnmanagedEventHandler<TPayload>)` for unmanaged mod-facing payloads.
-- `HectonAPI.Commands.Request`, `RequestAup`, and `RequestRenderInstance` for engine-validated writes.
+- `HectonAPI.Commands.RequestFuture`, `Request`, `RequestAup`, and `RequestRenderInstance` for engine-validated writes.
 - `HectonAPI.SaveState` for mod-owned save payloads.
 
 Forbidden for mods:
@@ -36,7 +51,9 @@ Every currently mod-exposed `SignalBus<T>` lane is listed below. No other first-
 
 `InteractionEvents` and `CraftingEvents` are also exposed, but they are not `SignalBus<T>` projections. They are copied into `SubscribeNative` as immutable bytes for the callback duration.
 
-Full source audit: [Signal_Audit_Matrix.md](Signal_Audit_Matrix.md) records 134 current `ISignal` structs in `GlobalSignals.cs`. Only 2 are projected for mods. The remaining 132 are denied by default.
+Full source audit: [Signal_Audit_Matrix.md](Signal_Audit_Matrix.md) records 160 current `ISignal` structs in `GlobalSignals.cs`. Only 2 are projected for mods. The remaining 158 are denied by default.
+
+R21 static closure: `Signal_Schema.json` schema revision `14` records the `160 / 2 / 158` signal split in both the source inventory and `staticValidation.lastStaticValidationSnapshot`, with `runtimeProof` set to `PENDING_VERIFICATION`. `Validate_Mod_API_Static.ps1` fails if that static snapshot block drifts behind the source inventory again. This is still static source/doc evidence only, not Unity runtime verification.
 
 ## ModEventDto Contract
 
@@ -86,6 +103,7 @@ Mods request writes. They do not mutate simulation truth.
 
 Allowed command APIs:
 
+- `RequestFuture(in FutureCommandEnvelope envelope)`
 - `Request(in ModCommand command)`
 - `RequestAup(in ModAupCommand command)`
 - `RequestRenderInstance(in ModRenderInstanceCommand command)`
@@ -203,6 +221,11 @@ Required future kernel before this cheat can affect gameplay:
 - telemetry on every accepted/rejected request
 - revocation on mod unload or quarantine
 
+Reservation status: this is not a public opcode. The reservation and payload boundary are tracked in
+[Future_Command_Kernel_Reservations.md](Future_Command_Kernel_Reservations.md). Do not add this enum
+or target without the PlayerSurvival owner, rejection telemetry, save-exclusion proof, and the full
+mod static/runtime verification chain.
+
 ## Why Unmanaged Structs, Not JSON
 
 Unmanaged structs are mandatory because the mod bridge crosses native queues, Burst-facing projections, and save-adjacent command results. Fixed payloads provide:
@@ -228,7 +251,7 @@ Resource/content audit: [Resource_Content_Audit_Matrix.md](Resource_Content_Audi
 |---|---|---|---|
 | `HectonAPI.Events` | `Subscribe<TPayload>`, `SubscribeNative`, `SubscribeProjected`, `OnPlayerSpawned`, `OnBiomeChanged`, `Unsubscribe`, `Publish<TPayload>` | unmanaged event/read-only projection/mod-owned payload | No direct first-party `SignalBus<T>` or managed `HectonEvent` subscription for mods. |
 | `HectonAPI.Input` | `GetButtonMask`, `HasButtonMask` | read-only frame mask | No Input System objects or action references. |
-| `HectonAPI.Commands` | `Request`, `RequestAup`, `RequestRenderInstance` | engine-validated write request | Mods request; first-party kernels execute or reject. |
+| `HectonAPI.Commands` | `RequestFuture`, `Request`, `RequestAup`, `RequestRenderInstance` | engine-validated write request | Mods request; first-party kernels execute or reject. |
 | `HectonAPI.Resources` | `Proxy`, `TryResolvePrefab`, `TryResolveAudioClip`, `TryResolveTexture` | hash-only resource resolution | No Unity asset reference leaves the engine. |
 | `HectonAPI.Telemetry` | `Publish` | mod marker write | Active mod execution scope required; hash plus scalar only. |
 | `HectonAPI.Items` | `RegisterCustomItem`, `TryFindItem` | cold catalog overlay | Runtime overlay only; no authored asset mutation. |
@@ -278,6 +301,8 @@ Full loader/save audit: [Loader_Save_Audit_Matrix.md](Loader_Save_Audit_Matrix.m
 | Max MMF mod payload | `16352` bytes | Protected block `16384` minus `32` byte mod payload header. |
 
 `HectonAPI.SaveState` is not a general persistence escape hatch. Mods may store their own text payloads; they may not write first-party save owners, inventory truth, player physiology, world sectors, or DataVault-backed state.
+
+SDK builder drift: `Assets/_Project/Scripts/Editor/ModdingSDK/ModBuilderWindow.cs` currently serializes only `Id`, `Name`, `Version`, `Author`, `Dependencies`, `EntryAssembly`, and `EntryType` into `mod.json`. Runtime loader source requires positive `RequiredAPIVersion` and consumes `ModPriority`; therefore a builder-created mod package is not proven loadable without manual manifest repair until the builder emits the full manifest or a Unity runtime smoke fixture proves a compatible fallback.
 
 ## Payload Layouts
 

@@ -24,7 +24,7 @@ Shader "Hidden/Hecton8/AtmosphereSootOverlay"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            CBUFFER_START(UnityPerMaterial)
+            CBUFFER_START(HectonAtmosphereSootGlobals)
                 float4 _HectonAtmosphereSootParams;
                 float4 _HectonAtmosphereSootCenter;
             CBUFFER_END

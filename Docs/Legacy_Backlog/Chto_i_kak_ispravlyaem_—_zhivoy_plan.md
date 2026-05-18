@@ -1,7 +1,26 @@
-﻿# Ð§Ñ‚Ð¾ Ð¸ ÐºÐ°Ðº Ð¸ÑÐ¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼ â€” Ð¶Ð¸Ð²Ð¾Ð¹ Ð¿Ð»Ð°Ð½
+# Ð§Ñ‚Ð¾ Ð¸ ÐºÐ°Ðº Ð¸ÑÐ¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼ â€” Ð¶Ð¸Ð²Ð¾Ð¹ Ð¿Ð»Ð°Ð½
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+## 2026-05-18 R11 Legacy Evidence Boundary
+
+Every `Verified in Unity`, `passed`, `PASS`, console-count, scene-count, or tool-result statement below is historical backlog prose unless it names a current artifact path, timestamp, Unity Console or Play Mode proof, current source/scene boundary, and unresolved-error list. Treat those blocks as context only; current runtime, profiler, GCMonitor, player-build, save/load, and visual proof remain `PENDING VERIFICATION`.
+
 Verification: PENDING VERIFICATION
 
 Ð¡Ð²ÑÐ·Ð°Ð½Ð½Ñ‹Ð¹ Ð¸ÑÑ…Ð¾Ð´Ð½Ñ‹Ð¹ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚:
@@ -2040,10 +2059,10 @@ Verification: PENDING VERIFICATION
 This file is a long-lived working plan with historical dated sections.
 It is not the current source-of-truth status page for compile health, service ownership, or first-party codebase inventory.
 
-Current same-day recheck supersedes older state claims inside this file:
+Historical same-day recheck below is superseded by DOC_GLOBAL R19 and must not be used as current inventory or Unity evidence:
 
 - current reachable Unity console readback is `0` entries
-- current first-party inventory is `1010` `.cs` under `Assets/_Project` and `970` under `Assets/_Project/Scripts`
+- superseded R21 orientation is `1798` project C# files, `1742` script C# files, and `1779` non-test C# files; rerun before using exact counts
 - `SpatialAudioManager` is the direct current `IAudioService` owner confirmed by source scan
 - `SuitHUDV4CanvasOverlay` is the direct current `IUIService` owner confirmed by source scan
 - current queue-backed event buses include `SaveEvents`, `QuestEvents`, `ScanEvents`, `NarrativeEvents`, and `AudioLogEvents`

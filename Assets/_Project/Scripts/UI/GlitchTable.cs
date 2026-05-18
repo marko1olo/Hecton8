@@ -6,6 +6,9 @@ namespace Hecton8.UI
     /// </summary>
     internal static class GlitchTable
     {
+        public const int ByteLength = 64;
+        public const int EmergencyMockLength = 16;
+
         private static readonly byte[] s_glyphBytes =
         {
             (byte)'#', (byte)'%', (byte)'&', (byte)'/', (byte)'?', (byte)'+', (byte)'=', (byte)'*',
@@ -35,6 +38,76 @@ namespace Hecton8.UI
                 return (char)s_digitBytes[(state + source) & DigitMask];
 
             return (char)s_glyphBytes[(state + source) & GlyphMask];
+        }
+
+        public static unsafe char ResolveGlyph(char source, uint state, byte* bytes, int length)
+        {
+            if (bytes == null || length <= 0)
+                return ResolveGlyph(source, state);
+
+            int index = (int)((state + source) & 0x7FFFFFFFu);
+            if ((length & (length - 1)) == 0)
+                index &= length - 1;
+            else
+                index %= length;
+
+            byte value = bytes[index];
+            return value >= 32 && value <= 126 ? (char)value : ResolveGlyph(source, state);
+        }
+
+        public static unsafe void CopyEmbeddedGlyphsTo(byte* destination, int length)
+        {
+            if (destination == null || length <= 0)
+                return;
+
+            int count = length < ByteLength ? length : ByteLength;
+            for (int i = 0; i < count; i++)
+                destination[i] = s_glyphBytes[i & GlyphMask];
+        }
+
+        public static unsafe bool IsValidGlyphTable(byte* bytes, int length)
+        {
+            if (bytes == null || length <= 0)
+                return false;
+
+            int count = length < ByteLength ? length : ByteLength;
+            for (int i = 0; i < count; i++)
+            {
+                byte value = bytes[i];
+                if (value < 33 || value > 126 || value == (byte)'"')
+                    return false;
+            }
+
+            return true;
+        }
+
+        public static unsafe void GenerateEmergencyMockGlitchTable(byte* destination, int length)
+        {
+            if (destination == null || length <= 0)
+                return;
+
+            for (int i = 0; i < length; i++)
+            {
+                switch (i & 15)
+                {
+                    case 0: destination[i] = (byte)'@'; break;
+                    case 1: destination[i] = (byte)'#'; break;
+                    case 2: destination[i] = (byte)'$'; break;
+                    case 3: destination[i] = (byte)'%'; break;
+                    case 4: destination[i] = (byte)'&'; break;
+                    case 5: destination[i] = (byte)'?'; break;
+                    case 6: destination[i] = (byte)'!'; break;
+                    case 7: destination[i] = (byte)'*'; break;
+                    case 8: destination[i] = (byte)'X'; break;
+                    case 9: destination[i] = (byte)'0'; break;
+                    case 10: destination[i] = (byte)'1'; break;
+                    case 11: destination[i] = (byte)'/'; break;
+                    case 12: destination[i] = (byte)'+'; break;
+                    case 13: destination[i] = (byte)'='; break;
+                    case 14: destination[i] = (byte)'|'; break;
+                    default: destination[i] = (byte)';'; break;
+                }
+            }
         }
     }
 }

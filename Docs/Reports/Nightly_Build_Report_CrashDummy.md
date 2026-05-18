@@ -1,5 +1,20 @@
 # HECTON-8 Nightly Headless Build Report
 
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-18 R13 Report Snapshot Boundary
+
+This report file is a snapshot/provenance document. It is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/Reports/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+Historical `PASS`, `VERIFIED`, `current`, `latest`, counter, compile, runtime, 0-GC, frame-time, cost, and performance statements inside this report are not current proof unless the exact claim links a fresh artifact path, command/tool, timestamp, evidence class, and unresolved-error list. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied by this file alone.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 - Generated UTC: `2026-05-16T01:47:58Z`
 - Scenario JSON: `Tools/HeadlessScenarios.json`
 - Evidence class: `DUMMY_PROCESS/FILESYSTEM`
@@ -59,7 +74,7 @@ SVG artifact: `Docs/Reports/Nightly_Build_Report_CrashDummy_FrameTime.svg`
 
 ## Crash Dumps
 
-- `Docs/AgentLogs/Dump_HEADLESS_SCENARIO_RUNNER.bin`: bytes `16`, sha256 `18a14d05b4b7109ce6158b19de1f65b881575e11385852c30f5aad041ab8a91f`, aligned16 `True`, valid_header `True`, entries `0`, struct `64`, error `none`
+- `Docs/AgentLogs/Dump_HEADLESS_SCENARIO_RUNNER.bin`: historical snapshot metadata recorded bytes `16`, sha256 `18a14d05b4b7109ce6158b19de1f65b881575e11385852c30f5aad041ab8a91f`, aligned16 `True`, valid_header `True`, entries `0`, struct `64`, error `none`; R13 filesystem check did not find the binary dump artifact, so this is not current dump proof.
 
 ## Regression Model
 

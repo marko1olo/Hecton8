@@ -1,8 +1,23 @@
 # HECTON-8 Project State Static X-Ray
 
-Date: 2026-05-15
+Date: 2026-05-19
 Status: PENDING VERIFICATION
-Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK / UNITY_BATCHMODE_IMPORT_COMPILE / CLI_COMPILE
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK / CLI_COMPILE_ARCHIVED
 
 This file is a durable project-state risk register. It is not an AgentLog and must not be treated as runtime proof.
 
@@ -10,7 +25,7 @@ This file is a durable project-state risk register. It is not an AgentLog and mu
 
 User request: ignore easy build bugs, audit deeper project health, and keep documentation current under concurrent agent churn.
 
-Most commands were static filesystem and source scans. DOC_AUDIT R29 added one Unity `6000.4.1f1` batchmode import/script-compilation artifact at `Library/Codex_DOC_AUDIT_UnityBatchCompile.log`; R40/R41 added controlled external CLI compile evidence through a source-backed generated-project bridge and a serial root `Hecton8*.csproj` sweep; R42 propagated that current compile boundary into active reference docs that still carried the older May 13 missing-artifact-only override. The latest same-day current-disk Core boundary is `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` (`EXIT=0`, `0 Warning(s)`, `0 Error(s)`) plus H-Phi full static budget artifact `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` (`EXIT=0`, `MemoryAlignment=0.506309148`, `RuntimeHPhiRisk=0.000636091`, `GlobalRegistrySurface=5060/5060`). DOC_HONEST_ANALYSIS R3 remains a historical same-day Core graph prune slice for transient `Hecton8.World.GPR` asmdef drift; CurrentDisk53/BudgetGate22 supersede R49/R52/R53/R54 as current top Core build/H-Phi evidence. No Play Mode, profiler, GCMonitor, player build, Memory Profiler, RenderDoc, save/load roundtrip, visual capture, or runtime benchmark was run. DOC_AUDIT R5/R6 added package-lock, BuildSettings, URP asset, PlayerSettings, and script-local docs checks; R8 added the world/scatter/streaming wiring addendum; R17 added the renderer/visor/shader proof boundary; R21 closed the static resource-node catalog/worldPrefab gaps; R22 added the PDA fail-closed guard; R23 hardened editor validation for duplicate item identity/catalog ambiguity.
+Most commands were static filesystem and source scans. DOC_AUDIT R29 reported one Unity `6000.4.1f1` batchmode import/script-compilation artifact at `Library/Codex_DOC_AUDIT_UnityBatchCompile.log`, but the R10 filesystem check did not find that path; treat it as dated report text unless restored or replaced. R40/R41 added controlled external CLI compile evidence through a source-backed generated-project bridge and a serial root `Hecton8*.csproj` sweep; R42 propagated that compile boundary into active reference docs that still carried the older May 13 missing-artifact-only override. The latest same-day Core boundary is archived at `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` (`EXIT=0`, `0 Warning(s)`, `0 Error(s)`) plus archived H-Phi full static budget artifact `Docs/Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` (`EXIT=0`, `MemoryAlignment=0.506309148`, `RuntimeHPhiRisk=0.000636091`, `GlobalRegistrySurface=5060/5060`). DOC_HONEST_ANALYSIS R3 remains a historical archived same-day Core graph prune slice for transient `Hecton8.World.GPR` asmdef drift; CurrentDisk53/BudgetGate22 supersede R49/R52/R53/R54 only as archived Core build/H-Phi evidence. No Play Mode, profiler, GCMonitor, player build, Memory Profiler, RenderDoc, save/load roundtrip, visual capture, or runtime benchmark was run. DOC_AUDIT R5/R6 added package-lock, BuildSettings, URP asset, PlayerSettings, and script-local docs checks; R8 added the world/scatter/streaming wiring addendum; R17 added the renderer/visor/shader proof boundary; R21 closed the static resource-node catalog/worldPrefab gaps; R22 added the PDA fail-closed guard; R23 hardened editor validation for duplicate item identity/catalog ambiguity.
 
 Mandates used:
 
@@ -42,17 +57,18 @@ Current static estimate: roughly 70% engineering infrastructure, 30% proven game
 
 Evidence class: `CLI_COMPILE` plus `STATIC_SOURCE_FULL_SCAN`.
 
-- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` reports `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`, `0 Warning(s)`, and `0 Error(s)` after the later 22:38 source write.
-- Failed or superseded same-session artifacts include stale generated-CLI visibility of `MacroDatabasePayloadFlags`, the transient `ScalabilityTierBindingBridge` typo, R50 missing `PlayerKinematicsRuntime` storage helpers, R51 duplicate helper definitions, R52/R53 stale boundaries under later source writes, the historical R49 clean slice, and R54 dirtied by a later 22:38 source write. The later clean CurrentDisk53 artifact supersedes them for current Core CLI status only.
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` reports H-Phi static budget `EXIT=0`, `MemoryAlignment=0.506309148`, `DataSovereignty=0.021306032`, `RuntimeHPhiRisk=0.000636091`, `GlobalRegistrySurface=5060/5060`, `ManagedFormatSurface=534/534`, `PrimaryManagedRuntimeRisk=147/147`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, and Core graph debt `25/10/14/8/6`.
-- `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CurrentStaticSummary.json` previously found static scores still at `HPhiStaticRisk=0.000636091`, `DataSovereignty=0.021306032`, and `MemoryAlignment=0.506309148`, but Core asmdef debt had drifted to `26` because unused `Hecton8.World.GPR` was present in transient Core asmdef state.
-- `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json` reports Core graph debt back at `25/10/14/8/6` and no unused Core asmdef reference candidates after file/index alignment; R54 is the newer top Core compile/H-Phi boundary.
+- `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` reports `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`, `0 Warning(s)`, and `0 Error(s)` after the later 22:38 source write.
+- Failed or superseded same-session artifacts include stale generated-CLI visibility of `MacroDatabasePayloadFlags`, the transient `ScalabilityTierBindingBridge` typo, R50 missing `PlayerKinematicsRuntime` storage helpers, R51 duplicate helper definitions, R52/R53 stale boundaries under later source writes, the historical R49 clean slice, and R54 dirtied by a later 22:38 source write. The later clean CurrentDisk53 artifact supersedes them for archived Core CLI status only.
+- `Docs/Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` reports H-Phi static budget `EXIT=0`, `MemoryAlignment=0.506309148`, `DataSovereignty=0.021306032`, `RuntimeHPhiRisk=0.000636091`, `GlobalRegistrySurface=5060/5060`, `ManagedFormatSurface=534/534`, `PrimaryManagedRuntimeRisk=147/147`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, and Core graph debt `25/10/14/8/6`.
+- `Docs/Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CurrentStaticSummary.json` is the archived equivalent of the previously cited active-path summary. It found static scores still at `HPhiStaticRisk=0.000636091`, `DataSovereignty=0.021306032`, and `MemoryAlignment=0.506309148`, but Core asmdef debt had drifted to `26` because unused `Hecton8.World.GPR` was present in transient Core asmdef state. The active-path `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CurrentStaticSummary.json` is absent in the R11 filesystem check.
+- `Docs/Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json` reports Core graph debt back at `25/10/14/8/6` and no unused Core asmdef reference candidates after file/index alignment; CurrentDisk53/BudgetGate22 are newer archived Core compile/H-Phi boundary evidence than that prune slice, not current active-workspace compile proof.
 - This addendum does not change the core verdict: runtime playability and scalability remain unproven until Unity import/Console, Play Mode, profiler, GCMonitor, player build, memory, scene wiring, save/load, and visual captures exist.
 
 ## Static Inventory Findings
 
-- `Assets/_Project/Scripts/**/*.cs`: 1365 first-party script C# files in the static `rg --files` pass.
-- `Assets/_Project/**/*.cs`: 1411 C# files in the broader extension inventory.
+- 2026-05-19 R24 source-scale spot check: `Assets/_Project/**/*.cs` = `1814`, `Assets/_Project/Scripts/**/*.cs` = `1758`, non-test C# files excluding `Assets/_Project/Tests*` = `1794`, project physical lines = `1198173`, script physical lines = `1178627`, non-test physical lines = `1193454`, direct public interfaces in `GlobalRegistryContracts.cs` = `62`, first-party asmdefs = `119`. Evidence class: `STATIC_SOURCE`; this is not compile or runtime proof and must be rerun under concurrent source churn.
+- `Assets/_Project/Scripts/**/*.cs`: `1758` first-party script C# files in the R24 static PowerShell pass.
+- `Assets/_Project/**/*.cs`: `1814` C# files in the R24 broader extension inventory.
 - BuildSettings contains the normative scene chain:
   - `Assets/_Project/Scenes/00_BOOTSTRAP.unity`
   - `Assets/_Project/Scenes/01_MAIN_MENU.unity`
@@ -687,11 +703,11 @@ Evidence type: STATIC_SOURCE / FILESYSTEM.
 
 Static inventory:
 
-- Total `*.asmdef` files under `Assets`: 72.
-- First-party `*.asmdef` files under `_Project`: 24.
-- First-party `*.asmdef` files under `_Project/Scripts`: 21.
-- Nearest-asmdef static count for all C# files under `_Project/Scripts`: `Hecton8.Core` owns about 1114 C# files; `Hecton8.Editor` owns about 199; all other first-party script assemblies are tiny by comparison.
-- Nearest-asmdef static count excluding `Editor` folders: `Hecton8.Core` owns about 1111 runtime C# files.
+- 2026-05-17 R6 scan: total `*.asmdef` files under `Assets`: 141.
+- 2026-05-17 R6 scan: first-party `*.asmdef` files under `_Project`: 95.
+- 2026-05-17 R6 scan: first-party `*.asmdef` files under `_Project/Scripts`: 91.
+- 2026-05-17 R6 nearest-asmdef static count for all C# files under `_Project/Scripts`: `Hecton8.Core` owns about 1203 C# files; `Hecton8.Editor` owns about 212; all other first-party script assemblies are still small by comparison.
+- 2026-05-17 R6 nearest-asmdef static count excluding `Editor` folders: `Hecton8.Core` owns about 1198 runtime C# files.
 - `Hecton8.Core.asmdef` references `Hecton8.Core.Memory`, bootstrap/world/contracts, physics determinism, logistics, cartography, SpaceEngine terrain, input, Unity InputSystem, Mathematics, Burst, Collections, Addressables, ResourceManager, Profiling.Core, TextMeshPro, UnityEngine.UI, URP/Core RP, `GPUInstancer`, and `VolumetricLightBeam`.
 - `Hecton8.Plugins.asmdef` references `Hecton8.Core`, SpaceEngine terrain, Burst/Collections/Mathematics, `Den.Tools`, `MapMagic`, `Crest`, and WaveHarmonic Crest assemblies.
 - `Hecton8.World.Dots.asmdef` is `autoReferenced: false` and gated by define constraints `HECTON8_ENABLE_ENTITIES_DOTS`, `HECTON8_HAS_ENTITIES_PACKAGE`, and `HECTON8_ENABLE_OPTIONAL_ASSEMBLIES`.
@@ -707,7 +723,7 @@ Positive architecture:
 
 Risk:
 
-- The actual runtime compile unit is still dominated by `Hecton8.Core`. With about 1111 runtime C# files in one assembly, the assembly boundary does not yet enforce most domain boundaries.
+- The actual runtime compile unit is still dominated by `Hecton8.Core`. With about 1198 non-editor script C# files nearest to that assembly in the R6 static scan, the assembly boundary does not yet enforce most domain boundaries.
 - `Hecton8.Core` directly references UI, TMP, URP, Addressables, InputSystem, Burst, Collections, GPUInstancer, and VolumetricLightBeam. That makes the central gameplay assembly sensitive to render/UI/input/asset/plugin churn.
 - The small domain assemblies are currently more like islands than the main architecture. Most gameplay still lives in the core sea.
 - `Hecton8.QA` is runtime auto-referenced. Even if QA code is gated at runtime, it is still part of player compilation unless the build pipeline strips it by symbols/asmdef changes.
@@ -926,7 +942,7 @@ Positive architecture:
 
 Risk:
 
-- R18 removed the immediate hidden-startup-grant defect from `Player.prefab`; static source/prefab proof now shows startup flags `0` and release-build provisioning guard.
+- R18 removed the immediate hidden-startup-grant defect from `Player.prefab`; static source/prefab scan observed startup flags `0` and a release-build provisioning guard. Runtime route proof remains absent.
 - Remaining provisioning risk is boundary hygiene, not current startup mutation: `ToolLoadoutProvisioner` is still serialized on the canonical player prefab, still carries direct tool/material references, and still allows explicit provisioning in editor/development builds. After R25, accidentally re-enabling its startup grant flags should become a content-validator error.
 - Shipping cleanup does not strip player-attached `ToolLoadoutProvisioner`; it suppresses named scene hierarchies. That is acceptable after R18 for release mutation risk, but prefab dependency pollution remains.
 - PDA backend and tab content exist, but the bridge is not proven. Before R22, `PlayerPDA.Open()` could switch to UI input, cursor, depth of field, sound, and events even when `pdaPanel`/tabs were null. R22 now fails closed instead of opening headless, but visible PDA UX is still not proven.
@@ -1045,7 +1061,7 @@ Decision:
 - Create a persistence authority ledger. Minimum columns: file/artifact, owning system, path under `Application.persistentDataPath`, temp/backup policy, atomicity primitive, load order, and failure behavior.
 - Re-evaluate the post-first-use allocation policy. R32 removes the large boot allocation, but low tier may still need release-after-use, pooled arena reuse, or tier-based reduced staging budget if Memory Profiler/save-load timing proves the first-use/resident cost too high.
 - Do not claim shipping-grade persistence until the current dirty workspace has a fresh Play Mode/player artifact with PASS lines and a captured save directory diff.
-- Treat `Library/Codex_DOC_AUDIT_UnityBatchCompile.log` as compile/import evidence only: it contains no `error CS`, no bootstrap dependency exception, no `BIOS ERROR`, and ends in successful batchmode exit. Later read-only Unity MCP Console readback first returned `0` errors and `7` non-C# warnings, then final readback returned `0` log entries. This does not prove runtime save/load behavior.
+- Treat `Library/Codex_DOC_AUDIT_UnityBatchCompile.log` as dated report text unless the artifact is restored or replaced; the R10 filesystem check did not find it. Earlier DOC_AUDIT text said it contained no `error CS`, no bootstrap dependency exception, no `BIOS ERROR`, and ended in successful batchmode exit, but that statement is not current filesystem proof. Later read-only Unity MCP Console readback first returned `0` errors and `7` non-C# warnings, then final readback returned `0` log entries. This does not prove runtime save/load behavior.
 
 ## World Streaming / HLOD PDA Upload Addendum
 

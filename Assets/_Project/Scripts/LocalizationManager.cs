@@ -1,13 +1,26 @@
+#if UNITY_EDITOR || UNITY_STANDALONE
+#define HECTON8_BABEL_MMF_AVAILABLE
+#endif
+
 using System;
 using System.Collections.Generic;
+using System.IO;
+#if HECTON8_BABEL_MMF_AVAILABLE
+using System.IO.MemoryMappedFiles;
+#endif
+using System.Threading;
 using System.Text.RegularExpressions;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Data;
 using Hecton8.Gameplay;
 using Hecton8.Input;
 using Hecton8.UI;
 using Hecton8.World;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -43,7 +56,7 @@ namespace Hecton.Localization
     /// Runtime owner for string localization tables and language switching.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization
+    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization, IDispatcherSystem
     {
         // COLD ALLOC: Regex[1] â€” flat JSON key/value extraction for localization tables â€” owner: LocalizationManager
         private static readonly Regex FlatJsonEntryRegex = new Regex(
@@ -83,6 +96,20 @@ namespace Hecton.Localization
         private const float MadnessRollInterval = 0.5f;
         private const float MadnessBlinkDuration = 2f;
         private const int GameLanguageCount = (int)GameLanguage.Arabic + 1;
+        private const uint BabelLocaleSwapSystemHash = 0xBABA0039u;
+        private const int BabelLocaleSwapIdle = 0;
+        private const int BabelLocaleSwapReading = 1;
+        private const int BabelLocaleSwapReady = 2;
+        private const int BabelLocaleSwapFailed = -1;
+        private const int BabelLocaleReadFaultNone = 0;
+        private const int BabelLocaleReadFaultMissing = 1;
+        private const int BabelLocaleReadFaultShortRead = 2;
+        private const int BabelLocaleReadFaultNullDestination = 3;
+        private const int BabelLocaleReadFaultException = 4;
+        private const int BabelLocaleReadChunkBytes = 64 * 1024;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private const float BabelOverrideCsvPollSeconds = 0.5f;
+#endif
         private static readonly uint _missingLocalizationWarningHash = unchecked((uint)LocHash.Compute("LocalizationManager.MissingKey"));
         private static readonly uint _formatStringApiWarningHash = unchecked((uint)LocHash.Compute("LocalizationManager.FormatStringApi"));
         private static readonly uint _corruptionStringApiWarningHash = unchecked((uint)LocHash.Compute("LocalizationManager.CorruptionStringApi"));
@@ -148,6 +175,17 @@ namespace Hecton.Localization
         private string _lastMadnessResolvedSourceToken = string.Empty;
         private string _lastMadnessResolvedValue = string.Empty;
         private bool _registeredLocalizationRuntime;
+        private bool _registeredBabelLocalizationRuntime;
+        private BabelDictionaryStage _pendingBabelStage;
+        private GameLanguage _pendingBabelLanguage;
+        private int _pendingBabelSwapState;
+        private int _pendingBabelReadFault;
+        private bool _registeredBabelDispatcher;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private string _overrideCsvPath;
+        private long _overrideCsvLastWriteTicks;
+        private float _overrideCsvPollTimer;
+#endif
 
         /// <summary>
         /// Active language for runtime lookups.
@@ -173,6 +211,8 @@ namespace Hecton.Localization
 
             GlobalRegistry.RegisterLocalizationRuntime(this);
             _registeredLocalizationRuntime = ReferenceEquals(GlobalRegistry.Localization, this);
+            GlobalRegistry.RegisterBabelLocalizationRuntime(this);
+            _registeredBabelLocalizationRuntime = ReferenceEquals(GlobalRegistry.BabelLocalization, this);
             GameBootstrapper.PersistRuntimeService(this);
 
             if (!TryGetComponent<FontStreamingManager>(out _))
@@ -181,6 +221,7 @@ namespace Hecton.Localization
             LoadAllTables();
             RestoreSavedLanguage();
             RefreshRuntimeRegistry();
+            TryRegisterBabelDispatcher();
         }
 
 #if UNITY_EDITOR
@@ -197,12 +238,27 @@ namespace Hecton.Localization
 
         private void OnDestroy()
         {
+            if (_registeredBabelLocalizationRuntime)
+            {
+                GlobalRegistry.UnregisterBabelLocalizationRuntime(this);
+                _registeredBabelLocalizationRuntime = false;
+            }
+
             if (_registeredLocalizationRuntime)
             {
                 GlobalRegistry.UnregisterLocalizationRuntime(this);
                 _registeredLocalizationRuntime = false;
             }
 
+            if (_registeredBabelDispatcher)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(this);
+                _registeredBabelDispatcher = false;
+            }
+
+            LocRegistry.AbortBabelDictionaryStage(in _pendingBabelStage);
+            _pendingBabelStage = default;
+            Volatile.Write(ref _pendingBabelSwapState, BabelLocaleSwapIdle);
         }
 
         /// <summary>
@@ -561,6 +617,446 @@ namespace Hecton.Localization
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Localization] Language changed to: {language}");
 #endif
+        }
+
+        /// <summary>
+        /// Reads a Babel binary off the main thread and commits the pointer swap in POST_SIMULATION.
+        /// </summary>
+        public async Awaitable SetLanguageAsync(GameLanguage language, CancellationToken cancellationToken = default)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            if (_transientLanguageOverrideActive)
+            {
+                SetLanguage(language);
+                return;
+            }
+
+            if (TryPrepareBabelLocaleSwap(language, out string path, out BabelDictionaryStage stage))
+            {
+                await RunBabelLocaleSwapAsync(language, path, stage, cancellationToken);
+                return;
+            }
+
+            await AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            SetLanguage(language);
+        }
+
+        public uint GetSystemIdHash()
+        {
+            return BabelLocaleSwapSystemHash;
+        }
+
+        public DispatcherPhase GetDispatcherPhase()
+        {
+            return DispatcherPhase.PostSimulation;
+        }
+
+        public byte GetBucketId()
+        {
+            return byte.MaxValue;
+        }
+
+        public int GetDependencyCount()
+        {
+            return 0;
+        }
+
+        public uint GetDependencyHash(int dependencyIndex)
+        {
+            return 0u;
+        }
+
+        public void PreSimulationTick(in DispatcherTimingDTO timing)
+        {
+        }
+
+        public JobHandle ScheduleSimulation(
+            in DispatcherTimingDTO timing,
+            in DispatcherJobContext context,
+            JobHandle dependsOn)
+        {
+            return dependsOn;
+        }
+
+        public void PostSimulationTick(in DispatcherTimingDTO timing)
+        {
+            CommitPendingBabelSwapIfReady();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            PollBabelOverrideCsv(timing.FrameDelta);
+#endif
+        }
+
+        public void VisualSyncTick(in DispatcherTimingDTO timing)
+        {
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void PollBabelOverrideCsv(float frameDelta)
+        {
+            float safeDelta = frameDelta > 0f && frameDelta < 10f ? frameDelta : Time.unscaledDeltaTime;
+            _overrideCsvPollTimer -= safeDelta;
+            if (_overrideCsvPollTimer > 0f)
+                return;
+
+            _overrideCsvPollTimer = BabelOverrideCsvPollSeconds;
+            if (string.IsNullOrEmpty(_overrideCsvPath))
+                _overrideCsvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "loc_overrides.csv"));
+
+            FileInfo info;
+            try
+            {
+                info = new FileInfo(_overrideCsvPath);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+
+            if (!info.Exists)
+                return;
+
+            long writeTicks = info.LastWriteTimeUtc.Ticks;
+            if (writeTicks == _overrideCsvLastWriteTicks)
+                return;
+
+            if (LocRegistry.TryApplyLocOverridesCsv(_overrideCsvPath, out _, out _))
+                _overrideCsvLastWriteTicks = writeTicks;
+        }
+
+        private void ResetBabelOverrideCsvMonitor()
+        {
+            _overrideCsvLastWriteTicks = 0L;
+            _overrideCsvPollTimer = 0f;
+        }
+#endif
+
+        private void TryRegisterBabelDispatcher()
+        {
+            if (_registeredBabelDispatcher)
+                return;
+
+            _registeredBabelDispatcher = GlobalRegistry.TryRegisterDispatcherSystem(this);
+        }
+
+        private bool TryPrepareBabelLocaleSwap(
+            GameLanguage language,
+            out string path,
+            out BabelDictionaryStage stage)
+        {
+            path = null;
+            stage = default;
+
+            if (Volatile.Read(ref _pendingBabelSwapState) != BabelLocaleSwapIdle)
+                return false;
+
+            if (!TryResolveBabelLocalePath(language, out path))
+                return false;
+
+            FileInfo info;
+            try
+            {
+                info = new FileInfo(path);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            if (!info.Exists ||
+                info.Length < 32L ||
+                info.Length > int.MaxValue ||
+                !LocRegistry.TryBeginBabelDictionaryStage((int)info.Length, language, out stage))
+            {
+                return false;
+            }
+
+            _pendingBabelLanguage = language;
+            _pendingBabelReadFault = BabelLocaleReadFaultNone;
+            Volatile.Write(ref _pendingBabelSwapState, BabelLocaleSwapReading);
+            return true;
+        }
+
+        private async Awaitable RunBabelLocaleSwapAsync(
+            GameLanguage language,
+            string path,
+            BabelDictionaryStage stage,
+            CancellationToken cancellationToken)
+        {
+            int fault = BabelLocaleReadFaultNone;
+            try
+            {
+                await Awaitable.BackgroundThreadAsync();
+                fault = cancellationToken.IsCancellationRequested
+                    ? BabelLocaleReadFaultMissing
+                    : ReadBabelDictionaryIntoStage(path, in stage);
+            }
+            catch (Exception)
+            {
+                fault = BabelLocaleReadFaultException;
+            }
+
+            await Awaitable.MainThreadAsync();
+            if (cancellationToken.IsCancellationRequested || fault != BabelLocaleReadFaultNone)
+            {
+                _pendingBabelReadFault = fault;
+                Volatile.Write(ref _pendingBabelSwapState, BabelLocaleSwapFailed);
+                LocRegistry.AbortBabelDictionaryStage(in stage);
+                _pendingBabelStage = default;
+                Volatile.Write(ref _pendingBabelSwapState, BabelLocaleSwapIdle);
+                SetLanguage(language);
+                return;
+            }
+
+            _pendingBabelStage = stage;
+            _pendingBabelLanguage = language;
+            _pendingBabelReadFault = BabelLocaleReadFaultNone;
+            Volatile.Write(ref _pendingBabelSwapState, BabelLocaleSwapReady);
+
+            if (!_registeredBabelDispatcher)
+                CommitPendingBabelSwapIfReady();
+        }
+
+        private void CommitPendingBabelSwapIfReady()
+        {
+            if (Volatile.Read(ref _pendingBabelSwapState) != BabelLocaleSwapReady)
+                return;
+
+            BabelDictionaryStage stage = _pendingBabelStage;
+            GameLanguage language = _pendingBabelLanguage;
+            bool committed = LocRegistry.TryCommitStagedBabelDictionary(in stage);
+            _pendingBabelStage = default;
+            Volatile.Write(ref _pendingBabelSwapState, BabelLocaleSwapIdle);
+
+            if (!committed)
+            {
+                SetLanguage(language);
+                return;
+            }
+
+            ApplyCommittedBabelLanguage(language);
+        }
+
+        private void ApplyCommittedBabelLanguage(GameLanguage language)
+        {
+            bool savedChanged = _savedLanguage != language;
+            _savedLanguage = language;
+            if (savedChanged)
+                SavePersistentLanguagePreference(language);
+
+            CurrentLanguage = language;
+            _transientLanguageOverrideActive = false;
+            _intrusionGlyphModeActive = false;
+            _lastPublishedVisualBucket = int.MinValue;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ResetBabelOverrideCsvMonitor();
+#endif
+            LocalizationEvents.PublishLanguageChanged(CurrentLanguage);
+            LocalizationEvents.PublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[Localization] Babel binary language changed to: {language}");
+#endif
+        }
+
+        private static bool TryResolveBabelLocalePath(GameLanguage language, out string path)
+        {
+            path = null;
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string languageFileName = GetBabelLocaleFileName(language);
+
+            if (TryResolveExistingPath(Path.Combine(projectRoot, "Data", "Localization", languageFileName), out path) ||
+                TryResolveExistingPath(Path.Combine(projectRoot, "Data", "Balance", "Baked", languageFileName), out path) ||
+                TryResolveExistingPath(Path.Combine(projectRoot, "Assets", "_Project", "Data", "Localization", languageFileName), out path) ||
+                TryResolveExistingPath(Path.Combine(projectRoot, "Data", "Balance", "Baked", H8StaticDataFormat.BabelDictionaryFileName), out path) ||
+                TryResolveExistingPath(Path.Combine(projectRoot, "Assets", "_Project", "Data", "Localization", H8StaticDataFormat.BabelDictionaryFileName), out path))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryResolveExistingPath(string candidate, out string path)
+        {
+            path = null;
+            if (string.IsNullOrEmpty(candidate) || !File.Exists(candidate))
+                return false;
+
+            path = Path.GetFullPath(candidate);
+            return true;
+        }
+
+        private static string GetBabelLocaleFileName(GameLanguage language)
+        {
+            switch (language)
+            {
+                case GameLanguage.Russian:
+                    return "loc_strings_ru.h8bin";
+                case GameLanguage.German:
+                    return "loc_strings_de.h8bin";
+                case GameLanguage.French:
+                    return "loc_strings_fr.h8bin";
+                case GameLanguage.Spanish:
+                    return "loc_strings_es.h8bin";
+                case GameLanguage.Italian:
+                    return "loc_strings_it.h8bin";
+                case GameLanguage.PortugueseBrazilian:
+                    return "loc_strings_pt_br.h8bin";
+                case GameLanguage.Polish:
+                    return "loc_strings_pl.h8bin";
+                case GameLanguage.Turkish:
+                    return "loc_strings_tr.h8bin";
+                case GameLanguage.Ukrainian:
+                    return "loc_strings_uk.h8bin";
+                case GameLanguage.ChineseSimplified:
+                    return "loc_strings_zh_hans.h8bin";
+                case GameLanguage.ChineseTraditional:
+                    return "loc_strings_zh_hant.h8bin";
+                case GameLanguage.Japanese:
+                    return "loc_strings_ja.h8bin";
+                case GameLanguage.Korean:
+                    return "loc_strings_ko.h8bin";
+                case GameLanguage.Hindi:
+                    return "loc_strings_hi.h8bin";
+                case GameLanguage.Indonesian:
+                    return "loc_strings_id.h8bin";
+                case GameLanguage.Arabic:
+                    return "loc_strings_ar.h8bin";
+                default:
+                    return "loc_strings_en.h8bin";
+            }
+        }
+
+        private static unsafe int ReadBabelDictionaryIntoStage(
+            string path,
+            in BabelDictionaryStage stage)
+        {
+            if (string.IsNullOrEmpty(path) ||
+                stage.Destination == IntPtr.Zero ||
+                stage.ByteLength <= 0 ||
+                stage.SourceByteLength <= 0 ||
+                stage.SourceByteLength > stage.ByteLength)
+            {
+                return BabelLocaleReadFaultNullDestination;
+            }
+
+#if HECTON8_BABEL_MMF_AVAILABLE
+            int mmfFault = ReadBabelDictionaryWithMmf(path, in stage);
+            if (mmfFault == BabelLocaleReadFaultNone)
+                return BabelLocaleReadFaultNone;
+#endif
+            return ReadBabelDictionaryWithStream(path, in stage);
+        }
+
+#if HECTON8_BABEL_MMF_AVAILABLE
+        private static unsafe int ReadBabelDictionaryWithMmf(
+            string path,
+            in BabelDictionaryStage stage)
+        {
+            try
+            {
+                using FileStream stream = new FileStream(
+                    path,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete,
+                    BabelLocaleReadChunkBytes,
+                    FileOptions.RandomAccess);
+                if (stream.Length != stage.SourceByteLength)
+                    return BabelLocaleReadFaultShortRead;
+
+                using MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
+                    stream,
+                    null,
+                    stage.SourceByteLength,
+                    MemoryMappedFileAccess.Read,
+                    HandleInheritability.None,
+                    false);
+                using MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(
+                    0L,
+                    stage.SourceByteLength,
+                    MemoryMappedFileAccess.Read);
+
+                byte* source = null;
+                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref source);
+                try
+                {
+                    if (source == null)
+                        return BabelLocaleReadFaultMissing;
+
+                    byte* destination = (byte*)stage.Destination.ToPointer();
+                    if (destination == null)
+                        return BabelLocaleReadFaultNullDestination;
+
+                    UnsafeUtility.MemCpy(destination, source + accessor.PointerOffset, stage.SourceByteLength);
+                    if (stage.ByteLength > stage.SourceByteLength)
+                        UnsafeUtility.MemClear(destination + stage.SourceByteLength, stage.ByteLength - stage.SourceByteLength);
+                    return BabelLocaleReadFaultNone;
+                }
+                finally
+                {
+                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                }
+            }
+            catch (Exception)
+            {
+                return BabelLocaleReadFaultException;
+            }
+        }
+#endif
+
+        private static unsafe int ReadBabelDictionaryWithStream(
+            string path,
+            in BabelDictionaryStage stage)
+        {
+            try
+            {
+                using FileStream stream = new FileStream(
+                    path,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete,
+                    BabelLocaleReadChunkBytes,
+                    FileOptions.SequentialScan);
+                if (stream.Length != stage.SourceByteLength)
+                    return BabelLocaleReadFaultShortRead;
+
+                byte* destination = (byte*)stage.Destination.ToPointer();
+                if (destination == null)
+                    return BabelLocaleReadFaultNullDestination;
+
+                int offset = 0;
+                while (offset < stage.SourceByteLength)
+                {
+                    int chunkBytes = Math.Min(BabelLocaleReadChunkBytes, stage.SourceByteLength - offset);
+                    int read = stream.Read(new Span<byte>(destination + offset, chunkBytes));
+                    if (read <= 0)
+                        return BabelLocaleReadFaultShortRead;
+
+                    offset += read;
+                }
+
+                if (stage.ByteLength > stage.SourceByteLength)
+                    UnsafeUtility.MemClear(destination + stage.SourceByteLength, stage.ByteLength - stage.SourceByteLength);
+                return BabelLocaleReadFaultNone;
+            }
+            catch (FileNotFoundException)
+            {
+                return BabelLocaleReadFaultMissing;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                return BabelLocaleReadFaultMissing;
+            }
+            catch (Exception)
+            {
+                return BabelLocaleReadFaultException;
+            }
         }
 
         /// <summary>
@@ -1740,6 +2236,9 @@ namespace Hecton.Localization
         private void RefreshRuntimeRegistry()
         {
             LocRegistry.Reload(_tables, CurrentLanguage);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ResetBabelOverrideCsvMonitor();
+#endif
         }
 
         private static void SavePersistentLanguagePreference(GameLanguage language)

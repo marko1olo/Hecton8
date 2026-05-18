@@ -29,10 +29,29 @@ Shader "Hecton8/VFX/MarineSnow"
             #pragma target 4.5
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile _ _MATH_LOD_LOW
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Hecton_WaterExtinction.hlsl"
+
+            struct ParticleDataDTO
+            {
+                float3 Position;
+                float Lifetime;
+                float3 Velocity;
+                float Size;
+            };
+
+            struct ParticleRenderMetaDTO
+            {
+                float3 PreviousPosition;
+                uint Flags;
+                float2 Uv;
+                float2 Pad;
+            };
 
             struct SiltParticle
             {
@@ -46,7 +65,8 @@ Shader "Hecton8/VFX/MarineSnow"
                 float2 Pad;
             };
 
-            StructuredBuffer<SiltParticle> _MarineSnowParticles;
+            StructuredBuffer<ParticleDataDTO> _MarineSnowParticles;
+            StructuredBuffer<ParticleRenderMetaDTO> _MarineSnowParticleMeta;
             StructuredBuffer<uint> _MarineSnowVisibleParticleIndices;
 
             struct MarineSnowFrameData
@@ -58,6 +78,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 float4 ShellParams;
                 float4 MetaParams;
                 float4 CameraVelocityStretch;
+                float4 Pad0;
             };
 
             StructuredBuffer<MarineSnowFrameData> _HectonMarineSnowFrame;
@@ -73,6 +94,22 @@ Shader "Hecton8/VFX/MarineSnow"
             float4 _MarineSnowTint;
             float4 _MarineSnowRenderParams;
 
+            SiltParticle LoadSiltParticle(uint index)
+            {
+                ParticleDataDTO data = _MarineSnowParticles[index];
+                ParticleRenderMetaDTO meta = _MarineSnowParticleMeta[index];
+                SiltParticle particle;
+                particle.Pos = data.Position;
+                particle.Life = data.Lifetime;
+                particle.Vel = data.Velocity;
+                particle.Size = data.Size;
+                particle.PrevPos = meta.PreviousPosition;
+                particle.Flags = meta.Flags;
+                particle.UV = meta.Uv;
+                particle.Pad = meta.Pad;
+                return particle;
+            }
+
             struct Attributes
             {
                 uint vertexID : SV_VertexID;
@@ -83,6 +120,7 @@ Shader "Hecton8/VFX/MarineSnow"
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                float3 positionWS : TEXCOORD1;
                 float4 color : COLOR0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
@@ -121,7 +159,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 instanceID = unity_InstanceID;
             #endif
                 uint particleIndex = _MarineSnowVisibleParticleIndices[instanceID];
-                SiltParticle particle = _MarineSnowParticles[particleIndex];
+                SiltParticle particle = LoadSiltParticle(particleIndex);
                 float active = step(0.5, _MarineSnowMetaParams.w);
                 float densityScale = saturate(_MarineSnowCameraUp_Density.w);
                 float2 corner = ResolveQuadCorner(input.vertexID);
@@ -129,7 +167,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 float3 cameraUp = _MarineSnowCameraUp_Density.xyz;
                 float maxDistance = max(_MarineSnowRenderParams.z, 0.25);
                 float3 cameraDelta = particle.Pos - _MarineSnowCameraPosition_Time.xyz;
-                float invMaxDistanceSq = rcp(maxDistance * maxDistance);
+                float invMaxDistanceSq = rcp(max(maxDistance * maxDistance, 0.0001));
                 float distanceFade = saturate(1.0 - dot(cameraDelta, cameraDelta) * invMaxDistanceSq);
                 float isBubble = ((particle.Flags & 1u) != 0u) ? 1.0 : 0.0;
                 float headlightBoost = saturate(particle.Pad.y);
@@ -147,6 +185,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 float3 worldPosition = particle.Pos + billboardOffset;
 
                 output.positionCS = TransformWorldToHClip(worldPosition);
+                output.positionWS = particle.Pos;
                 output.uv = corner * 0.5 + 0.5;
                 output.color = lerp(_MarineSnowTint, float4(0.72, 0.88, 0.94, _MarineSnowTint.a * 0.72), isBubble);
                 output.color.rgb *= 1.0 + headlightBoost * 1.45;
@@ -174,7 +213,13 @@ Shader "Hecton8/VFX/MarineSnow"
                 float radial = saturate(1.0 - dot(centered, centered));
                 float alpha = FastRadialSoftness(radial, _MarineSnowRenderParams.y) * input.color.a;
                 float coverage = step(MarineSnowDither01(input.positionCS.xy), saturate(alpha));
-                return half4(input.color.rgb, coverage);
+                Light mainLight = GetMainLight();
+                half3 extinctionColor = H8WaterExtinctionResolveRgbByWorld(input.positionWS, (half)_ExtinctionLUTRuntime.y);
+                half3 abyssFloor = half3(0.015h, 0.027h, 0.040h);
+                half depth01 = (half)H8WaterExtinctionDepth01FromWorld(input.positionWS);
+                half scatter = saturate((half)mainLight.color.r + 0.15h) * lerp(0.92h, 0.34h, depth01);
+                half3 litColor = (half3)input.color.rgb * max(extinctionColor, abyssFloor) * scatter;
+                return half4(litColor, coverage);
             }
             ENDHLSL
         }
@@ -199,6 +244,22 @@ Shader "Hecton8/VFX/MarineSnow"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
 
+            struct ParticleDataDTO
+            {
+                float3 Position;
+                float Lifetime;
+                float3 Velocity;
+                float Size;
+            };
+
+            struct ParticleRenderMetaDTO
+            {
+                float3 PreviousPosition;
+                uint Flags;
+                float2 Uv;
+                float2 Pad;
+            };
+
             struct SiltParticle
             {
                 float3 Pos;
@@ -211,7 +272,8 @@ Shader "Hecton8/VFX/MarineSnow"
                 float2 Pad;
             };
 
-            StructuredBuffer<SiltParticle> _MarineSnowParticles;
+            StructuredBuffer<ParticleDataDTO> _MarineSnowParticles;
+            StructuredBuffer<ParticleRenderMetaDTO> _MarineSnowParticleMeta;
             StructuredBuffer<uint> _MarineSnowVisibleParticleIndices;
 
             struct MarineSnowFrameData
@@ -223,6 +285,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 float4 ShellParams;
                 float4 MetaParams;
                 float4 CameraVelocityStretch;
+                float4 Pad0;
             };
 
             StructuredBuffer<MarineSnowFrameData> _HectonMarineSnowFrame;
@@ -234,6 +297,22 @@ Shader "Hecton8/VFX/MarineSnow"
             #define _MarineSnowCameraVelocity_Stretch (_HectonMarineSnowFrame[0].CameraVelocityStretch)
 
             float4 _MarineSnowRenderParams;
+
+            SiltParticle LoadSiltParticle(uint index)
+            {
+                ParticleDataDTO data = _MarineSnowParticles[index];
+                ParticleRenderMetaDTO meta = _MarineSnowParticleMeta[index];
+                SiltParticle particle;
+                particle.Pos = data.Position;
+                particle.Life = data.Lifetime;
+                particle.Vel = data.Velocity;
+                particle.Size = data.Size;
+                particle.PrevPos = meta.PreviousPosition;
+                particle.Flags = meta.Flags;
+                particle.UV = meta.Uv;
+                particle.Pad = meta.Pad;
+                return particle;
+            }
 
             struct Attributes
             {
@@ -285,7 +364,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 instanceID = unity_InstanceID;
             #endif
                 uint particleIndex = _MarineSnowVisibleParticleIndices[instanceID];
-                SiltParticle particle = _MarineSnowParticles[particleIndex];
+                SiltParticle particle = LoadSiltParticle(particleIndex);
                 float active = step(0.5, _MarineSnowMetaParams.w);
                 float densityScale = saturate(_MarineSnowCameraUp_Density.w);
                 float2 corner = ResolveQuadCorner(input.vertexID);
@@ -293,7 +372,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 float3 cameraUp = _MarineSnowCameraUp_Density.xyz;
                 float maxDistance = max(_MarineSnowRenderParams.z, 0.25);
                 float3 cameraDelta = particle.Pos - _MarineSnowCameraPosition_Time.xyz;
-                float invMaxDistanceSq = rcp(maxDistance * maxDistance);
+                float invMaxDistanceSq = rcp(max(maxDistance * maxDistance, 0.0001));
                 float distanceFade = saturate(1.0 - dot(cameraDelta, cameraDelta) * invMaxDistanceSq);
                 float isBubble = ((particle.Flags & 1u) != 0u) ? 1.0 : 0.0;
                 float headlightBoost = saturate(particle.Pad.y);

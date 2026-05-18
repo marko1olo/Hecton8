@@ -1,0 +1,29 @@
+{
+    "name": "Hecton8.Global.Contracts",
+    "rootNamespace": "Hecton8.Global.Contracts",
+    "references": [
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.burst",
+            "expression": "1.8.0",
+            "define": "H8_BURST_FUNCTION_POINTERS"
+        },
+        {
+            "name": "com.unity.render-pipelines.universal",
+            "expression": "17.0.0",
+            "define": "H8_QUALITY_ROUTING_URP17"
+        }
+    ],
+    "noEngineReferences": true
+}

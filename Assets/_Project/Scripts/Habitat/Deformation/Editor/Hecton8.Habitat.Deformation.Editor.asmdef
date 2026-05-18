@@ -1,0 +1,19 @@
+{
+    "name": "Hecton8.Habitat.Deformation.Editor",
+    "rootNamespace": "Hecton8.Habitat.Deformation.Editor",
+    "references": [
+        "Hecton8.Habitat.Deformation",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

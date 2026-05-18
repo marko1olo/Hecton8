@@ -1,3 +1,11 @@
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Audit sistem proekta
 
 2
@@ -11,9 +19,9 @@ Privet. Tvoya rabota eto dotoshnyy kritik, izuchatel proektov znatok yuniti, zna
 145 previous messages
 Paket polnogo audita zapisan v Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/README.md. Osnovnye vyvody sobrany v 01_EXECUTIVE_FORENSIC_SUMMARY.md, matritsa “realno vs na bumage” v 02_SYSTEM_REALITY_MATRIX.md, tehnicheskaya kritika arhitektury v 03_CODE_HEALTH_AND_RUNTIME_ARCHITECTURE.md, vzglyad s pozitsii igroka v 04_PLAYER_PERSPECTIVE_AND_READINESS.md, dokazatelnaya baza v 05_EVIDENCE_LEDGER.md, ochered kriticheskih deystviy v 06_CRITICAL_ACTION_QUEUE.md.
 
-Korotko po verdiktu: proekt ne pustoy i ne dekorativnyy. V nem realno est silnye sistemy: GlobalRegistry, SystemDispatcher, sereznyy SaveManager, silnyy HUD-put, krupnyy Jobs/Burst/native sloy, glubokaya audio-realizatsiya. No tekuschee sostoyanie nelzya nazyvat production-clean: v redaktore est active first-party compile errors, arhitekturnaya vlast razdroblena mezhdu registry/bootstrap/singleton-ostatkami, DOTS seychas v osnovnom bumazhnyy shov, testovoe pokrytie pochti otsutstvuet, a neskolko owner-faylov uzhe stali regressionnoy minoy.
+Korotko po verdiktu: proekt ne pustoy i ne dekorativnyy. V nem realno est silnye sistemy: GlobalRegistry, SystemDispatcher, sereznyy SaveManager, silnyy HUD-put, krupnyy Jobs/Burst/native sloy, glubokaya audio-realizatsiya. No tekuschee sostoyanie nelzya nazyvat production-clean: historical reviewer transcript reported active first-party compile errors at that time; current compile status requires fresh Unity evidence, arhitekturnaya vlast razdroblena mezhdu registry/bootstrap/singleton-ostatkami, DOTS seychas v osnovnom bumazhnyy shov, testovoe pokrytie pochti otsutstvuet, a neskolko owner-faylov uzhe stali regressionnoy minoy.
 
-Chto bylo provereno fakticheski: struktura proekta, dokumenty, mandaty, build scenes, active scene, package surface, representative core/world/player/audio/save/UI systems, compile-console truth, edit-mode tests. Chto ne bylo podtverzhdeno chislami: live play-mode GC/frame-time retention. Poetomu vse perf-otsenki v otchetah pomecheny kak PENDING VERIFICATION.
+Chto bylo provereno fakticheski: struktura proekta, dokumenty, mandaty, build scenes, active scene, package surface, representative core/world/player/audio/save/UI systems, historical compile-console summary; no current Console, Play Mode, GC, profiler, or build proof, edit-mode tests. Chto ne bylo podtverzhdeno chislami: live play-mode GC/frame-time retention. Poetomu vse perf-otsenki v otchetah pomecheny kak PENDING VERIFICATION.
 
 Esli nuzhen sleduyuschiy prohod, logichnyy shag odin: ne novyy obzor, a zhestkiy remediation-pass po Priority 0 iz 06_CRITICAL_ACTION_QUEUE.md s ustraneniem compile-break, fiksatsiey runtime sovereignty i zachistkoy 02_HECTON_WORLD kak istochnika istiny.
 

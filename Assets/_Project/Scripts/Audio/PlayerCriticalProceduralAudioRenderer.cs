@@ -31,7 +31,7 @@ namespace Hecton8.Audio
     /// Public blittable sonar echo tap bridge shared by acoustic DSP and cockpit radar presentation.
     /// Layout must stay 64 bytes; DSP and compute upload paths consume it directly.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct SonarEchoTap
     {
         public float DelaySeconds;
@@ -162,6 +162,7 @@ namespace Hecton8.Audio
         private const float PressureCreakMaximumBandCenterHertz = 1840f;
         private const int MetallicGrainSampleRate = 44100;
         private const int MetallicGrainBankCapacity = MetallicGrainSampleRate * 2;
+        private const float MetalStressAuthoredClipMaxSeconds = 2f;
         private const int GranularVoiceCapacity = 16;
         private const int GranularTelemetryCapacity = 300;
         private const int PrologueTransitionTelemetryCapacity = 300;
@@ -178,6 +179,14 @@ namespace Hecton8.Audio
         private const float GranularMinimumGrainSeconds = 0.01f;
         private const float GranularMaximumGrainSeconds = 0.05f;
         private const float GranularImpactClusterCooldownSeconds = 0.02f;
+        private const float GranularTuningBasePitchMinimum = 0.35f;
+        private const float GranularTuningBasePitchMaximum = 2.4f;
+        private const float GranularTuningGrainLengthMinimum = 0.25f;
+        private const float GranularTuningGrainLengthMaximum = 4f;
+        private const float GranularTuningOverlapDensityMinimum = 0f;
+        private const float GranularTuningOverlapDensityMaximum = 4f;
+        private const float GranularTuningFmModulationMinimum = 0f;
+        private const float GranularTuningFmModulationMaximum = 4f;
         private const int HullCreakMinimumGrainSamples = 96;
         private const float HullCreakMetalGroanWindowSeconds = 1.35f;
         private const float PrologueClosedLowPassHertz = 400f;
@@ -492,7 +501,7 @@ namespace Hecton8.Audio
         [Tooltip("Maximum gain applied to the hull-groan loop at full hull stress.")]
         [SerializeField, Range(0f, 1f)] private float hullGroanLoopMaximumVolume = 0.42f;
 
-        [Tooltip("Optional two-second authored metal-stress WAV used as the raw granular source. Procedural bank is used if absent.")]
+        [Tooltip("Optional <=2 second metal-stress grain source. Oversized WAV assets are rejected and the procedural bank is used.")]
         [SerializeField] private AudioClip metalStressGrainClip;
 
         [Tooltip("Low-tier fallback impact clip used when MX350 disables kinetic procedural collision synthesis.")]
@@ -1005,6 +1014,10 @@ namespace Hecton8.Audio
         private volatile float _targetVehicleCavitationSpeed01;
         private volatile float _targetStructuralSnapValue;
         private volatile int _targetGranularMaxVoiceCount = GranularVoiceCapacity;
+        private volatile float _targetGranularBasePitchScale = 1f;
+        private volatile float _targetGranularGrainLengthScale = 1f;
+        private volatile float _targetGranularOverlapDensityScale = 1f;
+        private volatile float _targetGranularFmModulationIndex = 1f;
         private volatile float _targetPrologueLowPassCutoffHertz = PrologueOpenLowPassHertz;
         private volatile float _targetPrologueLfeGain;
         private volatile float _targetPrologueGranularStress;
@@ -1043,6 +1056,7 @@ namespace Hecton8.Audio
             NativeConvolution = 2
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 72)]
         private struct SonarEchoCompositeGroup
         {
             public AbsoluteUniversePosition Position;
@@ -1069,6 +1083,7 @@ namespace Hecton8.Audio
             }
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
         private struct HighSpeedImpactDuplicateEntry
         {
             public uint Frame;
@@ -1076,7 +1091,7 @@ namespace Hecton8.Audio
             public byte Valid;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential, Size = 48)]
         private struct GranularAudioTelemetryEntry
         {
             public uint SampleIndex;
@@ -1090,13 +1105,17 @@ namespace Hecton8.Audio
             public int VoiceLimit;
             public int ActiveEchoTaps;
             public uint Flags;
+#pragma warning disable 0169
+            private uint _padding0;
+#pragma warning restore 0169
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential, Size = 56)]
         private struct PrologueAudioTransitionTelemetryEntry
         {
             public uint Frame;
             public uint Sequence;
+            public uint DspFlags;
             public float UniverseVelocityMetersPerSecond;
             public float Heat01;
             public float LowPassCutoffHz;
@@ -1110,29 +1129,53 @@ namespace Hecton8.Audio
             public byte Flags;
             public byte QualityTier;
             public byte Reserved;
-            public uint DspFlags;
+#pragma warning disable 0169
+            private byte _pad0;
+            private byte _pad1;
+            private byte _pad2;
+            private byte _pad3;
+#pragma warning restore 0169
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct SonarTriggerState
         {
+            public long StartFrame;
             public int Sequence;
             public int EchoRevision;
-            public long StartFrame;
             public float Intensity;
             public int EchoTapCount;
             public int Flags;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         internal struct AudioThreadDiagnostics
         {
+            public long ProducedSampleCount;
             public int BufferedFrames;
             public int WritableFrames;
             public int OverflowDropCount;
             public int ImpactEventQueueDropCount;
             public int ProducerRunning;
-            public long ProducedSampleCount;
         }
 
+        /// <summary>
+        /// Sixteen-byte live tuning DTO for the structural granular synth.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        public struct GranularSynthTuningSnapshot
+        {
+            /// <summary>Pitch multiplier applied to newly armed grains.</summary>
+            public float BasePitchScale;
+            /// <summary>Duration multiplier applied to newly armed grains.</summary>
+            public float GrainLengthScale;
+            /// <summary>Spawn-density multiplier applied to new overlap events.</summary>
+            public float OverlapDensityScale;
+            /// <summary>Pitch scatter and harshness scalar used for pressure-metal modulation.</summary>
+            public float FmModulationIndex;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = 256)]
         private struct AudioParameterSnapshot
         {
             public float HullStress;
@@ -1170,6 +1213,10 @@ namespace Hecton8.Audio
             public float LeviathanRoarPitchScale;
             public int HeartbeatActive;
             public int GranularMaxVoiceCount;
+            public float GranularBasePitchScale;
+            public float GranularGrainLengthScale;
+            public float GranularOverlapDensityScale;
+            public float GranularFmModulationIndex;
             public float BinauralAzimuthRadians;
             public float BinauralRightDot;
             public float BinauralItdSeconds;
@@ -1188,7 +1235,7 @@ namespace Hecton8.Audio
             public int PrologueFlags;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 320)]
+        [StructLayout(LayoutKind.Explicit, Size = 320)]
         private struct AudioParameterSnapshotSlot
         {
             [FieldOffset(0)]
@@ -1197,7 +1244,7 @@ namespace Hecton8.Audio
             private AudioParameterSnapshotCacheLinePad Padding;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct AudioParameterSnapshotCacheLinePad
         {
             [FieldOffset(0)] private long _frontFence;
@@ -1264,7 +1311,7 @@ namespace Hecton8.Audio
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct ImpactAudioEvent
         {
             public float Stress;
@@ -1285,9 +1332,22 @@ namespace Hecton8.Audio
             public float Reserved0;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 256)]
         private struct HullSynthesisState
         {
             public double PressureLfoPhase;
+            public double GrainReadCursor;
+            public double SubBassPhase;
+            public double DepthSubwooferPhase;
+            public double PressureScrubberHumPhase;
+            public double PressureScrubberHarmonicPhase;
+            public double PressureScrubberSaturationPhase;
+            public double DreadRumblePhase;
+            public double FatigueRingCarrierPhase;
+            public double FatigueRingModulationPhase;
+            public double StructuralSnapPhase;
+            public double KineticImpactThudPhase;
+            public long LastGranularImpactClusterSampleFrame;
             public int GrainElapsedSamples;
             public int GrainTotalSamples;
             public int GrainAttackSamples;
@@ -1299,7 +1359,6 @@ namespace Hecton8.Audio
             public float GrainDerivative;
             public uint GrainNoiseSeed;
             public int GrainLoopLength;
-            public double GrainReadCursor;
             public float GrainBandPassInput1;
             public float GrainBandPassInput2;
             public float GrainBandPassOutput1;
@@ -1309,23 +1368,13 @@ namespace Hecton8.Audio
             public float GrainBandPassB2;
             public float GrainBandPassA1;
             public float GrainBandPassA2;
-            public double SubBassPhase;
-            public double DepthSubwooferPhase;
-            public double PressureScrubberHumPhase;
-            public double PressureScrubberHarmonicPhase;
-            public double PressureScrubberSaturationPhase;
-            public double DreadRumblePhase;
-            public double FatigueRingCarrierPhase;
-            public double FatigueRingModulationPhase;
             public float StructuralSnapEnvelope;
-            public double StructuralSnapPhase;
             public float StructuralSnapPitchScale;
             public float ImpactClangEnvelope;
             public float ImpactClangFeedback;
             public float ImpactClangLowPassState;
             public int ImpactClangDelaySamples;
             public int ImpactClangWriteIndex;
-            public double KineticImpactThudPhase;
             public float KineticImpactThudAgeSeconds;
             public float KineticImpactThudDurationSeconds;
             public float KineticImpactThudStartHertz;
@@ -1334,15 +1383,15 @@ namespace Hecton8.Audio
             public float KineticImpactThudDistortion;
             public float KineticImpactThudLowPassCutoffHz;
             public float KineticImpactThudLowPassState;
-            public long LastGranularImpactClusterSampleFrame;
         }
 
 #pragma warning disable 0649 // DSP state fields are intentionally zero-initialized and written by the procedural audio integrator.
+        [StructLayout(LayoutKind.Sequential, Size = 96)]
         private struct SonarSynthesisState
         {
-            public int ActiveSequence;
             public double AttackPhase;
             public double ChirpPhase;
+            public double FmModulatorPhase;
             public double EchoPhase;
             public double TailSlowPhase;
             public double TailBeatAPhase;
@@ -1352,10 +1401,12 @@ namespace Hecton8.Audio
             public float EchoFilterInput2;
             public float EchoFilterOutput1;
             public float EchoFilterOutput2;
+            public int ActiveSequence;
             public int EchoWriteIndex;
         }
 #pragma warning restore 0649
 
+        [StructLayout(LayoutKind.Sequential, Size = 72)]
         private struct AmbientCurrentSynthesisState
         {
             public double CarrierPhase;
@@ -1372,8 +1423,11 @@ namespace Hecton8.Audio
             public float PressurePhaserAllPassD;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 48)]
         private struct ImpactEchoSynthesisState
         {
+            public double CarrierPhaseA;
+            public double CarrierPhaseB;
             public float DelayRemainingSeconds;
             public float Excitation;
             public float Attenuation;
@@ -1381,10 +1435,9 @@ namespace Hecton8.Audio
             public float LowPassState;
             public float ElapsedSeconds;
             public float PitchScale;
-            public double CarrierPhaseA;
-            public double CarrierPhaseB;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         private struct HeartbeatSynthesisState
         {
             public float TimeToNextBeatSeconds;
@@ -1394,12 +1447,14 @@ namespace Hecton8.Audio
             public float DuckEnvelope;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 8)]
         private struct CriticalSidechainCompressorState
         {
             public float Envelope;
             public float Gain;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 56)]
         private struct VwsPlaybackState
         {
             public int Active;
@@ -1417,12 +1472,14 @@ namespace Hecton8.Audio
             public float BitCrushHeldSample;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
         private struct TinnitusSynthesisState
         {
             public double Phase;
             public double RupturePhase;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 40)]
         private struct LeviathanGranularSynthesisState
         {
             public float Envelope;
@@ -1436,6 +1493,7 @@ namespace Hecton8.Audio
             public uint Seed;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct InteriorFdnReverbSynthesisState
         {
             public int WriteA;
@@ -1448,13 +1506,15 @@ namespace Hecton8.Audio
             public float DampingD;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
         private struct PendingImpactEchoProbe
         {
-            public bool Valid;
             public float Excitation;
             public float ExpireAt;
+            public byte Valid;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 136)]
         private struct ThrusterSynthesisState
         {
             public double Hum1Phase;
@@ -1463,6 +1523,9 @@ namespace Hecton8.Audio
             public double Hum4Phase;
             public double FlowPhase;
             public double PropCyclePhase;
+            public double CavitationCarrierPhase;
+            public double CavitationModulatorPhase;
+            public double VehicleCavitationScreechPhase;
             public float PinkB0;
             public float PinkB1;
             public float PinkB2;
@@ -1476,13 +1539,11 @@ namespace Hecton8.Audio
             public float BandPassOutput2;
             public float CombFeedbackSample;
             public int CombWriteIndex;
-            public double CavitationCarrierPhase;
-            public double CavitationModulatorPhase;
-            public double VehicleCavitationScreechPhase;
             public float VehicleCavitationHighPassInput;
             public float VehicleCavitationHighPassOutput;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 40)]
         private struct SabineReverbSynthesisState
         {
             public int CombAWriteIndex;
@@ -1496,6 +1557,7 @@ namespace Hecton8.Audio
             public float WetMix;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
         private struct CaveConvolutionReverbSynthesisState
         {
             public int WriteIndex;
@@ -2293,6 +2355,101 @@ namespace Hecton8.Audio
             return true;
         }
 
+        /// <summary>
+        /// Applies editor/live granular-synth tuning through the existing lock-free parameter snapshot path.
+        /// </summary>
+        /// <param name="basePitchScale">New-grain pitch multiplier.</param>
+        /// <param name="grainLengthScale">New-grain duration multiplier.</param>
+        /// <param name="overlapDensityScale">New-grain spawn density multiplier.</param>
+        /// <param name="fmModulationIndex">Pitch scatter and harshness scalar.</param>
+        /// <remarks>
+        /// This method is main-thread/editor facing. The audio producer reads the values only after the
+        /// double-buffered AudioParameterSnapshot swap.
+        /// </remarks>
+        public void ApplyGranularSynthTuning(
+            float basePitchScale,
+            float grainLengthScale,
+            float overlapDensityScale,
+            float fmModulationIndex)
+        {
+            _targetGranularBasePitchScale = math.clamp(
+                FiniteOrDefault(basePitchScale, 1f),
+                GranularTuningBasePitchMinimum,
+                GranularTuningBasePitchMaximum);
+            _targetGranularGrainLengthScale = math.clamp(
+                FiniteOrDefault(grainLengthScale, 1f),
+                GranularTuningGrainLengthMinimum,
+                GranularTuningGrainLengthMaximum);
+            _targetGranularOverlapDensityScale = math.clamp(
+                FiniteOrDefault(overlapDensityScale, 1f),
+                GranularTuningOverlapDensityMinimum,
+                GranularTuningOverlapDensityMaximum);
+            _targetGranularFmModulationIndex = math.clamp(
+                FiniteOrDefault(fmModulationIndex, 1f),
+                GranularTuningFmModulationMinimum,
+                GranularTuningFmModulationMaximum);
+            PublishAudioParameterSnapshot();
+        }
+
+        /// <summary>
+        /// Reads the last granular-synth tuning values accepted by the main thread.
+        /// </summary>
+        /// <param name="snapshot">Returned sixteen-byte tuning snapshot.</param>
+        /// <returns>True when a snapshot was written.</returns>
+        public bool TryGetGranularSynthTuning(out GranularSynthTuningSnapshot snapshot)
+        {
+            snapshot = new GranularSynthTuningSnapshot
+            {
+                BasePitchScale = _targetGranularBasePitchScale,
+                GrainLengthScale = _targetGranularGrainLengthScale,
+                OverlapDensityScale = _targetGranularOverlapDensityScale,
+                FmModulationIndex = _targetGranularFmModulationIndex
+            };
+            return true;
+        }
+
+        /// <summary>
+        /// Copies recent granular telemetry samples into an editor oscilloscope buffer.
+        /// </summary>
+        /// <param name="destination">Destination float buffer owned by the editor window.</param>
+        /// <param name="destinationOffset">First destination index to write.</param>
+        /// <param name="sampleCount">Maximum number of samples to copy.</param>
+        /// <returns>True when at least one sample was copied.</returns>
+        /// <remarks>
+        /// This is a cold editor/debug readback path. Runtime synthesis still writes native frame buffers.
+        /// </remarks>
+        public bool TryCopyLatestGranularOscilloscope(float[] destination, int destinationOffset, int sampleCount)
+        {
+            if (destination == null ||
+                !_granularTelemetryRing.IsCreated ||
+                destinationOffset < 0 ||
+                destinationOffset >= destination.Length ||
+                sampleCount <= 0)
+            {
+                return false;
+            }
+
+            int safeCount = math.min(
+                sampleCount,
+                math.min(destination.Length - destinationOffset, _granularTelemetryRing.Length));
+            if (safeCount <= 0)
+                return false;
+
+            int readCursor = _granularTelemetryCursor - safeCount;
+            while (readCursor < 0)
+                readCursor += _granularTelemetryRing.Length;
+
+            for (int i = 0; i < safeCount; i++)
+            {
+                destination[destinationOffset + i] = _granularTelemetryRing[readCursor].MixedSample;
+                readCursor++;
+                if (readCursor >= _granularTelemetryRing.Length)
+                    readCursor = 0;
+            }
+
+            return true;
+        }
+
         private void ProduceAudioBlock(int frameCount)
         {
             if (!CanProduceAudioBlock(frameCount))
@@ -2345,6 +2502,22 @@ namespace Hecton8.Audio
                 GranularDisabledVoiceCapacity,
                 GranularVoiceCapacity);
             float granularAccelerationPitchWobble = math.lerp(0.96f, 1.08f, thrusterAccelerationTarget);
+            float granularBasePitchScale = math.clamp(
+                FiniteOrDefault(parameters.GranularBasePitchScale, 1f),
+                GranularTuningBasePitchMinimum,
+                GranularTuningBasePitchMaximum);
+            float granularGrainLengthScale = math.clamp(
+                FiniteOrDefault(parameters.GranularGrainLengthScale, 1f),
+                GranularTuningGrainLengthMinimum,
+                GranularTuningGrainLengthMaximum);
+            float granularOverlapDensityScale = math.clamp(
+                FiniteOrDefault(parameters.GranularOverlapDensityScale, 1f),
+                GranularTuningOverlapDensityMinimum,
+                GranularTuningOverlapDensityMaximum);
+            float granularFmModulationIndex = math.clamp(
+                FiniteOrDefault(parameters.GranularFmModulationIndex, 1f),
+                GranularTuningFmModulationMinimum,
+                GranularTuningFmModulationMaximum);
 
             RenderHullStressBlock(
                 frameCount,
@@ -2363,8 +2536,12 @@ namespace Hecton8.Audio
                 pressureHumGainTarget,
                 impactMetallicTarget,
                 granularMaxVoiceCount,
-                granularAccelerationPitchWobble);
-            RenderSonarBlock(frameCount, blockStartFrame, invSampleRate);
+                granularAccelerationPitchWobble,
+                granularBasePitchScale,
+                granularGrainLengthScale,
+                granularOverlapDensityScale,
+                granularFmModulationIndex);
+            RenderSonarBlock(frameCount, blockStartFrame, invSampleRate, granularFmModulationIndex);
             RenderImpactEchoBlock(frameCount, invSampleRate);
             RenderThrusterBlock(
                 frameCount,
@@ -6169,7 +6346,7 @@ namespace Hecton8.Audio
 
             _pendingImpactEchoProbe = new PendingImpactEchoProbe
             {
-                Valid = true,
+                Valid = 1,
                 Excitation = echoExcitation,
                 ExpireAt = Time.unscaledTime + ImpactEchoMaximumLifetimeSeconds
             };
@@ -6177,7 +6354,7 @@ namespace Hecton8.Audio
 
         private void TryResolvePendingImpactEchoProbe()
         {
-            if (!_pendingImpactEchoProbe.Valid)
+            if (_pendingImpactEchoProbe.Valid == 0)
                 return;
 
             if (Time.unscaledTime > _pendingImpactEchoProbe.ExpireAt)
@@ -7452,7 +7629,7 @@ namespace Hecton8.Audio
             if (TryLoadMetalStressGrainClip(metalStressGrainClip, _metallicGrainBank))
                 return;
 
-            PlayerCriticalMetallicGrainBank.Generate(_metallicGrainBank);
+            PlayerCriticalMetallicGrainBank.GenerateEmergencyMockGrains(_metallicGrainBank);
         }
 
         private bool TryLoadMetalStressGrainClip(AudioClip clip, NativeArray<float> target)
@@ -7463,10 +7640,15 @@ namespace Hecton8.Audio
                 _vwsClipManagedScratch == null ||
                 _vwsClipManagedScratch.Length <= 0 ||
                 clip.samples <= 0 ||
-                clip.channels <= 0)
+                clip.channels <= 0 ||
+                clip.frequency <= 0)
             {
                 return false;
             }
+
+            int maxAllowedFrames = math.max(1, (int)(clip.frequency * MetalStressAuthoredClipMaxSeconds + 0.5f));
+            if (clip.samples > maxAllowedFrames)
+                return false;
 
             int sourceChannels = math.min(clip.channels, 8);
             int clipSampleCount = clip.samples > int.MaxValue / clip.channels
@@ -8329,7 +8511,11 @@ namespace Hecton8.Audio
             float pressureHumGainTarget,
             float impactMetallicTarget,
             int granularMaxVoiceCount,
-            float granularAccelerationPitchWobble)
+            float granularAccelerationPitchWobble,
+            float granularBasePitchScale,
+            float granularGrainLengthScale,
+            float granularOverlapDensityScale,
+            float granularFmModulationIndex)
         {
             HullSynthesisState state = _hullSynthesisState;
             float stressStart = _audioHullStressValue;
@@ -8384,6 +8570,10 @@ namespace Hecton8.Audio
                     impactMetallicImpulse,
                     granularMaxVoiceCount,
                     granularAccelerationPitchWobble,
+                    granularBasePitchScale,
+                    granularGrainLengthScale,
+                    granularOverlapDensityScale,
+                    granularFmModulationIndex,
                     blockSampleRate) * metallicDrive * granularVoiceScale;
                 float fatigueRing = RenderStructuralFatigueRingSample(ref state, sampleIndex, structuralFatigue, structuralStress, invSampleRate);
                 float structuralSnapTransient = RenderStructuralSnapTransientSample(
@@ -8647,7 +8837,7 @@ namespace Hecton8.Audio
             return math.lerp(sample0, sample1, fraction);
         }
 
-        private void RenderSonarBlock(int frameCount, long blockStartFrame, double invSampleRate)
+        private void RenderSonarBlock(int frameCount, long blockStartFrame, double invSampleRate, float fmModulationIndex)
         {
             SonarTriggerState activeState = _workerActiveSonarState;
             if (activeState.Sequence == 0 || activeState.Intensity <= 0f)
@@ -8678,6 +8868,10 @@ namespace Hecton8.Audio
             long maxActiveFrame = activeState.StartFrame +
                 math.max(1, (int)(activeDurationSeconds * math.max(_sampleRate, 1) + 0.5f));
             float dopplerFrameDelta = frameCount > 1 ? math.rcp((float)(frameCount - 1)) : 1f;
+            float safeFmModulationIndex = math.clamp(
+                FiniteOrDefault(fmModulationIndex, 1f),
+                GranularTuningFmModulationMinimum,
+                GranularTuningFmModulationMaximum);
             for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
             {
                 long sampleFrame = blockStartFrame + frameIndex;
@@ -8717,9 +8911,18 @@ namespace Hecton8.Audio
                     if (age < SonarChirpDurationSeconds)
                     {
                         float chirpT = math.saturate(age * SonarChirpDurationSecondsInv);
-                        float chirpFrequency = math.lerp(2000f, 400f, chirpT);
+                        float chirpBaseFrequency = math.lerp(2000f, 400f, chirpT);
+                        float chirpFmDepthHertz = math.lerp(0f, 180f, math.saturate(safeFmModulationIndex * 0.25f));
+                        float chirpModulator = AdvanceSine(
+                            ref state.FmModulatorPhase,
+                            math.lerp(45d, 150d, chirpT),
+                            invSampleRate);
+                        float chirpFrequency = math.max(40f, chirpBaseFrequency + chirpModulator * chirpFmDepthHertz);
                         float chirpEnv = ApproximateExpNegPositive(age * 5f);
-                        chirp = chirpEnv * AdvanceSine(ref state.ChirpPhase, chirpFrequency, invSampleRate);
+                        float carrier = AdvanceSine(ref state.ChirpPhase, chirpFrequency, invSampleRate);
+                        float sideband = AdvanceSine(ref state.EchoPhase, chirpFrequency * 1.997f, invSampleRate) *
+                            math.saturate(safeFmModulationIndex * 0.16f);
+                        chirp = chirpEnv * (carrier + sideband);
                     }
 
                     drySignal = attack + chirp;
@@ -9347,6 +9550,10 @@ namespace Hecton8.Audio
             float impactMetallic,
             int maxVoices,
             float accelerationPitchWobble,
+            float basePitchScale,
+            float grainLengthScale,
+            float overlapDensityScale,
+            float fmModulationIndex,
             int sampleRate)
         {
             if (!HasGranularVoiceBuffers() || !grainBank.IsCreated || grainBank.Length <= 1)
@@ -9361,6 +9568,22 @@ namespace Hecton8.Audio
             float safeDepthParam = math.saturate(FiniteOrZero(depthParam));
             float impactDrive = math.saturate(FiniteOrZero(impactMetallic));
             float safePitchWobble = math.clamp(FiniteOrDefault(accelerationPitchWobble, 1f), 0.92f, 1.12f);
+            float safeBasePitchScale = math.clamp(
+                FiniteOrDefault(basePitchScale, 1f),
+                GranularTuningBasePitchMinimum,
+                GranularTuningBasePitchMaximum);
+            float safeGrainLengthScale = math.clamp(
+                FiniteOrDefault(grainLengthScale, 1f),
+                GranularTuningGrainLengthMinimum,
+                GranularTuningGrainLengthMaximum);
+            float safeOverlapDensityScale = math.clamp(
+                FiniteOrDefault(overlapDensityScale, 1f),
+                GranularTuningOverlapDensityMinimum,
+                GranularTuningOverlapDensityMaximum);
+            float safeFmModulationIndex = math.clamp(
+                FiniteOrDefault(fmModulationIndex, 1f),
+                GranularTuningFmModulationMinimum,
+                GranularTuningFmModulationMaximum);
             float structuralDrive = math.saturate((math.max(safeStress, safeStressDerivative) - GranularStressThreshold01) * 2f);
             int safeSampleRate = math.max(1, sampleRate);
 
@@ -9385,6 +9608,9 @@ namespace Hecton8.Audio
                             safeDepthParam,
                             impactDrive,
                             safePitchWobble,
+                            safeBasePitchScale,
+                            safeGrainLengthScale,
+                            safeFmModulationIndex,
                             highPitchCluster: true);
                     }
 
@@ -9398,6 +9624,7 @@ namespace Hecton8.Audio
                     math.lerp(0.25f, 24f, structuralDrive) +
                     safeStressDerivative * 18f +
                     impactDrive * 32f;
+                eventsPerSecond *= safeOverlapDensityScale;
                 float eventThreshold = math.saturate(eventsPerSecond * math.rcp((float)safeSampleRate));
                 if (Hash01(sampleIndex ^ 0x2FD6A8BBu) <= eventThreshold)
                 {
@@ -9412,6 +9639,9 @@ namespace Hecton8.Audio
                         safeDepthParam,
                         impactDrive,
                         safePitchWobble,
+                        safeBasePitchScale,
+                        safeGrainLengthScale,
+                        safeFmModulationIndex,
                         highPitchCluster: false);
                 }
             }
@@ -9654,6 +9884,8 @@ namespace Hecton8.Audio
                 string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string directory = Path.Combine(root, "Docs", "AgentLogs");
                 Directory.CreateDirectory(directory);
+                WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_PROCEDURAL_SYNTH.h8dump"));
+                WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_PROCEDURAL_SYNTH.bin"));
                 WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_STRUCTURAL_ACOUSTICS_LEAD.bin"));
                 WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_ACOUSTIC_REFLECTION_MAPPER.bin"));
                 WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_KINETIC_IMPACT_ACOUSTICS.bin"));
@@ -9760,6 +9992,9 @@ namespace Hecton8.Audio
             float depthParam,
             float impactDrive,
             float accelerationPitchWobble,
+            float basePitchScale,
+            float grainLengthScale,
+            float fmModulationIndex,
             bool highPitchCluster)
         {
             if (!grainBank.IsCreated || grainBank.Length <= HullCreakMinimumGrainSamples)
@@ -9774,13 +10009,27 @@ namespace Hecton8.Audio
             float safeDepthParam = math.saturate(FiniteOrZero(depthParam));
             float safeImpactDrive = math.saturate(FiniteOrZero(impactDrive));
             float safePitchWobble = math.clamp(FiniteOrDefault(accelerationPitchWobble, 1f), 0.92f, 1.12f);
+            float safeBasePitchScale = math.clamp(
+                FiniteOrDefault(basePitchScale, 1f),
+                GranularTuningBasePitchMinimum,
+                GranularTuningBasePitchMaximum);
+            float safeGrainLengthScale = math.clamp(
+                FiniteOrDefault(grainLengthScale, 1f),
+                GranularTuningGrainLengthMinimum,
+                GranularTuningGrainLengthMaximum);
+            float safeFmModulationIndex = math.clamp(
+                FiniteOrDefault(fmModulationIndex, 1f),
+                GranularTuningFmModulationMinimum,
+                GranularTuningFmModulationMaximum);
             uint lcg = seed == 0u ? 0x9E3779B9u : seed;
             uint durationSeed = NextLcg(lcg);
             uint startSeed = NextLcg(durationSeed);
             uint pitchSeed = NextLcg(startSeed);
             uint gainSeed = NextLcg(pitchSeed);
-            int minSamples = math.max(1, (int)(GranularMinimumGrainSeconds * sampleRate + 0.5f));
-            int maxSamples = math.max(minSamples, (int)(GranularMaximumGrainSeconds * sampleRate + 0.5f));
+            int minSamples = math.max(1, (int)(GranularMinimumGrainSeconds * safeGrainLengthScale * sampleRate + 0.5f));
+            int maxSamples = math.max(
+                minSamples,
+                (int)(GranularMaximumGrainSeconds * safeGrainLengthScale * sampleRate + 0.5f));
             int durationRange = math.max(1, maxSamples - minSamples + 1);
             int grainSamples = math.min(
                 grainBank.Length - 2,
@@ -9792,11 +10041,19 @@ namespace Hecton8.Audio
                 ? math.lerp(1.22f, 1.82f, Hash01(pitchSeed ^ 0xA7C15E31u))
                 : math.lerp(0.72f, 1.16f, Hash01(pitchSeed ^ 0xC2B2AE35u));
             float derivativePitch = math.lerp(1f, 1.28f, safeStressDerivative);
-            float playbackRate = math.clamp(basePitch * derivativePitch * depthPitch * safePitchWobble, 0.35f, 2.4f);
+            float fmScatter = math.lerp(
+                1f,
+                math.lerp(0.82f, 1.18f, Hash01(pitchSeed ^ 0x64E62D11u)),
+                math.saturate(safeFmModulationIndex * 0.25f));
+            float playbackRate = math.clamp(
+                basePitch * derivativePitch * depthPitch * safePitchWobble * safeBasePitchScale * fmScatter,
+                0.35f,
+                2.4f);
             float gain =
                 math.lerp(0.06f, 0.28f, safeDepthParam) *
                 math.lerp(0.42f, 1f, safeStress) *
                 math.lerp(0.75f, 1.65f, math.max(safeStressDerivative, safeImpactDrive)) *
+                math.lerp(1f, 1.22f, math.saturate(safeFmModulationIndex * 0.25f)) *
                 math.lerp(0.88f, 1.12f, Hash01(gainSeed ^ 0x3D4E91B7u));
 
             _granularVoiceActive[voiceIndex] = 1;
@@ -10550,6 +10807,10 @@ namespace Hecton8.Audio
                 LeviathanRoarPitchScale = _targetLeviathanRoarPitchScale,
                 HeartbeatActive = _targetHeartbeatActive,
                 GranularMaxVoiceCount = _targetGranularMaxVoiceCount,
+                GranularBasePitchScale = _targetGranularBasePitchScale,
+                GranularGrainLengthScale = _targetGranularGrainLengthScale,
+                GranularOverlapDensityScale = _targetGranularOverlapDensityScale,
+                GranularFmModulationIndex = _targetGranularFmModulationIndex,
                 BinauralAzimuthRadians = _targetBinauralAzimuthRadians,
                 BinauralRightDot = _targetBinauralRightDot,
                 BinauralItdSeconds = _targetBinauralItdSeconds,

@@ -1,0 +1,21 @@
+{
+    "name": "Hecton8.Graphics.Culling.Editor",
+    "rootNamespace": "Hecton8.Graphics.Culling.Editor",
+    "references": [
+        "Hecton8.Graphics.Culling",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+

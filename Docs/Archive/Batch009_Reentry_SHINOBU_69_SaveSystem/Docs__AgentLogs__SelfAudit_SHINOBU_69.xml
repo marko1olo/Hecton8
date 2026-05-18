@@ -1,0 +1,189 @@
+<SELF_AUDIT agent_id="SHINOBU_69" domain="Data Archivist / SaveSystem WAL RLE" date_utc="2026-05-18" status="POLISH_PASS_ACTIVE_DTO_ACCESSORS_PURGED_FALSE_SHARING_HARDENED_STATIC_VERIFIED_EXTERNAL_COMPILE_WALL">
+  <TWENTY_TASK_RECONCILIATION>
+    <task id="01" name="BINARY_GRAVEYARD_RECONNAISSANCE" status="PASS">Archive/WAL history was inspected; current SaveSystem keeps emergency binary mock headers and avoids text fallback.</task>
+    <task id="02" name="JSON_ERADICATION_PASS" status="PASS">Static scan found no JsonUtility/BinaryFormatter/System.Text.Json in the audited SaveSystem/SaveManager/SaveBinaryStorage surface; remaining SaveBinaryPayloadCodec byte-array allocations are legacy managed SaveData migration outputs, not WAL/RLE hashing loop allocations.</task>
+    <task id="03" name="CS1612_ENCAPSULATION_PURGE" status="PASS">SaveSystem DTO audit found no hot DTO get/set properties; root SaveData fauna flag DTO properties were removed and SaveBinaryPayloadCodec now reads/writes public flag fields directly.</task>
+    <task id="04" name="ARM64_PADDING_RECONSTRUCTION" status="PASS">BinaryLayoutManifest asserts 32B/64B save DTO sizes and offsets; no Pack=1/Pack=4 was added in patched SaveSystem files, and touched primary WAL/AUP/master-hash DTOs use explicit Size plus manual padding instead of Pack=8.</task>
+    <task id="05" name="BLIND_DEPENDENCY_MOCKING" status="PASS">Save mock payload/jobs remain local to SaveSystem; no inventory/base runtime reference was introduced.</task>
+    <task id="06" name="BURST_XXHASH3_KERNEL" status="PASS">Merkle leaves use XXHash3-128; pager WAL new payload identity uses PageFlagPayloadHashXxHash3 and xxHash3.Hash64 folded into the existing check field.</task>
+    <task id="07" name="DELTA_RECORD_EXTRACTION" status="PASS">MerkleChangedLeafExtractionJob writes fixed StateDeltaRecordDTO headers plus payload into native arenas.</task>
+    <task id="08" name="BACKGROUND_MMF_WAL_COMMIT" status="PASS">Pager keeps background WAL/MMF/file commit path; TryEnqueueWrite no longer performs caller-thread WAL Flush(true) or sleep backpressure, and no main-thread JSON overwrite was added.</task>
+    <task id="09" name="BURST_RLE_COMPRESSION_JOB" status="PASS">Voxel RLE and pager byte-run compression remain native/Burst oriented; no managed compression was introduced in the hot loop.</task>
+    <task id="10" name="THE_DEAR_LIE_DEHYDRATION_SNAPSHOT" status="PASS">DearLieDehydrationJob writes stable/rest or NeedsWake flags and compact local AUP truth instead of full cosmetic transforms.</task>
+    <task id="11" name="CONTINUOUS_SCALABILITY_I_O_THROTTLING" status="PASS">ResolveRuntimeConfigForQuality and ResolveWalBudgetBytesPerFrame(float pressure) consume continuous weights with polynomial smoothing, math.lerp, and a math.step-gated low-quality cosmetic survival band.</task>
+    <task id="12" name="TOMBSTONE_PRUNING_PASS" status="PASS">TombstonePruneJob compacts fixed records without managed allocations.</task>
+    <task id="13" name="AUP_SECTOR_QUANTIZATION" status="PASS">SaveAupLocalOffset32 stores SectorKey plus millimeter-quantized local float3 offsets before persistence; the primary overload subtracts the supplied SectorKey origin before quantization, with a derived-origin fallback only for blind mocks.</task>
+    <task id="14" name="MOD_PAYLOAD_SIDECAR_ISOLATION" status="PASS">Mod payload sectors are marked through ModPayloadSectorPrefix and are isolated during WAL recovery decisions.</task>
+    <task id="15" name="CRASH_RECOVERY_RECONCILIATION" status="PASS">CRC32 remains the tail corruption tripwire while new payload identity is XXHash3-flagged for compatibility.</task>
+    <task id="16" name="ZERO_INIT_OVERHEAD_BYPASS" status="PASS">Overwritten Merkle/pager arenas request NativeArrayOptions.UninitializedMemory from the vault.</task>
+    <task id="17" name="TELEMETRY_CORRUPTION_RECORDER" status="PASS">Save telemetry dump identity is Dump_SAVE_SURGEON.bin/.h8dump with 300-frame rings.</task>
+    <task id="18" name="WAL_XRAY_EDITOR_WINDOW" status="PASS">WalXRayWindow/H8WalInspector surfaces WAL/state-delta inspection and corruption injection.</task>
+    <task id="19" name="CSV_OVERRIDE_INGESTOR" status="PASS">SaveMerkleCsvOverrideParser parses CSV overrides from native scratch without JsonUtility.</task>
+    <task id="20" name="LIVE_CORRUPTION_INJECTOR" status="PASS">Corrupt Sector path routes through H8WalInspector and WAL read validation rejects bad CRC tails.</task>
+  </TWENTY_TASK_RECONCILIATION>
+
+  <STRUCT_LAYOUT_VERIFICATION evidence_class="STATIC_SOURCE_AND_MANIFEST_ASSERTS">
+    <struct name="SaveAupLocalOffset32" size_bytes="32" alignment_proof="32 % 16 == 0" enters="WAL dehydrated save payload, Burst NativeArray via MockStatePayload">
+      <field name="SectorKey" offset="0" size="4"/>
+      <field name="ShiftFrameId" offset="4" size="4"/>
+      <field name="LocalOffsetX" offset="8" size="4"/>
+      <field name="LocalOffsetY" offset="12" size="4"/>
+      <field name="LocalOffsetZ" offset="16" size="4"/>
+      <field name="Flags" offset="20" size="4"/>
+      <field name="_pad0" offset="24" size="4"/>
+      <field name="_pad1" offset="28" size="4"/>
+    </struct>
+    <struct name="MockStatePayload" size_bytes="32" alignment_proof="32 % 16 == 0" enters="DearLieDehydrationJob output NativeArray">
+      <field name="LocalAup" offset="0" size="32"/>
+    </struct>
+    <struct name="SectorEntry" size_bytes="32" alignment_proof="32 % 16 == 0" enters="save sector index">
+      <field name="SectorHash" offset="0" size="8"/>
+      <field name="ByteOffset" offset="8" size="8"/>
+      <field name="CompressedSize" offset="16" size="4"/>
+      <field name="DecompressedSize" offset="20" size="4"/>
+      <field name="Checksum" offset="24" size="4"/>
+      <field name="_pad0" offset="28" size="4"/>
+    </struct>
+    <struct name="StateDeltaRecordDTO" size_bytes="64" alignment_proof="64 is one L1 cache line" enters="delta WAL record header">
+      <field name="PreviousHashLo" offset="0" size="8"/>
+      <field name="PreviousHashHi" offset="8" size="8"/>
+      <field name="NewHashLo" offset="16" size="8"/>
+      <field name="NewHashHi" offset="24" size="8"/>
+      <field name="SourceOffsetBytes" offset="32" size="4"/>
+      <field name="DataLength" offset="36" size="4"/>
+      <field name="DeltaPayloadOffset" offset="40" size="4"/>
+      <field name="CompressedOffset" offset="44" size="4"/>
+      <field name="SectorKey" offset="48" size="4"/>
+      <field name="Flags" offset="52" size="4"/>
+      <field name="Crc32" offset="56" size="4"/>
+      <field name="_pad0" offset="60" size="4"/>
+    </struct>
+    <struct name="SaveMasterHashV10Result" size_bytes="32" alignment_proof="32 % 16 == 0" enters="master hash proof payload">
+      <field name="PlainLo" offset="0" size="8"/>
+      <field name="PlainHi" offset="8" size="8"/>
+      <field name="StoredLo" offset="16" size="8"/>
+      <field name="StoredHi" offset="24" size="8"/>
+    </struct>
+    <struct name="SaveFileHeaderV10" size_bytes="72" alignment_proof="72 % 8 == 0" enters="save file V10 header">
+      <field name="MagicValue" offset="0" size="4"/>
+      <field name="Version" offset="4" size="2"/>
+      <field name="CompatMask" offset="6" size="1"/>
+      <field name="Flags" offset="7" size="1"/>
+      <field name="TimestampUnixMs" offset="8" size="8"/>
+      <field name="Checksum" offset="16" size="4"/>
+      <field name="DeltaCount" offset="20" size="4"/>
+      <field name="EntityCount" offset="24" size="4"/>
+      <field name="PlayerOffset" offset="28" size="4"/>
+      <field name="DeltaOffset" offset="32" size="4"/>
+      <field name="EntityOffset" offset="36" size="4"/>
+      <field name="HashPayload64" offset="40" size="8"/>
+      <field name="HashHeader64" offset="48" size="8"/>
+      <field name="MasterStateHashLo" offset="56" size="8"/>
+      <field name="MasterStateHashHi" offset="64" size="8"/>
+    </struct>
+    <struct name="PageWriteCommand" size_bytes="32" alignment_proof="32 % 16 == 0" enters="vault-backed pager write command ring">
+      <field name="SectorHash" offset="0" size="8"/>
+      <field name="PayloadType" offset="8" size="4"/>
+      <field name="ByteOffset" offset="12" size="4"/>
+      <field name="ByteCount" offset="16" size="4"/>
+      <field name="SourceHash" offset="20" size="4"/>
+      <field name="Frame" offset="24" size="4"/>
+      <field name="Reserved" offset="28" size="4"/>
+    </struct>
+    <struct name="PageReadCommand" size_bytes="24" alignment_proof="24 % 8 == 0" enters="vault-backed pager read command ring">
+      <field name="SectorHash" offset="0" size="8"/>
+      <field name="PayloadType" offset="8" size="4"/>
+      <field name="RequestId" offset="12" size="4"/>
+      <field name="Frame" offset="16" size="4"/>
+      <field name="Reserved" offset="20" size="4"/>
+    </struct>
+    <struct name="PageReadResult" size_bytes="32" alignment_proof="32 % 16 == 0" enters="vault-backed pager read result ring">
+      <field name="SectorHash" offset="0" size="8"/>
+      <field name="PayloadType" offset="8" size="4"/>
+      <field name="RequestId" offset="12" size="4"/>
+      <field name="SlotIndex" offset="16" size="4"/>
+      <field name="ByteCount" offset="20" size="4"/>
+      <field name="Status" offset="24" size="1"/>
+      <field name="Reserved0" offset="25" size="1"/>
+      <field name="Reserved1" offset="26" size="2"/>
+      <field name="Reserved2" offset="28" size="4"/>
+    </struct>
+    <struct name="CacheLineInt" size_bytes="64" alignment_proof="64 == one L1 cache line" enters="worker/main pager atomic counters">
+      <field name="Value" offset="0" size="4"/>
+      <field name="implicit_padding" offset="4" size="60"/>
+    </struct>
+    <struct name="SaveMerkleTelemetryEntry" size_bytes="64" alignment_proof="64 is one L1 cache line" enters="300-frame blackbox ring">
+      <field name="RootHashLo" offset="0" size="8"/>
+      <field name="RootHashHi" offset="8" size="8"/>
+      <field name="TotalBytesHashed" offset="16" size="4"/>
+      <field name="DeltaBytesGenerated" offset="20" size="4"/>
+      <field name="TreeComputeTimeMs" offset="24" size="4"/>
+      <field name="Frame" offset="28" size="4"/>
+      <field name="Flags" offset="32" size="4"/>
+      <field name="ChangedLeaves" offset="36" size="4"/>
+      <field name="WalBytesWritten" offset="40" size="4"/>
+      <field name="CrcFailures" offset="44" size="4"/>
+      <field name="IoFailures" offset="48" size="4"/>
+      <field name="_pad0" offset="52" size="4"/>
+      <field name="_pad1" offset="56" size="8"/>
+    </struct>
+    <false_sharing status="PASS_PADDED_PAGER_COUNTERS">The patch adds no IJobParallelFor-shared atomic counter array. Worker/main pager counters now use explicit 64B CacheLineInt wrappers for Interlocked/Volatile counters; queue data remains SpinLock-protected vault arrays. SaveMerkle counters remain dependency-serialized NativeArray int slots.</false_sharing>
+  </STRUCT_LAYOUT_VERIFICATION>
+
+  <CS1612_ACCESSOR_AUDIT status="PASS_DTO_PROPERTIES_REMOVED">
+    <scope name="SaveData_and_SaveBinaryPayloadCodec">ProceduralFaunaStateDTO and HibernatedFaunaStateDTO no longer expose flag properties; SaveBinaryPayloadCodec serializes their public flags byte with bit masks.</scope>
+    <scope name="PDA_marker_callsite">PDAMarkerEntryDTO.HasAupPosition is a method and the single PDA registry call site was updated.</scope>
+    <scope name="Steam_cloud_structs">SteamCloudSaveCandidate and SteamCloudSaveResolution use readonly fields instead of get-only properties.</scope>
+    <scope name="Managed_codec_read">ReadDataArchaeology and encrypted audio-log legacy reads reuse bounded SaveData arrays through EnsureExactArrayCapacity plus Array.Clear, avoiding duplicate cold arrays after CreateNew.</scope>
+    <residual name="H8BinaryWorldPager_service_properties">FileName, IsInitialized, and HasInitializationFault remain class-level service convenience properties, not unmanaged DTO fields or NativeArray elements.</residual>
+  </CS1612_ACCESSOR_AUDIT>
+
+  <SCALABILITY_CURVE_EXPLANATION>
+    GlobalQualityWeight is smoothed by SmoothUnit(t)=t*t*(3-2*t). math.step(0.3, quality) opens a low-quality cosmetic survival band only below 0.3; that band is then smoothed polynomially and blended with math.lerp. At 0.1, cosmeticScale collapses toward 0.00390625, SubBlockBytes moves toward a 12.5 percent floor before the 1024B safety clamp, WAL bytes-per-second approaches 12.5 percent of base retention, and CosmeticDeltaPayloadPruneJob drops cosmetic StateDeltaRecordDTO payloads once source bytes exceed the scaled threshold. The critical Merkle/CRC/XXHash/AUP truth path remains intact; only cosmetic WAL payload retention is shed.
+    Pager enqueue no longer performs caller-thread WAL Flush(true) or Thread.Sleep backpressure; MicroSD pressure is absorbed by fixed vault ring capacity, dropped-write telemetry, and the background worker append/commit path.
+  </SCALABILITY_CURVE_EXPLANATION>
+
+  <H_PHI_VAULT_STATUS private_persistent_native_allocations="ZERO_LOCAL_NATIVECONTAINERS">
+    <buffer id="SaveMerkleNodeFront"/>
+    <buffer id="SaveMerkleNodeBack"/>
+    <buffer id="SaveMerkleLeafDescriptors"/>
+    <buffer id="SaveMerkleDeltaRecords"/>
+    <buffer id="SaveMerkleDeltaBytes"/>
+    <buffer id="SaveMerklePrunedDeltaBytes"/>
+    <buffer id="SaveMerkleCompressedBytes"/>
+    <buffer id="SaveMerkleLz4BlockHeaders"/>
+    <buffer id="SaveMerkleTelemetryRing"/>
+    <buffer id="SaveMerkleCounters"/>
+    <buffer id="SaveMerkleLz4HashTable"/>
+    <buffer id="SaveWorldPagerWriteCommands"/>
+    <buffer id="SaveWorldPagerReadCommands"/>
+    <buffer id="SaveWorldPagerReadResults"/>
+    <buffer id="SaveWorldPagerWriteArena"/>
+    <buffer id="SaveWorldPagerReadArena"/>
+    <buffer id="SaveWorldPagerReadSlotStates"/>
+    <buffer id="SaveWorldPagerCompressionScratch"/>
+    <buffer id="SaveWorldPagerHotState"/>
+    <buffer id="SaveWorldPagerTelemetryRing"/>
+    <residual note="Legacy SaveBinaryStorage contains cold Allocator.Temp NativeParallelHashMap lookup helpers; these are not persistent pager/Merkle state and were not expanded in this pass."/>
+    <residual note="Legacy SaveBinaryPayloadCodec item-genetics migration still allocates managed byte[] outputs because the current SaveData schema stores those fields as managed arrays; this is a legacy load/migration path, not the WAL/RLE hashing or autosave loop."/>
+  </H_PHI_VAULT_STATUS>
+
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <aliasing status="PASS">SaveSystem Burst NativeArray fields are marked NoAlias where source/destination/counter buffers are isolated.</aliasing>
+    <job_chain consumes="dependency" outputs="lz4">
+      EnsureCommittedBaselineJob -> MerkleLeafHashJob -> MerkleBranchReductionJob -> MerkleChangedLeafExtractionJob -> CosmeticDeltaPayloadPruneJob -> Lz4SubBlockCompressionJob
+    </job_chain>
+    <job_chain consumes="dependency" outputs="copy">CopyMerkleTreeJob for committed baseline acceptance.</job_chain>
+    <job_chain consumes="dependency" outputs="telemetry">TelemetryWriteJob writes the 300-frame blackbox cursor/ring.</job_chain>
+    <blocking_complete_calls status="PASS">The Merkle WAL scheduling API returns JobHandle and does not call Complete inside the chain.</blocking_complete_calls>
+    <main_thread_io_backpressure status="PASS">TryEnqueueWrite no longer calls Flush(true), FileStream.Length pressure checks, or Thread.Sleep; WAL durability flush remains in the worker before world mutation.</main_thread_io_backpressure>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+
+  <COMPILE_GUARD status="PARTIAL_PASS_EXTERNAL_WALL">
+    SaveDeltaCompression, SaveBinaryPayloadCodec, and root SaveData no longer import Hecton8.Gameplay. H8BinaryWorldPager no longer owns direct NativeQueue/NativeParallelHashMap persistent allocations. A single PDA marker call site was updated only to follow the SaveData DTO method conversion. SaveSystem has no dedicated asmdef in the current tree and still lives inside the monolithic Hecton8.Core project; therefore full compile-wall proof requires a future SaveSystem assembly split. No new dotnet build was launched in the final polish pass per explicit user instruction; prior dotnet verification was blocked before SaveSystem by unrelated PlayerBuilder Construction DTO, LocRegistry math.reversebytes, and EconomyRuntimeInstaller TradeMarauderDirector errors.
+  </COMPILE_GUARD>
+
+  <DEAR_LIE_CONFIRMATION>
+    The fake is state dehydration: far or non-moving entities are saved as stable/rest snapshots plus NeedsWake flags, not live full transforms or cosmetic physics state. Complexity before the lie is O(N * full_transform_payload + cosmetic_state_bytes) WAL writes. After the lie it is O(N * 32B authoritative millimeter-quantized local AUP + changed critical deltas), with cosmetic payloads pruned continuously under low GlobalQualityWeight.
+  </DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>

@@ -503,7 +503,7 @@ namespace Hecton8.PDA
                         continue;
 
                     string stableTitle = string.IsNullOrWhiteSpace(entry.title) ? BuildDefaultTitle((MarkerIconType)entry.iconType) : entry.title;
-                    AbsoluteUniversePosition positionAup = entry.HasAupPosition
+                    AbsoluteUniversePosition positionAup = entry.HasAupPosition()
                         ? entry.GetAup()
                         : AbsoluteUniversePosition.FromRuntimePosition(entry.GetPosition());
                     MarkerRecord record = new MarkerRecord

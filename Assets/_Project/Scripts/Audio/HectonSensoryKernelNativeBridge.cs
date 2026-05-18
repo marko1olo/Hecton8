@@ -19,11 +19,11 @@ namespace Hecton8.Audio
         PluginUnavailable = 1 << 30
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 56)]
     internal struct NativeAudioKernelRingBufferDescriptor
     {
         public const uint DescriptorMagicValue = 0x484B3031u;
-        public const int RequiredAlignmentBytes = 4;
+        public const int RequiredAlignmentBytes = 8;
         public const int ReadIndexSlot = 0;
         public const int WriteIndexSlot = 1;
         public const int CapacityFramesSlot = 2;
@@ -34,14 +34,30 @@ namespace Hecton8.Audio
         public const int SharedStateGuardValueA = unchecked((int)0x48454354);
         public const int SharedStateGuardValueB = unchecked((int)0x4F4E2D38);
 
+        [FieldOffset(0)]
         public uint DescriptorMagic;
+#pragma warning disable 0169
+        [FieldOffset(4)]
+        private uint _descriptorPad0;
+#pragma warning restore 0169
+        [FieldOffset(8)]
         public IntPtr Frames;
+        [FieldOffset(16)]
         public IntPtr SharedState;
+        [FieldOffset(24)]
         public IntPtr ReadIndex;
+        [FieldOffset(32)]
         public IntPtr WriteIndex;
+        [FieldOffset(40)]
         public int CapacityFrames;
+        [FieldOffset(44)]
         public int CapacityMask;
+        [FieldOffset(48)]
         public int SharedStateLengthInts;
+#pragma warning disable 0169
+        [FieldOffset(52)]
+        private uint _reserved0;
+#pragma warning restore 0169
     }
 
     internal static class HectonSensoryKernelNativeBridge

@@ -136,7 +136,7 @@ namespace Hecton8.Quest
         public int QuestIndex;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public unsafe struct QuestSaveHeader
     {
         public const uint HeaderMagic = 0x48514753u;

@@ -1,7 +1,15 @@
-﻿# MODULAR EQUIPMENT ENGINE SURGERY LOG
+# MODULAR EQUIPMENT ENGINE SURGERY LOG
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 ## Current-State Addendum
 
@@ -10,7 +18,7 @@ It is not the current global project-health page.
 
 Later same-day recheck changed the surrounding project state:
 
-- current reachable Unity console readback is `0` entries
+- later same-day console readback reportedly had `0` entries; no current Unity Console artifact is linked
 - earlier unrelated full-project compile blockers described below are no longer safe as current-state claims
 - the modular-equipment implementation record remains valid
 - the blocker framing below must be read as historical surgery-session context

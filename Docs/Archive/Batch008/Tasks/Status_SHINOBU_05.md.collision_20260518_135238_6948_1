@@ -1,0 +1,61 @@
+# Status_SHINOBU_05
+Date: 2026-05-18
+Agent: SHINOBU_05 / Delta Crusher
+Domain: ECHELON 2 / Voxel Destruction + GPU Debris
+Status: ATOMIC MASS + DESIGNER BRIDGE POLISH APPLIED / CORE BUILD CLEAN / FULL PROJECT EXTERNAL WALL CONFIRMED
+
+## Mandates Read Before Coding
+- `Docs/Tasks/CURRENT_BATCH.md` exact `SHINOBU_05` prompt
+- `Docs/PROJECT_STATE_STATIC_XRAY.md`
+- `.agents-skills/VOX_Voxel_World_Logic_Carving_Persistence.txt`
+- `.agents-skills/GPU_Compute_Kernels_Kernels_Optimization_MX350.txt`
+- `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `.agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt`
+
+## 20-Task Matrix
+- [x] Task 01 BINARY_GRAVEYARD_RECONNAISSANCE - local sbyte fallback grid remains in `ShinobuDeltaCrusherJobs.cs`.
+- [x] Task 02 RIGIDBODY_ERADICATION_PASS - scoped scan finds no Rigidbody/MeshCollider/Instantiate debris path in SHINOBU files.
+- [x] Task 03 ARM64_DEBRIS_ALIGNMENT - `DebrisParticleDTO` remains 32 bytes and no longer uses explicit `Pack`.
+- [x] Task 04 ORPHANED_CHUNK_PROTECTION - mock chunk gate rejects non-ready chunk state and writes telemetry.
+- [x] Task 05 BLIND_SAMPLER_MOCKING - `MockWorldSampler` flat-plane fallback remains.
+- [x] Task 06 THE_SPHERICAL_CARVE_KERNEL - sphere AABB carve job remains.
+- [x] Task 07 RUN_LENGTH_ENCODING_BURST - preallocated `NativeList<short>` RLE remains.
+- [x] Task 08 DELTA_EXTRACTION_FOR_DEBRIS - mass-to-debris accounting now derives previous density from `Interlocked.Add` return value, removing stale non-atomic read.
+- [x] Task 09 GPU_DEBRIS_KINEMATICS_JOB - point gravity/bounce/sleep fake remains.
+- [x] Task 10 BATCH_RENDERER_DEBRIS_LINK - persistent GraphicsBuffer/indirect render route remains.
+- [x] Task 11 VISUAL_SLAG_HOLOGRAM - recent cut heat uses runtime-local position after AUP subtraction.
+- [x] Task 12 MATERIAL_YIELD_ROUTING - CPU loot route remains decoupled from debris.
+- [x] Task 13 HARDWARE_LOD_DEBRIS_CAP - 500/4096/10000 debris tier caps remain.
+- [x] Task 14 CHUNK_BOUNDARY_SEAM_FIX - chunk split/runtime cell-address write path remains.
+- [x] Task 15 ASYNCHRONOUS_READBACK_AVOIDANCE - no GPU readback for loot.
+- [x] Task 16 RLE_DECOMPRESSION_HYDRATOR - decompressor remains.
+- [x] Task 17 TELEMETRY_MASS_TRACKER - 300-frame blackbox exports `.h8dump`.
+- [x] Task 18 DESTRUCTION_SCULPTOR_WINDOW - editor sculptor window remains.
+- [x] Task 19 LIVE_RLE_INSPECTOR - RLE live stats remain.
+- [x] Task 20 DEBRIS_PHYSICS_TUNER - DataVault job-state tuning bridge remains; CSV bake now validates temp binary before atomic replace.
+
+## Iteration Log
+- [x] Loop 01: Recovered missing status/rationale/log files from current source truth. No old chat-memory state was treated as authoritative.
+- [x] Loop 02: Re-read `SHINOBU_05` and relevant mandates. Found `Pack=4` on DTOs containing `double3/ulong`, which violates the current ARM64 layout mandate.
+- [x] Loop 03: Removed explicit `Pack` from SHINOBU runtime DTOs and voxel snapshot structs while preserving explicit `Size`.
+- [x] Loop 04: Fixed direct absolute AUP to float casts in recent cut heat and voxel compaction sampling. Both now subtract origin/volume `double3` before casting to local/runtime float.
+- [x] Loop 05: Verified scoped scans: no SHINOBU `Pack=`, no scoped `Dump_*.bin`, no Rigidbody/MeshCollider/Instantiate/SetData/GetData/AsyncGPUReadback path, no 1024 compute thread group.
+- [x] Loop 06: Created missing `LOG_SHINOBU_05.md` and reran compile probe. Build still fails outside SHINOBU on missing RealtimeCSG source files and `LocRegistry.cs` missing `AcquireUtf8ByteBuffer`.
+- [x] Loop 07: Fixed stale non-atomic density read in `VoxelSphericalCarveJob`; removed incorrect mass accounting under overlapping lasers.
+- [x] Loop 08: Added fail-closed guards to debris mirror/injection jobs and hardened the editor CSV bridge with schema/hash/path display plus validated temp-write binary bake.
+
+## Current Verification
+- `rg`: no `Pack=` remains in `ShinobuDeltaCrusherJobs.cs`, `CarveDebrisComputeRenderer.cs`, or `VoxelDeltaProcessor.cs` scoped SHINOBU layouts.
+- `rg`: only `Dump_SHINOBU_05_DEBRIS_PHYSICS_FAKE.h8dump` and `Dump_SHINOBU_05_VOXEL_CARVE.h8dump` remain in scoped SHINOBU dump paths.
+- `git diff --check`: clean for scoped SHINOBU source/docs; only line-ending warnings were emitted.
+- `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly`: PASS, 9 warnings, 0 errors.
+- `dotnet build Assembly-CSharp.csproj -nologo -clp:ErrorsOnly -maxcpucount:1`: FAILED outside SHINOBU after this pass; 216 errors from missing `Assets/RealtimeCSG/...` source files, 11 warnings, elapsed 00:03:11.03.
+
+## Self Audit
+- GameObjects/Rigidbodies: PASS.
+- Primary DTO alignment: PASS, `DebrisParticleDTO` = 32 bytes.
+- AUP: PASS for patched visual heat and compaction path: subtract AUP origin/volume in double, then cast.
+- Blackbox: PASS, 300-frame rings dump to `.h8dump`.
+- H-Phi: PASS for SHINOBU buffers; runtime debris uses DataVault/GraphicsBuffers.
+- Designer bridge: PASS static source. CSV import is editor-only, binary bake validates temp output and replaces atomically.
+- Compile guard: PASS for `Hecton8.Core.csproj`; global generated Assembly-CSharp surface remains blocked by external project state.

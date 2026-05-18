@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Collections.LowLevel.Unsafe;
 
 namespace Hecton8.Core.Data
@@ -122,7 +123,7 @@ namespace Hecton8.Core.Data
     /// <summary>
     /// Fixed header for H8StaticData.bin. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct H8StaticDataHeader
     {
         public uint Magic;
@@ -148,7 +149,7 @@ namespace Hecton8.Core.Data
     /// <summary>
     /// Hash-to-offset lookup entry. Size: 16 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public struct H8StaticDataLookupEntry
     {
         public uint Hash;
@@ -160,7 +161,7 @@ namespace Hecton8.Core.Data
     /// <summary>
     /// Fixed header for Babel_Dictionary.h8bin. Size: 32 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct H8BabelDictionaryHeader
     {
         public uint Magic;
@@ -177,7 +178,7 @@ namespace Hecton8.Core.Data
     /// <summary>
     /// Hash-to-UTF8 block index entry. Size: 16 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public struct H8BabelDictionaryEntry
     {
         public uint Hash;
@@ -187,9 +188,78 @@ namespace Hecton8.Core.Data
     }
 
     /// <summary>
+    /// Hash-to-UTF8 Babel index row. Size: 16 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public struct BabelIndexDTO
+    {
+        public uint StringHash;
+        public uint ByteOffset;
+        public uint ByteLength;
+        public uint _pad0;
+    }
+
+    /// <summary>
+    /// Result row for Burst lookup kernels. Size: 16 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public struct BabelLookupResultDTO
+    {
+        public uint TextHash;
+        public uint ByteOffset;
+        public uint ByteLength;
+        public uint Flags;
+    }
+
+    /// <summary>
+    /// Dependency-free text request payload used by Babel vacuum tests. Size: 16 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public struct MockTextRequestSignal : ISignal
+    {
+        public uint TextHash;
+        public uint FrameIndex;
+        public ushort LocaleId;
+        public ushort Flags;
+        public uint _pad0;
+    }
+
+    /// <summary>
+    /// Decoupled voice-over request. Audio owns consumption. Size: 16 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public partial struct PlayVoiceOverSignal : ISignal
+    {
+        public uint TextHash;
+        public uint VoiceHash;
+        public uint FrameIndex;
+        public uint Flags;
+    }
+
+    /// <summary>
+    /// Blind UI output buffer contract for lookup smoke jobs. Size: 16 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public unsafe struct MockUIBuffer
+    {
+        public byte* Ptr;
+        public int CapacityBytes;
+        public int WrittenBytes;
+    }
+
+    public partial struct MockSpanConverter
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int CountBytes(ReadOnlySpan<byte> utf8Bytes)
+        {
+            return utf8Bytes.Length;
+        }
+    }
+
+    /// <summary>
     /// Static item balance payload. Size: 48 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct H8ItemStaticRecord
     {
         public uint Hash;
@@ -210,7 +280,7 @@ namespace Hecton8.Core.Data
     /// <summary>
     /// Static economy balance payload. Size: 48 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct H8EconomyStaticRecord
     {
         public uint Hash;
@@ -230,7 +300,7 @@ namespace Hecton8.Core.Data
     /// <summary>
     /// Static physics balance payload. Size: 48 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct H8PhysicsStaticRecord
     {
         public uint Hash;
@@ -250,7 +320,7 @@ namespace Hecton8.Core.Data
     /// <summary>
     /// Static fauna balance payload. Size: 48 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct H8FaunaStaticRecord
     {
         public uint Hash;
@@ -270,7 +340,7 @@ namespace Hecton8.Core.Data
     /// <summary>
     /// Static data black-box entry. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct H8StaticDataTelemetryEntry
     {
         public uint FrameIndex;
@@ -292,7 +362,7 @@ namespace Hecton8.Core.Data
     /// <summary>
     /// Fixed header for static-data black-box dumps. Size: 32 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct H8StaticDataDumpHeader
     {
         public ulong Magic;

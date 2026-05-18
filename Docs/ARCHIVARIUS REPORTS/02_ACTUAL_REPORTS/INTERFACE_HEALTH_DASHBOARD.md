@@ -2,16 +2,24 @@
 
 Date: 2026-05-11
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Source basis: `GlobalRegistryContracts.cs` plus direct first-party class declaration scan in `Assets/_Project/Scripts`, with focused checks of `PDALogbookManager`, `UIStateStore`, `FluidMathCore`, and May 11 `IDamageReceiver` owners
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
 
 ## Executive Summary
 
-2026-05-13 DOC_AUDIT R3 override: current static scan of `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs` finds `51` direct public interfaces. The May 11 `41`-interface inventory below is retained as historical named-owner evidence only; coverage ratios and empty-seam labels must be recomputed before use as current proof.
+2026-05-13 DOC_AUDIT R3 found `51` direct public interfaces. R18 static read sees `63` direct public interfaces in `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs`; coverage remains `PENDING VERIFICATION`. The May 11 `41`-interface inventory below is retained as historical named-owner evidence only; coverage ratios and empty-seam labels must be recomputed before use as current proof.
 
 | Metric | Count |
 |---|---:|
-| Direct public interfaces in `GlobalRegistryContracts.cs` | 51 |
+| Direct public interfaces in `GlobalRegistryContracts.cs` | Historical R3 `51`; R18 static read `63` |
 | Interfaces with at least one direct implementor found in the May 1 source scan | stale `30/31`; not valid for the current `51` contract count |
 | Confirmed empty extension seams in current pass | not recounted |
 | Confirmed shadow/conflict cases in current pass | not recounted |
@@ -95,7 +103,7 @@ Coverage ratios remain `PENDING VERIFICATION` until the implementor scan is reru
 
 | Older claim | Current verified state |
 |---|---|
-| `GlobalRegistryContracts.cs` had `19`, `27`, `31`, `33`, `34`, `36`, `37`, `38`, `39`, `40`, or `41` interfaces | False now. Current file has `51` direct public interfaces. |
+| `GlobalRegistryContracts.cs` had `19`, `27`, `31`, `33`, `34`, `36`, `37`, `38`, `39`, `40`, `41`, or `51` interfaces | False now. R18 static read sees `63` direct public interfaces; implementor coverage was not recounted. |
 | `IAudioService` had no implementor | False. `SpatialAudioManager` implements `IAudioService` and registers itself. |
 | `IUIService` was fragmented across multiple implementors | False in current source scan. Direct implementor found: `SuitHUDV4CanvasOverlay`. |
 | `IRenderable` had a single owner | False. Current direct implementors include `HectonUnderwaterVisuals`, `HectonSubmarineOS`, and `MissionMarkerSystem`. |

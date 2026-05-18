@@ -1,7 +1,22 @@
-﻿# AWAITABLE MEMORY COMPACTION SURGERY LOG
+# AWAITABLE MEMORY COMPACTION SURGERY LOG
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-18 R13 Report Snapshot Boundary
+
+This report file is a snapshot/provenance document. It is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/Reports/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+Historical `PASS`, `VERIFIED`, `current`, `latest`, counter, compile, runtime, 0-GC, frame-time, cost, and performance statements inside this report are not current proof unless the exact claim links a fresh artifact path, command/tool, timestamp, evidence class, and unresolved-error list. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied by this file alone.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Scope: safe subset of the OMEGA Awaitable Migration & Memory Compaction pass.
 No Play Mode was launched.
@@ -33,7 +48,7 @@ No Play Mode was launched.
 | Awaitable migration batch 7 | `Dev/ShellVerificationRuntimeSmokeTester` no longer uses `StartCoroutine`, `IEnumerator`, `yield return`, or `WaitForSecondsRealtime`. Auto-start, resume, editor-stability, menu/world, pause, input, and load-slot waits now use `Awaitable` with `destroyCancellationToken`. |
 | Coroutine grep hygiene | Removed false-positive or disabled coroutine tokens from `InteractionHighlighter`, `FaunaDirector`, and the dead `#if false` slow-tick stub in `GameTickManager`; no runtime slow-tick logic changed. |
 | Compile hygiene | Fixed a stale editor compile error in `HectonComplianceValidator` by fully qualifying `global::System.Environment.GetEnvironmentVariable`. |
-| Graveyard sync | Updated `DEAD_CODE_GRAVEYARD.md` with actual removal state and retained `WorldGenerativeGeologyRuntimeSmokeTester` because current editor code references it. |
+| Graveyard sync | Updated `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/DEAD_CODE_GRAVEYARD.md` with actual removal state and retained `WorldGenerativeGeologyRuntimeSmokeTester` because current editor code references it. |
 | Crash telemetry MMF/cache check | `CrashTelemetryBuffer` already uses `NativeArray<byte>` export scratch, `UnsafeUtility.MemCpy`, and `AsyncWriteManager.WriteAll` over a native pointer. No managed `byte[]` export buffer was introduced. |
 
 ## Awaitable / Coroutine State
@@ -73,10 +88,10 @@ Facts:
 
 | Check | Result |
 |---|---|
-| Assets refs to removed four classes | PASS: no current refs under `Assets/`. |
-| `CrashTelemetryBuffer` export path | PASS by code inspection: `NativeArray<byte>` + `UnsafeUtility.MemCpy` + native pointer write. |
-| Runtime `Spawn` expansion | PASS by code inspection: spawn path returns `null`; `InstantiatePooled` is only used from `Warmup`. |
-| Migrated harness coroutine scan | PASS: migrated files have no `StartCoroutine`, `IEnumerator`, or `yield return` hits. |
+| Assets refs to removed four classes | Historical STATIC_SOURCE pass: no refs under `Assets/` in that pass. |
+| `CrashTelemetryBuffer` export path | Historical STATIC_SOURCE code inspection: `NativeArray<byte>` + `UnsafeUtility.MemCpy` + native pointer write. |
+| Runtime `Spawn` expansion | Historical STATIC_SOURCE code inspection: spawn path returns `null`; `InstantiatePooled` is only used from `Warmup`. |
+| Migrated harness coroutine scan | Historical STATIC_SOURCE pass: migrated files had no `StartCoroutine`, `IEnumerator`, or `yield return` hits. |
 | Unity MCP refresh/console | PASS for that surgery session only: after a forced script compile/domain reload, `read_console(types=["error"])` returned 0 entries. |
 | Editor log tail fallback | Prior `HectonComplianceValidator` and transient `ConstructionManager` compile errors were stale after that domain reload; final MCP console read in that session reported 0 errors. |
 

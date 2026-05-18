@@ -1,6 +1,14 @@
 # ETA2_SUPREME_SUMMARY â€” Deep Core Archaeology Final Report
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 
 ## Current-State Addendum (2026-05-04)
@@ -107,7 +115,7 @@ Preferred current-state references: `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUA
 | `PlayerCriticalProceduralAudioRenderer.cs` | ~437-446 | 4 lazy lookups |
 
 **Fix pattern:** Replace `LayerMask.NameToLayer("X")` with `private static readonly int _XLayer = LayerMask.NameToLayer("X");` in class scope.
-**Ready for:** AGENT_PHYSICS to apply.
+**Ready for:** Historical handoff candidate only; rerun source, compile, and owner review before implementation.
 
 ---
 

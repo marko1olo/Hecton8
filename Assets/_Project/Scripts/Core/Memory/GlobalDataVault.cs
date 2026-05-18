@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core.Contracts;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -42,6 +43,9 @@ namespace Hecton8.Core.Memory
 
         /// <summary>Bitmask of vault buffers currently held by scheduled jobs.</summary>
         uint ActiveBurstLockMask { get; }
+
+        /// <summary>64-bit lock-free mutation mask for contested vault writers.</summary>
+        ulong ActiveMutationGuardMask { get; }
 
         /// <summary>True when the most recent gap analysis crossed the fragmentation threshold.</summary>
         bool IsFragmented { get; }
@@ -82,6 +86,12 @@ namespace Hecton8.Core.Memory
         /// <summary>Global vault generation for black-box telemetry and stale-handle audits.</summary>
         uint VaultGenerationID { get; }
 
+        /// <summary>Bitmask describing the most recent starvation fallback path.</summary>
+        byte MemoryStarvationWarnings { get; }
+
+        /// <summary>Current number of arena blocks exposed for editor-only memory maps.</summary>
+        int MemoryBlockSnapshotCount { get; }
+
         /// <summary>Records one no-allocation heartbeat into the fixed 300-frame vault telemetry ring.</summary>
         void RecordHeartbeat();
 
@@ -99,6 +109,16 @@ namespace Hecton8.Core.Memory
 
         /// <summary>Attempts to read an existing generation-checked handle without creating or growing it.</summary>
         bool TryGetBufferHandle<T>(BufferID bufferId, out VaultBufferHandle<T> handle) where T : struct;
+
+        /// <summary>Attempts to acquire a cache-line-aligned pointer slice from a vault-owned buffer.</summary>
+        bool TryAcquireSlice<T>(
+            BufferID bufferId,
+            int requiredLength,
+            int startIndex,
+            int count,
+            SystemID requester,
+            out VaultBufferSlice<T> slice,
+            NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct;
 
         /// <summary>Validates a generation-checked handle; stale cached metadata fails fast.</summary>
         bool ResolveBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct;
@@ -135,8 +155,17 @@ namespace Hecton8.Core.Memory
         /// <summary>Unlocks a previously locked buffer owned by a specific system.</summary>
         bool TryUnlockBuffer(BufferID bufferId, SystemID lockOwner);
 
+        /// <summary>Attempts to atomically reserve one or more writer bits.</summary>
+        bool TryAcquireMutationGuard(ulong writeMask);
+
+        /// <summary>Releases writer bits acquired by <see cref="TryAcquireMutationGuard"/>.</summary>
+        void ReleaseMutationGuard(ulong writeMask);
+
         /// <summary>Attempts to read one relocation record from future offline relocation.</summary>
         bool TryGetLastRelocationRecord(int index, out VaultRelocationRecord record);
+
+        /// <summary>Attempts to read one immutable memory-block snapshot for diagnostics/editor visualization.</summary>
+        bool TryGetMemoryBlockSnapshot(int index, out VaultMemoryBlockSnapshot snapshot);
 
         /// <summary>Locks vault allocation while AUP positions are being rebased.</summary>
         void LockAllocationsForAupShift(uint shiftFrameId);
@@ -160,7 +189,7 @@ namespace Hecton8.Core.Memory
     /// Generation-checked vault buffer handle. Resolve before dereferencing across frames.
     /// </summary>
     /// <typeparam name="T">Blittable element type.</typeparam>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
     public unsafe struct VaultBufferHandle<T> where T : struct
     {
         /// <summary>Cached raw pointer. Invalid after a generation mismatch; resolver fails fast.</summary>
@@ -206,12 +235,112 @@ namespace Hecton8.Core.Memory
         {
             return vault != null && vault.ResolveBuffer(ref this) ? ptr : null;
         }
+
+        /// <summary>
+        /// Resolves and returns a mutable reference to the element in vault memory.
+        /// </summary>
+        /// <param name="vault">Owning vault.</param>
+        /// <param name="index">Element index inside the buffer.</param>
+        /// <returns>Reference to the exact element address.</returns>
+        public ref T GetElementAsRef(IDataVault vault, int index)
+        {
+            void* basePtr = ResolvePointer(vault);
+            if (basePtr == null || (uint)index >= (uint)Length || Stride != UnsafeUtility.SizeOf<T>())
+                FatalMemoryException.ThrowStaleVaultHandle();
+
+            Hint.Assume(basePtr != null);
+            Hint.Assume(index >= 0);
+            Hint.Assume(index < Length);
+            Hint.Assume(Stride == UnsafeUtility.SizeOf<T>());
+            return ref UnsafeUtility.AsRef<T>((byte*)basePtr + (index * Stride));
+        }
+
+        /// <summary>
+        /// Resolves and returns a read-only reference to the element in vault memory.
+        /// </summary>
+        /// <param name="vault">Owning vault.</param>
+        /// <param name="index">Element index inside the buffer.</param>
+        /// <returns>Read-only reference to the exact element address.</returns>
+        public ref readonly T GetElementAsReadOnlyRef(IDataVault vault, int index)
+        {
+            return ref GetElementAsRef(vault, index);
+        }
+
+        /// <summary>
+        /// Clears one tombstoned element in-place while preserving the buffer index.
+        /// </summary>
+        /// <param name="vault">Owning vault.</param>
+        /// <param name="index">Element index to clear.</param>
+        /// <param name="aliveMask">Single 64-entity alive mask owned by the caller.</param>
+        /// <returns>True when the payload was cleared.</returns>
+        public bool TryTombstoneElement(IDataVault vault, int index, ref ulong aliveMask)
+        {
+            void* basePtr = ResolvePointer(vault);
+            if (basePtr == null || (uint)index >= (uint)Length || Stride <= 0)
+                return false;
+
+            aliveMask &= ~(1UL << (index & 63));
+            Hint.Assume(basePtr != null);
+            Hint.Assume(index >= 0);
+            Hint.Assume(index < Length);
+            UnsafeUtility.MemClear((byte*)basePtr + (index * Stride), Stride);
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Raw slice into vault-owned or emergency overflow memory. Size: 32 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    public unsafe struct VaultBufferSlice<T> where T : struct
+    {
+        public const byte FlagPrimary = 1 << 0;
+        public const byte FlagEmergencyOverflow = 1 << 1;
+        public const byte FlagReadOnlyDummy = 1 << 2;
+
+        public void* Ptr;
+        public uint Generation;
+        public BufferID BufferId;
+        public int StartIndex;
+        public int Length;
+        public int Stride;
+        public byte Flags;
+        private byte _pad0;
+        private byte _pad1;
+        private byte _pad2;
+
+        public bool IsCreated => Ptr != null && Length > 0 && Stride == UnsafeUtility.SizeOf<T>();
+        public bool IsReadOnlyDummy => (Flags & FlagReadOnlyDummy) != 0;
+
+        /// <summary>Returns a mutable reference to an element inside the slice.</summary>
+        public ref T GetElementAsRef(int localIndex)
+        {
+            if (Ptr == null || (uint)localIndex >= (uint)Length || IsReadOnlyDummy)
+                FatalMemoryException.ThrowStaleVaultHandle();
+
+            Hint.Assume(Ptr != null);
+            Hint.Assume(localIndex >= 0);
+            Hint.Assume(localIndex < Length);
+            return ref UnsafeUtility.AsRef<T>((byte*)Ptr + (localIndex * Stride));
+        }
+
+        /// <summary>Returns a read-only reference to an element inside the slice.</summary>
+        public ref readonly T GetElementAsReadOnlyRef(int localIndex)
+        {
+            if (Ptr == null || (uint)localIndex >= (uint)Length)
+                FatalMemoryException.ThrowStaleVaultHandle();
+
+            Hint.Assume(Ptr != null);
+            Hint.Assume(localIndex >= 0);
+            Hint.Assume(localIndex < Length);
+            return ref UnsafeUtility.AsRef<T>((byte*)Ptr + (localIndex * Stride));
+        }
     }
 
     /// <summary>
     /// Fixed-size relocation record copied from the memory assembly to the Core signal bridge.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct VaultRelocationRecord
     {
         public const byte FlagAddressChanged = 1 << 0;
@@ -228,7 +357,7 @@ namespace Hecton8.Core.Memory
         public ushort Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     internal struct VaultBufferMeta
     {
         public long OffsetBytes;
@@ -241,9 +370,30 @@ namespace Hecton8.Core.Memory
         public uint Version;
         public SystemID Owner;
         public SystemID LastAliasRequester;
+        public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    /// <summary>
+    /// Immutable block snapshot used by editor diagnostics. Size: 48 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    public struct VaultMemoryBlockSnapshot
+    {
+        public long OffsetBytes;
+        public long Bytes;
+        public int BufferKey;
+        public int H8BlockIndex;
+        public uint Version;
+        public ushort Owner;
+        public ushort LockCount;
+        public byte State;
+        public byte Flags;
+        public ushort Reserved0;
+        public uint Reserved1;
+        public long Reserved2;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     internal struct VaultArenaBlock
     {
         public long OffsetBytes;
@@ -256,7 +406,7 @@ namespace Hecton8.Core.Memory
         public ushort Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 128)]
+    [StructLayout(LayoutKind.Sequential, Size = 128)]
     internal struct MemoryDefragTelemetryEntry
     {
         public long TotalFreeSpaceBytes;
@@ -264,20 +414,27 @@ namespace Hecton8.Core.Memory
         public long LastMovedBytes;
         public long TotalMovedBytes;
         public long PendingMassiveMoveBytes;
+        public ulong ActiveMutationGuardMask;
         public uint Sequence;
         public uint Frame;
         public uint VaultGenerationID;
         public uint ActiveBurstLockMask;
         public int BlockCount;
         public int ActiveBufferCount;
-        public float HeapFragmentationRatio;
         public int WatchdogBreaches;
+        public int EmergencyOverflowCursorBytes;
+        public float HeapFragmentationRatio;
         public ushort LastRelocatedSystemId;
         public ushort Reserved16;
         public byte Flags;
         public byte IsFragmented;
         public byte WatchdogExceeded;
-        public byte Reserved;
+        public byte MemoryStarvationWarnings;
+        public uint Reserved32;
+        public long ReservedLong0;
+        public long ReservedLong1;
+        public long ReservedLong2;
+        public long ReservedLong3;
     }
 
     /// <summary>
@@ -296,11 +453,13 @@ namespace Hecton8.Core.Memory
         private const float HighTierFragmentationRatioThreshold = 0.30f;
         private const float StressDefragHaltThreshold = 0.9f;
         private const long MassiveMoveThresholdBytes = 50L * 1024L * 1024L;
-        private const long MaxLiveDefragMoveBytesPerSlice = 5L * 1024L * 1024L;
+        private const long MaxLiveDefragMoveBytesPerSlice = 1024L;
         private const long ArenaGrowSlackBytes = 64L * 1024L * 1024L;
         private const byte MacroDatabasePayloadDirtyFlag = 1 << 0;
         private const int MaxMacroDatabasePayloadBytes = 256 * 1024;
         private const int MaxRelocationRecordCount = 64;
+        private const int EmergencyOverflowBufferBytes = 256 * 1024;
+        private const int ReadOnlyDummyBufferBytes = 64;
         internal const byte BlockStateFree = 0;
         internal const byte BlockStateOccupied = 1;
         private const byte BlockFlagExternalView = 1 << 0;
@@ -317,12 +476,15 @@ namespace Hecton8.Core.Memory
         private const int VaultBufferHandleSizeBytes = 24;
         private const int VaultRelocationRecordSizeBytes = 32;
         private const int VaultBufferMetaSizeBytes = 48;
+        private const int VaultMemoryBlockSnapshotSizeBytes = 48;
         private const int VaultArenaBlockSizeBytes = 32;
         private const int MemoryDefragTelemetryEntrySizeBytes = 128;
         private const ulong DefragDumpMagic = 0x3147445648384848UL; // HH8HVDG1
         private const int DefragDumpVersion = 2;
         private const string DefragDumpPath = "Docs/AgentLogs/Dump_MEMORY_DEFRAGMENTATION_OVERSEER.bin";
         private const string PhiVodDumpPath = "Docs/AgentLogs/Dump_MEMORY_DEFRAGMENTATION_OVERSEER_PHIVOD.bin";
+        private const string ShinobuDumpPath = "Docs/AgentLogs/Dump_SHINOBU_01.bin";
+        private const string ShinobuH8DumpPath = "Docs/AgentLogs/Dump_SHINOBU_01.h8dump";
 
         private UnsafeHashMap<int, IntPtr> _buffers;
         private UnsafeHashMap<int, VaultBufferMeta> _metadata;
@@ -334,12 +496,18 @@ namespace Hecton8.Core.Memory
         private NativeParallelHashMap<ulong, uint> _macroDatabasePayloadAccessTicks;
         private NativeList<ulong> _macroDatabasePayloadKeys;
         private void* _arenaBase;
+        private void* _emergencyOverflowBase;
+        private void* _readOnlyDummyBase;
         private long _arenaBytes;
         private long _arenaCapacityLimitBytes;
+        private int _emergencyOverflowCursorBytes;
         private int _allocationLock;
         private int _compactionFence;
         private int _activeLocks;
+        private int _mutationGuardMaskLow;
+        private int _mutationGuardMaskHigh;
         private bool _memMoveBlockedByStress;
+        private byte _memoryStarvationWarnings;
         private uint _lockedShiftFrameId;
         private long _allocatedBytes;
         private long _macroDatabasePayloadBytes;
@@ -357,6 +525,7 @@ namespace Hecton8.Core.Memory
         private bool _defragDumpWritten;
         private bool _phiVodDumpWritten;
         private bool _initialized;
+        private static GlobalDataVault _latestCreated;
 
         /// <inheritdoc />
         public long AllocatedBytes => _allocatedBytes;
@@ -377,6 +546,11 @@ namespace Hecton8.Core.Memory
 
         /// <inheritdoc />
         public uint ActiveBurstLockMask => unchecked((uint)Volatile.Read(ref _activeLocks));
+
+        /// <inheritdoc />
+        public ulong ActiveMutationGuardMask =>
+            ((ulong)(uint)Volatile.Read(ref _mutationGuardMaskHigh) << 32) |
+            (uint)Volatile.Read(ref _mutationGuardMaskLow);
 
         /// <inheritdoc />
         public bool IsFragmented { get; private set; }
@@ -418,6 +592,12 @@ namespace Hecton8.Core.Memory
         public uint VaultGenerationID => _vaultGenerationId;
 
         /// <inheritdoc />
+        public byte MemoryStarvationWarnings => _memoryStarvationWarnings;
+
+        /// <inheritdoc />
+        public int MemoryBlockSnapshotCount => _blocks.IsCreated ? _blocks.Length : 0;
+
+        /// <inheritdoc />
         public int LastRelocationRecordCount => _lastRelocationRecordCount;
 
         /// <summary>
@@ -427,7 +607,15 @@ namespace Hecton8.Core.Memory
         {
             GlobalDataVault vault = new GlobalDataVault();
             vault.Initialize(capacity, arenaCapacityLimitBytes);
+            _latestCreated = vault;
             return vault;
+        }
+
+        /// <summary>Returns the most recently initialized vault for editor diagnostics.</summary>
+        public static bool TryGetLatestCreated(out GlobalDataVault vault)
+        {
+            vault = _latestCreated;
+            return vault != null && vault._initialized;
         }
 
         /// <summary>
@@ -469,6 +657,20 @@ namespace Hecton8.Core.Memory
                 Allocator.Persistent,
                 clearMemory: true,
                 H8AllocationFlags.Vault | H8AllocationFlags.SubAllocatorRoot);
+            _emergencyOverflowBase = H8Memory.AllocateRaw(
+                EmergencyOverflowBufferBytes,
+                VaultBlockAlignment,
+                SystemID.CoreDataVault,
+                Allocator.Persistent,
+                clearMemory: true,
+                H8AllocationFlags.Vault);
+            _readOnlyDummyBase = H8Memory.AllocateRaw(
+                ReadOnlyDummyBufferBytes,
+                VaultBlockAlignment,
+                SystemID.CoreDataVault,
+                Allocator.Persistent,
+                clearMemory: true,
+                H8AllocationFlags.Vault);
             if (_arenaBase == null)
             {
                 _initialized = true;
@@ -479,6 +681,10 @@ namespace Hecton8.Core.Memory
             _allocationLock = 0;
             _compactionFence = 0;
             _activeLocks = 0;
+            _mutationGuardMaskLow = 0;
+            _mutationGuardMaskHigh = 0;
+            _emergencyOverflowCursorBytes = 0;
+            _memoryStarvationWarnings = 0;
             _lockedShiftFrameId = 0u;
             _allocatedBytes = 0L;
             _macroDatabasePayloadBytes = 0L;
@@ -521,13 +727,16 @@ namespace Hecton8.Core.Memory
             }
 
             _initialized = true;
+            _latestCreated = this;
         }
 
         private static void ValidateAbiLayout()
         {
             if (UnsafeUtility.SizeOf<VaultBufferHandle<byte>>() != VaultBufferHandleSizeBytes ||
+                UnsafeUtility.SizeOf<VaultBufferSlice<byte>>() != VaultArenaBlockSizeBytes ||
                 UnsafeUtility.SizeOf<VaultRelocationRecord>() != VaultRelocationRecordSizeBytes ||
                 UnsafeUtility.SizeOf<VaultBufferMeta>() != VaultBufferMetaSizeBytes ||
+                UnsafeUtility.SizeOf<VaultMemoryBlockSnapshot>() != VaultMemoryBlockSnapshotSizeBytes ||
                 UnsafeUtility.SizeOf<VaultArenaBlock>() != VaultArenaBlockSizeBytes ||
                 UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>() != MemoryDefragTelemetryEntrySizeBytes)
             {
@@ -587,7 +796,8 @@ namespace Hecton8.Core.Memory
             NativeArrayOptions options,
             bool exposeExternalView,
             out IntPtr resolvedPointer,
-            out int resolvedLength) where T : struct
+            out int resolvedLength,
+            bool sanitizeFinite = true) where T : struct
         {
             resolvedPointer = default;
             resolvedLength = 0;
@@ -660,7 +870,8 @@ namespace Hecton8.Core.Memory
                         return false;
                     }
 
-                    SanitizeFinitePayload<T>(existingPointer, existingMeta.Length);
+                    if (sanitizeFinite)
+                        SanitizeFinitePayload<T>(existingPointer, existingMeta.Length);
                     resolvedPointer = existingPointer;
                     resolvedLength = existingMeta.Length;
                     return true;
@@ -694,7 +905,8 @@ namespace Hecton8.Core.Memory
                     return false;
                 }
 
-                SanitizeFinitePayload<T>(resizedPointer, requiredLength);
+                if (sanitizeFinite)
+                    SanitizeFinitePayload<T>(resizedPointer, requiredLength);
                 resolvedPointer = resizedPointer;
                 resolvedLength = requiredLength;
                 return true;
@@ -774,7 +986,8 @@ namespace Hecton8.Core.Memory
                 return false;
             }
 
-            SanitizeFinitePayload<T>(pointer, requiredLength);
+            if (sanitizeFinite)
+                SanitizeFinitePayload<T>(pointer, requiredLength);
             resolvedPointer = pointer;
             resolvedLength = requiredLength;
             return true;
@@ -851,6 +1064,69 @@ namespace Hecton8.Core.Memory
                 return false;
 
             return TryBuildHandle(bufferId, out handle);
+        }
+
+        /// <inheritdoc />
+        public bool TryAcquireSlice<T>(
+            BufferID bufferId,
+            int requiredLength,
+            int startIndex,
+            int count,
+            SystemID requester,
+            out VaultBufferSlice<T> slice,
+            NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct
+        {
+            slice = default;
+            if (count <= 0 || startIndex < 0 || requiredLength <= 0)
+                return false;
+
+            int stride = UnsafeUtility.SizeOf<T>();
+            if (stride <= 0 || startIndex > int.MaxValue - count)
+                return false;
+
+            int endIndex = startIndex + count;
+            int actualRequiredLength = requiredLength >= endIndex ? requiredLength : endIndex;
+            if (TryEnsureVaultBuffer<T>(
+                    bufferId,
+                    actualRequiredLength,
+                    requester,
+                    options,
+                    exposeExternalView: false,
+                    out IntPtr pointer,
+                    out int resolvedLength,
+                    sanitizeFinite: false) &&
+                endIndex <= resolvedLength &&
+                TryBuildHandle(bufferId, out VaultBufferHandle<T> handle))
+            {
+                Hint.Assume(pointer != IntPtr.Zero);
+                Hint.Assume(startIndex >= 0);
+                Hint.Assume(count > 0);
+                slice.Ptr = (byte*)pointer.ToPointer() + (startIndex * stride);
+                slice.Generation = handle.generation;
+                slice.BufferId = bufferId;
+                slice.StartIndex = startIndex;
+                slice.Length = count;
+                slice.Stride = stride;
+                slice.Flags = VaultBufferSlice<T>.FlagPrimary;
+                return true;
+            }
+
+            SetMemoryStarvationWarning(1);
+            if (TryAcquireEmergencyOverflowSlice(count, stride, out void* emergencyPtr))
+            {
+                slice.Ptr = emergencyPtr;
+                slice.Generation = _vaultGenerationId;
+                slice.BufferId = bufferId;
+                slice.StartIndex = 0;
+                slice.Length = count;
+                slice.Stride = stride;
+                slice.Flags = VaultBufferSlice<T>.FlagEmergencyOverflow;
+                return true;
+            }
+
+            SetMemoryStarvationWarning(2);
+            slice = BuildReadOnlyDummySlice<T>(bufferId, count, stride);
+            return false;
         }
 
         /// <inheritdoc />
@@ -1110,6 +1386,43 @@ namespace Hecton8.Core.Memory
             return true;
         }
 
+        /// <inheritdoc />
+        public bool TryAcquireMutationGuard(ulong writeMask)
+        {
+            if (writeMask == 0UL)
+                return false;
+
+            int lowMask = unchecked((int)(uint)writeMask);
+            int highMask = unchecked((int)(uint)(writeMask >> 32));
+            while (true)
+            {
+                int observedLow = Volatile.Read(ref _mutationGuardMaskLow);
+                int observedHigh = Volatile.Read(ref _mutationGuardMaskHigh);
+                if ((observedLow & lowMask) != 0 || (observedHigh & highMask) != 0)
+                    return false;
+
+                if (Interlocked.CompareExchange(ref _mutationGuardMaskLow, observedLow | lowMask, observedLow) != observedLow)
+                    continue;
+
+                if (Interlocked.CompareExchange(ref _mutationGuardMaskHigh, observedHigh | highMask, observedHigh) == observedHigh)
+                    return true;
+
+                ReleaseMutationGuard((uint)lowMask);
+            }
+        }
+
+        /// <inheritdoc />
+        public void ReleaseMutationGuard(ulong writeMask)
+        {
+            if (writeMask == 0UL)
+                return;
+
+            int lowMask = unchecked((int)(uint)writeMask);
+            int highMask = unchecked((int)(uint)(writeMask >> 32));
+            ClearAtomicBits(ref _mutationGuardMaskLow, lowMask);
+            ClearAtomicBits(ref _mutationGuardMaskHigh, highMask);
+        }
+
         private static int ResolveActiveLockBit(BufferID bufferId)
         {
             int bitIndex = unchecked((int)((uint)(int)bufferId & 31u));
@@ -1174,6 +1487,73 @@ namespace Hecton8.Core.Memory
             return (localLockMask | externalLockMask) != 0u;
         }
 
+        private void SetMemoryStarvationWarning(byte bit)
+        {
+            _memoryStarvationWarnings = (byte)(_memoryStarvationWarnings | (byte)(1 << bit));
+            LastDefragFlags = (byte)(LastDefragFlags | DefragFlagFault);
+        }
+
+        private bool TryAcquireEmergencyOverflowSlice(int count, int stride, out void* ptr)
+        {
+            ptr = null;
+            if (_emergencyOverflowBase == null || count <= 0 || stride <= 0)
+                return false;
+
+            long payloadBytes = (long)count * stride;
+            if (payloadBytes <= 0L || payloadBytes > int.MaxValue)
+                return false;
+
+            int byteCount = (int)AlignUp(payloadBytes, VaultBlockAlignment);
+            while (true)
+            {
+                int observed = Volatile.Read(ref _emergencyOverflowCursorBytes);
+                int alignedOffset = (int)AlignUp(observed, VaultBlockAlignment);
+                long next = (long)alignedOffset + byteCount;
+                if (next > EmergencyOverflowBufferBytes)
+                    return false;
+
+                if (Interlocked.CompareExchange(ref _emergencyOverflowCursorBytes, (int)next, observed) != observed)
+                    continue;
+
+                ptr = (byte*)_emergencyOverflowBase + alignedOffset;
+                UnsafeUtility.MemClear(ptr, byteCount);
+                return true;
+            }
+        }
+
+        private VaultBufferSlice<T> BuildReadOnlyDummySlice<T>(BufferID bufferId, int count, int stride) where T : struct
+        {
+            VaultBufferSlice<T> slice = default;
+            slice.Ptr = _readOnlyDummyBase;
+            slice.Generation = _vaultGenerationId;
+            slice.BufferId = bufferId;
+            slice.StartIndex = 0;
+            slice.Stride = stride > 0 ? stride : UnsafeUtility.SizeOf<T>();
+            int maxDummyCount = slice.Stride > 0 ? ReadOnlyDummyBufferBytes / slice.Stride : 1;
+            if (maxDummyCount <= 0)
+                maxDummyCount = 1;
+            slice.Length = math.min(count > 0 ? count : 1, maxDummyCount);
+            slice.Flags = (byte)(VaultBufferSlice<T>.FlagEmergencyOverflow | VaultBufferSlice<T>.FlagReadOnlyDummy);
+            return slice;
+        }
+
+        private static void ClearAtomicBits(ref int target, int bits)
+        {
+            if (bits == 0)
+                return;
+
+            int observed;
+            int updated;
+            do
+            {
+                observed = Volatile.Read(ref target);
+                updated = observed & ~bits;
+                if (updated == observed)
+                    return;
+            }
+            while (Interlocked.CompareExchange(ref target, updated, observed) != observed);
+        }
+
         /// <inheritdoc />
         public bool TryGetLastRelocationRecord(int index, out VaultRelocationRecord record)
         {
@@ -1187,6 +1567,28 @@ namespace Hecton8.Core.Memory
             }
 
             record = _lastRelocationRecords[index];
+            return true;
+        }
+
+        /// <inheritdoc />
+        public bool TryGetMemoryBlockSnapshot(int index, out VaultMemoryBlockSnapshot snapshot)
+        {
+            snapshot = default;
+            if (!_blocks.IsCreated || (uint)index >= (uint)_blocks.Length)
+                return false;
+
+            VaultArenaBlock block = _blocks[index];
+            snapshot.OffsetBytes = block.OffsetBytes;
+            snapshot.Bytes = block.Bytes;
+            snapshot.BufferKey = block.BufferKey;
+            snapshot.H8BlockIndex = block.H8BlockIndex;
+            snapshot.Version = block.Version;
+            snapshot.Owner = 0;
+            if (block.BufferKey != 0 && _metadata.IsCreated && _metadata.TryGetValue(block.BufferKey, out VaultBufferMeta meta))
+                snapshot.Owner = (ushort)meta.Owner;
+            snapshot.LockCount = block.Reserved1;
+            snapshot.State = block.State;
+            snapshot.Flags = block.Reserved0;
             return true;
         }
 
@@ -1216,6 +1618,8 @@ namespace Hecton8.Core.Memory
             if (!_initialized || !_defragBlackBox.IsCreated)
                 return;
 
+            Volatile.Write(ref _emergencyOverflowCursorBytes, 0);
+            _memoryStarvationWarnings = 0;
             RecordDefragBlackBox(++_defragTickSequence, DefragFlagHeartbeat);
         }
 
@@ -1518,6 +1922,16 @@ namespace Hecton8.Core.Memory
                 H8Memory.FreeRaw(_arenaBase, Allocator.Persistent, SystemID.CoreDataVault);
                 _arenaBase = null;
             }
+            if (_emergencyOverflowBase != null)
+            {
+                H8Memory.FreeRaw(_emergencyOverflowBase, Allocator.Persistent, SystemID.CoreDataVault);
+                _emergencyOverflowBase = null;
+            }
+            if (_readOnlyDummyBase != null)
+            {
+                H8Memory.FreeRaw(_readOnlyDummyBase, Allocator.Persistent, SystemID.CoreDataVault);
+                _readOnlyDummyBase = null;
+            }
 
             if (_keys.IsCreated)
                 _keys.Dispose();
@@ -1541,6 +1955,10 @@ namespace Hecton8.Core.Memory
             _allocationLock = 0;
             _compactionFence = 0;
             _activeLocks = 0;
+            _mutationGuardMaskLow = 0;
+            _mutationGuardMaskHigh = 0;
+            _emergencyOverflowCursorBytes = 0;
+            _memoryStarvationWarnings = 0;
             _defragBlackBoxCursor = 0;
             _defragBlackBoxRecordedCount = 0;
             _lastRelocationRecordCount = 0;
@@ -1554,6 +1972,8 @@ namespace Hecton8.Core.Memory
             _phiVodDumpWritten = false;
             ResetDefragTelemetry();
             _initialized = false;
+            if (ReferenceEquals(_latestCreated, this))
+                _latestCreated = null;
         }
 
         private void DisposeMacroDatabasePayloadCache()
@@ -2179,6 +2599,7 @@ namespace Hecton8.Core.Memory
             entry.Frame = unchecked((uint)UnityEngine.Time.frameCount);
             entry.VaultGenerationID = _vaultGenerationId;
             entry.ActiveBurstLockMask = ActiveBurstLockMask;
+            entry.ActiveMutationGuardMask = ActiveMutationGuardMask;
             entry.BlockCount = _blocks.IsCreated ? _blocks.Length : 0;
             entry.ActiveBufferCount = _keys.IsCreated ? _keys.Length : 0;
             entry.TotalFreeSpaceBytes = TotalFreeSpaceBytes;
@@ -2188,10 +2609,12 @@ namespace Hecton8.Core.Memory
             entry.PendingMassiveMoveBytes = PendingMassiveMoveBytes;
             entry.HeapFragmentationRatio = HeapFragmentationRatio;
             entry.WatchdogBreaches = _compactionWatchdogBreachCount;
+            entry.EmergencyOverflowCursorBytes = Volatile.Read(ref _emergencyOverflowCursorBytes);
             entry.LastRelocatedSystemId = (ushort)_lastRelocatedSystemId;
             entry.Flags = (byte)(LastDefragFlags | extraFlags);
             entry.IsFragmented = IsFragmented ? (byte)1 : (byte)0;
             entry.WatchdogExceeded = LastDefragWatchdogExceeded ? (byte)1 : (byte)0;
+            entry.MemoryStarvationWarnings = _memoryStarvationWarnings;
             _defragBlackBox[cursor] = entry;
 
             cursor++;
@@ -2214,6 +2637,8 @@ namespace Hecton8.Core.Memory
                     Directory.CreateDirectory(directory);
 
                 WriteDefragBlackBoxFile(DefragDumpPath);
+                WriteDefragBlackBoxFile(ShinobuDumpPath);
+                WriteDefragBlackBoxFile(ShinobuH8DumpPath);
 
                 _defragDumpWritten = true;
             }
@@ -2234,6 +2659,8 @@ namespace Hecton8.Core.Memory
                     Directory.CreateDirectory(directory);
 
                 WriteDefragBlackBoxFile(PhiVodDumpPath);
+                WriteDefragBlackBoxFile(ShinobuDumpPath);
+                WriteDefragBlackBoxFile(ShinobuH8DumpPath);
 
                 _phiVodDumpWritten = true;
             }

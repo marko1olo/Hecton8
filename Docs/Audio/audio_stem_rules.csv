@@ -1,0 +1,14 @@
+# SHINOBU_46 adaptive stem defaults. Parser reads key,value ASCII without managed string materialization.
+attack_seconds,0.1
+release_seconds,15.0
+crossfade_seconds,2.0
+beat_bpm,88.0
+beat_window_seconds,0.05
+depth_min_meters,0.0
+depth_max_meters,1200.0
+depth_filter_min_hz,800.0
+depth_filter_max_hz,22000.0
+combat_enter,0.5
+combat_exit,0.35
+narrative_override_weight,1.0
+biome_fade_seconds,10.0

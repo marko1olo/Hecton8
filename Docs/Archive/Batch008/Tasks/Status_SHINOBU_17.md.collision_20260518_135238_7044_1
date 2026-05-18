@@ -1,0 +1,70 @@
+# SHINOBU_17 Status
+
+Status: ACTIVE POLISH / SOOT CBUFFER + WATERLINE ARM64 PASS / CORE BUILD CLEAN
+Domain: PRESENTATION & UX / URP GPU SHADER INTEGRATION
+Prompt Source: `Docs/Tasks/CURRENT_BATCH.md` `<AGENT_PROMPT id="SHINOBU_17">`
+Task Count: 20
+
+## Preflight 2026-05-18
+- [x] Active truth read attempted | `Docs/Tasks/Status_SHINOBU_17.md`, `Docs/AgentLogs/Rationale_SHINOBU_17.md`, and `Docs/Tasks/CURRENT_BATCH.md` were absent from the active tree.
+- [x] Archive recovery | Recovered exact SHINOBU_17 XML from `Docs/Archive/Batch008/Tasks_Combined/Tasks_Batch008_COMBINED_MD_TXT.md`.
+- [x] Prior state recovered | Read archived `Docs/Archive/Batch008/Tasks/Status_SHINOBU_17.md` and `Docs/Archive/Batch008/AgentLogs/Rationale_SHINOBU_17.md`.
+- [x] Mandates refreshed | Read Zero-GC, ARM64 runtime layout, GPU sovereignty, descriptor binding, blackbox, AUP, mobile compute sizing, and visual-fake-first mandates.
+- [x] Unity workflow skill checked | `unity-mcp-orchestrator` guide read; no Unity MCP tools are available in this session, so verification remains CLI/static.
+
+## 20-Task Matrix
+- [x] Task 01 BINARY_GRAVEYARD_RECONNAISSANCE | Prior implementation stands; archive reports no legacy shader constants and emergency aligned mock path exists.
+- [x] Task 02 MATERIAL_SETFLOAT_ERADICATION | Core SHINOBU bridge and scooter shaft pass are clean; broad Presentation debt remains and is current polish target.
+- [x] Task 03 CS1612_ENCAPSULATION_PURGE | `ShaderGlobalsDTO` remains raw-field/ref-backed.
+- [x] Task 04 STD140_PADDING_RECONSTRUCTION | Primary DTO remains 48 bytes; further adjacent CBuffer structs must be explicitly audited.
+- [x] Task 05 BLIND_DEPENDENCY_MOCKING | Mock weather/flow state remains archive-confirmed.
+- [x] Task 06 CENTRAL_CBUFFER_DISPATCHER | `GlobalShaderDispatcher` exists and uses a static CommandBuffer.
+- [x] Task 07 STRUCTURED_BUFFER_ROUTER | Wake/thermal GraphicsBuffers remain archive-confirmed.
+- [x] Task 08 EXTINCTION_LUT_BINDING | LUT loader moved out of VISUAL_SYNC hot path; dispatcher binds resident texture.
+- [x] Task 09 AUP_TO_FLOAT_SHADER_REBASE | CPU-rebased origin offset remains the rendering path.
+- [x] Task 10 THE_DEAR_LIE_GLOBAL_FLOW | Low-tier global flow fake remains.
+- [x] Task 11 TIME_SYNC_STABILIZATION | Double-backed modulo shader time remains.
+- [x] Task 12 DYNAMIC_RESOLUTION_SCALING_DRS_LINK | Scalar `_ResolutionScale` plus params remain.
+- [x] Task 13 HARDWARE_TIER_SHADER_KEYWORDS | Global/change-only tier keywords remain.
+- [x] Task 14 CAUSTIC_PROJECTION_MATRIX | Global caustic projection remains.
+- [x] Task 15 BIOME_PALETTE_INTERPOLATION | Mock-job palette interpolation remains.
+- [x] Task 16 HAZARD_OVERLAY_PULSE | Core signal snapshot path remains; no Gameplay hazard DTO coupling.
+- [x] Task 17 TELEMETRY_CBUFFER_RECORDER | 300-frame CBuffer blackbox remains in DataVault slots and emits `.bin` plus `.h8dump`.
+- [x] Task 18 UBER_NOIR_TUNER_EDITOR_WINDOW | Editor facade exists in archive/current source.
+- [x] Task 19 CSV_OVERRIDE_INGESTOR | CSV override is timestamp-gated and preallocated.
+- [x] Task 20 GIZMO_FLOW_VISUALIZER | SceneView flow/wake gizmo exists.
+
+## Loop 14 - Active State Recovery / Residual Debt Target
+- [x] Active state files restored | Justification: AGENTS.md requires active `Status_[ID].md`; archived state was not enough for current-turn memory. Rejected reverting deleted `CURRENT_BATCH.md`. Estimate: 0 runtime us.
+- [x] Residual Presentation material-state scan | Justification: broad scan found remaining material/MPB/compute property uploads; selected two small runtime full-screen passes where CBuffer migration was isolated. Rejected broad all-feature rewrite. Estimate: audit only.
+- [x] Noir depth fog CBuffer migration | Justification: removed material `SetColor/SetVector` path and bound a 64-byte `HectonNoirDepthFogGlobals` constant buffer. Rejected `UnityPerMaterial` for pass globals. Estimate: removes 4 material property writes on dirty fog frames.
+- [x] Half-res particle composite CBuffer migration | Justification: removed material `SetFloat` path and bound a 16-byte `HectonHalfResParticlesGlobals` constant buffer. Rejected per-material scalar mutation. Estimate: removes 2 material property writes on dirty particle composite frames.
+- [x] Direct Gameplay using removed from depth fog | Justification: surface-readability bypass now reads `GlobalRegistry.Player` only. Rejected `PlayerRuntimeContextService` concrete gameplay type in Presentation pass. Estimate: compile-surface hygiene, 0 runtime us.
+- [x] Scoped banned-pattern scan | Justification: SHINOBU bridge, scooter shaft, noir depth fog, and half-res particle pass report no material `SetFloat/SetColor/SetVector/SetBuffer`, no `Pack=1`, and explicit CBuffer structs. Estimate: 80 us audit.
+- [x] Compile guard after patch | Justification: after `dotnet restore` repaired a missing generated editorconfig, `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` succeeds with `0 Error(s)` and `9 Warning(s)`. Estimate: build-time only.
+
+## Loop 15 - VR / Retina / SSR / Fluid CBuffer Sweep
+- [x] CURRENT_BATCH exact prompt re-read | Justification: extracted `<AGENT_PROMPT id="SHINOBU_17">` from active `Docs/Tasks/CURRENT_BATCH.md` with `Select-String`; task count remains 20. Rejected neighboring prompts. Estimate: 0 runtime us.
+- [x] Mandates refreshed | Justification: re-read Zero-GC, ARM64 layout, GPU sovereignty, descriptor binding, blackbox, visual-fake-first, and AUP determinism before edits. Estimate: 0 runtime us.
+- [x] VR brownout CBuffer migration | Justification: replaced six material scalar/vector uploads with 64-byte `HectonVRBrownoutGlobals`; removed direct `PlayerRuntimeContextService` fallback. Rejected per-material setter cache. Estimate: removes 6 dirty-frame material writes.
+- [x] Retina distortion CBuffer migration | Justification: replaced seven material scalar uploads with 32-byte `HectonRetinaDistortionGlobals`; changed MX350 toggle from material keyword to change-only global keyword. Rejected per-material keyword mutation. Estimate: removes 7 dirty-frame material writes.
+- [x] Stochastic SSR CBuffer migration | Justification: replaced three material vector uploads with 48-byte `HectonStochasticSsrGlobals`; preserves half-res R8 reflection fake. Rejected real SSR. Estimate: removes 3 dirty-frame vector writes.
+- [x] Visor fluid distortion CBuffer migration | Justification: replaced material scalar/vector uploads with 128-byte `HectonVisorFluidDistortionGlobals`; removed direct `PlayerRuntimeContextService`; moved `_RainIntensity` into the pass CBuffer after reading the global source scalar. Estimate: removes 24 dirty-frame material writes.
+- [x] ARM64 Pack=1 purge in touched Presentation runtime | Justification: `VisorRefractionTelemetryEntry` no longer declares `Pack=1`; explicit offsets remain, total size remains 48 bytes. Estimate: avoids ARM64 layout-policy breach.
+- [x] Scoped banned-pattern scan | Justification: patched VR brownout, retina, stochastic SSR, and fluid files report no material `SetFloat/SetColor/SetVector/SetBuffer`, no `PlayerRuntimeContextService`, no `Hecton8.Gameplay` using, no `Pack=1`, and named HECTON CBuffers instead of `UnityPerMaterial`. Estimate: audit only.
+- [x] Whitespace scan | Justification: `git diff --check` over the 8 touched runtime/shader files returns no whitespace errors; Git reports LF/CRLF normalization warnings only. Estimate: audit only.
+- [!] Compile guard blocked outside domain | Justification: `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` reaches C# and fails in untracked/foreign `Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs` and modified `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs`. SHINOBU touched Presentation/Visor only. Rejected editing AI/World compile wall. Estimate: build-time only.
+
+## Loop 16 - Internal Waterline / Atmosphere Soot Polish
+- [x] Preflight state re-read | Justification: re-read `Status_SHINOBU_17.md`, `Rationale_SHINOBU_17.md`, active `CURRENT_BATCH.md` SHINOBU_17 block, and `PROJECT_STATE_STATIC_XRAY.md` before new edits. Estimate: 0 runtime us.
+- [x] Mandate refresh | Justification: re-read Zero-GC, ARM64 layout, GPU sovereignty, descriptor binding, blackbox, visual-fake-first, AUP determinism, and GlobalRegistry mandates. Estimate: 0 runtime us.
+- [x] Internal flood direct dependency trimmed | Justification: removed `Hecton8.Gameplay` using, `_subscribedMovement`, and direct `PlayerRuntimeContextService` query. Runtime now resolves player pose through `GlobalRegistry.Player`/`IPlayerRuntimeContext`. Rejected concrete service fallback. Estimate: compile-surface reduction, no measured runtime claim.
+- [x] Internal flood telemetry layout fixed | Justification: `WaterlineTelemetryEntry` no longer declares `Pack=1`; it is sequential `Size=40`, naturally 4-byte field aligned, and total size is a multiple of 8. Estimate: avoids ARM64 runtime layout breach.
+- [x] Atmosphere soot CBuffer migration | Justification: replaced two material vector uploads with persistent 32-byte `HectonAtmosphereSootGlobals` CBuffer and changed shader from `UnityPerMaterial` to named global CBuffer. Rejected per-material fullscreen state. Estimate: removes 2 dirty-frame material vector writes; exact microseconds pending profiler.
+- [x] Scoped banned-pattern scan | Justification: three patched files report no `Pack=1`, `PlayerRuntimeContextService`, `Hecton8.Gameplay`, material property setters, or `UnityPerMaterial`. Estimate: audit only.
+- [x] Whitespace scan | Justification: `git diff --check` over three patched files returns exit 0; Git only reports LF/CRLF normalization warnings. Estimate: audit only.
+- [x] Compile guard | Justification: `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` succeeds with 0 errors and 9 warnings. Estimate: build-time only.
+
+## Residual Presentation Debt
+- [ ] Remaining material/MPB property uploads exist in `HectonVisorUberPostFeature`, `HectonHolographicEdgeFeature`, `HectonSonarPointCloudFeature`, `HectonBiosDiagnosticFeature`, `HectonScannerProjectionFeature`, `HectonDryVolumeFeature`, `HectonAbyssalSsdoFeature`, `DeferredDecalPass`, editor/debug, UI/MPB, and scatter paths. These are logged, not hidden as complete.
+- [ ] Remaining direct `PlayerRuntimeContextService` users exist in other Visor files (`SpectrumSystem`, `PlayerStressVFX`, `HectonVRDiegeticFocusController`, `CausticsProjectorManager`, and `HectonVisorUberPostFeature`). These are outside this Loop 16 patch.

@@ -1,7 +1,14 @@
-﻿# Critical Action Queue
+# Critical Action Queue
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Priority 0
 
@@ -118,7 +125,7 @@ Local `Editor.log` evidence after the event-bus/spatial-hash repair reports:
 - latest `Tundra build success`: line `14575`
 - latest `Mono: successfully reloaded assembly`: line `14663`
 - strict post-success signals (`error CS`, `warning CS`, `Burst error`, `Exception`, `Resource ID out of range`): `0`
-- MCP `read_console`: `0` error/warning entries after the compile refresh
+- Historical MCP `read_console`: `0` error/warning entries after that compile refresh; no current Console, Play Mode, build, or profiler proof is implied.
 
 Queue corrections from current source recheck:
 
@@ -136,8 +143,7 @@ Local `Editor.log` evidence after restoring `Assets/_Project/Scripts/World/Veget
 - latest `Mono: successfully reloaded assembly`: line `104086`
 - strict post-success signals (`error CS`, `warning CS`, `Burst error`, `Exception`, `Resource ID out of range`, `Tundra build failed`): `0`
 
-MCP console returned `0` error/warning entries after the final reload.
-Treat the current state as editor/script compile-clean, not Play Mode or profiler proof.
+Historical MCP console summary returned `0` error/warning entries after that reload. Current compile/import status requires a fresh artifact; this is not Play Mode or profiler proof.
 
 ## Priority 0 Additions
 
@@ -172,7 +178,7 @@ Reason: `HectonBatchRendererGroupUtility` allocates direct-draw `TempJob` memory
 - Do not claim Unity batchmode is globally clean from old logs alone. May 2 fresh dotnet build is clean for `Hecton8.Core.csproj`, but older Unity batch artifacts still include stale compile/path failures and must be re-run cleanly before Unity editor import truth is claimed.
 - Do not claim Play Mode deadlock is fixed. Play Mode was intentionally not launched.
 - Do not claim GC is zero. GCMonitor/profiler proof is absent.
-- Do not claim MCP VERIFIED as a global runtime state. Current May 4 evidence is editor-only MCP readback: latest current recheck reports active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, and console error/warning entries `0`. Earlier May 4 documentation-sweep readback reported `01_MAIN_MENU` in Play Mode transition with `18` warnings. Bounded Play Mode gameplay, GCMonitor, profiler, and long-run memory proof are absent.
+- Do not claim MCP VERIFIED as a global runtime state. May 4 editor-only MCP readbacks are historical: one recheck reported active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, and console error/warning entries `0`; an earlier readback reported `01_MAIN_MENU` in Play Mode transition with `18` warnings. Bounded Play Mode gameplay, GCMonitor, profiler, and long-run memory proof are absent.
 - Do not claim older dated reports are current. This queue points to current deltas, but historical report bodies retain scan-time claims.
 - Do not treat `2026-05-01_CURRENT_PROJECT_STATE.md` as runtime verification. It is a conceptual source-backed snapshot only.
 
@@ -191,7 +197,7 @@ Queue corrections:
 - Priority 0 item 1 remains open. Observability improved for dotnet compile only; Unity batchmode, MCP, Play Mode, GCMonitor, profiler, and memory retention are still not one reliable verification surface.
 - Priority 3 item 1 remains open. This pass updated active indexes and current-state anchors, not every historical document body.
 - The documentation authority path is now `Docs/README.md` -> `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` -> `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
-- Current source inventory for this queue boundary is superseded by the May 4 sweep: `1118` first-party `.cs` files under `Assets/_Project`, `1078` under `Assets/_Project/Scripts`, `519952` static script lines, and `0` strict `StartCoroutine(` hits under `Assets/_Project/Scripts`.
+- Historical source inventory for this queue boundary was later superseded. R22 static counts must be rerun before use; late validation spot count sees `1811` first-party `.cs`, `1755` under Scripts, and `1176132` script lines.
 
 STATUS: PENDING VERIFICATION
 
@@ -264,7 +270,7 @@ STATUS: PENDING VERIFICATION
 
 Follow-up evidence file: `Docs/Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`.
 
-Fresh Unity batchmode evidence after the deferred PhysX-bake teardown and watchdog pass reports:
+Historical May 3 report summary after the deferred PhysX-bake teardown and watchdog pass reports. Attach the raw Editor.log/batchmode command/timestamp before treating it as current Unity evidence:
 
 - latest `Tundra build success`: `51.07 seconds`, `33 items updated`, `1808 evaluated`
 - `CompileScripts`: `52654.128ms`
@@ -275,7 +281,7 @@ Fresh Unity batchmode evidence after the deferred PhysX-bake teardown and watchd
 Queue correction:
 
 - Priority 0 item 2 is source-patched for `HectonWorldGenerator`: runtime chunk retirement now defers active PhysX-bake teardown instead of force-completing bake handles during cancellation/eviction.
-- Priority 0 item 5 now has active Editor self-test coverage for `HectonSpatialHash`: stale handles are rejected, recycled handles advance generation, moved entries do not leave source-cell ghost occupancy, and AUP-scale queries pass at the tested range. Evidence: `Temp/CodexArtifacts/editmode-results-2026-05-03-spatialhash-selftest-after-beacon.xml`, result `Passed`, `3/3`.
+- Priority 0 item 5 has a historical Editor self-test claim for `HectonSpatialHash`, but `Temp/CodexArtifacts/editmode-results-2026-05-03-spatialhash-selftest-after-beacon.xml` is absent in the current R20 workspace check. Do not cite it as active Editor proof unless the XML is restored or rerun; live runtime churn under register/unregister pressure remains absent.
 - Priority 1 item 2 is partially addressed for `ProceduralWreckGenerator` and `HectonFloatingOrigin`: mesh-build yield waits now have a watchdog, and floating-origin shift stability now reports within `1200` frames instead of `50000`.
 
 Still open:

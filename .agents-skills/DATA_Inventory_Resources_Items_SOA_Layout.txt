@@ -15,17 +15,20 @@
 
 ## Section1 - CORE DATA STRUCTURES
 
-### 1.1 ItemData (Primary Record - 20 bytes, cache-aligned)
+### 1.1 ItemData (Primary Record - 24 bytes, ARM64-safe)
 
 struct ItemData {
+    ulong instanceUID;   // [EntityID:24bit | Timestamp:40bit] - collision-free
     uint  hashID;        // FNV-1a of canonical item name - computed offline
-    uint  instanceUID;   // [EntityID:24bit | Timestamp:40bit] - collision-free
     float quality;       // [0.0, 1.0] - saturate-clamped always
     ushort stackCount;   // max 65535 - sufficient for all resource types
     ushort flags;        // bitfield - see Section1.4
+    uint  _pad0;         // explicit tail padding -> total size multiple of 8
 }
 
-Size: 4+4+4+2+4 -> pad to 20B. Align structs to 16B cache boundary via `[StructLayout(LayoutKind.Sequential, Pack=4)]`.
+Size: 8+4+4+2+2+4 = 24B. Runtime layout follows `DATA_Runtime_Struct_Layout_ARM64.txt`: 8-byte field first, then 4-byte fields, then 2-byte fields, explicit padding, total size multiple of 8.
+
+[FORBID] `[StructLayout(Pack=1)]` or `[StructLayout(Pack=4)]` for this runtime record. Packed file records must be copied into this aligned runtime shape before NativeArray, Burst, SignalBus, save staging, telemetry, or GPU upload use.
 
 ### 1.2 ItemState (Per-Instance Mutable Runtime - 16 bytes)
 

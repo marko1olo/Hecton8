@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.Quest;
 using Hecton8.World;
 using Unity.Burst;
@@ -1107,7 +1108,7 @@ namespace Hecton8.SaveSystem
         internal const int ErrorCodeNone = 0;
         internal const int ErrorCodeHeaderReadFailed = unchecked((int)0x48385244);
         internal const int ErrorCodeMagicMismatch = unchecked((int)0x48384D47);
-        internal const ushort CurrentVersion = 0x0009;
+        internal const ushort CurrentVersion = 0x000B;
         internal const uint ExplorationMortonBuildSalt32 = 0x48384D4Fu;
         internal const int ExplorationMortonMaskAlignmentBytes = 64;
         internal const ushort MinimumSupportedVersion = 0x0003;
@@ -1125,8 +1126,10 @@ namespace Hecton8.SaveSystem
         private const long UnixEpochTicks = 621355968000000000L;
         private const int PayloadPrefixSizeBytes = SaveDataMigration_AupV8.CurrentPayloadPrefixSizeBytes;
         private const int PackedQuestStateSectionHeaderSize = 64;
-        private const int PersistentWorldSectionHeaderSize = 12;
-        private const int EcosystemSectionHeaderSize = 4;
+        private const int LegacyPersistentWorldSectionHeaderSize = 12;
+        private const int PersistentWorldSectionHeaderSize = 16;
+        private const int LegacyEcosystemSectionHeaderSize = 4;
+        private const int EcosystemSectionHeaderSize = 8;
         private const int SaveFileHeaderPrefixSize = 8;
         private const int LegacyHeaderHashSizeBytes = 36;
         private const int IndexedHeaderV8Size = 52;
@@ -1138,6 +1141,8 @@ namespace Hecton8.SaveSystem
         private const ushort TokenizedPayloadVersion = 0x0007;
         private const ushort IndexedBlockStorageVersion = 0x0008;
         private const ushort HeaderChecksumVersion = 0x0009;
+        private const ushort AlignedIndexedSectorDirectoryVersion = 0x000A;
+        private const ushort AlignedSectionHeaderVersion = 0x000B;
         private const int TokenizedPayloadHeaderSize = 8;
         private const int TokenBlockSizeBytes = 16;
         private const int MaxTokenCount = 64;
@@ -1145,6 +1150,8 @@ namespace Hecton8.SaveSystem
         private const int IndexedSectorDirectoryHeaderSize = 16;
         private const int IndexedSectorBlockHeaderSize = 8;
         private const int IndexedSectorDirectorySlotCount = 4096;
+        private const int LegacySectorEntryBytes = 28;
+        private const int SectorEntryBytes = 32;
         private const int StandardCompressedBlockHeaderBytes = 8;
         private const int ProtectedCompressedBlockHeaderBytes = 64;
         private const uint ProtectedCompressedBlockMagic = 0x4C423848u; // "H8BL"
@@ -1209,7 +1216,7 @@ namespace Hecton8.SaveSystem
 
         internal static int LastReadErrorCode => Volatile.Read(ref s_lastReadErrorCode);
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = TokenizedPayloadHeaderSize)]
+        [StructLayout(LayoutKind.Sequential, Size = TokenizedPayloadHeaderSize)]
         private struct TokenizedPayloadHeader
         {
             public uint ExpandedPayloadLength;
@@ -1217,7 +1224,7 @@ namespace Hecton8.SaveSystem
             public ushort Reserved;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 8, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct IndexedSectorGroup
         {
             public long SectorHash;
@@ -1385,7 +1392,7 @@ namespace Hecton8.SaveSystem
             public EntityDataRecord Record;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
         internal struct SectorCompactEntityStateRecord16
         {
             public uint PackedSectorPosition;
@@ -1395,12 +1402,14 @@ namespace Hecton8.SaveSystem
             public uint PackedState;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 6)]
+        [BinaryBlittableSafe]
+        [StructLayout(LayoutKind.Sequential, Size = 8)]
         internal struct QuantizedAupLocalOffsetShort3
         {
             public short XMillimeters;
             public short YMillimeters;
             public short ZMillimeters;
+            public ushort Reserved0;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -1712,7 +1721,7 @@ namespace Hecton8.SaveSystem
             return packedTime * SectorCompactTimeQuantumSeconds;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = IndexedSectorDirectoryHeaderSize)]
+        [StructLayout(LayoutKind.Sequential, Size = IndexedSectorDirectoryHeaderSize)]
         private struct IndexedSectorDirectoryHeader
         {
             public uint SectorCount;
@@ -1721,14 +1730,14 @@ namespace Hecton8.SaveSystem
             public int MetadataDecompressedSize;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = IndexedSectorBlockHeaderSize)]
+        [StructLayout(LayoutKind.Sequential, Size = IndexedSectorBlockHeaderSize)]
         private struct IndexedSectorBlockHeader
         {
             public uint Flags;
             public uint Reserved;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = ProtectedCompressedBlockHeaderBytes)]
+        [StructLayout(LayoutKind.Sequential, Size = ProtectedCompressedBlockHeaderBytes)]
         private struct ProtectedCompressedBlockHeader
         {
             public int CompressedLength;
@@ -1743,17 +1752,87 @@ namespace Hecton8.SaveSystem
             public ulong Reserved5;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 28)]
-        internal struct SectorEntry
+        [StructLayout(LayoutKind.Explicit, Size = LegacySectorEntryBytes)]
+        private struct LegacySectorEntry28
         {
+            [FieldOffset(0)]
             public long SectorHash;
+            [FieldOffset(8)]
             public long ByteOffset;
+            [FieldOffset(16)]
             public int CompressedSize;
+            [FieldOffset(20)]
             public int DecompressedSize;
+            [FieldOffset(24)]
             public uint Checksum;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
+        [BinaryBlittableSafe]
+        [StructLayout(LayoutKind.Explicit, Size = SectorEntryBytes)]
+        internal struct SectorEntry
+        {
+            [FieldOffset(0)]
+            public long SectorHash;
+            [FieldOffset(8)]
+            public long ByteOffset;
+            [FieldOffset(16)]
+            public int CompressedSize;
+            [FieldOffset(20)]
+            public int DecompressedSize;
+            [FieldOffset(24)]
+            public uint Checksum;
+            [FieldOffset(28)]
+            public uint Reserved0;
+        }
+
+        private static int ResolveIndexedSectorEntrySize(ushort saveVersion)
+        {
+            return saveVersion >= AlignedIndexedSectorDirectoryVersion
+                ? SectorEntryBytes
+                : LegacySectorEntryBytes;
+        }
+
+        private static SectorEntry ReadIndexedSectorEntry(byte* entryPtr, int entrySize)
+        {
+            if (entrySize == LegacySectorEntryBytes)
+            {
+                LegacySectorEntry28 legacy = UnsafeUtility.ReadArrayElement<LegacySectorEntry28>(entryPtr, 0);
+                return new SectorEntry
+                {
+                    SectorHash = legacy.SectorHash,
+                    ByteOffset = legacy.ByteOffset,
+                    CompressedSize = legacy.CompressedSize,
+                    DecompressedSize = legacy.DecompressedSize,
+                    Checksum = legacy.Checksum,
+                    Reserved0 = 0u
+                };
+            }
+
+            return UnsafeUtility.ReadArrayElement<SectorEntry>(entryPtr, 0);
+        }
+
+        private static void WriteIndexedSectorEntry(byte* entryPtr, int entrySize, in SectorEntry entry)
+        {
+            if (entrySize == LegacySectorEntryBytes)
+            {
+                LegacySectorEntry28 legacy = new LegacySectorEntry28
+                {
+                    SectorHash = entry.SectorHash,
+                    ByteOffset = entry.ByteOffset,
+                    CompressedSize = entry.CompressedSize,
+                    DecompressedSize = entry.DecompressedSize,
+                    Checksum = entry.Checksum
+                };
+                UnsafeUtility.CopyStructureToPtr(ref legacy, entryPtr);
+                return;
+            }
+
+            SectorEntry aligned = entry;
+            aligned.Reserved0 = 0u;
+            UnsafeUtility.CopyStructureToPtr(ref aligned, entryPtr);
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         private struct SectorOverrideFileHeader
         {
             public long SectorHash;
@@ -1763,7 +1842,7 @@ namespace Hecton8.SaveSystem
             public uint Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         private struct SectorEntityStateFileHeader
         {
             public long SectorHash;
@@ -1791,7 +1870,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = ModPayloadHeaderSizeBytes)]
+        [StructLayout(LayoutKind.Sequential, Size = ModPayloadHeaderSizeBytes)]
         private struct ModPayloadSubSectorHeader
         {
             public uint Magic;
@@ -1829,7 +1908,7 @@ namespace Hecton8.SaveSystem
             int payloadLength,
             out string error);
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = SaveFileHeaderPrefixSize)]
+        [StructLayout(LayoutKind.Sequential, Size = SaveFileHeaderPrefixSize)]
         private struct SaveFileHeaderPrefix
         {
             public uint MagicValue;
@@ -1838,7 +1917,7 @@ namespace Hecton8.SaveSystem
             public byte Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = CurrentHeaderSize)]
+        [StructLayout(LayoutKind.Sequential, Size = CurrentHeaderSize)]
         internal struct SaveFileHeader
         {
             public uint MagicValue;
@@ -1856,24 +1935,36 @@ namespace Hecton8.SaveSystem
             public ulong HashHeader64;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = IndexedHeaderV8Size)]
+        [StructLayout(LayoutKind.Explicit, Size = IndexedHeaderV8Size)]
         private struct IndexedSaveFileHeaderV8
         {
+            [FieldOffset(0)]
             public uint MagicValue;
+            [FieldOffset(4)]
             public ushort Version;
+            [FieldOffset(6)]
             public byte CompatMask;
+            [FieldOffset(7)]
             public byte Flags;
+            [FieldOffset(8)]
             public ulong TimestampUnixMs;
+            [FieldOffset(16)]
             public uint DeltaCount;
+            [FieldOffset(20)]
             public uint EntityCount;
+            [FieldOffset(24)]
             public uint PlayerOffset;
+            [FieldOffset(28)]
             public uint DeltaOffset;
+            [FieldOffset(32)]
             public uint EntityOffset;
+            [FieldOffset(36)]
             public ulong HashPayload64;
+            [FieldOffset(44)]
             public ulong HashHeader64;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         private struct LegacyIndexedChecksumLeaf
         {
             public long SectorHash;
@@ -1883,41 +1974,64 @@ namespace Hecton8.SaveSystem
             public uint Reserved;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 128)]
+        [StructLayout(LayoutKind.Sequential, Size = 128)]
         internal struct SaveCloudMetadataHeader
         {
-            public uint MagicValue;
-            public ushort Version;
-            public byte CompatMask;
-            public byte Flags;
-            public uint Checksum;
             public ulong TimestampUnixMs;
             public ulong HashPayload64;
             public ulong HashHeader64;
+            public uint MagicValue;
+            public uint Checksum;
             public uint PlayerOffset;
             public uint DeltaOffset;
             public uint EntityOffset;
-        }
-
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = LegacyHeaderSize)]
-        private struct LegacySaveFileHeader
-        {
-            public uint MagicValue;
             public ushort Version;
             public byte CompatMask;
             public byte Flags;
+            public uint Reserved0;
+            public ulong Reserved1;
+            public ulong Reserved2;
+            public ulong Reserved3;
+            public ulong Reserved4;
+            public ulong Reserved5;
+            public ulong Reserved6;
+            public ulong Reserved7;
+            public ulong Reserved8;
+            public ulong Reserved9;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = LegacyHeaderSize)]
+        private struct LegacySaveFileHeader
+        {
+            [FieldOffset(0)]
+            public uint MagicValue;
+            [FieldOffset(4)]
+            public ushort Version;
+            [FieldOffset(6)]
+            public byte CompatMask;
+            [FieldOffset(7)]
+            public byte Flags;
+            [FieldOffset(8)]
             public ulong TimestampUnixMs;
+            [FieldOffset(16)]
             public uint DeltaCount;
+            [FieldOffset(20)]
             public uint EntityCount;
+            [FieldOffset(24)]
             public uint PlayerOffset;
+            [FieldOffset(28)]
             public uint DeltaOffset;
+            [FieldOffset(32)]
             public uint EntityOffset;
+            [FieldOffset(36)]
             public uint HashHeader32;
+            [FieldOffset(40)]
             public uint HashPayload32;
         }
 
+        [BinaryBlittableSafe]
         [Serializable]
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 20)]
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         public struct DeltaCell
         {
             /// <summary>
@@ -1946,12 +2060,14 @@ namespace Hecton8.SaveSystem
             public ushort Metadata;
 
             /// <summary>
-            /// Reserved expansion bytes required by the current 20-byte mandate.
+            /// Reserved expansion bytes required by the 24-byte aligned runtime layout.
             /// </summary>
             public uint Reserved;
+            public uint Reserved1;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
+        [BinaryBlittableSafe]
+        [StructLayout(LayoutKind.Sequential, Size = 8)]
         internal struct ThermalGridRleRun
         {
             public ushort StartIndex;
@@ -1983,7 +2099,7 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = PayloadPrefixSizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = PayloadPrefixSizeBytes)]
         private struct PayloadPrefix
         {
             [FieldOffset(0)]
@@ -2002,21 +2118,168 @@ namespace Hecton8.SaveSystem
             public ushort GameVersionByteLength;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = PersistentWorldSectionHeaderSize)]
+        [StructLayout(LayoutKind.Explicit, Size = LegacyPersistentWorldSectionHeaderSize)]
+        private struct LegacyPersistentWorldSectionHeader12
+        {
+            [FieldOffset(0)]
+            public uint ChunkCount;
+            [FieldOffset(4)]
+            public uint ItemHashCount;
+            [FieldOffset(8)]
+            public uint RecordCount;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = PersistentWorldSectionHeaderSize)]
         private struct PersistentWorldSectionHeader
         {
+            [FieldOffset(0)]
             public uint ChunkCount;
+            [FieldOffset(4)]
             public uint ItemHashCount;
+            [FieldOffset(8)]
+            public uint RecordCount;
+            [FieldOffset(12)]
+            public uint Reserved0;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = LegacyEcosystemSectionHeaderSize)]
+        private struct LegacyEcosystemSectionHeader4
+        {
+            [FieldOffset(0)]
             public uint RecordCount;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = EcosystemSectionHeaderSize)]
+        [StructLayout(LayoutKind.Explicit, Size = EcosystemSectionHeaderSize)]
         private struct EcosystemSectionHeader
         {
+            [FieldOffset(0)]
             public uint RecordCount;
+            [FieldOffset(4)]
+            public uint Reserved0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+        private static int ResolvePersistentWorldSectionHeaderSize(ushort saveVersion)
+        {
+            return saveVersion >= AlignedSectionHeaderVersion
+                ? PersistentWorldSectionHeaderSize
+                : LegacyPersistentWorldSectionHeaderSize;
+        }
+
+        private static int ResolveEcosystemSectionHeaderSize(ushort saveVersion)
+        {
+            return saveVersion >= AlignedSectionHeaderVersion
+                ? EcosystemSectionHeaderSize
+                : LegacyEcosystemSectionHeaderSize;
+        }
+
+        private static PersistentWorldSectionHeader ReadPersistentWorldSectionHeader(byte* sectionPtr, int headerSize)
+        {
+            if (headerSize == LegacyPersistentWorldSectionHeaderSize)
+            {
+                LegacyPersistentWorldSectionHeader12 legacy =
+                    UnsafeUtility.ReadArrayElement<LegacyPersistentWorldSectionHeader12>(sectionPtr, 0);
+                return new PersistentWorldSectionHeader
+                {
+                    ChunkCount = legacy.ChunkCount,
+                    ItemHashCount = legacy.ItemHashCount,
+                    RecordCount = legacy.RecordCount,
+                    Reserved0 = 0u
+                };
+            }
+
+            return UnsafeUtility.ReadArrayElement<PersistentWorldSectionHeader>(sectionPtr, 0);
+        }
+
+        private static void WritePersistentWorldSectionHeader(
+            byte* sectionPtr,
+            int headerSize,
+            in PersistentWorldSectionHeader header)
+        {
+            if (headerSize == LegacyPersistentWorldSectionHeaderSize)
+            {
+                LegacyPersistentWorldSectionHeader12 legacy = new LegacyPersistentWorldSectionHeader12
+                {
+                    ChunkCount = header.ChunkCount,
+                    ItemHashCount = header.ItemHashCount,
+                    RecordCount = header.RecordCount
+                };
+                UnsafeUtility.CopyStructureToPtr(ref legacy, sectionPtr);
+                return;
+            }
+
+            PersistentWorldSectionHeader aligned = header;
+            aligned.Reserved0 = 0u;
+            UnsafeUtility.CopyStructureToPtr(ref aligned, sectionPtr);
+        }
+
+        private static EcosystemSectionHeader ReadEcosystemSectionHeader(byte* sectionPtr, int headerSize)
+        {
+            if (headerSize == LegacyEcosystemSectionHeaderSize)
+            {
+                LegacyEcosystemSectionHeader4 legacy =
+                    UnsafeUtility.ReadArrayElement<LegacyEcosystemSectionHeader4>(sectionPtr, 0);
+                return new EcosystemSectionHeader
+                {
+                    RecordCount = legacy.RecordCount,
+                    Reserved0 = 0u
+                };
+            }
+
+            return UnsafeUtility.ReadArrayElement<EcosystemSectionHeader>(sectionPtr, 0);
+        }
+
+        private static void WriteEcosystemSectionHeader(
+            byte* sectionPtr,
+            int headerSize,
+            in EcosystemSectionHeader header)
+        {
+            if (headerSize == LegacyEcosystemSectionHeaderSize)
+            {
+                LegacyEcosystemSectionHeader4 legacy = new LegacyEcosystemSectionHeader4
+                {
+                    RecordCount = header.RecordCount
+                };
+                UnsafeUtility.CopyStructureToPtr(ref legacy, sectionPtr);
+                return;
+            }
+
+            EcosystemSectionHeader aligned = header;
+            aligned.Reserved0 = 0u;
+            UnsafeUtility.CopyStructureToPtr(ref aligned, sectionPtr);
+        }
+
+        private static bool TryConvertSectionCount(uint source, out int count)
+        {
+            if (source > int.MaxValue)
+            {
+                count = 0;
+                return false;
+            }
+
+            count = (int)source;
+            return true;
+        }
+
+        private static bool TryConvertPersistentWorldSectionCounts(
+            in PersistentWorldSectionHeader sectionHeader,
+            out int recordCount,
+            out int chunkCount,
+            out int itemHashCount)
+        {
+            if (!TryConvertSectionCount(sectionHeader.RecordCount, out recordCount) ||
+                !TryConvertSectionCount(sectionHeader.ChunkCount, out chunkCount) ||
+                !TryConvertSectionCount(sectionHeader.ItemHashCount, out itemHashCount))
+            {
+                recordCount = 0;
+                chunkCount = 0;
+                itemHashCount = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
         private struct PersistentWorldSaveRecord16
         {
             public uint PackedLocalPosition;
@@ -2312,7 +2575,8 @@ namespace Hecton8.SaveSystem
                 sectorCount = IndexedSectorDirectorySlotCount;
             }
 
-            int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * UnsafeUtility.SizeOf<SectorEntry>());
+            int sectorEntrySize = ResolveIndexedSectorEntrySize(CurrentVersion);
+            int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * sectorEntrySize);
             int metadataBlockOffset = CurrentHeaderSize + directoryBytes;
             int fileCursor = metadataBlockOffset;
 
@@ -2449,8 +2713,8 @@ namespace Hecton8.SaveSystem
             for (int i = 0; i < sectorEntries.Length; i++)
             {
                 SectorEntry entry = sectorEntries[i];
-                UnsafeUtility.CopyStructureToPtr(ref entry, filePtr + directoryCursor);
-                directoryCursor += UnsafeUtility.SizeOf<SectorEntry>();
+                WriteIndexedSectorEntry(filePtr + directoryCursor, sectorEntrySize, in entry);
+                directoryCursor += sectorEntrySize;
             }
 
             ulong directoryHash64 = Hash64(filePtr + CurrentHeaderSize, directoryBytes);
@@ -2688,7 +2952,8 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * UnsafeUtility.SizeOf<SectorEntry>());
+            int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
+            int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * sectorEntrySize);
             if ((long)directoryOffset > mapping.Length - directoryBytes)
             {
                 error = "Indexed sector directory exceeds the file bounds.";
@@ -2716,7 +2981,7 @@ namespace Hecton8.SaveSystem
             int populatedCount = 0;
             for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
             {
-                SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+                SectorEntry entry = ReadIndexedSectorEntry(filePtr + entryCursor, sectorEntrySize);
                 if (IsIndexedSectorEntryPopulated(in entry) &&
                     !IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, mapping.Length))
                 {
@@ -2727,7 +2992,7 @@ namespace Hecton8.SaveSystem
                 sectorEntries[i] = entry;
                 if (IsIndexedSectorEntryPopulated(in entry))
                     populatedCount++;
-                entryCursor += UnsafeUtility.SizeOf<SectorEntry>();
+                entryCursor += sectorEntrySize;
             }
 
             if (populatedCount != sectorCount)
@@ -3063,17 +3328,43 @@ namespace Hecton8.SaveSystem
             persistentWorldDeltas = null;
             error = string.Empty;
 
-            if (sectionPtr == null || sectionLength < PersistentWorldSectionHeaderSize)
+            if (sectionPtr == null || sectionLength < LegacyPersistentWorldSectionHeaderSize)
             {
                 error = "Indexed persistent-world sector section is truncated.";
                 return false;
             }
 
-            PersistentWorldSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<PersistentWorldSectionHeader>(sectionPtr, 0);
-            int recordCount = checked((int)sectionHeader.RecordCount);
-            int chunkCount = checked((int)sectionHeader.ChunkCount);
-            int itemHashCount = checked((int)sectionHeader.ItemHashCount);
-            int expectedLength = ComputePersistentWorldSectionLength(recordCount, chunkCount, itemHashCount);
+            int sectionHeaderSize = LegacyPersistentWorldSectionHeaderSize;
+            int recordCount = 0;
+            int chunkCount = 0;
+            int itemHashCount = 0;
+            int expectedLength = -1;
+            bool sectionHeaderMatched = false;
+
+            if (sectionLength >= PersistentWorldSectionHeaderSize)
+            {
+                sectionHeaderSize = ResolvePersistentWorldSectionHeaderSize(CurrentVersion);
+                PersistentWorldSectionHeader sectionHeader = ReadPersistentWorldSectionHeader(sectionPtr, sectionHeaderSize);
+                if (TryConvertPersistentWorldSectionCounts(in sectionHeader, out recordCount, out chunkCount, out itemHashCount) &&
+                    TryComputePersistentWorldSectionLength(recordCount, chunkCount, itemHashCount, CurrentVersion, out expectedLength) &&
+                    expectedLength == sectionLength)
+                {
+                    sectionHeaderMatched = true;
+                }
+            }
+
+            if (!sectionHeaderMatched)
+            {
+                sectionHeaderSize = LegacyPersistentWorldSectionHeaderSize;
+                PersistentWorldSectionHeader sectionHeader = ReadPersistentWorldSectionHeader(sectionPtr, sectionHeaderSize);
+                if (!TryConvertPersistentWorldSectionCounts(in sectionHeader, out recordCount, out chunkCount, out itemHashCount) ||
+                    !TryComputePersistentWorldSectionLength(recordCount, chunkCount, itemHashCount, MinimumSupportedVersion, out expectedLength))
+                {
+                    error = "Indexed persistent-world sector compact header exceeds supported bounds.";
+                    return false;
+                }
+            }
+
             if (expectedLength != sectionLength)
             {
                 error = "Indexed persistent-world sector length does not match its compact header.";
@@ -3084,7 +3375,7 @@ namespace Hecton8.SaveSystem
             if (recordCount <= 0)
                 return true;
 
-            int cursor = PersistentWorldSectionHeaderSize;
+            int cursor = sectionHeaderSize;
             byte* chunkTablePtr = sectionPtr + cursor;
             cursor += chunkCount * UnsafeUtility.SizeOf<int3>();
             byte* itemHashTablePtr = sectionPtr + cursor;
@@ -3158,6 +3449,7 @@ namespace Hecton8.SaveSystem
                 return false;
 
             byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBuffer);
+            int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
             ulong metadataHash64 = Hash64(rawPtr, metadataRawLength);
             int headerSizeBytes = ResolveExpectedHeaderSize(header.Version);
             ulong directoryHash64 = header.PlayerOffset > headerSizeBytes
@@ -3173,6 +3465,7 @@ namespace Hecton8.SaveSystem
             if (!TryComputeIndexedChecksumRootFromMappedDirectory(
                     (byte*)mapping.View,
                     directoryEntryCursor,
+                    sectorEntrySize,
                     metadataEndOffset,
                     mapping.Length,
                     checked((int)directoryHeader.SectorCount),
@@ -3190,6 +3483,7 @@ namespace Hecton8.SaveSystem
                         checksumRoot,
                         (byte*)mapping.View,
                         directoryEntryCursor,
+                        sectorEntrySize,
                         unchecked((uint)metadataHash64),
                         header.Checksum))
                 {
@@ -3364,15 +3658,21 @@ namespace Hecton8.SaveSystem
                 packedQuestStateWords = Array.Empty<uint>();
             }
 
-            if (!IsByteRangeWithin(payloadCursor, EcosystemSectionHeaderSize, metadataRawLength))
+            int ecosystemHeaderSize = ResolveEcosystemSectionHeaderSize(header.Version);
+            if (!IsByteRangeWithin(payloadCursor, ecosystemHeaderSize, metadataRawLength))
             {
                 error = "Indexed ecosystem section header is truncated.";
                 return false;
             }
 
-            EcosystemSectionHeader ecosystemHeader = UnsafeUtility.ReadArrayElement<EcosystemSectionHeader>(AddByteOffset(rawPtr, payloadCursor), 0);
-            int ecosystemRecordCount = checked((int)ecosystemHeader.RecordCount);
-            int ecosystemSectionLength = ComputeEcosystemSectionLength(ecosystemRecordCount);
+            EcosystemSectionHeader ecosystemHeader = ReadEcosystemSectionHeader(AddByteOffset(rawPtr, payloadCursor), ecosystemHeaderSize);
+            if (!TryConvertSectionCount(ecosystemHeader.RecordCount, out int ecosystemRecordCount) ||
+                !TryComputeEcosystemSectionLength(ecosystemRecordCount, header.Version, out int ecosystemSectionLength))
+            {
+                error = "Indexed ecosystem section header exceeds supported bounds.";
+                return false;
+            }
+
             if (!IsByteRangeWithin(payloadCursor, ecosystemSectionLength, metadataRawLength))
             {
                 error = "Indexed ecosystem section exceeds the metadata payload bounds.";
@@ -3385,7 +3685,7 @@ namespace Hecton8.SaveSystem
                 fixed (EcosystemSectorSaveRecord* destinationPtr = ecosystemSectorStates)
                 {
                     int ecosystemBytes = ecosystemRecordCount * UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>();
-                    if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, ecosystemSectorStates.Length * UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>(), AddByteOffset(rawPtr, payloadCursor + EcosystemSectionHeaderSize), ecosystemBytes))
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, ecosystemSectorStates.Length * UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>(), AddByteOffset(rawPtr, payloadCursor + ecosystemHeaderSize), ecosystemBytes))
                     {
                         error = "Indexed ecosystem section copy exceeded destination bounds.";
                         return false;
@@ -3662,12 +3962,12 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                byte[] blockHeaderBytes = new byte[IndexedSectorBlockHeaderSize];
+                Span<byte> blockHeaderBytes = stackalloc byte[IndexedSectorBlockHeaderSize];
                 fileStream.Position = selectedEntry.ByteOffset;
                 int readBytes = 0;
                 while (readBytes < blockHeaderBytes.Length)
                 {
-                    int justRead = fileStream.Read(blockHeaderBytes, readBytes, blockHeaderBytes.Length - readBytes);
+                    int justRead = fileStream.Read(blockHeaderBytes.Slice(readBytes));
                     if (justRead <= 0)
                     {
                         error = "Smoke corruption block header read ended early.";
@@ -4359,11 +4659,23 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                int recordCount = checked((int)header.RecordCount);
+                if (!TryConvertSectionCount(header.RecordCount, out int recordCount))
+                {
+                    error = "Sector entity-state override record count exceeds supported bounds.";
+                    return false;
+                }
+
                 int recordStride = compact16
                     ? UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>()
                     : UnsafeUtility.SizeOf<EntityDataRecord>();
-                int expectedByteLength = checked(recordCount * recordStride);
+                long expectedByteLength64 = (long)recordCount * recordStride;
+                if (expectedByteLength64 > int.MaxValue)
+                {
+                    error = "Sector entity-state override byte count exceeds supported bounds.";
+                    return false;
+                }
+
+                int expectedByteLength = (int)expectedByteLength64;
                 if (expectedByteLength != header.DecompressedSize)
                 {
                     error = "Sector entity-state override byte count does not match the record count.";
@@ -4659,12 +4971,12 @@ namespace Hecton8.SaveSystem
                 }
 
                 byte* filePtr = (byte*)mapping.View;
-                int sectorEntrySize = UnsafeUtility.SizeOf<SectorEntry>();
+                int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
                 int populatedCount = 0;
                 using NativeArray<byte> rawBlockBytes = new NativeArray<byte>(ModPayloadSubBlockSizeBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
                 for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
                 {
-                    SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+                    SectorEntry entry = ReadIndexedSectorEntry(filePtr + entryCursor, sectorEntrySize);
                     entryCursor += sectorEntrySize;
                     if (!IsIndexedSectorEntryPopulated(in entry))
                         continue;
@@ -4746,13 +5058,13 @@ namespace Hecton8.SaveSystem
                 }
 
                 byte* filePtr = (byte*)mapping.View;
-                int sectorEntrySize = UnsafeUtility.SizeOf<SectorEntry>();
+                int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
                 int populatedCount = 0;
                 int skippedModSectorCount = 0;
                 using NativeArray<byte> rawBlockBytes = new NativeArray<byte>(ModPayloadSubBlockSizeBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
                 for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
                 {
-                    SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+                    SectorEntry entry = ReadIndexedSectorEntry(filePtr + entryCursor, sectorEntrySize);
                     entryCursor += sectorEntrySize;
                     if (!IsIndexedSectorEntryPopulated(in entry))
                         continue;
@@ -5032,7 +5344,8 @@ namespace Hecton8.SaveSystem
 
             directoryHeader.ChunkSizeMeters = math.max(1, directoryHeader.ChunkSizeMeters);
 
-            int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * UnsafeUtility.SizeOf<SectorEntry>());
+            int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
+            int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * sectorEntrySize);
             if ((long)directoryOffset > mapping.Length - directoryBytes)
             {
                 error = "Indexed sector directory exceeds the file bounds.";
@@ -5080,7 +5393,7 @@ namespace Hecton8.SaveSystem
                     return false;
 
                 int headerSizeBytes = ResolveExpectedHeaderSize(header.Version);
-                int sectorEntrySize = UnsafeUtility.SizeOf<SectorEntry>();
+                int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
                 int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * sectorEntrySize);
                 long metadataOffset = header.PlayerOffset;
                 long metadataEndOffset = metadataOffset + directoryHeader.MetadataCompressedSize;
@@ -5163,7 +5476,7 @@ namespace Hecton8.SaveSystem
 
                     entry.ByteOffset = writeCursor;
                     sectorEntries[i] = entry;
-                    UnsafeUtility.CopyStructureToPtr(ref entry, compactPtr + directoryEntryCursor);
+                    WriteIndexedSectorEntry(compactPtr + directoryEntryCursor, sectorEntrySize, in entry);
                     directoryEntryCursor += sectorEntrySize;
                     writeCursor += entry.CompressedSize;
                 }
@@ -5384,7 +5697,8 @@ namespace Hecton8.SaveSystem
                 }
 
                 int headerSizeBytes = ResolveExpectedHeaderSize(saveHeader.Version);
-                int directoryEntryOffset = headerSizeBytes + IndexedSectorDirectoryHeaderSize + (commitTarget.SlotIndex * UnsafeUtility.SizeOf<SectorEntry>());
+                int sectorEntrySize = ResolveIndexedSectorEntrySize(saveHeader.Version);
+                int directoryEntryOffset = headerSizeBytes + IndexedSectorDirectoryHeaderSize + (commitTarget.SlotIndex * sectorEntrySize);
                 SectorEntry updatedEntry = new SectorEntry
                 {
                     SectorHash = sectorHash,
@@ -5393,7 +5707,7 @@ namespace Hecton8.SaveSystem
                     DecompressedSize = overrideDecompressedSize,
                     Checksum = overrideChecksum
                 };
-                UnsafeUtility.CopyStructureToPtr(ref updatedEntry, mappedFilePtr + directoryEntryOffset);
+                WriteIndexedSectorEntry(mappedFilePtr + directoryEntryOffset, sectorEntrySize, in updatedEntry);
 
                 if (commitTarget.InsertedNewSlot && sectorCountDelta != 0)
                 {
@@ -5671,13 +5985,14 @@ namespace Hecton8.SaveSystem
             uint checksumRoot,
             byte* filePtr,
             int entryCursor,
+            int sectorEntrySize,
             uint metadataChecksum,
             uint expectedChecksum)
         {
             if (checksumRoot == expectedChecksum)
                 return true;
 
-            return ComputeIndexedChecksumRootLegacyHashFromMappedDirectory(filePtr, entryCursor, metadataChecksum) == expectedChecksum;
+            return ComputeIndexedChecksumRootLegacyHashFromMappedDirectory(filePtr, entryCursor, sectorEntrySize, metadataChecksum) == expectedChecksum;
         }
 
         private static uint FoldIndexedSectorChecksum(in SectorEntry entry)
@@ -5705,6 +6020,7 @@ namespace Hecton8.SaveSystem
         private static bool TryComputeIndexedChecksumRootFromMappedDirectory(
             byte* filePtr,
             int entryCursor,
+            int sectorEntrySize,
             long metadataEndOffset,
             long fileLength,
             int expectedSectorCount,
@@ -5723,7 +6039,7 @@ namespace Hecton8.SaveSystem
                 {
                     for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
                     {
-                        SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+                        SectorEntry entry = ReadIndexedSectorEntry(filePtr + entryCursor, sectorEntrySize);
                         if (IsIndexedSectorEntryPopulated(in entry))
                         {
                             if (!IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, fileLength))
@@ -5736,14 +6052,14 @@ namespace Hecton8.SaveSystem
                             checksumRoot = (checksumRoot ^ FoldIndexedSectorChecksum(in entry)) * 16777619u;
                         }
 
-                        entryCursor += UnsafeUtility.SizeOf<SectorEntry>();
+                        entryCursor += sectorEntrySize;
                     }
                 }
                 else
                 {
                     for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
                     {
-                        SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+                        SectorEntry entry = ReadIndexedSectorEntry(filePtr + entryCursor, sectorEntrySize);
                         if (IsIndexedSectorEntryPopulated(in entry))
                         {
                             if (!IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, fileLength))
@@ -5755,7 +6071,7 @@ namespace Hecton8.SaveSystem
                             populatedCount++;
                         }
 
-                        entryCursor += UnsafeUtility.SizeOf<SectorEntry>();
+                        entryCursor += sectorEntrySize;
                     }
                 }
 
@@ -5775,6 +6091,7 @@ namespace Hecton8.SaveSystem
         private static uint ComputeIndexedChecksumRootLegacyHashFromMappedDirectory(
             byte* filePtr,
             int entryCursor,
+            int sectorEntrySize,
             uint metadataChecksum)
         {
             unchecked
@@ -5782,14 +6099,14 @@ namespace Hecton8.SaveSystem
                 uint root = metadataChecksum == 0u ? 2166136261u : metadataChecksum;
                 for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
                 {
-                    SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+                    SectorEntry entry = ReadIndexedSectorEntry(filePtr + entryCursor, sectorEntrySize);
                     if (IsIndexedSectorEntryPopulated(in entry))
                     {
                         uint leafHash = FoldIndexedSectorChecksumLegacyHash(in entry);
                         root = (root ^ leafHash) * 16777619u;
                     }
 
-                    entryCursor += UnsafeUtility.SizeOf<SectorEntry>();
+                    entryCursor += sectorEntrySize;
                 }
 
                 return root == 0u ? 2166136261u : root;
@@ -6965,16 +7282,67 @@ namespace Hecton8.SaveSystem
 
         private static int ComputePersistentWorldSectionLength(int entityCount, int chunkCount, int itemHashCount)
         {
-            return PersistentWorldSectionHeaderSize +
+            return ComputePersistentWorldSectionLength(entityCount, chunkCount, itemHashCount, CurrentVersion);
+        }
+
+        private static int ComputePersistentWorldSectionLength(int entityCount, int chunkCount, int itemHashCount, ushort saveVersion)
+        {
+            return ResolvePersistentWorldSectionHeaderSize(saveVersion) +
                    checked(chunkCount * UnsafeUtility.SizeOf<int3>()) +
                    checked(itemHashCount * UnsafeUtility.SizeOf<ulong>()) +
                    checked(entityCount * UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>());
         }
 
+        private static bool TryComputePersistentWorldSectionLength(
+            int entityCount,
+            int chunkCount,
+            int itemHashCount,
+            ushort saveVersion,
+            out int sectionLength)
+        {
+            sectionLength = 0;
+            if (entityCount < 0 || chunkCount < 0 || itemHashCount < 0)
+                return false;
+
+            long total =
+                ResolvePersistentWorldSectionHeaderSize(saveVersion) +
+                ((long)chunkCount * UnsafeUtility.SizeOf<int3>()) +
+                ((long)itemHashCount * UnsafeUtility.SizeOf<ulong>()) +
+                ((long)entityCount * UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>());
+
+            if (total > int.MaxValue)
+                return false;
+
+            sectionLength = (int)total;
+            return true;
+        }
+
         private static int ComputeEcosystemSectionLength(int recordCount)
         {
-            return EcosystemSectionHeaderSize +
+            return ComputeEcosystemSectionLength(recordCount, CurrentVersion);
+        }
+
+        private static int ComputeEcosystemSectionLength(int recordCount, ushort saveVersion)
+        {
+            return ResolveEcosystemSectionHeaderSize(saveVersion) +
                    checked(math.max(recordCount, 0) * UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>());
+        }
+
+        private static bool TryComputeEcosystemSectionLength(int recordCount, ushort saveVersion, out int sectionLength)
+        {
+            sectionLength = 0;
+            if (recordCount < 0)
+                return false;
+
+            long total =
+                ResolveEcosystemSectionHeaderSize(saveVersion) +
+                ((long)recordCount * UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>());
+
+            if (total > int.MaxValue)
+                return false;
+
+            sectionLength = (int)total;
+            return true;
         }
 
         private static void WritePersistentWorldSection(
@@ -6994,8 +7362,9 @@ namespace Hecton8.SaveSystem
                 RecordCount = (uint)recordCount
             };
 
-            UnsafeUtility.CopyStructureToPtr(ref sectionHeader, destination);
-            int cursor = PersistentWorldSectionHeaderSize;
+            int sectionHeaderSize = ResolvePersistentWorldSectionHeaderSize(CurrentVersion);
+            WritePersistentWorldSectionHeader(destination, sectionHeaderSize, in sectionHeader);
+            int cursor = sectionHeaderSize;
 
             if (chunkTable.Length > 0)
             {
@@ -7086,8 +7455,9 @@ namespace Hecton8.SaveSystem
                 RecordCount = (uint)safeRecordCount
             };
 
-            UnsafeUtility.CopyStructureToPtr(ref sectionHeader, destination);
-            int cursor = PersistentWorldSectionHeaderSize;
+            int sectionHeaderSize = ResolvePersistentWorldSectionHeaderSize(CurrentVersion);
+            WritePersistentWorldSectionHeader(destination, sectionHeaderSize, in sectionHeader);
+            int cursor = sectionHeaderSize;
 
             if (chunkTable.Length > 0)
             {
@@ -7166,11 +7536,16 @@ namespace Hecton8.SaveSystem
             if (!TryResolvePersistentWorldSectionLength(rawPtr, rawPayloadLength, header, out int entitySectionOffset, out _, out error))
                 return false;
 
-            PersistentWorldSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<PersistentWorldSectionHeader>(AddByteOffset(rawPtr, entitySectionOffset), 0);
-            int chunkCount = checked((int)sectionHeader.ChunkCount);
-            int itemHashCount = checked((int)sectionHeader.ItemHashCount);
-            int recordCount = checked((int)sectionHeader.RecordCount);
-            if (recordCount != checked((int)header.EntityCount))
+            int sectionHeaderSize = ResolvePersistentWorldSectionHeaderSize(header.Version);
+            PersistentWorldSectionHeader sectionHeader = ReadPersistentWorldSectionHeader(AddByteOffset(rawPtr, entitySectionOffset), sectionHeaderSize);
+            if (!TryConvertPersistentWorldSectionCounts(in sectionHeader, out int recordCount, out int chunkCount, out int itemHashCount) ||
+                !TryConvertSectionCount(header.EntityCount, out int expectedRecordCount))
+            {
+                error = "Persistent-world delta section header exceeds supported bounds.";
+                return false;
+            }
+
+            if (recordCount != expectedRecordCount)
             {
                 error = "Persistent-world delta section count mismatch.";
                 return false;
@@ -7183,7 +7558,7 @@ namespace Hecton8.SaveSystem
                 return true;
             }
 
-            int cursor = entitySectionOffset + PersistentWorldSectionHeaderSize;
+            int cursor = entitySectionOffset + sectionHeaderSize;
             byte* chunkTablePtr = AddByteOffset(rawPtr, cursor);
             cursor += chunkCount * UnsafeUtility.SizeOf<int3>();
             byte* itemHashTablePtr = AddByteOffset(rawPtr, cursor);
@@ -7254,7 +7629,7 @@ namespace Hecton8.SaveSystem
                 entitySectionLength = entityCount > 0
                     ? checked(entityCount * UnsafeUtility.SizeOf<PersistentWorldDeltaRecord>())
                     : 0;
-                if (entitySectionOffset + entitySectionLength > rawPayloadLength)
+                if (!IsByteRangeWithin(entitySectionOffset, entitySectionLength, rawPayloadLength))
                 {
                     error = "Entity payload exceeds the decompressed payload bounds.";
                     return false;
@@ -7266,24 +7641,34 @@ namespace Hecton8.SaveSystem
             if (header.EntityCount <= 0)
                 return true;
 
-            if (entitySectionOffset + PersistentWorldSectionHeaderSize > rawPayloadLength)
+            int sectionHeaderSize = ResolvePersistentWorldSectionHeaderSize(header.Version);
+            if (!IsByteRangeWithin(entitySectionOffset, sectionHeaderSize, rawPayloadLength))
             {
                 error = "Persistent-world delta section header is truncated.";
                 return false;
             }
 
-            PersistentWorldSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<PersistentWorldSectionHeader>(AddByteOffset(rawPtr, entitySectionOffset), 0);
-            if (sectionHeader.RecordCount != header.EntityCount)
+            PersistentWorldSectionHeader sectionHeader = ReadPersistentWorldSectionHeader(AddByteOffset(rawPtr, entitySectionOffset), sectionHeaderSize);
+            if (!TryConvertPersistentWorldSectionCounts(in sectionHeader, out int recordCount, out int chunkCount, out int itemHashCount) ||
+                !TryConvertSectionCount(header.EntityCount, out int expectedRecordCount))
+            {
+                error = "Persistent-world delta section header exceeds supported bounds.";
+                return false;
+            }
+
+            if (recordCount != expectedRecordCount)
             {
                 error = "Persistent-world delta section header count mismatch.";
                 return false;
             }
 
-            int chunkCount = checked((int)sectionHeader.ChunkCount);
-            int itemHashCount = checked((int)sectionHeader.ItemHashCount);
-            int recordCount = checked((int)sectionHeader.RecordCount);
-            entitySectionLength = ComputePersistentWorldSectionLength(recordCount, chunkCount, itemHashCount);
-            if (entitySectionOffset + entitySectionLength > rawPayloadLength)
+            if (!TryComputePersistentWorldSectionLength(recordCount, chunkCount, itemHashCount, header.Version, out entitySectionLength))
+            {
+                error = "Persistent-world delta section exceeds supported bounds.";
+                return false;
+            }
+
+            if (!IsByteRangeWithin(entitySectionOffset, entitySectionLength, rawPayloadLength))
             {
                 error = "Persistent-world delta section exceeds the decompressed payload bounds.";
                 return false;
@@ -7302,7 +7687,8 @@ namespace Hecton8.SaveSystem
                 RecordCount = (uint)recordCount
             };
 
-            UnsafeUtility.CopyStructureToPtr(ref sectionHeader, destination);
+            int ecosystemHeaderSize = ResolveEcosystemSectionHeaderSize(CurrentVersion);
+            WriteEcosystemSectionHeader(destination, ecosystemHeaderSize, in sectionHeader);
             if (recordCount <= 0)
                 return;
 
@@ -7310,8 +7696,8 @@ namespace Hecton8.SaveSystem
             int recordBytes = recordCount * UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>();
             int sectionLength = ComputeEcosystemSectionLength(recordCount);
             if (!UnsafeMemoryCopyGuard.SafeCopy(
-                    AddByteOffset(destination, EcosystemSectionHeaderSize),
-                    sectionLength - EcosystemSectionHeaderSize,
+                    AddByteOffset(destination, ecosystemHeaderSize),
+                    sectionLength - ecosystemHeaderSize,
                     sourcePtr,
                     recordBytes))
             {
@@ -7348,8 +7734,14 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            EcosystemSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<EcosystemSectionHeader>(AddByteOffset(rawPtr, ecosystemSectionOffset), 0);
-            int recordCount = checked((int)sectionHeader.RecordCount);
+            int ecosystemHeaderSize = ResolveEcosystemSectionHeaderSize(header.Version);
+            EcosystemSectionHeader sectionHeader = ReadEcosystemSectionHeader(AddByteOffset(rawPtr, ecosystemSectionOffset), ecosystemHeaderSize);
+            if (!TryConvertSectionCount(sectionHeader.RecordCount, out int recordCount))
+            {
+                error = "Ecosystem section header exceeds supported bounds.";
+                return false;
+            }
+
             ecosystemSectorStates = new EcosystemSectorSaveRecord[recordCount];
             if (recordCount <= 0)
                 return true;
@@ -7360,7 +7752,7 @@ namespace Hecton8.SaveSystem
                 if (!UnsafeMemoryCopyGuard.SafeCopy(
                         destinationPtr,
                         ecosystemSectorStates.Length * UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>(),
-                        AddByteOffset(rawPtr, ecosystemSectionOffset + EcosystemSectionHeaderSize),
+                        AddByteOffset(rawPtr, ecosystemSectionOffset + ecosystemHeaderSize),
                         recordBytes))
                 {
                     error = "Ecosystem sector-state copy exceeded destination bounds.";
@@ -7381,12 +7773,20 @@ namespace Hecton8.SaveSystem
             out int ecosystemSectionLength,
             out string error)
         {
-            ecosystemSectionOffset = entitySectionOffset + entitySectionLength;
+            ecosystemSectionOffset = 0;
             ecosystemSectionLength = 0;
             error = string.Empty;
 
             if (header.Version < EcosystemSectionVersion)
                 return true;
+
+            if (!IsByteRangeWithin(entitySectionOffset, entitySectionLength, rawPayloadLength))
+            {
+                error = "Persistent-world section bounds are invalid before ecosystem resolution.";
+                return false;
+            }
+
+            ecosystemSectionOffset = entitySectionOffset + entitySectionLength;
 
             if (ecosystemSectionOffset < 0 || ecosystemSectionOffset > rawPayloadLength)
             {
@@ -7394,16 +7794,22 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            if (ecosystemSectionOffset + EcosystemSectionHeaderSize > rawPayloadLength)
+            int ecosystemHeaderSize = ResolveEcosystemSectionHeaderSize(header.Version);
+            if (!IsByteRangeWithin(ecosystemSectionOffset, ecosystemHeaderSize, rawPayloadLength))
             {
                 error = "Ecosystem section header is truncated.";
                 return false;
             }
 
-            EcosystemSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<EcosystemSectionHeader>(AddByteOffset(rawPtr, ecosystemSectionOffset), 0);
-            int recordCount = checked((int)sectionHeader.RecordCount);
-            ecosystemSectionLength = ComputeEcosystemSectionLength(recordCount);
-            if (ecosystemSectionOffset + ecosystemSectionLength > rawPayloadLength)
+            EcosystemSectionHeader sectionHeader = ReadEcosystemSectionHeader(AddByteOffset(rawPtr, ecosystemSectionOffset), ecosystemHeaderSize);
+            if (!TryConvertSectionCount(sectionHeader.RecordCount, out int recordCount) ||
+                !TryComputeEcosystemSectionLength(recordCount, header.Version, out ecosystemSectionLength))
+            {
+                error = "Ecosystem section header exceeds supported bounds.";
+                return false;
+            }
+
+            if (!IsByteRangeWithin(ecosystemSectionOffset, ecosystemSectionLength, rawPayloadLength))
             {
                 error = "Ecosystem section exceeds the decompressed payload bounds.";
                 return false;
@@ -7788,6 +8194,8 @@ namespace Hecton8.SaveSystem
                 case IndexedBlockStorageVersion:
                     return IndexedHeaderV8Size;
                 case HeaderChecksumVersion:
+                case AlignedIndexedSectorDirectoryVersion:
+                case AlignedSectionHeaderVersion:
                     return CurrentHeaderSize;
                 default:
                     return 0;

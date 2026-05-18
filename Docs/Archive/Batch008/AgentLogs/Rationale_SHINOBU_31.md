@@ -1,0 +1,137 @@
+# Rationale_SHINOBU_31
+
+Date: 2026-05-18
+Status: IMPLEMENTED / CURRENT SOURCE VERIFIED / FULL UNITY COMPILE BLOCKED BY DEPENDENCY
+Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / UNITY_BEE_PARTIAL / UNITY_ROSLYN_ISOLATED.
+
+## SELF_AUDIT
+
+<SELF_AUDIT>
+  <runtime_to_runtime_direct_refs>PASSED_FOR_NEW_WORK: current project baseline contains 85 illegal Runtime -> Runtime edges across 154 asmdefs, but SHINOBU_31 Global/MockDomain additions contribute 0. Build gate now blocks future spread.</runtime_to_runtime_direct_refs>
+  <global_signal_payload_alignment>PASSED: `GlobalSignalPayload` is explicit 128 bytes, `Pack=8`, 16-byte header, 112-byte payload body.</global_signal_payload_alignment>
+  <cs1612_contract_shape>PASSED_FOR_NEW_WORK: SHINOBU_31 contracts use raw handles, function pointers, and `ref MockDomainState`; no `{ get; set; }` array surfaces.</cs1612_contract_shape>
+  <mock_dependencies>PASSED: mock runtime Bee response references only Global.Contracts, MockDomain.Contracts, Burst, and Mathematics; no Core/UI/Physics refs.</mock_dependencies>
+  <authoring_dependencies>PASSED: mock authoring assembly compiles from current source against Global.Contracts and MockDomain.Contracts only; no Runtime/Core/UI/Physics first-party refs.</authoring_dependencies>
+  <compile_wall_xray>PASSED_SYNTAX: Editor facade implemented and isolated Unity Roslyn compile returned 0 errors; full Unity import is blocked by external domain errors.</compile_wall_xray>
+  <blackbox_native_ring>PASSED_CODE_PATH: compile-domain blackbox uses a 300-entry `NativeArray<CompileWallBlackBoxEntry>` and writes `Dump_SHINOBU_31.h8dump` on fatal build-gate failure.</blackbox_native_ring>
+</SELF_AUDIT>
+
+## Decision 00 - Baseline Graph First
+
+Problem: The user asked for assembly surgery in a repository with a dirty worktree and 40+ concurrent agents. Blind edits to `Hecton8.Core.asmdef` would corrupt unrelated work.
+
+Solution: Read `CURRENT_BATCH.md`, `AGENTS.md`, domain map, selected mandates, docs index, architecture index, and current `.asmdef` graph before writing code. Treat `Docs/DEPENDENCY_GRAPH.md` as static orientation, not proof.
+
+Rejected Alternatives: Directly removing Core references was rejected because source still imports leaf namespaces and would create immediate compile breakage. Adding more leaf references was rejected because it increases Compile Wall debt.
+
+Scalability potential: Low tier benefits from smaller compile/runtime surfaces; middle/high/ultra benefit from leaf systems staying independently swappable so saved CPU can buy visual overkill rather than monolithic boot cost.
+
+Hardware Impact: Estimated low-end i3/MX350 gain is editor iteration time, not frame time. Runtime hot-path gain remains PENDING VERIFICATION until dependent systems adopt function-pointer facades.
+
+## Decision 01 - Gate Instead Of Silent Drift
+
+Problem: Existing `.asmdef` graph already violates the target Runtime -> Runtime rule. Without an automated gate, more agents will add direct dependencies.
+
+Solution: Implement an Editor pre-build validator that parses first-party asmdefs, classifies Contracts/Runtime/Authoring/Editor/Test, and fails illegal Runtime -> Runtime references with explicit source/target paths.
+
+Rejected Alternatives: Manual review and dated reports were rejected; they have already allowed Core graph debt to exist. Runtime reflection scanners were rejected; the graph is static build metadata and must be checked before build.
+
+Scalability potential: Low tier avoids dragging high-end graphics/runtime assemblies into every build. Middle/high/ultra can compile optional domains independently and spend runtime budgets on visual detail.
+
+Hardware Impact: Editor-only check estimated under 0.1 ms per 100 asmdef files on desktop. It prevents 10-minute rebuild cascades rather than improving frame time directly.
+
+## Decision 02 - Global Contracts Spine
+
+Problem: The project has Core-centered assembly gravity. Leaf runtime domains can accidentally pull each other through Core or direct asmdef references, causing compile cascades and IL2CPP reachability bloat.
+
+Solution: Added `Hecton8.Global.Contracts.asmdef` with unmanaged DTOs, enums, `IBootstrapNode`, `IStaticResetNode`, raw buffer handles, and a `PhysicsFacade` that carries a Burst `FunctionPointer<T>` plus DataVault handle. The assembly references only Burst, Collections, and Mathematics.
+
+Rejected Alternatives: Adding contracts into `Hecton8.Core.asmdef` was rejected because Core already owns too many leaf references. Reflection DI was rejected because boot-time assembly scans are slow and fragile under IL2CPP stripping.
+
+Scalability potential: Low devices use the same tiny contract spine without compiling optional high-end domains. Middle/high/ultra builds can attach richer implementations behind the same facade and spend the saved compile/runtime budget on visual overkill.
+
+Hardware Impact: Runtime frame gain is indirect. Low-end i3/MX350 impact is primarily iteration/build reduction; hot-path call shape avoids managed interface dispatch and boxing when implementations register function pointers.
+
+## Decision 03 - Explicit Payload And Alias Layouts
+
+Problem: Cross-assembly signal and memory aliases can corrupt ARM64/mobile targets if implicit padding differs between assemblies or if writable slices alias silently.
+
+Solution: Defined explicit `Pack=8` layouts: `GlobalSignalPayload` = 128 bytes, `GlobalNativeBufferHandle` = 32 bytes, `NativeMemoryAliasContract` = 64 bytes, and `AssemblyRoutingOverride` = 64 bytes. Added `[NoAlias]` to the alias contract and owner/generation/range fields.
+
+Rejected Alternatives: `Pack=1` and managed property wrappers were rejected. They are slower to reason about, easier to break with CS1612, and hostile to Burst vectorization.
+
+Scalability potential: Low tier gets deterministic fixed-size payload dispatch. Middle/high/ultra tiers can reinterpret the same 112-byte payload body into richer visual or simulation structs without adding generic SignalBus instantiations.
+
+Hardware Impact: Estimated low-end i3/MX350 gain is avoiding defensive copies/locks around shared memory slices. Exact microsecond gain depends on adopter domains; SHINOBU_31 code itself adds no runtime loop.
+
+## Decision 04 - Mock Domain Isolation
+
+Problem: The assignment required proof that a runtime implementation can compile without UI, Physics, or Core implementation references.
+
+Solution: Added `Hecton8.MockDomain.Contracts.asmdef` and `Hecton8.MockDomain.Runtime.asmdef`. The runtime references only `Hecton8.Global.Contracts`, its own contracts, Burst, and Mathematics. The implementation is a readonly struct with static Burst function pointer target, so `Create()` returns `default` and does not allocate a managed object.
+
+Rejected Alternatives: A sealed class mock allocation was rejected during self-audit because it would make `Create()` heap-backed. Direct references to `Hecton8.Core`, `Hecton8.Physics`, or `Hecton8.UI` were rejected and verified absent in the Bee response file.
+
+Scalability potential: Low tier can route to cheap mocks/stubs. Middle/high/ultra can route to richer implementations without changing caller assemblies.
+
+Hardware Impact: Low-end i3/MX350 avoids managed allocation during mock creation. Function pointer invoke cost remains pending real domain adoption, but the bridge shape is Burst-compatible.
+
+## Decision 05 - Build Gate, X-Ray, And CSV Routing
+
+Problem: Runtime-to-runtime debt is invisible until build time, and manual inspection does not scale with 40+ agents.
+
+Solution: Added `CompileWallAsmdefBuildGate`, `CompileWallXRayWindow`, 300-entry `NativeArray` compile blackbox telemetry, and span-based CSV routing override parser. The window scans asmdefs, draws illegal Runtime -> Runtime edges red, and exposes the no-domain-reload toggle.
+
+Rejected Alternatives: Text-only reports were rejected because they do not stop builds. Runtime reflection scanning was rejected because asmdef dependencies are static metadata and must be blocked before player build.
+
+Scalability potential: Low devices benefit from smaller compiled surfaces. Middle/high/ultra builds can keep high-cost visual domains optional and visible in the graph instead of becoming hidden dependencies.
+
+Hardware Impact: Editor-only scan cost measured by code path, not profiler. Estimated under 300 us per asmdef JSON on workstation hardware; no runtime frame cost.
+
+## Decision 05B - Compile-Domain Blackbox
+
+Problem: The first polish pass still treated blackbox as partial because telemetry used managed samples only and did not own a fixed native crash/dump lane.
+
+Solution: Added `CompileWallBlackBox` with `NativeArray<CompileWallBlackBoxEntry>(300, Allocator.Persistent)`. Graph scans and compile samples write high-level state into the ring. Fatal Runtime -> Runtime build-gate failure dumps `Docs/AgentLogs/Dump_SHINOBU_31.h8dump` before throwing `BuildFailedException`.
+
+Rejected Alternatives: Leaving the managed 300-sample UI buffer as the only evidence was rejected. Runtime `NativeArray` ownership inside leaf domains was rejected; this is editor tooling, so the persistent native buffer is scoped to the Editor assembly and disposed on assembly reload/quitting.
+
+Scalability potential: Low-end developer machines get postmortem visibility without rerunning the full compile. Middle/high/ultra workstations get the same data and can afford richer future graph diagnostics without changing runtime domains.
+
+Hardware Impact: Editor-only persistent native memory is 300 x 40 bytes = 12,000 bytes plus NativeArray header. Dump happens only on fatal build gate or invalid timing state; no player frame cost.
+
+## Decision 05C - Authoring Slice Closure
+
+Problem: The earlier mock proof covered Contracts and Runtime, but strict three-tier architecture also requires an Authoring assembly that can expose designer-editable data without depending on Runtime implementation code.
+
+Solution: Added `Hecton8.MockDomain.Authoring.asmdef` and `MockDomainAuthoringProfile`. The Authoring assembly references only `Hecton8.Global.Contracts`, `Hecton8.MockDomain.Contracts`, and `Unity.Mathematics`; UnityEngine is present only as the ScriptableObject authoring surface. `BuildRoutingOverride()` emits contract-level route hashes. `BuildInitialState()` emits `MockDomainState` with `double3` AUP from serialized `double` fields.
+
+Rejected Alternatives: A direct Authoring -> Runtime reference was rejected because it would force implementation recompiles when designers edit authoring code. A `Vector3` AUP authoring field was rejected during polish because it silently narrows absolute world coordinates to float before restoring them to double.
+
+Scalability potential: Low devices can bind mock/cheap implementations from asset data without recompiling runtime domains. Middle/high/ultra tiers can swap richer implementations behind the same contract route while keeping presentation authoring separated from gameplay truth.
+
+Hardware Impact: Runtime frame gain is 0 us because this is an authoring facade. Compile-wall protection gain is structural: current-source Roslyn proof shows the Authoring assembly has no first-party Runtime/Core/UI/Physics references.
+
+## Decision 06 - IL2CPP Shield And Offset Generation
+
+Problem: Late-bound contract and registry surfaces can be stripped by IL2CPP, and blind pointer math needs stable offsets without direct assembly references.
+
+Solution: Added generated `link.xml` preserving global contract assemblies and 114 scanned `Hecton8.Core.GlobalRegistry` contract surface types. Added `VaultOffsets.g.cs` and Editor generator hooks for link/offset refresh.
+
+Rejected Alternatives: Trusting IL2CPP reachability was rejected. Hand-maintained offset notes were rejected because they rot when structs change.
+
+Scalability potential: Low tier avoids mobile-only stripping crashes. Middle/high/ultra can keep optional implementations stripped or preserved intentionally instead of incidentally.
+
+Hardware Impact: Build-time only. Runtime impact is crash prevention and pointer math stability, not measurable frame-time gain in SHINOBU_31 alone.
+
+## Decision 07 - Compile Wall Status
+
+Problem: Full Unity compile cannot currently complete. Errors after R3-R6 are outside SHINOBU_31 ownership and move between Core, Quest, Rendering, Audio Editor, Fauna, and other concurrent-agent files.
+
+Solution: Fixed the one local R4 error (`[BurstCompile]` is invalid on delegates in Unity 6000.4.1f1) and verified `CompileWallXRayWindow.cs` through isolated Unity Roslyn with the generated `Hecton8.Editor.rsp`. Marked full Unity compile `[BLOCKED BY DEPENDENCY]` with exact blocker files in Status.
+
+Rejected Alternatives: Editing Quest/UI/Rendering/Fauna internals was rejected as domain sabotage. Reverting other agents' untracked files was rejected. Reporting green compile was rejected because R6 exits with compiler errors.
+
+Scalability potential: The SHINOBU_31 layer is ready to prevent future asmdef debt, but the existing project remains blocked until external domain errors are repaired.
+
+Hardware Impact: No runtime hardware claim is made while full project compile is blocked. Editor iteration protection is implemented; measured end-to-end compile savings require a clean baseline after dependency repair.

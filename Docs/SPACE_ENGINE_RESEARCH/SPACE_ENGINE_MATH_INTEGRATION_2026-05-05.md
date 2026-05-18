@@ -1,7 +1,21 @@
-﻿# SpaceEngine 0.9.8 Terrain Math Integration
+# SpaceEngine 0.9.8 Terrain Math Integration
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## 2026-05-13 DOC_AUDIT R11 Boundary
 
@@ -12,9 +26,9 @@ Current static readback:
 - `Assets/_Project/Scripts/World/SpaceEngine098/SpaceEngine098TerrainKernels.cs` exists.
 - `Assets/_Project/Scripts/World/SpaceEngine098/Hecton8.SpaceEngine098Terrain.asmdef` exists.
 - `Assets/_Project/Scripts/Plugins/MapMagic/HectonSpaceEngine098MapMagicNodes.cs` exists. The older `Assets/_Project/Scripts/World/HectonSpaceEngine098MapMagicNodes.cs` path is stale.
-- `Assets/_Project/Scripts/Dev/SpaceEngine098TerrainSmokeTester.cs` exists.
+- `Assets/_Project/Scripts/Dev/SpaceEngine098/SpaceEngine098TerrainSmokeTester.cs` exists.
 - `Assets/_Project/Scripts/Editor/SpaceEngine098TerrainSmokeTestRunner.cs` exists.
-- `Library/SpaceEngine098TerrainSmokeTester.json` exists with last write time `2026-05-05 22:20:59`, but it uses the old smoke schema and does not contain `ridgedMsX1000`, `craterMsX1000`, `rilleMsX1000`, `metricsMsX1000`, or `nodeBudgetPassed`.
+- Historical DOC_AUDIT readback cited `Library/SpaceEngine098TerrainSmokeTester.json`, but the R17 current filesystem check did not find it. Runtime smoke remains `PENDING VERIFICATION` until the artifact is restored or replaced.
 
 Proof boundary:
 
@@ -27,7 +41,7 @@ Proof boundary:
 - `Assets/_Project/Scripts/World/SpaceEngine098/SpaceEngine098TerrainKernels.cs`
 - `Assets/_Project/Scripts/World/SpaceEngine098/Hecton8.SpaceEngine098Terrain.asmdef`
 - `Assets/_Project/Scripts/Plugins/MapMagic/HectonSpaceEngine098MapMagicNodes.cs`
-- `Assets/_Project/Scripts/Dev/SpaceEngine098TerrainSmokeTester.cs`
+- `Assets/_Project/Scripts/Dev/SpaceEngine098/SpaceEngine098TerrainSmokeTester.cs`
 - `Assets/_Project/Scripts/Editor/SpaceEngine098TerrainSmokeTestRunner.cs`
 
 ## Kernels
@@ -47,10 +61,10 @@ The node seed resolver mixes the authored node seed, `GlobalRegistry.WorldSeedPr
 
 ## Smoke Result
 
-Prior Unity smoke output in `Library/SpaceEngine098TerrainSmokeTester.json` from the old schema:
+Prior historical Unity smoke text cited `Library/SpaceEngine098TerrainSmokeTester.json` from the old schema; the R17 current filesystem check did not find that JSON artifact:
 
 ```json
-{"tester":"SpaceEngine098TerrainSmokeTester","status":"PASS","warmupSamples":256,"samples":4096,"elapsedMsX1000":26186,"minHeightX1000":401,"maxHeightX1000":1000,"ridgedDeltaX100000":7079,"craterDeltaX100000":50907,"rilleDeltaX100000":3500,"checksum":222504053,"nativeAllocationDelta":0,"nativeByteDelta":0}
+{"tester":"SpaceEngine098TerrainSmokeTester","status":"HISTORICAL_STATIC_SMOKE_ARTIFACT_PENDING_RERUN","historicalPass":true,"runtimeProof":"PENDING_VERIFICATION","warmupSamples":256,"samples":4096,"elapsedMsX1000":26186,"minHeightX1000":401,"maxHeightX1000":1000,"ridgedDeltaX100000":7079,"craterDeltaX100000":50907,"rilleDeltaX100000":3500,"checksum":222504053,"nativeAllocationDelta":0,"nativeByteDelta":0}
 ```
 
 The current smoke harness now emits per-node timing fields:

@@ -1,0 +1,59 @@
+# Status_SHINOBU_39
+
+Agent: SHINOBU_39  
+Role: ZERO_GC_LOCALIZATION_AND_SUBTITLES  
+Domain: Presentation & UX / Zero-GC Localization and Subtitles  
+Source: archived original `<AGENT_PROMPT id="SHINOBU_39">` in `Docs/Archive/Batch008/Tasks_Combined/Tasks_Batch008_COMBINED_MD_TXT.md`; current `Docs/Tasks/CURRENT_BATCH.md` no longer carries this agent block  
+Task Count: 20  
+State: LOOP 8 COMPLETE / ZERO-GC SUBTITLE PATH BUILT / TASK 09 BINARY SWAP CLOSED / CLI COMPILE CLEAN / RUNTIME PROFILER PROOF PENDING
+
+## Session Hygiene
+
+- [x] Prompt reconciliation checked with CLI. Current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `SHINOBU_39`; original block was recovered from `Docs/Archive/Batch008/Tasks_Combined/Tasks_Batch008_COMBINED_MD_TXT.md` and matched active status/rationale task shape.
+- [x] Active domain checked against `Docs/Actual Domains of Project.txt`: Echelon 8 / Zero-GC Subtitles.
+- [x] Static project boundary checked against `Docs/PROJECT_STATE_STATIC_XRAY.md`: no runtime proof implied by static scans.
+- [x] Mandates read: `UI_Localization_Babel_RTL_FontSwap_ZeroAlloc`, `UI_Data_Streaming_ZeroGC_Optimization`, `OPT_Zero_GC_Policy_AllocFree_Mandate`, `DATA_Runtime_Struct_Layout_ARM64`, `DBG_Telemetry_Crash_Reporting_PostMortem`, `ARCH_Execution_Phases`, `ARCH_Global_Registry_ServiceLocator_DI_Init`, `ARCH_Signal_Lane_Segregation`.
+- [x] Active Status/Rationale were missing; archive copies existed under `Docs/Archive/Batch008`. Active files restored from current disk truth, not chat memory.
+
+## 20-Task Matrix
+
+- [PASS] Task 01 BINARY_GRAVEYARD_RECONNAISSANCE. Current active binary authority is `Babel_Dictionary.h8bin` / static arena data; missing runtime data falls back to `ERROR -> MOCK_DATA`. DOD practice: safe mock instead of null/throw. Rejected: guessing old `loc_strings_*.h8bin`. Estimate: 0 us hot path.
+- [PASS] Task 02 STRING_CLASS_ERADICATION_PASS. Hash subtitle path routes `SubtitleCommandDTO -> LocRegistry.TryWriteVisualSpanFromUtf8 -> CharBufferPool -> TMP_Text.SetCharArray`. DOD practice: hash and spans. Rejected: `TMP_Text.text`, `SetText(string)`, `Dictionary<string,string>` hot path. Estimate: 35-120 us plus one string allocation avoided per subtitle.
+- [PASS] Task 03 CS1612_ENCAPSULATION_PURGE. Runtime DTOs use public fields, no `{ get; set; }` mutability wrappers. DOD practice: field DTOs. Rejected: property-backed NativeArray structs. Estimate: defensive-copy risk removed.
+- [PASS] Task 04 ARM64_PADDING_RECONSTRUCTION. `LocalizationEntryDTO` and `SubtitleCommandDTO` are 16 bytes, sequential, no `Pack=1`. DOD practice: 4-byte fields, total multiple of 8. Estimate: avoids ARM64 unaligned-load penalty.
+- [PASS] Task 05 BLIND_DEPENDENCY_MOCKING. Added `MockTranslationRequestSignal`, `MockUiRefreshSignal`, `MockTextMeshProText`, and Burst mock request job. DOD practice: isolated contracts. Rejected: direct Terminal/Quest dependencies. Estimate: 0 us unless test path used.
+- [PASS] Task 06 BURST_BINARY_SEARCH_KERNEL. Added `BabelBinarySearchJob` over sorted `NativeArray<LocalizationEntryDTO>` and retained visible-hash prefetch job. DOD practice: O(log N) raw array search. Rejected: managed lookup in visible UI drain. Estimate: sub-us per query target.
+- [PASS] Task 07 UTF8_TO_UTF16_SPAN_CONVERTER. Manual scalar UTF-8 decoder writes to caller `Span<char>`, handles malformed bytes, surrogate pairs, `^0..^3`, RTL reverse, truncation, and low-tier tag strip. DOD practice: caller-owned memory. Rejected: `Encoding.UTF8.GetChars` in render path. Estimate: 10-80 us and 0 B GC per subtitle.
+- [PASS] Task 08 CHAR_BUFFER_POOL_MANAGER. `CharBufferPool` owns 500 x 128 Babel slots backed by `NativeArray<char>[64000]` via `GlobalDataVault` when available, plus `NativeBitArray` leases and fixed `char[]` TMP bridge. DOD practice: fixed pool and bitset. Rejected: dynamic char arrays and strings. Estimate: 0 B steady-state GC.
+- [PASS] Task 09 ASYNC_LOCALE_SWAP_ROUTINE. `SetLanguageAsync` now stages a `.h8bin` into a Vault-owned `NativeArray<byte>`, reads via background MMF on standalone/editor with stream fallback, validates magic/version/header/CRC/index bounds, commits UTF-8 payload/index in dispatcher `POST_SIMULATION`, and fires typed `LocalizationLanguageChangedSignal`. DOD practice: no main-thread file I/O in locale swap, no direct sibling domain dependency. Estimate: removes language-change disk stall from the main thread; exact us pending profiler proof.
+- [PASS] Task 10 THE_DEAR_LIE_TYPEWRITER_EFFECT. Subtitles upload full char buffer once and reveal via `TMP_Text.maxVisibleCharacters`. DOD practice: integer reveal state. Rejected: substring/coroutine string rebuilds. Estimate: 15-60 us saved per reveal frame.
+- [PASS] Task 11 DYNAMIC_VARIABLE_INJECTION. `BabelFormatArgs` writes `^0..^3` integer payloads during UTF-8 decode using `ZeroGCFormatter.FastIntToChars`. Rejected: `string.Format`, interpolation, regex. Estimate: 20-150 us and allocations avoided per dynamic line.
+- [PASS] Task 12 SUBTITLE_QUEUE_DIRECTOR. `SubtitleManager` drains existing `SignalBus<SubtitleSignal>` into `SubtitleCommandDTO`, caps reads, and supports priority/interrupt. Rejected: duplicate UnityEvents or unbounded managed queues. Estimate: sub-us queue transfer at cap 8/frame.
+- [PASS] Task 13 HARDWARE_LOD_FONT_FALLBACK. Low/Unknown/Mx350 strips rich tags during decode; higher tiers preserve authored tags. Rejected: managed post-strip. Estimate: 3-20 us saved on tagged lines plus lower TMP parse/fill cost.
+- [PASS] Task 14 AUP_AGNOSTIC_UI_SPACE. Babel DTOs contain hashes, durations, lengths, flags; no `double3` or world coordinate payload. Rejected: world-space coupling. Estimate: 0 cache cost from AUP fields.
+- [PASS] Task 15 MISSING_HASH_FALLBACK_ROUTINE. Missing hash writes `[ERR_LOC_HASH]` directly into span and records telemetry. Rejected: exception/null/managed fallback string. Estimate: 0 B GC on miss.
+- [PASS] Task 16 ZERO_INIT_OVERHEAD_BYPASS. UTF-8 payload, emergency mock payload, Babel char arena use `NativeArrayOptions.UninitializedMemory` when allocated; first writes fill exposed bytes. Rejected: ClearMemory for payload blobs. Estimate: 5-80 us saved at cold reload depending size.
+- [PASS] Task 17 TELEMETRY_LOC_RECORDER. 300-frame `BabelTelemetryEntry` ring tracks translations/frame, active leases, span conversion ms, language, flags; slow/corrupt path dumps `Dump_SHINOBU_39.bin` and `Dump_BABEL_SYSTEM.bin`. DOD practice: fixed ring. Estimate: sub-2 us/event steady-state.
+- [PASS] Task 18 LOCALIZATION_TUNER_EDITOR_WINDOW. Added editor-only "Babel Localization Manager" for `.h8bin` load, validate, preview, edit, save. Rejected: runtime reflection/tooling. Estimate: 0 us runtime.
+- [PASS] Task 19 CSV_OVERRIDE_INGESTOR. Editor facade polls and ingests `loc_overrides.csv`; runtime subtitle tick does not poll disk. Rejected: MicroSD runtime CSV scans. Estimate: 0 us runtime.
+- [PASS] Task 20 GIZMO_SUBTITLE_VISUALIZER. Editor preview uses `GUI.Label` / SceneView label from parsed buffer. Rejected: runtime preview GameObjects. Estimate: 0 us runtime.
+
+## Iteration Log
+
+- Loop 1: Tasks 01-05 implemented/audited; DTOs and mock signal surface added.
+- Loop 2: Tasks 06-10 implemented/audited; UTF-8 span decode and typewriter path added.
+- Loop 3: Tasks 11-15 implemented/audited; dynamic injection, subtitle queue, low-tier strip, missing hash fallback added.
+- Loop 4: Tasks 16-20 implemented/audited; telemetry ring and editor facade added.
+- Loop 5: Static self-audit found the original char pool was managed-only; corrected to literal 64,000-char native arena plus TMP bridge.
+- Loop 6: Signal corridor corrected; `SubtitleManager` consumes existing `SignalBus<SubtitleSignal>`.
+- Loop 7: H-Phi correction; Babel payload arrays prefer `GlobalDataVault` through `SystemID.UI`. `NativeParallelHashMap<uint,int2>` remains local because the current Vault API exposes `NativeArray<T>` handles only.
+- Loop 8: Task 09 closure; async `.h8bin` stage/read/validate/POST_SIMULATION commit implemented. `dotnet build Hecton8.Core.csproj --no-restore -m:1 -clp:ErrorsOnly` succeeded with 9 warnings and 0 errors.
+
+## Current Verification State
+
+- Static zero-GC scan on SHINOBU runtime hot files: no `new string`, `string.Format`, `SetText(`, `TMP_Text.text =`, `Encoding.UTF8.GetChars/GetCharCount`, LINQ, or `foreach` found.
+- ARM64 scan on SHINOBU runtime files: no `Pack=1` found.
+- H-Phi scan: `NativeArray<char>`, active UTF-8 `NativeArray<byte>`, staged locale `NativeArray<byte>`, and telemetry `NativeArray<BabelTelemetryEntry>` are Vault-backed when `GlobalDataVault` exists; cold fallback remains only for pre-vault bootstrap. `NativeParallelHashMap<uint,int2>` cannot be Vault-backed without a new Vault API.
+- Binary validator: `python -B Tools/VerifyBabelDictionary.py` returned `BABEL VERIFIED`, endian `<`, alignment 16, collisions resolved 0.
+- Diff hygiene: `git diff --check` exited 0; Git emitted LF-to-CRLF warnings only.
+- Full compile: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -clp:ErrorsOnly` succeeded with 9 warnings and 0 errors on 2026-05-18. Warning details were intentionally not expanded because the command was run with `ErrorsOnly`.

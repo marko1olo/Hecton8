@@ -1,0 +1,73 @@
+## 2026-05-18 R6 Current-Disk Forensic Report
+
+Status: DOMAIN STATIC/CLI COMPILE PASS / UNITY COMPILE WALL OUTSIDE DOMAIN / RUNTIME PROFILER PROOF PENDING
+
+What was wrong:
+- Active SHINOBU_22 files were missing after concurrent batch hygiene even though the user explicitly ordered SHINOBU_22 continuation.
+- `ToolStateDTO._pad0/_pad1` had drifted into live-state usage. Padding is an ABI contract, not a secret flag lane.
+- Math LOD could flip immediately, causing potential VR hand/recoil jitter.
+- CSV worker lifecycle could orphan a still-alive thread handle or fail to restart after a dead worker.
+- Original Bee response files referenced stale missing `Hecton8.Core.ref.dll`, making direct compile evidence ambiguous.
+
+What was done:
+- Recreated active SHINOBU_22 status/rationale/log and re-extracted the original 20-task XML assignment.
+- Kept `ToolStateDTO._pad0/_pad1` zeroed; moved live flags to `ToolScreenExportDTO.StateFlags` and `ToolPoseOutputDTO.Flags`.
+- Added 2 second hysteresis for Low/Middle/High/Ultra math LOD.
+- Hardened CSV watcher start/stop and worker fault coding.
+- Compiled ToolKinematics Contracts, Runtime, and Editor via Unity Roslyn temp rsp files: all exit 0.
+- Ran `dotnet restore Hecton8.Core.csproj` and `dotnet build Hecton8.Core.csproj --no-restore`: 0 warnings, 0 errors.
+- Ran static scans: forbidden API/layout/hot-path patterns clean.
+- Verified ToolKinematics BufferIDs 605-619 are ToolKinematics-local duplicate-free.
+
+Cinematic Cheats used:
+- Contact remains SDF tip penetration plus damped spring recoil plus wrist-pivot compensation.
+- Low tier snaps to controller and drops recoil.
+- Hit detection remains analytic MockSDF raymarching, not PhysX.
+- Beam remains procedural vault-buffer vertices, not LineRenderer/GameObject work.
+
+Exact Microseconds saved:
+- No profiler numbers exist in this run. Exact measured savings are not claimed.
+- Prior estimate retained: Low-tier IK snap avoids roughly 6.5 us per active arm versus full analytical IK.
+- Prior estimate retained: Low-tier recoil zeroing avoids roughly 1.5 us per active tool.
+- CSV worker change is 0 hot-frame us by design; value is hitch prevention, not average-frame math reduction.
+
+Struct Layout:
+- `ToolStateDTO`: 0 double3 AUP 24; 24 float3 Forward 12; 36 float HeatLevel 4; 40 uint ToolTypeHash 4; 44 float EnergyRemaining 4; 48 uint `_pad0`; 52 uint `_pad1`; total 56.
+- `ToolScreenExportDTO`: 0 float HitDistance; 4 uint MaterialHash; 8 float HeatLevel; 12 uint StateFlags; total 16.
+- `ToolPoseOutputDTO`: 0/16/32/48 float4 matrix columns; 64 float3 RecoilOffset; 76 float RecoilRadians; 80 uint Flags; 84/88/92 pads; total 96.
+
+H-Phi:
+- All hot arrays are GlobalDataVault buffers.
+- Jobs are stateless kernels over vault data.
+- Runtime has no private NativeArray fields.
+
+Blackbox:
+- 300-frame `ToolKinematicsTelemetryEntry` ring remains active.
+- Fatal dump path remains `Docs/AgentLogs/Dump_TOOL_KINEMATICS.h8dump`.
+
+Compile Guard:
+- ToolKinematics targeted Roslyn compile passed for contracts/runtime/editor.
+- Core CLI build passed.
+- Unity R6 log at `Logs/SHINOBU_22_UnityImport_R6.log` reaches script compilation and exits with unrelated errors in `SabineReverbDspTunerWindow.cs`, `SomaticKinematicsRuntime.cs`, and `TerminalOsRuntime.cs`. No ToolKinematics compiler-error match exists. It is not PlayMode, profiler, GCMonitor, player-build, or visual proof.
+
+REGRESSION MODEL:
+- CPU: one small LOD hysteresis branch chain per FixedTick; not profiled.
+- GC: runtime hot-path static scan clean; measured GC proof absent.
+- Memory: no new NativeArray ownership; existing fixed CSV byte buffers remain cold/runtime-owned.
+- Cadence: no Unity Update/FixedUpdate/LateUpdate method added; dispatcher tick path retained.
+- Correctness: padding no longer stores flags; explicit flag DTOs are now authoritative.
+
+HOT PATH IMPACT:
+- FixedTick schedules Burst jobs over vault buffers.
+- PostFixedTick completes ready jobs, publishes typed signals, and checks telemetry.
+- File I/O is background CSV cold path or fatal dump path only.
+
+FAILURE MODES:
+- Unity batchmode full script compile is blocked by unrelated Audio/Somatic/UI domains.
+- PlayMode/profiler/GCMonitor/player-build evidence is absent.
+- If GlobalDataVault is unavailable, runtime fails closed by not resolving buffers.
+
+WHY KEPT/REJECTED:
+- Kept local mock signals because the assignment explicitly requires blind dependency proof.
+- Bridged to existing global tool lanes to reduce private signal fragmentation.
+- Rejected Unity Rigging, Raycast, LineRenderer, physics joints, direct voxel/VFX/inventory calls, and public API expansion outside ToolKinematics.

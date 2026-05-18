@@ -146,7 +146,7 @@ namespace Hecton8.Audio
             Interior = 2
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct AcousticGraphState
         {
             public float LowPassCutoffHz;
@@ -156,6 +156,7 @@ namespace Hecton8.Audio
             public float ReverbLevelDb;
             public float RoomHighFrequencyDb;
             public float DryLevelDb;
+            public float Arm64AlignmentPad0;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -2418,9 +2419,10 @@ namespace Hecton8.Audio
             if (!(totalWeight > 0.0001f))
                 return;
 
-            _emitterOcclusionTransmission01 = math.saturate(weightedTransmission / totalWeight);
+            float invTotalWeight = math.rcp(math.max(totalWeight, 0.0001f));
+            _emitterOcclusionTransmission01 = math.saturate(weightedTransmission * invTotalWeight);
             _emitterOcclusionLowPassCutoffHz = math.clamp(
-                weightedCutoff / totalWeight,
+                weightedCutoff * invTotalWeight,
                 AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
                 AcousticOcclusionUtility.OpenLowPassCutoffHertz);
         }
@@ -2454,6 +2456,7 @@ namespace Hecton8.Audio
                 interiorGraphDryLevel - (120f * sonarImpulse),
                 -10000f,
                 0f);
+            state.Arm64AlignmentPad0 = 0f;
             ApplyEmitterOcclusionToAcousticState(ref state);
             return state;
         }
@@ -2489,6 +2492,7 @@ namespace Hecton8.Audio
                 underwaterGraphDryLevel - (350f * depth01),
                 -10000f,
                 0f);
+            state.Arm64AlignmentPad0 = 0f;
             ApplyEmitterOcclusionToAcousticState(ref state);
             return state;
         }

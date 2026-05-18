@@ -1,0 +1,37 @@
+using System;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.World;
+using Unity.Mathematics;
+
+namespace Hecton8.Physics
+{
+    public sealed partial class GlobalPhysicsStateManager
+    {
+        private const int PhysicsWakeRequestFlushLimit = 16;
+
+        private void QueuePhysicsWakeRequest(in WakeRequestSignal request)
+        {
+            SignalBus<WakeRequestSignal>.TryPush(in request);
+        }
+
+        private void FlushPhysicsWakeRequests()
+        {
+            ReadOnlySpan<WakeRequestSignal> requests = SignalBus<WakeRequestSignal>.GetSignals();
+            int count = math.min(requests.Length, PhysicsWakeRequestFlushLimit);
+            for (int i = 0; i < count; i++)
+            {
+                WakeRequestSignal request = requests[i];
+                if (!math.all(math.isfinite(request.OriginAup)) ||
+                    !math.isfinite(request.RadiusMeters) ||
+                    request.RadiusMeters <= 0f)
+                {
+                    continue;
+                }
+
+                AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(request.OriginAup);
+                float radiusMeters = math.min(request.RadiusMeters, AcousticWakeMaximumRadiusMeters);
+                WakeCulledBodiesNear(in originAup, radiusMeters);
+            }
+        }
+    }
+}

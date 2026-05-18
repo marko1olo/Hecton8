@@ -1,7 +1,22 @@
-﻿# HECTON-8 Doc Authority Classification
+# HECTON-8 Doc Authority Classification
 
-Date: 2026-05-15
+Date: 2026-05-18
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Scope: active documentation importance and authority sorting across repository root and `Docs/`
 
 Mandates followed:
@@ -14,13 +29,14 @@ This file answers one question: which documents are actually important now, and 
 
 It is not runtime proof.
 If this file disagrees with current source, source wins.
-Latest documentation/status override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
-Latest root/current-index cleanup: `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
+Latest DOC_GLOBAL root/architecture/status override: `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`.
+Compact content read order after R24: R24 -> R23 -> R22 -> R21 -> R20 -> R19 -> R18 -> R17 -> R16 -> R15 -> R14 -> R13 -> R11 -> R10 -> R9.
+Historical root/current-index cleanup baseline: `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
 Latest historical machine-readable active manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`; counters and build-state are not current authority.
 Latest `.agents-skills` visual-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
 Latest sorting authority: `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, amended by later synchronization passes.
-Latest header state: May 11 manifest reports active markdown header debt `0` missing `Date:`, `0` missing `Status:`.
-Latest root cleanup: `Docs/ROOT_DOCS_REFERENCE.md` and `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
+Historical header snapshot: the May 11 manifest reported active markdown header debt `0` missing `Date:`, `0` missing `Status:`. Current header/counter state must come from the latest DOC_GLOBAL report or a fresh rerun.
+Latest root cleanup baseline: `Docs/ROOT_DOCS_REFERENCE.md` and `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
 
 ## 1. Read First / Current Authority
 
@@ -43,16 +59,31 @@ These files are the current navigation spine. Stable authority comes before date
 | 13 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | PRIMARY CONCEPT MAP | Current load-bearing/transitional/presentation/experimental system classification. |
 | 14 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOCSET_COVERAGE_MATRIX.md` | PRIMARY COVERAGE MAP | Domain-by-domain map of which docs to trust first. |
 | 15 | `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md` | REPORT VAULT BOUNDARY | Confirms `02_ACTUAL_REPORTS` is evidence, not direct authority. |
-| 16 | `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` | CURRENT STATIC OVERRIDE | Latest broad documentation/status correction boundary found in this pass; demotes missing May 11 artifacts and stale counters. |
-| 17 | `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md` | CURRENT INDEX/ROOT CLEANUP | Current navigation honesty and root-cleanup evidence; static/filesystem only. |
-| 18 | `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` | HISTORICAL EVIDENCE | May 11 counters and compile-only boundary; historical where May 13/May 15 conflicts. |
-| 19 | `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` | HISTORICAL MACHINE-READABLE DOC MANIFEST | May 11 active markdown inventory snapshot; data artifact, not current runtime proof. |
-| 20 | `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` | MANDATE EVIDENCE | Supporting audit for visual-fake-first promotion; stable mandates carry the rule. |
-| 21 | `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` | DOC SORTING EVIDENCE | Sorting report evidence; lower authority than stable docs after later synchronization passes. |
-| 22 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | CONCEPTUAL STATE EVIDENCE | Historical/stable conceptual state anchor; still refuses runtime-certification claims. |
-| 23 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md` | NAMING LEDGER | Current non-ASCII path/content inventory and English replacement proposals. |
-| 24 | `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` | DOMAIN REFERENCE | SpaceEngine 0.9.8 terrain math integration evidence; use after stable authority files. |
-| 25 | `Docs/SPACE_ENGINE_RESEARCH/TERRAIN_AND_NOISE_098.md` | DOMAIN REFERENCE | Terrain/noise research extraction; adapt through HECTON mandates only. |
+| 16 | `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md` | CURRENT DOC_GLOBAL STATIC OVERRIDE | R24 root/architecture actuality, source-counter recapture, atlas regeneration, and proof-language correction. |
+| 17 | `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | R23 subagent-residue, read-order, and SpaceEngine/Omega status-JSON correction. |
+| 18 | `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | R22 source-counter drift, active authority count refresh, validation, and unchanged AtlasCheck blocker. |
+| 18 | `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | R21 source-counter refresh, report/Archivarius read-order supersession, Marketing R4 boundary, and proof-residue correction. |
+| 19 | `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | Archivarius/design/SpaceEngine/lore/legacy proof-residue and absent-artifact boundary. |
+| 19 | `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | Marketing KPI/source caveat, EventBus lane-count, and volatile R19 source-counter boundary. |
+| 20 | `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | R4/Archivarius/forensic long-tail and Modding signal-schema resync boundary. |
+| 21 | `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | Report-vault/status and absent-artifact correction boundary. |
+| 22 | `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | R15-navigation supersession boundary; local-only static/filesystem evidence. |
+| 23 | `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | Active entrypoint read-order correction boundary; local-only static/filesystem evidence. |
+| 24 | `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | Batch008 binary hygiene correction boundary; local-only static/filesystem evidence. |
+| 25 | `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | Generic report boundaries and internal proof-label cleanup. |
+| 26 | `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | Active-doc remainder correction and R11 source-counter boundary. |
+| 27 | `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | Long-tail documentation/source correction boundary; local-only static evidence. |
+| 28 | `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | Evidence-language, archive-path, and R9 counter boundary. |
+| 29 | `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` | HISTORICAL STATIC OVERRIDE BASELINE | Broad documentation/status correction baseline; superseded by R9-R24 for current DOC_GLOBAL counters, report-boundary framing, read order, EventBus count framing, Marketing caveats, Design/SpaceEngine proof-residue, status-JSON residue, root/architecture actuality, and Batch008 binary hygiene. |
+| 30 | `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md` | HISTORICAL INDEX/ROOT CLEANUP BASELINE | Navigation honesty and root-cleanup evidence; static/filesystem only. |
+| 31 | `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` | HISTORICAL EVIDENCE | May 11 counters and compile-only boundary; historical where May 13/15/R9-R24 conflict. |
+| 32 | `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` | HISTORICAL MACHINE-READABLE DOC MANIFEST | May 11 active markdown inventory snapshot; data artifact, not current runtime proof. |
+| 33 | `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` | MANDATE EVIDENCE | Supporting audit for visual-fake-first promotion; stable mandates carry the rule. |
+| 34 | `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` | DOC SORTING EVIDENCE | Sorting report evidence; lower authority than stable docs after later synchronization passes. |
+| 35 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | CONCEPTUAL STATE EVIDENCE | Historical/stable conceptual state anchor; still refuses runtime-certification claims. |
+| 36 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md` | NAMING LEDGER | Current non-ASCII path/content inventory and English replacement proposals. |
+| 37 | `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` | DOMAIN REFERENCE | SpaceEngine 0.9.8 terrain math integration evidence; use after stable authority files. |
+| 38 | `Docs/SPACE_ENGINE_RESEARCH/TERRAIN_AND_NOISE_098.md` | DOMAIN REFERENCE | Terrain/noise research extraction; adapt through HECTON mandates only. |
 
 ## 2. New / High-Value Reports
 
@@ -60,23 +91,38 @@ These are new enough and important enough to stay active.
 
 | File | Authority class | Keep active? | Notes |
 |---|---|---|---|
-| `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` | CURRENT STATIC OVERRIDE | yes | Current broad documentation/status correction boundary for stale counters, missing artifacts, and compile-evidence labels. |
-| `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md` | CURRENT INDEX/ROOT CLEANUP | yes | Current navigation honesty and root cleanup evidence; static/filesystem only. |
-| `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` | HISTORICAL DOC/DATA CONTINUATION | yes | May 11 counters and compile-only boundary; historical where May 13/May 15 conflicts. |
+| `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md` | CURRENT DOC_GLOBAL STATIC OVERRIDE | yes | Current R24 root/architecture/source-counter boundary for this file. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior R23 subagent-residue/status-JSON boundary for this file. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior source-counter drift and validation boundary for this file. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior R21 source-counter/report-index/Marketing-boundary correction boundary for this file. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior Archivarius/design/SpaceEngine proof-residue correction boundary for this file. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior Marketing/EventBus/counter correction boundary for this file. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior R4/Archivarius/forensic long-tail correction boundary. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior report-vault/status/navigation correction boundary. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Prior R15-navigation supersession boundary; read after R23/R22/R21/R20/R19/R18/R17. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Active entrypoint read-order correction boundary for this file. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Batch008 binary hygiene correction boundary for this file. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Generic report boundary and proof-label cleanup boundary. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Active-doc remainder correction and R11 source-counter boundary. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Long-tail documentation/source correction boundary for this file. |
+| `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md` | PRIOR DOC_GLOBAL STATIC OVERRIDE | yes | Evidence-language, archive-path, and counter boundary. |
+| `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` | HISTORICAL STATIC OVERRIDE BASELINE | yes | Broad documentation/status correction baseline for stale counters, missing artifacts, and compile-evidence labels. |
+| `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md` | HISTORICAL INDEX/ROOT CLEANUP BASELINE | yes | Navigation honesty and root cleanup evidence; static/filesystem only. |
+| `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` | HISTORICAL DOC/DATA CONTINUATION | yes | May 11 counters and compile-only boundary; historical where May 13/15/R9-R24 conflict. |
 | `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` | HISTORICAL MACHINE-READABLE DOC MANIFEST | yes | May 11 active markdown inventory snapshot with parsed `Date` and `Status`; data artifact only. |
 | `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` | PRIMARY MANDATE DOCTRINE | yes | Current visual-fake-first mandate correction layer. |
 | `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` | PREVIOUS DOC SYNCHRONIZATION | yes | Previous R186 sync; historical where May 11 data supersedes it. |
 | `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json` | PREVIOUS MACHINE-READABLE DOC MANIFEST | yes | Previous manifest; historical where May 11 manifest supersedes it. |
 | `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` | PRIMARY DOC SORTING MAP | yes | Latest documentation sorting map; root text handling, active bundle classes, and first-read report order. |
 | `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` | PRIMARY DOC CLEANUP QUEUE | yes | Structural cleanup queue: relocated root evidence logs and archive candidates; active missing-header debt is now `0`. |
-| `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` | HISTORICAL DOCSET ACTUALITY | yes | Historical broad read-pass; current status/counter/root boundary starts at May 13/May 15. |
+| `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` | HISTORICAL DOCSET ACTUALITY | yes | Historical broad read-pass; current status/counter/root/binary-hygiene/read-order boundary starts at R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9 for DOC_GLOBAL work. |
 | `Docs/Reports/2026-05-04_WARNING_CLEANUP.md` | PRIMARY WARNING CLEANUP ADDENDUM | yes | Latest first-party warning cleanup and post-refresh Unity console readback boundary. |
 | `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` | PRIMARY FOUNDATION GUARD ADDENDUM | yes | Latest guard-clean source/build addendum; foundation guard scan exits `0`. |
 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | CONCEPTUAL EVIDENCE | yes | Dated system-shape evidence retained for reference; stable authority now starts at `AGENTS.md`, `.agents-skills/README.md`, and stable `Docs/*.md` files. |
 | `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md` | PRIMARY TERRAIN/BIOME REPORT | yes | Canonical terrain/biome report; former root duplicate moved to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`. |
 | `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Source/build/controlled-console evidence only; no PlayMode visual/audio/profiler proof. |
 | `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Source/build evidence only; no PlayMode smoke/profiler proof. |
-| `Docs/Reports/2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Historical task evidence; May 4 sweep is older global context, while current doc/status boundary starts at May 13/May 15. |
+| `Docs/Reports/2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Historical task evidence; May 4 sweep is older global context, while current DOC_GLOBAL doc/status boundary starts at R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9. |
 | `Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md` | ACTIVE WORLD IMPLEMENTATION REPORT | yes | Hydraulic erosion source/surgery report; Unity import/compile, MapMagic execution, harness output, GCMonitor, and profiler proof remain pending. |
 | `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` | PRIMARY SPACEENGINE INTEGRATION | yes | Current SpaceEngine 0.9.8 terrain math integration and Burst kernel evidence. |
 | `Docs/SPACE_ENGINE_RESEARCH/TERRAIN_AND_NOISE_098.md` | PRIMARY SPACEENGINE RESEARCH | yes | Current extracted SpaceEngine terrain/noise research; use before adapting SpaceEngine shape language. |
@@ -85,10 +131,10 @@ These are new enough and important enough to stay active.
 | `Docs/Reports/2026-05-05_ARCHIVARIUS_REALITY_DELTA.md` | PRIMARY REALITY DELTA | yes | Current Archivarius delta and untracked inventory snapshot. |
 | `Docs/Reports/2026-05-15_COMPUTE_AUDIT/README.md` | ACTIVE COMPUTE AUDIT BUNDLE | yes | Same-day compute report slices moved out of repository root; static/report evidence only. |
 | `Docs/Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md` | GENERATED STATIC SNAPSHOT | yes | Former root generated prefab snapshot; not Unity import, Console, Play Mode, or player-build proof. |
-| `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` | HISTORICAL DOCSET ACTUALITY | yes | Previous documentation read-pass and May 2 build evidence. Read after May 13/May 15 overrides and the May 4 historical sweep. |
+| `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` | HISTORICAL DOCSET ACTUALITY | yes | Previous documentation read-pass and May 2 build evidence. Read after R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9 DOC_GLOBAL overrides and the May 4 historical sweep. |
 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY PROJECT VERDICT | yes | Honest project-level verdict after current docs/source scan; not Play Mode proof. |
-| `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | ACTIVE COMPILE DELTA | yes | Latest editor compile/MCP console evidence for Sargassum/Emergency relay listener migration and spatial-hash fix. |
-| `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | ACTIVE COMPILE DELTA | yes | Supersedes latest compile line numbers after `VegetationJobRecovery.cs.meta` restoration; records Bee/backend recovery and final MCP console zero-entry check. |
+| `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | HISTORICAL COMPILE DELTA | yes | Historical editor compile/MCP console evidence for Sargassum/Emergency relay listener migration and spatial-hash fix; not current Unity Console, Play Mode, profiler, GCMonitor, or player-build proof. |
+| `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | HISTORICAL COMPILE DELTA | yes | Historical compile line-number continuation after `VegetationJobRecovery.cs.meta` restoration; not current Unity Console, Play Mode, profiler, GCMonitor, or player-build proof. |
 | `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` | ACTIVE HIGH-RISK REPORT | yes | Current concurrency/headless/memory/raycast/event-risk map. |
 | `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md` | ACTIVE SURGERY REPORT | yes | Current coroutine/pool/telemetry surgery state; not runtime proof. |
 | `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md` | ACTIVE COMPLIANCE REPORT WITH CAUTION | yes | Important because it rejects fake `MCP VERIFIED` status and records remaining compile/console limits. |
@@ -175,20 +221,31 @@ When a task asks "what is current":
 1. Read `AGENTS.md`.
 2. Read relevant `.agents-skills/` mandates.
 3. Read `Docs/README.md`.
-4. Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
-5. Read `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
-6. Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`.
-7. Read `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`.
-8. Read `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
-9. Read `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`.
-10. Read `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`.
-11. Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
-12. Read `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` for SpaceEngine terrain work.
-13. Read `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md` for Planetary Sandbox terrain work.
-14. Read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`.
-15. Read `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`.
-16. Read domain-specific current maps.
-17. Open source files.
+4. Read `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, then the R23/R22/R21/R20/R19/R18 subordinate DOC_GLOBAL reports.
+5. Read `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`.
+6. Read `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`.
+7. Read `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`.
+8. Read `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`.
+9. Read `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`.
+10. Read `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`.
+11. Read `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`.
+12. Read `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`.
+13. Read `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`.
+14. Read `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`.
+15. Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
+16. Read `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
+17. Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`.
+18. Read `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`.
+19. Read `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
+16. Read `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`.
+17. Read `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`.
+18. Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+19. Read `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` for SpaceEngine terrain work.
+20. Read `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md` for Planetary Sandbox terrain work.
+21. Read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`.
+17. Read `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`.
+18. Read domain-specific current maps.
+19. Open source files.
 
 Do not start from archive, deprecated folders, copied external prompts, patch files, or old root artifacts.
 

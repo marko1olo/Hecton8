@@ -5,7 +5,6 @@ using UnityEngine;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(-9916)]
     internal sealed class VRSomaticRuntimeBootstrap : MonoBehaviour, ISlowTickable, IGameBootstrapperEventListener
     {
         private const string RuntimeOwnerName = "[VRSomaticRuntimeBootstrap]";
@@ -203,6 +202,8 @@ namespace Hecton8.Gameplay
 
             if (!playerObject.TryGetComponent(out VRSomaticProvider provider))
                 provider = playerObject.AddComponent<VRSomaticProvider>(); // COLD ALLOC: VRSomaticProvider[1] - XR-only somatic suit provider attached to player root - owner: VRSomaticRuntimeBootstrap
+
+            SomaticKinematicsRuntime.EnsureOnPlayerRoot(playerObject);
 
             Transform hmdTransform = ResolveHmdTransform(runtimeContext, playerObject.transform);
             if (hmdTransform == null)

@@ -1,0 +1,3 @@
+# SHINOBU_49 glyph override profile.
+# First data row is parsed byte-by-byte; no managed string split in runtime.
+glyphs,#%&/?+=*X01AEHKMNTVWYZ[]{}<>|!;:

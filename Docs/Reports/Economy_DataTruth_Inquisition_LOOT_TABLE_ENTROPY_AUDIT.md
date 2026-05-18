@@ -1,6 +1,21 @@
 # Economy Data Truth Inquisition
 
-Status: PASS
+Status: HISTORICAL STATIC SNAPSHOT / BATCH008 BINARY HYGIENE SUPERSEDED / RUNTIME PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-18 R13 Report Snapshot Boundary
+
+This report file is a snapshot/provenance document. It is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/Reports/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+Historical `PASS`, `VERIFIED`, `current`, `latest`, counter, compile, runtime, 0-GC, frame-time, cost, and performance statements inside this report are not current proof unless the exact claim links a fresh artifact path, command/tool, timestamp, evidence class, and unresolved-error list. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied by this file alone.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 Evidence class: CLI_PYTHON + STATIC_DATA. Runtime Unity proof remains PENDING VERIFICATION.
 
 ## Economy Proof
@@ -13,11 +28,11 @@ Evidence class: CLI_PYTHON + STATIC_DATA. Runtime Unity proof remains PENDING VE
 
 ## Binary Hygiene
 
-- Binary blob count: 46
-- Unaligned blobs: 0 []
+- Binary blob count: historical 46; Batch008 RECHECK2 now reports global verifier scope 65 `.bin` / `.h8bin` files.
+- Unaligned blobs: historical 0 []; Batch008 RECHECK2 reports 16 misaligned files, including product payload `Data/Balance/Baked/Babel_Dictionary.h8bin`.
 - Unknown endian manifests: 0 []
 - Big or mixed endian manifests: 0 []
-- Binary status: PASS
+- Binary status: HISTORICAL STATIC PASS SUPERSEDED BY `BINARY_HYGIENE_FAILED` in `Docs/Archive/Batch008/AgentLogs/BinaryHygiene_H8BIN_GRAVEYARD_AUDITOR_RECHECK2.json`
 - Python struct format sites: 133
 - H8 endian failures: 0 []
 - External container big-endian allowed: 23

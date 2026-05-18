@@ -1,5 +1,16 @@
 ﻿# Platform Compatibility Editor Audit
 
+Date: 2026-05-11
+Status: HISTORICAL EDITOR SNAPSHOT / PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-18 R21 Report Snapshot Boundary
+
+This report is a historical editor/module snapshot. `PASS` means editor evidence existed at the 2026-05-11 capture time, not current platform readiness.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, player build, platform launch, certification, input-device smoke, or visual-route proof is implied unless a fresh evidence artifact is linked.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 - Status vocabulary: PASS = editor evidence exists; WARN = incomplete but not compile-blocking; BLOCKED = cannot ship that target from this checkout; VENDOR_BLOCKED = requires closed platform SDK/module.
 - Unity version: 6000.4.1f1
 - Active build target: StandaloneWindows64
@@ -21,7 +32,7 @@
 
 | Target | Status | Hub/module fact | Deeper blocker |
 |---|---:|---|---|
-| Windows 10/11 x64 | PASS | Windows Build Support installed | Still needs player build, run, profiler, GPU/VRAM proof. |
+| Windows 10/11 x64 | HISTORICAL MODULE PRESENT | Windows Build Support was installed at 2026-05-11 capture time | Still needs current player build, run, profiler, GPU/VRAM proof. |
 | Linux x64 | BLOCKED | Install Linux Build Support in Unity Hub | Native plugin parity and Linux player smoke test still required. |
 | macOS | BLOCKED | Install Mac Build Support in Unity Hub | Native dylib parity, Metal render validation, notarization/signing path required. |
 | Quest/standalone Android XR | BLOCKED | Install Android Build Support plus SDK/NDK/OpenJDK in Unity Hub | XR Management package missing. |

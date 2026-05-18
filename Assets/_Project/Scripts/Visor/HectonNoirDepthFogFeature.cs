@@ -1,7 +1,7 @@
 using System;
-using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
-using Hecton8.Gameplay;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -24,6 +24,7 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_NoirDepthFog.shader";
 #endif
+        private const int DepthFogGlobalsStrideBytes = 64;
 
         private static bool IsUnsupportedCameraType(CameraType cameraType)
         {
@@ -71,12 +72,9 @@ namespace Hecton8.Visor
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Noir Depth Fog");
             private FeatureSettings _settings;
             private Material _material;
-            private Material _lastUploadedMaterial;
-            private bool _hasMaterialState;
-            private Color _lastShallowFogColor;
-            private Color _lastAbyssFogColor;
-            private Vector4 _lastParamsA;
-            private Vector4 _lastParamsB;
+            private GraphicsBuffer _depthFogGlobalsBuffer;
+            private DepthFogGlobalsDTO _lastDepthFogGlobals;
+            private bool _hasDepthFogGlobals;
 
             public NoirDepthFogPass()
             {
@@ -91,6 +89,15 @@ namespace Hecton8.Visor
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingTransparents;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
+                EnsureDepthFogGlobalsBuffer();
+            }
+
+            public void Dispose()
+            {
+                _depthFogGlobalsBuffer?.Release();
+                _depthFogGlobalsBuffer = null;
+                _lastDepthFogGlobals = default;
+                _hasDepthFogGlobals = false;
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -122,7 +129,8 @@ namespace Hecton8.Visor
                 destinationDesc.autoGenerateMips = false;
 
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
-                UpdateMaterialParameters(_material, _settings);
+                if (!UpdateDepthFogGlobals(_settings))
+                    return;
 
                 using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
                            new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
@@ -135,59 +143,92 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private void UpdateMaterialParameters(Material material, FeatureSettings settings)
+            private bool EnsureDepthFogGlobalsBuffer()
             {
-                Color shallowFogColor = settings.shallowFogColor.linear;
-                Color abyssFogColor = settings.abyssFogColor.linear;
-                Vector4 paramsA = new Vector4(
-                    math.max(settings.density, 0.00001f),
-                    math.max(settings.startDistanceMeters, 0f),
-                    math.max(settings.maxDepthMeters, 1f),
-                    0f);
-                Vector4 paramsB = new Vector4(0f, 0f, 0f, math.saturate(settings.ditherStrength));
+                if (!SystemInfo.supportsSetConstantBuffer)
+                    return false;
 
-                if (_lastUploadedMaterial != material)
+                if (_depthFogGlobalsBuffer == null || !_depthFogGlobalsBuffer.IsValid())
                 {
-                    _lastUploadedMaterial = material;
-                    _hasMaterialState = false;
+                    _depthFogGlobalsBuffer = new GraphicsBuffer(
+                        GraphicsBuffer.Target.Constant,
+                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                        1,
+                        DepthFogGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[64B] - noir depth fog global CBuffer - owner: NoirDepthFogPass
+                    _hasDepthFogGlobals = false;
                 }
 
-                bool materialDirty = !_hasMaterialState;
-                SetMaterialColorIfChanged(material, ShaderConstants.ShallowColorId, shallowFogColor, ref _lastShallowFogColor, materialDirty);
-                SetMaterialColorIfChanged(material, ShaderConstants.AbyssColorId, abyssFogColor, ref _lastAbyssFogColor, materialDirty);
-                SetMaterialVectorIfChanged(material, ShaderConstants.ParamsAId, paramsA, ref _lastParamsA, materialDirty);
-                SetMaterialVectorIfChanged(material, ShaderConstants.ParamsBId, paramsB, ref _lastParamsB, materialDirty);
-
-                _hasMaterialState = true;
+                return _depthFogGlobalsBuffer != null && _depthFogGlobalsBuffer.IsValid();
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static void SetMaterialColorIfChanged(Material material, int shaderId, Color value, ref Color cachedValue, bool materialDirty)
+            private bool UpdateDepthFogGlobals(FeatureSettings settings)
             {
-                if (!materialDirty && cachedValue == value)
-                    return;
+                if (!EnsureDepthFogGlobalsBuffer())
+                    return false;
 
-                material.SetColor(shaderId, value);
-                cachedValue = value;
+                DepthFogGlobalsDTO globals = DepthFogGlobalsDTO.FromSettings(settings);
+                if (_hasDepthFogGlobals && DepthFogGlobalsEqual(in _lastDepthFogGlobals, in globals))
+                {
+                    Shader.SetGlobalConstantBuffer(ShaderConstants.DepthFogGlobalsBufferId, _depthFogGlobalsBuffer, 0, DepthFogGlobalsStrideBytes);
+                    return true;
+                }
+
+                NativeArray<DepthFogGlobalsDTO> mapped = _depthFogGlobalsBuffer.LockBufferForWrite<DepthFogGlobalsDTO>(0, 1);
+                try
+                {
+                    mapped[0] = globals;
+                }
+                finally
+                {
+                    _depthFogGlobalsBuffer.UnlockBufferAfterWrite<DepthFogGlobalsDTO>(1);
+                }
+
+                Shader.SetGlobalConstantBuffer(ShaderConstants.DepthFogGlobalsBufferId, _depthFogGlobalsBuffer, 0, DepthFogGlobalsStrideBytes);
+                _lastDepthFogGlobals = globals;
+                _hasDepthFogGlobals = true;
+                return true;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static void SetMaterialVectorIfChanged(Material material, int shaderId, Vector4 value, ref Vector4 cachedValue, bool materialDirty)
+            private static bool DepthFogGlobalsEqual(
+                in DepthFogGlobalsDTO left,
+                in DepthFogGlobalsDTO right)
             {
-                if (!materialDirty && cachedValue == value)
-                    return;
+                return left.ShallowColor == right.ShallowColor &&
+                       left.AbyssColor == right.AbyssColor &&
+                       left.ParamsA == right.ParamsA &&
+                       left.ParamsB == right.ParamsB;
+            }
 
-                material.SetVector(shaderId, value);
-                cachedValue = value;
+            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = DepthFogGlobalsStrideBytes)]
+            private struct DepthFogGlobalsDTO
+            {
+                internal Vector4 ShallowColor;
+                internal Vector4 AbyssColor;
+                internal Vector4 ParamsA;
+                internal Vector4 ParamsB;
+
+                internal static DepthFogGlobalsDTO FromSettings(FeatureSettings settings)
+                {
+                    Color shallowFogColor = settings.shallowFogColor.linear;
+                    Color abyssFogColor = settings.abyssFogColor.linear;
+
+                    DepthFogGlobalsDTO dto;
+                    dto.ShallowColor = new Vector4(shallowFogColor.r, shallowFogColor.g, shallowFogColor.b, shallowFogColor.a);
+                    dto.AbyssColor = new Vector4(abyssFogColor.r, abyssFogColor.g, abyssFogColor.b, abyssFogColor.a);
+                    dto.ParamsA = new Vector4(
+                        math.max(settings.density, 0.00001f),
+                        math.max(settings.startDistanceMeters, 0f),
+                        math.max(settings.maxDepthMeters, 1f),
+                        0f);
+                    dto.ParamsB = new Vector4(0f, 0f, 0f, math.saturate(settings.ditherStrength));
+                    return dto;
+                }
             }
         }
 
         private static class ShaderConstants
         {
-            internal static readonly int ShallowColorId = Shader.PropertyToID("_HectonNoirDepthFogShallowColor");
-            internal static readonly int AbyssColorId = Shader.PropertyToID("_HectonNoirDepthFogAbyssColor");
-            internal static readonly int ParamsAId = Shader.PropertyToID("_HectonNoirDepthFogParamsA");
-            internal static readonly int ParamsBId = Shader.PropertyToID("_HectonNoirDepthFogParamsB");
+            internal static readonly int DepthFogGlobalsBufferId = Shader.PropertyToID("HectonNoirDepthFogGlobals");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -235,15 +276,8 @@ namespace Hecton8.Visor
             if (renderCamera == null)
                 return false;
 
-            HectonPlayerMovement playerMovement = null;
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
-                playerMovement = runtimeContext.PlayerMovement;
-
-            if (playerMovement == null)
-            {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            }
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
 
             if (playerMovement != null)
             {
@@ -256,6 +290,7 @@ namespace Hecton8.Visor
 
         protected override void Dispose(bool disposing)
         {
+            _pass?.Dispose();
             DisposeMaterial(ref _material);
         }
 

@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core.Memory;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Profiling;
@@ -295,6 +296,24 @@ namespace Hecton8.Core
                 allocation.ByteCount,
                 allocation.ArenaIndex,
                 allocation.SlabIndex,
+                allocation.FrameSequence);
+            return true;
+        }
+
+        /// <summary>
+        /// Acquires a cache-line-aligned transient slice from the current write arena.
+        /// </summary>
+        public static bool TryAcquireSlice<T>(int count, uint ownerHash, out NativeArenaSlice<T> slice) where T : unmanaged
+        {
+            slice = default;
+            if (!TryAllocateBlock<T>(count, ownerHash, out ArenaAllocation allocation))
+                return false;
+
+            slice = new NativeArenaSlice<T>(
+                allocation.Ptr,
+                count,
+                UnsafeUtility.SizeOf<T>(),
+                allocation.ByteCount,
                 allocation.FrameSequence);
             return true;
         }
@@ -853,7 +872,44 @@ namespace Hecton8.Core
 #endif
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        /// <summary>
+        /// Raw cache-line-aligned arena slice. Frame lifetime only.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        public readonly struct NativeArenaSlice<T> where T : unmanaged
+        {
+            public readonly void* Ptr;
+            public readonly int Length;
+            public readonly int Stride;
+            public readonly int ByteCount;
+            public readonly int FrameSequence;
+            private readonly long _pad0;
+
+            public NativeArenaSlice(void* ptr, int length, int stride, int byteCount, int frameSequence)
+            {
+                Ptr = ptr;
+                Length = length;
+                Stride = stride;
+                ByteCount = byteCount;
+                FrameSequence = frameSequence;
+                _pad0 = 0L;
+            }
+
+            public bool IsCreated => Ptr != null && Length > 0;
+
+            public ref T GetElementAsRef(int index)
+            {
+                if (Ptr == null || (uint)index >= (uint)Length)
+                    FatalMemoryException.ThrowStaleVaultHandle();
+
+                Hint.Assume(Ptr != null);
+                Hint.Assume(index >= 0);
+                Hint.Assume(index < Length);
+                return ref UnsafeUtility.AsRef<T>((byte*)Ptr + (index * Stride));
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         internal readonly struct ArenaAllocation
         {
             public readonly void* Ptr;

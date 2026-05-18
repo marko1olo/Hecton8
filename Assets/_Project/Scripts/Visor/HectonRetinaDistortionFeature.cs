@@ -1,5 +1,7 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -19,6 +21,8 @@ namespace Hecton8.Visor
     /// </summary>
     public sealed class HectonRetinaDistortionFeature : ScriptableRendererFeature
     {
+        private const int RetinaGlobalsStrideBytes = 32;
+
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_RetinaDistortion.shader";
 #endif
@@ -81,23 +85,17 @@ namespace Hecton8.Visor
 
         private sealed class RetinaDistortionPass : ScriptableRenderPass
         {
-            private const float MaterialFloatEpsilon = 0.0001f;
+            private const float GlobalsFloatEpsilon = 0.0001f;
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Retina Distortion");
             private FeatureSettings _settings;
             private Material _material;
             private RuntimeState _runtimeState;
-            private Material _lastParameterMaterial;
-            private float _lastHealth01 = float.PositiveInfinity;
-            private float _lastCritical01 = float.PositiveInfinity;
-            private float _lastHeartbeatBpm = float.PositiveInfinity;
-            private float _lastNarcosis01 = float.PositiveInfinity;
-            private float _lastChromaticOffset = float.PositiveInfinity;
-            private float _lastDistortionOffset = float.PositiveInfinity;
-            private float _lastVignetteStrength = float.PositiveInfinity;
+            private GraphicsBuffer _retinaGlobalsBuffer;
+            private RetinaGlobalsDTO _lastRetinaGlobals;
+            private bool _hasRetinaGlobals;
             private bool _lastMx350Tier;
             private bool _keywordStateInitialized;
-            private bool _materialDirty = true;
 
             public RetinaDistortionPass()
             {
@@ -113,6 +111,7 @@ namespace Hecton8.Visor
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
+                EnsureRetinaGlobalsBuffer();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -152,7 +151,8 @@ namespace Hecton8.Visor
                 destinationDesc.autoGenerateMips = false;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
-                UpdateMaterialParameters(_material, _settings, _runtimeState);
+                if (!UpdateRetinaGlobals(_settings, _runtimeState))
+                    return;
 
                 renderGraph.AddBlitPass(
                     new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
@@ -161,13 +161,39 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private void UpdateMaterialParameters(Material material, FeatureSettings settings, RuntimeState runtimeState)
+            public void Dispose()
             {
-                if (!ReferenceEquals(_lastParameterMaterial, material))
+                _retinaGlobalsBuffer?.Release();
+                _retinaGlobalsBuffer = null;
+                _hasRetinaGlobals = false;
+                _keywordStateInitialized = false;
+            }
+
+            private bool EnsureRetinaGlobalsBuffer()
+            {
+                if (!SystemInfo.supportsSetConstantBuffer)
                 {
-                    ResetMaterialParameterCache();
-                    _lastParameterMaterial = material;
+                    Dispose();
+                    return false;
                 }
+
+                if (_retinaGlobalsBuffer != null && _retinaGlobalsBuffer.IsValid())
+                    return true;
+
+                _retinaGlobalsBuffer?.Release();
+                _retinaGlobalsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    RetinaGlobalsStrideBytes);
+                _hasRetinaGlobals = false;
+                return _retinaGlobalsBuffer.IsValid();
+            }
+
+            private bool UpdateRetinaGlobals(FeatureSettings settings, RuntimeState runtimeState)
+            {
+                if (!EnsureRetinaGlobalsBuffer())
+                    return false;
 
                 float critical01 = math.saturate(runtimeState.Critical01);
                 float narcosis01 = math.saturate(runtimeState.Narcosis01);
@@ -182,75 +208,72 @@ namespace Hecton8.Visor
                 bool mx350Tier = SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048;
                 float vignetteStrength = math.saturate(settings.maxVignetteStrength) * math.max(critical01, narcosis01 * 0.62f);
 
-                SetMx350KeywordIfChanged(material, mx350Tier);
-                SetMaterialFloatIfChanged(material, ShaderConstants.HealthId, health01, ref _lastHealth01);
-                SetMaterialFloatIfChanged(material, ShaderConstants.CriticalId, critical01, ref _lastCritical01);
-                SetMaterialFloatIfChanged(material, ShaderConstants.HeartbeatBpmId, heartbeatBpm, ref _lastHeartbeatBpm);
-                SetMaterialFloatIfChanged(material, ShaderConstants.NarcosisId, narcosis01, ref _lastNarcosis01);
-                SetMaterialFloatIfChanged(
-                    material,
-                    ShaderConstants.ChromaticOffsetId,
-                    offsetBudget.ChromaticOffset,
-                    ref _lastChromaticOffset);
-                SetMaterialFloatIfChanged(
-                    material,
-                    ShaderConstants.DistortionOffsetId,
-                    offsetBudget.DistortionOffset,
-                    ref _lastDistortionOffset);
-                SetMaterialFloatIfChanged(
-                    material,
-                    ShaderConstants.VignetteStrengthId,
-                    vignetteStrength,
-                    ref _lastVignetteStrength);
-                _materialDirty = false;
+                SetMx350KeywordIfChanged(mx350Tier);
+
+                RetinaGlobalsDTO globals = new RetinaGlobalsDTO(
+                    new Vector4(health01, critical01, heartbeatBpm, narcosis01),
+                    new Vector4(offsetBudget.ChromaticOffset, offsetBudget.DistortionOffset, vignetteStrength, 0f));
+                if (_hasRetinaGlobals && RetinaGlobalsEqual(in _lastRetinaGlobals, in globals))
+                {
+                    Shader.SetGlobalConstantBuffer(ShaderConstants.RetinaGlobalsBufferId, _retinaGlobalsBuffer, 0, RetinaGlobalsStrideBytes);
+                    return true;
+                }
+
+                NativeArray<RetinaGlobalsDTO> mapped = _retinaGlobalsBuffer.LockBufferForWrite<RetinaGlobalsDTO>(0, 1);
+                mapped[0] = globals;
+                _retinaGlobalsBuffer.UnlockBufferAfterWrite<RetinaGlobalsDTO>(1);
+                _lastRetinaGlobals = globals;
+                _hasRetinaGlobals = true;
+                Shader.SetGlobalConstantBuffer(ShaderConstants.RetinaGlobalsBufferId, _retinaGlobalsBuffer, 0, RetinaGlobalsStrideBytes);
+                return true;
             }
 
-            private void ResetMaterialParameterCache()
+            private void SetMx350KeywordIfChanged(bool mx350Tier)
             {
-                _lastHealth01 = float.PositiveInfinity;
-                _lastCritical01 = float.PositiveInfinity;
-                _lastHeartbeatBpm = float.PositiveInfinity;
-                _lastNarcosis01 = float.PositiveInfinity;
-                _lastChromaticOffset = float.PositiveInfinity;
-                _lastDistortionOffset = float.PositiveInfinity;
-                _lastVignetteStrength = float.PositiveInfinity;
-                _keywordStateInitialized = false;
-                _materialDirty = true;
-            }
-
-            private void SetMx350KeywordIfChanged(Material material, bool mx350Tier)
-            {
-                if (!_materialDirty && _keywordStateInitialized && _lastMx350Tier == mx350Tier)
+                if (_keywordStateInitialized && _lastMx350Tier == mx350Tier)
                     return;
 
                 if (mx350Tier)
-                    material.EnableKeyword(ShaderConstants.Mx350Keyword);
+                    Shader.EnableKeyword(ShaderConstants.Mx350Keyword);
                 else
-                    material.DisableKeyword(ShaderConstants.Mx350Keyword);
+                    Shader.DisableKeyword(ShaderConstants.Mx350Keyword);
 
                 _lastMx350Tier = mx350Tier;
                 _keywordStateInitialized = true;
             }
 
-            private void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue)
+            private static bool RetinaGlobalsEqual(in RetinaGlobalsDTO left, in RetinaGlobalsDTO right)
             {
-                if (!_materialDirty && math.abs(cachedValue - value) <= MaterialFloatEpsilon)
-                    return;
+                return Vector4Approximately(left.Params0, right.Params0) &&
+                       Vector4Approximately(left.Params1, right.Params1);
+            }
 
-                material.SetFloat(shaderId, value);
-                cachedValue = value;
+            private static bool Vector4Approximately(Vector4 left, Vector4 right)
+            {
+                return math.abs(left.x - right.x) <= GlobalsFloatEpsilon &&
+                       math.abs(left.y - right.y) <= GlobalsFloatEpsilon &&
+                       math.abs(left.z - right.z) <= GlobalsFloatEpsilon &&
+                       math.abs(left.w - right.w) <= GlobalsFloatEpsilon;
+            }
+
+            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = RetinaGlobalsStrideBytes)]
+            private struct RetinaGlobalsDTO
+            {
+                public Vector4 Params0;
+                public Vector4 Params1;
+
+                public RetinaGlobalsDTO(Vector4 params0, Vector4 params1)
+                {
+                    Params0 = params0;
+                    Params1 = params1;
+                }
             }
         }
 
         private static class ShaderConstants
         {
-            internal static readonly int HealthId = Shader.PropertyToID("_HectonRetinaHealth01");
-            internal static readonly int CriticalId = Shader.PropertyToID("_HectonRetinaCritical01");
-            internal static readonly int HeartbeatBpmId = Shader.PropertyToID("_HectonRetinaHeartbeatBpm");
+            internal static readonly int RetinaGlobalsBufferId = Shader.PropertyToID("HectonRetinaDistortionGlobals");
             internal static readonly int NarcosisId = Shader.PropertyToID("_HectonNarcosisScalar");
-            internal static readonly int ChromaticOffsetId = Shader.PropertyToID("_HectonRetinaChromaticOffset");
-            internal static readonly int DistortionOffsetId = Shader.PropertyToID("_HectonRetinaDistortionOffset");
-            internal static readonly int VignetteStrengthId = Shader.PropertyToID("_HectonRetinaVignetteStrength");
             internal const string Mx350Keyword = "_QUALITY_MX350";
         }
 
@@ -296,6 +319,7 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
+            _pass?.Dispose();
             CoreUtils.Destroy(_material);
             _material = null;
         }

@@ -3,6 +3,20 @@
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 ## 2026-05-12 Current Status Override
 
 HECTON-8 has moved from MMF documentation claims to FileStream/native-window source truth for save I/O.
@@ -14,7 +28,7 @@ Code truth:
 | Save persistence | `SaveBinaryStorage.AsyncWriteManager` uses `FileStream`, cached native read windows, throttled flush, and portable sequential/random access flags |
 | MMF | no first-party `MemoryMappedFile` source hit was found in the current save path |
 | Data Monolith | `.h8bin` runtime load still uses boot-only `File.ReadAllBytes` staging before native blit |
-| Event bus | `GlobalSignals.cs` owns 33 typed NativeQueue lanes, not the old prose-only five-artery model |
+| Event bus | `GlobalSignals.cs` is no longer the old prose-only five-artery model; R21 static scan sees `73` direct native queue slots, `133` typed `SignalBus<T>` lanes, and a `DebugSignal` lane |
 | Registry | `GlobalRegistry` remains the service locator; singleton self-sovereignty is still architectural debt |
 
 This audit is documentation-verified, not runtime-certified. Unity import, Console, Play Mode, profiler, GCMonitor, and player-build proof remain `PENDING VERIFICATION`.

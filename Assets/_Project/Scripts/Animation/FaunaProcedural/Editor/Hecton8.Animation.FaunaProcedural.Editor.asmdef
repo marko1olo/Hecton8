@@ -1,0 +1,23 @@
+{
+    "name": "Hecton8.Animation.FaunaProcedural.Editor",
+    "rootNamespace": "Hecton8.Animation.FaunaProcedural.Editor",
+    "references": [
+        "Hecton8.Animation.FaunaProcedural",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

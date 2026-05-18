@@ -3,6 +3,20 @@
 Date: 2026-05-11
 Status: EVIDENCE VAULT / PENDING VERIFICATION
 
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Purpose: trust boundary for `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS`.
 
 This folder contains dated audits, patch artifacts, static scans, and investigation reports. It is not the permanent project brain.
@@ -39,6 +53,6 @@ This folder contains dated audits, patch artifacts, static scans, and investigat
 
 ## Proof Boundary
 
-2026-05-14 DOC_AUDIT override: `../../Reports/2026-05-13_DOC_AUDIT_XRAY.md` now records that the May 11 `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.*` files are absent from the current filesystem, while R41 records the current external root `Hecton8*.csproj` no-restore CLI compile surface at `0 Warning(s)` / `0 Error(s)` after restore assets exist.
+2026-05-19 DOC_GLOBAL R24 override: `../../Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md` is the current DOC_GLOBAL root/architecture/source-counter boundary. `../../Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md` remains the proof-language/navigation/status-JSON boundary. `../../Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `../../Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `../../Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `../../Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `../../Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `../../Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `../../Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `../../Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `../../Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `../../Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `../../Reports/2026-05-18_DOCUMENTATION_RESIDUE_SCAN_R12_LOCAL.md`, `../../Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `../../Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`, and `../../Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md` remain prior DOC_GLOBAL boundaries. `../../Reports/2026-05-13_DOC_AUDIT_XRAY.md` remains the historical note that the May 11 `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.*` files are absent. R41/R43/R45 remain CLI-only compile evidence, not current runtime proof.
 
-May 11 compile-success evidence is not current artifact-backed proof in this workspace because the cited summary/raw log are absent. Current R43 evidence is external root-project CLI compile only; it does not certify Unity import, Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, or visual quality.
+May 11 compile-success evidence is not current artifact-backed proof in this workspace because the cited summary/raw log are absent. Historical R43 evidence is external root-project CLI compile only; it does not certify Unity import, Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, or visual quality.

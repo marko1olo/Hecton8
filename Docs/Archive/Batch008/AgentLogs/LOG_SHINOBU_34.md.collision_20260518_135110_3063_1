@@ -1,0 +1,89 @@
+# LOG_SHINOBU_34
+
+## 2026-05-18 - SHINOBU_MERKLE_TREE Active Recovery and WAL Baseline Hardening
+
+What was wrong:
+- Active `Docs/Tasks/Status_SHINOBU_34.md`, `Docs/AgentLogs/Rationale_SHINOBU_34.md`, and `Docs/AgentLogs/LOG_SHINOBU_34.md` were missing, despite archive evidence from Batch008.
+- `ScheduleVaultDeltaWalPipeline()` had to be audited for the P0 save invariant: previous Merkle tree must mean last committed WAL baseline, not merely previous compression frame.
+- `PreviousTree` initialization needed protection against undefined root comparison when a vault buffer is first created or recovered without a committed sentinel.
+- Pruned delta bytes needed a dedicated vault BufferID instead of aliasing tombstone scratch.
+
+What was done:
+- Re-extracted `<AGENT_PROMPT id="SHINOBU_34">` from active `Docs/Tasks/CURRENT_BATCH.md`; verified 20 tasks.
+- Re-read project domain boundaries and relevant mandates: save binary delta, ARM64 layout, zero-GC, native jobs, blackbox telemetry, AUP determinism, LZ4 dictionary boundary, and GlobalRegistry dependency rules.
+- Added `BufferID.SaveMerklePrunedDeltaBytes = 70283`.
+- Confirmed `TryResolveVaultBuffers()` resolves Merkle buffers through `IDataVault` and now uses a dedicated `SaveMerklePrunedDeltaBytes` buffer.
+- Added/confirmed committed baseline semantics:
+  - `CommittedTreeSentinel` in the root padding lane.
+  - `EnsureCommittedBaselineJob` stamps an empty committed baseline when the previous tree lacks the sentinel.
+  - `ScheduleVaultDeltaWalPipeline()` returns after LZ4 and does not accept the current tree as committed.
+  - `ScheduleAcceptCommittedTree()` is the explicit post-WAL-success barrier for current->previous copy.
+  - `CopyMerkleTreeJob` stamps the sentinel on the root when accepting a committed tree.
+- Recreated active `Status_SHINOBU_34.md`, `Rationale_SHINOBU_34.md`, and this log.
+
+Cinematic cheats used:
+- Stable-rest/needs-wake dehydration remains the physical lie: exact transient rotations and far presentation motion are not saved as authority.
+- Low-tier cosmetic-only deltas can be dropped before LZ4 when storage pressure crosses the configured threshold.
+- MODP sidecar corruption is isolated and skippable; core sectors remain authoritative.
+
+Exact microseconds saved / estimated:
+- Commit-barrier copy is scheduled and costs one Merkle tree copy only after WAL success; it prevents silent lost saves rather than saving CPU.
+- Previous baseline sentinel check is one root read per pipeline schedule; cold sentinel recovery zeros 4369 nodes only when the committed baseline is absent.
+- Dedicated pruned-delta buffer saves no raw CPU but removes alias corruption risk between tombstone scratch and cosmetic-pruned stream.
+- Existing zero-init bypass for current tree preserves the earlier 2-5 us saved per tree init.
+- Counter-driven delta->prune->LZ4 chain still removes an estimated 0.05-0.6 ms main-thread sync-risk spike versus reading counters between jobs.
+
+Verification:
+- Static scan on `SaveStateMerkleTree.cs` and `WalXRayWindow.cs` found no `Pack=1`, `JsonUtility`, `System.Text.Json`, `new byte[]`, `File.ReadAllBytes`, `.ToArray()`, `NativeList`, `foreach`, LINQ query calls, local `new NativeArray`, or mid-pipeline `.Complete()`.
+- `git diff --check` was clean for scoped owned files; Git reported only line-ending warnings on tracked files.
+- Current Core compile command:
+  `dotnet build .\Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly`
+  failed on external files:
+  - `Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs(1405,31)` missing `IsFinite`
+  - `Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs(1412,31)` missing `IsFinite`
+  - `Assets/_Project/Scripts/VoxelDeltaProcessor.cs(3119,36)` `UnityEngine.Vector3` cannot convert to `Unity.Mathematics.double3`
+- No `SaveStateMerkleTree.cs`, `WalXRayWindow.cs`, or SHINOBU_34-owned compile errors were emitted in that output.
+
+Residual risk:
+- No Unity Play Mode save/load roundtrip, GCMonitor, profiler, Memory Profiler, or device I/O trace was available.
+- Runtime integration must call `TryAppendCompressedWalMmf()` from the save worker and call `ScheduleAcceptCommittedTree()` only after the WAL append/fync succeeds.
+- The project-wide Core build remains blocked by external domains until the owner agents or Integrator fix those files.
+
+## 2026-05-18 - SHINOBU_MERKLE_TREE False-Delta and WAL Tail Audit
+
+What was wrong:
+- Empty/inactive Merkle leaves still carried `SectorKey` metadata. Branch reduction hashed full child DTO bytes, so inactive metadata could create a non-zero root and wake the WAL pipeline with no actual payload changes.
+- Dear Lie dehydration measured distance from absolute world origin instead of subtracting a reference AUP. In a rebased 100km world, that is invalid save truth.
+- WAL append calculated CRC before stamping the actual append offset, so a bad caller offset could enter the protected header.
+- If MMF setup failed after extending the file, the WAL could be left with a zero/garbage tail.
+- LZ4 compression failure could expose partial stored-byte counters, and WAL validation allowed weak subblock flag/size combinations.
+
+What was done:
+- `MerkleLeafHashJob` now writes an all-zero node for inactive/tombstoned/empty leaves.
+- `MerkleBranchReductionJob` now hashes a branch only when `ChildMask != 0`; empty branches and an empty root stay zero.
+- `DearLieDehydrationJob` now subtracts `ReferenceAupMeters` before squared-distance gating and drops non-finite double3 inputs to a default safe payload.
+- `TryAppendCompressedWalMmf()` now stamps `LogicalOffset = stream.Length` before record CRC and truncates back to `appendOffset` on any MMF failure before FileStream fallback.
+- WAL subblock validation now rejects zero stored bytes, stored bytes larger than raw bytes, invalid raw/compressed flag combinations, and uses long alignment math.
+- LZ4 compression now fails closed by publishing `StoredBytes=0`, `BlockCount=0`, and `CounterFailure=1` on block/header/capacity failure.
+
+Cinematic cheats used:
+- Stable-rest/needs-wake remains the physical fake, now anchored to a caller-supplied reference AUP instead of world origin.
+- Cosmetic-only deltas still drop before compression under storage pressure; gameplay truth remains in core records.
+
+Exact microseconds saved / estimated:
+- Empty branch canonicalization prevents a wasted Merkle->delta->LZ4 schedule on empty/inactive state; per-parent cost is one `childMask` branch.
+- Reference-AUP Dear Lie adds one double3 subtract and squared-length per dehydrated payload; correctness win, not a CPU win.
+- WAL append offset stamping is one length read; MMF truncation is cold failure path only.
+- LZ4 fail-closed counters add negligible normal-path integer checks and prevent partial WAL append attempts.
+
+Verification:
+- Static scan on owned runtime/editor files found no `Pack=1`, JSON APIs, `new byte[]`, `File.ReadAllBytes`, `.ToArray()`, `NativeList`, LINQ query calls, `foreach`, local `new NativeArray`, or `.Complete()`.
+- `git diff --check` was clean for scoped owned files; Git reported only existing line-ending warnings.
+- `dotnet build .\Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` first hit a generated sourcelink Temp artifact; after recreating that Temp stub, compile reached C# and failed on external files:
+  - `TetherManager.cs` / `TetherInstance.cs`: missing `TetherBlackBoxDumpWriter`
+  - `ShinobuEcosystemBalancer.cs`: `LotkaVolterraMacroJob` missing `SectorBucketHeads` and `SectorEntityLinks`
+- No SHINOBU_34-owned errors appeared in the build output.
+
+Residual risk:
+- No Unity Play Mode save/load roundtrip, GCMonitor, profiler, Memory Profiler, or device I/O trace was available.
+- Runtime save orchestrator still must supply the correct `ReferenceAupMeters` and call `ScheduleAcceptCommittedTree()` only after WAL append and sync success.

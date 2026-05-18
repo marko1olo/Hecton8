@@ -1,0 +1,187 @@
+# LOG_SHINOBU_26 - Biolum Sync
+
+## 2026-05-18 R4 Forensic Report
+
+What was wrong:
+- Active SHINOBU_26 status/rationale files were absent from the live batch folders. Only archive copies existed.
+- `BiolumVisualSyncJob` still generated `MockPredatorProximitySignal` from inside the 50k color job.
+- `BiolumSpeciesTuningDTO` did not expose the task-required species `WaveSpeed` facade.
+- Layout validation only guarded two DTOs.
+- Unity job safety finalization was present but not labeled, making it indistinguishable from a dangerous `Schedule().Complete()` stall.
+
+What was done:
+- Recreated active `Docs/Tasks/Status_SHINOBU_26.md` and `Docs/AgentLogs/Rationale_SHINOBU_26.md` from current XML/source.
+- Moved mock predator signal advancement to a one-record vault producer before pulse consumption.
+- Removed predator buffer locking and `PredatorSignal` payload from `BiolumVisualSyncJob`.
+- Removed unused `Frame` from the Burst job payload.
+- Added `BiolumSpeciesTuningDTO.WaveSpeed` as a 24-byte explicit-layout row with padding.
+- Added editor sliders for species color, base frequency, and wave speed.
+- Extended CSV parsing to accept optional `species,r,g,b,frequency,waveSpeed`.
+- Predator-generated pulses now sample up to four matching species wave speeds without touching the 50k instance DTO.
+- Expanded runtime layout validation to all SHINOBU_26 DTO/header structs.
+
+Cinematic cheats used:
+- Dear Lie remains the core: four global shader color groups drive broad ocean glow instead of CPU-updating 50,000 unique colors every frame.
+- No Unity point lights. Glow is packed `RGB10_A2 uint` data plus shader globals/GraphicsBuffer.
+- Spatial predator response is a cheap expanding ring color/phase override, not physical light transport.
+
+Microsecond estimates:
+- Evicting mock predator update from the visual job: estimated <1 us/frame on low-end CPUs; no profiler proof due compile wall.
+- Avoiding `GlowStateDTO` expansion for species wave speed: prevents roughly 400 KB extra hot instance memory and keeps four 16-byte glow records per 64-byte cache line.
+- Species wave speed sampling: estimated <2 us per predator pulse event, not per frame.
+- Dear Lie low-tier path: replaces 50,000 instance uploads with 4 global groups when health/LOD forces fallback; exact savings require Unity profiler after external compile wall is cleared.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj`: passed, 0 warnings, 0 errors.
+- `dotnet build Assembly-CSharp.csproj`: blocked by external `RealtimeCSG.csproj` CS2001 missing source files.
+- `dotnet build Assembly-CSharp.csproj -p:BuildProjectReferences=false`: blocked by missing `Assembly-CSharp-firstpass.dll` and `RealtimeCSG.dll`.
+- `dotnet build Assembly-CSharp-Editor.csproj -p:BuildProjectReferences=false`: blocked by missing generated Unity/editor metadata.
+- Static scans found no `Pack=1`, no point lights, no per-instance `Material.Set*`, no `Schedule().Complete()`, no `foreach`, no `GetComponent`, no `FindObjectsOfType` in SHINOBU_26 runtime/editor files.
+
+<SELF_AUDIT>
+Task 01 [PASS] Binary archive fallback/mock glows exist.
+Task 02 [PASS] Color data is `NativeArray<uint>`/GraphicsBuffer; no Unity Light path.
+Task 03 [PASS] `GlowStateDTO` is raw 16-byte data and ref-mutated via unsafe pointer helper.
+Task 04 [PASS] `SyncPulseDTO`: 0 `double3 OriginAUP` 24b, 24 `float WaveSpeed` 4b, 28 `uint ColorOverride` 4b, size 32.
+Task 05 [PASS] Mock weather/predator/damage producers are vault-backed; predator producer no longer mutates inside visual job.
+Task 06 [PASS] Burst `IJobParallelFor` transforms 50k glow states to packed GPU colors.
+Task 07 [PASS] Spatial pulse subtracts double AUP before casting delta to `float3`.
+Task 08 [PASS] Dear Lie publishes four global groups via matrix/vector globals.
+Task 09 [PASS] Ambient suppression uses `1 - AmbientLightLevel`.
+Task 10 [PASS] Biome palette shifts through hashed target color and smooth blend.
+Task 11 [PASS] System health can force Dear Lie-only update cadence.
+Task 12 [PASS] AUP is kept as `double3` until local delta calculation.
+Task 13 [PASS] Damage flicker reads typed damage DTO from vault.
+Task 14 [PASS] O2 warning heartbeat tints red without UI strings.
+Task 15 [PASS] Colors are packed/lerped as `RGB10_A2 uint`.
+Task 16 [PASS] GPU buffer is fixed structured `uint`, initialized/uploaded through memcpy/LockBufferForWrite.
+Task 17 [PASS] 300-frame blackbox writes `.bin` and `.h8dump` on fatal conditions.
+Task 18 [PASS] EditorWindow exposes species color, base frequency, wave speed, and global pulse controls.
+Task 19 [PASS] CSV hot reload parses unmanaged byte scratch and updates vault rows.
+Task 20 [PASS] Editor trigger creates `SyncPulseDTO` at camera AUP.
+
+ARM64 layout:
+- `GlowStateDTO`: 0 `uint PackedColor`, 4 `float Phase`, 8 `float Frequency`, 12 `uint SpeciesHash`, size 16.
+- `SyncPulseDTO`: 0 `double3 OriginAUP`, 24 `float WaveSpeed`, 28 `uint ColorOverride`, size 32.
+- `BiolumSpeciesTuningDTO`: 0 `uint SpeciesHash`, 4 `uint PackedColor`, 8 `float Frequency`, 12 `float WaveSpeed`, 16 `float BiomeBlend01`, 20 padding uint, size 24.
+- `MockPredatorProximitySignal`: 0 `double3 OriginAUP`, 24 `float RadiusMeters`, 28 `float Strength01`, 32 `uint SpeciesMask`, 36 `uint FrameStamp`, size 40.
+- `BiolumPulseTelemetryEntry`: 0 `uint Frame`, 4 `uint ActiveGlowingInstances`, 8 `ushort WavePulsesActive`, 10 `byte QualityTier`, 11 `byte Flags`, 12 `float OscillatorComputeTimeMs`, 16 `float PrimaryIntensityHdr`, 20 `float TimeSeconds`, 24 `float AupOffsetX`, 28 `float AupOffsetZ`, size 32.
+
+Zero-GC check:
+- `Tick()` path uses for-loops, `ReadOnlySpan` signal snapshots, vault `NativeArray` handles, and no LINQ/foreach/string formatting.
+- Cold/editor/background paths may allocate editor GUI strings and file paths; not in the hot oscillator.
+
+AUP check:
+- Pulses and damage keep absolute positions as `double3`; distance math subtracts AUP first, then casts local delta to `float3`.
+
+Dear Lie check:
+- Physical 50,000-light illumination is faked by four global shader color groups plus packed instance colors. Low-tier can skip the full per-instance upload and rely on global groups.
+
+Dependency check:
+- Runtime uses `GlobalRegistry`, `IDataVault`, and typed `SignalBus<T>`/`GlobalSignals`; no direct sibling runtime-domain class coupling was added.
+
+H-Phi check:
+- Persistent glow states, GPU color pools, AUP origins, pulses, pulse ages, mock signals, species tuning, CSV scratch, and blackbox are vault buffers. Managed arrays are fixed shader/editor bridges only.
+
+Blackbox:
+- 300-frame ring buffer is active. Fatal non-finite/job-overrun/AUP invalid paths dump to `Docs/AgentLogs/Dump_BIOLUM_SYNC.bin` and `.h8dump`.
+
+Compile guard:
+- Core compiles clean. Runtime/editor assembly verification is blocked by external RealtimeCSG/generated metadata wall, not SHINOBU_26 source.
+</SELF_AUDIT>
+
+## 2026-05-18 R5 Forensic Report
+
+What was wrong:
+- The SHINOBU_26 prompt extraction script used an exact opening tag and failed after `CURRENT_BATCH.md` added `role`/`chat_name` attributes.
+- Visual job publication still lived in `Tick()`. The `IsCompleted` guard prevented a blind worker wait, but the hot update lane still owned safety-handle release, CPU readback, GPU buffer upload, and shader global publication.
+- `BioluminescenceTunerWindow` used IMGUI `OnGUI()`/`GUILayout`, violating the current editor facade polish mandate.
+- Runtime layout validation threw `InvalidOperationException` during `OnEnable()`, which is the wrong failure mode for a gameplay component that owns vault/GPU state.
+
+What was done:
+- Re-extracted `<AGENT_PROMPT id="SHINOBU_26" ...>` with an attribute-tolerant CLI regex.
+- Added `ILateFrameTickable` to `BiolumPulseSyncRuntime`.
+- Registered/unregistered the runtime with `GlobalRegistry.TryRegisterLateFrameTickable` / `UnregisterLateFrameTickable`.
+- Removed job publication from `Tick()`. `Tick()` now only consumes signals/scalars and schedules the visual job.
+- Moved `CompleteScheduledJobAndPublish()` into `LateFrameTick()`, with scheduling gated by `_registeredLateFrame`.
+- Converted the editor tuner to UI Toolkit `CreateGUI()` with fixed controls for weather, global pulse, species color, base frequency, and wave speed.
+- Removed editor `Camera.main` fallback. Global pulse origin now comes from `SceneView.lastActiveSceneView` or zero.
+- Converted `ValidateSyncLayouts()` to a bool fail-closed check that logs and disables before dispatcher/vault/GPU registration.
+
+Cinematic cheats used:
+- The Dear Lie remains active: four global shader color groups can stand in for 50,000 coral color uploads on weak hardware.
+- No Point Lights, no per-instance `Material.Set*`, no runtime object spawning.
+- Spatial response remains a shader/packed-color illusion: expanding AUP ring + phase/color override, not physical light transport.
+
+Microsecond estimates:
+- Moving publish to `LateFrameTick()`: no honest fixed microsecond number without Unity Profiler. The concrete saving is removal of a possible mid-`Tick()` synchronization fence; when the job is already complete, expected delta is near 0 us.
+- UI Toolkit facade: runtime cost remains 0 us. Editor-only repaint/layout churn is reduced versus IMGUI, but no runtime profiler metric applies.
+- Fail-closed layout validation: 0 us normal runtime delta; prevents repeated exception cost and partial vault/GPU mutation if a struct contract breaks.
+- Dear Lie low-tier path still avoids pushing 50,000 per-instance colors when the four global groups are sufficient; profiler proof remains blocked by the external Unity metadata wall.
+
+Verification:
+- Static SHINOBU scan: no `OnGUI`, `EditorGUILayout`, `GUILayout`, `Camera.main`, `Pack=1`, Light/PointLight, per-instance `Material.Set*`, LINQ/foreach, hot `GetComponent`, `FindObjectsOfType`, or `new string`.
+- Static job scan: no `Schedule().Complete()` pattern. `.Complete()` remains only after `IsCompleted` in `LateFrameTick()` publication and in teardown.
+- `dotnet build Hecton8.Core.csproj`: passed with 9 pre-existing core warnings, 0 errors. Warnings are outside SHINOBU_26.
+- `dotnet build Assembly-CSharp.csproj -p:BuildProjectReferences=false`: blocked before SHINOBU source compile by missing `Temp/bin/Debug/*.dll` metadata (`CS0006`).
+- `dotnet build Assembly-CSharp-Editor.csproj -p:BuildProjectReferences=false`: blocked before SHINOBU editor source compile by the same missing generated/third-party metadata (`CS0006`).
+
+<SELF_AUDIT>
+Task 01 [PASS] Binary archive fallback/mock glows remain in initialization.
+Task 02 [PASS] No Unity Light path; visual output is packed `uint`/GraphicsBuffer and shader globals.
+Task 03 [PASS] `GlowStateDTO` is raw 16-byte data; no `{ get; set; }` wrapper on hot arrays.
+Task 04 [PASS] `SyncPulseDTO` remains 32 bytes and 8-byte aligned.
+Task 05 [PASS] Mock predator/weather/damage signals remain local/vault-backed; predator write is outside the 50k visual job.
+Task 06 [PASS] Burst oscillator still mutates glow state phases and writes packed GPU colors.
+Task 07 [PASS] Spatial pulse uses AUP double subtraction before float local distance.
+Task 08 [PASS] Dear Lie four-group global matrix path remains live.
+Task 09 [PASS] Ambient suppression remains `saturate(1 - AmbientLightLevel)`.
+Task 10 [PASS] Biome palette shift remains smooth hash-target blend.
+Task 11 [PASS] System health can force Dear Lie-only mode and lower cadence.
+Task 12 [PASS] Absolute AUP is never directly cast before subtracting a local delta.
+Task 13 [PASS] Damage flicker reads a typed damage DTO and applies chaotic packed-color feedback.
+Task 14 [PASS] O2 warning heartbeat/red tint remains shader/packed-color driven.
+Task 15 [PASS] RGB10_A2 pack/unpack/lerp uses `uint`, not `UnityEngine.Color` in Burst.
+Task 16 [PASS] Fixed GPU color buffers and vault-backed color pools remain; no gameplay allocation loop.
+Task 17 [PASS] 300-frame blackbox ring and `.bin`/`.h8dump` dump path remain active.
+Task 18 [PASS] Editor tuner is now UI Toolkit and still controls species color, base frequency, and wave speed.
+Task 19 [PASS] CSV hot reload remains background-file + unmanaged byte scratch + vault row overwrite.
+Task 20 [PASS] Trigger Global Pulse button remains present and writes a `SyncPulseDTO`.
+
+ARM64 layout:
+- `GlowStateDTO`: offset 0 `uint PackedColor`, 4 `float Phase`, 8 `float Frequency`, 12 `uint SpeciesHash`, size 16.
+- `SyncPulseDTO`: offset 0 `double3 OriginAUP`, 24 `float WaveSpeed`, 28 `uint ColorOverride`, size 32.
+- `BiolumSpeciesTuningDTO`: offset 0 `uint SpeciesHash`, 4 `uint PackedColor`, 8 `float Frequency`, 12 `float WaveSpeed`, 16 `float BiomeBlend01`, 20 explicit padding uint, size 24.
+- `MockPredatorProximitySignal`: offset 0 `double3 OriginAUP`, 24 `float RadiusMeters`, 28 `float Strength01`, 32 `uint SpeciesMask`, 36 `uint FrameStamp`, size 40.
+- `MockCombatDamageSignal`: offset 0 `double3 OriginAUP`, 24 `float RadiusMeters`, 28 `float AgeSeconds`, 32 `uint PackedDamageColor`, 36 `uint FrameStamp`, size 40.
+- `BiolumPulseTelemetryEntry`: offset 0 `uint Frame`, 4 `uint ActiveGlowingInstances`, 8 `ushort WavePulsesActive`, 10 `byte QualityTier`, 11 `byte Flags`, 12 `float OscillatorComputeTimeMs`, 16 `float PrimaryIntensityHdr`, 20 `float TimeSeconds`, 24 `float AupOffsetX`, 28 `float AupOffsetZ`, size 32.
+
+Zero-GC check:
+- `Tick()` contains no LINQ, foreach, string formatting, boxing, managed collection creation, hot `GetComponent`, or object lookup.
+- Editor UI allocations are isolated to `#if UNITY_EDITOR` and not in gameplay.
+- CSV/file-path allocations are background/cold I/O paths, not the oscillator hot path.
+
+AUP check:
+- Pulse and damage origins remain `double3`.
+- Distance math subtracts plant AUP and pulse/damage AUP first, then casts the local delta to `float3`.
+
+Dear Lie check:
+- The expensive physical lie is 50,000 real light sources and 50,000 unique CPU-driven emission updates.
+- Low-tier truth is four global shader groups derived from species hash modulo group; terrain illumination is left to shader emission, bloom, and SSGI/post.
+
+Dependency check:
+- Cross-domain runtime communication uses `GlobalRegistry`, `IDataVault`, and typed `GlobalSignals`.
+- No new direct sibling runtime-domain reference or asmdef dependency was added.
+
+H-Phi check:
+- Persistent hot buffers remain in GlobalDataVault handles: glow states, GPU front/back colors, AUP origins, pulses, pulse ages, mock signals, species tuning, CSV scratch, blackbox.
+- Private managed state is fixed shader/editor bridge data only, not gameplay-owned NativeArray memory.
+
+Blackbox:
+- 300-frame `NativeArray<BiolumPulseTelemetryEntry>` ring remains active.
+- Non-finite, overrun, and invalid AUP flags can dump `Docs/AgentLogs/Dump_BIOLUM_SYNC.bin` and `Docs/AgentLogs/Dump_BIOLUM_SYNC.h8dump`.
+
+Compile guard:
+- No contracts asmdef edit was made.
+- Runtime/editor Unity assemblies are still blocked by missing generated/third-party metadata before source compilation, so no false clean-build claim is made.
+</SELF_AUDIT>

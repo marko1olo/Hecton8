@@ -1,19 +1,36 @@
-﻿# Scatter Refactor Execution Plan
+# Scatter Refactor Execution Plan
 
-Date: 2026-05-07
+Date: 2026-05-18
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Verification: `PENDING VERIFICATION`
 Owner: `Codex`
 Scope: `WorldProceduralScatterDirector` follow-up against `Docs/Scatter_Runtime/SCATTER_REFACTORING_MANIFESTO_V2.md`
 
-## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
+## 2026-05-18 R11 Active Evidence Boundary
 
 - Historical data boundary snapshot: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
 - Historical manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
-- Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
+- Historical actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Current documentation/source orientation: `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, and `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`.
+- R11 capture-time static counters supersede older broad source-count text in this plan where exact values differ: `1742` project C# files, `1689` script C# files, `1725` non-test C# files, `1138660` project source lines, `1119546` script source lines, `1134363` non-test source lines, `296` project-wide interface declaration hits, `294` script interface hits, `63` direct public interfaces in `GlobalRegistryContracts.cs`, and `107` first-party asmdefs. These counts are volatile under concurrent agents; rerun `rg` before treating exact values as current.
 - Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- May 14 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat that May 11 compile-success line as stale report text. R43 rechecked the current external root `Hecton8*.csproj` no-restore CLI compile surface at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; full restore graphs still carry vendor/package warnings, and shared `Temp\obj` locks can create transient evidence noise. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
+- May 14/R43 CLI compile notes are historical `CLI_COMPILE` evidence only. They do not certify Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, scene wiring, frame-time, memory, or visual quality under the current dirty workspace.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 
@@ -38,9 +55,9 @@ R46 correction to this plan:
 - Treat earlier "file absent" bullets as stale where the files now exist.
 - Treat checked extraction items as source-present only, not runtime-validated.
 - Keep Phase 6 fully pending until artifact-backed Unity/scene/profiler captures exist.
-## 2026-05-04 Current-State Boundary
+## Historical May 4 Boundary
 
-- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as current runtime truth.
+- Read current stable docs and the DOC_GLOBAL R16/R15/R14/R13/R11/R10/R9 reports before using May 4 / May 6 / May 11 reports as runtime context. The older reports are historical unless current source or a fresh evidence artifact revalidates a claim.
 - This is an execution plan for the scatter owner cleanup, not proof that scatter is profiler-clean, runtime-correct, or fully refactored.
 - Native memory teardown notes in older scatter docs must be rechecked against current `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`; do not blindly preserve local `.Complete()` barriers.
 - Source files and fresh Unity/profiler evidence win over this plan.

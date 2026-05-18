@@ -1,4 +1,5 @@
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Generated;
 using CameraJuiceImpactSignal = Hecton8.Core.Contracts.Signals.CameraJuiceImpactSignal;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -7,10 +8,13 @@ using UnityEngine;
 namespace Hecton8.Core
 {
     /// <summary>
-    /// NativeQueue-backed camera impact lane. Producers publish impacts without referencing the camera runtime.
+    /// Typed signal camera impact lane. Producers publish impacts without referencing the camera runtime.
     /// </summary>
     public static class CameraJuiceSignals
     {
+        private const int ImpactSignalCapacity = 128;
+        private const int LowTierImpactSignalCapacity = 32;
+
         private static bool _signalLaneConfigured;
 
         /// <summary>Number of camera impact packets in the current typed-lane snapshot.</summary>
@@ -77,7 +81,11 @@ namespace Hecton8.Core
             if (_signalLaneConfigured)
                 return;
 
-            GlobalSignals.InitializeAllQueues();
+            SignalBus<CameraJuiceImpactSignal>.Configure(
+                ImpactSignalCapacity,
+                maxFrameSignals: ImpactSignalCapacity,
+                lowTierFrameSignals: LowTierImpactSignalCapacity,
+                laneHash: H8Hashes.Signals.CameraJuiceImpactSignalHash);
             SignalBus<CameraJuiceImpactSignal>.EnsureInitialized();
             _signalLaneConfigured = true;
         }

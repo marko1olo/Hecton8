@@ -18,6 +18,17 @@ namespace Hecton8.Core
         SecondaryFire = 1u << 3,
         Sprint = 1u << 4,
         Dash = 1u << 5,
+        Pda = 1u << 6,
+        Inventory = 1u << 7,
+        Cancel = 1u << 8,
+        TabNext = 1u << 9,
+        TabPrevious = 1u << 10,
+        ToolSlot1 = 1u << 11,
+        ToolSlot2 = 1u << 12,
+        ToolSlot3 = 1u << 13,
+        ToolSlot4 = 1u << 14,
+        Flashlight = 1u << 15,
+        Pause = 1u << 16,
     }
 
     /// <summary>
@@ -55,7 +66,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Bit-packed deterministic input sample consumed by simulation and replay.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
     public struct InputState
     {
         public const float AxisQuantizeScale = 32767.0f;
@@ -144,7 +155,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Zero-allocation player input snapshot captured once at the start of each frame.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct PlayerInputState
     {
         /// <summary>
@@ -163,11 +174,6 @@ namespace Hecton8.Core
         public Vector2 ScrollDelta;
 
         /// <summary>
-        /// Cached vertical ascend/descend input for the current frame.
-        /// </summary>
-        public float VerticalDelta;
-
-        /// <summary>
         /// Steam Deck gyro contribution already folded into <see cref="LookDelta"/>.
         /// </summary>
         public Vector2 SteamDeckGyroAimDelta;
@@ -181,6 +187,11 @@ namespace Hecton8.Core
         /// Right Steam Deck trackpad axis, or the mapped right-stick proxy when Steam Input is unavailable.
         /// </summary>
         public Vector2 SteamDeckRightTrackpad;
+
+        /// <summary>
+        /// Cached vertical ascend/descend input for the current frame.
+        /// </summary>
+        public float VerticalDelta;
 
         /// <summary>
         /// Frame-cached action flags for held and latched gameplay actions.
@@ -219,11 +230,32 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable OpenXR controller state captured once per dispatcher frame.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     internal struct XRInputState
     {
+        /// <summary>Grip-pose rotation in runtime world space.</summary>
+        public quaternion GripRotationWS;
+
+        /// <summary>Grip-pose position in runtime world space.</summary>
+        public float3 GripPositionWS;
+
+        /// <summary>Primary joystick or primary 2D axis value.</summary>
+        public float2 Joystick;
+
+        /// <summary>Trigger axis normalized to 0..1.</summary>
+        public float Trigger;
+
+        /// <summary>Grip axis normalized to 0..1.</summary>
+        public float Grip;
+
         /// <summary>Frame that produced this snapshot.</summary>
         public int Frame;
+
+        /// <summary>Cached OpenXR button flags.</summary>
+        public uint ButtonsBitmask;
+
+        /// <summary>Shifted active-control mask: left uses bits 0-4, right uses bits 5-9.</summary>
+        public uint ActiveMask;
 
         /// <summary>Controller slot: 0 left, 1 right.</summary>
         public byte ControllerIndex;
@@ -232,27 +264,9 @@ namespace Hecton8.Core
         public byte IsTracked;
         private byte _reserved0;
         private byte _reserved1;
-
-        /// <summary>Trigger axis normalized to 0..1.</summary>
-        public float Trigger;
-
-        /// <summary>Grip axis normalized to 0..1.</summary>
-        public float Grip;
-
-        /// <summary>Primary joystick or primary 2D axis value.</summary>
-        public float2 Joystick;
-
-        /// <summary>Grip-pose position in runtime world space.</summary>
-        public float3 GripPositionWS;
-
-        /// <summary>Grip-pose rotation in runtime world space.</summary>
-        public quaternion GripRotationWS;
-
-        /// <summary>Cached OpenXR button flags.</summary>
-        public uint ButtonsBitmask;
-
-        /// <summary>Shifted active-control mask: left uses bits 0-4, right uses bits 5-9.</summary>
-        public uint ActiveMask;
+        private byte _pad0;
+        private byte _pad1;
+        private byte _pad2;
 
         /// <summary>True when any analog/button input survived the deadzone gate.</summary>
         public readonly bool HasActiveInput => ActiveMask != 0u;

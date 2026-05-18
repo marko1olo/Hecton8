@@ -1,7 +1,26 @@
-﻿# ÐŸÐ¾Ð»Ð½Ñ‹Ð¹ ÑÐ¿Ð¸ÑÐ¾Ðº Ð½ÐµÐ´Ð¾Ñ€Ð°Ð±Ð¾Ñ‚Ð¾Ðº Ð¸ Ð¿Ð»Ð°Ð½ Ñ€Ð°Ð·Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ¸ â€” Project Submerge (HECTON-8)
+# ÐŸÐ¾Ð»Ð½Ñ‹Ð¹ ÑÐ¿Ð¸ÑÐ¾Ðº Ð½ÐµÐ´Ð¾Ñ€Ð°Ð±Ð¾Ñ‚Ð¾Ðº Ð¸ Ð¿Ð»Ð°Ð½ Ñ€Ð°Ð·Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ¸ â€” Project Submerge (HECTON-8)
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+## 2026-05-18 R11 Legacy Evidence Boundary
+
+`GOTOV` / ready, ES3/Easy Save, `Zero GC`, system-complete, and implementation-done claims below are historical backlog claims only. Current status is `PENDING VERIFICATION` until current source scan, Unity import/Console, Play Mode route, profiler/GCMonitor, save/load, and artifact links exist. ES3/Easy Save references are legacy contamination unless a current stable authority explicitly approves that path.
+
 Verification: PENDING VERIFICATION
 
 # ÐŸÐ¾Ð»Ð½Ñ‹Ð¹ ÑÐ¿Ð¸ÑÐ¾Ðº Ð½ÐµÐ´Ð¾Ñ€Ð°Ð±Ð¾Ñ‚Ð¾Ðº Ð¸ Ð¿Ð»Ð°Ð½ Ñ€Ð°Ð·Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ¸

@@ -1,15 +1,29 @@
 # Reports
 
-Date: 2026-05-17
-Status: PENDING VERIFICATION (DOC_AUDIT R29-R45 STATIC/CLI EVIDENCE + DOC_HONEST_ANALYSIS ROOT CLEANUP / RUNTIME PROOF ABSENT)
+Date: 2026-05-19
+Status: PENDING VERIFICATION (DOC_AUDIT R29-R45 STATIC/CLI EVIDENCE + DOC_GLOBAL R24 STATIC DOC/FILESYSTEM/SOURCE EVIDENCE / RUNTIME PROOF ABSENT)
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Purpose: canonical drop zone for reports, audits, counters, and validation writeups.
 
-Dated reports are evidence snapshots. Durable project policy belongs in `AGENTS.md`, `.agents-skills/README.md`, task-relevant `.agents-skills/*`, and stable docs such as `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`.
+Dated reports and generic report files in this folder are evidence snapshots. Durable project policy belongs in `AGENTS.md`, `.agents-skills/README.md`, task-relevant `.agents-skills/*`, and stable docs such as `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`.
 
 ## 2026-05-17 Documentation Global Refresh
 
-`2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md` is the latest broad documentation currency report. It reruns static doc/source/package/root counts, records the then-current root drift file `COMPUTE_AUDIT_BRIEF.md`, normalizes tracked stable active `Docs` headers to `144 / 144` with `Date:` and `Status:`, and classifies dated reports/archives/deprecated folders as evidence rather than rewriting them.
+`2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md` is the initial broad documentation currency report for this refresh sequence. R2-R24 supersede its counters and root-drift facts where they conflict. R24 is the latest DOC_GLOBAL disk-backed static root/architecture/source-counter boundary. R23 remains the proof-language/navigation and status-JSON correction boundary; R22 is a prior source-counter boundary; R21, R20, and R19 remain prior static evidence snapshots.
 
 It is not Unity import, Unity Console, Play Mode, profiler, GCMonitor, player-build, scene-wiring, save/load, frame-time, memory, or visual proof.
 
@@ -17,6 +31,27 @@ R2/R3 continuation:
 
 - `2026-05-17_DOCUMENTATION_CONCURRENT_DELTA_LEDGER.md` records the concurrent documentation wave visible after the global refresh and the ownership boundary for active logs/tasks, archives, reports, root drift, and stable/domain docs.
 - `2026-05-17_DOCUMENTATION_INTEGRATION_R3.md` records the R3 root compute-brief relocation, architecture/report index integration, stable header gate, changed JSON parse gate, and dirty source boundary.
+- `2026-05-17_DOCUMENTATION_INTERIOR_R4_LOCAL.md` records the local-only R4 interior pass that inserted actuality boundaries into all active stable `.md` / `.txt` docs without GitHub operations.
+- `2026-05-17_DOCUMENTATION_INTERIOR_CLAIM_R5_LOCAL.md` records the local-only R5 content pass that corrected stale internal source-scale, root-scan, asmdef, interface-count, and mod-builder manifest claims without GitHub operations.
+- `2026-05-17_DOCUMENTATION_MODDING_SCHEMA_R6_LOCAL.md` records the local-only R6 content pass that corrected Modding schema drift, strengthened the static validator, repaired active metadata placement, and refreshed current asmdef-count claims without GitHub operations.
+- `2026-05-17_DOCUMENTATION_DEPENDENCY_ATLAS_R7_LOCAL.md` records the local-only R7 atlas regeneration pass, generator status correction, and current `AtlasCheck` failure on missing RealtimeCSG vendor image references without GitHub operations.
+- `2026-05-17_DOCUMENTATION_ATLAS_AND_COUNTERS_R8_LOCAL.md` records the local-only R8 atlas cache/test/timestamp correction, volatile source-counter refresh, archived compile-artifact path correction, future-seam ownership correction, tool metadata count correction, and verified-language downgrade without GitHub operations.
+- `2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md` records the local-only R9 evidence-language downgrade, archive-path correction, R9 source-counter refresh, generated-atlas refresh, and R4 boundary closure for newly active docs without GitHub operations.
+- `2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md` records the local-only R10 long-tail interior pass over Design, AI/Fauna, Flora, Scatter, SpaceEngine, Archivarius, and forensic-bundle entry points; it supersedes R9 counters where the R10 static scan differs.
+- `2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md` records the local-only R11 active-doc remainder pass over root authority docs, architecture/static X-Ray/atlas surfaces, Reports/Archivarius indexes, and legacy backlog proof-language boundaries; it supersedes R10 exact counters where the R11 static scan differs.
+- `2026-05-18_DOCUMENTATION_RESIDUE_SCAN_R12_LOCAL.md` records the local-only R12 residue pass over active proof-language leaks, absent Omega/UI/Unity artifacts, and current-truth wording after R11.
+- `2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md` records the local-only R13 generic report pass: `72` direct generic report boundaries, top-level status demotions, internal data-truth/network proof-label cleanup, absent artifact corrections, and the unchanged RealtimeCSG `AtlasCheck` blocker.
+- `2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md` records the local-only R14 Batch008 pass: archived H8BIN evidence routing, binary-hygiene PASS demotion, current `BINARY_HYGIENE_FAILED` boundary, and active-index correction for pre-Batch008 `unaligned=0` rows.
+- `2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md` records the local-only R15 active entrypoint pass; R16/R17/R18/R19/R20/R21/R22/R23/R24 then corrected remaining entrypoint, report-vault, R4, Archivarius, forensic, Marketing, EventBus, counter, Design/SpaceEngine proof-residue, source-counter, active Marketing-boundary, validation, status-JSON, root/architecture, and navigation drift so read-order lines now start at R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9 instead of stale R9/R10/R11-only boundaries.
+- `2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md` records the local-only R16 navigation pass: remaining R9/R10/R11-only and R14-current entrypoint language was corrected after R15 became the newest disk-backed DOC_GLOBAL boundary.
+- `2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md` records the local-only R17 report-vault pass: proof-like status lines, absent artifacts, MaterialAudit/DataVault/SpaceEngine path drift, Archivarius navigation residue, and legacy five-bucket signal wording were corrected.
+- `2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md` records the local-only R18 long-tail pass: active stable R4 coverage reached `252 / 252` after concurrent Marketing doc churn, Archivarius/forensic stale counts were demoted, Modding signal schema was resynced to `160 / 2 / 158`, and SHINOBU_41/Marketing documentation was boundary-marked.
+- `2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md` records the local-only R19 pass: Marketing KPI/forecast caveats, Steam wishlist/key-policy wording, creator lead verification boundary, localized-pitch review flags, EventBus lane-count supersession, and R19 volatile source counters.
+- `2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md` records the local-only R20 pass: Archivarius R20/R19/R18/R17 read-order correction, Design/TechArt/SpaceEngine proof-status demotion, absent forensic/lore/economy artifacts, and historical JSON PASS/VERIFIED reclassification.
+- `2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md` records the local-only R21 pass: volatile source-counter refresh, report/Archivarius read-order supersession, active Marketing R4 boundary closure, and proof-residue demotion for platform/SHINOBU/co-op/SpaceEngine docs.
+- `2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md` records the local-only R22 pass: post-R21 source-counter drift, active authority count refresh, stale-current scan, atlas/Modding/JSON/R4 validation, and the unchanged RealtimeCSG AtlasCheck blocker.
+- `2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md` records the local-only R23 pass: read-only subagent residue integration, R23 read-order promotion, SpaceEngine/Omega status-JSON demotion, and JSON validation.
+- `2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md` records the local-only R24 root/architecture pass: root authority and architecture entrypoint read-order promotion, R24 source-counter recapture, atlas regeneration, architecture proof-language demotion, and the unchanged RealtimeCSG AtlasCheck blocker.
 - `2026-05-17` R3 moved the concise compute brief to `2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md`, restoring the three-anchor root documentation target.
 
 ## 2026-05-17 Subnautica / Actuality Overlay
@@ -35,13 +70,13 @@ Related clean-room reference:
 
 ## 2026-05-13 Evidence Override
 
-`2026-05-13_DOC_AUDIT_XRAY.md` is the current documentation-reality override.
+`2026-05-13_DOC_AUDIT_XRAY.md` is a historical broad documentation-reality override baseline, superseded by later DOC_GLOBAL R9-R24 boundaries where they conflict.
 It found the May 11 build artifacts cited by stable docs absent from the current filesystem:
 
 - `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`
 - `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.log`
 
-Therefore May 11 compile-success claims remain dated report text. DOC_AUDIT R29 captured a replacement Unity `6000.4.1f1` batchmode import/script-compilation artifact at `Library/Codex_DOC_AUDIT_UnityBatchCompile.log`; it is compile/import evidence only, not PlayMode/runtime proof.
+Therefore May 11 compile-success claims remain dated report text. DOC_AUDIT R29 reported a replacement Unity `6000.4.1f1` batchmode import/script-compilation artifact at `Library/Codex_DOC_AUDIT_UnityBatchCompile.log`, but the R10 filesystem check did not find that path. Treat the R29 path as dated report text unless the artifact is restored or replaced. It is not PlayMode/runtime proof.
 
 ## 2026-05-15 Root Cleanup / Honesty Addendum
 
@@ -54,7 +89,7 @@ Current filesystem facts from that pass:
 - former root compatibility mirrors were moved to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`
 - same-day compute report slices live under `Docs/Reports/2026-05-15_COMPUTE_AUDIT/`
 
-The May 13 broad counters below remain historical/static orientation where not rerun by the May 15 pass. Do not promote them to runtime, Play Mode, profiler, GCMonitor, player-build, scene-wiring, or visual proof.
+The May 13/May 15 broad counters below remain historical/static orientation where not rerun by later DOC_GLOBAL passes. R9/R10/R11/R12/R13/R14/R15/R16/R17/R18/R19/R20/R21/R22/R23 supersede them for current documentation/source-count, report-boundary, Batch008 binary-hygiene, active-entrypoint read-order, proof-language, R4 coverage, Modding signal-schema, Marketing caveats, EventBus lane-count framing, Design/SpaceEngine proof-residue, absent-artifact framing, post-R21 counter drift, and status-JSON residue. Do not promote any of them to runtime, Play Mode, profiler, GCMonitor, player-build, scene-wiring, or visual proof.
 
 R2/R3/R4/R5/R6/R7/R8/R9/R10/R11/R12/R13/R14/R15/R16/R17/R18/R19/R20/R21/R22/R23/R24/R25/R26/R27/R28/R29/R30/R31/R32/R33/R34/R35/R36/R37/R38 refresh also found active non-report docs still calling that missing file `Current compile-only evidence`, stale interface-count claims, Archivarius path drift, an inflated active-doc counter that included `Docs/Archive`, package-surface wording that confused clean UPM manifest state with physical legacy asset contamination, primary `AGENTS` authority drift around Low URP mapping / Easy Save 3 wording, world/scatter runtime-wiring proof gaps, root mirror/atlas scope confusion, active root anchors still promoting the missing May 11 artifact as current evidence, SpaceEngine research proof/path drift, Omega smoke artifact drift, active documentation manifest JSON files whose count/build-state surfaces needed historical snapshot boundaries, a gameplay resource-loop break candidate where most resource-node harvest items lacked world prefabs while the drop registry rejects null prefabs, an AI/Fauna proof gap where real data coverage was being treated too close to runtime spawn readiness, a Tools/PDA first-hour proof gap where R16 found dev provisioning contamination, R18 statically hardened it, R22 added a fail-closed PDA open guard, R24 added active tool metadata route validation, and R25 added player-prefab dev-provisioner startup flag validation while runtime route/PDA shell proof remains absent, a renderer/visor/shader proof gap where substantial RenderGraph-era source and active low-tier post features still lack Frame Debugger/Profiler/Memory Profiler proof, R19/R20 resource-pickup data and validator hardening, R21 static closure of resource-node harvest catalog/worldPrefab gaps to `0 / 27` missing worldPrefab and `0 / 27` non-catalog, R23 item/catalog identity validator hardening for duplicate PersistentIds and catalog ambiguity, R24 tool metadata orphan / held tool route validation, R25 hidden startup-grant regression validation, R26 quest item/prerequisite route validation, R27 recipe/result/ingredient/catalog plus craft-quest recipe-output validation, R28 scan-gate warnings for scan-locked recipes without known generic/prefab unlock routes, R29 async world-pager compile/bootstrap hardening for locked `world_data.h8bin`, R30 correction of false chunk-local voxel pager claims, R31 lazy pager boot trim / regression guard, R32 lazy allocation for large save buffers, R33 pager-fault staging guard / load allocation failure envelope, R34 player-movement ladder snap hot-path cache, R35 HLOD PDA upload version gating, R36 recurrent world-pager voxel snapshot regression removal, R37 local Bee/Roslyn Core.Memory/Core compile reconciliation plus joinable pager worker guard, and R38 pager worker pending-counter fault accounting plus WFC outpost persistence contract implementation. May 13 static counters after then-current churn were: `918` markdown files under `Docs`, `283` active markdown, `203` active non-`Docs/Reports` markdown, `80` active direct report markdown, `10` docs JSON, `1411` project C# files, `1365` script C# files, `869871` project source lines, `852315` script source lines, `215` interface declaration hits, `51` direct public interfaces in `GlobalRegistryContracts.cs`, and `24` first-party asmdefs. The May 15 root cleanup supersedes the root file counts and any broad doc/source count must be rerun before use.
 
@@ -68,7 +103,7 @@ DOC_AUDIT R16/R18/R22/R24/R25 adds a Tools/PDA/first-hour boundary: tool data an
 
 DOC_AUDIT R17 adds a Rendering/Visor/Shader boundary: active renderer tiers carry a real custom post/noir/SSDO/shaft stack and `21` visor renderer-feature files implement `RecordRenderGraph`, but `16` visor feature files still use `AddUnsafePass`, GPU Resident Drawer/GPU occlusion are disabled in scanned URP tier assets, and no Frame Debugger, RenderGraph Viewer, Profiler, Memory Profiler, RenderDoc, player build, or visual capture proves MX350 readiness or pass-graph optimality.
 
-DOC_AUDIT R29/R30/R31/R32/R33 adds a compile/persistence boundary: generated `.csproj` builds remain stale around split asmdefs, but Unity `6000.4.1f1` batchmode import/script compilation completed in `Library/Codex_DOC_AUDIT_UnityBatchCompile.log` with no `error CS`, bootstrap dependency exception, or `BIOS ERROR` entries. Later read-only Unity MCP Console readback first returned `0` errors and `7` non-C# warnings, then final readback returned `0` log entries. `SaveManager` / `H8BinaryWorldPager` now fail-close locked async page persistence instead of throwing through bootstrap; R30/R31/R32/R33 harden single-writer page-file semantics, bounded pager shutdown, read-slot cleanup, sparse/collided page fallback, lazy pager file open outside `InitializeNativeBuffers()`, first-use allocation for large save buffers, pager-fault staging guard, and remove false chunk-local voxel snapshot/prefetch behavior. This is not PlayMode, save/load, corrupted-sector recovery, profiler, GCMonitor, Memory Profiler, or player-build proof.
+DOC_AUDIT R29/R30/R31/R32/R33 adds a compile/persistence boundary: generated `.csproj` builds remain stale around split asmdefs, and DOC_AUDIT reported Unity `6000.4.1f1` batchmode import/script compilation at `Library/Codex_DOC_AUDIT_UnityBatchCompile.log`, but the R10 filesystem check did not find that path. Treat that import log as dated report text unless restored or replaced. Later read-only Unity MCP Console readback first returned `0` errors and `7` non-C# warnings, then final readback returned `0` log entries. `SaveManager` / `H8BinaryWorldPager` now fail-close locked async page persistence instead of throwing through bootstrap; R30/R31/R32/R33 harden single-writer page-file semantics, bounded pager shutdown, read-slot cleanup, sparse/collided page fallback, lazy pager file open outside `InitializeNativeBuffers()`, first-use allocation for large save buffers, pager-fault staging guard, and remove false chunk-local voxel snapshot/prefetch behavior. This is not PlayMode, save/load, corrupted-sector recovery, profiler, GCMonitor, Memory Profiler, or player-build proof.
 
 DOC_AUDIT R35 adds a world-streaming/PDA bandwidth boundary: `IStreamingBackpressureService.ActiveImpostorVersion` and the PDA-side uploaded version/count cache prevent unchanged HLOD POI data from being resent to the fixed `16 x float4` PDA buffer every map build. Fade progress uses a separate point/read-model version, not the renderer matrix version. This is static source evidence only; no PDA map route, Frame Debugger, profiler, GCMonitor, PlayMode, or player-build proof was run.
 
@@ -93,9 +128,29 @@ DOC_AUDIT R39/R40/R41/R42/R43/R45 adds a generated-project/asmdef drift boundary
 
 ## Current Evidence Snapshots
 
+- `2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`
 - `2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md`
 - `2026-05-17_DOCUMENTATION_CONCURRENT_DELTA_LEDGER.md`
 - `2026-05-17_DOCUMENTATION_INTEGRATION_R3.md`
+- `2026-05-17_DOCUMENTATION_INTERIOR_R4_LOCAL.md`
+- `2026-05-17_DOCUMENTATION_INTERIOR_CLAIM_R5_LOCAL.md`
+- `2026-05-17_DOCUMENTATION_MODDING_SCHEMA_R6_LOCAL.md`
+- `2026-05-17_DOCUMENTATION_DEPENDENCY_ATLAS_R7_LOCAL.md`
+- `2026-05-17_DOCUMENTATION_ATLAS_AND_COUNTERS_R8_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_RESIDUE_SCAN_R12_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`
+- `2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`
 - `2026-05-17_DOCUMENTATION_ACTUALITY_SUBNAUTICA_RESEARCHER.md`
 - `2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`
 - `2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md`
@@ -168,7 +223,7 @@ DOC_AUDIT R20/R21 boundary: `ContentSanityValidator` now validates resource-node
 It records that the registry was not fully current for the current production direction: several physical/visual realism mandates still pushed simulate-first, Unity Joint, broad flow/lighting, or default HRTF paths. It adds `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` and override blocks to the affected mandates. This is documentation-only. It does not prove Unity import, Play Mode, profiler, GCMonitor, player build, frame time, memory retention, or visual quality.
 
 `2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` is the previous documentation synchronization counter boundary with a 2026-05-09 R186 addendum.
-It superseded conflicting May 7/May 8 source-count and build-blocker statements at the R186 boundary. It recorded then-current counters: `Assets/_Project/**/*.cs` `1292`, `Assets/_Project/Scripts/**/*.cs` `1248`, project physical lines `759122`, script physical lines `742892`, and `GlobalRegistryContracts.cs` direct public interfaces `40`. The then-latest full Core dependency build was `CodexArtifacts/2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `DOTNET_EXIT_CODE=0`, `CS_WRITES_AFTER_START=0`, `CS_WRITES_AFTER_END=0`. This is historical local `dotnet` compile evidence only.
+It superseded conflicting May 7/May 8 source-count and build-blocker statements at the R186 boundary. It recorded then-current counters: `Assets/_Project/**/*.cs` `1292`, `Assets/_Project/Scripts/**/*.cs` `1248`, project physical lines `759122`, script physical lines `742892`, and `GlobalRegistryContracts.cs` direct public interfaces `40`. The historical R186 build-success text cites `CodexArtifacts/2026-05-09_R186_CORE_FULLGRAPH_SERIAL_NORESTORE_BUILD.log`, but the R17 filesystem check did not find that artifact in the current workspace. Treat it as dated report text unless the log is restored or replaced.
 
 `2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json` is the previous historical machine-readable active documentation manifest snapshot.
 It remains historical R186 snapshot evidence only where the May 11 historical manifest does not cover a field, and it is not current compile/runtime proof.
@@ -177,7 +232,7 @@ It remains historical R186 snapshot evidence only where the May 11 historical ma
 It is historical for counters and compile status. Use the May 11 continuation, May 11 manifest, and May 8/R186 continuation before citing any May 7 numeric or build-state claim.
 
 `2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md` is the latest final-inquisition fallback compile/MCP boundary.
-It records editor-only scanner changes, its then-current `PENDING FINAL UNITY PROOF` status, repeated MCP console failure, and fallback Core build evidence. Read the May 13 DOC_AUDIT X-Ray and May 15 documentation honest analysis first for current documentation/status boundaries.
+It records editor-only scanner changes, its then-pending Unity proof status, repeated MCP console failure, and fallback Core build evidence. Read the May 13 DOC_AUDIT X-Ray and May 15 documentation honest analysis first for current documentation/status boundaries.
 
 `2026-05-07_LIVE_CHURN_CONTINUATION_SYNC.md` is the previous same-day live-churn boundary.
 It remains useful for churn methodology, but its numeric counters are superseded by `2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md` where they conflict.
@@ -189,7 +244,7 @@ It records the current first-party compile cleanup around bootstrap warmup API d
 It remains useful for Project Atlas/source-count methodology, but its numeric source counters are superseded by `2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` when they conflict. It also records stale-symbol source proof for `itemGeneticsWords`, `MinimumDensity`, and `MaximumDensity`, and keeps runtime verification `PENDING`.
 
 `2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md` is the current static documentation integrity report.
-It records the earlier May 7 static documentation integrity sweep. Its numeric counters are superseded by `2026-05-07_LIVE_CHURN_CONTINUATION_SYNC.md` when they conflict. It remains authority for hallucination-pattern scan results, deprecated stub state, cinematic-cheat ledger inclusion, five-artery Mega-Bus synchronization, zero-GC UI doctrine, native collection leak/lifecycle audit status, and the diff artifact path. It is not Play Mode, profiler, console-clean compile, current-source whole-project build, or runtime leak proof.
+It records the earlier May 7 static documentation integrity sweep. Its numeric counters are superseded by `2026-05-07_LIVE_CHURN_CONTINUATION_SYNC.md` when they conflict. It remains historical evidence for hallucination-pattern scan results, deprecated stub state, cinematic-cheat ledger inclusion, legacy signal-lane synchronization, zero-GC UI doctrine, native collection leak/lifecycle audit status, and the diff artifact path. It is not Play Mode, profiler, console-clean compile, current-source whole-project build, or runtime leak proof.
 
 `2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json` is a historical machine-readable active documentation manifest snapshot.
 It lists `230` active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields as May 7 snapshot data. Its source count fields are historical only and are not current compile/runtime proof.
@@ -204,7 +259,7 @@ It is superseded by later historical manifests and by the May 13 DOC_AUDIT X-Ray
 It records root text handling, active `Docs/` bundle classes, first-read reports, historical/evidence-only reports, the original dirty-worktree boundary, the follow-up relocation of repository-root logs into a deprecated evidence bundle, and the 2026-05-05 documentation influx count boundary. Read the May 13 DOC_AUDIT X-Ray and May 15 documentation honest analysis first for current documentation/status boundaries.
 
 `2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md` is a bounded Omega-autonomy hardening evidence report.
-It records the PowerGrid native-sentinel and job-barrier telemetry changes, BaseLogisticsNetwork route BFS `.Run()` removal, procedural audio overflow telemetry, the explicit-EventSystem `MainMenuInputRoutingGuard` smoke fix, repair telemetry code/dedupe proof, runtime-watchdog registry hijack smoke, `HectonWorldGenerator.ActiveRuntimeInstance` compile-blocker cleanup through `GlobalRegistry.WorldSeedProvider`, scoped no-`IJob.Run()`/`JobHandle.Complete()` scan, scoped native-memory registration scan, `Hecton8.Core` build evidence, and an older scoped `OmegaAutonomySmokeTester` JSON `PASS`. DOC_AUDIT R12 found current `Library/OmegaAutonomySmokeTester.json` reads `FAIL` on `nativeSentinelBalance` (`allocationDelta=2`, `trackedByteDelta=2560`), so the older smoke `PASS` is historical scoped evidence only. The latest serial Omega Core build in that report is `Build succeeded`, `0 Warning(s)`, `0 Error(s)`; the last warning-bearing Omega baseline had `48 Warning(s)` owned by dependency/vendor code and `0` first-party `Assets/_Project/Scripts` warning matches. Current authority status remains `PENDING VERIFICATION`; no Play Mode/profiler/GCMonitor/player-build proof is claimed.
+It records the PowerGrid native-sentinel and job-barrier telemetry changes, BaseLogisticsNetwork route BFS `.Run()` removal, procedural audio overflow telemetry, the explicit-EventSystem `MainMenuInputRoutingGuard` smoke fix, repair telemetry code/dedupe proof, runtime-watchdog registry hijack smoke, `HectonWorldGenerator.ActiveRuntimeInstance` compile-blocker cleanup through `GlobalRegistry.WorldSeedProvider`, scoped no-`IJob.Run()`/`JobHandle.Complete()` scan, scoped native-memory registration scan, `Hecton8.Core` build evidence, and an older scoped `OmegaAutonomySmokeTester` JSON `PASS`. DOC_AUDIT R12 historically reported `Library/OmegaAutonomySmokeTester.json` failing `nativeSentinelBalance`, but R11 found that file absent in the current filesystem; the older smoke `PASS`/`FAIL` data is historical scoped evidence only. The latest serial Omega Core build in that report is `Build succeeded`, `0 Warning(s)`, `0 Error(s)`; the last warning-bearing Omega baseline had `48 Warning(s)` owned by dependency/vendor code and `0` first-party `Assets/_Project/Scripts` warning matches. Current authority status remains `PENDING VERIFICATION`; no Play Mode/profiler/GCMonitor/player-build proof is claimed.
 
 `2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` is the current structural cleanup queue.
 It previously recorded `41` active markdown files still missing `Date:`; the May 6 synchronization pass closed that debt and then normalized the remaining `_Archive`, `Reports`, and `DEPRECATED` markdown provenance headers. Current full `Docs/**/*.md` header debt is `0`. It also notes that repository-root `.log` evidence artifacts have been moved to dated `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_*` bundles and keeps archive/deprecated move candidates queued for a separate pass. It also records the editor-only documentation authority smoke guard, its three-pass stress runner, failed-audit telemetry hook, CI-facing `RunBatchAll` entrypoint, direct Roslyn compile evidence, and the current Unity licensing/project-lock blocker that prevents claiming batch smoke proof.
@@ -258,12 +313,12 @@ It records the active-doc inventory boundary, dirty-worktree risk, conflicting o
 `2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` is the current blunt project-level verdict.
 It is source/doc-backed, but still not Play Mode proof.
 
-`2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md` is the current local `Editor.log` evidence for console-spam mitigation.
-It supersedes older same-day statements that the editor console had known C# warnings or `SetResource` spam in the latest reachable local log, but it is not Play Mode or profiler proof.
+`2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md` is historical local `Editor.log` evidence for console-spam mitigation.
+It superseded older same-day statements at capture time, but it is not current console proof unless a fresh log path is linked; it is not Play Mode or profiler proof.
 
 `2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` records the May 1 compile-clean source migration around listener-backed Sargassum/Emergency relay events, the Burst spatial-hash `in` argument fix, and the May 1 MCP console zero-entry check. Current console truth is the May 4 post-repair/current recheck: editor console error/warning entries `0`. The earlier May 4 documentation-sweep `18` warning snapshot is historical Play Mode-transition evidence, not the current editor-console boundary.
 
-`2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` supersedes the older compile-evidence line numbers after the `VegetationJobRecovery.cs.meta` restoration. It records the Bee file-lock/internal-error recovery, current `Editor.log` compile/reload success, and final MCP console zero-entry check.
+`2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` supersedes the older compile-evidence line numbers after the `VegetationJobRecovery.cs.meta` restoration. It records historical Bee/Edit log and MCP console notes; current Unity Console/import proof requires a fresh linked artifact.
 
 `2026-05-01_EVENT_CASCADE_RECHECK.md` corrects stale event-bus audit claims.
 It confirms the source-present `HectonEventBus` depth cap and keeps NativeQueue generation split as the remaining event-cascade risk. As of 2026-05-03, `ModRegistryEvents`, `BootstrapEvents`, `LocalizationEvents`, `InteractionEvents`, `CraftingEvents`, `ScanEvents`, `SaveEvents`, `InventoryEvents`, `WeatherEvents`, `QuestEvents`, `PowerGridTelemetryEvents`, `NarrativeEvents`, `NotificationEvents`, `FirstHourEvents`, `EndingEvents`, `AudioLogEvents`, `AtmosphereEvents`, `EclipseGameplayEvents`, `AcousticZoneEvents`, `PhysicsEventBus`, `CelestialEvents`, `FluidFeedbackEvents`, `RepairDroneTorchAcousticEvents`, `ElectrolysisAcousticEvents`, `AudioCaptionEvents`, `SpectrumEvents`, `ProceduralAudioEvents`, `HectonSubmarineOsEvents`, `LaserCutterEvents`, `MapMagicBiomeEvents`, `BiomeMatrixEvents`, `DirectorAIEvents`, `HectonDroneFleetEvents`, `FlashlightEvents`, `PlayerSignalEvents`, `HighPressureEvents`, `FatalPressureImplosionEvents`, `ModuleStatusEvents`, `BaseAirlockEvents`, `DepthZoneEvents`, `SoundscapeEvents`, `EmergencyServiceRelayEvents`, `SargassumGlobalDragManager`, `AtlasSignalEvents`, `PlayerExpressionEvents`, `BaseIntegrityEvents`, `PDAIntrusionEvents`, `PDAEvents`, `SceneBootstrap`, `ObjectPoolDiagnostics`, `PerformanceEvents`, `RandomEventEvents`, `Atlas6Events`, and `GlobalRegistry` service rebound events have source-level generation split; remaining lanes still require review and runtime proof.

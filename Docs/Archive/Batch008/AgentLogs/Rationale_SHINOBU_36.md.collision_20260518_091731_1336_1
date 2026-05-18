@@ -1,0 +1,29 @@
+# SHINOBU_36 Rationale
+
+Date: 2026-05-18
+Domain: INPUT_DETERMINISM_AND_HAPTICS
+Status: REOPENED AFTER BATCH008 ARCHIVE
+
+## R6 - Active State Recovery After Archive
+
+Problem: Active `Docs/Tasks/Status_SHINOBU_36.md`, `Docs/AgentLogs/Rationale_SHINOBU_36.md`, and `Docs/Tasks/CURRENT_BATCH.md` disappeared because batch hygiene moved prior files into `Docs/Archive/Batch008`.
+
+Solution: Created fresh active state files and recorded only current, verifiable facts from this continuation. Previous batch files remain archived. The user explicitly ordered continuation, so work proceeds against the current compile state.
+
+Rejected Alternatives: Reading archived logs as the active batch brain was rejected because AGENTS batch hygiene forbids treating previous-batch reports as current authority unless explicitly ordered. Chat-only memory was rejected because context compression is unsafe.
+
+Scalability potential: No runtime cost. Stable disk state protects parallel-agent coordination across low, middle, high, and ultra targets.
+
+Hardware Impact: 0 us runtime gain; prevents repeated full-project rebuild churn on weak developer hardware.
+
+## R7 - Compile Guard Boundary
+
+Problem: Sequential `Hecton8.Core.csproj` build exposed an external compile wall in `SomaticKinematicsRuntime.cs`: missing namespace for `PhysicsDeterminismSignals`, then missing `EnsureNativeState(bool)` overload expected by existing call sites.
+
+Solution: Added `using Hecton8.Physics;` and restored a bool overload that blocks cold initialization from hot `FixedTick` paths while preserving cold initialization in Awake/OnEnable/SlowTick/rebind paths.
+
+Rejected Alternatives: Rewriting somatic kinematics was rejected as cross-domain sabotage. Replacing the call sites with the no-arg method was rejected because it would allow legacy file scans from hot paths.
+
+Scalability potential: Low tier avoids cold archive/file work in `FixedTick`; middle/high/ultra keep the same deterministic state path.
+
+Hardware Impact: Avoids accidental hot-path file/archive work; runtime gain is conditional, but worst-case spike prevention matters more than average us.

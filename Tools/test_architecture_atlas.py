@@ -119,11 +119,34 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
         self.assertIn("Publish", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
         self.assertIn("GetFrameSnapshot", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
 
+    def test_sherst_text_cells_do_not_emit_path_references(self) -> None:
+        out = []
+        atlas_build.append_sherst(
+            out,
+            [
+                (
+                    "Docs/AgentLogs/LOG_TEST.md",
+                    7,
+                    "Solution: moved code through Assets/_Project/Scripts/Core/Signals/Foo.cs",
+                )
+            ],
+        )
+        rendered = "\n".join(out)
+        refs = atlas_check.collect_references(rendered)
+
+        self.assertIn("Docs/AgentLogs/LOG_TEST.md", refs)
+        self.assertNotIn("Assets/_Project/Scripts/Core/Signals/Foo.cs", refs)
+        self.assertIn("Assets&#47;_Project/Scripts/Core/Signals/Foo.cs", rendered)
+
     def test_current_atlas_contains_required_machine_sections(self) -> None:
         atlas = PROJECT_ROOT / "Docs" / "DEPENDENCY_GRAPH.md"
         text = atlas.read_text(encoding="utf-8")
 
-        self.assertIn("Status: ATLAS VERIFIED PENDING RUNTIME VERIFICATION", text)
+        self.assertIn(
+            "Status: ATLAS GENERATED STATIC SOURCE / ATLASCHECK SEPARATE GATE REQUIRED / RUNTIME PENDING",
+            text,
+        )
+        self.assertIn("not `VERIFIED` unless `Tools/AtlasCheck.py` exits `0`", text)
         self.assertIn("## SignalBus<T> Flow Map", text)
         self.assertIn("## Queue-Backed Signal Lanes", text)
         self.assertIn("## SHERST Wall Of Shame", text)

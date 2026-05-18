@@ -21,20 +21,23 @@ Shader "Hidden/Hecton8/RetinaDistortion"
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
-            #pragma shader_feature_local _QUALITY_MX350
+            #pragma multi_compile _ _QUALITY_MX350
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            CBUFFER_START(UnityPerMaterial)
-                float _HectonRetinaHealth01;
-                float _HectonRetinaCritical01;
-                float _HectonRetinaHeartbeatBpm;
-                float _HectonNarcosisScalar;
-                float _HectonRetinaChromaticOffset;
-                float _HectonRetinaDistortionOffset;
-                float _HectonRetinaVignetteStrength;
+            CBUFFER_START(HectonRetinaDistortionGlobals)
+                float4 _HectonRetinaParams0;
+                float4 _HectonRetinaParams1;
             CBUFFER_END
+
+            #define _HectonRetinaHealth01 _HectonRetinaParams0.x
+            #define _HectonRetinaCritical01 _HectonRetinaParams0.y
+            #define _HectonRetinaHeartbeatBpm _HectonRetinaParams0.z
+            #define _HectonNarcosisScalar _HectonRetinaParams0.w
+            #define _HectonRetinaChromaticOffset _HectonRetinaParams1.x
+            #define _HectonRetinaDistortionOffset _HectonRetinaParams1.y
+            #define _HectonRetinaVignetteStrength _HectonRetinaParams1.z
 
             TEXTURE2D_X(_BlitTexture);
             float4 _BlitTexture_TexelSize;

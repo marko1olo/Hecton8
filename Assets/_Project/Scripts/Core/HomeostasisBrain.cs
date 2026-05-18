@@ -21,7 +21,8 @@ namespace Hecton8.Core
         CpuTempC = 2,
         GpuUtil01 = 3,
         BatteryLife01 = 4,
-        Count = 5
+        VramPressure01 = 5,
+        Count = 6
     }
 
     [Flags]
@@ -43,7 +44,14 @@ namespace Hecton8.Core
         AiOneHz = 1UL << 22,
         SlowTick2Hz = AiOneHz,
         TimeDilation09 = 1UL << 23,
-        TimeDilation08 = TimeDilation09
+        TimeDilation08 = TimeDilation09,
+        LowTierEmergency = 1UL << 24,
+        VisualOverkill = 1UL << 25,
+        VramShedding = 1UL << 26,
+        CullingDistanceSqueeze = 1UL << 27,
+        MathLodLow = 1UL << 28,
+        GcFreeze = 1UL << 29,
+        MockHeavyLoad = 1UL << 30
     }
 
     [Flags]
@@ -64,7 +72,7 @@ namespace Hecton8.Core
         XrRefreshRateShed = 1 << 11
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct HomeostasisBlackBoxEntry
     {
         [FieldOffset(0)]
@@ -107,7 +115,7 @@ namespace Hecton8.Core
     /// Pre-simulation hardware homeostasis controller. It writes numeric masks and signals only;
     /// render/gameplay systems decide how to consume each bit.
     /// </summary>
-    public static class HomeostasisBrain
+    public static partial class HomeostasisBrain
     {
         private const int FrameTimeWindow = ScalabilityContract.HomeostasisFrameTimeWindow;
         private const int BlackBoxCapacity = ScalabilityContract.HomeostasisBlackBoxCapacity;
@@ -155,6 +163,7 @@ namespace Hecton8.Core
         private static VaultBufferHandle<float> _frameTimeMsHandle;
         private static VaultBufferHandle<HomeostasisBlackBoxEntry> _blackBoxHandle;
         private static FunctionPointer<ComputeSystemHealthIndexDelegate> _computeShi;
+        private static FunctionPointer<ComputeFrameEwmaDelegate> _computeFrameEwma;
         // COLD ALLOC: ScalabilityListener[1] - cached scalability-tier bridge for PreSimulationTick - owner: HomeostasisBrain
         private static readonly ScalabilityListener s_scalabilityListener = new ScalabilityListener();
         // COLD ALLOC: DependencyHotSwapBridge[1] - cached registry dependency bridge - owner: HomeostasisBrain
@@ -201,6 +210,13 @@ namespace Hecton8.Core
             float cpuTempC,
             float batteryLife01,
             int lowTier);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate float ComputeFrameEwmaDelegate(
+            float previousValue,
+            float currentValue,
+            float alpha,
+            int seeded);
 
         public static NativeArray<float> GlobalHardwareMetrics
         {
@@ -253,6 +269,7 @@ namespace Hecton8.Core
             GlobalSignals.InitializeAllQueues();
 
             _computeShi = BurstCompiler.CompileFunctionPointer<ComputeSystemHealthIndexDelegate>(ComputeSystemHealthIndexBurst);
+            _computeFrameEwma = BurstCompiler.CompileFunctionPointer<ComputeFrameEwmaDelegate>(ComputeFrameEwmaBurst);
             _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
             _hardwareThermalService = GlobalRegistry.HardwareThermal;
             RegisterDependencyListeners();
@@ -272,6 +289,7 @@ namespace Hecton8.Core
             _blackBoxDumped = false;
             _shiEwmaSeeded = false;
             _peakSystemHealthIndex01 = 0f;
+            InitializeScalabilityDictator(hardwareMetrics, frameTimes, blackBox);
 
 #if UNITY_OSX && !UNITY_EDITOR
             EnsureMacThermalBridge();
@@ -292,6 +310,8 @@ namespace Hecton8.Core
             _globalHardwareMetricsHandle = default;
             _frameTimeMsHandle = default;
             _blackBoxHandle = default;
+            _computeFrameEwma = default;
+            ShutdownScalabilityDictator();
             _initialized = false;
             _blackBoxDumped = false;
             _shiEwmaSeeded = false;
@@ -330,6 +350,8 @@ namespace Hecton8.Core
             float targetFps = ResolveTargetFrameRate();
             float frameMs = SampleFrameMetrics(unscaledDeltaTime, targetFps, hardwareMetrics, frameTimes);
             SamplePlatformMetrics(targetFps, hardwareMetrics);
+            float targetFrameMs = ResolveTargetFrameMs(targetFps);
+            float vramPressure01 = SampleVramPressure01(hardwareMetrics);
 
             HectonQualityTier tier = _cachedScalabilityTier;
             bool lowTier = IsLowTier(tier);
@@ -344,6 +366,16 @@ namespace Hecton8.Core
                     hardwareMetrics[(int)HardwareMetricSlot.CpuTempC],
                     hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01],
                     lowTier);
+            rawShi = ComputeDictatorRawShi(
+                frame,
+                rawShi,
+                frameMs,
+                targetFrameMs,
+                vramPressure01,
+                hardwareMetrics[(int)HardwareMetricSlot.CpuTempC],
+                hardwareMetrics[(int)HardwareMetricSlot.JitterSigma],
+                lowTier,
+                hardwareMetrics);
 
             if (!math.isfinite(rawShi))
             {
@@ -363,12 +395,13 @@ namespace Hecton8.Core
             }
 
             _systemHealthIndex01 = math.saturate(_systemHealthIndex01);
+            _systemHealthIndex01 = ApplyHardwareShiFloor(_systemHealthIndex01);
             if (_systemHealthIndex01 > _peakSystemHealthIndex01)
                 _peakSystemHealthIndex01 = _systemHealthIndex01;
 
             ushort flags = ApplyPressurePolicy(frame, frameMs, BuildFlags(lowTier, tier, hardwareMetrics), hardwareMetrics);
             PublishFrameTimeSignal(frame, frameMs, targetFps, flags, hardwareMetrics);
-            WriteBlackBox(frame, flags, hardwareMetrics, blackBox);
+            WriteBlackBox(frame, frameMs, flags, hardwareMetrics, blackBox);
         }
 
         private static float SampleFrameMetrics(
@@ -380,13 +413,12 @@ namespace Hecton8.Core
             float safeDeltaTime = math.isfinite(unscaledDeltaTime) && unscaledDeltaTime > 0f
                 ? unscaledDeltaTime
                 : 1f / math.max(1f, targetFps);
-            float currentFps = math.clamp(1f / safeDeltaTime, 1f, 1000f);
-            _fpsEwma = _fpsEwma <= 0f
-                ? currentFps
-                : math.lerp(_fpsEwma, currentFps, FpsEwmaAlpha);
+            float frameMs = SampleStopwatchFrameMilliseconds(safeDeltaTime, targetFps);
+            frameMs = ApplyMockFrameSpikeToFrameMs(frameMs);
+            float currentFps = math.clamp(1000f * math.rcp(math.max(0.001f, frameMs)), 1f, 1000f);
+            _fpsEwma = ComputeFrameEwma(_fpsEwma, currentFps, FpsEwmaAlpha, _fpsEwma > 0f);
             hardwareMetrics[(int)HardwareMetricSlot.FpsEwma] = math.isfinite(_fpsEwma) ? _fpsEwma : math.max(1f, targetFps);
 
-            float frameMs = safeDeltaTime * 1000f;
             frameMs = math.isfinite(frameMs) ? math.max(0f, frameMs) : 1000f * math.rcp(math.max(1f, targetFps));
             frameTimes[_frameTimeCursor] = frameMs;
             _frameTimeCursor++;
@@ -646,6 +678,13 @@ namespace Hecton8.Core
                 _recoveryStepFrameCounter = 0;
                 _restorationIndex = 0;
             }
+            targetMask = ApplyDictatorPressurePolicy(
+                frame,
+                frameMs,
+                targetMask,
+                ref targetLevel,
+                ref flags,
+                hardwareMetrics);
 
             _currentPressureLevel = targetLevel;
             _currentKillSwitchMask = targetMask;
@@ -784,20 +823,18 @@ namespace Hecton8.Core
             ushort flags,
             NativeArray<float> hardwareMetrics)
         {
-            SystemHealthSignal signal = new SystemHealthSignal
-            {
-                Frame = unchecked((uint)frame),
-                SystemHealthIndex01 = _systemHealthIndex01,
-                FpsEwma = hardwareMetrics[(int)HardwareMetricSlot.FpsEwma],
-                JitterSigmaMs = hardwareMetrics[(int)HardwareMetricSlot.JitterSigma],
-                CpuTempC = hardwareMetrics[(int)HardwareMetricSlot.CpuTempC],
-                GpuUtil01 = hardwareMetrics[(int)HardwareMetricSlot.GpuUtil01],
-                BatteryLife01 = hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01],
-                KillSwitchMask = _currentKillSwitchMask,
-                PressureLevel = _currentPressureLevel,
-                FoveatedPressureTier = foveatedPressureTier,
-                Flags = flags
-            };
+            SystemHealthSignal signal = default;
+            signal.Frame = unchecked((uint)frame);
+            signal.SystemHealthIndex01 = _systemHealthIndex01;
+            signal.FpsEwma = hardwareMetrics[(int)HardwareMetricSlot.FpsEwma];
+            signal.JitterSigmaMs = hardwareMetrics[(int)HardwareMetricSlot.JitterSigma];
+            signal.CpuTempC = hardwareMetrics[(int)HardwareMetricSlot.CpuTempC];
+            signal.GpuUtil01 = hardwareMetrics[(int)HardwareMetricSlot.GpuUtil01];
+            signal.BatteryLife01 = hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01];
+            signal.KillSwitchMask = _currentKillSwitchMask;
+            signal.PressureLevel = _currentPressureLevel;
+            signal.FoveatedPressureTier = foveatedPressureTier;
+            signal.Flags = flags;
             SignalBus<SystemHealthSignal>.Push(in signal);
         }
 
@@ -815,54 +852,49 @@ namespace Hecton8.Core
             if (!math.isfinite(frameTimeEwmaMs))
                 frameTimeEwmaMs = frameMs;
 
-            FrameTimeSignal signal = new FrameTimeSignal
-            {
-                Frame = unchecked((uint)frame),
-                CurrentFrameTimeMs = frameMs,
-                FrameTimeEwmaMs = frameTimeEwmaMs,
-                TargetFrameTimeMs = 1000f * math.rcp(math.max(1f, targetFps)),
-                JitterSigmaMs = hardwareMetrics[(int)HardwareMetricSlot.JitterSigma],
-                PressureLevel = _currentPressureLevel,
-                Flags = unchecked((byte)(flags & 0xFF)),
-                Reserved = 0,
-                Sequence = _frameTimeSignalSequence++
-            };
+            FrameTimeSignal signal = default;
+            signal.Frame = unchecked((uint)frame);
+            signal.CurrentFrameTimeMs = frameMs;
+            signal.FrameTimeEwmaMs = frameTimeEwmaMs;
+            signal.TargetFrameTimeMs = 1000f * math.rcp(math.max(1f, targetFps));
+            signal.JitterSigmaMs = hardwareMetrics[(int)HardwareMetricSlot.JitterSigma];
+            signal.PressureLevel = _currentPressureLevel;
+            signal.Flags = unchecked((byte)(flags & 0xFF));
+            signal.Reserved = 0;
+            signal.Sequence = _frameTimeSignalSequence++;
             SignalBus<FrameTimeSignal>.Push(in signal);
         }
 
         private static void PublishKillSwitchSignal(int frame, ulong previousMask, byte previousLevel, ushort flags)
         {
-            KillSwitchSignal signal = new KillSwitchSignal
-            {
-                Frame = unchecked((uint)frame),
-                PreviousMask = previousMask,
-                CurrentMask = _currentKillSwitchMask,
-                SystemHealthIndex01 = _systemHealthIndex01,
-                PreviousLevel = previousLevel,
-                CurrentLevel = _currentPressureLevel,
-                Flags = flags
-            };
+            KillSwitchSignal signal = default;
+            signal.Frame = unchecked((uint)frame);
+            signal.PreviousMask = previousMask;
+            signal.CurrentMask = _currentKillSwitchMask;
+            signal.SystemHealthIndex01 = _systemHealthIndex01;
+            signal.PreviousLevel = previousLevel;
+            signal.CurrentLevel = _currentPressureLevel;
+            signal.Flags = flags;
             SignalBus<KillSwitchSignal>.Push(in signal);
         }
 
         private static void PublishLegacySystemHealthIndexSignal(int frame)
         {
-            SystemHealthIndexSignal signal = new SystemHealthIndexSignal
-            {
-                Health01 = 1f - _systemHealthIndex01,
-                Pressure01 = _systemHealthIndex01,
-                Frame = unchecked((uint)frame),
-                SourceHash = ReasonHash,
-                State = _currentPressureLevel >= 3
-                    ? SystemHealthIndexSignal.StateCritical
-                    : (_currentPressureLevel > 0 ? SystemHealthIndexSignal.StateWarning : SystemHealthIndexSignal.StateStable),
-                Flags = _currentPressureLevel >= 3 ? SystemHealthIndexSignal.FlagAdrenaline : (byte)0
-            };
+            SystemHealthIndexSignal signal = default;
+            signal.Health01 = 1f - _systemHealthIndex01;
+            signal.Pressure01 = _systemHealthIndex01;
+            signal.Frame = unchecked((uint)frame);
+            signal.SourceHash = ReasonHash;
+            signal.State = _currentPressureLevel >= 3
+                ? SystemHealthIndexSignal.StateCritical
+                : (_currentPressureLevel > 0 ? SystemHealthIndexSignal.StateWarning : SystemHealthIndexSignal.StateStable);
+            signal.Flags = _currentPressureLevel >= 3 ? SystemHealthIndexSignal.FlagAdrenaline : (byte)0;
             SignalBus<SystemHealthIndexSignal>.Push(in signal);
         }
 
         private static void WriteBlackBox(
             int frame,
+            float frameMs,
             ushort flags,
             NativeArray<float> hardwareMetrics,
             NativeArray<HomeostasisBlackBoxEntry> blackBox)
@@ -873,23 +905,27 @@ namespace Hecton8.Core
             float timeDilation = SystemDispatcher.ActiveRuntimeInstance != null
                 ? SystemDispatcher.ActiveRuntimeInstance.TimeDilationScalar
                 : 1f;
-            blackBox[_blackBoxCursor] = new HomeostasisBlackBoxEntry
-            {
-                Frame = unchecked((uint)frame),
-                SystemHealthIndex01 = _systemHealthIndex01,
-                KillSwitchMask = _currentKillSwitchMask,
-                FpsEwma = hardwareMetrics[(int)HardwareMetricSlot.FpsEwma],
-                JitterSigmaMs = hardwareMetrics[(int)HardwareMetricSlot.JitterSigma],
-                CpuTempC = hardwareMetrics[(int)HardwareMetricSlot.CpuTempC],
-                GpuUtil01 = hardwareMetrics[(int)HardwareMetricSlot.GpuUtil01],
-                BatteryLife01 = hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01],
-                PressureLevel = _currentPressureLevel,
-                FoveatedPressureTier = _currentPressureLevel >= 2 ? (byte)3 : (byte)0,
-                Flags = flags,
-                TimeDilationScalar = math.isfinite(timeDilation) ? timeDilation : 1f,
-                PeakSystemHealthIndex01 = _peakSystemHealthIndex01,
-                LastThermalAction = _lastThermalAction
-            };
+            float vramPressure01 = hardwareMetrics[(int)HardwareMetricSlot.VramPressure01];
+            vramPressure01 = math.isfinite(vramPressure01) ? math.saturate(vramPressure01) : 1f;
+            HomeostasisBlackBoxEntry entry = default;
+            entry.Frame = unchecked((uint)frame);
+            entry.SystemHealthIndex01 = _systemHealthIndex01;
+            entry.KillSwitchMask = _currentKillSwitchMask;
+            entry.FpsEwma = hardwareMetrics[(int)HardwareMetricSlot.FpsEwma];
+            entry.JitterSigmaMs = hardwareMetrics[(int)HardwareMetricSlot.JitterSigma];
+            entry.CpuTempC = hardwareMetrics[(int)HardwareMetricSlot.CpuTempC];
+            entry.GpuUtil01 = hardwareMetrics[(int)HardwareMetricSlot.GpuUtil01];
+            entry.BatteryLife01 = hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01];
+            entry.PressureLevel = _currentPressureLevel;
+            entry.FoveatedPressureTier = _currentPressureLevel >= 2 ? (byte)3 : (byte)0;
+            entry.Flags = flags;
+            entry.TimeDilationScalar = math.isfinite(timeDilation) ? timeDilation : 1f;
+            entry.PeakSystemHealthIndex01 = _peakSystemHealthIndex01;
+            entry.LastThermalAction = _lastThermalAction;
+            entry.Reserved0 = math.asuint(math.isfinite(frameMs) ? frameMs : 0f);
+            entry.Reserved1 = math.asuint(vramPressure01);
+            entry.Reserved2 = math.asuint(GlobalQualityWeight);
+            blackBox[_blackBoxCursor] = entry;
             _blackBoxCursor++;
             if (_blackBoxCursor >= BlackBoxCapacity)
                 _blackBoxCursor = 0;
@@ -940,8 +976,8 @@ namespace Hecton8.Core
                         WriteFloatLittleEndian(entryBytes.Slice(40, 4), entry.TimeDilationScalar);
                         WriteFloatLittleEndian(entryBytes.Slice(44, 4), entry.PeakSystemHealthIndex01);
                         BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(48, 4), entry.LastThermalAction);
-                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(52, 4), entry.Reserved0);
-                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(56, 4), entry.Reserved1);
+                        WriteFloatLittleEndian(entryBytes.Slice(52, 4), math.asfloat(entry.Reserved0));
+                        WriteFloatLittleEndian(entryBytes.Slice(56, 4), math.asfloat(entry.Reserved1));
                         BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(60, 4), entry.Reserved2);
                         stream.Write(entryBytes);
                     }
@@ -962,7 +998,8 @@ namespace Hecton8.Core
         {
             return ((long)HardwareMetricSlot.Count * sizeof(float)) +
                    ((long)FrameTimeWindow * sizeof(float)) +
-                   ((long)BlackBoxCapacity * Marshal.SizeOf<HomeostasisBlackBoxEntry>());
+                   ((long)BlackBoxCapacity * Marshal.SizeOf<HomeostasisBlackBoxEntry>()) +
+                   ResolveScalabilityDictatorRequestedVaultBytes();
         }
 
         private static bool TryResolveRuntimeBuffers(
@@ -978,13 +1015,17 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
+            bool metricsCreated = false;
+            bool frameTimesCreated = false;
+            bool blackBoxCreated = false;
             if (!_globalHardwareMetricsHandle.IsCreated || !vault.ResolveBuffer(ref _globalHardwareMetricsHandle))
             {
                 _globalHardwareMetricsHandle = vault.GetBufferHandle<float>(
                     BufferID.HardwareMetrics,
                     (int)HardwareMetricSlot.Count,
                     SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.ClearMemory);
+                    NativeArrayOptions.UninitializedMemory);
+                metricsCreated = true;
             }
 
             if (!_frameTimeMsHandle.IsCreated || !vault.ResolveBuffer(ref _frameTimeMsHandle))
@@ -993,7 +1034,8 @@ namespace Hecton8.Core
                     BufferID.HardwareFrameTimes,
                     FrameTimeWindow,
                     SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.ClearMemory);
+                    NativeArrayOptions.UninitializedMemory);
+                frameTimesCreated = true;
             }
 
             if (!_blackBoxHandle.IsCreated || !vault.ResolveBuffer(ref _blackBoxHandle))
@@ -1002,12 +1044,19 @@ namespace Hecton8.Core
                     BufferID.HomeostasisBlackBox,
                     BlackBoxCapacity,
                     SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.ClearMemory);
+                    NativeArrayOptions.UninitializedMemory);
+                blackBoxCreated = true;
             }
 
             hardwareMetrics = _globalHardwareMetricsHandle.Resolve(vault);
             frameTimes = _frameTimeMsHandle.Resolve(vault);
             blackBox = _blackBoxHandle.Resolve(vault);
+            if (metricsCreated)
+                MemClearIfCreated(hardwareMetrics);
+            if (frameTimesCreated)
+                MemClearIfCreated(frameTimes);
+            if (blackBoxCreated)
+                MemClearIfCreated(blackBox);
             return hardwareMetrics.IsCreated &&
                    hardwareMetrics.Length >= (int)HardwareMetricSlot.Count &&
                    frameTimes.IsCreated &&
@@ -1023,16 +1072,20 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
+            bool metricsCreated = false;
             if (!_globalHardwareMetricsHandle.IsCreated || !vault.ResolveBuffer(ref _globalHardwareMetricsHandle))
             {
                 _globalHardwareMetricsHandle = vault.GetBufferHandle<float>(
                     BufferID.HardwareMetrics,
                     (int)HardwareMetricSlot.Count,
                     SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.ClearMemory);
+                    NativeArrayOptions.UninitializedMemory);
+                metricsCreated = true;
             }
 
             metrics = _globalHardwareMetricsHandle.Resolve(vault);
+            if (metricsCreated)
+                MemClearIfCreated(metrics);
             return metrics.IsCreated && metrics.Length >= (int)HardwareMetricSlot.Count;
         }
 
@@ -1071,6 +1124,13 @@ namespace Hecton8.Core
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.DynamicResolutionRuntime)
+            {
+                _dynamicResolutionRuntime = currentService as IDynamicResolutionRuntime;
+                _lastAppliedRenderScale01 = ForcedQualityWeightDisabled;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -1078,6 +1138,7 @@ namespace Hecton8.Core
             _globalHardwareMetricsHandle = default;
             _frameTimeMsHandle = default;
             _blackBoxHandle = default;
+            ResetScalabilityDictatorVaultHandles();
         }
 
         private sealed class ScalabilityListener : IScalabilityChangedEventListener
@@ -1130,7 +1191,7 @@ namespace Hecton8.Core
             return HectonXRRuntimeState.TryRequestDisplayRefreshRateHz(72f);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MonoPInvokeCallback(typeof(ComputeSystemHealthIndexDelegate))]
         private static float ComputeSystemHealthIndexBurst(
             float jitterSigmaMs,
@@ -1154,6 +1215,34 @@ namespace Hecton8.Core
             float temp01 = math.saturate((cpuTempC - 55f) / 30f);
             float batteryPressure01 = math.saturate(1f - batteryLife01);
             return math.saturate(temp01 * 0.5f + batteryPressure01 * 0.3f + jitter01 * 0.2f);
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [MonoPInvokeCallback(typeof(ComputeFrameEwmaDelegate))]
+        private static float ComputeFrameEwmaBurst(
+            float previousValue,
+            float currentValue,
+            float alpha,
+            int seeded)
+        {
+            float safeCurrent = math.isfinite(currentValue) ? currentValue : 0f;
+            if (seeded == 0 || !math.isfinite(previousValue) || previousValue <= 0f)
+                return safeCurrent;
+
+            float safeAlpha = math.clamp(alpha, 0f, 1f);
+            return math.lerp(previousValue, safeCurrent, safeAlpha);
+        }
+
+        private static float ComputeFrameEwma(
+            float previousValue,
+            float currentValue,
+            float alpha,
+            bool seeded)
+        {
+            if (_computeFrameEwma.IsCreated)
+                return _computeFrameEwma.Invoke(previousValue, currentValue, alpha, seeded ? 1 : 0);
+
+            return ComputeFrameEwmaBurst(previousValue, currentValue, alpha, seeded ? 1 : 0);
         }
     }
 }

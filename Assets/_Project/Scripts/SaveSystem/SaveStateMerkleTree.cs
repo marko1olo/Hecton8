@@ -1,0 +1,2309 @@
+using System;
+using System.IO;
+#if UNITY_EDITOR || UNITY_STANDALONE || HECTON8_MMF_AVAILABLE
+using System.IO.MemoryMappedFiles;
+#endif
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Hecton8.Core;
+using Hecton8.Core.Memory;
+using Hecton8.Core.Memory.Layout;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Mathematics;
+
+namespace Hecton8.SaveSystem
+{
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    internal struct MerkleNodeDTO
+    {
+        public ulong HashLo;
+        public ulong HashHi;
+        public uint SectorKey;
+        public uint ChildMask;
+        public ulong _pad0;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    internal struct SectorEntry
+    {
+        public long SectorHash;
+        public long ByteOffset;
+        public int CompressedSize;
+        public int DecompressedSize;
+        public uint Checksum;
+        public uint _pad0;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    internal struct StateDeltaRecordDTO
+    {
+        public ulong PreviousHashLo;
+        public ulong PreviousHashHi;
+        public ulong NewHashLo;
+        public ulong NewHashHi;
+        public int SourceOffsetBytes;
+        public int DataLength;
+        public int DeltaPayloadOffset;
+        public int CompressedOffset;
+        public uint SectorKey;
+        public uint Flags;
+        public uint Crc32;
+        public uint _pad0;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    internal struct StateLeafDescriptor
+    {
+        public uint SectorKey;
+        public uint Flags;
+        public int SourceOffsetBytes;
+        public int ByteLength;
+        public int RecordStrideBytes;
+        public int TombstoneOffsetBytes;
+        public uint TombstoneAliveMask;
+        public uint _pad0;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    internal struct Lz4SubBlockHeader
+    {
+        public uint Magic;
+        public int RawBytes;
+        public int StoredBytes;
+        public int SourceOffsetBytes;
+        public uint Crc32;
+        public uint Flags;
+        public ushort Version;
+        public ushort HeaderBytes;
+        public uint _pad0;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    internal struct SaveMerkleWalAppendHeader
+    {
+        public long LogicalOffset;
+        public long TimestampTicks;
+        public ulong RootHashLo;
+        public ulong RootHashHi;
+        public int RawBytes;
+        public int StoredBytes;
+        public uint Magic;
+        public uint Flags;
+        public uint BlockCount;
+        public uint Frame;
+        public uint RecordCrc32;
+        public ushort Version;
+        public ushort HeaderBytes;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    internal struct SaveMerkleTelemetryEntry
+    {
+        public ulong RootHashLo;
+        public ulong RootHashHi;
+        public int TotalBytesHashed;
+        public int DeltaBytesGenerated;
+        public float TreeComputeTimeMs;
+        public uint Frame;
+        public uint Flags;
+        public uint ChangedLeaves;
+        public uint WalBytesWritten;
+        public uint CrcFailures;
+        public uint IoFailures;
+        public uint _pad0;
+        public ulong _pad1;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    internal struct SaveMerkleEmergencyHeader64
+    {
+        public ulong TimestampTicks;
+        public ulong RootHashLo;
+        public ulong RootHashHi;
+        public ulong _pad0;
+        public ulong _pad1;
+        public uint Magic;
+        public uint SectorEntryBytes;
+        public uint MerkleNodeBytes;
+        public uint Flags;
+        public uint Checksum;
+        public ushort Version;
+        public ushort HeaderBytes;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    internal struct SaveMerkleRuntimeConfig
+    {
+        public int SubBlockBytes;
+        public int WalBytesPerSecond;
+        public int MathLod;
+        public int CosmeticDropThresholdBytes;
+        public uint Version;
+        public uint SchemaHash;
+        public uint Flags;
+        public uint _pad0;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    internal struct SaveMerkleEditorSnapshot
+    {
+        public ulong RootHashLo;
+        public ulong RootHashHi;
+        public ulong ChangedBranchBits0;
+        public ulong ChangedBranchBits1;
+        public ulong ChangedBranchBits2;
+        public ulong ChangedBranchBits3;
+        public uint ChangedLeafCount;
+        public uint LeafCount;
+        public uint LastChangedSectorKey;
+        public uint CorruptBlockCount;
+        public uint StoredBytes;
+        public uint RawBytes;
+        public uint SnapshotFlags;
+        public uint _pad0;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    internal unsafe partial struct MockInventoryData
+    {
+        public uint ItemId;
+        public uint Count;
+        public uint Flags;
+        public uint StableSeed;
+        public fixed byte Payload[112];
+    }
+
+    internal struct SaveMerkleVaultBufferSet
+    {
+        public NativeArray<MerkleNodeDTO> CurrentTree;
+        public NativeArray<MerkleNodeDTO> PreviousTree;
+        public NativeArray<StateLeafDescriptor> LeafDescriptors;
+        public NativeArray<StateDeltaRecordDTO> DeltaRecords;
+        public NativeArray<byte> DeltaBytes;
+        public NativeArray<byte> PrunedDeltaBytes;
+        public NativeArray<byte> CompressedBytes;
+        public NativeArray<Lz4SubBlockHeader> Lz4BlockHeaders;
+        public NativeArray<SaveMerkleTelemetryEntry> TelemetryRing;
+        public NativeArray<int> Counters;
+        public NativeArray<int> Lz4HashTable;
+    }
+
+    internal static unsafe class SaveStateMerkleTree
+    {
+        internal const int LeafCount = 4096;
+        internal const int Fanout = 16;
+        internal const int Level1Count = 16;
+        internal const int Level2Count = 256;
+        internal const int BranchNodeCount = 273;
+        internal const int TotalNodeCount = 4369;
+        internal const int RootIndex = 0;
+        internal const int Level1Offset = 1;
+        internal const int Level2Offset = 17;
+        internal const int LeafLevelOffset = 273;
+        internal const int DefaultSubBlockBytes = 16 * 1024;
+        internal const int MaxSubBlockBytes = 32 * 1024;
+        internal const int TelemetryRingFrames = 300;
+        internal const int HashTableSlots = 4096;
+        internal const uint LeafFlagTombstone = 1u;
+        internal const uint LeafFlagStableRestState = 1u << 1;
+        internal const uint LeafFlagNeedsWake = 1u << 2;
+        internal const uint LeafFlagModPayload = 1u << 3;
+        internal const uint LeafFlagCosmetic = 1u << 4;
+        internal const uint DeltaFlagOverflow = 1u << 31;
+        internal const uint ModPayloadSectorPrefix = 0x4D500000u;
+        internal const uint Lz4BlockMagic = 0x4C5A3448u; // H4ZL
+        internal const uint MerkleWalMagic = 0x4D574838u; // H8WM
+        internal const uint EmergencyHeaderMagic = 0x48454354u; // HECT
+        internal const ushort MerkleWalVersion = 1;
+        internal const ushort Lz4BlockVersion = 1;
+        internal const ushort EmergencyHeaderVersion = 0x0009;
+        internal const uint Lz4BlockFlagCompressed = 1u;
+        internal const uint Lz4BlockFlagRaw = 1u << 1;
+        internal const uint Lz4BlockFlagModPayload = 1u << 2;
+        internal const uint TelemetryFlagHashOverBudget = 1u << 0;
+        internal const uint TelemetryFlagIoException = 1u << 1;
+        internal const uint TelemetryFlagCrcFailure = 1u << 2;
+        internal const string DefaultMerkleWalFileName = "slot_0.wal";
+        internal const string DefaultTelemetryDumpFileName = "Dump_SAVE_SURGEON.bin";
+
+        private const ulong LeafSeed = 0x48485341564C4546UL; // FLEVS HH
+        private const ulong NodeSeed = 0x48485341564E4F44UL; // DONVS HH
+        private const ulong CommittedTreeSentinel = 0x534156454D524B4CUL; // LKRMEVAS
+        private const int CounterRecords = 0;
+        private const int CounterBytes = 1;
+        private const int CounterChangedLeaves = 2;
+        private const int CounterFlags = 3;
+        private const int CounterDroppedCosmeticBytes = 4;
+        private const int CounterDroppedCosmeticRecords = 5;
+        private const int CounterStoredBytes = 8;
+        private const int CounterBlockCount = 9;
+        private const int CounterRawBytes = 10;
+        private const int CounterFailure = 11;
+        private const int CounterCapacity = 16;
+
+        private static SaveMerkleEditorSnapshot s_LastEditorSnapshot;
+        private static int s_LastEditorSnapshotVersion;
+
+        internal static int RequiredNodeCount => TotalNodeCount;
+
+        internal static SaveMerkleRuntimeConfig BuildDefaultConfig()
+        {
+            return new SaveMerkleRuntimeConfig
+            {
+                SubBlockBytes = DefaultSubBlockBytes,
+                WalBytesPerSecond = 16 * 1024 * 1024,
+                MathLod = 1,
+                CosmeticDropThresholdBytes = 512 * 1024,
+                Version = 1u,
+                SchemaHash = 0x534D524Bu,
+                Flags = 0u,
+                _pad0 = 0u
+            };
+        }
+
+        internal static SaveMerkleRuntimeConfig ResolveRuntimeConfigForQuality(
+            in SaveMerkleRuntimeConfig baseConfig,
+            float globalQualityWeight,
+            float systemStress01)
+        {
+            SaveMerkleRuntimeConfig config = baseConfig;
+            float quality = SmoothUnit(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float stress = SmoothUnit(math.isfinite(systemStress01) ? systemStress01 : 0f);
+            float retention = math.saturate(quality * (1f - (stress * 0.5f)));
+            float survivalBand = 1f - math.step(0.3f, quality);
+            float survivalPull = survivalBand * SmoothUnit((0.3f - quality) * 3.3333333f);
+            float cosmeticFloor = math.lerp(0.03125f, 0.00390625f, survivalPull);
+            float cosmeticScale = math.max(cosmeticFloor, retention * retention * math.lerp(0.5f, 1f, quality));
+            float subBlockScale = math.lerp(math.lerp(0.25f, 0.125f, survivalPull), 1f, quality);
+            float walScale = math.lerp(0.125f, 1f, retention);
+            float lodContinuous = math.lerp(0f, 3.999f, quality);
+
+            int baseCosmeticThreshold = math.max(4096, baseConfig.CosmeticDropThresholdBytes);
+            int baseSubBlockBytes = math.clamp(
+                baseConfig.SubBlockBytes <= 0 ? DefaultSubBlockBytes : baseConfig.SubBlockBytes,
+                1024,
+                MaxSubBlockBytes);
+            int baseWalBytesPerSecond = math.max(1024 * 1024, baseConfig.WalBytesPerSecond);
+
+            config.CosmeticDropThresholdBytes = Align16(math.max(4096, (int)math.round(baseCosmeticThreshold * cosmeticScale)));
+            config.SubBlockBytes = Align16(math.clamp((int)math.round(baseSubBlockBytes * subBlockScale), 1024, MaxSubBlockBytes));
+            config.WalBytesPerSecond = Align16(math.max(1024 * 1024, (int)math.round(baseWalBytesPerSecond * walScale)));
+            config.MathLod = (int)math.clamp(math.floor(lodContinuous), 0f, 3f);
+            return config;
+        }
+
+        private static float SmoothUnit(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - (2f * t));
+        }
+
+        internal static int ResolveRequiredNodeCount(int leafCount)
+        {
+            if (leafCount <= 0)
+                return 0;
+
+            int nodes = leafCount;
+            int level = leafCount;
+            while (level > 1)
+            {
+                level = (level + Fanout - 1) / Fanout;
+                nodes += level;
+            }
+
+            return nodes;
+        }
+
+        internal static int ResolveRequiredSubBlockCount(int sourceBytes, int subBlockBytes)
+        {
+            int blockSize = math.clamp(subBlockBytes <= 0 ? DefaultSubBlockBytes : subBlockBytes, 1024, MaxSubBlockBytes);
+            int bytes = math.max(0, sourceBytes);
+            return math.max(1, (bytes + blockSize - 1) / blockSize);
+        }
+
+        internal static int ResolveRequiredCompressedCapacity(int sourceBytes, int subBlockBytes)
+        {
+            int bytes = math.max(0, sourceBytes);
+            int blockCount = ResolveRequiredSubBlockCount(bytes, subBlockBytes);
+            long headerBytes = (long)blockCount * UnsafeUtility.SizeOf<Lz4SubBlockHeader>();
+            long alignmentBytes = (long)blockCount * 16L;
+            long lz4WorstCaseBytes = bytes + (bytes / 255) + 16L;
+            long required = headerBytes + alignmentBytes + lz4WorstCaseBytes + 256L;
+            return required > int.MaxValue ? int.MaxValue : math.max(1024, (int)required);
+        }
+
+        internal static bool TryResolveVaultBuffers(
+            IDataVault vault,
+            int deltaCapacityBytes,
+            int compressedCapacityBytes,
+            int blockHeaderCapacity,
+            out SaveMerkleVaultBufferSet buffers)
+        {
+            buffers = default;
+            if (vault == null)
+                return false;
+
+            int safeDeltaBytes = math.max(1024, deltaCapacityBytes);
+            int safeCompressedBytes = math.max(
+                math.max(1024, compressedCapacityBytes),
+                ResolveRequiredCompressedCapacity(safeDeltaBytes, DefaultSubBlockBytes));
+            int safeBlockHeaders = math.max(
+                math.max(1, blockHeaderCapacity),
+                ResolveRequiredSubBlockCount(safeDeltaBytes, DefaultSubBlockBytes));
+
+            buffers.CurrentTree = vault.GetBuffer<MerkleNodeDTO>(
+                BufferID.SaveMerkleNodeFront,
+                TotalNodeCount,
+                SystemID.SavePersistence,
+                NativeArrayOptions.UninitializedMemory);
+            buffers.PreviousTree = vault.GetBuffer<MerkleNodeDTO>(
+                BufferID.SaveMerkleNodeBack,
+                TotalNodeCount,
+                SystemID.SavePersistence,
+                NativeArrayOptions.ClearMemory);
+            buffers.LeafDescriptors = vault.GetBuffer<StateLeafDescriptor>(
+                BufferID.SaveMerkleLeafDescriptors,
+                LeafCount,
+                SystemID.SavePersistence,
+                NativeArrayOptions.ClearMemory);
+            buffers.DeltaRecords = vault.GetBuffer<StateDeltaRecordDTO>(
+                BufferID.SaveMerkleDeltaRecords,
+                LeafCount,
+                SystemID.SavePersistence,
+                NativeArrayOptions.UninitializedMemory);
+            buffers.DeltaBytes = vault.GetBuffer<byte>(
+                BufferID.SaveMerkleDeltaBytes,
+                safeDeltaBytes,
+                SystemID.SavePersistence,
+                NativeArrayOptions.UninitializedMemory);
+            buffers.PrunedDeltaBytes = vault.GetBuffer<byte>(
+                BufferID.SaveMerklePrunedDeltaBytes,
+                safeDeltaBytes,
+                SystemID.SavePersistence,
+                NativeArrayOptions.UninitializedMemory);
+            buffers.CompressedBytes = vault.GetBuffer<byte>(
+                BufferID.SaveMerkleCompressedBytes,
+                safeCompressedBytes,
+                SystemID.SavePersistence,
+                NativeArrayOptions.UninitializedMemory);
+            buffers.Lz4BlockHeaders = vault.GetBuffer<Lz4SubBlockHeader>(
+                BufferID.SaveMerkleLz4BlockHeaders,
+                safeBlockHeaders,
+                SystemID.SavePersistence,
+                NativeArrayOptions.UninitializedMemory);
+            buffers.TelemetryRing = vault.GetBuffer<SaveMerkleTelemetryEntry>(
+                BufferID.SaveMerkleTelemetryRing,
+                TelemetryRingFrames,
+                SystemID.SavePersistence,
+                NativeArrayOptions.ClearMemory);
+            buffers.Counters = vault.GetBuffer<int>(
+                BufferID.SaveMerkleCounters,
+                CounterCapacity,
+                SystemID.SavePersistence,
+                NativeArrayOptions.ClearMemory);
+            buffers.Lz4HashTable = vault.GetBuffer<int>(
+                BufferID.SaveMerkleLz4HashTable,
+                HashTableSlots,
+                SystemID.SavePersistence,
+                NativeArrayOptions.UninitializedMemory);
+
+            return buffers.CurrentTree.IsCreated &&
+                   buffers.PreviousTree.IsCreated &&
+                   buffers.LeafDescriptors.IsCreated &&
+                   buffers.DeltaRecords.IsCreated &&
+                   buffers.DeltaBytes.IsCreated &&
+                   buffers.PrunedDeltaBytes.IsCreated &&
+                   buffers.CompressedBytes.IsCreated &&
+                   buffers.Lz4BlockHeaders.IsCreated &&
+                   buffers.TelemetryRing.IsCreated &&
+                   buffers.Counters.IsCreated &&
+                   buffers.Lz4HashTable.IsCreated;
+        }
+
+        internal static int ResolveWalBudgetBytesPerFrame(in SaveMerkleRuntimeConfig config, float deltaTimeSeconds, bool slowMicroSdIo)
+        {
+            return ResolveWalBudgetBytesPerFrame(config, deltaTimeSeconds, slowMicroSdIo ? 1f : 0f);
+        }
+
+        internal static int ResolveWalBudgetBytesPerFrame(in SaveMerkleRuntimeConfig config, float deltaTimeSeconds, float microSdPressure01)
+        {
+            int bytesPerSecond = math.max(1024, config.WalBytesPerSecond);
+            float pressure = SmoothUnit(math.isfinite(microSdPressure01) ? microSdPressure01 : 0f);
+            int cappedBytesPerSecond = math.min(bytesPerSecond, 16 * 1024 * 1024);
+            bytesPerSecond = Align16((int)math.round(math.lerp(bytesPerSecond, cappedBytesPerSecond, pressure)));
+
+            return math.max(1024, (int)math.floor(bytesPerSecond * math.max(0.001f, deltaTimeSeconds)));
+        }
+
+        internal static uint BuildModPayloadSectorKey(ushort localSector)
+        {
+            return ModPayloadSectorPrefix | localSector;
+        }
+
+        internal static bool IsModPayloadSector(uint sectorKey)
+        {
+            return (sectorKey & 0xFFFF0000u) == ModPayloadSectorPrefix;
+        }
+
+        internal static SaveAupLocalOffset32 QuantizeAupForSave(
+            double3 absoluteUniverseMeters,
+            uint sectorKey,
+            int sectorSizeMeters,
+            uint flags)
+        {
+            return SaveDeltaCompression.QuantizeAupLocalOffset32(
+                absoluteUniverseMeters,
+                sectorKey,
+                sectorSizeMeters,
+                0u,
+                flags);
+        }
+
+        internal static SaveAupLocalOffset32 QuantizeAupForSave(
+            double3 absoluteUniverseMeters,
+            double3 sectorOriginMeters,
+            uint sectorKey,
+            int sectorSizeMeters,
+            uint flags)
+        {
+            return SaveDeltaCompression.QuantizeAupLocalOffset32(
+                absoluteUniverseMeters,
+                sectorOriginMeters,
+                sectorKey,
+                sectorSizeMeters,
+                0u,
+                flags);
+        }
+
+        internal static void GenerateEmergencyMockHeader(void* destination, int destinationCapacity)
+        {
+            if (destination == null || destinationCapacity < UnsafeUtility.SizeOf<SaveMerkleEmergencyHeader64>())
+                return;
+
+            SaveMerkleEmergencyHeader64 header = new SaveMerkleEmergencyHeader64
+            {
+                Magic = EmergencyHeaderMagic,
+                Version = EmergencyHeaderVersion,
+                HeaderBytes = (ushort)UnsafeUtility.SizeOf<SaveMerkleEmergencyHeader64>(),
+                TimestampTicks = 0UL,
+                RootHashLo = 0UL,
+                RootHashHi = 0UL,
+                SectorEntryBytes = (uint)UnsafeUtility.SizeOf<SectorEntry>(),
+                MerkleNodeBytes = (uint)UnsafeUtility.SizeOf<MerkleNodeDTO>(),
+                Flags = 1u,
+                Checksum = 0u,
+                _pad0 = 0UL,
+                _pad1 = 0UL
+            };
+
+            header.Checksum = ComputeCrc32((byte*)&header, UnsafeUtility.SizeOf<SaveMerkleEmergencyHeader64>());
+            UnsafeUtility.MemCpy(destination, &header, UnsafeUtility.SizeOf<SaveMerkleEmergencyHeader64>());
+        }
+
+        internal static JobHandle ScheduleMerkleBuild(
+            NativeArray<byte> sourceBytes,
+            NativeArray<StateLeafDescriptor> descriptors,
+            NativeArray<MerkleNodeDTO> treeNodes,
+            JobHandle dependency)
+        {
+            JobHandle leaves = new MerkleLeafHashJob
+            {
+                SourceBytes = sourceBytes,
+                Descriptors = descriptors,
+                TreeNodes = treeNodes
+            }.Schedule(LeafCount, 64, dependency);
+
+            return new MerkleBranchReductionJob
+            {
+                TreeNodes = treeNodes
+            }.Schedule(leaves);
+        }
+
+        internal static JobHandle ScheduleDeltaExtraction(
+            NativeArray<byte> sourceBytes,
+            NativeArray<StateLeafDescriptor> descriptors,
+            NativeArray<MerkleNodeDTO> currentTree,
+            NativeArray<MerkleNodeDTO> previousTree,
+            NativeArray<StateDeltaRecordDTO> deltaRecords,
+            NativeArray<byte> deltaBytes,
+            NativeArray<int> counters,
+            JobHandle dependency)
+        {
+            return new MerkleChangedLeafExtractionJob
+            {
+                SourceBytes = sourceBytes,
+                Descriptors = descriptors,
+                CurrentTree = currentTree,
+                PreviousTree = previousTree,
+                DeltaRecords = deltaRecords,
+                DeltaBytes = deltaBytes,
+                Counters = counters
+            }.Schedule(dependency);
+        }
+
+        internal static JobHandle ScheduleCopyCurrentToPrevious(
+            NativeArray<MerkleNodeDTO> currentTree,
+            NativeArray<MerkleNodeDTO> previousTree,
+            JobHandle dependency)
+        {
+            return new CopyMerkleTreeJob
+            {
+                Source = currentTree,
+                Destination = previousTree
+            }.Schedule(TotalNodeCount, 64, dependency);
+        }
+
+        internal static JobHandle ScheduleAcceptCommittedTree(
+            NativeArray<MerkleNodeDTO> currentTree,
+            NativeArray<MerkleNodeDTO> previousCommittedTree,
+            JobHandle dependency)
+        {
+            return ScheduleCopyCurrentToPrevious(currentTree, previousCommittedTree, dependency);
+        }
+
+        internal static JobHandle ScheduleLz4SubBlocks(
+            NativeArray<byte> source,
+            int sourceLength,
+            NativeArray<byte> destination,
+            NativeArray<Lz4SubBlockHeader> blockHeaders,
+            NativeArray<int> hashTable,
+            NativeArray<int> counters,
+            SaveMerkleRuntimeConfig config,
+            JobHandle dependency)
+        {
+            return new Lz4SubBlockCompressionJob
+            {
+                Source = source,
+                Destination = destination,
+                BlockHeaders = blockHeaders,
+                HashTable = hashTable,
+                Counters = counters,
+                SourceLength = sourceLength,
+                SourceLengthCounterIndex = CounterBytes,
+                SubBlockBytes = config.SubBlockBytes
+            }.Schedule(dependency);
+        }
+
+        internal static JobHandle ScheduleCosmeticPayloadPrune(
+            NativeArray<byte> sourceDeltaBytes,
+            int sourceLength,
+            NativeArray<byte> destinationDeltaBytes,
+            NativeArray<int> counters,
+            SaveMerkleRuntimeConfig config,
+            JobHandle dependency)
+        {
+            return new CosmeticDeltaPayloadPruneJob
+            {
+                SourceDeltaBytes = sourceDeltaBytes,
+                DestinationDeltaBytes = destinationDeltaBytes,
+                Counters = counters,
+                SourceLength = sourceLength,
+                SourceLengthCounterIndex = CounterBytes,
+                DropThresholdBytes = config.CosmeticDropThresholdBytes
+            }.Schedule(dependency);
+        }
+
+        internal static JobHandle ScheduleVaultDeltaWalPipeline(
+            NativeArray<byte> sourceBytes,
+            SaveMerkleVaultBufferSet buffers,
+            SaveMerkleRuntimeConfig config,
+            float globalQualityWeight,
+            float systemStress01,
+            JobHandle dependency)
+        {
+            SaveMerkleRuntimeConfig resolvedConfig = ResolveRuntimeConfigForQuality(
+                config,
+                globalQualityWeight,
+                systemStress01);
+            return ScheduleVaultDeltaWalPipeline(sourceBytes, buffers, resolvedConfig, dependency);
+        }
+
+        internal static JobHandle ScheduleVaultDeltaWalPipeline(
+            NativeArray<byte> sourceBytes,
+            SaveMerkleVaultBufferSet buffers,
+            SaveMerkleRuntimeConfig config,
+            JobHandle dependency)
+        {
+            if (!sourceBytes.IsCreated ||
+                !buffers.CurrentTree.IsCreated ||
+                !buffers.PreviousTree.IsCreated ||
+                !buffers.LeafDescriptors.IsCreated ||
+                !buffers.DeltaRecords.IsCreated ||
+                !buffers.DeltaBytes.IsCreated ||
+                !buffers.PrunedDeltaBytes.IsCreated ||
+                !buffers.CompressedBytes.IsCreated ||
+                !buffers.Lz4BlockHeaders.IsCreated ||
+                !buffers.Counters.IsCreated ||
+                !buffers.Lz4HashTable.IsCreated)
+            {
+                return dependency;
+            }
+
+            JobHandle baseline = new EnsureCommittedBaselineJob
+            {
+                TreeNodes = buffers.PreviousTree
+            }.Schedule(dependency);
+            JobHandle merkle = ScheduleMerkleBuild(
+                sourceBytes,
+                buffers.LeafDescriptors,
+                buffers.CurrentTree,
+                baseline);
+            JobHandle delta = ScheduleDeltaExtraction(
+                sourceBytes,
+                buffers.LeafDescriptors,
+                buffers.CurrentTree,
+                buffers.PreviousTree,
+                buffers.DeltaRecords,
+                buffers.DeltaBytes,
+                buffers.Counters,
+                merkle);
+            JobHandle prune = ScheduleCosmeticPayloadPrune(
+                buffers.DeltaBytes,
+                -1,
+                buffers.PrunedDeltaBytes,
+                buffers.Counters,
+                config,
+                delta);
+            JobHandle lz4 = ScheduleLz4SubBlocks(
+                buffers.PrunedDeltaBytes,
+                -1,
+                buffers.CompressedBytes,
+                buffers.Lz4BlockHeaders,
+                buffers.Lz4HashTable,
+                buffers.Counters,
+                config,
+                prune);
+            return lz4;
+        }
+
+        internal static void PublishEditorSnapshot(
+            in MerkleNodeDTO root,
+            int changedLeafCount,
+            uint lastChangedSectorKey,
+            int rawBytes,
+            int storedBytes,
+            int corruptBlockCount)
+        {
+            PublishEditorSnapshot(
+                root,
+                changedLeafCount,
+                lastChangedSectorKey,
+                rawBytes,
+                storedBytes,
+                corruptBlockCount,
+                0UL,
+                0UL,
+                0UL,
+                0UL);
+        }
+
+        internal static void PublishEditorSnapshot(
+            NativeArray<MerkleNodeDTO> currentTree,
+            NativeArray<MerkleNodeDTO> previousTree,
+            int changedLeafCount,
+            uint lastChangedSectorKey,
+            int rawBytes,
+            int storedBytes,
+            int corruptBlockCount)
+        {
+            MerkleNodeDTO root = currentTree.IsCreated && currentTree.Length > RootIndex ? currentTree[RootIndex] : default;
+            ulong mask0 = 0UL;
+            ulong mask1 = 0UL;
+            ulong mask2 = 0UL;
+            ulong mask3 = 0UL;
+            if (currentTree.IsCreated &&
+                previousTree.IsCreated &&
+                currentTree.Length >= TotalNodeCount &&
+                previousTree.Length >= TotalNodeCount)
+            {
+                for (int i = 0; i < Level2Count; i++)
+                {
+                    MerkleNodeDTO current = currentTree[Level2Offset + i];
+                    MerkleNodeDTO previous = previousTree[Level2Offset + i];
+                    if (current.HashLo == previous.HashLo && current.HashHi == previous.HashHi)
+                        continue;
+
+                    int lane = i >> 6;
+                    ulong bit = 1UL << (i & 63);
+                    if (lane == 0)
+                        mask0 |= bit;
+                    else if (lane == 1)
+                        mask1 |= bit;
+                    else if (lane == 2)
+                        mask2 |= bit;
+                    else
+                        mask3 |= bit;
+                }
+            }
+
+            PublishEditorSnapshot(
+                root,
+                changedLeafCount,
+                lastChangedSectorKey,
+                rawBytes,
+                storedBytes,
+                corruptBlockCount,
+                mask0,
+                mask1,
+                mask2,
+                mask3);
+        }
+
+        private static void PublishEditorSnapshot(
+            in MerkleNodeDTO root,
+            int changedLeafCount,
+            uint lastChangedSectorKey,
+            int rawBytes,
+            int storedBytes,
+            int corruptBlockCount,
+            ulong changedBranchBits0,
+            ulong changedBranchBits1,
+            ulong changedBranchBits2,
+            ulong changedBranchBits3)
+        {
+            s_LastEditorSnapshot = new SaveMerkleEditorSnapshot
+            {
+                RootHashLo = root.HashLo,
+                RootHashHi = root.HashHi,
+                ChangedBranchBits0 = changedBranchBits0,
+                ChangedBranchBits1 = changedBranchBits1,
+                ChangedBranchBits2 = changedBranchBits2,
+                ChangedBranchBits3 = changedBranchBits3,
+                ChangedLeafCount = (uint)math.max(0, changedLeafCount),
+                LeafCount = LeafCount,
+                LastChangedSectorKey = lastChangedSectorKey,
+                CorruptBlockCount = (uint)math.max(0, corruptBlockCount),
+                StoredBytes = (uint)math.max(0, storedBytes),
+                RawBytes = (uint)math.max(0, rawBytes),
+                SnapshotFlags = (changedBranchBits0 | changedBranchBits1 | changedBranchBits2 | changedBranchBits3) != 0UL ? 1u : 0u,
+                _pad0 = 0u
+            };
+
+            System.Threading.Volatile.Write(ref s_LastEditorSnapshotVersion, s_LastEditorSnapshotVersion + 1);
+        }
+
+        internal static bool TryReadLastEditorSnapshot(out SaveMerkleEditorSnapshot snapshot, out int version)
+        {
+            version = System.Threading.Volatile.Read(ref s_LastEditorSnapshotVersion);
+            snapshot = s_LastEditorSnapshot;
+            return version != 0;
+        }
+
+        internal static SaveMerkleWalAppendHeader BuildWalHeader(
+            ulong rootHashLo,
+            ulong rootHashHi,
+            uint frame,
+            long logicalOffset,
+            int rawBytes,
+            int storedBytes,
+            uint blockCount,
+            uint flags)
+        {
+            return new SaveMerkleWalAppendHeader
+            {
+                Magic = MerkleWalMagic,
+                Version = MerkleWalVersion,
+                HeaderBytes = (ushort)UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>(),
+                Flags = flags,
+                BlockCount = blockCount,
+                LogicalOffset = logicalOffset,
+                RawBytes = rawBytes,
+                StoredBytes = storedBytes,
+                RootHashLo = rootHashLo,
+                RootHashHi = rootHashHi,
+                Frame = frame,
+                RecordCrc32 = 0u,
+                TimestampTicks = DateTime.UtcNow.Ticks
+            };
+        }
+
+        internal static bool TryAppendCompressedWalMmf(
+            string walPath,
+            NativeArray<byte> compressedBytes,
+            int byteCount,
+            SaveMerkleWalAppendHeader header,
+            out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(walPath))
+            {
+                error = "Merkle WAL path is empty.";
+                return false;
+            }
+
+            if (!compressedBytes.IsCreated || byteCount <= 0 || byteCount > compressedBytes.Length)
+            {
+                error = "Merkle WAL payload is empty or out of range.";
+                return false;
+            }
+
+            try
+            {
+                HectonPersistentPathPolicy.EnsureParentDirectory(walPath);
+                using FileStream stream = new FileStream(
+                    walPath,
+                    FileMode.OpenOrCreate,
+                    FileAccess.ReadWrite,
+                    FileShare.ReadWrite,
+                    4096,
+                    FileOptions.WriteThrough);
+
+                byte* payload = (byte*)compressedBytes.GetUnsafeReadOnlyPtr();
+                long appendOffset = stream.Length;
+                header.StoredBytes = byteCount;
+                header.LogicalOffset = appendOffset;
+                header.RecordCrc32 = 0u;
+                uint crc = UpdateCrc32(0xFFFFFFFFu, (byte*)&header, UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>());
+                crc = UpdateCrc32(crc, payload, byteCount);
+                header.RecordCrc32 = FinalizeCrc32(crc);
+
+                int headerBytes = UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>();
+                long appendBytes = headerBytes + (long)byteCount;
+                long endOffset = appendOffset + appendBytes;
+
+#if UNITY_EDITOR || UNITY_STANDALONE || HECTON8_MMF_AVAILABLE
+                try
+                {
+                    stream.SetLength(endOffset);
+                    using MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
+                        stream,
+                        null,
+                        endOffset,
+                        MemoryMappedFileAccess.ReadWrite,
+                        HandleInheritability.None,
+                        false);
+                    using MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(
+                        appendOffset,
+                        appendBytes,
+                        MemoryMappedFileAccess.Write);
+                    byte* mappedPtr = null;
+                    try
+                    {
+                        accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPtr);
+                        byte* target = mappedPtr + (int)accessor.PointerOffset;
+                        UnsafeUtility.MemCpy(target, &header, headerBytes);
+                        UnsafeUtility.MemCpy(target + headerBytes, payload, byteCount);
+                        accessor.Flush();
+                        stream.Flush(true);
+                        return true;
+                    }
+                    finally
+                    {
+                        if (mappedPtr != null)
+                            accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                    }
+                }
+                catch (PlatformNotSupportedException)
+                {
+                    stream.SetLength(appendOffset);
+                }
+                catch (Exception)
+                {
+                    stream.SetLength(appendOffset);
+                }
+#endif
+
+                stream.Position = appendOffset;
+                stream.Write(new ReadOnlySpan<byte>(&header, headerBytes));
+                stream.Write(new ReadOnlySpan<byte>(payload, byteCount));
+                stream.Flush(true);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = exception.GetType().Name + ": " + exception.Message;
+                return false;
+            }
+        }
+
+        internal static bool TryValidateWalAndRollback(string walPath, string backupPath, out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(walPath) || !File.Exists(walPath))
+                return true;
+
+            try
+            {
+                using FileStream stream = new FileStream(walPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan);
+                while (stream.Position < stream.Length)
+                {
+                    SaveMerkleWalAppendHeader header;
+                    if (!TryReadStruct(stream, &header, UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>()))
+                        return TryRestoreBackup(walPath, backupPath, "Merkle WAL header truncated.", out error);
+
+                    if (header.Magic != MerkleWalMagic ||
+                        header.Version != MerkleWalVersion ||
+                        header.HeaderBytes != UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>() ||
+                        header.StoredBytes <= 0 ||
+                        header.StoredBytes > stream.Length - stream.Position)
+                    {
+                        return TryRestoreBackup(walPath, backupPath, "Merkle WAL header invalid.", out error);
+                    }
+
+                    long payloadStart = stream.Position;
+                    if (!TryValidateStoredSubBlocks(stream, header.StoredBytes))
+                    {
+                        if ((header.Flags & LeafFlagModPayload) != 0u)
+                        {
+                            stream.Position = payloadStart + header.StoredBytes;
+                            continue;
+                        }
+
+                        return TryRestoreBackup(walPath, backupPath, "Merkle WAL LZ4 sub-block CRC failed.", out error);
+                    }
+
+                    stream.Position = payloadStart;
+                    uint expected = header.RecordCrc32;
+                    header.RecordCrc32 = 0u;
+                    uint crc = UpdateCrc32(0xFFFFFFFFu, (byte*)&header, UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>());
+                    if (!TryUpdateCrcFromStream(stream, header.StoredBytes, ref crc) ||
+                        FinalizeCrc32(crc) != expected)
+                    {
+                        if ((header.Flags & LeafFlagModPayload) != 0u)
+                        {
+                            stream.Position = payloadStart + header.StoredBytes;
+                            continue;
+                        }
+
+                        return TryRestoreBackup(walPath, backupPath, "Merkle WAL record CRC failed.", out error);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception exception)
+            {
+                return TryRestoreBackup(walPath, backupPath, exception.GetType().Name + ": " + exception.Message, out error);
+            }
+        }
+
+        internal static bool TryDumpTelemetry(
+            NativeArray<SaveMerkleTelemetryEntry> telemetryRing,
+            string dumpPath,
+            out string error)
+        {
+            error = string.Empty;
+            if (!telemetryRing.IsCreated || telemetryRing.Length <= 0)
+            {
+                error = "Merkle telemetry ring is empty.";
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(dumpPath))
+                dumpPath = ResolveDefaultTelemetryDumpPath();
+
+            try
+            {
+                HectonPersistentPathPolicy.EnsureParentDirectory(dumpPath);
+                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough);
+                int bytes = telemetryRing.Length * UnsafeUtility.SizeOf<SaveMerkleTelemetryEntry>();
+                byte* ptr = (byte*)telemetryRing.GetUnsafeReadOnlyPtr();
+                stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
+                stream.Flush(true);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = exception.GetType().Name + ": " + exception.Message;
+                return false;
+            }
+        }
+
+        private static string ResolveDefaultTelemetryDumpPath()
+        {
+            try
+            {
+                string root = Directory.GetCurrentDirectory();
+                if (!string.IsNullOrEmpty(root))
+                {
+                    string projectRoot = Path.GetFullPath(root);
+                    if (Directory.Exists(Path.Combine(projectRoot, "Assets")) ||
+                        Directory.Exists(Path.Combine(projectRoot, "Docs")))
+                    {
+                        return Path.Combine(projectRoot, "Docs", "AgentLogs", DefaultTelemetryDumpFileName);
+                    }
+                }
+            }
+            catch
+            {
+                // Dump fallback must never become the crash path.
+            }
+
+            return HectonPersistentPathPolicy.CombineFile(DefaultTelemetryDumpFileName);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint ComputeCrc32(byte* data, int byteCount)
+        {
+            return FinalizeCrc32(UpdateCrc32(0xFFFFFFFFu, data, byteCount));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Hash128(void* ptr, int length, ulong seed, out ulong lo, out ulong hi)
+        {
+            if (ptr == null || length <= 0)
+            {
+                lo = 0UL;
+                hi = 0UL;
+                return;
+            }
+
+            uint4 hash = xxHash3.Hash128(ptr, (long)length, seed);
+            lo = ((ulong)hash.y << 32) | hash.x;
+            hi = ((ulong)hash.w << 32) | hash.z;
+        }
+
+        private static bool TryRestoreBackup(string walPath, string backupPath, string reason, out string error)
+        {
+            if (!string.IsNullOrEmpty(backupPath) && File.Exists(backupPath))
+            {
+                File.Copy(backupPath, walPath, true);
+                error = reason + " Restored .bak.";
+                return false;
+            }
+
+            error = reason + " No .bak available.";
+            return false;
+        }
+
+        private static bool TryReadStruct(FileStream stream, void* destination, int byteCount)
+        {
+            Span<byte> scratch = stackalloc byte[64];
+            if (byteCount > scratch.Length)
+                return false;
+
+            int total = 0;
+            while (total < byteCount)
+            {
+                int read = stream.Read(scratch.Slice(total, byteCount - total));
+                if (read <= 0)
+                    return false;
+
+                total += read;
+            }
+
+            fixed (byte* scratchPtr = scratch)
+            {
+                UnsafeUtility.MemCpy(destination, scratchPtr, byteCount);
+            }
+
+            return true;
+        }
+
+        private static bool TryValidateStoredSubBlocks(FileStream stream, int storedBytes)
+        {
+            long payloadEnd = stream.Position + storedBytes;
+            while (stream.Position < payloadEnd)
+            {
+                if (payloadEnd - stream.Position < UnsafeUtility.SizeOf<Lz4SubBlockHeader>())
+                    return false;
+
+                Lz4SubBlockHeader header;
+                if (!TryReadStruct(stream, &header, UnsafeUtility.SizeOf<Lz4SubBlockHeader>()))
+                    return false;
+
+                if (header.Magic != Lz4BlockMagic ||
+                    header.Version != Lz4BlockVersion ||
+                    header.HeaderBytes != UnsafeUtility.SizeOf<Lz4SubBlockHeader>() ||
+                    header.StoredBytes <= 0 ||
+                    header.StoredBytes > header.RawBytes ||
+                    header.RawBytes <= 0 ||
+                    stream.Position + header.StoredBytes > payloadEnd)
+                {
+                    return false;
+                }
+
+                uint storageFlags = header.Flags & (Lz4BlockFlagRaw | Lz4BlockFlagCompressed);
+                if (storageFlags != Lz4BlockFlagRaw && storageFlags != Lz4BlockFlagCompressed)
+                    return false;
+
+                uint crc = 0xFFFFFFFFu;
+                if (!TryUpdateCrcFromStream(stream, header.StoredBytes, ref crc) ||
+                    FinalizeCrc32(crc) != header.Crc32)
+                {
+                    return false;
+                }
+
+                long aligned = Align16(stream.Position - (payloadEnd - storedBytes)) + (payloadEnd - storedBytes);
+                if (aligned > payloadEnd)
+                    return false;
+
+                stream.Position = aligned;
+            }
+
+            return stream.Position == payloadEnd;
+        }
+
+        private static bool TryUpdateCrcFromStream(FileStream stream, int byteCount, ref uint crc)
+        {
+            Span<byte> chunk = stackalloc byte[4096];
+            int remaining = byteCount;
+            while (remaining > 0)
+            {
+                int readLength = math.min(remaining, chunk.Length);
+                Span<byte> slice = chunk.Slice(0, readLength);
+                int total = 0;
+                while (total < readLength)
+                {
+                    int read = stream.Read(slice.Slice(total));
+                    if (read <= 0)
+                        return false;
+
+                    total += read;
+                }
+
+                fixed (byte* ptr = slice)
+                {
+                    crc = UpdateCrc32(crc, ptr, readLength);
+                }
+
+                remaining -= readLength;
+            }
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int Align16(int value)
+        {
+            return (value + 15) & ~15;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static long Align16(long value)
+        {
+            return (value + 15L) & ~15L;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint UpdateCrc32(uint crc, byte* data, int byteCount)
+        {
+            if (data == null || byteCount <= 0)
+                return crc;
+
+            for (int i = 0; i < byteCount; i++)
+            {
+                crc ^= data[i];
+                for (int bit = 0; bit < 8; bit++)
+                {
+                    uint mask = 0u - (crc & 1u);
+                    crc = (crc >> 1) ^ (0xEDB88320u & mask);
+                }
+            }
+
+            return crc;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint FinalizeCrc32(uint crc)
+        {
+            return ~crc;
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct MockInventoryDataGeneratorJob : IJobParallelFor
+        {
+            [NoAlias]
+            public NativeArray<MockInventoryData> Inventory;
+            public uint Seed;
+
+            public void Execute(int index)
+            {
+                if (!Inventory.IsCreated)
+                    return;
+
+                uint state = Seed ^ ((uint)index * 0x9E3779B9u);
+                MockInventoryData dto = default;
+                dto.ItemId = Mix32(state);
+                dto.Count = (Mix32(state + 1u) & 0xFFu) + 1u;
+                dto.Flags = 1u;
+                dto.StableSeed = Mix32(state + 2u);
+                byte* payload = dto.Payload;
+                for (int i = 0; i < 112; i++)
+                {
+                    state = Mix32(state + (uint)i + 3u);
+                    payload[i] = unchecked((byte)(state >> 24));
+                }
+
+                Inventory[index] = dto;
+            }
+
+            private static uint Mix32(uint value)
+            {
+                value ^= value >> 16;
+                value *= 0x7FEB352Du;
+                value ^= value >> 15;
+                value *= 0x846CA68Bu;
+                value ^= value >> 16;
+                return value;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct MockInventoryMutationJob : IJob
+        {
+            [NoAlias]
+            public NativeArray<MockInventoryData> Inventory;
+            public int ElementIndex;
+            public int DeepByteOffset;
+            public uint XorMask;
+
+            public void Execute()
+            {
+                if (!Inventory.IsCreated || Inventory.Length <= 0)
+                    return;
+
+                int index = math.clamp(ElementIndex, 0, Inventory.Length - 1);
+                int stride = UnsafeUtility.SizeOf<MockInventoryData>();
+                int offset = math.clamp(DeepByteOffset, 16, stride - sizeof(uint)) & ~3;
+                byte* basePtr = (byte*)Inventory.GetUnsafePtr();
+                uint* target = (uint*)(basePtr + (index * stride) + offset);
+                *target ^= XorMask == 0u ? 0xA11CE34u : XorMask;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct MockInventoryLeafDescriptorJob : IJobParallelFor
+        {
+            [NoAlias]
+            public NativeArray<StateLeafDescriptor> Descriptors;
+            public int SourceByteLength;
+            public int LeafByteStride;
+            public uint SectorKeyBase;
+
+            public void Execute(int index)
+            {
+                if (!Descriptors.IsCreated || index >= Descriptors.Length)
+                    return;
+
+                int stride = math.max(1, LeafByteStride);
+                int offset = index * stride;
+                int byteLength = offset >= SourceByteLength ? 0 : math.min(stride, SourceByteLength - offset);
+                Descriptors[index] = new StateLeafDescriptor
+                {
+                    SectorKey = SectorKeyBase + (uint)index,
+                    Flags = 0u,
+                    SourceOffsetBytes = offset,
+                    ByteLength = byteLength,
+                    RecordStrideBytes = UnsafeUtility.SizeOf<MockInventoryData>(),
+                    TombstoneOffsetBytes = 8,
+                    TombstoneAliveMask = 1u,
+                    _pad0 = 0u
+                };
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct DearLieDehydrationJob : IJobParallelFor
+        {
+            [ReadOnly, NoAlias] public NativeArray<double3> AbsoluteUniverseMeters;
+            [ReadOnly, NoAlias] public NativeArray<double3> SectorOriginMeters;
+            [ReadOnly, NoAlias] public NativeArray<uint> SectorKeys;
+            [ReadOnly, NoAlias] public NativeArray<byte> MovingFlags;
+            [NoAlias]
+            public NativeArray<MockStatePayload> OutputPayloads;
+            public double3 ReferenceAupMeters;
+            public float FarSectorDistanceMeters;
+            public int SectorSizeMeters;
+
+            public void Execute(int index)
+            {
+                if (!AbsoluteUniverseMeters.IsCreated ||
+                    !SectorKeys.IsCreated ||
+                    !MovingFlags.IsCreated ||
+                    !OutputPayloads.IsCreated ||
+                    index >= AbsoluteUniverseMeters.Length ||
+                    index >= SectorKeys.Length ||
+                    index >= MovingFlags.Length ||
+                    index >= OutputPayloads.Length)
+                {
+                    return;
+                }
+
+                double3 absolute = AbsoluteUniverseMeters[index];
+                if (!IsFinite3(absolute) || !IsFinite3(ReferenceAupMeters))
+                {
+                    OutputPayloads[index] = default;
+                    return;
+                }
+
+                double farDistance = math.max(0d, FarSectorDistanceMeters);
+                double3 relative = absolute - ReferenceAupMeters;
+                bool farSector = farDistance > 0d && math.lengthsq(relative) >= farDistance * farDistance;
+                bool moving = MovingFlags[index] != 0;
+                uint flags = farSector || !moving ? LeafFlagStableRestState : LeafFlagNeedsWake;
+                bool hasSectorOrigin =
+                    SectorOriginMeters.IsCreated &&
+                    index < SectorOriginMeters.Length &&
+                    IsFinite3(SectorOriginMeters[index]);
+                OutputPayloads[index] = new MockStatePayload
+                {
+                    LocalAup = hasSectorOrigin
+                        ? QuantizeAupForSave(absolute, SectorOriginMeters[index], SectorKeys[index], SectorSizeMeters, flags)
+                        : QuantizeAupForSave(absolute, SectorKeys[index], SectorSizeMeters, flags)
+                };
+            }
+
+            private static bool IsFinite3(double3 value)
+            {
+                return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct MerkleLeafHashJob : IJobParallelFor
+        {
+            [ReadOnly, NoAlias] public NativeArray<byte> SourceBytes;
+            [ReadOnly, NoAlias] public NativeArray<StateLeafDescriptor> Descriptors;
+            [NoAlias]
+            public NativeArray<MerkleNodeDTO> TreeNodes;
+
+            public void Execute(int index)
+            {
+                if (!TreeNodes.IsCreated || TreeNodes.Length < TotalNodeCount)
+                    return;
+
+                StateLeafDescriptor descriptor = default;
+                descriptor.SectorKey = (uint)index;
+                if (Descriptors.IsCreated && index < Descriptors.Length)
+                    descriptor = Descriptors[index];
+
+                MerkleNodeDTO node = default;
+
+                if (SourceBytes.IsCreated &&
+                    descriptor.ByteLength > 0 &&
+                    descriptor.SourceOffsetBytes >= 0 &&
+                    descriptor.SourceOffsetBytes <= SourceBytes.Length - descriptor.ByteLength &&
+                    (descriptor.Flags & LeafFlagTombstone) == 0u)
+                {
+                    byte* source = (byte*)SourceBytes.GetUnsafeReadOnlyPtr() + descriptor.SourceOffsetBytes;
+                    Hash128(source, descriptor.ByteLength, LeafSeed ^ descriptor.SectorKey, out node.HashLo, out node.HashHi);
+                    node.SectorKey = descriptor.SectorKey;
+                    node.ChildMask = 1u;
+                }
+
+                TreeNodes[LeafLevelOffset + index] = node;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct MerkleBranchReductionJob : IJob
+        {
+            [NoAlias]
+            public NativeArray<MerkleNodeDTO> TreeNodes;
+
+            public void Execute()
+            {
+                if (!TreeNodes.IsCreated || TreeNodes.Length < TotalNodeCount)
+                    return;
+
+                ReduceLevel(LeafLevelOffset, Level2Offset, Level2Count, 2u);
+                ReduceLevel(Level2Offset, Level1Offset, Level1Count, 1u);
+                ReduceLevel(Level1Offset, RootIndex, 1, 0u);
+            }
+
+            private void ReduceLevel(int childOffset, int parentOffset, int parentCount, uint level)
+            {
+                int nodeBytes = UnsafeUtility.SizeOf<MerkleNodeDTO>();
+                byte* treePtr = (byte*)TreeNodes.GetUnsafePtr();
+                for (int parent = 0; parent < parentCount; parent++)
+                {
+                    int childStart = childOffset + (parent * Fanout);
+                    uint childMask = 0u;
+                    for (int child = 0; child < Fanout; child++)
+                    {
+                        MerkleNodeDTO childNode = TreeNodes[childStart + child];
+                        if ((childNode.HashLo | childNode.HashHi) != 0UL)
+                            childMask |= 1u << child;
+                    }
+
+                    MerkleNodeDTO node = default;
+                    if (childMask != 0u)
+                    {
+                        node.SectorKey = (uint)parent;
+                        node.ChildMask = childMask;
+                        Hash128(treePtr + (childStart * nodeBytes), Fanout * nodeBytes, NodeSeed ^ ((ulong)level << 32) ^ (uint)parent, out node.HashLo, out node.HashHi);
+                    }
+
+                    TreeNodes[parentOffset + parent] = node;
+                }
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct MerkleChangedLeafExtractionJob : IJob
+        {
+            [ReadOnly, NoAlias] public NativeArray<byte> SourceBytes;
+            [ReadOnly, NoAlias] public NativeArray<StateLeafDescriptor> Descriptors;
+            [ReadOnly, NoAlias] public NativeArray<MerkleNodeDTO> CurrentTree;
+            [ReadOnly, NoAlias] public NativeArray<MerkleNodeDTO> PreviousTree;
+            [NoAlias]
+            public NativeArray<StateDeltaRecordDTO> DeltaRecords;
+            [NoAlias]
+            public NativeArray<byte> DeltaBytes;
+            [NoAlias]
+            public NativeArray<int> Counters;
+
+            public void Execute()
+            {
+                if (!SourceBytes.IsCreated ||
+                    !Descriptors.IsCreated ||
+                    !CurrentTree.IsCreated ||
+                    !PreviousTree.IsCreated ||
+                    !DeltaRecords.IsCreated ||
+                    !DeltaBytes.IsCreated ||
+                    !Counters.IsCreated ||
+                    Counters.Length < 4 ||
+                    CurrentTree.Length < TotalNodeCount ||
+                    PreviousTree.Length < TotalNodeCount)
+                {
+                    return;
+                }
+
+                Counters[CounterRecords] = 0;
+                Counters[CounterBytes] = 0;
+                Counters[CounterChangedLeaves] = 0;
+                Counters[CounterFlags] = 0;
+
+                MerkleNodeDTO currentRoot = CurrentTree[RootIndex];
+                MerkleNodeDTO previousRoot = PreviousTree[RootIndex];
+                if (currentRoot.HashLo == previousRoot.HashLo && currentRoot.HashHi == previousRoot.HashHi)
+                    return;
+
+                byte* sourcePtr = (byte*)SourceBytes.GetUnsafeReadOnlyPtr();
+                byte* deltaPtr = (byte*)DeltaBytes.GetUnsafePtr();
+                int headerBytes = UnsafeUtility.SizeOf<StateDeltaRecordDTO>();
+                int recordCount = 0;
+                int byteCursor = 0;
+                int changedLeaves = 0;
+                uint flags = 0u;
+
+                for (int i = 0; i < LeafCount && i < Descriptors.Length; i++)
+                {
+                    MerkleNodeDTO current = CurrentTree[LeafLevelOffset + i];
+                    MerkleNodeDTO previous = PreviousTree[LeafLevelOffset + i];
+                    if (current.HashLo == previous.HashLo && current.HashHi == previous.HashHi)
+                        continue;
+
+                    StateLeafDescriptor descriptor = Descriptors[i];
+                    if ((descriptor.Flags & LeafFlagTombstone) != 0u ||
+                        descriptor.ByteLength <= 0 ||
+                        descriptor.SourceOffsetBytes < 0 ||
+                        descriptor.SourceOffsetBytes > SourceBytes.Length - descriptor.ByteLength)
+                    {
+                        continue;
+                    }
+
+                    changedLeaves++;
+                    int required = headerBytes + descriptor.ByteLength;
+                    if (recordCount >= DeltaRecords.Length || byteCursor > DeltaBytes.Length - required)
+                    {
+                        flags |= DeltaFlagOverflow;
+                        break;
+                    }
+
+                    StateDeltaRecordDTO record = new StateDeltaRecordDTO
+                    {
+                        SectorKey = descriptor.SectorKey,
+                        Flags = descriptor.Flags | (IsModPayloadSector(descriptor.SectorKey) ? LeafFlagModPayload : 0u),
+                        SourceOffsetBytes = descriptor.SourceOffsetBytes,
+                        DataLength = descriptor.ByteLength,
+                        DeltaPayloadOffset = byteCursor + headerBytes,
+                        CompressedOffset = -1,
+                        PreviousHashLo = previous.HashLo,
+                        PreviousHashHi = previous.HashHi,
+                        NewHashLo = current.HashLo,
+                        NewHashHi = current.HashHi,
+                        Crc32 = ComputeCrc32(sourcePtr + descriptor.SourceOffsetBytes, descriptor.ByteLength),
+                        _pad0 = 0u
+                    };
+
+                    DeltaRecords[recordCount] = record;
+                    UnsafeUtility.MemCpy(deltaPtr + byteCursor, &record, headerBytes);
+                    UnsafeUtility.MemCpy(deltaPtr + byteCursor + headerBytes, sourcePtr + descriptor.SourceOffsetBytes, descriptor.ByteLength);
+                    byteCursor += required;
+                    recordCount++;
+                }
+
+                Counters[CounterRecords] = recordCount;
+                Counters[CounterBytes] = byteCursor;
+                Counters[CounterChangedLeaves] = changedLeaves;
+                Counters[CounterFlags] = unchecked((int)flags);
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct CopyMerkleTreeJob : IJobParallelFor
+        {
+            [ReadOnly, NoAlias] public NativeArray<MerkleNodeDTO> Source;
+            [NoAlias]
+            public NativeArray<MerkleNodeDTO> Destination;
+
+            public void Execute(int index)
+            {
+                if (!Source.IsCreated || !Destination.IsCreated || index >= Source.Length || index >= Destination.Length)
+                    return;
+
+                MerkleNodeDTO node = Source[index];
+                if (index == RootIndex)
+                    node._pad0 = CommittedTreeSentinel;
+
+                Destination[index] = node;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct EnsureCommittedBaselineJob : IJob
+        {
+            [NoAlias]
+            public NativeArray<MerkleNodeDTO> TreeNodes;
+
+            public void Execute()
+            {
+                if (!TreeNodes.IsCreated || TreeNodes.Length < TotalNodeCount)
+                    return;
+
+                MerkleNodeDTO root = TreeNodes[RootIndex];
+                if (root._pad0 == CommittedTreeSentinel)
+                    return;
+
+                for (int i = 0; i < TotalNodeCount; i++)
+                    TreeNodes[i] = default;
+
+                root = default;
+                root._pad0 = CommittedTreeSentinel;
+                TreeNodes[RootIndex] = root;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct TombstonePruneJob : IJob
+        {
+            [ReadOnly, NoAlias] public NativeArray<byte> SourceRecords;
+            [NoAlias]
+            public NativeArray<byte> DestinationRecords;
+            [NoAlias]
+            public NativeArray<int> Counters;
+            public int RecordStrideBytes;
+            public int AliveFlagOffsetBytes;
+            public uint AliveMask;
+            public int RecordCount;
+
+            public void Execute()
+            {
+                if (!SourceRecords.IsCreated ||
+                    !DestinationRecords.IsCreated ||
+                    !Counters.IsCreated ||
+                    Counters.Length <= 0 ||
+                    RecordStrideBytes <= 0 ||
+                    AliveFlagOffsetBytes < 0 ||
+                    AliveFlagOffsetBytes > RecordStrideBytes - sizeof(uint) ||
+                    RecordCount <= 0)
+                {
+                    return;
+                }
+
+                byte* source = (byte*)SourceRecords.GetUnsafeReadOnlyPtr();
+                byte* destination = (byte*)DestinationRecords.GetUnsafePtr();
+                int writeRecord = 0;
+                for (int i = 0; i < RecordCount; i++)
+                {
+                    int sourceOffset = i * RecordStrideBytes;
+                    if (sourceOffset < 0 || sourceOffset > SourceRecords.Length - RecordStrideBytes)
+                        break;
+
+                    uint flags = *(uint*)(source + sourceOffset + AliveFlagOffsetBytes);
+                    if ((flags & AliveMask) == 0u)
+                        continue;
+
+                    int destinationOffset = writeRecord * RecordStrideBytes;
+                    if (destinationOffset > DestinationRecords.Length - RecordStrideBytes)
+                        break;
+
+                    UnsafeUtility.MemCpy(destination + destinationOffset, source + sourceOffset, RecordStrideBytes);
+                    writeRecord++;
+                }
+
+                Counters[0] = writeRecord;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct Lz4SubBlockCompressionJob : IJob
+        {
+            [ReadOnly, NoAlias] public NativeArray<byte> Source;
+            [NoAlias]
+            public NativeArray<byte> Destination;
+            [NoAlias]
+            public NativeArray<Lz4SubBlockHeader> BlockHeaders;
+            [NoAlias]
+            public NativeArray<int> HashTable;
+            [NoAlias]
+            public NativeArray<int> Counters;
+            public int SourceLength;
+            public int SourceLengthCounterIndex;
+            public int SubBlockBytes;
+
+            public void Execute()
+            {
+                if (!Source.IsCreated ||
+                    !Destination.IsCreated ||
+                    !BlockHeaders.IsCreated ||
+                    !HashTable.IsCreated ||
+                    !Counters.IsCreated ||
+                    Counters.Length <= CounterFailure)
+                {
+                    return;
+                }
+
+                int requestedSourceLength = SourceLength;
+                if (requestedSourceLength < 0 &&
+                    SourceLengthCounterIndex >= 0 &&
+                    SourceLengthCounterIndex < Counters.Length)
+                {
+                    requestedSourceLength = Counters[SourceLengthCounterIndex];
+                }
+
+                int sourceLength = math.clamp(requestedSourceLength, 0, Source.Length);
+                int blockSize = math.clamp(SubBlockBytes <= 0 ? DefaultSubBlockBytes : SubBlockBytes, 1024, MaxSubBlockBytes);
+                Counters[CounterStoredBytes] = 0;
+                Counters[CounterBlockCount] = 0;
+                Counters[CounterRawBytes] = 0;
+                Counters[CounterFailure] = 0;
+
+                int write = 0;
+                int blockIndex = 0;
+                int rawTotal = 0;
+                bool failed = false;
+                byte* sourcePtr = (byte*)Source.GetUnsafeReadOnlyPtr();
+                byte* destinationPtr = (byte*)Destination.GetUnsafePtr();
+                int headerBytes = UnsafeUtility.SizeOf<Lz4SubBlockHeader>();
+
+                for (int blockStart = 0; blockStart < sourceLength; blockStart += blockSize)
+                {
+                    int rawBytes = math.min(blockSize, sourceLength - blockStart);
+                    rawTotal += rawBytes;
+                    if (blockIndex >= BlockHeaders.Length || write > Destination.Length - headerBytes)
+                    {
+                        failed = true;
+                        break;
+                    }
+
+                    int headerOffset = write;
+                    int payloadOffset = headerOffset + headerBytes;
+                    if (payloadOffset >= Destination.Length)
+                    {
+                        failed = true;
+                        break;
+                    }
+
+                    ClearHashTable();
+                    int compressedBytes = rawBytes >= SaveDeltaCompression.MinimumLz4PayloadBytes
+                        ? CompressBlock(blockStart, rawBytes, payloadOffset, Destination.Length - payloadOffset)
+                        : -1;
+
+                    bool useRaw = compressedBytes <= 0 || compressedBytes >= rawBytes;
+                    int storedBytes = useRaw ? rawBytes : compressedBytes;
+                    if (payloadOffset > Destination.Length - storedBytes)
+                    {
+                        failed = true;
+                        break;
+                    }
+
+                    if (useRaw)
+                        UnsafeUtility.MemCpy(destinationPtr + payloadOffset, sourcePtr + blockStart, rawBytes);
+
+                    uint crc = ComputeCrc32(destinationPtr + payloadOffset, storedBytes);
+                    Lz4SubBlockHeader header = new Lz4SubBlockHeader
+                    {
+                        Magic = Lz4BlockMagic,
+                        Version = Lz4BlockVersion,
+                        HeaderBytes = (ushort)headerBytes,
+                        RawBytes = rawBytes,
+                        StoredBytes = storedBytes,
+                        SourceOffsetBytes = blockStart,
+                        Crc32 = crc,
+                        Flags = useRaw ? Lz4BlockFlagRaw : Lz4BlockFlagCompressed,
+                        _pad0 = 0u
+                    };
+
+                    BlockHeaders[blockIndex] = header;
+                    UnsafeUtility.MemCpy(destinationPtr + headerOffset, &header, headerBytes);
+                    write = Align16(payloadOffset + storedBytes);
+                    if (write > Destination.Length)
+                    {
+                        failed = true;
+                        break;
+                    }
+
+                    for (int pad = payloadOffset + storedBytes; pad < write; pad++)
+                        Destination[pad] = 0;
+
+                    blockIndex++;
+                }
+
+                Counters[CounterRawBytes] = rawTotal;
+                if (failed)
+                {
+                    Counters[CounterStoredBytes] = 0;
+                    Counters[CounterBlockCount] = 0;
+                    Counters[CounterFailure] = 1;
+                    return;
+                }
+
+                Counters[CounterStoredBytes] = write;
+                Counters[CounterBlockCount] = blockIndex;
+            }
+
+            private void ClearHashTable()
+            {
+                for (int i = 0; i < HashTable.Length; i++)
+                    HashTable[i] = -1;
+            }
+
+            private int CompressBlock(int sourceOffset, int sourceLength, int destinationOffset, int destinationCapacity)
+            {
+                int anchor = 0;
+                int read = 0;
+                int write = 0;
+                int lastMatchStart = math.max(0, sourceLength - 12);
+                while (read <= lastMatchStart)
+                {
+                    uint sequence = ReadUInt32(sourceOffset + read);
+                    int hash = ResolveLz4Hash(sequence, HashTable.Length);
+                    int previous = HashTable[hash];
+                    HashTable[hash] = read;
+
+                    if (previous >= 0 &&
+                        read - previous <= ushort.MaxValue &&
+                        previous + 4 <= sourceLength &&
+                        Equals4(sourceOffset + previous, sourceOffset + read))
+                    {
+                        int matchLength = 4;
+                        while (read + matchLength < sourceLength &&
+                               Source[sourceOffset + previous + matchLength] == Source[sourceOffset + read + matchLength])
+                        {
+                            matchLength++;
+                        }
+
+                        if (!WriteSequence(sourceOffset, destinationOffset, destinationCapacity, anchor, read, previous, matchLength, ref write))
+                            return -1;
+
+                        read += matchLength;
+                        anchor = read;
+                        continue;
+                    }
+
+                    read++;
+                }
+
+                if (!WriteLastLiterals(sourceOffset, destinationOffset, destinationCapacity, anchor, sourceLength - anchor, ref write) ||
+                    write >= sourceLength)
+                {
+                    return -1;
+                }
+
+                return write;
+            }
+
+            private uint ReadUInt32(int offset)
+            {
+                return Source[offset] |
+                       ((uint)Source[offset + 1] << 8) |
+                       ((uint)Source[offset + 2] << 16) |
+                       ((uint)Source[offset + 3] << 24);
+            }
+
+            private bool Equals4(int left, int right)
+            {
+                return Source[left] == Source[right] &&
+                       Source[left + 1] == Source[right + 1] &&
+                       Source[left + 2] == Source[right + 2] &&
+                       Source[left + 3] == Source[right + 3];
+            }
+
+            private static int ResolveLz4Hash(uint sequence, int hashLength)
+            {
+                uint mixed = sequence * 2654435761u;
+                return hashLength <= 1 ? 0 : (int)(mixed % (uint)hashLength);
+            }
+
+            private bool WriteSequence(
+                int sourceOffset,
+                int destinationOffset,
+                int destinationCapacity,
+                int anchor,
+                int read,
+                int previous,
+                int matchLength,
+                ref int write)
+            {
+                int literalLength = read - anchor;
+                int tokenOffset = write++;
+                if (tokenOffset >= destinationCapacity)
+                    return false;
+
+                byte token = (byte)(math.min(literalLength, 15) << 4);
+                if (!WriteLengthExtension(destinationOffset, destinationCapacity, literalLength, ref write))
+                    return false;
+
+                if (!CopySource(sourceOffset + anchor, destinationOffset, destinationCapacity, literalLength, ref write))
+                    return false;
+
+                int offset = read - previous;
+                if (write + 2 > destinationCapacity)
+                    return false;
+
+                Destination[destinationOffset + write++] = unchecked((byte)offset);
+                Destination[destinationOffset + write++] = unchecked((byte)(offset >> 8));
+                int matchCode = matchLength - 4;
+                token |= (byte)math.min(matchCode, 15);
+                Destination[destinationOffset + tokenOffset] = token;
+                return WriteLengthExtension(destinationOffset, destinationCapacity, matchCode, ref write);
+            }
+
+            private bool WriteLastLiterals(
+                int sourceOffset,
+                int destinationOffset,
+                int destinationCapacity,
+                int start,
+                int literalLength,
+                ref int write)
+            {
+                int tokenOffset = write++;
+                if (tokenOffset >= destinationCapacity)
+                    return false;
+
+                Destination[destinationOffset + tokenOffset] = (byte)(math.min(literalLength, 15) << 4);
+                return WriteLengthExtension(destinationOffset, destinationCapacity, literalLength, ref write) &&
+                       CopySource(sourceOffset + start, destinationOffset, destinationCapacity, literalLength, ref write);
+            }
+
+            private bool WriteLengthExtension(int destinationOffset, int destinationCapacity, int totalLength, ref int write)
+            {
+                if (totalLength < 15)
+                    return true;
+
+                int value = totalLength - 15;
+                while (value >= 255)
+                {
+                    if (write >= destinationCapacity)
+                        return false;
+
+                    Destination[destinationOffset + write++] = 255;
+                    value -= 255;
+                }
+
+                if (write >= destinationCapacity)
+                    return false;
+
+                Destination[destinationOffset + write++] = (byte)value;
+                return true;
+            }
+
+            private bool CopySource(int sourceStart, int destinationOffset, int destinationCapacity, int length, ref int write)
+            {
+                if (length < 0 || write > destinationCapacity - length)
+                    return false;
+
+                for (int i = 0; i < length; i++)
+                    Destination[destinationOffset + write++] = Source[sourceStart + i];
+
+                return true;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct CosmeticDeltaPayloadPruneJob : IJob
+        {
+            [ReadOnly, NoAlias] public NativeArray<byte> SourceDeltaBytes;
+            [NoAlias]
+            public NativeArray<byte> DestinationDeltaBytes;
+            [NoAlias]
+            public NativeArray<int> Counters;
+            public int SourceLength;
+            public int SourceLengthCounterIndex;
+            public int DropThresholdBytes;
+
+            public void Execute()
+            {
+                if (!SourceDeltaBytes.IsCreated ||
+                    !DestinationDeltaBytes.IsCreated ||
+                    !Counters.IsCreated ||
+                    Counters.Length <= CounterDroppedCosmeticRecords)
+                {
+                    return;
+                }
+
+                int requestedSourceLength = SourceLength;
+                if (requestedSourceLength < 0 &&
+                    SourceLengthCounterIndex >= 0 &&
+                    SourceLengthCounterIndex < Counters.Length)
+                {
+                    requestedSourceLength = Counters[SourceLengthCounterIndex];
+                }
+
+                int sourceLength = math.clamp(requestedSourceLength, 0, SourceDeltaBytes.Length);
+                int thresholdBytes = math.max(0, DropThresholdBytes);
+                Counters[CounterRecords] = 0;
+                Counters[CounterBytes] = 0;
+                Counters[CounterChangedLeaves] = 0;
+                Counters[CounterFlags] = 0;
+                Counters[CounterDroppedCosmeticBytes] = 0;
+                Counters[CounterDroppedCosmeticRecords] = 0;
+
+                byte* sourcePtr = (byte*)SourceDeltaBytes.GetUnsafeReadOnlyPtr();
+                byte* destinationPtr = (byte*)DestinationDeltaBytes.GetUnsafePtr();
+                if (sourceLength <= 0)
+                    return;
+
+                int headerBytes = UnsafeUtility.SizeOf<StateDeltaRecordDTO>();
+                int read = 0;
+                int write = 0;
+                int keptRecords = 0;
+                int changedRecords = 0;
+                int droppedRecords = 0;
+                int droppedBytes = 0;
+                uint flags = 0u;
+                bool shouldDropCosmetics = thresholdBytes > 0 && sourceLength > thresholdBytes;
+
+                while (read < sourceLength)
+                {
+                    if (sourceLength - read < headerBytes)
+                    {
+                        flags |= DeltaFlagOverflow;
+                        break;
+                    }
+
+                    StateDeltaRecordDTO record = UnsafeUtility.ReadArrayElement<StateDeltaRecordDTO>(sourcePtr + read, 0);
+                    int payloadStart = record.DeltaPayloadOffset;
+                    int payloadLength = record.DataLength;
+                    if (payloadLength < 0 ||
+                        payloadStart < read + headerBytes ||
+                        payloadStart > sourceLength - payloadLength)
+                    {
+                        flags |= DeltaFlagOverflow;
+                        break;
+                    }
+
+                    int headerGapBytes = payloadStart - read;
+                    int recordBytes = headerGapBytes + payloadLength;
+                    if (recordBytes < headerBytes || read > sourceLength - recordBytes)
+                    {
+                        flags |= DeltaFlagOverflow;
+                        break;
+                    }
+
+                    changedRecords++;
+                    bool isCosmetic = (record.Flags & LeafFlagCosmetic) != 0u;
+                    if (shouldDropCosmetics && isCosmetic)
+                    {
+                        droppedRecords++;
+                        droppedBytes += recordBytes;
+                        read += recordBytes;
+                        continue;
+                    }
+
+                    if (write > DestinationDeltaBytes.Length - recordBytes)
+                    {
+                        flags |= DeltaFlagOverflow;
+                        break;
+                    }
+
+                    int newPayloadStart = write + headerGapBytes;
+                    record.DeltaPayloadOffset = newPayloadStart;
+                    record.CompressedOffset = -1;
+                    UnsafeUtility.WriteArrayElement(destinationPtr + write, 0, record);
+                    if (headerGapBytes > headerBytes)
+                    {
+                        UnsafeUtility.MemMove(
+                            destinationPtr + write + headerBytes,
+                            sourcePtr + read + headerBytes,
+                            headerGapBytes - headerBytes);
+                    }
+
+                    UnsafeUtility.MemMove(
+                        destinationPtr + newPayloadStart,
+                        sourcePtr + payloadStart,
+                        payloadLength);
+
+                    write += recordBytes;
+                    keptRecords++;
+                    read += recordBytes;
+                }
+
+                Counters[CounterRecords] = keptRecords;
+                Counters[CounterBytes] = write;
+                Counters[CounterChangedLeaves] = changedRecords;
+                Counters[CounterFlags] = unchecked((int)flags);
+                Counters[CounterDroppedCosmeticBytes] = droppedBytes;
+                Counters[CounterDroppedCosmeticRecords] = droppedRecords;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct TelemetryWriteJob : IJob
+        {
+            [NoAlias]
+            public NativeArray<SaveMerkleTelemetryEntry> TelemetryRing;
+            [NoAlias]
+            public NativeArray<int> Cursor;
+            public uint Frame;
+            public int TotalBytesHashed;
+            public int DeltaBytesGenerated;
+            public float TreeComputeTimeMs;
+            public uint ChangedLeaves;
+            public MerkleNodeDTO RootNode;
+            public uint WalBytesWritten;
+            public uint CrcFailures;
+            public uint IoFailures;
+
+            public void Execute()
+            {
+                if (!TelemetryRing.IsCreated || TelemetryRing.Length <= 0 || !Cursor.IsCreated || Cursor.Length <= 0)
+                    return;
+
+                int writeIndex = math.abs(Cursor[0]) % TelemetryRing.Length;
+                uint flags = 0u;
+                if (TreeComputeTimeMs > 1f)
+                    flags |= TelemetryFlagHashOverBudget;
+                if (IoFailures > 0u)
+                    flags |= TelemetryFlagIoException;
+                if (CrcFailures > 0u)
+                    flags |= TelemetryFlagCrcFailure;
+
+                TelemetryRing[writeIndex] = new SaveMerkleTelemetryEntry
+                {
+                    Frame = Frame,
+                    Flags = flags,
+                    TotalBytesHashed = TotalBytesHashed,
+                    DeltaBytesGenerated = DeltaBytesGenerated,
+                    TreeComputeTimeMs = TreeComputeTimeMs,
+                    ChangedLeaves = ChangedLeaves,
+                    RootHashLo = RootNode.HashLo,
+                    RootHashHi = RootNode.HashHi,
+                    WalBytesWritten = WalBytesWritten,
+                    CrcFailures = CrcFailures,
+                    IoFailures = IoFailures,
+                    _pad0 = 0u,
+                    _pad1 = 0UL
+                };
+
+                Cursor[0] = writeIndex + 1;
+            }
+        }
+    }
+
+    internal static unsafe class SaveMerkleCsvOverrideParser
+    {
+        private const uint SubBlockSizeHash = 0x77168845u;
+        private const uint WalBytesPerSecondHash = 0x7E9BC934u;
+        private const uint MathLodHash = 0xAFF90B1Fu;
+        private const uint DropCosmeticThresholdHash = 0xA685836Au;
+
+        internal static bool TryApplyFile(
+            string csvPath,
+            NativeArray<byte> scratchBytes,
+            ref long observedWriteTicks,
+            ref SaveMerkleRuntimeConfig config,
+            out int appliedCount,
+            out string error)
+        {
+            appliedCount = 0;
+            error = string.Empty;
+            if (string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
+                return true;
+
+            try
+            {
+                long writeTicks = File.GetLastWriteTimeUtc(csvPath).Ticks;
+                if (writeTicks == observedWriteTicks)
+                    return true;
+
+                if (!scratchBytes.IsCreated)
+                {
+                    error = "CSV override scratch buffer is not created.";
+                    return false;
+                }
+
+                using FileStream stream = new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan);
+                if (stream.Length > scratchBytes.Length)
+                {
+                    error = "CSV override file exceeds native scratch capacity.";
+                    return false;
+                }
+
+                byte* destination = (byte*)scratchBytes.GetUnsafePtr();
+                int total = 0;
+                while (total < stream.Length)
+                {
+                    int read = stream.Read(new Span<byte>(destination + total, (int)stream.Length - total));
+                    if (read <= 0)
+                        break;
+
+                    total += read;
+                }
+
+                bool applied = TryApply(destination, total, ref config, out appliedCount);
+                observedWriteTicks = writeTicks;
+                return applied || appliedCount == 0;
+            }
+            catch (Exception exception)
+            {
+                error = exception.GetType().Name + ": " + exception.Message;
+                return false;
+            }
+        }
+
+        internal static bool TryApply(byte* data, int byteCount, ref SaveMerkleRuntimeConfig config, out int appliedCount)
+        {
+            appliedCount = 0;
+            if (data == null || byteCount <= 0)
+                return false;
+
+            int cursor = 0;
+            while (cursor < byteCount)
+            {
+                int lineStart = cursor;
+                while (cursor < byteCount && data[cursor] != (byte)'\n' && data[cursor] != (byte)'\r')
+                    cursor++;
+
+                ParseLine(data, lineStart, cursor - lineStart, ref config, ref appliedCount);
+                while (cursor < byteCount && (data[cursor] == (byte)'\n' || data[cursor] == (byte)'\r'))
+                    cursor++;
+            }
+
+            return appliedCount > 0;
+        }
+
+        private static void ParseLine(byte* data, int start, int length, ref SaveMerkleRuntimeConfig config, ref int appliedCount)
+        {
+            if (length <= 0 || data[start] == (byte)'#')
+                return;
+
+            int comma = -1;
+            for (int i = 0; i < length; i++)
+            {
+                if (data[start + i] == (byte)',')
+                {
+                    comma = i;
+                    break;
+                }
+            }
+
+            if (comma <= 0)
+                return;
+
+            int keyStart = TrimStart(data, start, comma);
+            int keyEnd = TrimEnd(data, keyStart, start + comma);
+            int valueStart = TrimStart(data, start + comma + 1, length - comma - 1);
+            int valueEnd = TrimEnd(data, valueStart, start + length);
+            if (keyEnd <= keyStart || valueEnd <= valueStart)
+                return;
+
+            uint keyHash = HashAsciiLower(data + keyStart, keyEnd - keyStart);
+            if (!TryParseInt(data + valueStart, valueEnd - valueStart, out int value))
+                return;
+
+            switch (keyHash)
+            {
+                case SubBlockSizeHash:
+                    config.SubBlockBytes = math.clamp(value, 1024, SaveStateMerkleTree.MaxSubBlockBytes);
+                    appliedCount++;
+                    break;
+                case WalBytesPerSecondHash:
+                    config.WalBytesPerSecond = math.max(1024, value);
+                    appliedCount++;
+                    break;
+                case MathLodHash:
+                    config.MathLod = math.clamp(value, 0, 3);
+                    appliedCount++;
+                    break;
+                case DropCosmeticThresholdHash:
+                    config.CosmeticDropThresholdBytes = math.max(0, value);
+                    appliedCount++;
+                    break;
+            }
+        }
+
+        private static int TrimStart(byte* data, int start, int length)
+        {
+            int cursor = start;
+            int end = start + length;
+            while (cursor < end && IsWhitespace(data[cursor]))
+                cursor++;
+            return cursor;
+        }
+
+        private static int TrimEnd(byte* data, int start, int end)
+        {
+            int cursor = end;
+            while (cursor > start && IsWhitespace(data[cursor - 1]))
+                cursor--;
+            return cursor;
+        }
+
+        private static bool IsWhitespace(byte value)
+        {
+            return value == (byte)' ' || value == (byte)'\t';
+        }
+
+        private static uint HashAsciiLower(byte* data, int length)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < length; i++)
+            {
+                byte value = data[i];
+                if (value >= (byte)'A' && value <= (byte)'Z')
+                    value = (byte)(value + 32);
+                hash = (hash ^ value) * 16777619u;
+            }
+
+            return hash;
+        }
+
+        private static bool TryParseInt(byte* data, int length, out int value)
+        {
+            value = 0;
+            if (length <= 0)
+                return false;
+
+            int cursor = 0;
+            int sign = 1;
+            if (data[0] == (byte)'-')
+            {
+                sign = -1;
+                cursor = 1;
+            }
+
+            int parsed = 0;
+            bool any = false;
+            for (; cursor < length; cursor++)
+            {
+                byte ch = data[cursor];
+                if (ch < (byte)'0' || ch > (byte)'9')
+                    return false;
+
+                parsed = (parsed * 10) + (ch - (byte)'0');
+                any = true;
+            }
+
+            value = parsed * sign;
+            return any;
+        }
+    }
+}

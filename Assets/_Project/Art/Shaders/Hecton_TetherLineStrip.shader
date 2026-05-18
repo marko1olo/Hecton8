@@ -45,22 +45,19 @@ Shader "Hecton8/Physics/TetherLineStrip"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            StructuredBuffer<float3> _TetherPositions;
+            StructuredBuffer<float4> _TetherPositions;
             StructuredBuffer<float> _TetherSegmentTensions;
 
-            CBUFFER_START(UnityPerMaterial)
-                float4 _TetherColor;
-                float4 _TetherStressColor;
-                float _TetherStress01;
-                float _TetherSegmentStressScale;
-                float _TetherRadius;
-                float _TetherVisualTier;
-                float _TetherCrystalDensity;
-                float _TetherSiltIntensity;
-                float _TetherVisualClock;
-                int _TetherPointCount;
-                int _TetherIndirectMode;
-            CBUFFER_END
+            struct TetherDrawParams
+            {
+                float4 Color;
+                float4 StressColor;
+                float4 Params0; // x=global stress, y=segment stress scale, z=point count, w=radius.
+                float4 Params1; // x=indirect mode, y=visual tier, z=crystal density, w=silt intensity.
+                float4 Params2; // x=visual clock, yzw reserved.
+            };
+
+            StructuredBuffer<TetherDrawParams> _TetherDrawParams;
 
             struct Attributes
             {
@@ -117,8 +114,11 @@ Shader "Hecton8/Physics/TetherLineStrip"
             {
                 Varyings output;
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                int segmentCount = max(_TetherPointCount - 1, 0);
-                int segmentIndex = _TetherIndirectMode != 0
+                TetherDrawParams drawParams = _TetherDrawParams[0];
+                int pointCount = max((int)(drawParams.Params0.z + 0.5), 0);
+                int segmentCount = max(pointCount - 1, 0);
+                int indirectMode = drawParams.Params1.x >= 0.5 ? 1 : 0;
+                int segmentIndex = indirectMode != 0
                     ? clamp((int)input.instanceID, 0, max(segmentCount - 1, 0))
                     : clamp((int)(input.vertexID / 6u), 0, max(segmentCount - 1, 0));
                 int localVertex = (int)(input.vertexID % 6u);
@@ -128,8 +128,8 @@ Shader "Hecton8/Physics/TetherLineStrip"
                     localVertex == 3 ? 2 :
                     localVertex == 4 ? 1 : 3;
 
-                float3 p0 = _TetherPositions[segmentIndex];
-                float3 p1 = _TetherPositions[min(segmentIndex + 1, max(_TetherPointCount - 1, 0))];
+                float3 p0 = _TetherPositions[segmentIndex].xyz;
+                float3 p1 = _TetherPositions[min(segmentIndex + 1, max(pointCount - 1, 0))].xyz;
                 float3 segment = p1 - p0;
                 float segmentLenSq = max(dot(segment, segment), 0.000001);
                 float3 segmentDir = segment * rsqrt(segmentLenSq);
@@ -144,13 +144,13 @@ Shader "Hecton8/Physics/TetherLineStrip"
                 fallbackSide = fallbackLenSq > 0.000001 ? fallbackSide * rsqrt(fallbackLenSq) : float3(1.0, 0.0, 0.0);
                 side = sideLenSq > 0.000001 ? side * rsqrt(sideLenSq) : fallbackSide;
 
-                float globalStress01 = saturate(_TetherStress01);
-                float segmentStress01 = saturate(_TetherSegmentTensions[segmentIndex] * _TetherSegmentStressScale);
+                float globalStress01 = saturate(drawParams.Params0.x);
+                float segmentStress01 = saturate(_TetherSegmentTensions[segmentIndex] * max(drawParams.Params0.y, 0.0));
                 float stress01 = saturate(max(globalStress01, segmentStress01));
-                float visualClock = max(_TetherVisualClock, 0.0);
+                float visualClock = max(drawParams.Params2.x, 0.0);
                 float pulse = abs(frac(visualClock * 6.0) * 2.0 - 1.0);
                 float stressPulse = stress01 * pulse;
-                float radius = max(_TetherRadius * (1.0 + stressPulse * 0.18), 0.001);
+                float radius = max(drawParams.Params0.w * (1.0 + stressPulse * 0.18), 0.001);
                 bool useEnd = cornerIndex >= 2;
                 bool positiveSide = cornerIndex == 1 || cornerIndex == 3;
                 float3 basePosition = useEnd ? p1 : p0;
@@ -159,8 +159,8 @@ Shader "Hecton8/Physics/TetherLineStrip"
                 output.cableUV = float2(positiveSide ? 1.0 : -1.0, segmentIndex + (useEnd ? 1.0 : 0.0));
                 output.stress01 = (half)stress01;
                 output.segmentStress01 = (half)segmentStress01;
-                output.visualTier = (half)_TetherVisualTier;
-                output.color = lerp(_TetherColor, _TetherStressColor, stress01);
+                output.visualTier = (half)drawParams.Params1.y;
+                output.color = lerp(drawParams.Color, drawParams.StressColor, stress01);
                 output.color.rgb += stressPulse * 0.08;
                 return output;
             }
@@ -173,16 +173,17 @@ Shader "Hecton8/Physics/TetherLineStrip"
                 UNITY_BRANCH
                 if (input.visualTier >= 2.0h)
                 {
-                    float visualClock = max(_TetherVisualClock, 0.0);
+                    TetherDrawParams drawParams = _TetherDrawParams[0];
+                    float visualClock = max(drawParams.Params2.x, 0.0);
                     float stress01 = saturate((float)input.stress01);
                     float edge01 = saturate(abs(input.cableUV.x));
                     float fiber = HectonHighTierFiberOcclusion(input.cableUV, stress01);
                     float saltHash = HectonHash11(floor(input.cableUV.y * 37.0) + floor((input.cableUV.x + 1.0) * 13.0));
-                    float salt = step(1.0 - saturate(_TetherCrystalDensity) * 0.075, saltHash);
+                    float salt = step(1.0 - saturate(drawParams.Params1.z) * 0.075, saltHash);
                     float saltPulse = HectonTriangle(visualClock * 9.0 + input.cableUV.y * 0.37);
                     float glint = salt * stress01 * edge01 * (0.35 + saltPulse * 0.65);
                     float siltHash = HectonHash11(floor(input.cableUV.y * 53.0) + 19.0);
-                    float silt = siltHash * saturate(_TetherSiltIntensity) * stress01 * (1.0 - edge01 * 0.35);
+                    float silt = siltHash * saturate(drawParams.Params1.w) * stress01 * (1.0 - edge01 * 0.35);
                     color *= (half)(0.84 + fiber * 0.32);
                     color += (half3)(glint * float3(0.9, 0.96, 1.0));
                     color += (half3)(silt * float3(0.20, 0.32, 0.28));

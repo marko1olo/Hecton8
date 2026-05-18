@@ -12,6 +12,7 @@ using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -28,6 +29,7 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-10000)]
     public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct OriginShiftTranslateJob : IJobParallelForTransform
         {
             public Vector3 ShiftOffset;
@@ -38,22 +40,23 @@ namespace Hecton8.Core
                     return;
 
                 float3 shift = new float3(ShiftOffset.x, ShiftOffset.y, ShiftOffset.z);
-                float3 position = new float3(transform.position.x, transform.position.y, transform.position.z);
+                Vector3 localPositionVector = transform.localPosition;
+                float3 position = new float3(localPositionVector.x, localPositionVector.y, localPositionVector.z);
                 if (!math.all(math.isfinite(shift)) || !math.all(math.isfinite(position)))
                     return;
 
-                transform.position -= ShiftOffset;
+                transform.localPosition = localPositionVector - ShiftOffset;
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct AupDriftCheckJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<double3> RuntimePositions;
-            [ReadOnly] public NativeArray<double3> TrackedAbsolutePositions;
+            [ReadOnly, NoAlias] public NativeArray<double3> RuntimePositions;
+            [ReadOnly, NoAlias] public NativeArray<double3> TrackedAbsolutePositions;
             public double3 CommittedTotalOffset;
             public double MaxDeltaSq;
-            [WriteOnly] public NativeArray<byte> InvalidMask;
+            [WriteOnly, NoAlias] public NativeArray<byte> InvalidMask;
 
             public void Execute(int index)
             {
@@ -82,7 +85,7 @@ namespace Hecton8.Core
         private const int ShiftStabilityWatchdogFrames = 1200;
         private const float PrecisionWatchdogSafeRadiusMeters = HectonPhysicsContract.AupSectorSizeMetersFloat;
         private const float PrecisionWatchdogSafeRadiusSq = PrecisionWatchdogSafeRadiusMeters * PrecisionWatchdogSafeRadiusMeters;
-        private const float MinimumShiftThresholdMeters = HectonPhysicsContract.AupSectorSizeMetersFloat;
+        private const float MinimumShiftThresholdMeters = 2000f;
         private const float ShiftDeadzoneReleaseMeters = 4500f;
         private const float OutwardMotionSpeedEpsilon = 0.05f;
         private const int DriftCheckEntityCapacity = 2;
@@ -149,7 +152,7 @@ namespace Hecton8.Core
 
         [Header("── Settings ────────────────────────────────")]
         [Tooltip("Distance from (0,0,0) that triggers a shift.")]
-        [SerializeField] private float _threshold = 1000f;
+        [SerializeField] private float _threshold = 4000f;
 
         [Tooltip("Object to follow (normally Player). If null, resolves via GameBootstrapper.")]
         [SerializeField] private Transform _anchor;
@@ -213,6 +216,50 @@ namespace Hecton8.Core
                 HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
                 return origin != null && origin._physicsPauseActive;
             }
+        }
+
+        /// <summary>Editor/runtime readback for the unmanaged AUP coordinator state.</summary>
+        public static bool TryGetAupUniverseTunerSnapshot(out AupUniverseTunerSnapshot snapshot)
+        {
+            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            IDataVault vault = origin != null ? origin._dataVault ?? GlobalRegistry.DataVault : GlobalRegistry.DataVault;
+            uint sequence = origin != null ? origin._shiftSequence : 0u;
+            return AupOriginShiftCoordinator.TryGetEditorSnapshot(vault, sequence, out snapshot);
+        }
+
+        /// <summary>Editor facade for the unmanaged rebase threshold.</summary>
+        public static void SetRebaseThresholdForTuner(float thresholdMeters)
+        {
+            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            IDataVault vault = origin != null ? origin._dataVault ?? GlobalRegistry.DataVault : GlobalRegistry.DataVault;
+            float threshold = math.clamp(math.isfinite(thresholdMeters) ? thresholdMeters : 4000f, 2000f, 8000f);
+            if (origin != null)
+            {
+                origin._threshold = threshold;
+                origin.RefreshThresholdCache();
+            }
+
+            AupOriginShiftCoordinator.SetRebaseThreshold(vault, threshold);
+        }
+
+        /// <summary>Editor facade that raises the unmanaged pending rebase flag.</summary>
+        public static void ForceRebaseNowForTuner()
+        {
+            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            IDataVault vault = origin != null ? origin._dataVault ?? GlobalRegistry.DataVault : GlobalRegistry.DataVault;
+            AupOriginShiftCoordinator.RequestManualRebase(vault);
+        }
+
+        /// <summary>Editor facade for cold CSV override reloads outside the simulation hot path.</summary>
+        public static bool ReloadAupConstantsForTuner()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            IDataVault vault = origin != null ? origin._dataVault ?? GlobalRegistry.DataVault : GlobalRegistry.DataVault;
+            return AupOriginShiftCoordinator.TryReloadCsvOverrideFromDisk(vault);
+#else
+            return false;
+#endif
         }
 
         /// <summary>Last committed shift event payload.</summary>
@@ -495,6 +542,7 @@ namespace Hecton8.Core
             GlobalRegistry.RegisterFloatingOriginRuntime(this);
             _dataVault = GlobalRegistry.DataVault;
             RefreshThresholdCache();
+            AupOriginShiftCoordinator.GenerateEmergencyMockThresholds(_dataVault);
             TryResolveAnchor(force: true);
             EnsureDriftCheckBuffers();
             PublishGlobalOffsets();
@@ -553,6 +601,7 @@ namespace Hecton8.Core
 
             _dataVault = GlobalRegistry.DataVault;
             RefreshThresholdCache();
+            AupOriginShiftCoordinator.GenerateEmergencyMockThresholds(_dataVault);
             TryResolveAnchor(force: true);
             EnsureDriftCheckBuffers();
             PublishGlobalOffsets();
@@ -597,6 +646,21 @@ namespace Hecton8.Core
                 return;
             }
 
+            Vector3 anchorRuntimePosition = Vector3.zero;
+            bool hasAnchorRuntimePosition = _anchor != null && TryGetTransformWorldPosition(_anchor, out anchorRuntimePosition);
+            if (AupOriginShiftCoordinator.TickPreSimulation(
+                    _dataVault ?? GlobalRegistry.DataVault,
+                    deltaTime,
+                    hasAnchorRuntimePosition,
+                    anchorRuntimePosition,
+                    _totalOffsetDouble,
+                    out Vector3 aupRequestedShift))
+            {
+                _shiftDeadzoneArmed = false;
+                BeginShiftWorld(aupRequestedShift);
+                return;
+            }
+
             if (_driftCheckScheduled && ConsumeCompletedDriftCheck())
                 return;
 
@@ -616,7 +680,9 @@ namespace Hecton8.Core
                     return;
             }
 
-            Vector3 anchorPosition = _anchor.position;
+            if (!TryGetTransformWorldPosition(_anchor, out Vector3 anchorPosition))
+                return;
+
             float anchorDistanceSqr = VectorLengthSq(anchorPosition);
             if (anchorDistanceSqr <= ShiftDeadzoneReleaseMeters * ShiftDeadzoneReleaseMeters)
                 _shiftDeadzoneArmed = true;
@@ -713,6 +779,10 @@ namespace Hecton8.Core
             bool trackedBodiesPrepared = false;
             bool trackedBodiesFinalized = false;
             bool xrPoseLockActive = false;
+            bool vaultAllocationLockActive = false;
+            uint nextShiftSequence = _shiftSequence + 1u;
+            AupOriginShiftScheduleInfo aupScheduleInfo = default;
+            double aupRebaseElapsedMs = 0d;
             int gen0CollectionCountBeforeShift = GC.CollectionCount(0);
             HectonXRRuntimeState.BeginOriginShiftPoseLock();
             xrPoseLockActive = HectonXRRuntimeState.IsXRActive;
@@ -720,11 +790,29 @@ namespace Hecton8.Core
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+                if (vault != null)
+                {
+                    AupOriginShiftCoordinator.EnsureRuntimeState(vault, out _);
+                    vault.LockAllocationsForAupShift(nextShiftSequence);
+                    vaultAllocationLockActive = true;
+                }
+
+                GlobalSignals.FlushPreSimulation();
                 PhysicsApplySystem.PrepareTrackedBodiesForOriginShift();
                 trackedBodiesPrepared = true;
 
                 if (_shiftTargetsDirty)
                     RebuildShiftTargetCache();
+
+                double3 shiftDouble = new double3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+                long aupRebaseStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+                JobHandle aupRebaseHandle = AupOriginShiftCoordinator.ScheduleVaultOriginRebase(
+                    vault,
+                    shiftOffset,
+                    _totalOffsetDouble + shiftDouble,
+                    nextShiftSequence,
+                    out aupScheduleInfo);
 
                 if (_shiftTargetAccessArray.isCreated && _shiftTargetAccessArray.length > 0)
                 {
@@ -733,9 +821,18 @@ namespace Hecton8.Core
                         ShiftOffset = shiftOffset
                     };
 
-                    JobHandle handle = UnityEngine.Jobs.IJobParallelForTransformExtensions.ScheduleByRef(ref shiftJob, _shiftTargetAccessArray, default);
-                    await AwaitTransformShiftJobAsync(handle, cancellationToken);
+                    JobHandle transformHandle = UnityEngine.Jobs.IJobParallelForTransformExtensions.ScheduleByRef(ref shiftJob, _shiftTargetAccessArray, default);
+                    JobHandle combinedHandle = JobHandle.CombineDependencies(aupRebaseHandle, transformHandle);
+                    await AwaitTransformShiftJobAsync(combinedHandle, cancellationToken);
                 }
+                else
+                {
+                    await AwaitTransformShiftJobAsync(aupRebaseHandle, cancellationToken);
+                }
+
+                aupRebaseElapsedMs = (System.Diagnostics.Stopwatch.GetTimestamp() - aupRebaseStartTicks) *
+                    1000.0d /
+                    System.Diagnostics.Stopwatch.Frequency;
 
                 PhysicsApplySystem.CommitTrackedBodiesForOriginShift(shiftOffset);
 
@@ -760,6 +857,11 @@ namespace Hecton8.Core
                 PublishAupShiftSignal(in _lastShiftEvent);
                 CrashTelemetryBuffer.ReportOriginShift(shiftOffset, _shiftSequence);
                 PublishGlobalOffsets();
+                AupOriginShiftCoordinator.RecordRebaseCompletion(
+                    vault,
+                    in aupScheduleInfo,
+                    aupRebaseElapsedMs,
+                    _totalOffsetDouble);
                 HectonXRRuntimeState.EndOriginShiftPoseLock(_shiftSequence, fixedInterpolationAlpha);
                 xrPoseLockActive = false;
                 ResyncCriticalEntityTrackersAfterShift();
@@ -788,6 +890,12 @@ namespace Hecton8.Core
 
                 if (trackedBodiesPrepared && !trackedBodiesFinalized)
                     PhysicsApplySystem.FinalizeTrackedBodiesAfterOriginShift();
+
+                if (vaultAllocationLockActive)
+                {
+                    IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+                    vault?.UnlockAllocationsAfterAupShift(nextShiftSequence);
+                }
 
                 _isShiftInProgress = false;
             }
@@ -1227,9 +1335,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            Vector3 runtimePosition = target.position;
-            float3 runtimePosition3 = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
-            if (!math.all(math.isfinite(runtimePosition3)))
+            if (!TryGetTransformWorldPosition(target, out Vector3 runtimePosition))
                 return;
 
             if (!tracker.Initialized)
@@ -1293,8 +1399,7 @@ namespace Hecton8.Core
             if (!tracker.Initialized || tracker.Transform == null || writeIndex >= DriftCheckEntityCapacity)
                 return writeIndex;
 
-            Vector3 runtimePosition = tracker.Transform.position;
-            if (!IsFiniteVector(runtimePosition) || !math.all(math.isfinite(tracker.AbsolutePosition)))
+            if (!TryGetTransformWorldPosition(tracker.Transform, out Vector3 runtimePosition) || !math.all(math.isfinite(tracker.AbsolutePosition)))
                 return writeIndex;
 
             runtimePositions[writeIndex] = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
@@ -1318,7 +1423,7 @@ namespace Hecton8.Core
             }
 
             double maxDriftErrorSq = ResolveMaxDriftErrorSq(runtimePositions, absolutePositions);
-            Vector3 telemetryPosition = _anchor != null ? _anchor.position : Vector3.zero;
+            Vector3 telemetryPosition = TryGetTransformWorldPosition(_anchor, out Vector3 anchorTelemetryPosition) ? anchorTelemetryPosition : Vector3.zero;
             CrashTelemetryBuffer.ReportAupMaxDriftError(telemetryPosition, ResolveDriftErrorMeters(maxDriftErrorSq));
 
             bool hasInvalidEntity = false;
@@ -1337,7 +1442,10 @@ namespace Hecton8.Core
 
             Vector3 forcedShiftOffset = ResolveForcedDriftShiftOffset(invalidMask);
             if (VectorLengthSq(forcedShiftOffset) <= 0.0001f)
-                forcedShiftOffset = _anchor.position;
+            {
+                if (!TryGetTransformWorldPosition(_anchor, out forcedShiftOffset))
+                    return false;
+            }
 
             if (!IsFiniteVector(forcedShiftOffset))
             {
@@ -1446,7 +1554,8 @@ namespace Hecton8.Core
             if (!tracker.Initialized || tracker.Transform == null)
                 return;
 
-            tracker.LastRuntimePosition = tracker.Transform.position;
+            if (TryGetTransformWorldPosition(tracker.Transform, out Vector3 runtimePosition))
+                tracker.LastRuntimePosition = runtimePosition;
         }
 
         private void EnsureDriftCheckBuffers()
@@ -1603,8 +1712,7 @@ namespace Hecton8.Core
             {
                 _anchor = playerTransform;
                 _anchor.TryGetComponent(out _anchorRigidbody);
-                _previousAnchorPosition = _anchor.position;
-                _hasPreviousAnchorPosition = true;
+                _hasPreviousAnchorPosition = TryGetTransformWorldPosition(_anchor, out _previousAnchorPosition);
             }
         }
 
@@ -1871,14 +1979,14 @@ namespace Hecton8.Core
                     continue;
 
                 Transform rootTransform = rootObject.transform;
-                Vector3 rootPosition = rootTransform.position;
+                Vector3 rootPosition = rootTransform.localPosition;
                 if (!IsFiniteVector(rootPosition))
                 {
                     CrashTelemetryBuffer.ReportNanPhysicsRecovery(rootPosition, Vector3.zero);
                     continue;
                 }
 
-                rootTransform.position = rootPosition - committedTotalOffset;
+                rootTransform.localPosition = rootPosition - committedTotalOffset;
             }
         }
 
@@ -1886,6 +1994,16 @@ namespace Hecton8.Core
         {
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3));
+        }
+
+        private static bool TryGetTransformWorldPosition(Transform source, out Vector3 position)
+        {
+            position = Vector3.zero;
+            if (source == null)
+                return false;
+
+            source.GetPositionAndRotation(out position, out _);
+            return IsFiniteVector(position);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

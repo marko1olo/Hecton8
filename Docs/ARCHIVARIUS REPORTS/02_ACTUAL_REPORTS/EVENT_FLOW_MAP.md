@@ -1,7 +1,15 @@
-﻿# HECTON-8 EVENT FLOW MAP
+# HECTON-8 EVENT FLOW MAP
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Scope: source-backed event topology visible in first-party code; no profiler or play-mode proof in this document.
 
 Mandates followed:
@@ -31,11 +39,11 @@ No runtime replay, scene wiring proof, or GCMonitor capture is claimed here.
 
 `SystemDispatcher.LateUpdate()` is the current deferred-event drain owner.
 
-## 2.1 Five-Artery Mega-Bus Classification
+## 2.1 Typed Signal-Lane Orientation
 
-The source-level bus inventory is not one flat conceptual system. It is classified into exactly five arteries for architecture work:
+The old five-bucket bus grouping is legacy shorthand only. Current ownership uses the 9-echelon / 85-domain map plus typed `SignalBus<T>` and `NativeQueue` lanes; Core/Env/Player/Base/AI are local reading buckets, not complete architecture coverage or exclusive cross-domain authority.
 
-| Artery | Scope | Representative source queues |
+| Legacy bucket | Scope | Representative source queues |
 | --- | --- | --- |
 | Core | bootstrap, save/load, registry, telemetry, scene bootstrap, localization, mod registry, object-pool diagnostics, performance warnings | `BootstrapEvents`, `SaveEvents`, `LocalizationEvents`, `ModRegistryEvents`, `GlobalRegistry`, `ObjectPoolDiagnostics`, `PerformanceEvents`, `GlobalTelemetryBus` |
 | Env | atmosphere, weather, ocean/acoustics, celestial, physics signals, fluid feedback, biome/depth/soundscape changes | `AtmosphereEvents`, `WeatherEvents`, `CelestialEvents`, `PhysicsEventBus`, `FluidFeedbackEvents`, `MapMagicBiomeEvents`, `BiomeMatrixEvents`, `DepthZoneEvents`, `SoundscapeEvents` |
@@ -43,7 +51,7 @@ The source-level bus inventory is not one flat conceptual system. It is classifi
 | Base | submarine OS, modules, base integrity, power telemetry, emergency service relays, pressure alarm lanes | `HectonSubmarineOsEvents`, `ModuleStatusEvents`, `BaseIntegrityEvents`, `PowerGridTelemetryEvents`, `EmergencyServiceRelayEvents`, `HighPressureEvents`, `FatalPressureImplosionEvents` |
 | AI | director, drone fleet, random events, Atlas signal/directive, narrative/audio-log discovery pressure | `DirectorAIEvents`, `HectonDroneFleetEvents`, `RandomEventEvents`, `AtlasSignalEvents`, `Atlas6Events`, `NarrativeEvents`, `AudioLogEvents` |
 
-This classification is an ownership map, not a new runtime dispatcher. `SystemDispatcher.LateUpdate()` remains the actual drain point and enforces the shared late-frame budget.
+This orientation is a local reading aid, not a new runtime dispatcher or complete cross-domain authority map. `SystemDispatcher.LateUpdate()` remains the actual drain point and enforces the shared late-frame budget.
 
 Cross-domain authority rule:
 - Core, Env, Player, Base, and AI are the only documented first-party cross-domain arteries.

@@ -48,7 +48,7 @@ namespace Hecton8.Inventory
     /// Unmanaged inventory payload carried by the native event queue.
     /// Managed references are resolved through the sidecar slot table during LateUpdate dispatch.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
     public struct InventoryEventPayload
     {
         public float TotalMassKg;

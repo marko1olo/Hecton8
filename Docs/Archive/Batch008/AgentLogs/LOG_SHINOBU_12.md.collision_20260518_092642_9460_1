@@ -1,0 +1,32 @@
+## 2026-05-18 - SHINOBU_12 - SDF LOS / UNITY PHYSICS RAYCAST PURGE
+
+What was wrong:
+- The bend topology path had already dropped component hierarchy lookup, but line-of-sight and anti-slice validation still used Unity Physics raycasts.
+- Active anti-amnesia files for SHINOBU_12 were absent from `Docs/Tasks` and `Docs/AgentLogs`; full history existed only under `Docs/Archive/Batch008`.
+
+What was done:
+- `TetherInstance.TryFindClosestObstacle` now uses `HectonVoxelVolume.TryRaymarchAnyPublishedSdf` and returns hit point, normal, volume, and runtime stamp.
+- `UpdateLineOfSight`, `RecalculateBendPoints`, `TryResolveBendCorner`, and `ValidateCableIntegrity` now consume SDF hit data instead of `RaycastHit`.
+- Removed obsolete `_bendObstructionMask` and post-migration dead locals.
+- Recreated active `Docs/Tasks/Status_SHINOBU_12.md`, `Docs/AgentLogs/Rationale_SHINOBU_12.md`, and this log with pointers to archived full history.
+
+Cinematic Cheats used:
+- No swept cable CCD. No PhysX fallback. Rock interaction remains published SDF raymarch plus cached bend corners.
+- If no published SDF answers, tangent/normal bend fallback remains and visual clipping between nodes is accepted.
+
+Exact Microseconds saved:
+- Not claimed without Unity profiler data.
+- Static estimate: removes synchronous PhysX raycast surface and collider filter work from tether bend checks.
+
+Verification:
+- Scoped forbidden grep returns no SHINOBU_12 hits for Unity Physics raycasts, component lookup, `FindObject*`, scalar MPB setters, `Material.Set*`, Unity joints, `LineRenderer`, `Pack=1`, direct `GetBuffer<`, `new NativeArray`, fake `Schedule().Complete()`, or gameplay `Update`/`FixedUpdate`.
+- `git diff --check` only reports CRLF normalization warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /p:BaseIntermediateOutputPath=.codex-artifacts/msbuild/shinobu12_obj/ /p:OutputPath=.codex-artifacts/msbuild/shinobu12_bin/` succeeded with 0 errors and 9 global warnings outside SHINOBU_12.
+- Build-log filter for Tether/Verlet/Cable symbols is empty.
+
+SELF_AUDIT:
+- Task matrix: 01-20 PASS by static implementation.
+- Struct layout: `VerletNodeDTO` 32 bytes, `GpuCableSplinePointDTO` 16 bytes, `GpuCableDrawParamsDTO` 80 bytes.
+- H-Phi: gameplay arrays remain vault-owned; bend caches are fixed cold arrays.
+- Blackbox: cable and manager 300-frame rings remain active.
+- Compile guard: static Core build passes; runtime Unity Play Mode/profiler/GC evidence is still pending.

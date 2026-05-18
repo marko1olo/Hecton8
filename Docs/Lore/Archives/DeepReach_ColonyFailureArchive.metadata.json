@@ -248,7 +248,7 @@
     }
   },
   "binary_cache_contract": {
-    "status": "CACHE_READY_STATIC_LOOKUP",
+    "status": "STATIC_CACHE_LAYOUT_DEFINED_PENDING_RUNTIME_BINDING",
     "alignment_bytes": 16,
     "lore_blob": {
       "path": "Data/Lore/Encyclopedia.h8bin",
@@ -279,7 +279,8 @@
     }
   },
   "hash_collision_audit": {
-    "status": "ZERO_COLLISIONS",
+    "status": "PENDING_ARTIFACT_RECHECK",
+    "artifact_state": "R20 filesystem check did not find the referenced Docs/AgentLogs/HashCollision_CORP_FAILURE_ARCHIVIST artifacts.",
     "tool": "Tools/VerifyH8HashCollisions.py",
     "report": "Docs/AgentLogs/HashCollision_CORP_FAILURE_ARCHIVIST.md",
     "json": "Docs/AgentLogs/HashCollision_CORP_FAILURE_ARCHIVIST.json",
@@ -288,7 +289,8 @@
     "runtime_impact_us_per_frame": 0
   },
   "economy_audit": {
-    "status": "NO_INFINITE_RESOURCE_LOOP_IN_SCOPED_RECIPES",
+    "status": "PENDING_ARTIFACT_RECHECK",
+    "artifact_state": "R20 filesystem check did not find the referenced CORP_FAILURE_ARCHIVIST economy audit artifacts.",
     "graph_report": "Docs/AgentLogs/EconomyRecipeGraphAudit_CORP_FAILURE_ARCHIVIST.md",
     "monte_carlo_report": "Docs/AgentLogs/EconomyMonteCarlo_CORP_FAILURE_ARCHIVIST.json",
     "crafting_monte_carlo_report": "Data/Economy/Crafting_MonteCarlo_Audit.json",
@@ -373,7 +375,8 @@
     "fit_status": "WITHIN_85_DOMAIN_MAP"
   },
   "h_phi_audit": {
-    "status": "LOCAL_ARCHIVE_STATELESS_GLOBAL_RUNTIME_UNCHANGED",
+    "status": "PENDING_HPHI_ARTIFACT_RECHECK",
+    "artifact_state": "R20 filesystem check did not find Docs/AgentLogs/HPhi_CORP_FAILURE_ARCHIVIST.json.",
     "reason": "Archive truth moved into static Markdown/JSON/H8LR binary with hash and offset lookup; consumers do not need private mutable terminal state. The project H-Phi tool reports this pass did not increase runtime Data Sovereignty because no runtime system was edited.",
     "h_phi_report": "Docs/AgentLogs/HPhi_CORP_FAILURE_ARCHIVIST.json",
     "runtime_data_sovereignty_increased_by_this_pass": false,

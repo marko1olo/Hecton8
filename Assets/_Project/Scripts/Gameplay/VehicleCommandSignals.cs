@@ -17,7 +17,7 @@ namespace Hecton8.Gameplay
         CriticalList = 1 << 5
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct VehicleCommandSignal
     {
         public int TargetInstanceId;
@@ -27,6 +27,9 @@ namespace Hecton8.Gameplay
         public float BallastDelta;
         public uint Sequence;
         public byte Flags;
+        private byte _pad0;
+        private ushort _pad1;
+        private int _pad2;
     }
 
     public interface IVehicleCommandSignalListener

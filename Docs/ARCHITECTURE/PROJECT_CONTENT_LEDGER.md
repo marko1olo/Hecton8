@@ -1,6 +1,20 @@
-﻿# PROJECT_CONTENT_LEDGER
+# PROJECT_CONTENT_LEDGER
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 STATUS: PENDING VERIFICATION
 OWNER: Resource Matrix / Geology
@@ -28,7 +42,7 @@ MANDATES FOLLOWED:
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 ## Historical 2026-05-04 Boundary
 
-- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this ledger as current project truth.
+- Read `Docs/README.md`, `Docs/Reports/README.md`, current source/assets, and the dated reports below before using this ledger as current resource-content guidance.
 - `Assets/_Project/Data/Scavenging/ResourceNodes/` remains the authored data source for this ledger, but this document is not proof that all resource nodes, hash IDs, layers, or runtime spawn paths are scene-validated.
 - Re-open current assets and source before changing IDs or layer contracts.
 
@@ -50,6 +64,7 @@ Full candidate artifact:
 Boundary:
 
 - This is not deletion authorization.
+- R11 filesystem check did not find `CodexArtifacts/2026-05-07_ORPHANED_SCRIPT_AUDIT.csv`; regenerate the artifact before using any deletion candidates.
 - Editor menu scripts, smoke testers, generated roots, reflection entry points, asmdef owners, ScriptableObject references, scene references, and Addressables references require manual review before removal.
 - Treat the list as the deletion queue seed, not as proof that the files are unused at runtime.
 

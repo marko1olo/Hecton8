@@ -1,0 +1,52 @@
+# SHINOBU_36 Status
+
+Date: 2026-05-18
+Domain: INPUT_DETERMINISM_AND_HAPTICS
+Status: IMPLEMENTED - CORE/INPUT/EDITOR TARGETS GREEN - UNITY RUNTIME PENDING
+
+## Current Truth
+
+- Active `Docs/Tasks/CURRENT_BATCH.md` now contains the SHINOBU_36 prompt again; the archived Batch008 copy remains the recovery source used during the interrupted run.
+- Active status/rationale/log files are current verification artifacts. Archived reports are evidence history, not current proof.
+- Primary mandates used: `CTRL_Device_Abstraction_Haptics`, `DATA_Runtime_Struct_Layout_ARM64`, `NET_Logistics_Sync_BitPacking_Reconciliation`, `OPT_Zero_GC_Policy_AllocFree_Mandate`, `OPT_Native_Memory_Collections_JobSystem_Protocol`, `ARCH_Global_Registry_ServiceLocator_DI_Init`, `ARCH_Execution_Phases`, `ARCH_Signal_Lane_Segregation`, `DBG_Telemetry_Crash_Reporting_PostMortem`.
+- Supplemental designer bridge mandate read: `TOOL_Designer_Facades_CSV_Binary_Bridge`.
+
+## 20 Task Matrix
+
+- [x] 01 Graveyard scan. DOD: no authoritative `input_bindings.h8bin`/`haptic_curves.bin` found; aligned defaults used. Rejected: runtime dependence on absent binary. Estimate: 0 us runtime.
+- [x] 02 No legacy input. DOD: SHINOBU scan has no `Input.GetKey/GetAxis/GetButton`, `.performed +=`, `.canceled +=`. Rejected: callback authority. Estimate: removes desync vector.
+- [x] 03 No DTO properties. DOD: DTOs are unmanaged structs with raw fields and Vault ref writes. Rejected: property-wrapped NativeArrays. Estimate: avoids CS1612/copy churn.
+- [x] 04 ARM64 padding. DOD: `InputStateDTO` 24B, `HapticCommandDTO` 16B, `PlayerInputState` 64B, `XRInputState` 64B, `BufferedActionEntry` 16B, `UniversalInputStateSignal` 48B; touched haptic/input structs have explicit aligned sizes. Rejected: `Pack=1`, `Pack=4`, and implicit tail padding. Estimate: avoids ARM64 misalignment stalls.
+- [x] 05 Mock signals. DOD: mock collision signal path can feed haptic DTOs without KCC/tool direct dependency. Rejected: hard gameplay reference. Estimate: sub-us when disabled.
+- [x] 06 PreSimulation polling. DOD: `PreSimulationInputTick` captures cached InputSystem actions into deterministic DTO/ring. Rejected: Update callback order. Estimate: fixed poll cost only.
+- [x] 07 Radial deadzone. DOD: inner/outer/exponent radial solve with finite guards. Rejected: Unity platform processors. Estimate: one bounded sqrt/pow per poll.
+- [x] 08 512 journal. DOD: `BufferID.ShinobuInputJournalRing` has 512 `InputStateDTO` entries. Rejected: local/private NativeArray ring. Estimate: replay stability gain.
+- [x] 09 16-slot haptic decay. DOD: Vault haptic command buffer decays through bounded math. Rejected: coroutine/device-specific haptics. Estimate: bounded 16-iteration loop.
+- [x] 10 Input block mask. DOD: Vault `InputBlockMask` blocks movement/look/tools/discrete. Rejected: UI-side branch coupling. Estimate: sub-us bit masking.
+- [x] 11 XR dear-lie. DOD: XR haptics reduced to scalar amplitude and 0.02s impulse. Rejected: controller-specific physics truth. Estimate: avoids per-device simulation.
+- [x] 12 10-frame buffer. DOD: Vault button mask window is ten `uint` masks with `CheckBufferedInput`; legacy `TryConsumeBufferedAction` now converts seconds to deterministic 60 Hz frames and no longer uses `Time.time`. Rejected: unbounded/time-based queue. Estimate: fixed 10 reads worst case.
+- [x] 13 Mouse delta scaling. DOD: look delta scales by `Screen.height`; no AUP absolute cast. Rejected: world-space look correction. Estimate: deterministic viewport-local input.
+- [x] 14 Steam Deck throttle. DOD: haptic dispatch interval and thermal amplitude scale are profile controlled; movement stays 60 Hz. Rejected: dropping input tick rate. Estimate: avoids motor write bursts under pressure.
+- [x] 15 Signal bus XOR. DOD: discrete commands emit from `currentButtonMask & ~previousButtonMask`. Rejected: `WasPressedThisFrame`. Estimate: sub-us bit ops.
+- [x] 16 Uninitialized + memclear. DOD: Vault buffers request `UninitializedMemory` then `UnsafeUtility.MemClear`. Rejected: implicit clear assumptions. Estimate: explicit deterministic initialization.
+- [x] 17 300 telemetry. DOD: 300-entry telemetry ring dumps to `Docs/AgentLogs/Dump_INPUT_DETERMINISM.bin` on fault/stall. Rejected: unknown crash. Estimate: fixed ring write.
+- [x] 18 Editor tuner. DOD: `Input Curve & Haptics Tuner` exists under Core/Editor. Rejected: recompiling C# for balance. Estimate: 0 us player runtime.
+- [x] 19 CSV override. DOD: root `input_profiles.csv` is watched; file I/O/parsing is staged from the watcher path into a scalar `InputProfileDTO`, and `PRE_SIMULATION` only copies the staged DTO into Vault. Rejected: per-frame file probing, main-thread dirty-load streams, and string split parsing. Estimate: 0 us steady-state I/O and no dirty-load main-thread file stall.
+- [x] 20 Live oscilloscope. DOD: editor oscilloscope reads Vault input DTO/ring. Rejected: gameplay debug allocation. Estimate: editor-only.
+
+## Verification
+
+- PASS: `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` => 9 warnings, 0 errors.
+- PASS: `dotnet build Hecton8.Input.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` => 0 warnings, 0 errors.
+- PASS: `dotnet build Hecton8.Editor.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` => 11 warnings, 0 errors.
+- BLOCKED EXTERNAL: `dotnet build Assembly-CSharp.csproj ...` fails before SHINOBU runtime proof on 216 missing `RealtimeCSG.csproj` source file references.
+- PASS: static SHINOBU scan for legacy input authority returned no `Input.GetKey/GetAxis/GetButton`.
+- PASS: static SHINOBU scan for InputSystem callback authority returned no `.performed +=` or `.canceled +=` in `Assets/_Project/Scripts/Input` or `InputDispatcher.cs`.
+- PASS: static touched/input-domain struct scan for `Pack=1` and un-sized sequential layout returned no matches.
+- PASS: deterministic action buffer scan confirms `TryConsumeBufferedAction` no longer uses `Time.time`.
+- PASS: static scan confirms removed `TryLoadInputProfileCsvToVault` main-thread dirty-load path; CSV staging is `TryStageInputProfileCsvFromFile` plus `ApplyStagedInputProfileCsvToVault`.
+- PENDING: Unity Editor Play Mode, Profiler GC proof, actual gamepad/XR haptics, Steam Deck thermal validation.
+
+## Blocker Note For Integrator
+
+Full `Assembly-CSharp` remains a project-surface wall outside SHINOBU_36. The current root blocker is vendor `RealtimeCSG.csproj` entries pointing at absent files under `Assets/RealtimeCSG`; latest run reports 216 missing source file errors. SHINOBU verification stops at this external vendor wall instead of mutating RealtimeCSG from the input domain.

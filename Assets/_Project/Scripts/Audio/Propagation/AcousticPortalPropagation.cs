@@ -45,7 +45,7 @@ namespace Hecton8.Audio.Propagation
         InvalidInput = 5
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 56)]
     public struct AcousticPortalNode
     {
         public AcousticAup Position;
@@ -57,7 +57,7 @@ namespace Hecton8.Audio.Propagation
         private ushort _reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public struct AcousticPortalEdge
     {
         public int ToNode;
@@ -65,9 +65,10 @@ namespace Hecton8.Audio.Propagation
         public AcousticPortalFlags Flags;
         private byte _reserved0;
         private ushort _reserved1;
+        private uint _reserved2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 112)]
     public struct AcousticPathQuery
     {
         public AcousticAup SourceAup;
@@ -79,17 +80,20 @@ namespace Hecton8.Audio.Propagation
         public byte QualityTier;
         public byte DisablePortalPath;
         private ushort _reserved0;
+        private uint _reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public readonly struct SoundEmissionSignal
     {
-        public readonly uint EventID;
         public readonly AcousticAup SourceAup;
         public readonly float Volume;
         public readonly float Pitch;
+        public readonly uint EventID;
         public readonly int StationaryCacheKey;
         public readonly AcousticPortalFlags Flags;
+        private readonly byte _reserved0;
+        private readonly ushort _reserved1;
 
         public SoundEmissionSignal(
             uint eventID,
@@ -105,21 +109,15 @@ namespace Hecton8.Audio.Propagation
             Pitch = pitch;
             StationaryCacheKey = stationaryCacheKey;
             Flags = flags;
+            _reserved0 = 0;
+            _reserved1 = 0;
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 104)]
     public struct AcousticPathResult
     {
-        public AcousticPathStatus Status;
-        public byte UsedPortalPath;
-        public byte UsedSealedBulkhead;
-        public byte UsedReprojectionCache;
-        public int NodeCount;
-        public int CornerCount;
-        public int ExpandedNodeCount;
-        public int SourceNodeIndex;
-        public int ListenerNodeIndex;
+        public AcousticAup LastPortalAup;
         public float TrueDistanceMeters;
         public float DelaySeconds;
         public float Transmission01;
@@ -127,8 +125,17 @@ namespace Hecton8.Audio.Propagation
         public float ItdSeconds;
         public float RoomVolumeCubicMeters;
         public float PathfindingMs;
-        public AcousticAup LastPortalAup;
+        public int NodeCount;
+        public int CornerCount;
+        public int ExpandedNodeCount;
+        public int SourceNodeIndex;
+        public int ListenerNodeIndex;
         public uint StateHash;
+        public AcousticPathStatus Status;
+        public byte UsedPortalPath;
+        public byte UsedSealedBulkhead;
+        public byte UsedReprojectionCache;
+        private uint _reserved0;
 
         public static AcousticPathResult Fallback(AcousticPathStatus status, in AcousticPathQuery query)
         {
@@ -152,12 +159,13 @@ namespace Hecton8.Audio.Propagation
                 RoomVolumeCubicMeters = 0f,
                 PathfindingMs = 0f,
                 LastPortalAup = query.SourceAup,
-                StateHash = 0u
+                StateHash = 0u,
+                _reserved0 = 0u
             };
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 40)]
     public struct AcousticTelemetryEntry
     {
         public int Frame;

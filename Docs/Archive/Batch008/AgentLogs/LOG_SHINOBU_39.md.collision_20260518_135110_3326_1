@@ -1,0 +1,258 @@
+# LOG_SHINOBU_39
+
+## 2026-05-18 Loop 7 Forensic Report
+
+Agent: SHINOBU_39  
+Domain: Presentation & UX / Zero-GC Localization and Subtitles  
+Status: ZERO-GC SUBTITLE PATH BUILT / CLI COMPILE CLEAN / TASK 09 BACKGROUND H8BIN SWAP PARTIAL
+
+### What Was Wrong
+
+- UI subtitle hash paths still had managed-string escape routes through legacy display APIs.
+- The first char pool implementation removed many allocations but did not satisfy the literal `NativeArray<char>[64000]` Babel arena requirement.
+- Persistent Babel payload arrays were locally owned; this violated the H-Phi direction where `GlobalDataVault` can own `NativeArray<T>` buffers.
+- Cross-domain subtitle input was local-ring only; it did not consume the existing typed `SignalBus<SubtitleSignal>` lane.
+- Active `Docs/Tasks/Status_SHINOBU_39.md` and `Docs/AgentLogs/Rationale_SHINOBU_39.md` were missing; archive copies were not enough for anti-amnesia protocol.
+
+### What Was Done
+
+- Built the hash subtitle route: `SubtitleCommandDTO -> LocRegistry.TryWriteVisualSpanFromUtf8 -> CharBufferPool.BabelLease -> TMP_Text.SetCharArray`.
+- Added `LocalizationEntryDTO`, `SubtitleCommandDTO`, `SubtitleStateDTO`, `BabelFormatArgs`, mock translation/UI structs, and `LocalizationLanguageChangedSignal` as field-only runtime DTOs.
+- Added manual UTF-8 scalar decode into caller `Span<char>` with malformed-byte fallback, surrogate pairs, `^0..^3` integer injection, low-tier rich-tag stripping, RTL visual reversal, and ellipsis truncation.
+- Upgraded `CharBufferPool` to 500 x 128 Babel slots backed by `NativeArray<char>[64000]` through `GlobalDataVault` when available. TMP still receives a fixed `char[]` bridge because `TMP_Text.SetCharArray` does not accept `NativeArray<char>`.
+- Moved Babel UTF-8 payload blob and 300-frame telemetry ring to Vault-backed `NativeArray<byte>` / `NativeArray<BabelTelemetryEntry>` when `GlobalDataVault` exists. Cold fallback remains only for pre-vault bootstrap.
+- Left `NativeParallelHashMap<uint,int2>` local because `GlobalDataVault` has no hash-map handle API; forcing this would require core API work outside SHINOBU_39 scope.
+- Wired `SubtitleManager` to drain existing `SignalBus<SubtitleSignal>` with a capped eight-signal read and priority/interrupt mapping.
+- Added typed language-change publication after reload.
+- Added editor-only "Babel Localization Manager" for `.h8bin` load, validation, preview, CSV override ingestion, save, and SceneView `GUI.Label` preview.
+- Restored active Status/Rationale files from current source truth and appended this forensic report.
+
+### Cinematic Cheats Used
+
+- Typewriter effect is faked by one full text upload plus `TMP_Text.maxVisibleCharacters`. No substring rebuilds.
+- Low-tier rich text is stripped during byte decode, not rendered or parsed by TMP.
+- Localization "text" is treated as byte slices and char spans; the game-facing illusion of strings is a copy into TMP's preallocated char buffer.
+
+### Microseconds
+
+- Exact measured microseconds saved: not available. No Unity Profiler, Play Mode, Memory Profiler, or GCMonitor route was run in this session.
+- Static estimates retained for planning only:
+  - Hash subtitle string removal: 35-120 us and one managed string avoided per subtitle on i3/MX350-class CPU.
+  - Manual span decode versus managed decode/string bridge: 10-80 us per line depending length.
+  - `^0..^3` direct integer injection: 20-150 us and formatting allocation avoided per dynamic line.
+  - Typewriter via `maxVisibleCharacters`: 15-60 us saved per active reveal frame.
+  - Native-to-TMP bridge copy: bounded at 128 chars, expected <3 us per subtitle.
+
+### Verification
+
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -clp:ErrorsOnly`: succeeded, 0 warnings, 0 errors.
+- `git diff --check` on SHINOBU runtime/editor/docs files: no whitespace errors; Git reported LF-to-CRLF warnings only.
+- Static hot-path scan on `LocRegistry.cs`, `CharBufferPool.cs`, `LabelSwapScheduler.cs`, and `SubtitleManager.cs`: no `new string`, `string.Format`, `SetText(`, `TMP_Text.text =`, `Encoding.UTF8.GetChars`, `Encoding.UTF8.GetCharCount`, LINQ, or `foreach`.
+- `Pack=1` scan on SHINOBU runtime files: no matches.
+- Runtime proof not claimed: no Unity import, Play Mode, profiler, GCMonitor, Memory Profiler, player build, or visual screenshot was run.
+
+<SELF_AUDIT>
+
+## 20-Task Check
+
+- Task 01 [PASS] Binary archaeology/fallback: active binary authority and `ERROR -> MOCK_DATA` path exist.
+- Task 02 [PASS] String eradication: hash subtitle path uses UTF-8 bytes, `Span<char>`, fixed buffers, and `SetCharArray`.
+- Task 03 [PASS] CS1612 purge: runtime DTOs are field-only.
+- Task 04 [PASS] ARM64 command layout: `SubtitleCommandDTO` is 16 bytes.
+- Task 05 [PASS] Blind mocks: mock translation/UI/text structs and job exist.
+- Task 06 [PASS] Burst binary search: `BabelBinarySearchJob` exists over sorted index DTOs.
+- Task 07 [PASS] UTF-8 to UTF-16 span converter: implemented without `Encoding.UTF8.GetChars` in render path.
+- Task 08 [PASS] CharBufferPool: 64,000 native chars, 500 x 128 slots, `NativeBitArray` leases, fixed TMP bridge.
+- Task 09 [FAIL] Async locale swap: frame-deferred async API, Vault-backed reload, and language-change signal exist; full background `.h8bin` MMF/file read plus explicit POST_SIMULATION pointer commit is not implemented.
+- Task 10 [PASS] Typewriter cheat: full upload plus `maxVisibleCharacters`.
+- Task 11 [PASS] Dynamic variables: `^0..^3` integer injection via `BabelFormatArgs`.
+- Task 12 [PASS] Subtitle queue: `SignalBus<SubtitleSignal>` drains into `SubtitleCommandDTO` ring.
+- Task 13 [PASS] Hardware LOD: low-tier rich-tag strip during decode.
+- Task 14 [PASS] AUP agnostic: no `double3` or world coordinates in Babel DTOs.
+- Task 15 [PASS] Missing hash: `[ERR_LOC_HASH]` span fallback.
+- Task 16 [PASS] Zero-init bypass: payload native buffers use `UninitializedMemory` where safe.
+- Task 17 [PASS] Telemetry: 300-frame ring plus `Dump_BABEL_SYSTEM.bin` and `Dump_SHINOBU_39.bin`.
+- Task 18 [PASS] Editor facade: "Babel Localization Manager".
+- Task 19 [PASS] CSV override: editor-only `loc_overrides.csv` ingest.
+- Task 20 [PASS] GUI.Label preview: SceneView preview implemented.
+
+## ARM64 Check
+
+- `LocalizationEntryDTO` size 16:
+  - offset 0: `uint StringHash`
+  - offset 4: `uint ByteOffset`
+  - offset 8: `uint ByteLength`
+  - offset 12: `uint _pad0`
+- `SubtitleCommandDTO` size 16:
+  - offset 0: `uint SpeakerHash`
+  - offset 4: `uint TextHash`
+  - offset 8: `float Duration`
+  - offset 12: `uint _pad0`
+- `BabelTelemetryEntry` size 32:
+  - offset 0: `int Frame`
+  - offset 4: `uint KeyHash`
+  - offset 8: `int Offset`
+  - offset 12: `int Length`
+  - offset 16: `int TranslationsPerFrame`
+  - offset 20: `int BufferPoolLeasesActive`
+  - offset 24: `float SpanConversionTimeMs`
+  - offset 28: `ushort Language`
+  - offset 30: `ushort Flags`
+- No runtime SHINOBU struct uses `Pack=1`.
+
+## Zero-GC Check
+
+- `SubtitleManager.Tick()` drains typed signals, advances timers, and mutates `maxVisibleCharacters`; no string allocation route is used by the hash/Babel path.
+- Hash subtitle display writes into `CharBufferPool.BabelLease.Span`, copies into a preallocated TMP bridge, and calls `SetCharArray`.
+- Static scan found no `new string`, `string.Format`, `SetText(`, `TMP_Text.text =`, `Encoding.UTF8.GetChars`, `Encoding.UTF8.GetCharCount`, LINQ, or `foreach` in SHINOBU runtime hot files.
+- Legacy string APIs remain for compatibility, but the new Babel subtitle route does not use them.
+
+## AUP Check
+
+- Babel DTOs carry hashes, duration, counters, flags, and byte/char offsets only.
+- No 64-bit AUP coordinates are injected into localization or subtitle decode.
+- Screen-space subtitle presentation avoids float-jitter by design.
+
+## Dear Lie Check
+
+- Physical typewriter behavior is faked with `maxVisibleCharacters`.
+- Low-tier style complexity is faked by stripping rich tags before TMP sees them instead of simulating or rendering richer effects.
+
+## Dependency Check
+
+- Cross-domain subtitle input uses existing `SignalBus<SubtitleSignal>`.
+- Language swaps publish typed `LocalizationLanguageChangedSignal`.
+- Vault access goes through `GlobalRegistry.DataVault` / `GlobalDataVault.TryGetLatestCreated`.
+- No direct quest, terminal, audio-log implementation class dependency was added to the Babel hot path.
+- No `*.Contracts.asmdef` churn was introduced for this patch.
+
+## H-Phi Check
+
+- Vault-backed when available: Babel native char arena, UTF-8 payload blob, Babel telemetry ring.
+- Local fallback remains only for pre-vault bootstrap.
+- `NativeParallelHashMap<uint,int2>` remains local because the current `GlobalDataVault` contract does not expose hash-map ownership.
+
+## Blackbox
+
+- 300-frame ring active in `LocRegistry`.
+- Fault/slow decode path writes `Docs/AgentLogs/Dump_SHINOBU_39.bin` and `Docs/AgentLogs/Dump_BABEL_SYSTEM.bin`.
+
+## Compile Guard
+
+- `Hecton8.Core.csproj` CLI compile succeeded with 0 warnings and 0 errors.
+- Circular dependency risk checked by avoiding direct sibling-domain references and avoiding core enum/contract churn for private Babel buffer IDs.
+
+</SELF_AUDIT>
+
+---
+
+## LOOP 8 TASK 09 CLOSURE - 2026-05-18
+
+Status: PENDING VERIFICATION / CLI COMPILE CLEAN / UNITY RUNTIME PROFILER PROOF NOT RUN
+
+### What Was Wrong
+
+- Task 09 was correctly marked partial: `SetLanguageAsync` deferred one frame but did not perform a background `.h8bin` read or commit a pointer/payload swap in the dispatcher `POST_SIMULATION` window.
+- The previous report would have been a false completion claim for the async locale-swap requirement.
+
+### What Was Done
+
+- Added `BabelDictionaryStage` as a 32-byte aligned staging DTO.
+- Added Vault-backed staged locale bytes at private buffer id `(BufferID)70543`; the buffer is locked while a background reader owns the raw pointer.
+- Added `LocRegistry.TryBeginBabelDictionaryStage`, `AbortBabelDictionaryStage`, and `TryCommitStagedBabelDictionary`.
+- Added `.h8bin` validation before commit: magic, version, header size, file length, little-endian flag, 16-byte index/data alignment, index bounds, entry bounds, and CRC32 via `H8Crc32`.
+- Added background MMF read in `LocalizationManager` for editor/standalone with stream fallback using `Span<byte>` over the staged native pointer.
+- Registered `LocalizationManager` as an `IDispatcherSystem` and committed successful swaps in `DispatcherPhase.PostSimulation`.
+- Kept legacy string table APIs intact for compatibility; the Babel hash subtitle/TMP path remains the zero-GC path.
+
+### Cinematic Cheats Used
+
+- Typewriter reveal remains a display fake: upload full translated char buffer once and reveal via `TMP_Text.maxVisibleCharacters`.
+- Low-tier text complexity is faked by stripping rich tags during UTF-8 decode before TMP parses them.
+- Locale swap treats text as binary payload pages, not semantic strings, until the final `SetCharArray` bridge.
+
+### Microseconds
+
+- Exact measured microseconds saved: not claimed. No Unity Profiler, Play Mode, GCMonitor, Memory Profiler, or player build was run.
+- Static expectation: the 1.53 MB Babel dictionary read is moved off the main thread, so the language-change stall is file-system dependent rather than frame-bound. Steam Deck MicroSD benefit still needs runtime capture.
+
+### Verification
+
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -clp:ErrorsOnly`: PASS, 9 warnings, 0 errors. Warning details were not emitted by `ErrorsOnly`.
+- `python -B Tools/VerifyBabelDictionary.py`: PASS, `BABEL VERIFIED`, endian `<`, alignment 16, collisions resolved 0.
+- `git diff --check`: PASS; Git emitted LF-to-CRLF warnings only.
+- Runtime hot-file scan (`LocRegistry.cs`, `CharBufferPool.cs`, `LabelSwapScheduler.cs`, `SubtitleManager.cs`): no `new string`, `string.Format`, `SetText(`, `TMP_Text.text =`, `Encoding.UTF8.GetChars`, `Encoding.UTF8.GetCharCount`, LINQ, or `foreach`.
+- `Pack=1` scan on SHINOBU runtime files: no matches.
+
+<SELF_AUDIT>
+
+## 20-Task Check
+
+- Task 01 [PASS] Binary archaeology/fallback: active Babel dictionary verified; emergency `ERROR -> MOCK_DATA` fallback remains.
+- Task 02 [PASS] String eradication: hash subtitle path uses UTF-8 bytes, `Span<char>`, `CharBufferPool`, and `TMP_Text.SetCharArray`.
+- Task 03 [PASS] CS1612 purge: runtime DTOs use fields, not mutable properties.
+- Task 04 [PASS] ARM64 command layout: `SubtitleCommandDTO` is 16 bytes.
+- Task 05 [PASS] Blind mocks: mock translation/UI/text structs and Burst mock job exist.
+- Task 06 [PASS] Burst binary search: `BabelBinarySearchJob` exists over `LocalizationEntryDTO`.
+- Task 07 [PASS] UTF-8 to UTF-16 span converter: manual decoder writes caller-owned spans.
+- Task 08 [PASS] CharBufferPool: 64,000 native chars, 500 x 128 slots, bitset leases, fixed TMP bridge.
+- Task 09 [PASS] Async locale swap: background `.h8bin` read into Vault staging, validation, POST_SIMULATION commit, typed language signal.
+- Task 10 [PASS] Typewriter cheat: full char upload plus `maxVisibleCharacters`.
+- Task 11 [PASS] Dynamic variables: `^0..^3` integer injection into span.
+- Task 12 [PASS] Subtitle queue: existing `SignalBus<SubtitleSignal>` drains into `SubtitleCommandDTO`.
+- Task 13 [PASS] Hardware LOD: low-tier rich-tag strip during decode.
+- Task 14 [PASS] AUP agnostic: no `double3` or world coordinates in Babel DTOs.
+- Task 15 [PASS] Missing hash: `[ERR_LOC_HASH]` span fallback.
+- Task 16 [PASS] Zero-init bypass: active and staged native byte buffers use `UninitializedMemory` where safe.
+- Task 17 [PASS] Telemetry: 300-frame ring and dump paths active.
+- Task 18 [PASS] Editor facade: Babel Localization Manager exists.
+- Task 19 [PASS] CSV override: editor-only override ingest exists.
+- Task 20 [PASS] GUI.Label preview: editor preview exists.
+
+## Struct Layout
+
+- `LocalizationEntryDTO`, size 16: offset 0 `uint StringHash`; offset 4 `uint ByteOffset`; offset 8 `uint ByteLength`; offset 12 `uint _pad0`.
+- `SubtitleCommandDTO`, size 16: offset 0 `uint SpeakerHash`; offset 4 `uint TextHash`; offset 8 `float Duration`; offset 12 `uint _pad0`.
+- `BabelDictionaryStage`, size 32: offset 0 `IntPtr Destination`; offset 8 `int ByteLength`; offset 12 `uint Generation`; offset 16 `int BufferId`; offset 20 `ushort Language`; offset 22 `ushort Flags`; offset 24 `uint _pad0`; offset 28 `uint _pad1`.
+- `BabelTelemetryEntry`, size 32: offset 0 `int Frame`; offset 4 `uint KeyHash`; offset 8 `int Offset`; offset 12 `int Length`; offset 16 `int TranslationsPerFrame`; offset 20 `int BufferPoolLeasesActive`; offset 24 `float SpanConversionTimeMs`; offset 28 `ushort Language`; offset 30 `ushort Flags`.
+
+## Zero-GC Check
+
+- Hash subtitle `Tick()` path does not allocate strings, use LINQ, box enumerators, or call TMP string APIs.
+- Locale swap is cold async work, not a per-frame text hot path; background file I/O uses native staging, not managed `byte[]`.
+- Legacy string APIs in `LocalizationManager` still exist for compatibility. They are not the Babel subtitle/TMP hot path and are not claimed zero-GC.
+
+## AUP Check
+
+- Babel/subtitle payloads carry hashes, byte offsets, lengths, durations, counters, and flags only.
+- No absolute world positions are cast or stored; screen-space UI avoids AUP jitter by staying AUP-agnostic.
+
+## Dear Lie Check
+
+- The physical typewriter is faked with integer visibility.
+- Low-tier font complexity is faked by pre-stripping tags instead of asking TMP/GPU to render effects.
+
+## Dependency Check
+
+- Used `GlobalRegistry.TryRegisterDispatcherSystem` for the POST_SIMULATION commit owner.
+- Used `GlobalRegistry.DataVault` / `GlobalDataVault.TryGetLatestCreated` for Vault access.
+- Used typed `SignalBus<LocalizationLanguageChangedSignal>` and existing `SignalBus<SubtitleSignal>`.
+- No contracts/asmdef churn and no direct quest/terminal/audio-log concrete dependency added.
+
+## H-Phi Check
+
+- Vault-backed: Babel char arena, active UTF-8 blob, staged locale bytes, telemetry ring.
+- Remaining local native map: `NativeParallelHashMap<uint,int2>` because current Vault API exposes `NativeArray<T>` handles, not hash-map handles.
+
+## Blackbox
+
+- 300-frame Babel ring is active.
+- Slow decode or corrupt slice writes `Docs/AgentLogs/Dump_SHINOBU_39.bin` and `Docs/AgentLogs/Dump_BABEL_SYSTEM.bin`.
+
+## Compile Guard
+
+- No direct sibling assembly references were introduced.
+- No `*.Contracts.asmdef` file was modified.
+- CLI compile passed with 0 errors.
+
+</SELF_AUDIT>

@@ -461,8 +461,8 @@ namespace Hecton8.Audio.Editor
 
             if (directorAI.Length > 0)
             {
-                AssertContains(directorAI, "[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]", "DirectorAI music signal has explicit ARM64 layout", builder, ref failureCount);
-                AssertContains(directorAI, "public readonly struct DirectorAIMusicSignal : ISignal", "DirectorAI music cue is an immutable typed signal", builder, ref failureCount);
+                AssertContains(globalSignals, "[StructLayout(LayoutKind.Sequential, Size = 32)]", "DirectorAI music signal has explicit ARM64 layout with natural packing", builder, ref failureCount);
+                AssertContains(globalSignals, "public readonly struct DirectorAIMusicSignal : ISignal", "DirectorAI music cue is an immutable typed signal", builder, ref failureCount);
                 AssertContains(directorAI, "SignalBus<DirectorAIMusicSignal>.Push(in signal)", "DirectorAI publishes music cues through the typed SignalBus lane", builder, ref failureCount);
                 AssertContains(directorAI, "PublishMusicSignal(ThreatSpikeEventType", "DirectorAI threat spikes publish typed music cues even without legacy listeners", builder, ref failureCount);
                 AssertContains(directorAI, "PublishMusicSignal(PredatorPressureEventType", "DirectorAI predator pressure publishes typed music cues even without legacy listeners", builder, ref failureCount);
@@ -645,9 +645,9 @@ namespace Hecton8.Audio.Editor
             {
                 string acousticPlayMadness = ExtractMethodBody(acousticZone, "internal void PlayMadnessWhisperCue()");
                 string acousticEmitterOcclusion = ExtractMethodBody(acousticZone, "private void UpdateEmitterOcclusionState(AudioListener listener)");
-                AssertContains(acousticZone, "[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]", "Acoustic-zone typed signal has explicit ARM64 layout", builder, ref failureCount);
-                AssertContains(acousticZone, "public readonly struct AcousticZoneChangedEvent : ISignal", "Acoustic-zone transition payload is an immutable typed signal", builder, ref failureCount);
-                AssertContains(acousticZone, "private readonly byte _isInterior", "Acoustic-zone payload avoids bool field layout ambiguity", builder, ref failureCount);
+                AssertContains(globalSignals, "[StructLayout(LayoutKind.Sequential, Size = 16)]", "Acoustic-zone typed signal has explicit ARM64 layout with natural packing", builder, ref failureCount);
+                AssertContains(globalSignals, "public readonly struct AcousticZoneChangedEvent : ISignal", "Acoustic-zone transition payload is an immutable typed signal", builder, ref failureCount);
+                AssertContains(globalSignals, "private readonly byte _isInterior", "Acoustic-zone payload avoids bool field layout ambiguity", builder, ref failureCount);
                 AssertContains(acousticZone, "SignalBus<AcousticZoneChangedEvent>.Push(in payload)", "Acoustic-zone transitions publish through the typed SignalBus lane", builder, ref failureCount);
                 AssertContains(acousticZone, "SignalBus<AcousticZoneChangedEvent>.SnapshotCount", "Acoustic-zone pending telemetry reads typed-lane snapshot state", builder, ref failureCount);
                 AssertContains(acousticZone, "SignalBus<AcousticZoneChangedEvent>.DroppedLastFlush", "Acoustic-zone drop telemetry reads typed-lane drop state", builder, ref failureCount);

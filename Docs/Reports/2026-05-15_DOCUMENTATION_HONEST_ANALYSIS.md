@@ -1,3 +1,10 @@
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-18 R22 Static Actuality Boundary
+
+This document is active only where it agrees with `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, current source files, and fresh verification artifacts.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, platform run, campaign telemetry, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older `PASS` / `VERIFIED` labels inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 # 2026-05-15 Documentation Honest Analysis
 
 Date: 2026-05-15
@@ -165,7 +172,7 @@ What was wrong:
 
 What was done:
 
-- Current documentation/status override now starts at `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
+- Historical R10-era note: documentation/status override then started at `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`; current DOC_GLOBAL navigation is superseded by the May 18 R15/R14/R13/R11/R10/R9 local reports.
 - Current root/index cleanup now starts at `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
 - May 11 continuation and manifest are retained as historical evidence/manifest snapshots.
 - May 4 actuality sweep is retained as historical broad context unless rerun.

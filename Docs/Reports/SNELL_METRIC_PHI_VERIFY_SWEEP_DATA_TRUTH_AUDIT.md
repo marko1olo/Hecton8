@@ -1,14 +1,33 @@
 # METRIC_PHI Data Truth Audit
 
-Status: DATA_TRUTH_VERIFIED
+Status: HISTORICAL DATA-TRUTH STATIC SNAPSHOT / RUNTIME PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-18 R13 Report Snapshot Boundary
+
+This report file is a snapshot/provenance document. It is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/Reports/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+Historical `PASS`, `VERIFIED`, `current`, `latest`, counter, compile, runtime, 0-GC, frame-time, cost, and performance statements inside this report are not current proof unless the exact claim links a fresh artifact path, command/tool, timestamp, evidence class, and unresolved-error list. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied by this file alone.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 Evidence class: CLI_PYTHON_STATIC_DATA. Unity/runtime proof remains PENDING VERIFICATION.
+
+
+Batch008 binary hygiene supersession: `Docs/Archive/Batch008/AgentLogs/BinaryHygiene_H8BIN_GRAVEYARD_AUDITOR_RECHECK2.json` reports `BINARY_HYGIENE_FAILED`, `binaryCount=65`, `misalignedCount=16`; the product misalignment is `Data/Balance/Baked/Babel_Dictionary.h8bin` and the other 15 are Bakery editor/plugin fixtures. Old aligned-data rows in this snapshot are historical only.
+
 
 ## Checks
 
 | Check | Status | Artifact | Detail |
 |---|---:|---|---|
 | `h_phi_status` | PASS | `Docs/Reports/SNELL_METRIC_PHI_VERIFY_SWEEP_H_PHI_SCORE.json` | PHI CALCULATED |
-| `h_phi_omega_static` | PASS | `Docs/Reports/SNELL_METRIC_PHI_VERIFY_SWEEP_H_PHI_SCORE.json` | VERIFIED MASTER GRADE STATIC_SOURCE ONLY |
+| `h_phi_omega_static` | PASS | `Docs/Reports/SNELL_METRIC_PHI_VERIFY_SWEEP_H_PHI_SCORE.json` | HISTORICAL STATIC_SOURCE SNAPSHOT ONLY / RUNTIME PENDING |
 | `h_phi_domain_count` | PASS | `Docs/Reports/SNELL_METRIC_PHI_VERIFY_SWEEP_H_PHI_SCORE.json` | domain_index_count=85 |
 | `h_phi_report_fresh_for_eligible_sources` | PASS | `Docs/Reports/SNELL_METRIC_PHI_VERIFY_SWEEP_H_PHI_SCORE.json` | generated_at=2026-05-17T02:05:17 eligible_files=5015 report_files=5015 newest=Assets/_Project/Scripts/UI/Localization/H8LocHashes.cs newest_time=2026-05-17T00:25:53.373942 |
 | `h_phi_graph_exists` | PASS | `Docs/Reports/SNELL_METRIC_PHI_VERIFY_SWEEP_H_PHI_ARCHITECTURE_GRAPH.png` | bytes=793668 |
@@ -30,7 +49,7 @@ Evidence class: CLI_PYTHON_STATIC_DATA. Unity/runtime proof remains PENDING VERI
 | `acoustic_scalability_tiers` | PASS | `Data/Audio/Acoustic_LUT.manifest.json` | tiers=['high', 'middle', 'rtx_overkill', 'toaster_i3'] |
 | `acoustic_stateless_lookup` | PASS | `Data/Audio/Acoustic_LUT.manifest.json` | {'atlasAssemblies': ['Hecton8.Audio.Propagation', 'Hecton8.Audio.Synthesis', 'Hecton8.Audio.Echolocation', 'Hecton8.Audio.Virtualization'], 'atlasFamily': 'Audio', 'audioThreadLookup': 'forbidden', 'dataSovereignty': 'stateless raw binary lookup; no private runtime coefficient solver', 'snapshotCadence': 'block_or_control_update_only'} |
 | `economy_million_step` | PASS | `Docs/Reports/Economy_MonteCarlo_Audit.json` | steps=1078223 million=True |
-| `economy_no_failures` | PASS | `Docs/Reports/Economy_MonteCarlo_Audit.json` | status=ECONOMY PROVEN failures=0 |
+| `economy_no_failures` | PASS | `Docs/Reports/Economy_MonteCarlo_Audit.json` | historical economy Monte Carlo zero-failure label / RUNTIME PENDING |
 | `economy_p99_threshold` | PASS | `Docs/Reports/Economy_MonteCarlo_Audit.json` | p99=59.150000000000034 threshold=60.0 |
 | `fnv_collision_count` | PASS | `Docs/Reports/H8HashCollision_METRIC_PHI_ANALYST.json` | collision_count=0 |
 | `fnv_record_coverage` | PASS | `Docs/Reports/H8HashCollision_METRIC_PHI_ANALYST.json` | records=1018 |
@@ -39,10 +58,10 @@ Evidence class: CLI_PYTHON_STATIC_DATA. Unity/runtime proof remains PENDING VERI
 | `lore_stateless_lookup` | PASS | `Data/Lore/Encyclopedia.manifest.json` | {'data_sovereignty_static_score': 1.0, 'lookup_model': 'stateless binary search over sorted 16-byte records; payload is raw UTF-8 slice', 'private_runtime_state_required': False, 'unity_runtime_proof': 'PENDING VERIFICATION'} |
 | `lore_scalability_profiles` | PASS | `Data/Lore/Encyclopedia.manifest.json` | profiles=['rtx_overkill', 'toaster'] |
 | `tech_lore_manifest` | PASS | `Data/Lore/PdaTechnicalLogs.manifest.json` | magic=H8PT entries=100 collisions=0 |
-| `verify_sweep_pass` | PASS | `.codex_tmp/metric_phi_selfcheck/SNELL_METRIC_PHI_VERIFY_SWEEP.11780.json` | status=VERIFY_SWEEP_PASS requiredFailures=0 selfCheckPending=True |
+| `verify_sweep_pass` | PASS | `.codex_tmp/metric_phi_selfcheck/SNELL_METRIC_PHI_VERIFY_SWEEP.11780.json` | historical verify-sweep zero-required-failure label selfCheckPending=True / STATIC_TOOLING |
 | `verify_sweep_command_coverage` | PASS | `.codex_tmp/metric_phi_selfcheck/SNELL_METRIC_PHI_VERIFY_SWEEP.11780.json` | totalCommands=34 results=34 |
 | `verify_replay_hasher_reference` | PASS | `.codex_tmp/metric_phi_selfcheck/SNELL_METRIC_PHI_VERIFY_SWEEP.11780.json` | returnCode=0 |
-| `all_data_binaries_aligned16` | PASS | `Data` | files=44 unaligned=0 |
+| `all_data_binaries_aligned16` | HISTORICAL_STATIC_PASS_SUPERSEDED | `Data` | historical files=44 unaligned=0; Batch008 RECHECK2 now reports global binary hygiene failed with one product misalignment plus Bakery fixtures |
 | `python_struct_endianness` | PASS | `Tools` | format_sites=274 failures=0 |
 
 ## Summary

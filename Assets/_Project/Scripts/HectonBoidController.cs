@@ -9,7 +9,7 @@
 //   4. Lifecycle: ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ñ‹Ð¹ Release Ð±ÑƒÑ„ÐµÑ€Ð¾Ð² Ð¿Ñ€Ð¸ OnDestroy.
 //
 // ÐÐ Ð¥Ð˜Ð¢Ð•ÐšÐ¢Ð£Ð Ð:
-//   â€¢ ITickable â€” Ð¸Ð½Ñ‚ÐµÐ³Ñ€Ð°Ñ†Ð¸Ñ Ñ GameTickManager. ÐÐµÑ‚ Update().
+//   â€¢ ITickable â€” Ð¸Ð½Ñ‚ÐµÐ³Ñ€Ð°Ñ†Ð¸Ñ Ñ GameTickManager. ÐÐµÑ‚ MonoBehaviour tick.
 //   â€¢ Graphics.RenderMeshIndirect (Unity 6) â€” one GPU-visible draw call.
 //   â€¢ Ping-Pong GraphicsBuffer â€” Ð´Ð²Ð° Ð±ÑƒÑ„ÐµÑ€Ð°, swap ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€, zero race conditions.
 //   â€¢ MaterialPropertyBlock â€” zero GC per-frame (reuse).
@@ -59,9 +59,11 @@
 //   â€¢ Ping-Pong swap â€” integer increment, zero allocation.
 // ============================================================================
 
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.World;
@@ -73,7 +75,7 @@ using UnityEngine.Rendering;
 namespace Hecton8.AI.GPU
 {
     [DisallowMultipleComponent]
-    public sealed class HectonBoidController : MonoBehaviour, ITickable, IUpdatable, Hecton8.Physics.IAcousticPingEventListener
+    public sealed class HectonBoidController : MonoBehaviour, ITickable, IUpdatable
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  BOID DATA â€” must match compute shader struct exactly
@@ -87,6 +89,10 @@ namespace Hecton8.AI.GPU
         private const int SpatialGridCounterStride = 4;
         private const int SpatialGridCellEntryStride = 4;
         private const int MaxPredatorAupPositions = 16;
+        private const int MaxAcousticPingSignalsPerFrame = 16;
+        private const float AcousticPingDecayMetersPerSecond = 34f;
+        private const float AcousticPingMinLifetimeSeconds = 0.15f;
+        private const float AcousticPingMaxLifetimeSeconds = 3.5f;
         private const float DefaultBoidCullingRadiusScale = 2.25f;
 
         /// <summary>
@@ -335,7 +341,6 @@ namespace Hecton8.AI.GPU
         private int _predatorAupCount;
         private Vector4 _activeAcousticPingAupRadius;
         private Vector4 _activeAcousticPingParams;
-        private bool _acousticPingSubscribed;
 
         /// <summary>
         /// Frame counter for Ping-Pong buffer swap.
@@ -490,8 +495,6 @@ namespace Hecton8.AI.GPU
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
             _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
-            Hecton8.Physics.PhysicsEventBus.Register((Hecton8.Physics.IAcousticPingEventListener)this);
-            _acousticPingSubscribed = true;
 
             if (_playerTransform == null)
                 FindPlayer();
@@ -507,22 +510,10 @@ namespace Hecton8.AI.GPU
 
             _foveatedSimulationDirector = null;
             _foveatedSimulationTier = FoveatedSimulationTier.Active;
-
-            if (_acousticPingSubscribed)
-            {
-                Hecton8.Physics.PhysicsEventBus.Unregister((Hecton8.Physics.IAcousticPingEventListener)this);
-                _acousticPingSubscribed = false;
-            }
         }
 
         private void OnDestroy()
         {
-            if (_acousticPingSubscribed)
-            {
-                Hecton8.Physics.PhysicsEventBus.Unregister((Hecton8.Physics.IAcousticPingEventListener)this);
-                _acousticPingSubscribed = false;
-            }
-
             ReleaseBuffers();
         }
 
@@ -569,7 +560,10 @@ namespace Hecton8.AI.GPU
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             if (simulateBoids)
+            {
+                ConsumeAcousticPingSignals();
                 SetComputeUniforms(deltaTime);
+            }
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  3. DISPATCH COMPUTE
@@ -1656,27 +1650,56 @@ namespace Hecton8.AI.GPU
             _predatorAupCount = Mathf.Clamp(count, 0, MaxPredatorAupPositions);
         }
 
-        public void OnAcousticPing(in Hecton8.Physics.AcousticPingEvent pingEvent)
+        private void ConsumeAcousticPingSignals()
         {
-            RegisterAcousticPing(
-                pingEvent.RuntimePosition,
-                pingEvent.RadiusMeters,
-                pingEvent.Intensity01,
-                pingEvent.LifetimeSeconds);
+            ReadOnlySpan<AcousticPingSignal> signals = SignalBus<AcousticPingSignal>.GetFrameSnapshot();
+            int start = Mathf.Max(0, signals.Length - MaxAcousticPingSignalsPerFrame);
+            float currentTime = Time.time;
+            for (int i = start; i < signals.Length; i++)
+            {
+                ref readonly AcousticPingSignal signal = ref signals[i];
+                if (!math.isfinite(signal.RadiusMeters) ||
+                    !math.isfinite(signal.Intensity01) ||
+                    !TryToFiniteVector3(signal.PositionAup.ToRuntimeFloat3(), out Vector3 runtimePosition))
+                {
+                    continue;
+                }
+
+                float lifetimeSeconds = math.clamp(
+                    signal.RadiusMeters / AcousticPingDecayMetersPerSecond,
+                    AcousticPingMinLifetimeSeconds,
+                    AcousticPingMaxLifetimeSeconds);
+                RegisterAcousticPing(runtimePosition, signal.RadiusMeters, signal.Intensity01, lifetimeSeconds, currentTime);
+            }
         }
 
         public void RegisterAcousticPing(Vector3 aupPosition, float radiusMeters, float intensity01, float lifetimeSeconds)
         {
+            RegisterAcousticPing(aupPosition, radiusMeters, intensity01, lifetimeSeconds, Time.time);
+        }
+
+        private void RegisterAcousticPing(Vector3 aupPosition, float radiusMeters, float intensity01, float lifetimeSeconds, float currentTime)
+        {
+            if (!math.isfinite(radiusMeters) ||
+                !math.isfinite(intensity01) ||
+                !math.isfinite(lifetimeSeconds) ||
+                !math.isfinite(currentTime) ||
+                !TryToFiniteVector3(new float3(aupPosition.x, aupPosition.y, aupPosition.z), out Vector3 finitePosition))
+            {
+                return;
+            }
+
+            float shockwaveWeight = math.isfinite(acousticPingShockwaveWeight) ? math.max(0f, acousticPingShockwaveWeight) : 0f;
             float radius = Mathf.Max(0.001f, radiusMeters);
-            float intensity = Mathf.Clamp01(intensity01) * Mathf.Max(0f, acousticPingShockwaveWeight);
+            float intensity = Mathf.Clamp01(intensity01) * shockwaveWeight;
             if (intensity <= 0.0001f)
                 return;
 
-            _activeAcousticPingAupRadius = new Vector4(aupPosition.x, aupPosition.y, aupPosition.z, radius);
+            _activeAcousticPingAupRadius = new Vector4(finitePosition.x, finitePosition.y, finitePosition.z, radius);
             _activeAcousticPingParams = new Vector4(
                 intensity,
                 radius * radius,
-                Time.time + Mathf.Max(0.001f, lifetimeSeconds),
+                currentTime + Mathf.Max(0.001f, lifetimeSeconds),
                 1f);
         }
 

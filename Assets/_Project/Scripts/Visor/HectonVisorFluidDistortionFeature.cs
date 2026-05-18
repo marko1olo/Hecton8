@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
-using Hecton8.Gameplay;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -32,6 +32,7 @@ namespace Hecton8.Visor
         private const float QuaternionUnitLengthSqEpsilon = 0.015625f;
         private const int BlackBoxFrameCount = 300;
         private const int BlackBoxEntrySizeBytes = 48;
+        private const int VisorFluidGlobalsStrideBytes = 128;
         private const uint BlackBoxMagic = 0x56535246u;
         private const uint BlackBoxVersion = 1u;
         private const uint BlackBoxFlagPlayerCamera = 1u << 0;
@@ -117,7 +118,7 @@ namespace Hecton8.Visor
                 float thermalMotionCull01,
                 float waterDensitySignal01,
                 float homeostasisFallback01,
-                bool lowTier,
+                float lowTierWeight01,
                 float visualOverkill01,
                 HectonQualityTier qualityTier,
                 uint telemetryFlags)
@@ -131,28 +132,28 @@ namespace Hecton8.Visor
                 ThermalMotionCull01 = thermalMotionCull01;
                 WaterDensitySignal01 = waterDensitySignal01;
                 HomeostasisFallback01 = homeostasisFallback01;
-                LowTier = lowTier;
+                LowTierWeight01 = lowTierWeight01;
                 VisualOverkill01 = visualOverkill01;
                 QualityTier = qualityTier;
                 TelemetryFlags = telemetryFlags;
             }
 
-            public float Wetness { get; }
-            public float HullStress { get; }
-            public Vector3 LocalVelocity { get; }
-            public float AmbientLight01 { get; }
-            public float EffectIntensity { get; }
-            public float RainIntensity { get; }
-            public float ThermalMotionCull01 { get; }
-            public float WaterDensitySignal01 { get; }
-            public float HomeostasisFallback01 { get; }
-            public bool LowTier { get; }
-            public float VisualOverkill01 { get; }
-            public HectonQualityTier QualityTier { get; }
-            public uint TelemetryFlags { get; }
+            public readonly float Wetness;
+            public readonly float HullStress;
+            public readonly Vector3 LocalVelocity;
+            public readonly float AmbientLight01;
+            public readonly float EffectIntensity;
+            public readonly float RainIntensity;
+            public readonly float ThermalMotionCull01;
+            public readonly float WaterDensitySignal01;
+            public readonly float HomeostasisFallback01;
+            public readonly float LowTierWeight01;
+            public readonly float VisualOverkill01;
+            public readonly HectonQualityTier QualityTier;
+            public readonly uint TelemetryFlags;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = BlackBoxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = BlackBoxEntrySizeBytes)]
         private struct VisorRefractionTelemetryEntry
         {
             [FieldOffset(0)] public uint FrameIndex;
@@ -180,37 +181,15 @@ namespace Hecton8.Visor
                 internal Material Material;
             }
 
-            private const float MaterialFloatEpsilon = 0.0001f;
+            private const float GlobalsFloatEpsilon = 0.0001f;
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Visor Fluid Distortion");
             private FeatureSettings _settings;
             private Material _material;
             private RuntimeState _runtimeState;
-            private Material _lastParameterMaterial;
-            private Vector4 _lastLocalVelocityShader = Vector4.positiveInfinity;
-            private float _lastIntensity = float.PositiveInfinity;
-            private float _lastRainIntensity = float.PositiveInfinity;
-            private float _lastWetness = float.PositiveInfinity;
-            private float _lastHullStress = float.PositiveInfinity;
-            private float _lastDistortionStrength = float.PositiveInfinity;
-            private float _lastRunoffSpeed = float.PositiveInfinity;
-            private float _lastDropletScale = float.PositiveInfinity;
-            private float _lastLateralStreakStrength = float.PositiveInfinity;
-            private float _lastForwardStretchStrength = float.PositiveInfinity;
-            private float _lastEdgeStreakStrength = float.PositiveInfinity;
-            private float _lastEdgeFadeExponent = float.PositiveInfinity;
-            private float _lastSpeed01 = float.PositiveInfinity;
-            private float _lastThermalMotionCull = float.PositiveInfinity;
-            private float _lastAmbientLight = float.PositiveInfinity;
-            private float _lastDustStrength = float.PositiveInfinity;
-            private float _lastAmbientDustResponse = float.PositiveInfinity;
-            private float _lastSnellStrength = float.PositiveInfinity;
-            private float _lastDepthSoftness = float.PositiveInfinity;
-            private float _lastWaterDensitySignal = float.PositiveInfinity;
-            private float _lastHomeostasisFallback = float.PositiveInfinity;
-            private float _lastLowTier = float.PositiveInfinity;
-            private float _lastVisualOverkill = float.PositiveInfinity;
-            private Vector4 _lastIorLut = Vector4.positiveInfinity;
+            private GraphicsBuffer _visorFluidGlobalsBuffer;
+            private VisorFluidGlobalsDTO _lastVisorFluidGlobals;
+            private bool _hasVisorFluidGlobals;
 
             public VisorFluidPass()
             {
@@ -226,6 +205,7 @@ namespace Hecton8.Visor
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Color | ScriptableRenderPassInput.Depth);
                 requiresIntermediateTexture = true;
+                EnsureVisorFluidGlobalsBuffer();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -265,7 +245,8 @@ namespace Hecton8.Visor
                 destinationDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
-                UpdateMaterialParameters(_material, _settings, _runtimeState);
+                if (!UpdateVisorFluidGlobals(_settings, _runtimeState))
+                    return;
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PassData>(
                            "Hecton Visor Fluid Distortion",
@@ -295,13 +276,38 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private void UpdateMaterialParameters(Material material, FeatureSettings settings, RuntimeState runtimeState)
+            public void Dispose()
             {
-                if (!ReferenceEquals(_lastParameterMaterial, material))
+                _visorFluidGlobalsBuffer?.Release();
+                _visorFluidGlobalsBuffer = null;
+                _hasVisorFluidGlobals = false;
+            }
+
+            private bool EnsureVisorFluidGlobalsBuffer()
+            {
+                if (!SystemInfo.supportsSetConstantBuffer)
                 {
-                    ResetMaterialParameterCache();
-                    _lastParameterMaterial = material;
+                    Dispose();
+                    return false;
                 }
+
+                if (_visorFluidGlobalsBuffer != null && _visorFluidGlobalsBuffer.IsValid())
+                    return true;
+
+                _visorFluidGlobalsBuffer?.Release();
+                _visorFluidGlobalsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    VisorFluidGlobalsStrideBytes);
+                _hasVisorFluidGlobals = false;
+                return _visorFluidGlobalsBuffer.IsValid();
+            }
+
+            private bool UpdateVisorFluidGlobals(FeatureSettings settings, RuntimeState runtimeState)
+            {
+                if (!EnsureVisorFluidGlobalsBuffer())
+                    return false;
 
                 float effectIntensity = Sanitize01(runtimeState.EffectIntensity);
                 float rainIntensity = Sanitize01(runtimeState.RainIntensity);
@@ -316,112 +322,116 @@ namespace Hecton8.Visor
                 float speed01 = math.saturate(
                     (localVelocity.x * localVelocity.x +
                      localVelocity.y * localVelocity.y +
-                     localVelocity.z * localVelocity.z) * VisorSpeedSquaredToShader01);
+                    localVelocity.z * localVelocity.z) * VisorSpeedSquaredToShader01);
                 Vector4 localVelocityShader = new Vector4(lateralVelocity, verticalVelocity, forwardVelocity, 0f);
-                SetMaterialFloatIfChanged(material, ShaderConstants.IntensityId, effectIntensity, ref _lastIntensity);
-                SetMaterialFloatIfChanged(material, ShaderConstants.RainIntensityId, rainIntensity, ref _lastRainIntensity);
-                SetMaterialFloatIfChanged(material, ShaderConstants.WetnessId, wetness, ref _lastWetness);
-                SetMaterialFloatIfChanged(material, ShaderConstants.HullStressId, hullStress, ref _lastHullStress);
-                SetMaterialFloatIfChanged(material, ShaderConstants.DistortionStrengthId, SanitizeNonNegative(settings.distortionStrength), ref _lastDistortionStrength);
-                SetMaterialFloatIfChanged(material, ShaderConstants.SnellStrengthId, SanitizeNonNegative(settings.snellStrength), ref _lastSnellStrength);
-                SetMaterialFloatIfChanged(material, ShaderConstants.DepthSoftnessId, SanitizeAtLeast(settings.depthSoftnessMeters, 0.001f), ref _lastDepthSoftness);
-                SetMaterialFloatIfChanged(material, ShaderConstants.WaterDensitySignalId, Sanitize01(runtimeState.WaterDensitySignal01), ref _lastWaterDensitySignal);
-                SetMaterialFloatIfChanged(material, ShaderConstants.HomeostasisFallbackId, Sanitize01(runtimeState.HomeostasisFallback01), ref _lastHomeostasisFallback);
-                SetMaterialFloatIfChanged(material, ShaderConstants.LowTierId, runtimeState.LowTier ? 1f : 0f, ref _lastLowTier);
-                SetMaterialFloatIfChanged(material, ShaderConstants.VisualOverkillId, Sanitize01(runtimeState.VisualOverkill01), ref _lastVisualOverkill);
-                SetMaterialVectorIfChanged(material, ShaderConstants.IorLutId, SanitizeIorLut(settings.refractionIndexLut), ref _lastIorLut);
-                SetMaterialFloatIfChanged(material, ShaderConstants.RunoffSpeedId, SanitizeAtLeast(settings.runoffSpeed, 0.1f), ref _lastRunoffSpeed);
-                SetMaterialFloatIfChanged(material, ShaderConstants.DropletScaleId, SanitizeAtLeast(settings.dropletScale, 2f), ref _lastDropletScale);
-                SetMaterialFloatIfChanged(material, ShaderConstants.LateralStreakStrengthId, Sanitize01(settings.lateralStreakStrength), ref _lastLateralStreakStrength);
-                SetMaterialFloatIfChanged(material, ShaderConstants.ForwardStretchStrengthId, Sanitize01(settings.forwardStretchStrength), ref _lastForwardStretchStrength);
-                SetMaterialFloatIfChanged(material, ShaderConstants.EdgeStreakStrengthId, Sanitize01(settings.edgeStreakStrength), ref _lastEdgeStreakStrength);
-                SetMaterialFloatIfChanged(material, ShaderConstants.EdgeFadeExponentId, SanitizeAtLeast(settings.edgeFadeExponent, 0.1f), ref _lastEdgeFadeExponent);
-                SetMaterialFloatIfChanged(material, ShaderConstants.SpeedId, speed01, ref _lastSpeed01);
-                SetMaterialVectorIfChanged(material, ShaderConstants.LocalVelocityId, localVelocityShader, ref _lastLocalVelocityShader);
-                SetMaterialFloatIfChanged(material, ShaderConstants.ThermalMotionCullId, thermalMotionCull01, ref _lastThermalMotionCull);
-                SetMaterialFloatIfChanged(material, ShaderConstants.AmbientLightId, ambientLight01, ref _lastAmbientLight);
-                SetMaterialFloatIfChanged(material, ShaderConstants.DustStrengthId, Sanitize01(settings.dustStrength), ref _lastDustStrength);
-                SetMaterialFloatIfChanged(material, ShaderConstants.AmbientDustResponseId, SanitizeNonNegative(settings.ambientDustResponse), ref _lastAmbientDustResponse);
-            }
 
-            private void ResetMaterialParameterCache()
-            {
-                _lastLocalVelocityShader = Vector4.positiveInfinity;
-                _lastIntensity = float.PositiveInfinity;
-                _lastRainIntensity = float.PositiveInfinity;
-                _lastWetness = float.PositiveInfinity;
-                _lastHullStress = float.PositiveInfinity;
-                _lastDistortionStrength = float.PositiveInfinity;
-                _lastRunoffSpeed = float.PositiveInfinity;
-                _lastDropletScale = float.PositiveInfinity;
-                _lastLateralStreakStrength = float.PositiveInfinity;
-                _lastForwardStretchStrength = float.PositiveInfinity;
-                _lastEdgeStreakStrength = float.PositiveInfinity;
-                _lastEdgeFadeExponent = float.PositiveInfinity;
-                _lastSpeed01 = float.PositiveInfinity;
-                _lastThermalMotionCull = float.PositiveInfinity;
-                _lastAmbientLight = float.PositiveInfinity;
-                _lastDustStrength = float.PositiveInfinity;
-                _lastAmbientDustResponse = float.PositiveInfinity;
-                _lastSnellStrength = float.PositiveInfinity;
-                _lastDepthSoftness = float.PositiveInfinity;
-                _lastWaterDensitySignal = float.PositiveInfinity;
-                _lastHomeostasisFallback = float.PositiveInfinity;
-                _lastLowTier = float.PositiveInfinity;
-                _lastVisualOverkill = float.PositiveInfinity;
-                _lastIorLut = Vector4.positiveInfinity;
-            }
-
-            private static void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue)
-            {
-                if (math.abs(value - cachedValue) <= MaterialFloatEpsilon)
-                    return;
-
-                material.SetFloat(shaderId, value);
-                cachedValue = value;
-            }
-
-            private static void SetMaterialVectorIfChanged(Material material, int shaderId, Vector4 value, ref Vector4 cachedValue)
-            {
-                if (math.abs(value.x - cachedValue.x) <= MaterialFloatEpsilon &&
-                    math.abs(value.y - cachedValue.y) <= MaterialFloatEpsilon &&
-                    math.abs(value.z - cachedValue.z) <= MaterialFloatEpsilon &&
-                    math.abs(value.w - cachedValue.w) <= MaterialFloatEpsilon)
+                VisorFluidGlobalsDTO globals = new VisorFluidGlobalsDTO(
+                    new Vector4(effectIntensity, rainIntensity, wetness, hullStress),
+                    new Vector4(
+                        SanitizeNonNegative(settings.distortionStrength),
+                        SanitizeNonNegative(settings.snellStrength),
+                        SanitizeAtLeast(settings.depthSoftnessMeters, 0.001f),
+                        Sanitize01(runtimeState.WaterDensitySignal01)),
+                    new Vector4(
+                        Sanitize01(runtimeState.HomeostasisFallback01),
+                        Sanitize01(runtimeState.LowTierWeight01),
+                        Sanitize01(runtimeState.VisualOverkill01),
+                        SanitizeAtLeast(settings.runoffSpeed, 0.1f)),
+                    SanitizeIorLut(settings.refractionIndexLut),
+                    new Vector4(
+                        SanitizeAtLeast(settings.dropletScale, 2f),
+                        Sanitize01(settings.lateralStreakStrength),
+                        Sanitize01(settings.forwardStretchStrength),
+                        Sanitize01(settings.edgeStreakStrength)),
+                    new Vector4(
+                        SanitizeAtLeast(settings.edgeFadeExponent, 0.1f),
+                        speed01,
+                        thermalMotionCull01,
+                        ambientLight01),
+                    localVelocityShader,
+                    new Vector4(
+                        Sanitize01(settings.dustStrength),
+                        SanitizeNonNegative(settings.ambientDustResponse),
+                        0f,
+                        0f));
+                if (_hasVisorFluidGlobals && VisorFluidGlobalsEqual(in _lastVisorFluidGlobals, in globals))
                 {
-                    return;
+                    Shader.SetGlobalConstantBuffer(ShaderConstants.VisorFluidGlobalsBufferId, _visorFluidGlobalsBuffer, 0, VisorFluidGlobalsStrideBytes);
+                    return true;
                 }
 
-                material.SetVector(shaderId, value);
-                cachedValue = value;
+                NativeArray<VisorFluidGlobalsDTO> mapped = _visorFluidGlobalsBuffer.LockBufferForWrite<VisorFluidGlobalsDTO>(0, 1);
+                mapped[0] = globals;
+                _visorFluidGlobalsBuffer.UnlockBufferAfterWrite<VisorFluidGlobalsDTO>(1);
+                _lastVisorFluidGlobals = globals;
+                _hasVisorFluidGlobals = true;
+                Shader.SetGlobalConstantBuffer(ShaderConstants.VisorFluidGlobalsBufferId, _visorFluidGlobalsBuffer, 0, VisorFluidGlobalsStrideBytes);
+                return true;
+            }
+
+            private static bool VisorFluidGlobalsEqual(in VisorFluidGlobalsDTO left, in VisorFluidGlobalsDTO right)
+            {
+                return Vector4Approximately(left.Params0, right.Params0) &&
+                       Vector4Approximately(left.Params1, right.Params1) &&
+                       Vector4Approximately(left.Params2, right.Params2) &&
+                       Vector4Approximately(left.IorLut, right.IorLut) &&
+                       Vector4Approximately(left.Params3, right.Params3) &&
+                       Vector4Approximately(left.Params4, right.Params4) &&
+                       Vector4Approximately(left.LocalVelocity, right.LocalVelocity) &&
+                       Vector4Approximately(left.Params5, right.Params5);
+            }
+
+            private static bool Vector4Approximately(Vector4 left, Vector4 right)
+            {
+                return math.abs(left.x - right.x) <= GlobalsFloatEpsilon &&
+                       math.abs(left.y - right.y) <= GlobalsFloatEpsilon &&
+                       math.abs(left.z - right.z) <= GlobalsFloatEpsilon &&
+                       math.abs(left.w - right.w) <= GlobalsFloatEpsilon;
+            }
+
+            [StructLayout(LayoutKind.Sequential, Size = VisorFluidGlobalsStrideBytes)]
+            private struct VisorFluidGlobalsDTO
+            {
+                public Vector4 Params0;
+                public Vector4 Params1;
+                public Vector4 Params2;
+                public Vector4 IorLut;
+                public Vector4 Params3;
+                public Vector4 Params4;
+                public Vector4 LocalVelocity;
+                public Vector4 Params5;
+
+                public VisorFluidGlobalsDTO(
+                    Vector4 params0,
+                    Vector4 params1,
+                    Vector4 params2,
+                    Vector4 iorLut,
+                    Vector4 params3,
+                    Vector4 params4,
+                    Vector4 localVelocity,
+                    Vector4 params5)
+                {
+                    Params0 = params0;
+                    Params1 = params1;
+                    Params2 = params2;
+                    IorLut = iorLut;
+                    Params3 = params3;
+                    Params4 = params4;
+                    LocalVelocity = localVelocity;
+                    Params5 = params5;
+                }
             }
         }
 
         private static class ShaderConstants
         {
-            internal static readonly int IntensityId = Shader.PropertyToID("_HectonVisorFluidIntensity");
+            internal static readonly int VisorFluidGlobalsBufferId = Shader.PropertyToID("HectonVisorFluidDistortionGlobals");
             internal static readonly int RainIntensityId = Shader.PropertyToID("_RainIntensity");
-            internal static readonly int WetnessId = Shader.PropertyToID("_HectonVisorFluidWetness");
-            internal static readonly int HullStressId = Shader.PropertyToID("_HectonVisorFluidHullStress");
-            internal static readonly int DistortionStrengthId = Shader.PropertyToID("_HectonVisorFluidDistortionStrength");
-            internal static readonly int SnellStrengthId = Shader.PropertyToID("_HectonVisorFluidSnellStrength");
-            internal static readonly int DepthSoftnessId = Shader.PropertyToID("_HectonVisorFluidDepthSoftness");
             internal static readonly int WaterDensitySignalId = Shader.PropertyToID("_HectonWaterDensitySignal");
-            internal static readonly int HomeostasisFallbackId = Shader.PropertyToID("_HectonVisorFluidHomeostasisFallback");
-            internal static readonly int LowTierId = Shader.PropertyToID("_HectonVisorFluidLowTier");
-            internal static readonly int VisualOverkillId = Shader.PropertyToID("_HectonVisorFluidVisualOverkill");
-            internal static readonly int IorLutId = Shader.PropertyToID("_HectonVisorFluidIorLut");
-            internal static readonly int RunoffSpeedId = Shader.PropertyToID("_HectonVisorFluidRunoffSpeed");
-            internal static readonly int DropletScaleId = Shader.PropertyToID("_HectonVisorFluidDropletScale");
-            internal static readonly int LateralStreakStrengthId = Shader.PropertyToID("_HectonVisorFluidLateralStreakStrength");
-            internal static readonly int ForwardStretchStrengthId = Shader.PropertyToID("_HectonVisorFluidForwardStretchStrength");
-            internal static readonly int EdgeStreakStrengthId = Shader.PropertyToID("_HectonVisorFluidEdgeStreakStrength");
-            internal static readonly int EdgeFadeExponentId = Shader.PropertyToID("_HectonVisorFluidEdgeFadeExponent");
-            internal static readonly int SpeedId = Shader.PropertyToID("_HectonVisorFluidSpeed");
-            internal static readonly int LocalVelocityId = Shader.PropertyToID("_HectonVisorFluidLocalVelocity");
-            internal static readonly int ThermalMotionCullId = Shader.PropertyToID("_HectonThermalDistortionMotionCull");
-            internal static readonly int AmbientLightId = Shader.PropertyToID("_HectonVisorFluidAmbientLight");
-            internal static readonly int DustStrengthId = Shader.PropertyToID("_HectonVisorFluidDustStrength");
-            internal static readonly int AmbientDustResponseId = Shader.PropertyToID("_HectonVisorFluidAmbientDustResponse");
+            internal static readonly int DiegeticLensStateId = Shader.PropertyToID("_HectonDiegeticVisorLensState");
+            internal static readonly int DiegeticLensParams0Id = Shader.PropertyToID("_HectonDiegeticVisorLensParams0");
+            internal static readonly int DiegeticLensParams1Id = Shader.PropertyToID("_HectonDiegeticVisorLensParams1");
+            internal static readonly int DiegeticLensParams2Id = Shader.PropertyToID("_HectonDiegeticVisorLensParams2");
             internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
             internal static readonly int CameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
             internal static readonly int CameraOpaqueTextureId = Shader.PropertyToID("_CameraOpaqueTexture");
@@ -432,6 +442,8 @@ namespace Hecton8.Visor
         private VisorFluidPass _pass;
         private Material _material;
         private IDataVault _dataVault;
+        private IPlayerRuntimeContext _playerContext;
+        private IFluidSim _fluidSimulation;
         private VaultBufferHandle<VisorRefractionTelemetryEntry> _blackBoxHandle;
         private uint _blackBoxVaultGeneration;
         private bool _blackBoxDumped;
@@ -477,12 +489,15 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
+            _pass?.Dispose();
             CoreUtils.Destroy(_material);
             _material = null;
+            _playerContext = null;
+            _fluidSimulation = null;
             InvalidateBlackBoxLease();
         }
 
-        private static bool TryBuildRuntimeState(
+        private bool TryBuildRuntimeState(
             Camera renderCamera,
             FeatureSettings settings,
             out RuntimeState runtimeState)
@@ -492,22 +507,12 @@ namespace Hecton8.Visor
             if (renderCamera == null || settings == null)
                 return false;
 
-            Camera playerCamera;
-            HectonPlayerMovement playerMovement;
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
-            {
-                playerCamera = runtimeContext.PlayerCamera;
-                playerMovement = runtimeContext.PlayerMovement;
-            }
-            else
-            {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                if (playerContext == null)
-                    return false;
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            if (playerContext == null)
+                return false;
 
-                playerCamera = playerContext.PlayerCamera;
-                playerMovement = playerContext.PlayerMovement;
-            }
+            Camera playerCamera = playerContext.PlayerCamera;
+            var playerMovement = playerContext.PlayerMovement;
 
             if (playerCamera == null || !ReferenceEquals(renderCamera, playerCamera))
                 return false;
@@ -519,6 +524,25 @@ namespace Hecton8.Visor
             FlagIfNonFinite(rawHullStress, ref telemetryFlags);
             float wetness = Sanitize01(rawWetness);
             float hullStress = Sanitize01(rawHullStress);
+            Vector4 rawLensState = Shader.GetGlobalVector(ShaderConstants.DiegeticLensStateId);
+            Vector4 rawLensParams0 = Shader.GetGlobalVector(ShaderConstants.DiegeticLensParams0Id);
+            Vector4 rawLensParams1 = Shader.GetGlobalVector(ShaderConstants.DiegeticLensParams1Id);
+            Vector4 rawLensParams2 = Shader.GetGlobalVector(ShaderConstants.DiegeticLensParams2Id);
+            FlagIfNonFinite(rawLensState, ref telemetryFlags);
+            FlagIfNonFinite(rawLensParams0, ref telemetryFlags);
+            FlagIfNonFinite(rawLensParams1, ref telemetryFlags);
+            FlagIfNonFinite(rawLensParams2, ref telemetryFlags);
+            float lensCondensation = Sanitize01(rawLensState.x);
+            float lensDroplets = Sanitize01(rawLensState.y);
+            float lensCrack = Sanitize01(rawLensState.z);
+            float lensDirt = Sanitize01(rawLensState.w);
+            float lensRefractionScale = Sanitize01(rawLensParams0.w);
+            float lensSurfaceWash = Sanitize01(rawLensParams1.z);
+            float lensContribution = math.max(
+                math.max(lensCondensation, lensDroplets),
+                math.max(lensCrack, lensDirt));
+            wetness = math.saturate(math.max(wetness, math.max(lensDroplets, lensCondensation * 0.35f)));
+            hullStress = math.saturate(math.max(hullStress, lensCrack));
             float dustStrength = Sanitize01(settings.dustStrength);
             float ambientDustResponse = SanitizeNonNegative(settings.ambientDustResponse);
             float ambientLight01 = 0f;
@@ -530,14 +554,15 @@ namespace Hecton8.Visor
                 ambientLight01 = Sanitize01(rawAmbientLight);
                 dustContribution = math.saturate(ambientLight01 * dustStrength * ambientDustResponse);
             }
+            dustContribution = math.saturate(math.max(dustContribution, lensDirt * (0.18f + ambientLight01 * 0.82f)));
 
             float hullContribution = math.saturate(
                 math.saturate((hullStress - HullStressVisorContributionStart01) * HullStressVisorContributionInvRange) *
                 Sanitize01(settings.hullStressContribution));
-            float effectIntensity = math.saturate(math.max(math.max(wetness, hullContribution), dustContribution));
+            float effectIntensity = math.saturate(math.max(math.max(math.max(wetness, hullContribution), dustContribution), lensContribution));
             float rawRainIntensity = Shader.GetGlobalFloat(ShaderConstants.RainIntensityId);
             FlagIfNonFinite(rawRainIntensity, ref telemetryFlags);
-            float rainIntensity = Sanitize01(rawRainIntensity);
+            float rainIntensity = math.saturate(math.max(Sanitize01(rawRainIntensity), lensSurfaceWash * 0.35f));
 
             Vector3 localVelocity = Vector3.zero;
             float fluidVelocityActivity = math.max(wetness, hullStress);
@@ -546,6 +571,11 @@ namespace Hecton8.Visor
                 Vector3 rawWorldVelocity = playerMovement.InterpolatedLinearVelocity;
                 FlagIfNonFinite(rawWorldVelocity, ref telemetryFlags);
                 localVelocity = ResolveCameraLocalVelocity(playerCameraTransform, rawWorldVelocity);
+            }
+            if (lensContribution > 0.001f)
+            {
+                localVelocity.x += SanitizeSigned(rawLensParams0.x, -1f, 1f) * 6f;
+                localVelocity.y += SanitizeSigned(rawLensParams0.y, -1f, 1f) * 6f;
             }
 
             float localVelocitySq =
@@ -556,8 +586,14 @@ namespace Hecton8.Visor
             HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
             bool lowTier = ResolveLowTier(settings, qualityTier);
             float waterDensitySignal01 = ResolveWaterDensitySignal01(ref telemetryFlags);
-            float homeostasisFallback01 = lowTier || hullStress >= Sanitize01(settings.stressFallbackThreshold) ? 1f : 0f;
-            float visualOverkill01 = ResolveVisualOverkill01(settings, qualityTier, lowTier);
+            float globalQualityWeight = ResolveGlobalQualityWeight();
+            float qualityLowPressure01 = 1f - Smooth01((globalQualityWeight - 0.18f) * (1f / 0.12f));
+            float hardwareLowPressure01 = lowTier ? 1f : 0f;
+            float lensLowPressure01 = lensContribution > 0.001f ? 1f - lensRefractionScale : 0f;
+            float stressFallback01 = Smooth01((hullStress - Sanitize01(settings.stressFallbackThreshold)) * 5f);
+            float lowTierWeight01 = math.saturate(math.max(math.max(qualityLowPressure01, hardwareLowPressure01), lensLowPressure01));
+            float homeostasisFallback01 = math.saturate(math.max(lowTierWeight01, stressFallback01));
+            float visualOverkill01 = ResolveVisualOverkill01(settings, qualityTier, lowTierWeight01);
             runtimeState = new RuntimeState(
                 wetness,
                 hullStress,
@@ -568,7 +604,7 @@ namespace Hecton8.Visor
                 thermalMotionCull01,
                 waterDensitySignal01,
                 homeostasisFallback01,
-                lowTier,
+                lowTierWeight01,
                 visualOverkill01,
                 qualityTier,
                 telemetryFlags);
@@ -646,6 +682,11 @@ namespace Hecton8.Visor
             return math.isfinite(value) ? math.max(minimum, value) : minimum;
         }
 
+        private static float SanitizeSigned(float value, float minimum, float maximum)
+        {
+            return math.isfinite(value) ? math.clamp(value, minimum, maximum) : 0f;
+        }
+
         private static Vector4 SanitizeIorLut(Vector4 value)
         {
             float air = math.max(1.0001f, SanitizeAtLeast(value.x, 1.0003f));
@@ -665,11 +706,20 @@ namespace Hecton8.Visor
             return graphicsMemoryMb > 0 && graphicsMemoryMb <= thresholdMb;
         }
 
-        private static float ResolveVisualOverkill01(FeatureSettings settings, HectonQualityTier qualityTier, bool lowTier)
+        private static float ResolveGlobalQualityWeight()
         {
-            if (lowTier)
-                return 0f;
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(weight) ? math.saturate(weight) : 0.5f;
+        }
 
+        private static float Smooth01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - 2f * x);
+        }
+
+        private static float ResolveVisualOverkill01(FeatureSettings settings, HectonQualityTier qualityTier, float lowTierWeight01)
+        {
             float configuredStrength = settings != null ? Sanitize01(settings.visualOverkillStrength) : 0f;
             float tierScale;
             switch (qualityTier)
@@ -688,17 +738,39 @@ namespace Hecton8.Visor
                     break;
             }
 
-            return configuredStrength * tierScale;
+            return configuredStrength * tierScale * (1f - Sanitize01(lowTierWeight01));
         }
 
-        private static float ResolveWaterDensitySignal01(ref uint telemetryFlags)
+        private IPlayerRuntimeContext ResolvePlayerContext()
+        {
+            IPlayerRuntimeContext context = _playerContext;
+            if (context != null && context.PlayerCamera != null)
+                return context;
+
+            context = GlobalRegistry.Player;
+            _playerContext = context;
+            return context;
+        }
+
+        private IFluidSim ResolveFluidSimulation()
+        {
+            IFluidSim fluidSimulation = _fluidSimulation;
+            if (fluidSimulation != null && fluidSimulation.IsReady)
+                return fluidSimulation;
+
+            fluidSimulation = GlobalRegistry.FluidSimulation;
+            _fluidSimulation = fluidSimulation;
+            return fluidSimulation;
+        }
+
+        private float ResolveWaterDensitySignal01(ref uint telemetryFlags)
         {
             float globalSignal = Shader.GetGlobalFloat(ShaderConstants.WaterDensitySignalId);
             FlagIfNonFinite(globalSignal, ref telemetryFlags);
             if (math.isfinite(globalSignal) && globalSignal > 0.0001f)
                 return math.saturate(globalSignal);
 
-            IFluidSim fluidSimulation = GlobalRegistry.FluidSimulation;
+            IFluidSim fluidSimulation = ResolveFluidSimulation();
             if (fluidSimulation == null || !fluidSimulation.IsReady)
                 return 0f;
 
@@ -728,6 +800,12 @@ namespace Hecton8.Visor
                 flags |= BlackBoxFlagNonFiniteInput;
         }
 
+        private static void FlagIfNonFinite(Vector4 value, ref uint flags)
+        {
+            if (!math.isfinite(value.x) || !math.isfinite(value.y) || !math.isfinite(value.z) || !math.isfinite(value.w))
+                flags |= BlackBoxFlagNonFiniteInput;
+        }
+
         private unsafe void WriteBlackBoxFrame(Camera renderCamera, in RuntimeState runtimeState)
         {
             int frame = Time.frameCount;
@@ -742,7 +820,7 @@ namespace Hecton8.Visor
             uint flags = BlackBoxFlagPlayerCamera | runtimeState.TelemetryFlags;
             if (runtimeState.EffectIntensity > 0.001f || runtimeState.RainIntensity > 0.001f)
                 flags |= BlackBoxFlagVisualActive;
-            if (runtimeState.LowTier)
+            if (runtimeState.LowTierWeight01 >= 0.5f)
                 flags |= BlackBoxFlagLowTier;
             if (runtimeState.HomeostasisFallback01 > 0.5f)
                 flags |= BlackBoxFlagHomeostasisFallback;
@@ -853,6 +931,7 @@ namespace Hecton8.Visor
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.Wetness)));
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.HullStress)));
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.WaterDensitySignal01)));
+            hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.LowTierWeight01)));
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.VisualOverkill01)));
             Vector3 velocity = SanitizeVector(runtimeState.LocalVelocity);
             hash = MixHash(hash, math.asuint(velocity.x));

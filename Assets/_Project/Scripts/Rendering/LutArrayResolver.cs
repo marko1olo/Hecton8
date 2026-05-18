@@ -14,10 +14,14 @@ namespace Hecton8.Core
     /// </summary>
     public static class LutArrayResolver
     {
-        private const int MatrixSize = 4096;
-        private const int MatrixTexelCount = MatrixSize * MatrixSize;
+        private const int MatrixDepthSamples = 256;
+        private const int MatrixTurbiditySamples = 256;
+        private const int MatrixChannels = 3;
+        private const int MatrixWidth = MatrixTurbiditySamples * MatrixChannels;
+        private const int MatrixHeight = MatrixDepthSamples;
+        private const int MatrixTexelCount = MatrixWidth * MatrixHeight;
         private const int MatrixByteCount = MatrixTexelCount * 2;
-        private const float DefaultMaxDepthMeters = 1500f;
+        private const float DefaultMaxDepthMeters = 500f;
         private const float DefaultMaxTurbidity = 2.5f;
         private const float DefaultStrength = 1f;
         private const int StreamingReadChunkBytes = 128 * 1024;
@@ -110,7 +114,7 @@ namespace Hecton8.Core
 
         private static Texture2D BuildRHalfTexture(string matrixPath)
         {
-            Texture2D texture = new Texture2D(MatrixSize, MatrixSize, TextureFormat.RHalf, false, true)
+            Texture2D texture = new Texture2D(MatrixWidth, MatrixHeight, TextureFormat.RHalf, false, true)
             {
                 name = "TX_Water_Extinction_Matrix_R16F",
                 wrapMode = TextureWrapMode.Clamp,
@@ -140,7 +144,7 @@ namespace Hecton8.Core
 
         private static Texture2D BuildArgb32Fallback(string matrixPath)
         {
-            Texture2D texture = new Texture2D(MatrixSize, MatrixSize, TextureFormat.RGBA32, false, true)
+            Texture2D texture = new Texture2D(MatrixWidth, MatrixHeight, TextureFormat.RGBA32, false, true)
             {
                 name = "TX_Water_Extinction_Matrix_ARGB32_Fallback",
                 wrapMode = TextureWrapMode.Clamp,
@@ -175,7 +179,7 @@ namespace Hecton8.Core
                 if (File.Exists(streamingLocation))
                     return streamingLocation;
             }
-            else if (TryStageStreamingUriToCache(streamingLocation, out string cachedStreamingPath))
+            else if (Application.isEditor && TryStageStreamingUriToCache(streamingLocation, out string cachedStreamingPath))
             {
                 return cachedStreamingPath;
             }
@@ -543,5 +547,10 @@ namespace Hecton8.Core
         /// True when ARGB32 quantization replaced the native R16F texture path.
         /// </summary>
         public static bool UsingFallbackFormat => _usingFallbackFormat;
+
+        /// <summary>
+        /// Loaded global extinction LUT texture, or null when the analytical fallback is active.
+        /// </summary>
+        public static Texture2D ExtinctionTexture => _extinctionTexture;
     }
 }

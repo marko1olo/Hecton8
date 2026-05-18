@@ -35,6 +35,7 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Audio;
 using Hecton8.Building;
+using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
@@ -47,6 +48,7 @@ using Hecton8.UI;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
+using ConstructionMockWorldSampler = Hecton8.Construction.MockWorldSampler;
 
 namespace Hecton8.Building
 {
@@ -160,7 +162,6 @@ namespace Hecton8.Building
         private const float StructuralRotationStepDegrees = 90f;
         private const float StructuralSnapRadiusMeters = 1f;
         private const float StructuralUnsnapRadiusMeters = 1.25f;
-        private readonly Collider[] _terrainSdfOverlapBuffer = new Collider[16];
         private int _ghostYawStep;
         private const int BuildGhostProjectionInstanceCount = 1;
         private readonly Matrix4x4[] _buildGhostProjectionMatrices = new Matrix4x4[BuildGhostProjectionInstanceCount];
@@ -223,6 +224,12 @@ namespace Hecton8.Building
         private const byte TerrainSdfBlockHapticPriority = 2;
         private bool _terrainSdfWasBlocked;
         private float _terrainSdfBlockHapticCooldown;
+        private ConstructionRequestDTO _lastConstructionValidationRequest;
+        private StructuralBoundsDTO _lastConstructionValidationBounds;
+        private ConstructionValidationSettingsDTO _lastConstructionValidationSettings;
+        private ConstructionValidationResultDTO _lastConstructionValidationResult;
+        private ConstructionMockWorldSampler _lastConstructionWorldSampler;
+        private static bool s_ConstructionSignalLanesInitialized;
         private HabitatConstructionManager _habitatConstructionManager;
         private ModuleSocket _snappedGhostSocket;
         private bool _integrityPlacementValid = true;
@@ -344,8 +351,22 @@ namespace Hecton8.Building
                 if (builderDebugLogging)
                     LogBuilderDebug($"DebugDeploy consuming cost for {activeBuildable.moduleName}.");
 #endif
-                ConsumeResources(activeBuildable);
+                if (!ConsumeResources(activeBuildable))
+                {
+                    ConstructionManager constructionManager = ResolveConstructionManager();
+                    if (constructionManager != null)
+                        constructionManager.DestroyModule(spawned);
+                    else
+                        pool.Despawn(spawned);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: resource transaction failed.");
+#endif
+                    return false;
+                }
             }
+
+            PublishConstructionCommitSignals(spawned, activeBuildable);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (builderDebugLogging)
@@ -1279,6 +1300,7 @@ namespace Hecton8.Building
                 modulePosition,
                 moduleRotation,
                 hasModulePose));
+            PublishConstructionCommitSignals(placedModule, activeBuildable);
             PlaySound(buildSound);
             NotifyBuildPlaced(activeBuildable);
 
@@ -1315,6 +1337,9 @@ namespace Hecton8.Building
             LogBuilderDebug("ResolveRuntimeReferences begin");
             if (_habitatConstructionManager == null)
                 _habitatConstructionManager = new HabitatConstructionManager();
+
+            ModularBaseConstructionValidator.InitializeVault(GlobalRegistry.DataVault);
+            EnsureConstructionSignalLanes();
 
             IPlayerRuntimeContext playerContext = ResolvePlayerContext();
             if (inventory == null && playerContext != null)
@@ -1360,6 +1385,26 @@ namespace Hecton8.Building
             if (builderDebugLogging)
                 LogBuilderDebug($"ResolveRuntimeReferences end activeIndex={_activeBuildableIndex}");
 #endif
+        }
+
+        private static void EnsureConstructionSignalLanes()
+        {
+            if (s_ConstructionSignalLanesInitialized)
+                return;
+
+            SignalBus<ConstructionPreviewSignal>.Configure(
+                expectedCapacity: 4,
+                maxFrameSignals: 8,
+                lowTierFrameSignals: 1,
+                laneHash: ConstructionPreviewSignal.LaneHash);
+            SignalBus<FloraExclusionSignal>.Configure(
+                expectedCapacity: 4,
+                maxFrameSignals: 8,
+                lowTierFrameSignals: 1,
+                laneHash: FloraExclusionSignal.LaneHash);
+            SignalBus<ConstructionPreviewSignal>.EnsureInitialized();
+            SignalBus<FloraExclusionSignal>.EnsureInitialized();
+            s_ConstructionSignalLanesInitialized = true;
         }
 
         private void EnsureCatalogSelection()
@@ -1911,39 +1956,314 @@ namespace Hecton8.Building
                 return AcceptTerrainSdfPlacement();
 
             Transform ghostTransform = _currentGhostObj.transform;
-            Vector3 center = ghostTransform.TransformPoint(template.ProxyBoundsCenter);
-            Vector3 halfExtents = proxyBoundsSize * 0.5f;
-            int terrainMask = HectonLayerMasks.TerrainLayerMask |
-                              HectonLayerMasks.VoxelCaveLayerMask |
-                              HectonLayerMasks.BaseModuleLayerMask |
-                              HectonLayerMasks.VehicleLayerMask |
-                              HectonLayerMasks.DebrisLayerMask;
-            int overlapCount = UnityEngine.Physics.OverlapBoxNonAlloc(
-                center,
-                halfExtents,
-                _terrainSdfOverlapBuffer,
-                ghostTransform.rotation,
-                terrainMask,
-                QueryTriggerInteraction.Ignore);
-
-            int blockingCount = 0;
-            for (int i = 0; i < overlapCount; i++)
+            if (!TryBuildConstructionValidationPayload(
+                    template,
+                    ghostTransform,
+                    out ConstructionRequestDTO request,
+                    out StructuralBoundsDTO bounds,
+                    out ConstructionValidationSettingsDTO settings,
+                    out ConstructionSipBudgetDTO sipBudget,
+                    out ConstructionMockWorldSampler worldSampler))
             {
-                Collider overlap = _terrainSdfOverlapBuffer[i];
-                if (overlap != null && !IsCurrentGhostCollider(overlap))
-                    blockingCount++;
-
-                _terrainSdfOverlapBuffer[i] = null;
+                _terrainSdfPlacementValid = false;
+                _terrainSdfPlacementBlockReason = "PLACEMENT NAN";
+                TryQueueTerrainSdfBlockHaptic();
+                _terrainSdfWasBlocked = true;
+                return false;
             }
 
-            if (blockingCount <= 0)
+            ConstructionValidationResultDTO result = ModularBaseConstructionValidator.ValidatePlacementNoOccupancy(
+                in request,
+                in bounds,
+                in settings,
+                in worldSampler,
+                in sipBudget);
+
+            if (TryFindOccupiedConstructionGridCell(
+                    in request,
+                    in settings,
+                    out int occupiedCellHash))
+            {
+                ModularBaseConstructionValidator.ApplyFailureFlags(
+                    ref result,
+                    in request,
+                    (uint)ConstructionValidationFlags.OccupiedGridCell,
+                    result.MinSdfDistance,
+                    occupiedCellHash);
+            }
+
+            if (TryFindVoxelSdfIntersection(
+                    in request,
+                    in bounds,
+                    in settings,
+                    out float voxelDensity))
+            {
+                ModularBaseConstructionValidator.ApplyFailureFlags(
+                    ref result,
+                    in request,
+                    (uint)ConstructionValidationFlags.TerrainIntersection,
+                    -math.abs(voxelDensity),
+                    result.OccupiedCellHash);
+            }
+
+            _lastConstructionValidationRequest = request;
+            _lastConstructionValidationBounds = bounds;
+            _lastConstructionValidationSettings = settings;
+            _lastConstructionValidationResult = result;
+            _lastConstructionWorldSampler = worldSampler;
+
+            if (ModularBaseConstructionValidator.TryResolveTelemetryRing(GlobalRegistry.DataVault, out var telemetryRing))
+            {
+                ModularBaseConstructionValidator.WriteTelemetry(
+                    telemetryRing,
+                    (uint)Time.frameCount,
+                    in request,
+                    in result,
+                    0f,
+                    0u);
+            }
+
+            if ((result.FailureFlags & (uint)ConstructionValidationFlags.NonFiniteInput) != 0u)
+            {
+                _terrainSdfPlacementValid = false;
+                _terrainSdfPlacementBlockReason = "PLACEMENT NAN";
+                TryQueueTerrainSdfBlockHaptic();
+                _terrainSdfWasBlocked = true;
+                return false;
+            }
+
+            if ((result.FailureFlags & (uint)ConstructionValidationFlags.OutsideBounds) != 0u)
+            {
+                _terrainSdfPlacementValid = false;
+                _terrainSdfPlacementBlockReason = "GRID LIMIT";
+                TryQueueTerrainSdfBlockHaptic();
+                _terrainSdfWasBlocked = true;
+                return false;
+            }
+
+            if ((result.FailureFlags & (uint)ConstructionValidationFlags.OccupiedGridCell) != 0u)
+            {
+                _terrainSdfPlacementValid = false;
+                _terrainSdfPlacementBlockReason = "GRID OCCUPIED";
+                TryQueueTerrainSdfBlockHaptic();
+                _terrainSdfWasBlocked = true;
+                return false;
+            }
+
+            if ((result.FailureFlags & (uint)ConstructionValidationFlags.TerrainIntersection) == 0u)
                 return AcceptTerrainSdfPlacement();
 
             _terrainSdfPlacementValid = false;
-            _terrainSdfPlacementBlockReason = "PLACEMENT OBSTACLE";
+            _terrainSdfPlacementBlockReason = "TERRAIN SDF";
             TryQueueTerrainSdfBlockHaptic();
             _terrainSdfWasBlocked = true;
             return false;
+        }
+
+        private bool TryBuildConstructionValidationPayload(
+            BaseModuleTemplate template,
+            Transform ghostTransform,
+            out ConstructionRequestDTO request,
+            out StructuralBoundsDTO bounds,
+            out ConstructionValidationSettingsDTO settings,
+            out ConstructionSipBudgetDTO sipBudget,
+            out ConstructionMockWorldSampler worldSampler)
+        {
+            request = default;
+            bounds = default;
+            settings = ModularBaseConstructionValidator.GetTunerSettings();
+            sipBudget = default;
+            worldSampler = default;
+
+            if (template == null || ghostTransform == null || activeBuildable == null)
+                return false;
+
+            ModularBaseConstructionValidator.TryReadTunerSettingsFromVault(GlobalRegistry.DataVault, out settings);
+            float gridSize = ResolveConstructionGridSize();
+            double3 rootAup = ResolveConstructionRootAup(ghostTransform.position);
+            double3 pivotAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(ghostTransform.position);
+            uint moduleHash = (uint)activeBuildable.ModuleHashId;
+            uint rotation = ResolveConstructionRotationIndex(ghostTransform.rotation);
+            if (!ModularBaseConstructionValidator.TryBuildRequestFromAup(
+                    rootAup,
+                    pivotAup,
+                    moduleHash,
+                    rotation,
+                    gridSize,
+                    out request))
+                return false;
+
+            settings.GridSizeMeters = gridSize;
+            settings.GlobalQualityWeight = ModularBaseConstructionValidator.ResolveGlobalQualityWeight();
+            settings.Frame = (uint)Time.frameCount;
+            settings.CandidatePortMask = ToConstructionPortMask(template.SocketMask);
+
+            bounds = ModularBaseConstructionValidator.BuildBounds(
+                (float3)template.ProxyBoundsCenter,
+                (float3)template.ProxyBoundsSize,
+                moduleHash);
+
+            float localBottomY = ModularBaseConstructionValidator.GridToLocal(in request, gridSize).y +
+                                 template.ProxyBoundsCenter.y -
+                                 template.ProxyBoundsSize.y * 0.5f;
+            worldSampler = ModularBaseConstructionValidator.CreateMockWorldSampler(
+                rootAup,
+                localBottomY - settings.TerrainClearanceMargin,
+                moduleHash);
+
+            sipBudget.TotalBaseSIP = structuralIntegrityBudget;
+            sipBudget.AddedSIPCost = EstimateAddedSipCost(template);
+            sipBudget.DepthPressure = EstimateDepthPressure(pivotAup);
+            sipBudget.StructuralWarningRatio = 1f;
+            sipBudget.BaseHash = moduleHash;
+            sipBudget.Flags = 0u;
+            sipBudget._pad0 = 0u;
+            sipBudget._pad1 = 0u;
+            return true;
+        }
+
+        private bool TryFindOccupiedConstructionGridCell(
+            in ConstructionRequestDTO request,
+            in ConstructionValidationSettingsDTO settings,
+            out int occupiedCellHash)
+        {
+            occupiedCellHash = 0;
+            ConstructionManager constructionManager = ResolveConstructionManager();
+            IReadOnlyList<GameObject> modules = constructionManager != null ? constructionManager.SpawnedModules : null;
+            if (modules == null)
+                return false;
+
+            float gridSize = settings.GridSizeMeters > 0.001f ? settings.GridSizeMeters : ResolveConstructionGridSize();
+            int moduleCount = modules.Count;
+            for (int i = 0; i < moduleCount; i++)
+            {
+                GameObject module = modules[i];
+                if (module == null)
+                    continue;
+
+                Transform moduleTransform = module.transform;
+                if (moduleTransform == null)
+                    continue;
+
+                double3 moduleAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(moduleTransform.position);
+                if (!ModularBaseConstructionValidator.TryBuildRequestFromAup(
+                        request.RootAUP,
+                        moduleAup,
+                        0u,
+                        0u,
+                        gridSize,
+                        out ConstructionRequestDTO existing))
+                {
+                    continue;
+                }
+
+                if (!math.all(existing.GridPos == request.GridPos))
+                    continue;
+
+                occupiedCellHash = ModularBaseConstructionValidator.HashGrid(request.GridPos);
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryFindVoxelSdfIntersection(
+            in ConstructionRequestDTO request,
+            in StructuralBoundsDTO bounds,
+            in ConstructionValidationSettingsDTO settings,
+            out float maxDensity)
+        {
+            maxDensity = 0f;
+            int probeCount = ModularBaseConstructionValidator.ResolveTerrainProbeCount(settings.GlobalQualityWeight);
+            for (int i = 0; i < probeCount; i++)
+            {
+                float3 localProbe = ModularBaseConstructionValidator.ResolveTerrainProbeLocal(
+                    i,
+                    in request,
+                    in bounds,
+                    in settings);
+                double3 probeAup = request.RootAUP + new double3(localProbe.x, localProbe.y, localProbe.z);
+                Vector3 probeRuntime = HectonFloatingOrigin.ToRuntimePosition(probeAup);
+                float3 probeRuntimeFloat = new float3(probeRuntime.x, probeRuntime.y, probeRuntime.z);
+                if (!math.all(math.isfinite(probeRuntimeFloat)))
+                    return true;
+
+                if (!HectonVoxelVolume.TrySampleRuntimeSdfDensity(probeRuntime, out float density))
+                    continue;
+
+                if (density > 0f)
+                {
+                    maxDensity = math.max(maxDensity, density);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private double3 ResolveConstructionRootAup(Vector3 fallbackRuntimePosition)
+        {
+            ConstructionManager constructionManager = ResolveConstructionManager();
+            if (constructionManager != null && constructionManager.SpawnedModules != null)
+            {
+                IReadOnlyList<GameObject> modules = constructionManager.SpawnedModules;
+                for (int i = 0, count = modules.Count; i < count; i++)
+                {
+                    GameObject module = modules[i];
+                    if (module != null)
+                        return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(module.transform.position);
+                }
+            }
+
+            return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(fallbackRuntimePosition);
+        }
+
+        private float ResolveConstructionGridSize()
+        {
+            return constructionGridSize > 0.001f ? constructionGridSize : StructuralPlacementGridMeters;
+        }
+
+        private static uint ResolveConstructionRotationIndex(Quaternion rotation)
+        {
+            float yaw = rotation.eulerAngles.y;
+            int yawStep = Mathf.RoundToInt(yaw / StructuralRotationStepDegrees);
+            return (uint)(yawStep & 3);
+        }
+
+        private static uint ToConstructionPortMask(ModuleSocketMask socketMask)
+        {
+            uint mask = ConstructionPortMask.None;
+            if ((socketMask & ModuleSocketMask.East) != 0)
+                mask |= ConstructionPortMask.PosX;
+            if ((socketMask & ModuleSocketMask.West) != 0)
+                mask |= ConstructionPortMask.NegX;
+            if ((socketMask & ModuleSocketMask.Top) != 0)
+                mask |= ConstructionPortMask.PosY;
+            if ((socketMask & ModuleSocketMask.Bottom) != 0)
+                mask |= ConstructionPortMask.NegY;
+            if ((socketMask & ModuleSocketMask.North) != 0)
+                mask |= ConstructionPortMask.PosZ;
+            if ((socketMask & ModuleSocketMask.South) != 0)
+                mask |= ConstructionPortMask.NegZ;
+            return mask != 0u ? mask : ConstructionPortMask.AllCardinal;
+        }
+
+        private static float EstimateDepthPressure(double3 pivotAup)
+        {
+            float depthMeters = math.isfinite(pivotAup.y) ? math.max(0f, -(float)pivotAup.y) : 0f;
+            return depthMeters * 0.0125f;
+        }
+
+        private static float EstimateAddedSipCost(BaseModuleTemplate template)
+        {
+            if (template == null)
+                return 0f;
+
+            float yieldSip = math.isfinite(template.ModuleYieldStrengthNewtons)
+                ? template.ModuleYieldStrengthNewtons * 0.0001f
+                : 0f;
+            float volumeSip = template.ProxyBoundsSize.x * template.ProxyBoundsSize.y * template.ProxyBoundsSize.z * 0.015625f;
+            return math.clamp(yieldSip + volumeSip, 1f, 100f);
         }
 
         private bool IsCurrentGhostCollider(Collider candidate)
@@ -2006,6 +2326,7 @@ namespace Hecton8.Building
             double3 targetAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(targetRuntime);
             Vector3 drawPosition = HectonFloatingOrigin.ToRuntimePosition(targetAup);
             _buildGhostProjectionMatrices[0] = Matrix4x4.TRS(drawPosition, ghostTransform.rotation, proxyBoundsSize);
+            PublishConstructionPreviewSignal(targetAup, ghostTransform.rotation, proxyBoundsSize, placementAllowed);
 
             UnityEngine.Graphics.DrawMeshInstanced(
                 _buildGhostProjectionMesh,
@@ -2040,6 +2361,22 @@ namespace Hecton8.Building
                 _buildGhostValidProjectionMaterial = validMaterial;
                 _buildGhostBlockedProjectionMaterial = blockedMaterial;
             }
+        }
+
+        private void PublishConstructionPreviewSignal(double3 centerAup, Quaternion rotation, Vector3 proxyBoundsSize, bool placementAllowed)
+        {
+            EnsureConstructionSignalLanes();
+            ConstructionPreviewSignal signal = default;
+            signal.CenterAup = AbsoluteUniversePosition.FromAbsolutePosition(centerAup);
+            signal.Rotation = new float4(rotation.x, rotation.y, rotation.z, rotation.w);
+            signal.Scale = (float3)Vector3.Max(proxyBoundsSize, Vector3.one * 0.001f);
+            signal.ModuleHash = activeBuildable != null ? (uint)activeBuildable.ModuleHashId : 0u;
+            signal.FailureFlags = _lastConstructionValidationResult.FailureFlags;
+            signal.ResultHash = _lastConstructionValidationResult.ResultHash;
+            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.IsValid = placementAllowed ? (byte)1 : (byte)0;
+            signal.Flags = ConstructionPreviewSignal.FlagActive | ConstructionPreviewSignal.FlagFallbackPreview;
+            SignalBus<ConstructionPreviewSignal>.TryPush(in signal);
         }
 
         private void UpdatePlacementValidationState()
@@ -2395,6 +2732,51 @@ namespace Hecton8.Building
                 return false;
 
             return _habitatConstructionManager.ConsumeBuildResources(inventory, data);
+        }
+
+        private void PublishConstructionCommitSignals(GameObject placedModule, BuildableData data)
+        {
+            if (placedModule == null || data == null)
+                return;
+
+            EnsureConstructionSignalLanes();
+            Transform moduleTransform = placedModule.transform;
+            BaseModuleTemplate template = data.ModuleTemplate;
+            Vector3 localCenter = template != null ? template.ProxyBoundsCenter : Vector3.zero;
+            Vector3 proxySize = template != null ? template.ProxyBoundsSize : Vector3.one;
+            Vector3 centerRuntime = moduleTransform.TransformPoint(localCenter);
+            double3 centerAupDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(centerRuntime);
+            AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromAbsolutePosition(centerAupDouble);
+            float3 extents = (float3)(Vector3.Max(proxySize * 0.5f, Vector3.one * 0.5f) + Vector3.one * 0.25f);
+            float radius = math.max(6f, math.cmax(extents) * 4f);
+            uint sourceLow = FoldEntityId(EntityId.ToULong(placedModule.GetEntityId()));
+            uint moduleHash = (uint)data.ModuleHashId;
+
+            AcousticPingSignal clunk = default;
+            clunk.PositionAup = centerAup;
+            clunk.RadiusMeters = radius;
+            clunk.Intensity01 = math.saturate(0.35f + radius * 0.025f);
+            clunk.SourceId = sourceLow != 0u ? sourceLow : moduleHash;
+            clunk.Channel = AcousticPingSignal.ChannelMetalStress;
+            clunk.Flags = 0;
+            GlobalSignals.Publish(in clunk);
+
+            FloraExclusionSignal flora = default;
+            flora.CenterAup = centerAup;
+            flora.Extents = extents;
+            flora.ModuleHash = moduleHash;
+            flora.SourceEntityLow = sourceLow;
+            flora.Frame = unchecked((uint)Time.frameCount);
+            flora.Operation = FloraExclusionSignal.OperationApply;
+            flora.Flags = 0;
+            flora._pad0 = 0;
+            flora._pad1 = 0u;
+            SignalBus<FloraExclusionSignal>.TryPush(in flora);
+        }
+
+        private static uint FoldEntityId(ulong entityId)
+        {
+            return unchecked((uint)entityId ^ (uint)(entityId >> 32));
         }
 
         // ══════════════════════════════════════════════════════════

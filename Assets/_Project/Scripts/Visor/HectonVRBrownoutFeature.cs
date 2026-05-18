@@ -1,6 +1,8 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -20,6 +22,8 @@ namespace Hecton8.Visor
     /// </summary>
     public sealed class HectonVRBrownoutFeature : ScriptableRendererFeature
     {
+        private const int VRBrownoutGlobalsStrideBytes = 64;
+
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hidden_Hecton_VRBrownout.shader";
 #endif
@@ -68,22 +72,15 @@ namespace Hecton8.Visor
 
         private sealed class BrownoutPass : ScriptableRenderPass
         {
-            private const float MaterialFloatEpsilon = 0.0001f;
+            private const float GlobalsFloatEpsilon = 0.0001f;
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton VR Brownout");
             private FeatureSettings _settings;
             private Material _material;
             private RuntimeState _runtimeState;
-            private Material _lastParameterMaterial;
-            private float _lastBrownoutIntensity = float.PositiveInfinity;
-            private float _lastWorldFocusBlur = float.PositiveInfinity;
-            private float _lastNearCollisionIntensity = float.PositiveInfinity;
-            private float _lastWorldBlurTexelRadius = float.PositiveInfinity;
-            private float _lastScanlineStrength = float.PositiveInfinity;
-            private float _lastDitherStrength = float.PositiveInfinity;
-            private Vector4 _lastVrComfortSignals = Vector4.positiveInfinity;
-            private Vector4 _lastVrComfortMotion = Vector4.positiveInfinity;
-            private bool _materialDirty = true;
+            private GraphicsBuffer _brownoutGlobalsBuffer;
+            private BrownoutGlobalsDTO _lastBrownoutGlobals;
+            private bool _hasBrownoutGlobals;
 
             public BrownoutPass()
             {
@@ -99,6 +96,7 @@ namespace Hecton8.Visor
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
+                EnsureBrownoutGlobalsBuffer();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -141,7 +139,8 @@ namespace Hecton8.Visor
                 destinationDesc.autoGenerateMips = false;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
-                UpdateMaterialParameters(_material, _settings, _runtimeState);
+                if (!UpdateBrownoutGlobals(_settings, _runtimeState))
+                    return;
 
                 renderGraph.AddBlitPass(
                     new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
@@ -150,97 +149,108 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private void UpdateMaterialParameters(Material material, FeatureSettings settings, RuntimeState runtimeState)
+            public void Dispose()
             {
-                if (!ReferenceEquals(_lastParameterMaterial, material))
+                _brownoutGlobalsBuffer?.Release();
+                _brownoutGlobalsBuffer = null;
+                _hasBrownoutGlobals = false;
+            }
+
+            private bool EnsureBrownoutGlobalsBuffer()
+            {
+                if (!SystemInfo.supportsSetConstantBuffer)
                 {
-                    ResetMaterialParameterCache();
-                    _lastParameterMaterial = material;
+                    Dispose();
+                    return false;
                 }
 
-                SetMaterialFloatIfChanged(
-                    material,
-                    ShaderConstants.BrownoutIntensityId,
-                    HectonVRBrownoutFeature.Sanitize01(runtimeState.BrownoutIntensity),
-                    ref _lastBrownoutIntensity);
-                SetMaterialFloatIfChanged(
-                    material,
-                    ShaderConstants.WorldFocusBlurId,
-                    HectonVRBrownoutFeature.Sanitize01(runtimeState.WorldFocusBlur),
-                    ref _lastWorldFocusBlur);
-                SetMaterialFloatIfChanged(
-                    material,
-                    ShaderConstants.NearCollisionIntensityId,
-                    HectonVRBrownoutFeature.Sanitize01(runtimeState.NearCollisionIntensity),
-                    ref _lastNearCollisionIntensity);
-                SetMaterialFloatIfChanged(
-                    material,
-                    ShaderConstants.WorldBlurTexelRadiusId,
-                    HectonVRBrownoutFeature.SanitizeRange(settings.worldBlurTexelRadius, 0f, 3f),
-                    ref _lastWorldBlurTexelRadius);
-                SetMaterialFloatIfChanged(
-                    material,
-                    ShaderConstants.ScanlineStrengthId,
-                    HectonVRBrownoutFeature.Sanitize01(settings.scanlineStrength),
-                    ref _lastScanlineStrength);
-                SetMaterialFloatIfChanged(
-                    material,
-                    ShaderConstants.DitherStrengthId,
-                    HectonVRBrownoutFeature.Sanitize01(settings.ditherStrength),
-                    ref _lastDitherStrength);
-                SetMaterialVectorIfChanged(
-                    material,
-                    ShaderConstants.VrComfortSignalsId,
+                if (_brownoutGlobalsBuffer != null && _brownoutGlobalsBuffer.IsValid())
+                    return true;
+
+                _brownoutGlobalsBuffer?.Release();
+                _brownoutGlobalsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    VRBrownoutGlobalsStrideBytes);
+                _hasBrownoutGlobals = false;
+                return _brownoutGlobalsBuffer.IsValid();
+            }
+
+            private bool UpdateBrownoutGlobals(FeatureSettings settings, RuntimeState runtimeState)
+            {
+                if (!EnsureBrownoutGlobalsBuffer())
+                    return false;
+
+                BrownoutGlobalsDTO globals = new BrownoutGlobalsDTO(
+                    new Vector4(
+                        HectonVRBrownoutFeature.Sanitize01(runtimeState.BrownoutIntensity),
+                        HectonVRBrownoutFeature.Sanitize01(runtimeState.WorldFocusBlur),
+                        HectonVRBrownoutFeature.Sanitize01(runtimeState.NearCollisionIntensity),
+                        HectonVRBrownoutFeature.SanitizeRange(settings.worldBlurTexelRadius, 0f, 3f)),
+                    new Vector4(
+                        HectonVRBrownoutFeature.Sanitize01(settings.scanlineStrength),
+                        HectonVRBrownoutFeature.Sanitize01(settings.ditherStrength),
+                        0f,
+                        0f),
                     SanitizeVrComfortSignals(runtimeState.VrComfortSignals),
-                    ref _lastVrComfortSignals);
-                SetMaterialVectorIfChanged(
-                    material,
-                    ShaderConstants.VrComfortMotionId,
-                    SanitizeVrComfortMotion(runtimeState.VrComfortMotion),
-                    ref _lastVrComfortMotion);
-                _materialDirty = false;
-            }
-
-            private void ResetMaterialParameterCache()
-            {
-                _lastBrownoutIntensity = float.PositiveInfinity;
-                _lastWorldFocusBlur = float.PositiveInfinity;
-                _lastNearCollisionIntensity = float.PositiveInfinity;
-                _lastWorldBlurTexelRadius = float.PositiveInfinity;
-                _lastScanlineStrength = float.PositiveInfinity;
-                _lastDitherStrength = float.PositiveInfinity;
-                _lastVrComfortSignals = Vector4.positiveInfinity;
-                _lastVrComfortMotion = Vector4.positiveInfinity;
-                _materialDirty = true;
-            }
-
-            private void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue)
-            {
-                if (!_materialDirty && math.abs(cachedValue - value) <= MaterialFloatEpsilon)
-                    return;
-
-                material.SetFloat(shaderId, value);
-                cachedValue = value;
-            }
-
-            private void SetMaterialVectorIfChanged(Material material, int shaderId, Vector4 value, ref Vector4 cachedValue)
-            {
-                if (!_materialDirty &&
-                    math.abs(cachedValue.x - value.x) <= MaterialFloatEpsilon &&
-                    math.abs(cachedValue.y - value.y) <= MaterialFloatEpsilon &&
-                    math.abs(cachedValue.z - value.z) <= MaterialFloatEpsilon &&
-                    math.abs(cachedValue.w - value.w) <= MaterialFloatEpsilon)
+                    SanitizeVrComfortMotion(runtimeState.VrComfortMotion));
+                if (_hasBrownoutGlobals && BrownoutGlobalsEqual(in _lastBrownoutGlobals, in globals))
                 {
-                    return;
+                    Shader.SetGlobalConstantBuffer(ShaderConstants.BrownoutGlobalsBufferId, _brownoutGlobalsBuffer, 0, VRBrownoutGlobalsStrideBytes);
+                    return true;
                 }
 
-                material.SetVector(shaderId, value);
-                cachedValue = value;
+                NativeArray<BrownoutGlobalsDTO> mapped = _brownoutGlobalsBuffer.LockBufferForWrite<BrownoutGlobalsDTO>(0, 1);
+                mapped[0] = globals;
+                _brownoutGlobalsBuffer.UnlockBufferAfterWrite<BrownoutGlobalsDTO>(1);
+                _lastBrownoutGlobals = globals;
+                _hasBrownoutGlobals = true;
+                Shader.SetGlobalConstantBuffer(ShaderConstants.BrownoutGlobalsBufferId, _brownoutGlobalsBuffer, 0, VRBrownoutGlobalsStrideBytes);
+                return true;
+            }
+
+            private static bool BrownoutGlobalsEqual(in BrownoutGlobalsDTO left, in BrownoutGlobalsDTO right)
+            {
+                return Vector4Approximately(left.Params0, right.Params0) &&
+                       Vector4Approximately(left.Params1, right.Params1) &&
+                       Vector4Approximately(left.VrComfortSignals, right.VrComfortSignals) &&
+                       Vector4Approximately(left.VrComfortMotion, right.VrComfortMotion);
+            }
+
+            private static bool Vector4Approximately(Vector4 left, Vector4 right)
+            {
+                return math.abs(left.x - right.x) <= GlobalsFloatEpsilon &&
+                       math.abs(left.y - right.y) <= GlobalsFloatEpsilon &&
+                       math.abs(left.z - right.z) <= GlobalsFloatEpsilon &&
+                       math.abs(left.w - right.w) <= GlobalsFloatEpsilon;
+            }
+
+            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = VRBrownoutGlobalsStrideBytes)]
+            private struct BrownoutGlobalsDTO
+            {
+                public Vector4 Params0;
+                public Vector4 Params1;
+                public Vector4 VrComfortSignals;
+                public Vector4 VrComfortMotion;
+
+                public BrownoutGlobalsDTO(
+                    Vector4 params0,
+                    Vector4 params1,
+                    Vector4 vrComfortSignals,
+                    Vector4 vrComfortMotion)
+                {
+                    Params0 = params0;
+                    Params1 = params1;
+                    VrComfortSignals = vrComfortSignals;
+                    VrComfortMotion = vrComfortMotion;
+                }
             }
         }
 
         private static class ShaderConstants
         {
+            internal static readonly int BrownoutGlobalsBufferId = Shader.PropertyToID("HectonVRBrownoutGlobals");
             internal static readonly int BrownoutIntensityId = Shader.PropertyToID("_HectonVRBrownoutIntensity");
             internal static readonly int WorldFocusBlurId = Shader.PropertyToID("_HectonWorldFocusBlur");
             internal static readonly int NearCollisionIntensityId = Shader.PropertyToID("_HectonVRNearCollisionIntensity");
@@ -293,6 +303,7 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
+            _pass?.Dispose();
             CoreUtils.Destroy(_material);
             _material = null;
         }
@@ -303,17 +314,9 @@ namespace Hecton8.Visor
             if (renderCamera == null || !HectonXRRuntimeState.IsXRActive)
                 return false;
 
-            Camera playerCamera = null;
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
-                playerCamera = runtimeContext.PlayerCamera;
-
-            if (playerCamera == null)
-            {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
-            }
-
-            if (playerCamera != null && !ReferenceEquals(renderCamera, playerCamera))
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            if (playerCamera == null || !ReferenceEquals(renderCamera, playerCamera))
                 return false;
 
             float brownoutIntensity = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.BrownoutIntensityId));

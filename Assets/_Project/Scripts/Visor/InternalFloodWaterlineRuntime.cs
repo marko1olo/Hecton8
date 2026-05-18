@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -38,7 +37,7 @@ namespace Hecton8.Visor
         private static readonly int InternalWaterlineRuntimeId = Shader.PropertyToID("_InternalWaterlineRuntime");
         private static readonly int InternalWaterlineDistortionId = Shader.PropertyToID("_InternalWaterlineDistortion");
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential, Size = TelemetryEntrySizeBytes)]
         private struct WaterlineTelemetryEntry
         {
             public uint Frame;
@@ -62,7 +61,6 @@ namespace Hecton8.Visor
         [SerializeField, Range(0.001f, 0.1f)] private float edgeSoftness = 0.018f;
 
         private NativeArray<WaterlineTelemetryEntry> _telemetry;
-        private HectonPlayerMovement _subscribedMovement;
         private IHabitatGraphService _habitatGraph;
         private IGasDynamicsSolver _gasDynamics;
         private AbsoluteUniversePosition _lastCameraAup;
@@ -140,7 +138,6 @@ namespace Hecton8.Visor
         private void OnDisable()
         {
             UnregisterRuntime();
-            UnsubscribeMovement();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
         }
@@ -163,17 +160,15 @@ namespace Hecton8.Visor
             if (_dropletSecondsRemaining > 0f)
                 _dropletSecondsRemaining = math.max(0f, _dropletSecondsRemaining - deltaTime);
 
-            if (!TryResolveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            if (!TryResolveRuntimeContext(out IPlayerRuntimeContext runtimeContext, out PlayerRuntimePoseSnapshot poseSnapshot))
             {
                 ClearWaterlineState();
                 return;
             }
 
-            SubscribeMovement(runtimeContext.PlayerMovement);
-
             IHabitatGraphService habitatGraph = _habitatGraph;
             if (habitatGraph == null ||
-                !TryResolvePlayerRuntimePosition(in runtimeContext, out Vector3 playerRuntimePosition) ||
+                !TryResolvePlayerRuntimePosition(in poseSnapshot, out Vector3 playerRuntimePosition) ||
                 !habitatGraph.TryResolveRoomWaterline(playerRuntimePosition, _cachedRoomId, out HabitatRoomWaterlineSnapshot snapshot) ||
                 !snapshot.IsValid)
             {
@@ -192,8 +187,10 @@ namespace Hecton8.Visor
                 return;
             }
 
-            Vector3 cameraRuntimePosition = ResolveCameraRuntimePosition(in runtimeContext);
-            _lastCameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraRuntimePosition);
+            Vector3 cameraRuntimePosition = ResolveCameraRuntimePosition(runtimeContext, in poseSnapshot);
+            _lastCameraAup = IsFiniteAup(in poseSnapshot.Aup)
+                ? poseSnapshot.Aup
+                : AbsoluteUniversePosition.FromRuntimePosition(cameraRuntimePosition);
             float targetY = snapshot.SurfaceY;
             if (!math.isfinite(targetY))
             {
@@ -264,7 +261,6 @@ namespace Hecton8.Visor
         private void Shutdown()
         {
             UnregisterRuntime();
-            UnsubscribeMovement();
             _isInitialized = false;
             _habitatGraph = null;
             _gasDynamics = null;
@@ -286,62 +282,35 @@ namespace Hecton8.Visor
             _telemetry = new NativeArray<WaterlineTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<WaterlineTelemetryEntry>[300] - fixed internal flood blackbox ring - owner: InternalFloodWaterlineRuntime
         }
 
-        private static bool TryResolveRuntimeContext(out PlayerRuntimeContext runtimeContext)
+        private static bool TryResolveRuntimeContext(
+            out IPlayerRuntimeContext runtimeContext,
+            out PlayerRuntimePoseSnapshot poseSnapshot)
         {
-            return PlayerRuntimeContextService.TryGetActiveRuntimeContext(out runtimeContext) &&
-                   runtimeContext != null &&
-                   runtimeContext.IsBound;
+            runtimeContext = GlobalRegistry.Player;
+            poseSnapshot = default;
+            return runtimeContext != null &&
+                   runtimeContext.IsInitialized &&
+                   runtimeContext.TryGetPlayerPoseSnapshot(out poseSnapshot) &&
+                   math.all(math.isfinite(poseSnapshot.RuntimePosition));
         }
 
-        private static bool TryResolvePlayerRuntimePosition(in PlayerRuntimeContext runtimeContext, out Vector3 runtimePosition)
+        private static bool TryResolvePlayerRuntimePosition(in PlayerRuntimePoseSnapshot poseSnapshot, out Vector3 runtimePosition)
         {
-            float3 predicted = runtimeContext.MovementState.PredictedAup.ToRuntimeFloat3();
-            if (math.all(math.isfinite(predicted)))
-            {
-                runtimePosition = new Vector3(predicted.x, predicted.y, predicted.z);
-                return true;
-            }
-
-            float3 current = runtimeContext.MovementState.WorldPosition;
-            if (math.all(math.isfinite(current)))
-            {
-                runtimePosition = new Vector3(current.x, current.y, current.z);
-                return true;
-            }
-
-            runtimePosition = default;
-            return false;
+            float3 current = poseSnapshot.RuntimePosition;
+            runtimePosition = new Vector3(current.x, current.y, current.z);
+            return math.all(math.isfinite(current));
         }
 
-        private static Vector3 ResolveCameraRuntimePosition(in PlayerRuntimeContext runtimeContext)
+        private static Vector3 ResolveCameraRuntimePosition(
+            IPlayerRuntimeContext runtimeContext,
+            in PlayerRuntimePoseSnapshot poseSnapshot)
         {
-            float3 eyePosition = runtimeContext.LookState.EyePosition;
-            if (math.all(math.isfinite(eyePosition)))
-                return new Vector3(eyePosition.x, eyePosition.y, eyePosition.z);
-
             Camera playerCamera = runtimeContext.PlayerCamera;
-            if (playerCamera != null)
+            if (playerCamera != null && IsFiniteVector(playerCamera.transform.position))
                 return playerCamera.transform.position;
 
-            float3 fallback = runtimeContext.MovementState.WorldPosition;
+            float3 fallback = poseSnapshot.RuntimePosition;
             return new Vector3(fallback.x, fallback.y, fallback.z);
-        }
-
-        private void SubscribeMovement(HectonPlayerMovement movement)
-        {
-            if (ReferenceEquals(_subscribedMovement, movement))
-                return;
-
-            UnsubscribeMovement();
-            _subscribedMovement = movement;
-        }
-
-        private void UnsubscribeMovement()
-        {
-            if (_subscribedMovement == null)
-                return;
-
-            _subscribedMovement = null;
         }
 
         private void ConsumePlayerExhaleSignals()
@@ -626,6 +595,20 @@ namespace Hecton8.Visor
             return tier == HectonQualityTier.Low ||
                    tier == HectonQualityTier.Mx350 ||
                    tier == HectonQualityTier.Unknown;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
         }
 
         private static uint ResolveTelemetryHash(int roomId, float fill01, float waterlineY, float cameraY, float droplets01)

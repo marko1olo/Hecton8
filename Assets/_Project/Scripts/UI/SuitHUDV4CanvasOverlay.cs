@@ -8,6 +8,7 @@ using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
@@ -119,6 +120,7 @@ namespace Hecton8.UI
         private const byte CriticalMaskHealth = 1 << 2;
         private const float ToolDepletedWarningDurationSeconds = 2.25f;
         private const float MemorySubsystemBreachHoldSeconds = 4f;
+        private const int LegacyGlitchReadabilityPrefixChars = 5;
         private const float SavingProgressFadeSpeed = 6.5f;
         private const float SavingProgressVisibleEpsilon = 0.001f;
         private const float SavingProgressMinimumVisibleSeconds = 0.35f;
@@ -752,6 +754,11 @@ namespace Hecton8.UI
         private char[] _headingDisplayBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity];
         // COLD ALLOC: char[256] — LOAD telemetry fallback staging buffer — owner: SuitHUDV4CanvasOverlay
         private char[] _loadDisplayFallbackBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
+        // COLD ALLOC: char[256] — caller-owned HUD glitch scratch buffer — owner: SuitHUDV4CanvasOverlay
+        private char[] _glitchScratchBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
+        private IDataVault _glitchVault;
+        private VaultBufferHandle<byte> _glitchTableHandle;
+        private bool _glitchTableHandleReady;
         private Canvas _appliedCanvasTarget;
         private Camera _appliedProjectionCamera;
         private RenderPath _appliedRenderPath;
@@ -1095,6 +1102,7 @@ namespace Hecton8.UI
             EnsureLayerCache();
             ResolveGraphicRaycasterCold();
             CacheRuntimeDependencies();
+            CacheGlitchTableVaultCold();
             LocalizationEvents.RegisterLanguageListener(this);
             LocalizationEvents.RegisterCorruptionVisualStateListener(this);
             GameBootstrapper.Register(this);
@@ -1900,6 +1908,10 @@ namespace Hecton8.UI
                     needsRefresh = true;
                     break;
 
+                case GlobalRegistryServiceSlot.DataVault:
+                    BindGlitchTableVault(currentService as IDataVault);
+                    return;
+
                 default:
                     return;
             }
@@ -1944,6 +1956,55 @@ namespace Hecton8.UI
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
+        }
+
+        private void CacheGlitchTableVaultCold()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
+                vault = latestVault;
+
+            BindGlitchTableVault(vault);
+        }
+
+        private void BindGlitchTableVault(IDataVault vault)
+        {
+            _glitchVault = vault;
+            _glitchTableHandle = default;
+            _glitchTableHandleReady = false;
+            if (vault == null)
+                return;
+
+            _glitchTableHandle = vault.GetBufferHandle<byte>(
+                (BufferID)DiegeticGlitchSurgeonRuntime.GlitchTableBufferIdRaw,
+                DiegeticGlitchSurgeonRuntime.GlitchTableCapacity,
+                SystemID.UI,
+                NativeArrayOptions.UninitializedMemory);
+            _glitchTableHandleReady = _glitchTableHandle.IsCreated;
+            if (!_glitchTableHandleReady)
+                return;
+
+            unsafe
+            {
+                byte* table = (byte*)_glitchTableHandle.ResolvePointer(vault);
+                if (table != null && !GlitchTable.IsValidGlyphTable(table, DiegeticGlitchSurgeonRuntime.GlitchTableCapacity))
+                    GlitchTable.CopyEmbeddedGlyphsTo(table, DiegeticGlitchSurgeonRuntime.GlitchTableCapacity);
+            }
+        }
+
+        private unsafe bool TryResolveGlitchTablePointer(out byte* table, out int tableLength)
+        {
+            table = null;
+            tableLength = 0;
+            if (!_glitchTableHandleReady || _glitchVault == null)
+                return false;
+
+            table = (byte*)_glitchTableHandle.ResolvePointer(_glitchVault);
+            if (table == null)
+                return false;
+
+            tableLength = DiegeticGlitchSurgeonRuntime.GlitchTableCapacity;
+            return true;
         }
 
         private void RebindInventoryService(IPlayerInventoryService inventoryService)
@@ -2068,6 +2129,8 @@ namespace Hecton8.UI
 #if !UNITY_EDITOR
                 return false;
 #else
+                if (Application.isPlaying)
+                    return false;
                 if (targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
                     return false;
                 if (targetCanvas.worldCamera != null)
@@ -2141,6 +2204,13 @@ namespace Hecton8.UI
             ApplyProjectionCanvasState(canvas, canvasRect, ResolveUiReferenceResolution());
             return;
 #else
+            if (Application.isPlaying)
+            {
+                renderPath = RenderPath.ProjectionSource;
+                ApplyProjectionCanvasState(canvas, canvasRect, ResolveUiReferenceResolution());
+                return;
+            }
+
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.worldCamera = null;
             canvas.overrideSorting = true;
@@ -4770,7 +4840,7 @@ namespace Hecton8.UI
             return 1f - math.saturate(depth * math.rcp(safeDepth));
         }
 
-        private static void UpdateGauge(
+        private void UpdateGauge(
             ref GaugeRefs gauge,
             float normalized,
             float currentValue,
@@ -6006,7 +6076,7 @@ namespace Hecton8.UI
             return AppendInt(value, buffer, cursor);
         }
 
-        private static void SetDisplayBufferIfChanged(
+        private void SetDisplayBufferIfChanged(
             TextMeshProUGUI label,
             char[] sourceBuffer,
             int sourceLength,
@@ -6026,15 +6096,43 @@ namespace Hecton8.UI
                 return;
             }
 
-            GlitchEncoder.ApplyDecay(
-                sourceBuffer,
-                sourceLength,
-                corruptionIntensity,
-                unchecked((corruptionVersion * 397) ^ corruptionSalt),
-                out char[] corruptedBuffer,
-                out int corruptedLength);
-            int corruptedDisplayVersion = unchecked((version * 397) ^ corruptionVersion ^ corruptionSalt);
-            SetCharBufferIfChanged(label, corruptedBuffer, corruptedLength, rtl, color, corruptedDisplayVersion, ref cachedVersion, ref cachedColor);
+            if (sourceLength > _glitchScratchBuffer.Length)
+            {
+                SetCharBufferIfChanged(label, sourceBuffer, sourceLength, rtl, color, version, ref cachedVersion, ref cachedColor);
+                return;
+            }
+
+            int seed = unchecked((corruptionVersion * 397) ^ corruptionSalt);
+            unsafe
+            {
+                if (TryResolveGlitchTablePointer(out byte* table, out int tableLength))
+                {
+                    GlitchEncoder.ApplyDecayToBuffer(
+                        sourceBuffer,
+                        sourceLength,
+                        _glitchScratchBuffer,
+                        corruptionIntensity,
+                        seed,
+                        table,
+                        tableLength,
+                        LegacyGlitchReadabilityPrefixChars,
+                        out int corruptedLength);
+                    int corruptedDisplayVersion = unchecked((version * 397) ^ corruptionVersion ^ corruptionSalt);
+                    SetCharBufferIfChanged(label, _glitchScratchBuffer, corruptedLength, rtl, color, corruptedDisplayVersion, ref cachedVersion, ref cachedColor);
+                }
+                else
+                {
+                    GlitchEncoder.ApplyDecayToBuffer(
+                        sourceBuffer,
+                        sourceLength,
+                        _glitchScratchBuffer,
+                        corruptionIntensity,
+                        seed,
+                        out int corruptedLength);
+                    int corruptedDisplayVersion = unchecked((version * 397) ^ corruptionVersion ^ corruptionSalt);
+                    SetCharBufferIfChanged(label, _glitchScratchBuffer, corruptedLength, rtl, color, corruptedDisplayVersion, ref cachedVersion, ref cachedColor);
+                }
+            }
         }
 
         private static void ResolveMetricIntBuffer(char[] templateBuffer, int templateLength, ref char[] displayBuffer, int value, out char[] buffer, out int length)
@@ -6856,13 +6954,16 @@ namespace Hecton8.UI
                        ReferenceEquals(canvas.worldCamera, requestedProjectionCamera);
             }
 
-#if !UNITY_EDITOR
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                return canvas.renderMode == RenderMode.ScreenSpaceOverlay &&
+                       canvas.worldCamera == null;
+            }
+#endif
+
             return canvas.renderMode == RenderMode.WorldSpace &&
                    ReferenceEquals(canvas.worldCamera, requestedProjectionCamera);
-#else
-            return canvas.renderMode == RenderMode.ScreenSpaceOverlay &&
-                   canvas.worldCamera == null;
-#endif
         }
 
         public void CopyConfigurationFrom(SuitHUDV4CanvasOverlay source)

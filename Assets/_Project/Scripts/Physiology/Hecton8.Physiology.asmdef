@@ -3,11 +3,16 @@
     "rootNamespace": "Hecton8.Physiology",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
         "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": false,
+    "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": false,

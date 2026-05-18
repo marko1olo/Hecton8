@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
-using Hecton8.Gameplay;
+using Hecton8.Core.Contracts;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -28,6 +28,8 @@ namespace Hecton8.Visor
 #endif
         private const string AutoExposureComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_NoirAutoExposure.compute";
         private const int HistogramBinCount = 64;
+        private const int ShaftGlobalsStrideBytes = 176;
+        private const int MaterialParameterStateSizeBytes = 152;
         private const float ExposureStateDefaultMultiplier = 1f;
         private const float ThermalHazeMotionCullSpeedMetersPerSecondSq = 225f;
         private const float SurfaceNoirSuppressionDepth = 0.08f;
@@ -214,14 +216,10 @@ namespace Hecton8.Visor
             private ComputeShader _autoExposureComputeShader;
             private GraphicsBuffer _histogramBuffer;
             private GraphicsBuffer _exposureStateBuffer;
+            private GraphicsBuffer _shaftGlobalsBuffer;
             private GraphicsBuffer _lastExposureStateBuffer;
-            private Material _lastExposureStateMaterial;
-            private MaterialUploadCache _raymarchMaterialCache;
-            private MaterialUploadCache _blurHorizontalMaterialCache;
-            private MaterialUploadCache _blurVerticalMaterialCache;
-            private MaterialUploadCache _compositeMaterialCache;
-            private Vector4 _lastContactShadowGlobals = Vector4.positiveInfinity;
-            private bool _hasContactShadowGlobals;
+            private MaterialParameterState _shaftGlobalsCache;
+            private bool _hasShaftGlobalsCache;
             private int _clearHistogramKernel = -1;
             private int _buildHistogramKernel = -1;
             private int _resolveExposureKernel = -1;
@@ -263,16 +261,13 @@ namespace Hecton8.Visor
             {
                 _histogramBuffer?.Release();
                 _exposureStateBuffer?.Release();
+                _shaftGlobalsBuffer?.Release();
                 _histogramBuffer = null;
                 _exposureStateBuffer = null;
+                _shaftGlobalsBuffer = null;
                 _lastExposureStateBuffer = null;
-                _lastExposureStateMaterial = null;
-                _raymarchMaterialCache = default;
-                _blurHorizontalMaterialCache = default;
-                _blurVerticalMaterialCache = default;
-                _compositeMaterialCache = default;
-                _hasContactShadowGlobals = false;
-                _lastContactShadowGlobals = Vector4.positiveInfinity;
+                _shaftGlobalsCache = default;
+                _hasShaftGlobalsCache = false;
                 _clearHistogramKernel = -1;
                 _buildHistogramKernel = -1;
                 _resolveExposureKernel = -1;
@@ -441,11 +436,8 @@ namespace Hecton8.Visor
                     _settings,
                     exposureAvailable,
                     underwaterNoirBlend);
-                ApplyContactShadowGlobalsIfChanged(in materialParameters);
-                UpdateMaterialParameters(_raymarchMaterial, ref _raymarchMaterialCache, in materialParameters, 0f);
-                UpdateMaterialParameters(_blurHorizontalMaterial, ref _blurHorizontalMaterialCache, in materialParameters, 1f);
-                UpdateMaterialParameters(_blurVerticalMaterial, ref _blurVerticalMaterialCache, in materialParameters, 2f);
-                UpdateMaterialParameters(_compositeMaterial, ref _compositeMaterialCache, in materialParameters, 3f);
+                if (!UpdateShaftGlobals(in materialParameters))
+                    return;
 
                 using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
                            new RenderGraphUtils.BlitMaterialParameters(sourceTexture, halfResDepthTexture, _raymarchMaterial, HalfResContactDepthPassIndex),
@@ -531,15 +523,14 @@ namespace Hecton8.Visor
                     _exposureStateBuffer.UnlockBufferAfterWrite<Vector4>(1);
                 }
 
-                if (_compositeMaterial != null &&
-                    _exposureStateBuffer != null &&
-                    (!ReferenceEquals(_lastExposureStateMaterial, _compositeMaterial) ||
-                     !ReferenceEquals(_lastExposureStateBuffer, _exposureStateBuffer)))
+                if (_exposureStateBuffer != null &&
+                    !ReferenceEquals(_lastExposureStateBuffer, _exposureStateBuffer))
                 {
-                    _compositeMaterial.SetBuffer(ShaderConstants.ExposureStateBufferId, _exposureStateBuffer);
-                    _lastExposureStateMaterial = _compositeMaterial;
+                    Shader.SetGlobalBuffer(ShaderConstants.ExposureStateBufferId, _exposureStateBuffer);
                     _lastExposureStateBuffer = _exposureStateBuffer;
                 }
+
+                EnsureShaftGlobalsBuffer();
             }
 
             private void TryInitializeAutoExposureKernels()
@@ -595,7 +586,6 @@ namespace Hecton8.Visor
                 _histogramBuffer = null;
                 _exposureStateBuffer = null;
                 _lastExposureStateBuffer = null;
-                _lastExposureStateMaterial = null;
             }
 
             private static Vector4 ResolveInputSize(int width, int height)
@@ -608,80 +598,49 @@ namespace Hecton8.Visor
                 return inputSize;
             }
 
-            private static void UpdateMaterialParameters(
-                Material material,
-                ref MaterialUploadCache cache,
-                in MaterialParameterState parameters,
-                float passMode)
+            private bool EnsureShaftGlobalsBuffer()
             {
-                if (cache.HasState &&
-                    ReferenceEquals(cache.Material, material) &&
-                    cache.PassMode == passMode &&
-                    MaterialParametersEqual(in cache.Parameters, in parameters))
+                if (!SystemInfo.supportsSetConstantBuffer)
+                    return false;
+
+                if (_shaftGlobalsBuffer == null || !_shaftGlobalsBuffer.IsValid())
                 {
-                    return;
+                    _shaftGlobalsBuffer = new GraphicsBuffer(
+                        GraphicsBuffer.Target.Constant,
+                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                        1,
+                        ShaftGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[176B] - URP noir shaft global CBuffer - owner: ShaftsPass
+                    _hasShaftGlobalsCache = false;
                 }
 
-                material.SetFloat(ShaderConstants.PassModeId, passMode);
-                material.SetFloat(ShaderConstants.RenderScaleId, parameters.RenderScale);
-                material.SetFloat(ShaderConstants.RaymarchStepsId, 0f);
-                material.SetFloat(ShaderConstants.MaxRayDistanceId, parameters.MaxRayDistance);
-                material.SetFloat(ShaderConstants.ScatteringAnisotropyId, parameters.ScatteringAnisotropy);
-                material.SetFloat(ShaderConstants.DensityId, parameters.Density);
-                material.SetFloat(ShaderConstants.IgnJitterId, parameters.IgnJitter);
-                material.SetFloat(ShaderConstants.BilateralDepthSigmaId, parameters.BilateralDepthSigma);
-                material.SetFloat(ShaderConstants.ShaftIntensityId, parameters.ShaftIntensity);
-                material.SetFloat(ShaderConstants.BiolumPatternScaleId, parameters.BiolumPatternScale);
-                material.SetFloat(ShaderConstants.BiolumProjectionStrengthId, parameters.BiolumProjectionStrength);
-                material.SetFloat(ShaderConstants.SiltStrengthId, parameters.SiltStrength);
-                material.SetFloat(ShaderConstants.SiltNoiseScaleId, parameters.SiltNoiseScale);
-                material.SetFloat(ShaderConstants.SiltFloorBoostId, parameters.SiltFloorBoost);
-                material.SetFloat(ShaderConstants.SiltDriftSpeedId, parameters.SiltDriftSpeed);
-                material.SetFloat(ShaderConstants.ContactShadowStrengthId, parameters.ContactShadowStrength);
-                material.SetFloat(ShaderConstants.ContactShadowStepsId, parameters.ContactShadowSteps);
-                material.SetFloat(ShaderConstants.ContactShadowBiasId, parameters.ContactShadowBias);
-                material.SetFloat(ShaderConstants.ContactShadowMaxDistanceId, parameters.ContactShadowMaxDistance);
-                material.SetFloat(ShaderConstants.FlashlightShadowStepsId, parameters.FlashlightShadowSteps);
-                material.SetFloat(ShaderConstants.FlashlightShadowSoftnessId, parameters.FlashlightShadowSoftness);
-                material.SetFloat(ShaderConstants.FlashlightShadowMinStepId, parameters.FlashlightShadowMinStep);
-                material.SetFloat(ShaderConstants.FlashlightShadowBiasId, parameters.FlashlightShadowBias);
-                material.SetFloat(ShaderConstants.FlashlightShadowFloorId, parameters.FlashlightShadowFloor);
-                material.SetFloat(ShaderConstants.NoirPowerId, parameters.NoirPower);
-                material.SetFloat(ShaderConstants.NoirFogDensityId, parameters.NoirFogDensity);
-                material.SetColor(ShaderConstants.NoirLiftColorId, parameters.NoirLiftColor);
-                material.SetFloat(ShaderConstants.LensGhostIntensityId, parameters.LensGhostIntensity);
-                material.SetFloat(ShaderConstants.LensGhostScaleId, parameters.LensGhostScale);
-                material.SetFloat(ShaderConstants.LensChromaticAberrationId, parameters.LensChromaticAberration);
-                material.SetFloat(ShaderConstants.LensEdgeWeightId, parameters.LensEdgeWeight);
-                material.SetFloat(ShaderConstants.LensDirtIntensityId, parameters.LensDirtIntensity);
-                material.SetFloat(ShaderConstants.CondensationIntensityId, parameters.CondensationIntensity);
-                material.SetFloat(ShaderConstants.ThermalHazeIntensityId, parameters.ThermalHazeIntensity);
-                material.SetFloat(ShaderConstants.ThermalHazeScaleId, parameters.ThermalHazeScale);
-                material.SetFloat(ShaderConstants.HasExposureStateId, parameters.HasExposureState);
-
-                cache.Material = material;
-                cache.PassMode = passMode;
-                cache.Parameters = parameters;
-                cache.HasState = true;
+                return _shaftGlobalsBuffer != null && _shaftGlobalsBuffer.IsValid();
             }
 
-            private void ApplyContactShadowGlobalsIfChanged(in MaterialParameterState parameters)
+            private bool UpdateShaftGlobals(in MaterialParameterState parameters)
             {
-                Vector4 globals = new Vector4(
-                    parameters.ContactShadowStrength,
-                    parameters.ContactShadowSteps,
-                    parameters.ContactShadowBias,
-                    parameters.ContactShadowMaxDistance);
+                if (!EnsureShaftGlobalsBuffer())
+                    return false;
 
-                if (_hasContactShadowGlobals && _lastContactShadowGlobals == globals)
-                    return;
+                if (_hasShaftGlobalsCache && MaterialParametersEqual(in _shaftGlobalsCache, in parameters))
+                {
+                    Shader.SetGlobalConstantBuffer(ShaderConstants.ShaftGlobalsBufferId, _shaftGlobalsBuffer, 0, ShaftGlobalsStrideBytes);
+                    return true;
+                }
 
-                Shader.SetGlobalFloat(ShaderConstants.ContactShadowStrengthId, parameters.ContactShadowStrength);
-                Shader.SetGlobalFloat(ShaderConstants.ContactShadowStepsId, parameters.ContactShadowSteps);
-                Shader.SetGlobalFloat(ShaderConstants.ContactShadowBiasId, parameters.ContactShadowBias);
-                Shader.SetGlobalFloat(ShaderConstants.ContactShadowMaxDistanceId, parameters.ContactShadowMaxDistance);
-                _lastContactShadowGlobals = globals;
-                _hasContactShadowGlobals = true;
+                NativeArray<ShaftGlobalsDTO> mapped = _shaftGlobalsBuffer.LockBufferForWrite<ShaftGlobalsDTO>(0, 1);
+                try
+                {
+                    mapped[0] = ShaftGlobalsDTO.FromParameters(in parameters);
+                }
+                finally
+                {
+                    _shaftGlobalsBuffer.UnlockBufferAfterWrite<ShaftGlobalsDTO>(1);
+                }
+
+                Shader.SetGlobalConstantBuffer(ShaderConstants.ShaftGlobalsBufferId, _shaftGlobalsBuffer, 0, ShaftGlobalsStrideBytes);
+                _shaftGlobalsCache = parameters;
+                _hasShaftGlobalsCache = true;
+                return true;
             }
 
             private static bool MaterialParametersEqual(
@@ -741,7 +700,7 @@ namespace Hecton8.Visor
                     return 1f;
 
                 IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+                var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
                 if (playerMovement == null)
                     return 0f;
 
@@ -759,7 +718,7 @@ namespace Hecton8.Visor
                 if (playerContext == null)
                     return default;
 
-                HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
+                var playerMovement = playerContext.PlayerMovement;
                 if (playerMovement != null)
                     return ToFloat3(playerMovement.InterpolatedLinearVelocity);
 
@@ -786,15 +745,40 @@ namespace Hecton8.Visor
                 return configured;
             }
 
-            private struct MaterialUploadCache
+            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = ShaftGlobalsStrideBytes)]
+            private struct ShaftGlobalsDTO
             {
-                internal Material Material;
-                internal MaterialParameterState Parameters;
-                internal float PassMode;
-                internal bool HasState;
+                internal Vector4 PassRenderRayDistance;
+                internal Vector4 ScatteringDensityIgnBilateral;
+                internal Vector4 ShaftBiolumSilt;
+                internal Vector4 SiltContact;
+                internal Vector4 ContactFlashlight;
+                internal Vector4 FlashlightParams;
+                internal Vector4 NoirPowerDensityPad;
+                internal Vector4 NoirLiftColor;
+                internal Vector4 LensGhostChromatic;
+                internal Vector4 LensThermal;
+                internal Vector4 ExposurePad;
+
+                internal static ShaftGlobalsDTO FromParameters(in MaterialParameterState parameters)
+                {
+                    ShaftGlobalsDTO dto;
+                    dto.PassRenderRayDistance = new Vector4(0f, parameters.RenderScale, 0f, parameters.MaxRayDistance);
+                    dto.ScatteringDensityIgnBilateral = new Vector4(parameters.ScatteringAnisotropy, parameters.Density, parameters.IgnJitter, parameters.BilateralDepthSigma);
+                    dto.ShaftBiolumSilt = new Vector4(parameters.ShaftIntensity, parameters.BiolumPatternScale, parameters.BiolumProjectionStrength, parameters.SiltStrength);
+                    dto.SiltContact = new Vector4(parameters.SiltNoiseScale, parameters.SiltFloorBoost, parameters.SiltDriftSpeed, parameters.ContactShadowStrength);
+                    dto.ContactFlashlight = new Vector4(parameters.ContactShadowSteps, parameters.ContactShadowBias, parameters.ContactShadowMaxDistance, parameters.FlashlightShadowSteps);
+                    dto.FlashlightParams = new Vector4(parameters.FlashlightShadowSoftness, parameters.FlashlightShadowMinStep, parameters.FlashlightShadowBias, parameters.FlashlightShadowFloor);
+                    dto.NoirPowerDensityPad = new Vector4(parameters.NoirPower, parameters.NoirFogDensity, 0f, 0f);
+                    dto.NoirLiftColor = parameters.NoirLiftColor;
+                    dto.LensGhostChromatic = new Vector4(parameters.LensGhostIntensity, parameters.LensGhostScale, parameters.LensChromaticAberration, parameters.LensEdgeWeight);
+                    dto.LensThermal = new Vector4(parameters.LensDirtIntensity, parameters.CondensationIntensity, parameters.ThermalHazeIntensity, parameters.ThermalHazeScale);
+                    dto.ExposurePad = new Vector4(parameters.HasExposureState, 0f, 0f, 0f);
+                    return dto;
+                }
             }
 
-            [StructLayout(LayoutKind.Sequential)]
+            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = MaterialParameterStateSizeBytes)]
             private struct MaterialParameterState
             {
                 internal float RenderScale;
@@ -831,6 +815,7 @@ namespace Hecton8.Visor
                 internal float ThermalHazeIntensity;
                 internal float ThermalHazeScale;
                 internal float HasExposureState;
+                private float _pad0;
 
                 internal static MaterialParameterState Resolve(
                     FeatureSettings settings,
@@ -873,6 +858,7 @@ namespace Hecton8.Visor
                     state.ThermalHazeIntensity = ResolveThermalHazeIntensity(settings.thermalHazeIntensity) * underwaterBlend;
                     state.ThermalHazeScale = math.max(0.001f, settings.thermalHazeScale);
                     state.HasExposureState = exposureAvailable ? 1f : 0f;
+                    state._pad0 = 0f;
                     return state;
                 }
             }
@@ -880,6 +866,7 @@ namespace Hecton8.Visor
 
         private static class ShaderConstants
         {
+            internal static readonly int ShaftGlobalsBufferId = Shader.PropertyToID("HectonScooterVolumetricShaftsGlobals");
             internal static readonly int SourceColorId = Shader.PropertyToID("_HectonSourceColor");
             internal static readonly int InputSizeId = Shader.PropertyToID("_HectonNoirInputSize");
             internal static readonly int MinEvId = Shader.PropertyToID("_HectonNoirMinEv");
@@ -889,44 +876,6 @@ namespace Hecton8.Visor
             internal static readonly int EvMaxDeltaPerFrameId = Shader.PropertyToID("_HectonNoirEVMaxDeltaPerFrame");
             internal static readonly int HistogramBufferId = Shader.PropertyToID("_HectonNoirHistogram");
             internal static readonly int ExposureStateBufferId = Shader.PropertyToID("_HectonNoirExposureState");
-            internal static readonly int HeadlightCountId = Shader.PropertyToID("_HectonScooterHeadlightCount");
-            internal static readonly int FloorBiolumStrengthId = Shader.PropertyToID("_HectonFloorBiolumStrength");
-            internal static readonly int PassModeId = Shader.PropertyToID("_HectonShaftPassMode");
-            internal static readonly int RenderScaleId = Shader.PropertyToID("_HectonShaftRenderScale");
-            internal static readonly int RaymarchStepsId = Shader.PropertyToID("_HectonShaftRaymarchSteps");
-            internal static readonly int MaxRayDistanceId = Shader.PropertyToID("_HectonShaftMaxRayDistance");
-            internal static readonly int ScatteringAnisotropyId = Shader.PropertyToID("_HectonShaftScatteringAnisotropy");
-            internal static readonly int DensityId = Shader.PropertyToID("_HectonShaftDensity");
-            internal static readonly int IgnJitterId = Shader.PropertyToID("_HectonShaftIgnJitter");
-            internal static readonly int BilateralDepthSigmaId = Shader.PropertyToID("_HectonShaftBilateralDepthSigma");
-            internal static readonly int ShaftIntensityId = Shader.PropertyToID("_HectonShaftIntensity");
-            internal static readonly int BiolumPatternScaleId = Shader.PropertyToID("_HectonBiolumPatternScale");
-            internal static readonly int BiolumProjectionStrengthId = Shader.PropertyToID("_HectonBiolumProjectionStrength");
-            internal static readonly int SiltStrengthId = Shader.PropertyToID("_HectonSiltStrength");
-            internal static readonly int SiltNoiseScaleId = Shader.PropertyToID("_HectonSiltNoiseScale");
-            internal static readonly int SiltFloorBoostId = Shader.PropertyToID("_HectonSiltFloorBoost");
-            internal static readonly int SiltDriftSpeedId = Shader.PropertyToID("_HectonSiltDriftSpeed");
-            internal static readonly int ContactShadowStrengthId = Shader.PropertyToID("_HectonContactShadowStrength");
-            internal static readonly int ContactShadowStepsId = Shader.PropertyToID("_HectonContactShadowSteps");
-            internal static readonly int ContactShadowBiasId = Shader.PropertyToID("_HectonContactShadowBias");
-            internal static readonly int ContactShadowMaxDistanceId = Shader.PropertyToID("_HectonContactShadowMaxDistance");
-            internal static readonly int FlashlightShadowStepsId = Shader.PropertyToID("_HectonFlashlightShadowSteps");
-            internal static readonly int FlashlightShadowSoftnessId = Shader.PropertyToID("_HectonFlashlightShadowSoftness");
-            internal static readonly int FlashlightShadowMinStepId = Shader.PropertyToID("_HectonFlashlightShadowMinStep");
-            internal static readonly int FlashlightShadowBiasId = Shader.PropertyToID("_HectonFlashlightShadowBias");
-            internal static readonly int FlashlightShadowFloorId = Shader.PropertyToID("_HectonFlashlightShadowFloor");
-            internal static readonly int NoirPowerId = Shader.PropertyToID("_HectonNoirPower");
-            internal static readonly int NoirFogDensityId = Shader.PropertyToID("_HectonNoirFogDensity");
-            internal static readonly int NoirLiftColorId = Shader.PropertyToID("_HectonNoirLiftColor");
-            internal static readonly int LensGhostIntensityId = Shader.PropertyToID("_HectonLensGhostIntensity");
-            internal static readonly int LensGhostScaleId = Shader.PropertyToID("_HectonLensGhostScale");
-            internal static readonly int LensChromaticAberrationId = Shader.PropertyToID("_HectonLensChromaticAberration");
-            internal static readonly int LensEdgeWeightId = Shader.PropertyToID("_HectonLensEdgeWeight");
-            internal static readonly int LensDirtIntensityId = Shader.PropertyToID("_HectonLensDirtIntensity");
-            internal static readonly int CondensationIntensityId = Shader.PropertyToID("_HectonCondensationIntensity");
-            internal static readonly int ThermalHazeIntensityId = Shader.PropertyToID("_HectonThermalHazeIntensity");
-            internal static readonly int ThermalHazeScaleId = Shader.PropertyToID("_HectonThermalHazeScale");
-            internal static readonly int HasExposureStateId = Shader.PropertyToID("_HectonHasExposureState");
             internal static readonly int ShaftTextureId = Shader.PropertyToID("_HectonShaftsTexture");
             internal static readonly int HalfResDepthTextureId = Shader.PropertyToID("_HectonHalfResDepthTexture");
             internal static readonly int HeadlightVolumetricsTextureId = Shader.PropertyToID("_HectonHeadlightVolumetrics");
@@ -981,6 +930,9 @@ namespace Hecton8.Visor
 
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (IsUnsupportedCameraType(cameraType))
+                return;
+
+            if (HectonDrsRenderFeatureGate.ShouldCullForSurvivalScale())
                 return;
 
             _pass.Setup(settings, _raymarchMaterial, _blurHorizontalMaterial, _blurVerticalMaterial, _compositeMaterial);

@@ -1,0 +1,142 @@
+<SELF_AUDIT agent_id="SHINOBU_67" date="2026-05-19" domain="MODULAR_BASE_CONSTRUCTION_VALIDATOR">
+  <PRE_FLIGHT>
+    <READ>Docs/Tasks/CURRENT_BATCH.md</READ>
+    <READ>Docs/AgentLogs/Rationale_SHINOBU_67.md</READ>
+    <READ>Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md</READ>
+    <ACTIVE_PROMPT>First SHINOBU_67 block: role MODULAR_BASE_CONSTRUCTION_VALIDATOR. Later duplicate SHINOBU_67 blocks are ignored for this domain.</ACTIVE_PROMPT>
+    <BUILD_POLICY>No dotnet build launched during the current strict H-PHI preview recheck. Static scans and diff-check only, per user instruction.</BUILD_POLICY>
+  </PRE_FLIGHT>
+
+  <TWENTY_TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">Archive/binary ledger checked. No live wfc_module_bounds.h8bin authority found. Added GenerateEmergencyMockBounds() to hydrate 16 emergency AABB rows into ConstructionBuilderBounds when Vault bounds are empty.</TASK>
+    <TASK id="02" status="PASS">Construction terrain validation no longer uses Physics.OverlapBox/OverlapBoxNonAlloc. Scoped scan returns no matches in SHINOBU_67 construction files. Live preview also rejects occupied registered grid cells through AUP-local integer math.</TASK>
+    <TASK id="03" status="PASS">New construction DTOs are field-only explicit structs. No get/set or get/private set properties in ModularBaseConstructionValidator.</TASK>
+    <TASK id="04" status="PASS">All new construction DTOs are 32B or 64B explicit layouts. No Pack=1.</TASK>
+    <TASK id="05" status="PASS">MockWorldSampler exists as partial 64B struct. It rejects Distance below terrain clearance. Random was rejected for rollback determinism; seed-driven ridge fields are present but default amplitude is zero for stable fallback.</TASK>
+    <TASK id="06" status="PASS_WITH_CAVEAT">BurstGridValidationJob checks occupancy, SDF distance, port alignment, bounds, finite input, and SIP warning through unmanaged DTOs. PlayerBuilder preview now has a no-allocation registered-module occupancy fallback because the Vault occupancy mirror is not yet exported.</TASK>
+    <TASK id="07" status="PASS_WITH_CAVEAT">ConstructionSipBudgetDTO preflight exists. PlayerBuilder feeds total budget, added SIP estimate, and depth pressure fallback. Direct HullIntegrity ledger dependency was rejected because it creates assembly coupling.</TASK>
+    <TASK id="08" status="PASS_WITH_RENDER_CAVEAT">ConstructionPreviewSignal is emitted after validator result and consumed by HectonBlueprintPreviewBatch for instanced green/red AABB preview. HectonBlueprintPreviewBatch now stores only VaultBufferHandle fields, resolves NativeArray views locally, and locks ConstructionPreviewWrite/Build/Matrices while the Burst matrix job owns pointers. This is an unmanaged construction-owned fallback lane, not the final Agent 09 BRG module-hash renderer.</TASK>
+    <TASK id="09" status="PASS_WITH_CAVEAT">LogisticsGraphSpliceJob emits int2 neighbor edges from port-aligned cells. It does not mutate Agent 13 graph directly because no stable incremental graph mutation API was exposed.</TASK>
+    <TASK id="10" status="PASS">Production inventory deduction uses HabitatConstructionManager.HasBuildResources/ConsumeBuildResources with rollback. DebugDeployActiveBuildable now destroys spawned module if consume fails. MockCraftingRequestSignal was not promoted.</TASK>
+    <TASK id="11" status="PASS">GlobalQualityWeight now curves through step(0.3,q) * smoothstep(0.3,1.0,q) and lerp(1,9,curve). Weight below 0.3 collapses to one center SDF probe; weight 1.0 reaches nine AABB probes.</TASK>
+    <TASK id="12" status="PASS">DeconstructionConnectivityJob runs BFS over directed int2 edges and flags disconnected wings.</TASK>
+    <TASK id="13" status="PASS">TryBuildRequestFromAup subtracts RootAUP from TargetAUP first, validates the local delta, then casts to float3 and snaps to int3 grid. The voxel SDF adapter now also subtracts floating-origin offset before float conversion by using ToRuntimePosition(double3) and TrySampleRuntimeSdfDensity.</TASK>
+    <TASK id="14" status="PASS_WITH_NAME_CAVEAT">Build commit emits canonical AcousticPingSignal ChannelMetalStress. Literal AcousticEchoTap import was rejected because multiple incompatible AcousticEchoTap contracts exist in sibling domains.</TASK>
+    <TASK id="15" status="PASS">Build commit emits construction-owned FloraExclusionSignal with AUP center and AABB extents. Existing BaseModuleNavModifier remains immediate vegetation/terrain-hole bridge.</TASK>
+    <TASK id="16" status="PASS">AllocateRequestScratch uses NativeArrayOptions.UninitializedMemory for ConstructionRequestDTO scratch.</TASK>
+    <TASK id="17" status="PASS">ConstructionBuilderTelemetry Vault ring is 300 entries. PlayerBuilder writes validation telemetry every terrain validation. Non-finite state triggers Dump_SHINOBU_67.bin.</TASK>
+    <TASK id="18" status="PASS">WFC Builder Tuner editor window exposes Grid Snap Size, Max Base Bounds, Terrain Clearance Margin and writes Vault tuning.</TASK>
+    <TASK id="19" status="PASS">Span-based module_bounds.csv parser exists. Editor button loads bytes cold-path and parser writes StructuralBoundsDTO rows into ConstructionBuilderBounds Vault buffer.</TASK>
+    <TASK id="20" status="PASS">SceneView gizmo draws local grid and red terrain rejection AABB from last validator result.</TASK>
+  </TWENTY_TASK_RECONCILIATION>
+
+  <STRUCT_LAYOUT_VERIFICATION>
+    <ConstructionRequestDTO size="64" alignment="8_or_16_safe" pack1="false">
+      <FIELD name="RootAUP" offset="0" size="24" type="double3"/>
+      <FIELD name="GridPos" offset="24" size="12" type="int3"/>
+      <FIELD name="ModuleHash" offset="36" size="4" type="uint"/>
+      <FIELD name="Rotation" offset="40" size="4" type="uint"/>
+      <FIELD name="_pad0" offset="44" size="4" type="uint"/>
+      <FIELD name="_pad1" offset="48" size="4" type="uint"/>
+      <FIELD name="_pad2" offset="52" size="4" type="uint"/>
+      <FIELD name="_pad3" offset="56" size="4" type="uint"/>
+      <FIELD name="_pad4" offset="60" size="4" type="uint"/>
+      <MATH>24 + 12 + 4 + 4 + 20 = 64 bytes, exactly one L1 cache line.</MATH>
+    </ConstructionRequestDTO>
+    <OTHER_DTOS>StructuralBoundsDTO=32B, ConstructionValidationSettingsDTO=32B, BaseModuleOccupancyDTO=32B, ConstructionSipBudgetDTO=32B, ConstructionValidationResultDTO=32B, ConstructionTelemetryEntry=64B, ConstructionPreviewSignal=96B, FloraExclusionSignal=80B, BlueprintPreviewInstance=64B.</OTHER_DTOS>
+    <ConstructionPreviewSignal size="96" alignment="16_safe" pack1="false">
+      <FIELD name="CenterAup" offset="0" size="48" type="AbsoluteUniversePosition"/>
+      <FIELD name="Rotation" offset="48" size="16" type="float4"/>
+      <FIELD name="Scale" offset="64" size="12" type="float3"/>
+      <FIELD name="ModuleHash" offset="76" size="4" type="uint"/>
+      <FIELD name="FailureFlags" offset="80" size="4" type="uint"/>
+      <FIELD name="ResultHash" offset="84" size="4" type="uint"/>
+      <FIELD name="Frame" offset="88" size="4" type="uint"/>
+      <FIELD name="IsValid" offset="92" size="1" type="byte"/>
+      <FIELD name="Flags" offset="93" size="1" type="byte"/>
+      <FIELD name="_pad0" offset="94" size="2" type="ushort"/>
+      <MATH>48 + 16 + 12 + 4 + 4 + 4 + 4 + 1 + 1 + 2 = 96 bytes.</MATH>
+    </ConstructionPreviewSignal>
+    <FloraExclusionSignal size="80" alignment="16_safe" pack1="false">
+      <FIELD name="CenterAup" offset="0" size="48" type="AbsoluteUniversePosition"/>
+      <FIELD name="Extents" offset="48" size="12" type="float3"/>
+      <FIELD name="ModuleHash" offset="60" size="4" type="uint"/>
+      <FIELD name="SourceEntityLow" offset="64" size="4" type="uint"/>
+      <FIELD name="Frame" offset="68" size="4" type="uint"/>
+      <FIELD name="Operation" offset="72" size="1" type="byte"/>
+      <FIELD name="Flags" offset="73" size="1" type="byte"/>
+      <FIELD name="_pad0" offset="74" size="2" type="ushort"/>
+      <FIELD name="_pad1" offset="76" size="4" type="uint"/>
+      <MATH>48 + 12 + 4 + 4 + 4 + 1 + 1 + 2 + 4 = 80 bytes.</MATH>
+    </FloraExclusionSignal>
+    <FALSE_SHARING>ConstructionTelemetryEntry is 64B. Jobs write Result[0] only; no parallel atomic counter sharing added in SHINOBU_67.</FALSE_SHARING>
+  </STRUCT_LAYOUT_VERIFICATION>
+
+  <SCALABILITY_CURVE_EXPLANATION>
+    <CURVE>activeQuality = step(0.3, saturate(GlobalQualityWeight)); probeWeight = smoothstep(0.3, 1.0, saturate(GlobalQualityWeight)) * activeQuality; probeCount = ceil(lerp(1, 9, probeWeight)).</CURVE>
+    <LOW_WEIGHT_BELOW_0_3>Only center AABB/SDF probe runs. Corner checks collapse out. This buys frame stability during drag on throttled mobile hardware and accepts the prompt's slight low-tier clipping risk.</LOW_WEIGHT_BELOW_0_3>
+    <MIDDLE_TO_HIGH>Probe count increases continuously through the curve. More corners are sampled without binary low/high mode flips.</MIDDLE_TO_HIGH>
+    <ULTRA_WEIGHT_1_0>Nine probes run: center plus AABB corners. Editor gizmos expose red rejection box for designer diagnosis.</ULTRA_WEIGHT_1_0>
+  </SCALABILITY_CURVE_EXPLANATION>
+
+  <H_PHI_VAULT_STATUS>
+    <PRIVATE_NATIVE_ARRAY_FIELDS>ZERO in ModularBaseConstructionValidator and HectonBlueprintPreviewBatch. Preview batch stores only VaultBufferHandle fields; NativeArray views are local method variables resolved from GlobalDataVault.</PRIVATE_NATIVE_ARRAY_FIELDS>
+    <VAULT_HANDLES>
+      <BUFFER id="ConstructionBuilderTuning" type="ConstructionValidationSettingsDTO" length="1" owner="SystemID.Construction"/>
+      <BUFFER id="ConstructionBuilderTelemetry" type="ConstructionTelemetryEntry" length="300" owner="SystemID.Construction"/>
+      <BUFFER id="ConstructionBuilderBounds" type="StructuralBoundsDTO" length="512" owner="SystemID.Construction"/>
+      <BUFFER id="ConstructionPreviewWrite" type="BlueprintPreviewInstance" length="previewCapacity" owner="SystemID.Construction"/>
+      <BUFFER id="ConstructionPreviewBuild" type="BlueprintPreviewInstance" length="previewCapacity" owner="SystemID.Construction"/>
+      <BUFFER id="ConstructionPreviewMatrices" type="Matrix4x4" length="previewCapacity" owner="SystemID.Construction"/>
+    </VAULT_HANDLES>
+    <VAULT_LOCKS>ConstructionPreviewWrite, ConstructionPreviewBuild, and ConstructionPreviewMatrices are locked while BuildPreviewMatricesJob owns their pointers and unlocked after job completion or teardown force-completion.</VAULT_LOCKS>
+    <COLD_ALLOCATIONS>Editor-only File.ReadAllBytes for module_bounds.csv; fault-path byte[] for DumpTelemetry. Neither is gameplay validation hot path.</COLD_ALLOCATIONS>
+  </H_PHI_VAULT_STATUS>
+
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <JOB name="BurstGridValidationJob" consumes="caller JobHandle" outputs="scheduled JobHandle by caller">
+      <NO_ALIAS>Occupancy, Result</NO_ALIAS>
+      <MUTATION>Writes Result[0]. No main-thread Complete inside job.</MUTATION>
+    </JOB>
+    <JOB name="LogisticsGraphSpliceJob" consumes="caller JobHandle" outputs="scheduled JobHandle by caller">
+      <NO_ALIAS>Occupancy, EdgeScratch, EdgeCount</NO_ALIAS>
+      <MUTATION>Writes bounded int2 edges and EdgeCount[0].</MUTATION>
+    </JOB>
+    <JOB name="DeconstructionConnectivityJob" consumes="caller JobHandle" outputs="scheduled JobHandle by caller">
+      <NO_ALIAS>DirectedEdges, Visited, Queue, Result</NO_ALIAS>
+      <MUTATION>Writes BFS scratch arrays and Result[0].</MUTATION>
+    </JOB>
+    <JOB name="BuildPreviewMatricesJob" consumes="DispatcherJobSwap build dependency" outputs="scheduled JobHandle stored in HectonBlueprintPreviewBatch">
+      <NO_ALIAS>Instances, Matrices</NO_ALIAS>
+      <MUTATION>Reads Vault build-preview instances and writes Vault matrix rows. The three preview Vault buffers are locked for the job lifetime and released after nonblocking completion or teardown.</MUTATION>
+    </JOB>
+    <CURRENT_PLAYERBUILDER_PATH>Uses scalar validator call for immediate ghost feedback. No arbitrary JobHandle.Complete was introduced.</CURRENT_PLAYERBUILDER_PATH>
+    <LIVE_OCCUPANCY_FALLBACK>PlayerBuilder scans ConstructionManager.SpawnedModules with for-loops only and compares AUP-local int3 grid cells. This is not the final Vault NativeMultiHashMap owner path; it prevents live preview overlap without per-frame allocation.</LIVE_OCCUPANCY_FALLBACK>
+    <SIGNAL_LANES>PlayerBuilder pushes ConstructionPreviewSignal and FloraExclusionSignal through SignalBus. Build clunk uses GlobalSignals.Publish(AcousticPingSignal) on the canonical global acoustic lane.</SIGNAL_LANES>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+
+  <COMPILE_GUARD>
+    <ASMDEF_CHANGES>None added by SHINOBU_67. No direct asmdef reference to sibling Runtime assembly was introduced.</ASMDEF_CHANGES>
+    <CORE_TOUCH_CAVEAT>H8Memory BufferID enum was touched earlier for Vault IDs. A later AUP recheck added a narrow HectonVoxelVolume runtime-space SDF facade to remove construction's absolute-float AUP cast. Both edits are compile-wall hostile caveats and are recorded instead of hidden.</CORE_TOUCH_CAVEAT>
+    <SDF_CAVEAT>PlayerBuilder still uses Hecton8.Caves.HectonVoxelVolume as same-project SDF adapter because no GlobalRegistry world-sampler lease exists. The adapter now exposes runtime-space sampling so construction no longer casts absolute AUP to float before origin subtraction. This is a controlled caveat, not a new asmdef edge.</SDF_CAVEAT>
+  </COMPILE_GUARD>
+
+  <AUP_RECHECK>
+    <OLD_FAULT>RootAUP + localProbe was reduced to absolute float3 before HectonVoxelVolume.GetSDFDensity.</OLD_FAULT>
+    <FIX>RootAUP + localProbe stays double3 until HectonFloatingOrigin.ToRuntimePosition(double3). Runtime-space Vector3 is then sampled by TrySampleRuntimeSdfDensity.</FIX>
+    <RESULT>No absolute float AUP handoff remains in the SHINOBU_67 construction SDF probe path.</RESULT>
+  </AUP_RECHECK>
+
+  <BLACKBOX_HASH_RECHECK>
+    <OLD_FAULT>Live occupancy and voxel SDF flags were applied after the base validation result hash was computed.</OLD_FAULT>
+    <FIX>ApplyFailureFlags refreshes FailureFlags, IsValid, StructuralWarning, MinSdfDistance, OccupiedCellHash, and ResultHash in one validator-owned helper.</FIX>
+    <RESULT>Telemetry ResultHash now represents the final rejection evidence seen by PlayerBuilder.</RESULT>
+  </BLACKBOX_HASH_RECHECK>
+
+  <DEAR_LIE_CONFIRMATION>
+    <FAKE>Modules are treated as strict-grid AABBs, not mesh/poly intersections. Terrain rejection is distance sampling, not collider broadphase.</FAKE>
+    <BEFORE>Collider broadphase OverlapBox over terrain/vehicle/debris/base layers: O(C) over broadphase candidates, vulnerable to non-collider mountains.</BEFORE>
+    <AFTER>Grid hash lookup O(1) plus SDF probes O(P), P in [1,9] from GlobalQualityWeight. No Physics.OverlapBox.</AFTER>
+    <VISUAL_FAKE_STATUS>ConstructionPreviewSignal plus HectonBlueprintPreviewBatch provides an unmanaged instanced AABB fallback. Final BRG module-hash rendering remains external render-owner work. Editor gizmo provides diagnostic visual fake for rejection boxes.</VISUAL_FAKE_STATUS>
+  </DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>

@@ -1,0 +1,194 @@
+# LOG_SHINOBU_32 - Hardware Scalability Dictator
+
+## 2026-05-17 - Scalability Dictator Implementation
+
+Status: COMPLETE_WITH_EXTERNAL_COMPILE_BLOCK
+
+What was wrong:
+- Steam Deck/OOM protection depended mostly on frame pressure and existing homeostasis. VRAM cliff pressure was not promoted into the central SHI path.
+- The project had a real `HomeostasisBrain`, but no SHINOBU_32-owned 16-byte `SystemHealthDTO`/`ScalabilityStateDTO` facade, no mock heavy-load signal, no hardware dictator tuner, and no SHI oscilloscope.
+- Runtime quality-level swapping was explicitly forbidden. The correct control surface had to be math scalars, masks, dispatcher cadence, and Vault DTOs.
+
+What was done:
+- Extended `HomeostasisBrain` as a narrow `partial` dictator instead of creating a second scheduler.
+- Added 16-byte `SystemHealthDTO`, `ScalabilityStateDTO`, `MockHeavyLoadSignal`, and `MockScatterDensitySignal` with sequential layout and no `Pack=1`.
+- Added Stopwatch-based frame sampling, VRAM pressure sampling from graphics-driver allocation over cached memory budget, polynomial SHI spike logic, hysteresis, hardware floor, math-LOD broadcast, culling squeeze, visual-overkill lease, GC freeze gate, CSV overrides, and 300-frame dump routing.
+- Added Vault buffer IDs `ShinobuScalabilitySystemHealth` through `ShinobuScalabilityOscilloscope`.
+- Added `Hardware Dictator Tuner` editor window with Play Mode sliders, mock load control, GC-safe menu toggle, and `Handles.DrawPolyLine` SHI/frame oscilloscope.
+- Reused existing 300-frame `HomeostasisBlackBoxEntry` ring and dump path `Docs/AgentLogs/Dump_SCALABILITY_DICTATOR.bin`.
+
+Cinematic Cheats used:
+- Low tier uses `_MATH_LOD_LOW`, kill masks, and culling multiplier squeeze instead of real shader/asset reconfiguration.
+- Scatter density is represented by a mock 16-byte signal and deterministic SHI-driven density multiplier, avoiding a dependency on Agent 09.
+- Overkill is a lease, not a tier: only sustained SHI <0.3 opens the bit; SHI >0.5 revokes it.
+
+Exact Microseconds saved:
+- Measured exact saving: 0 us claimed. No profiler/runtime benchmark was run.
+- Static expected impact: bucket dilation 250-900 us on i3/MX350 scenes with many distant systems; hardware floor avoids 500-1500 us early overcommit spikes; GC freeze avoids multi-ms pauses only when Unity GC would otherwise trigger. These are engineering estimates, not measured artifacts.
+
+Verification:
+- Initial Core build passed before later external graph drift: `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned 0 warnings / 0 errors.
+- Later compile verification hit a 3-strike external wall: generated `Hecton8.Core.csproj` drift around `Hecton8.Input.Determinism`, omitted existing contract sources, then unrelated partial sources in `InputDispatcher`, `WorldChunkResidencyManager`, and `GlobalPhysicsStateManager`. Temporary csproj probes were reverted. No SHINOBU-owned compiler errors appeared.
+- 2026-05-18 fresh compile probe still fails externally: `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` reports missing `Hecton8.Input.Determinism`, `IDispatcherSystem`/`DispatcherStateDTO`/`JobDependencyDTO`, and `ChunkResidencyDTO`/`WorldStreamingRuntimeTuning` visibility. No SHINOBU-owned compiler errors appear.
+- `git diff --check` on SHINOBU-owned files reported no whitespace errors, only pre-existing CRLF warnings on modified files.
+
+<SELF_AUDIT>
+  <TASK_CHECK>
+    01 [PASS] Archive/log reconnaissance executed; fallback `GenerateEmergencyMockProfiles()` writes aligned defaults.
+    02 [PASS] No `QualitySettings.SetQualityLevel()` added; state is masks/scalars/registry.
+    03 [PASS] DTO fields are raw public fields; Vault writes use ref access.
+    04 [PASS] `ScalabilityStateDTO` is 16 bytes, `_pad0` remains padding.
+    05 [PASS] `MockScatterDensitySignal` and Burst job added.
+    06 [PASS] Frame sample source is `Stopwatch.GetTimestamp()` feeding existing 120-frame window.
+    07 [PASS] VRAM pressure sensor added with mock fallback.
+    08 [PASS] Polynomial SHI spike logic implemented.
+    09 [PASS] Emergency hysteresis: activate at threshold, release below 0.6 for 300 default frames.
+    10 [PASS] `_MATH_LOD_LOW`/registry low precision broadcast added.
+    11 [PASS] Dispatcher pressure route uses existing `AiOneHz`/level-3 seam; exact 32/64 API is not exposed.
+    12 [PASS] `VisualOverkill` opens after 600 low-SHI frames and revokes above 0.5.
+    13 [PASS] Boot hardware tier lock applies 0.7 SHI floor for low memory/known low devices.
+    14 [PASS] `_H8CullingMultiplier` squeezes to 0.6 under pressure.
+    15 [PASS] GC spike gate can disable GC and requires safe base menu to re-enable.
+    16 [PASS] Dictator DTO/mock/CSV buffers are Vault-owned and memcleared at boot.
+    17 [PASS] 300-frame blackbox dump route active for >33 ms while emergency is active.
+    18 [PASS] `Hardware Dictator Tuner` editor window added.
+    19 [PASS] CSV override parser uses fixed byte scratch and byte-span parsing.
+    20 [PASS] Editor oscilloscope uses `Handles.DrawPolyLine`.
+  </TASK_CHECK>
+  <ARM64_CHECK>
+    SystemHealthDTO: offset 0 float FrameTimeMs; offset 4 float VramPressure; offset 8 float ThermalIndex; offset 12 uint ActiveThrottlesMask; total 16 bytes.
+    ScalabilityStateDTO: offset 0 float TargetFrameMs; offset 4 float CurrentShi; offset 8 uint EnabledFeaturesMask; offset 12 uint _pad0; total 16 bytes.
+    MockHeavyLoadSignal: offset 0 float FrameSpikeMs; offset 4 float VramPressure01; offset 8 uint Flags; offset 12 uint _pad0; total 16 bytes.
+    MockScatterDensitySignal: offset 0 float DensityMultiplier01; offset 4 float LastShi; offset 8 uint Frame; offset 12 uint Flags; total 16 bytes.
+    New SHINOBU_32 runtime DTOs use no `Pack=1`.
+  </ARM64_CHECK>
+  <ZERO_GC_CHECK>
+    Runtime dictator tick path has no LINQ, no foreach, no `new NativeArray`, no `GetComponent`, no `FindObjectsOfType`, no `Instantiate`, and no `QualitySettings.SetQualityLevel`.
+    Editor-only arrays and `.ToString()` calls are confined to `HardwareDictatorTunerWindow`.
+  </ZERO_GC_CHECK>
+  <AUP_CHECK>
+    SHINOBU_32 does not operate on world positions. No absolute AUP is cast to float in this domain.
+  </AUP_CHECK>
+  <DEAR_LIE_CHECK>
+    Physical/rendering cost is faked through `_MATH_LOD_LOW`, culling multiplier, bucket cadence masks, and mock scatter density instead of shader/material/AI direct mutation.
+  </DEAR_LIE_CHECK>
+  <DEPENDENCY_CHECK>
+    Cross-domain output uses `GlobalRegistry`, existing `SystemDispatcher.ApplyHomeostasisKillSwitch`, existing kill masks, and Vault DTOs. No direct references to scatter/VFX/AI implementations were added.
+  </DEPENDENCY_CHECK>
+  <H_PHI_CHECK>
+    Runtime arrays are Vault-backed through `VaultBufferHandle` or pre-existing Homeostasis Vault buffers. No SHINOBU runtime private `NativeArray` owner was introduced.
+  </H_PHI_CHECK>
+  <BLACKBOX_CHECK>
+    Existing 300-frame `HomeostasisBlackBoxEntry` ring remains active and is dumped by SHINOBU_32 to `Dump_SCALABILITY_DICTATOR.bin` on fatal throttling failure.
+  </BLACKBOX_CHECK>
+  <COMPILE_GUARD>
+    Source asmdef dependencies were checked. Compile is blocked by external generated-project/partial-source drift after three attempts; no SHINOBU-owned compiler error was observed.
+  </COMPILE_GUARD>
+</SELF_AUDIT>
+
+## 2026-05-18 - Hard-Audit Polish Pass
+
+Status: COMPLETE_WITH_EXTERNAL_COMPILE_BLOCK
+
+What was wrong:
+- Previous compile report left too much as "generated project drift." The drift was actionable through the existing `Directory.Build.targets` source-backed bridge.
+- Runtime CSV polling touched disk from the dictator path every 60 frames. That violates the Steam Deck MicroSD pressure rule for production builds.
+
+What was done:
+- `Directory.Build.targets` now includes the missing CLI bridge files already present in source truth: `SystemDispatcherContracts.cs`, `ShinobuStreamingRuntime.cs`, and `DeterministicInputContracts.cs`.
+- `InputDispatcher.cs` now imports `Hecton8.Input.Determinism`, matching the actual DTO namespace for `InputStateDTO`, `InputProfileDTO`, `InputTelemetryEntryDTO`, `HapticCommandDTO`, and mock input signals.
+- `HomeostasisBrain.ScalabilityDictator.cs` now compiles CSV file polling only for `UNITY_EDITOR || DEVELOPMENT_BUILD`; production builds do not touch CSV files from the dictator loop.
+
+Cinematic Cheats used:
+- No new simulation. Still pure masks/scalars/dispatcher pressure. CSV overrides remain a human-control bridge for editor/dev, not a runtime dependency.
+
+Exact Microseconds saved:
+- Measured: 0 us claimed.
+- Static reduction: production Steam Deck path now avoids one CSV existence/timestamp/read branch every 60 frames, removing a possible MicroSD hitch source. No profiler evidence yet.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` improved from 64/17 visibility errors to 2 external errors.
+- Remaining compile wall: `GlobalPhysicsStateManager.cs` references missing `WakeRequestSignal`; no `WakeRequestSignal` definition exists in current source. This belongs to the physics/SHINOBU_37 wake-request contract, not SHINOBU_32.
+- Static forbidden scan on SHINOBU files still finds no `QualitySettings.SetQualityLevel`, runtime `new NativeArray`, LINQ, foreach, `GetComponent`, or `FindObjectsOfType`.
+
+## 2026-05-18 - Ultra Polish Re-Run / L1 Cache Audit
+
+Status: PENDING_VERIFICATION_WITH_EXTERNAL_COMPILE_BLOCK
+
+What was wrong:
+- `SampleFrameMetrics()` used true `Stopwatch.GetTimestamp()` but the EWMA itself was still managed scalar math. The XML requires a Burst-backed EWMA kernel.
+- `_MATH_LOD_LOW` was being pushed every frame and `RefreshMathLodLowScalar()` polled `GlobalRegistry.MathPrecision` from the hot path.
+- The 300-frame ring contained SHI and kill mask, but raw hitch frame time was only reconstructable from FPS EWMA. A 33ms spike can be blurred out by EWMA.
+- The mock scatter job touched one 16-byte signal but scheduled at frame cadence, which is overhead theater for a fallback mock lane.
+
+What was done:
+- Added `ComputeFrameEwmaBurst` as a Burst function pointer compiled at boot and invoked from `SampleFrameMetrics()`.
+- Changed `_MATH_LOD_LOW` scalar publishing to state-change-only and removed the hot-path `GlobalRegistry.MathPrecision` read.
+- Stored raw `FrameTimeMs` as float bits in `HomeostasisBlackBoxEntry.Reserved0` and `VramPressure01` in `Reserved1`; both normal and dictator dump writers now emit these offsets as floats.
+- Updated the editor oscilloscope to read raw frame ms from the blackbox first, falling back to FPS EWMA only for legacy samples.
+- Cadenced `MockScatterDensityJob` to every 8 frames unless SHI bucket or folded mask changes.
+
+Cinematic Cheats used:
+- No physical truth added. Load shedding remains mask/scalar based: `_MATH_LOD_LOW`, culling multiplier, `AiOneHz` dispatcher pressure, VRAM shedding, and `VisualOverkill` lease.
+- Low tier fakes expensive render/physics work through dear-lie math and closer culling; Ultra spends recovered headroom through `VisualOverkill` only after 600 stable frames.
+
+Exact Microseconds saved:
+- Measured: 0 us claimed. No Unity Profiler/GCMonitor/MX350 capture was available in this session.
+- Static reduction: `_MATH_LOD_LOW` no longer writes a shader global every frame; one hot volatile registry read is removed; steady mock scatter job schedules drop by up to 87.5%.
+
+Verification:
+- Static forbidden scan over `HomeostasisBrain.cs`, `HomeostasisBrain.ScalabilityDictator.cs`, and `HardwareDictatorTunerWindow.cs`: no `QualitySettings.SetQualityLevel`, runtime `new NativeArray`, LINQ, `foreach`, `GetComponent`, scene find calls, or `GlobalRegistry.MathPrecision` hot polling.
+- `git diff --check` over touched SHINOBU files: no whitespace errors; only existing CRLF warnings on tracked files.
+- `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` now fails outside SHINOBU_32 with 52 errors in UI subtitle signal visibility, world indirect vegetation `uint`/`int`, and SHINOBU_37 physics-culling partial methods/types. No `HomeostasisBrain` or `HomeostasisBrain.ScalabilityDictator` compiler error is reported before the external wall.
+
+<SELF_AUDIT>
+  <TASK_CHECK>
+    01 [PASS] Archive/log reconnaissance and emergency mock profile path remain in place.
+    02 [PASS] No `QualitySettings.SetQualityLevel()` or runtime quality asset swap.
+    03 [PASS] `SystemHealthDTO`/state/mock structs expose raw fields; no DTO properties.
+    04 [PASS] `ScalabilityStateDTO` is 16 bytes with `_pad0` at offset 12.
+    05 [PASS] `MockScatterDensitySignal` plus Burst job exists; job is now cadence/state-change gated.
+    06 [PASS] True frame time uses `Stopwatch.GetTimestamp()` and EWMA uses Burst function pointer.
+    07 [PASS] VRAM pressure path writes `VramPressure01` and supports mock OOM pressure.
+    08 [PASS] SHI polynomial spikes aggressively above VRAM pressure 0.8/0.85.
+    09 [PASS] Emergency hysteresis activates at 0.9 default and releases below 0.6 after 300 frames.
+    10 [PASS] `_MATH_LOD_LOW` is state-change-only and mask based.
+    11 [PASS] Existing dispatcher `AiOneHz`/level-3 pressure is used; literal 32/64 bucket API is not exposed in current source.
+    12 [PASS] `VisualOverkill` opens after 600 low-SHI frames and revokes over 0.5.
+    13 [PASS] Low-end hardware lock applies 0.7 SHI floor and suppresses overkill.
+    14 [PASS] Culling multiplier squeezes toward 0.6 under pressure.
+    15 [PASS] GC freeze gate remains pressure-based and re-enables only in safe base menu context.
+    16 [PASS] SHINOBU runtime buffers are Vault-owned and boot-memcleared.
+    17 [PASS] 300-frame blackbox now stores SHI, active mask, raw frame ms, and VRAM pressure.
+    18 [PASS] `Hardware Dictator Tuner` editor facade exists.
+    19 [PASS] CSV override parser remains byte-span based and editor/development gated to avoid production MicroSD stalls.
+    20 [PASS] Editor oscilloscope uses `Handles.DrawPolyLine` and raw frame-ms samples.
+  </TASK_CHECK>
+  <ARM64_CHECK>
+    SystemHealthDTO: offset 0 float FrameTimeMs; offset 4 float VramPressure; offset 8 float ThermalIndex; offset 12 uint ActiveThrottlesMask; total 16 bytes.
+    ScalabilityStateDTO: offset 0 float TargetFrameMs; offset 4 float CurrentShi; offset 8 uint EnabledFeaturesMask; offset 12 uint _pad0; total 16 bytes.
+    MockHeavyLoadSignal: offset 0 float FrameSpikeMs; offset 4 float VramPressure01; offset 8 uint Flags; offset 12 uint _pad0; total 16 bytes.
+    MockScatterDensitySignal: offset 0 float DensityMultiplier01; offset 4 float LastShi; offset 8 uint Frame; offset 12 uint Flags; total 16 bytes.
+  </ARM64_CHECK>
+  <ZERO_GC_CHECK>
+    Static hot-path scan is clean for the SHINOBU files listed above. Editor-only arrays and `.ToString()` remain confined to `HardwareDictatorTunerWindow`.
+  </ZERO_GC_CHECK>
+  <AUP_CHECK>
+    SHINOBU_32 does not process world positions; no absolute AUP is cast to float.
+  </AUP_CHECK>
+  <DEAR_LIE_CHECK>
+    Expensive physical/render behavior is faked through math LOD, culling squeeze, cadence masks, and mock scatter density. No material instances, no shader variant swaps, no asset reloads.
+  </DEAR_LIE_CHECK>
+  <DEPENDENCY_CHECK>
+    Outputs are Vault DTOs, `GlobalRegistry.SetTransientLowScalabilityOverride`, shader global scalars, and existing dispatcher kill masks. No direct scatter/VFX/AI concrete class reference was added.
+  </DEPENDENCY_CHECK>
+  <H_PHI_CHECK>
+    SHINOBU arrays are Vault-backed. Existing `HomeostasisBlackBoxEntry` ring is reused; no private runtime `new NativeArray` owner was introduced.
+  </H_PHI_CHECK>
+  <BLACKBOX_CHECK>
+    300-frame ring is active. Dump path remains `Docs/AgentLogs/Dump_SCALABILITY_DICTATOR.bin`; raw frame ms is now persisted.
+  </BLACKBOX_CHECK>
+  <COMPILE_GUARD>
+    SHINOBU source has no reported compiler errors in the latest Core probe. Build remains blocked by external UI/World/Physics/SHINOBU_37 churn.
+  </COMPILE_GUARD>
+</SELF_AUDIT>

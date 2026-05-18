@@ -1,0 +1,39 @@
+Date: 2026-05-18
+Agent: SHINOBU_12
+Status: PENDING RUNTIME VERIFICATION
+
+Source history:
+- Full prior rationale: `Docs/Archive/Batch008/AgentLogs/Rationale_SHINOBU_12.md`
+- Active mirror recreated because `Docs/AgentLogs/Rationale_SHINOBU_12.md` was absent in the current tree.
+
+## Loop 10 - SDF LOS / Unity Physics Raycast Purge
+
+Problem: The bend-corner purge removed component hierarchy lookup, but the LOS and cable anti-slice path still depended on synchronous Unity Physics raycasts. That kept cable topology tied to PhysX colliders, duplicated rock collision authority, and contradicted the SHINOBU task rule that rock interaction is SDF-node truth plus visual bend approximation.
+Solution: Replaced `Physics.RaycastNonAlloc` bend/anti-slice obstruction queries with `HectonVoxelVolume.TryRaymarchAnyPublishedSdf`. `TryFindClosestObstacle` now returns hit point, normal, volume, and runtime stamp directly from published voxel SDF. `RecalculateBendPoints`, `TryResolveBendCorner`, and `ValidateCableIntegrity` consume that value path. Removed obsolete `_bendObstructionMask` and dead locals left by the migration.
+Rejected Alternatives: Keeping PhysX as a fallback for non-voxel obstacles. That would preserve two collision authorities and reintroduce collider hierarchy ownership. Swept segment CCD was also rejected; the assignment explicitly accepts node/sample and visual clipping as the Dear Lie.
+Scalability potential: Low/MX350/Steam Deck use published-SDF raymarch and tangent fallback without collider hierarchy work. Middle/High retain cached bend volume stamps for stable topology after voxel edits. Ultra spends saved budget on shader-only stress/salt/silt visual overkill without changing gameplay truth.
+Hardware Impact: No profiler-backed microseconds are claimed. Static impact is removal of synchronous PhysX raycast surface from tether bend checks.
+
+Problem: Active status/rationale/log files were absent from `Docs/Tasks` and `Docs/AgentLogs`; current SHINOBU history was only under `Docs/Archive/Batch008`.
+Solution: Recreated active mirror documents with the current task matrix, Loop 10 evidence, and pointers to archived full history.
+Rejected Alternatives: Leaving future anti-amnesia reads pointed at missing files.
+Scalability potential: Process hygiene; no runtime effect.
+Hardware Impact: 0 us runtime.
+
+Problem: The prior status still described a current external compile wall.
+Solution: Re-ran isolated `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /p:BaseIntermediateOutputPath=.codex-artifacts/msbuild/shinobu12_obj/ /p:OutputPath=.codex-artifacts/msbuild/shinobu12_bin/`. Result: 0 errors, 9 global warnings outside SHINOBU_12. Build-log filter for `Tether`, `Verlet`, `CableDTO`, `Cable`, `TetherInstance`, `TetherManager`, `TetherVerletJobs`, `VerletTowTuner`, `Hecton_TetherLineStrip`, and `GpuCableDrawParamsDTO` is empty.
+Rejected Alternatives: Editing global physics warning ownership from the cable agent.
+Scalability potential: Cable domain is statically build-clean under current Core project surface; runtime proof remains pending.
+Hardware Impact: 0 us runtime; developer iteration and evidence quality only.
+
+<SELF_AUDIT source="SDF_LOS_RAYCAST_PURGE_ACTIVE">
+  <TaskMatrix>01 PASS, 02 PASS, 03 PASS, 04 PASS, 05 PASS, 06 PASS, 07 PASS, 08 PASS, 09 PASS, 10 PASS, 11 PASS, 12 PASS, 13 PASS, 14 PASS, 15 PASS, 16 PASS, 17 PASS, 18 PASS, 19 PASS, 20 PASS.</TaskMatrix>
+  <ARM64Layout>No DTO ABI changed in Loop 10. `VerletNodeDTO`: offset 0 Position float3[12], offset 12 InvMass float[4], offset 16 OldPosition float3[12], offset 28 _pad0 float[4], sizeof 32. `GpuCableSplinePointDTO`: offset 0 Position float3[12], offset 12 Tension01 float[4], sizeof 16. `GpuCableDrawParamsDTO`: offsets 0/16/32/48/64, sizeof 80.</ARM64Layout>
+  <ZeroGC>`TryFindClosestObstacle`, `RecalculateBendPoints`, and `ValidateCableIntegrity` use value outputs, fixed arrays, and for loops. Scoped grep finds no component lookup, Unity Physics raycast, LINQ, closure, string formatting, direct DataVault `GetBuffer<`, `new NativeArray`, or fake job completion in SHINOBU_12 files.</ZeroGC>
+  <AUP>Verlet node truth remains anchor-local before float math; SDF LOS consumes runtime-space endpoints after the active tether has resolved safe anchor/payload positions.</AUP>
+  <DearLie>Obstacle truth is voxel SDF raymarch plus cached bend corners. If no published SDF answers, tangent/normal fallback remains and segment-level visual clipping is accepted. No swept CCD was introduced.</DearLie>
+  <Dependency>No new asmdef or sibling runtime domain reference was added. The path uses existing `HectonVoxelVolume` public SDF surface; force and gameplay state remain routed through vault buffers/signals.</Dependency>
+  <HPhi>Simulation arrays remain vault-owned; bend caches are fixed cold arrays and not per-frame allocations.</HPhi>
+  <Blackbox>Per-cable 300-frame ring and manager ring remain active; dump paths unchanged.</Blackbox>
+  <CompileGuard>Current isolated Core build succeeds with 0 errors and 9 global warnings outside SHINOBU_12. Runtime Unity Play Mode/profiler/GC evidence is pending.</CompileGuard>
+</SELF_AUDIT>

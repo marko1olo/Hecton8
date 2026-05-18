@@ -20,7 +20,7 @@ namespace Hecton8.Vehicles.Automation
         Aborted = 4
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 144)]
+    [StructLayout(LayoutKind.Explicit, Size = 144)]
     public struct ActiveSplineData
     {
         [FieldOffset(0)] public double3 P0;
@@ -54,7 +54,7 @@ namespace Hecton8.Vehicles.Automation
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = 56)]
     public struct DockingSplineSample
     {
         [FieldOffset(0)] public double3 AbsolutePosition;

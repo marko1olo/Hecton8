@@ -1,0 +1,18 @@
+{
+    "name": "Hecton8.MockDomain.Authoring",
+    "rootNamespace": "Hecton8.MockDomain.Authoring",
+    "references": [
+        "Hecton8.Global.Contracts",
+        "Hecton8.MockDomain.Contracts",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

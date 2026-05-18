@@ -1,9 +1,23 @@
 # Hardware Adaptive UI Scaler Runbook
 
+Date: 2026-05-17
+Status: STATIC UI SCALE RUNBOOK / ARTIFACT RERUN REQUIRED / UNITY PENDING
 Owner: UX_ENGINEER
 Prompt ID: HARDWARE_ADAPTIVE_UI_BAKER
-Date: 2026-05-17
-Status: UI SCALED - PYTHON STATIC VALIDATION PASS, UNITY PENDING
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Scope
 
@@ -30,7 +44,9 @@ python -m unittest Tools.UX.test_hardware_adaptive_ui Tools.UX.test_unity_verifi
 python Tools/UX/clean_python_cache.py --write-report
 ```
 
-The aggregate report also self-validates before final `PASS`: `aggregateSelfValidation` and `statusLogSelfValidation` must both be `PASS` with empty failure lists. Current expected counts are 8 ordered commands, 48 unit tests, and 30 well-formed SHA-256 artifact hashes. The final aggregate command must be `python_cache_cleanup`, and the report field `pythonCacheCountAfter` must be `0`. Evidence classes are locked to `STATIC_SOURCE`, `STATIC_DOC`, and `CLI_COMPILE`; `UNITY_CONSOLE`, `PLAYMODE`, `PROFILER`, `FRAME_DEBUGGER`, and `PLAYER_BUILD` must remain listed as missing runtime evidence until Unity captures exist. Prompt source tracking must report either active `Docs/Tasks/CURRENT_BATCH.md` or the explicit archived Batch006 fallback when the active batch file is missing, and must prove the extracted UX prompt has 7 tasks, required status `UI SCALED`, and a valid prompt-block SHA-256.
+The aggregate report also self-validates before final `PASS`: `aggregateSelfValidation` and `statusLogSelfValidation` must both be `PASS` with empty failure lists. Expected counts are 8 ordered commands, 48 unit tests, and 30 well-formed SHA-256 artifact hashes unless the validator source changes. The final aggregate command must be `python_cache_cleanup`, and the report field `pythonCacheCountAfter` must be `0`. Evidence classes are locked to `STATIC_SOURCE`, `STATIC_DOC`, and `CLI_COMPILE`; `UNITY_CONSOLE`, `PLAYMODE`, `PROFILER`, `FRAME_DEBUGGER`, and `PLAYER_BUILD` must remain listed as missing runtime evidence until Unity captures exist. Prompt source tracking must report either active `Docs/Tasks/CURRENT_BATCH.md` or the explicit archived Batch006 fallback when the active batch file is missing, and must prove the extracted UX prompt has 7 tasks, its historical required prompt status token was `UI SCALED`, and a valid prompt-block SHA-256. That token is not current project runtime status.
+
+2026-05-18 R12 artifact boundary: only `Docs/Design/HardwareAdaptiveUIScaler_UnityVerificationTemplate.json` existed during the DOC_GLOBAL spot check. The listed `Docs/AgentLogs/UI_*_UX_ENGINEER.json`, `Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/IconBakeManifest.json`, and `Docs/AgentLogs/UnityVerification_UX_ENGINEER.json` paths were absent. Rerun the aggregate validator before treating the local static validation as current proof.
 
 Direct post-run validation commands:
 
@@ -57,7 +73,7 @@ The Unity evidence-gate tests can also be run directly:
 python -m unittest Tools.UX.test_unity_verification_gates Tools.UX.test_unity_report_update_cli -v
 ```
 
-Expected local artifacts:
+Expected local artifacts after rerun:
 
 - `Docs/AgentLogs/UI_Readability_UX_ENGINEER.json`
 - `Docs/AgentLogs/UI_ShaderSampleAudit_UX_ENGINEER.json`

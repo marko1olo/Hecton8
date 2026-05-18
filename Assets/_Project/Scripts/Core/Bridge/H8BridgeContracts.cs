@@ -223,7 +223,7 @@ namespace Hecton8.Core.Bridge
             return hash;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 4)]
         private struct FloatUInt32Union
         {
             [FieldOffset(0)] public float FloatValue;

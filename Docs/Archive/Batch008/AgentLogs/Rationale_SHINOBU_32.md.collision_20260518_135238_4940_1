@@ -1,0 +1,179 @@
+# SHINOBU_32 Rationale - Hardware Scalability Dictator
+
+Status: CLI_COMPILE_VERIFIED_PENDING_UNITY_RUNTIME_PROFILER
+
+## Decision 00 - Domain Placement
+
+Problem: The project already contains `HomeostasisBrain` in Core controlling health pressure, kill switches, and dispatcher cadence. A second unmanaged dictator would duplicate authority and risk oscillation.
+Solution: Extend the existing Core homeostasis/scalability path and expose narrow DTO/vault/editor seams instead of creating a sibling runtime domain.
+Rejected Alternatives: A new MonoBehaviour monitor was rejected because Update/Tick ownership would violate dispatcher phase control and increase boot wiring risk. Direct references to scatter/VFX/AI domains were rejected because 20+ agents are modifying those domains concurrently.
+Scalability potential: Low uses math LOD and bucket dilation; Middle uses normal masks; High/Ultra can activate VisualOverkill only after sustained low SHI.
+Hardware Impact: MX350/i3-class devices avoid asset reload stalls and shed CPU/GPU work through masks; estimated hot-path allocation remains 0 B/frame pending profiler proof.
+
+## Decision 01 - No Unity Quality Switch
+
+Problem: `QualitySettings.SetQualityLevel()` can reload quality-dependent assets and create frame stalls, exactly the failure mode this task forbids.
+Solution: Use scalar state, bitmasks, dispatcher cadence, and shader/global registry lanes.
+Rejected Alternatives: Runtime quality-level changes and per-material mutations were rejected as stall-prone and SRP-batcher hostile.
+Scalability potential: Low/Middle/High/Ultra are mathematical modes, not asset profile swaps.
+Hardware Impact: Avoids reload-class spikes on Steam Deck/MX350. Exact saved microseconds require runtime profiler evidence.
+
+## Decision 02 - Data Ownership
+
+Problem: Local private NativeArray ownership in a logic class violates H-Phi/Data Vault sovereignty and makes memory lifetime ambiguous.
+Solution: Prefer `GlobalDataVault` handles for DTOs, frame windows, mock scatter signal, and blackbox telemetry. Existing Homeostasis buffers are the natural owner.
+Rejected Alternatives: `new NativeArray` in a monitor singleton was rejected even with persistent allocator because it bypasses central memory accounting.
+Scalability potential: All tiers read the same small cache-friendly structs.
+Hardware Impact: 16-byte DTO reads are ARM64 safe and predictable; avoids fragmented allocator churn.
+
+## Decision 03 - Archaeology And Emergency Profile Fallback
+
+Problem: The task referenced legacy binary hardware profile files, but active source cannot depend on stale archive payloads that may be absent on a clean checkout.
+Solution: Scan archive/log/report paths for hardware/homeostasis/VRAM artifacts, then inject a deterministic emergency mock profile into DataVault at boot through `GenerateEmergencyMockProfiles()`.
+Rejected Alternatives: Loading arbitrary archived `.bin` payloads was rejected because the current binary ABI is not authoritative. Hard-coded unlogged constants without archive scan were rejected.
+Scalability potential: Low starts with safe 16.667 ms target and emergency hysteresis; Middle/High/Ultra can override via CSV/editor without recompilation.
+Hardware Impact: MX350/i3 gets no disk read on the hot path; profile fallback is cold boot and 16-byte aligned.
+
+## Decision 04 - Partial Extension Instead Of Core Rewrite
+
+Problem: `HomeostasisBrain.cs` is already load-bearing and consumed by dispatcher, XR, graphics scalability, and telemetry signals.
+Solution: Convert the class to `partial` and add `HomeostasisBrain.ScalabilityDictator.cs` for DTOs, mock job, CSV parser, VRAM sampling, and policy additions. The original file only receives narrow hooks.
+Rejected Alternatives: Rewriting the original controller or creating a second scheduler was rejected due to compile-wall and oscillation risk.
+Scalability potential: Low uses existing kill masks and math precision lease; Ultra uses the same state vector to open VisualOverkill after sustained headroom.
+Hardware Impact: Existing dispatcher integration is preserved, avoiding a new Update path and avoiding extra registry polling per frame.
+
+## Decision 05 - Mock Scatter Through Vault Job
+
+Problem: Agent 09 scatter may not exist or may be changing, but SHINOBU_32 must prove downstream throttling without a direct dependency.
+Solution: `MockScatterDensitySignal` is a 16-byte unmanaged partial struct in Core, written by a Burst `IJob` into a DataVault buffer. Its density is a deterministic pseudo-random function of SHI and frame.
+Rejected Alternatives: Direct calls into scatter renderer classes were rejected. Managed C# events were rejected because this is hot-path cross-domain traffic.
+Scalability potential: Low density falls toward 25% as SHI rises; High/Ultra keeps density near 100% and can coexist with VisualOverkill.
+Hardware Impact: The job touches one 16-byte record and schedules without same-frame completion unless the prior job is already complete.
+
+## Decision 06 - Stopwatch Frame Truth In Existing Dispatcher Route
+
+Problem: Existing homeostasis used dispatcher `unscaledDeltaTime`, which Unity may smooth or XR-normalize. The prompt requires true frame time.
+Solution: Replace the sample source with `Stopwatch.GetTimestamp()` deltas and keep the existing 120-frame vault window/EWMA. The current dispatcher hook remains pre-simulation, but the value represents the previous complete wall-clock frame.
+Rejected Alternatives: Moving the entire controller to a new dispatcher phase was rejected for this batch because it would alter a load-bearing phase contract. Adding a second post-simulation scheduler was rejected as duplicate authority.
+Scalability potential: Low reacts to real hitches; High/Ultra avoid false throttles from smoothed Unity delta.
+Hardware Impact: O(1) timestamp math; no managed allocation; exact microseconds require profiler proof.
+
+## Decision 07 - VRAM As OOM Cliff, Not Soft Hint
+
+Problem: Steam Deck/integrated memory can die before frame time clearly degrades; frame-only SHI misses OOM.
+Solution: Use graphics-driver allocated memory over cached VRAM budget, plus mock VRAM signal when the platform does not expose a useful value. VRAM above 0.8 feeds a smoothstep curve; above 0.85 forces emergency pressure.
+Rejected Alternatives: Texture memory-only recorder was rejected because RT/depth/driver memory can be the actual OOM source. Recorder discovery every frame was rejected.
+Scalability potential: Low sheds before OOM; Middle/High/Ultra only shed when pressure is real or forced for screenshots/tests.
+Hardware Impact: Avoids late OOM detection; hot path cost is one profiler value read and scalar math.
+
+## Decision 08 - Math LOD Broadcast Through Existing Registry
+
+Problem: Other agents already read `_MATH_LOD_LOW`/math precision state; inventing a second shader/control channel would fragment the contract.
+Solution: Use `GlobalRegistry.SetTransientLowScalabilityOverride()` and a scalar `Shader.SetGlobalFloat("_MATH_LOD_LOW", ...)`, plus a mask bit for non-shader consumers.
+Rejected Alternatives: Runtime shader variant swapping, material instance mutation, and QualitySettings profile swaps were rejected.
+Scalability potential: Low uses 1D LUT/dear-lie math; Ultra can release the lease and reopen expensive math plus VisualOverkill.
+Hardware Impact: State-change only, no asset reload.
+
+## Decision 09 - Bucket Dilation Through Dispatcher Pressure
+
+Problem: The prompt requests 32/64 slow-bucket dilation, but the active `SystemDispatcher` exposes kill-mask/pressure cadence (`SlowTick2Hz`, `AiOneHz`) rather than a public literal bucket-ratio API.
+Solution: At SHI >0.95, route through existing dispatcher pressure by setting `AiOneHz` and level-3 pressure through `ApplyHomeostasisKillSwitch`. This preserves central ownership and avoids invented cross-domain calls.
+Rejected Alternatives: Directly mutating dispatcher internals or creating a second bucket scheduler was rejected because it would create a compile wall and cadence oscillation.
+Scalability potential: Low and Middle cut distant simulation cadence; High and Ultra never enter the branch unless SHI actually spikes.
+Hardware Impact: O(1) mask propagation; CPU savings depend on downstream bucket subscribers, estimated 250-900 us on i3/MX350-class scenes with many distant systems.
+
+## Decision 10 - Visual Overkill Is Lease-Based
+
+Problem: High-end hardware should spend spare budget, but permanent high-tier effects would punish transient spikes.
+Solution: Enable `VisualOverkill` only after 600 consecutive low-pressure frames (10 seconds at 60 Hz), revoke above 0.5 SHI, and disable entirely under low-tier hardware lock.
+Rejected Alternatives: Static quality tiers and permanent RTX toggles were rejected because they ignore thermal/VRAM drift.
+Scalability potential: Low stays mobile-safe; Middle mostly neutral; High/Ultra can activate overkill particles/dents without changing gameplay truth.
+Hardware Impact: Low-end gain is protection by absence of expensive VFX; high-end impact is intentional budget spending, not guaranteed saving.
+
+## Decision 11 - Hardware Tier Floor Without Runtime Strings
+
+Problem: Quest/Steam Deck/MX350-class devices can stutter or OOM before dynamic SHI has enough history.
+Solution: Resolve a boot-time FNV-style device/GPU scan and apply a permanent 0.7 SHI floor for known low-end or tiny memory budgets.
+Rejected Alternatives: Per-frame `SystemInfo.deviceModel` string comparisons were rejected as unnecessary managed work. A hard platform enum was rejected because integrated GPUs vary across PCs.
+Scalability potential: Low locks dear-lie math and suppresses overkill; Middle/High/Ultra remain dynamic.
+Hardware Impact: Prevents first-scene spikes on weak silicon; estimated 500-1500 us avoided during early visual overcommit by never arming high-tier paths.
+
+## Decision 12 - GC Freeze Gate
+
+Problem: Managed GC spikes during combat create frame-time cliffs that look like simulation instability.
+Solution: Detect Gen0 or mono heap jumps, raise SHI pressure, and allow `GarbageCollector.GCMode = Disabled` only under pressure. Re-enable requires explicit safe-base menu arm plus low SHI.
+Rejected Alternatives: Always disabling GC was rejected because it risks unbounded memory growth and later OOM. Leaving GC uncontrolled was rejected because it creates fatal stutters.
+Scalability potential: Low devices get emergency stutter protection; High/Ultra only freeze on real spikes and restore automatically in safe context.
+Hardware Impact: Avoids multi-millisecond GC pauses when armed; exact gain requires Unity Profiler evidence.
+
+## Decision 13 - Human Facade Without Runtime Ownership
+
+Problem: Designers need to tune thresholds and force screenshot modes without recompiling C# or mutating ScriptableObjects at runtime.
+Solution: Add an editor-only `HardwareDictatorTunerWindow`, byte-span CSV override parser, and 300-sample oscilloscope that call narrow runtime facades and write the Vault DTO state.
+Rejected Alternatives: Runtime UI, string-split CSV parsing, and ScriptableObject profile mutation were rejected as hot-path or asset-dirtying risks.
+Scalability potential: Low/Middle/High/Ultra can be tuned by CSV/editor while preserving the same unmanaged state model.
+Hardware Impact: Runtime CSV polling is 60-frame cadence into a preallocated byte buffer; editor arrays allocate only inside editor tooling.
+
+## Decision 14 - Compile Wall Classification
+
+Problem: CLI build validation hit stale/generated project graph errors outside SHINOBU_32 after three attempts: missing `Hecton8.Input.Determinism` reference, omitted existing contract source files, then unrelated Input/World/Physics partial members.
+Solution: Revert temporary `.csproj` probes, record the dependency wall, and continue self-audit of SHINOBU files. Source asmdef already declares the missing deterministic input reference.
+Rejected Alternatives: Editing Input/World/Physics partial implementations was rejected as cross-domain sabotage. Keeping generated `.csproj` hacks was rejected because Unity will overwrite them.
+Scalability potential: No runtime impact.
+Hardware Impact: No runtime impact; protects developer iteration by not chasing unrelated rebuild spam.
+
+## Decision 15 - Generated Project Bridge Repair
+
+Problem: The generated `Hecton8.Core.csproj` visibility was stale relative to source truth, hiding existing dispatcher, input, and streaming contracts from CLI compile.
+Solution: Patch the existing `Directory.Build.targets` source-backed bridge, not the generated `.csproj`: include `SystemDispatcherContracts.cs`, `ShinobuStreamingRuntime.cs`, and `DeterministicInputContracts.cs`, then add `using Hecton8.Input.Determinism` to `InputDispatcher.cs` so the current DTO namespace is visible.
+Rejected Alternatives: Editing `Hecton8.Core.csproj` was rejected because Unity overwrites it. Rewriting Input/World systems was rejected because the contract files already exist.
+Scalability potential: No runtime behavior change; this protects iteration by making CLI compile see the same contracts Unity source sees.
+Hardware Impact: No runtime impact.
+
+## Decision 16 - Production CSV I/O Gate
+
+Problem: The first dictator pass polled and read `scalability_profiles.csv` from the main thread every 60 frames. That is acceptable for editor tuning but hostile to Steam Deck MicroSD in production.
+Solution: Keep CSV hot-reload for `UNITY_EDITOR || DEVELOPMENT_BUILD` only. Production runtime keeps Vault/editor-configured values and avoids CSV disk reads entirely.
+Rejected Alternatives: A background file watcher was rejected for this pass because it adds thread lifetime/state ownership in a hot Core system. Leaving production polling enabled was rejected as micro-stutter risk.
+Scalability potential: Low-tier production no longer performs CSV file I/O. High/Ultra editor/development builds still retain screenshot/QA override control.
+Hardware Impact: Removes debug CSV disk-touch risk from Steam Deck production frames; exact microseconds are not claimed.
+
+## Decision 17 - Burst EWMA Without Per-Frame Job Churn
+
+Problem: The first pass sampled true frame time but left the FPS EWMA as managed math. The prompt explicitly requires Burst-backed EWMA, while scheduling a tiny job every frame would cost more than the scalar math it replaces.
+Solution: Add a Burst function pointer `ComputeFrameEwmaBurst` compiled at boot and invoked from `SampleFrameMetrics()`. It preserves the existing 120-frame Vault window for jitter while moving the EWMA kernel out of managed-only code.
+Rejected Alternatives: A scheduled `IJob` for one scalar EWMA was rejected because job scheduling overhead is the wrong trade for a single float. Keeping managed `math.lerp` was rejected because it did not literally satisfy the Burst EWMA requirement.
+Scalability potential: Low/Middle/High/Ultra all use the same cheap scalar kernel; high tiers do not spend extra simulation cost for monitoring.
+Hardware Impact: 0 B/frame. No measured microsecond claim; expected gain is compile-path correctness and avoiding one avoidable job schedule per frame.
+
+## Decision 18 - State-Change Shader Scalar And No Hot Registry Poll
+
+Problem: `_MATH_LOD_LOW` was being written every frame and `RefreshMathLodLowScalar()` read `GlobalRegistry.MathPrecision` from the hot path, violating the GlobalRegistry hot-path cache law.
+Solution: The dictator now writes `_MATH_LOD_LOW` only when its lease state changes or when the scalar has not yet been initialized. It no longer polls `GlobalRegistry.MathPrecision` per frame; `GlobalRegistry.SetTransientLowScalabilityOverride()` remains the state-change communication path.
+Rejected Alternatives: Per-frame shader/global-registry refresh was rejected as invisible CPU churn. Duplicating GlobalRegistry's math precision transition state locally was rejected as a second authority.
+Scalability potential: Low keeps dear-lie math when SHI/VRAM demands it; High/Ultra release the lease and can reopen VisualOverkill after hysteresis.
+Hardware Impact: Removes redundant shader-global writes and one volatile registry read per frame; exact microseconds are unmeasured.
+
+## Decision 19 - Blackbox Raw Frame Time And Mock Job Cadence
+
+Problem: The 300-frame ring dumped SHI and masks but only preserved FPS EWMA, not the raw `FrameTimeMs` required for postmortem hitch diagnosis. The mock scatter job also scheduled every frame for one 16-byte record.
+Solution: Store raw frame milliseconds as float bits in `HomeostasisBlackBoxEntry.Reserved0` and VRAM pressure in `Reserved1`; dump writers now emit those offsets as floats. Mock scatter density job scheduling is cadenced to 8 frames unless SHI bucket or mask changes.
+Rejected Alternatives: Changing the 64-byte blackbox struct layout was rejected because it would break existing dump readers. Keeping FPS-EWMA-only telemetry was rejected because a 33ms spike can disappear in EWMA. Per-frame mock-job scheduling was rejected as overhead theater.
+Scalability potential: Low devices get accurate hitch forensic data; High/Ultra keep the same telemetry surface without adding visual-path cost.
+Hardware Impact: 0 B/frame; one extra sanitized float store in the existing ring. Mock job scheduling pressure drops by up to 87.5% in steady state before profiler proof.
+
+## Decision 20 - Final ARM64 Metadata Purge And Dual Crash Dump
+
+Problem: The final static audit still found legacy runtime metadata `[StructLayout(..., Pack = 1)]` on `HomeostasisBlackBoxEntry`, the low-tier hardware lock only became visible after the first policy tick, and the XML contract asked for `.bin` while the crash mandate also names `.h8dump`.
+Solution: Remove `Pack=1` from the explicit 64-byte blackbox struct without changing field offsets; call `SetMathLodLowLease(_hardwareLowTierLocked)` during dictator initialization; write both `Dump_SCALABILITY_DICTATOR.bin` and `Dump_SCALABILITY_DICTATOR.h8dump` from the same 300-frame ring writer.
+Rejected Alternatives: Keeping `Pack=1` because it was pre-existing was rejected because ARM64 alignment rules apply to runtime memory, not authorship. Waiting one tick for low-tier shader state was rejected because Steam Deck/Quest boot spikes are exactly the target failure class. Replacing `.bin` with `.h8dump` was rejected because Task 17 explicitly names the `.bin` path.
+Scalability potential: Minimal/Low tier enter dear-lie math immediately; Middle remains dynamic; High and Ultra stay eligible for `VisualOverkill` after sustained low SHI; all tiers get identical binary forensic output.
+Hardware Impact: Removes misleading pack metadata from a 64-byte ring entry, avoids a first-frame low-tier scalar delay, and adds no hot-path I/O because dump emission is fatal-state only. Measured microseconds: 0 claimed without Unity Profiler capture.
+
+## Decision 21 - Compile Wall Recheck Under Concurrent Churn
+
+Problem: The last build wall named `TetherManager` pool methods as missing despite source definitions existing later in the same file. That is outside SHINOBU_32 and looked inconsistent with current disk.
+Solution: Re-read current source and run a fresh serial Core CLI build instead of editing Physics. Current `TetherManager.cs` has changed under concurrent work and the fresh build now succeeds. SHINOBU status moves from external compile block to CLI compile verified while retaining runtime/profiler non-claims.
+Rejected Alternatives: Patching Physics/Tether ownership from SHINOBU_32 was rejected as cross-domain contamination. Editing generated `.csproj` was rejected because Unity overwrites it and the source-backed build bridge already exists.
+Scalability potential: No runtime behavior change; the value is evidence quality and avoiding needless rebuild-loop churn.
+Hardware Impact: No runtime impact. Compile probe evidence: `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` returned `0 Error(s)`; immediate warnings-only recheck returned `0 Warning(s)` / `0 Error(s)`.

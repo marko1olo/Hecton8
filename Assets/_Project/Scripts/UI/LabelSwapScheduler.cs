@@ -1,3 +1,4 @@
+using System;
 using Hecton.Localization;
 using TMPro;
 using Unity.Collections;
@@ -124,18 +125,49 @@ namespace Hecton8.UI
             if (!entry.IsUserInput && entry.HasLocalizationKey)
             {
                 text.isRightToLeftText = false;
-                char[] buffer;
-                int length;
-                if (pending.HasPrefetchedSlice != 0)
-                    LocRegistry.TryGetVisualBufferFromUtf8Slice(entry.LocalizationKeyHash, pending.Utf8Slice, out buffer, out length);
-                else
-                    LocRegistry.TryGetVisualBufferFromUtf8(entry.LocalizationKeyHash, out buffer, out length);
+                if (CharBufferPool.TryAcquireBabel(out CharBufferPool.BabelLease lease))
+                {
+                    try
+                    {
+                        int length;
+                        if (pending.HasPrefetchedSlice != 0)
+                        {
+                            LocRegistry.TryWriteVisualSpanFromUtf8Slice(
+                                entry.LocalizationKeyHash,
+                                pending.Utf8Slice,
+                                lease.Span,
+                                out length,
+                                ShouldStripRichTextForCurrentTier());
+                        }
+                        else
+                        {
+                            LocRegistry.TryWriteVisualSpanFromUtf8(
+                                entry.LocalizationKeyHash,
+                                lease.Span,
+                                out length,
+                                ShouldStripRichTextForCurrentTier());
+                        }
 
-                text.SetCharArray(buffer, 0, length);
+                        length = lease.CopyToTmpBuffer(length);
+                        text.SetCharArray(lease.TmpBuffer, 0, length);
+                    }
+                    finally
+                    {
+                        CharBufferPool.Release(in lease);
+                    }
+                }
             }
 
             text.SetMaterialDirty();
             text.SetVerticesDirty();
+        }
+
+        private static bool ShouldStripRichTextForCurrentTier()
+        {
+            Hecton8.Core.HectonQualityTier tier = Hecton8.Core.GlobalRegistry.ScalabilityTier;
+            return tier == Hecton8.Core.HectonQualityTier.Unknown ||
+                   tier == Hecton8.Core.HectonQualityTier.Low ||
+                   tier == Hecton8.Core.HectonQualityTier.Mx350;
         }
 
         private struct PendingSwap

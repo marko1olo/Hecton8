@@ -10,10 +10,11 @@
   "recordFormat": "<IIII",
   "recordLayout": "H8BabelDictionaryEntry: uint32 hash, uint32 offset, uint32 length, uint32 flags",
   "runtimeContract": "zero-copy UTF8 slice lookup by uint hash; no string table construction on hot path",
-  "sha256": "C86112A4AB020516C0C5CCE08DF4398695A6624453F79EBBF257A4172C2B6F67",
+  "sha256": "E15A4465D85A1296AC8D63E5493417A23DDA1AB9B325BBAEA912B1B56D08DB96",
   "sourceEvidence": [
-    "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs:H8BabelDictionaryHeader Pack=1 Size=32",
-    "Assets/_Project/Scripts/Core/Data/H8DataBaker.cs:WriteBabelDictionary sets LittleEndianFlag"
+    "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs:BabelIndexDTO Sequential Size=16",
+    "Assets/_Project/Scripts/Core/Data/H8DataBaker.cs:WriteBabelDictionary aligns final file length to 16 bytes"
   ],
-  "status": "BALANCE_BABEL_ENDIAN_VERIFIED"
+  "status": "BALANCE_BABEL_16B_ALIGNED",
+  "payloadCrc32": "0x199CAC7A"
 }

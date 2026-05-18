@@ -9,6 +9,7 @@ using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChange
 using Hecton8.Physics;
 using Hecton8.Physics.Determinism;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -35,7 +36,7 @@ namespace Hecton8.Core.Determinism
     /// <summary>
     /// Blittable player truth snapshot hashed by the lockstep validator.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 96)]
+    [StructLayout(LayoutKind.Sequential, Size = 96)]
     public struct LockstepPlayerKinematicState
     {
         public long SectorX;
@@ -58,7 +59,7 @@ namespace Hecton8.Core.Determinism
     /// <summary>
     /// Fixed-size replay input frame stored in `.h8replay` blocks.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct LockstepReplayInputFrame
     {
         public uint Frame;
@@ -76,7 +77,7 @@ namespace Hecton8.Core.Determinism
     /// <summary>
     /// Fixed-size replay block header followed by 300 input frames.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 128)]
+    [StructLayout(LayoutKind.Sequential, Size = 128)]
     public struct LockstepReplayBlockHeader
     {
         public ulong Magic;
@@ -106,7 +107,7 @@ namespace Hecton8.Core.Determinism
         public ulong Reserved5;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     internal struct LockstepArrayHash
     {
         public uint CategoryId;
@@ -119,7 +120,7 @@ namespace Hecton8.Core.Determinism
         public uint Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     internal struct LockstepTelemetryEntry
     {
         public uint Frame;
@@ -140,7 +141,7 @@ namespace Hecton8.Core.Determinism
         public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     internal struct LockstepMasterHashHistoryEntry
     {
         public uint Frame;
@@ -1885,13 +1886,13 @@ namespace Hecton8.Core.Determinism
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HashFloat3ArrayJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float3> Source;
-        [WriteOnly] public NativeArray<uint> ElementHashes;
-        [WriteOnly] public NativeArray<byte> ElementFlags;
+        [ReadOnly, NoAlias] public NativeArray<float3> Source;
+        [WriteOnly, NoAlias] public NativeArray<uint> ElementHashes;
+        [WriteOnly, NoAlias] public NativeArray<byte> ElementFlags;
         public uint CategorySalt;
 
         public void Execute(int index)
@@ -1906,13 +1907,13 @@ namespace Hecton8.Core.Determinism
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HashDouble3ArrayJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<double3> Source;
-        [WriteOnly] public NativeArray<uint> ElementHashes;
-        [WriteOnly] public NativeArray<byte> ElementFlags;
+        [ReadOnly, NoAlias] public NativeArray<double3> Source;
+        [WriteOnly, NoAlias] public NativeArray<uint> ElementHashes;
+        [WriteOnly, NoAlias] public NativeArray<byte> ElementFlags;
         public uint CategorySalt;
 
         public void Execute(int index)
@@ -1927,13 +1928,13 @@ namespace Hecton8.Core.Determinism
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HashFloatArrayJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float> Source;
-        [WriteOnly] public NativeArray<uint> ElementHashes;
-        [WriteOnly] public NativeArray<byte> ElementFlags;
+        [ReadOnly, NoAlias] public NativeArray<float> Source;
+        [WriteOnly, NoAlias] public NativeArray<uint> ElementHashes;
+        [WriteOnly, NoAlias] public NativeArray<byte> ElementFlags;
         public uint CategorySalt;
 
         public void Execute(int index)
@@ -1948,13 +1949,13 @@ namespace Hecton8.Core.Determinism
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HashPlayerKinematicArrayJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<LockstepPlayerKinematicState> Source;
-        [WriteOnly] public NativeArray<uint> ElementHashes;
-        [WriteOnly] public NativeArray<byte> ElementFlags;
+        [ReadOnly, NoAlias] public NativeArray<LockstepPlayerKinematicState> Source;
+        [WriteOnly, NoAlias] public NativeArray<uint> ElementHashes;
+        [WriteOnly, NoAlias] public NativeArray<byte> ElementFlags;
         public uint CategorySalt;
 
         public void Execute(int index)
@@ -1983,13 +1984,13 @@ namespace Hecton8.Core.Determinism
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct CombineElementHashesJob : IJob
     {
-        [ReadOnly] public NativeArray<uint> ElementHashes;
-        [ReadOnly] public NativeArray<byte> ElementFlags;
-        public NativeArray<LockstepArrayHash> ArrayHashes;
+        [ReadOnly, NoAlias] public NativeArray<uint> ElementHashes;
+        [ReadOnly, NoAlias] public NativeArray<byte> ElementFlags;
+        [NoAlias] public NativeArray<LockstepArrayHash> ArrayHashes;
         public int CategoryIndex;
         public int Count;
 
@@ -2021,13 +2022,13 @@ namespace Hecton8.Core.Determinism
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct MasterStateHashJob : IJob
     {
-        [ReadOnly] public NativeArray<LockstepArrayHash> ArrayHashes;
-        public NativeArray<ulong> MasterHash;
-        public NativeArray<uint> MasterFlags;
+        [ReadOnly, NoAlias] public NativeArray<LockstepArrayHash> ArrayHashes;
+        [NoAlias] public NativeArray<ulong> MasterHash;
+        [NoAlias] public NativeArray<uint> MasterFlags;
         public uint Frame;
 
         public void Execute()

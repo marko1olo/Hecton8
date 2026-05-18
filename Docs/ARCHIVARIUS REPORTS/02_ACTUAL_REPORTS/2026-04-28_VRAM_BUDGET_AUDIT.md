@@ -1,6 +1,14 @@
 # VRAM BUDGET AUDIT â€” HECTON-8
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 
 ## Current-State Addendum (2026-04-29)
@@ -274,7 +282,7 @@ VRAM HARD CEILING: 1800 MB (MX350)
 
 ### ðŸš¨ ÐšÐ Ð˜Ð¢Ð˜Ð§Ð•Ð¡ÐšÐ˜Ð™ Ð¡Ð¢ÐÐ¢Ð£Ð¡
 
-**used/total = 1,320 / 1,800 = 0.73 (73%)**
+**Historical static estimate only:** used/total = 1,320 / 1,800 = 0.73 (73%). This is not current measured VRAM.
 
 **Graduation response threshold: 0.90 (90%)**
 

@@ -24,7 +24,7 @@ using UnityEngine;
 namespace Hecton8.World
 {
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct AbsoluteUniversePosition
     {
         public const int CellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
@@ -42,7 +42,9 @@ namespace Hecton8.World
         [FieldOffset(32)]
         public float LocalZ;
         [FieldOffset(36)]
-        private float _pad;
+        private float _pad0;
+        [FieldOffset(40)]
+        private ulong _pad1;
 
         /// <summary>
         /// Converts the compact save-layout position into a 16-byte-aligned transfer payload for memcpy/blit lanes.
@@ -201,7 +203,7 @@ namespace Hecton8.World
     /// 16-byte-aligned AUP transfer payload for network or memcpy lanes that require float4-friendly packing.
     /// </summary>
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct AbsoluteUniversePositionBlit128
     {
         [FieldOffset(0)]
@@ -286,6 +288,7 @@ namespace Hecton8.World
     {
         public ulong TombstoneId;
         public uint InstanceUid;
+        public uint Reserved0;
         public AbsoluteUniversePosition Position;
         public int3 ChunkId;
     }

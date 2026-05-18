@@ -515,3 +515,51 @@ This section adds the latest source-drift-gated H-Phi/token window after the 11:
 Marginal H-Phi ROI vs 11:42: `2,070,473,643` tokens and `USD 1,607.26` per `+0.001` Runtime H-Phi risk. Cumulative tracked H-Phi ROI since 2026-05-15 22:46 is now `1,200,993,958` tokens and `USD 930.33` per `+0.001` Runtime risk.
 
 STATUS: AUDIT COMPLETE.
+
+## Token Rebase - 2026-05-18T17:34+04:00
+
+This is a full local JSONL rebase plus a SQLite live tail check. It supersedes the 2026-05-17T15:39 token total for current token-accounting only. It does not update H-Phi and does not imply Unity runtime proof.
+
+| Metric | Value |
+|---|---:|
+| SQLite HECTON/Hades tokens at 2026-05-18T17:35:14+04:00 | 54,517,775,171 |
+| SQLite all-local tokens at 2026-05-18T17:35:14+04:00 | 54,555,349,108 |
+| JSONL HECTON/Hades final tokens at 2026-05-18T17:34:06+04:00 | 54,468,241,841 |
+| JSONL all-local final tokens | 54,507,104,762 |
+| Delta vs 2026-05-17T15:39 SQLite total | +2,931,323,073 |
+| JSONL files scanned | 1,002 |
+| JSONL bytes scanned | 9,580,317,579 |
+| Usable token rows | 468,382 |
+| Parse errors | 0 |
+| Negative cumulative deltas observed | 8 |
+| Input tokens, HECTON JSONL | 54,281,061,389 |
+| Cached input tokens, HECTON JSONL | 52,113,735,040 |
+| Non-cached input tokens, HECTON JSONL | 2,167,326,349 |
+| Output tokens, HECTON JSONL | 186,922,052 |
+| Reasoning output tokens, HECTON JSONL | 63,548,475 |
+| Cached-input ratio | 96.007% |
+| JSONL HECTON cache-aware estimate | USD 37,575.94 |
+| JSONL HECTON no-cache equivalent | USD 246,487.42 |
+| SQLite HECTON live cache-aware estimate | USD 37,610.11 |
+| SQLite HECTON live no-cache equivalent | USD 246,711.58 |
+| Current first-party script files | 1,698 |
+| Current meaningful LOC | 934,997 |
+| Tokens per meaningful LOC, SQLite HECTON | 58,302.09 |
+| Current energy estimate, SQLite HECTON | 2,725.61 MWh |
+
+Rolling HECTON/Hades windows:
+
+| Window | Tokens | Tokens/sec | Cache-aware cost | No-cache equivalent |
+|---|---:|---:|---:|---:|
+| Last 1h | 185,331,409 | 51,480.95 | USD 127.85 | USD 838.69 |
+| Last 6h | 519,532,296 | 24,052.42 | USD 358.41 | USD 2,351.06 |
+| Last 24h | 2,862,892,706 | 33,135.33 | USD 1,975.02 | USD 12,955.57 |
+| Last 7d | 20,584,216,692 | 34,034.75 | USD 14,200.41 | USD 93,150.62 |
+| Last 14d | 35,876,843,205 | 29,660.09 | USD 24,750.32 | USD 162,354.98 |
+| Last 30d | 49,819,568,589 | 19,220.51 | USD 34,368.97 | USD 225,450.58 |
+
+Scope correction: `\\?\C:\hades`, `\\?\C:\hades\Hecton8`, `c:\hades`, and `c:\hades\Hecton8` are included. `\\?\C:\Users\danat\Downloads` contributed 37,573,937 SQLite tokens and is excluded from HECTON/Hades totals.
+
+Detailed file: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_REBASE_20260518_1734.md`.
+
+STATUS: AUDIT COMPLETE.

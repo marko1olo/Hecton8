@@ -365,7 +365,7 @@ namespace Hecton8.Systems.AI
     /// <summary>
     /// One Burst-built predator sight ray input. Managed brain references stay outside this native lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     internal struct PredatorSightRaycastInput
     {
         public float3 Origin;

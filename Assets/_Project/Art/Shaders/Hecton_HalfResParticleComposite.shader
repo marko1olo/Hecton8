@@ -21,9 +21,11 @@ Shader "Hidden/Hecton8/HalfResParticleComposite"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
-        CBUFFER_START(UnityPerMaterial)
+        CBUFFER_START(HectonHalfResParticlesGlobals)
             float _HectonHalfResParticlesCompositeStrength;
             float _HectonHalfResParticlesBilateralDepthScale;
+            float _HectonHalfResParticlesActive;
+            float _HectonHalfResParticlesPad0;
         CBUFFER_END
 
         TEXTURE2D_X(_BlitTexture);

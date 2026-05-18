@@ -113,6 +113,12 @@ namespace Hecton8.Physics
         void WakeBodiesNear(in AbsoluteUniversePosition originAup, float radiusMeters);
 
         /// <summary>
+        /// Queues a targeted wake request from raymarched impacts or other non-PhysX gameplay events.
+        /// </summary>
+        /// <param name="request">Unmanaged wake request payload.</param>
+        void QueueWakeRequest(in WakeRequestSignal request);
+
+        /// <summary>
         /// Returns true when the overseer currently owns a culled state for the body.
         /// </summary>
         /// <param name="body">Target rigidbody.</param>
@@ -311,7 +317,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8995)]
-    public sealed class GlobalPhysicsStateManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IPostFixedTickable, IOriginShiftListener, IAcousticPingEventListener, IPhysicsAcousticImpulseEventListener, IPhysicsImpactEventListener, IPhysicsCullingOverseer, IServiceHeartbeat, IServiceShutdown
+    public sealed partial class GlobalPhysicsStateManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IPostFixedTickable, IOriginShiftListener, IAcousticPingEventListener, IPhysicsAcousticImpulseEventListener, IPhysicsImpactEventListener, IPhysicsCullingOverseer, IServiceHeartbeat, IServiceShutdown
     {
         private struct VaultBufferBinding<T>
             where T : struct
@@ -412,7 +418,7 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct RigidbodyState
         {
             public ulong EntityId;
@@ -459,6 +465,8 @@ namespace Hecton8.Physics
             public bool AddedMassTensorApplied;
             public PhysicsCullingFlags CullingFlags;
             public byte MeshColliderCount;
+            public byte SleepColliderCount;
+            public bool CollidersDisabledByDistanceSleep;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -553,7 +561,7 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct PhysicsConnection
         {
             public UnityEngine.Object Owner;
@@ -564,7 +572,7 @@ namespace Hecton8.Physics
             public bool CompensationActive;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct PhysicsImpactEventData
         {
             public ulong PrimaryBodyId;
@@ -580,7 +588,7 @@ namespace Hecton8.Physics
             public byte SecondaryAudioMaterialId;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct PhysicsCullingTelemetryEntry
         {
             public int FrameIndex;
@@ -595,16 +603,19 @@ namespace Hecton8.Physics
             public ushort CcdInterventions;
         }
 
-        private const int MaxTrackedBodies = 512;
+        private const int MaxTrackedBodies = 2048;
         private const int MaxTrackedConnections = 128;
         private const int MaxQueuedImpactEvents = 256;
         private const int PhysicsCullingTelemetryCapacity = 300;
         private const int MaxImpactFlushIterations = MaxQueuedImpactEvents;
         private const int MaxMeshCollidersPerBody = 4;
         private const int MaxTrackedMeshColliderRefs = MaxTrackedBodies * MaxMeshCollidersPerBody;
+        private const int MaxSleepCollidersPerBody = 4;
+        private const int MaxTrackedSleepColliderRefs = MaxTrackedBodies * MaxSleepCollidersPerBody;
         private const int SceneRootScanCapacity = 128;
         private const int SceneRigidbodyScanCapacity = MaxTrackedBodies;
         private const int MeshColliderScratchCapacity = MaxMeshCollidersPerBody;
+        private const int SleepColliderScratchCapacity = MaxSleepCollidersPerBody;
         private const float MinMass = 0.0001f;
         private const float MassRatioThreshold = 100f;
         private const float MinImpactForce = 0.01f;
@@ -627,7 +638,6 @@ namespace Hecton8.Physics
         private const float ImpactWakeMinimumRadiusMeters = 4f;
         private const float ImpactWakeMaximumRadiusMeters = 64f;
         private const float PhysicsCullingSlowTickIntervalSeconds = 0.1f;
-        private const float DistanceSleepVelocityDampening = 0.9f;
         private const byte CullingStateSleepActive = 1 << 0;
         private const byte CullingStateKinematicActive = 1 << 1;
         private const byte CullingStateMeshColliderStripped = 1 << 2;
@@ -685,6 +695,14 @@ namespace Hecton8.Physics
         private readonly byte[] _trackedMeshColliderEnabledBeforeStrip = new byte[MaxTrackedMeshColliderRefs];
         // COLD ALLOC: List<MeshCollider>[4] - cold registration scratch; never used by frame loops - owner: GlobalPhysicsStateManager
         private readonly List<MeshCollider> _meshColliderScratch = new List<MeshCollider>(MeshColliderScratchCapacity);
+        // COLD ALLOC: Collider[8192] - cached collider refs for distance sleep disable/restore - owner: GlobalPhysicsStateManager
+        private readonly Collider[] _trackedSleepColliders = new Collider[MaxTrackedSleepColliderRefs];
+        // COLD ALLOC: byte[8192] - pre-sleep collider enabled flags for restoration - owner: GlobalPhysicsStateManager
+        private readonly byte[] _trackedSleepColliderEnabledBeforeSleep = new byte[MaxTrackedSleepColliderRefs];
+        // COLD ALLOC: List<Collider>[4] - cold registration scratch; never used by frame loops - owner: GlobalPhysicsStateManager
+        private readonly List<Collider> _sleepColliderScratch = new List<Collider>(SleepColliderScratchCapacity);
+        // COLD ALLOC: Dictionary<int,int>[2048] - Unity instance-id to tracked index for O(1) wake signals - owner: GlobalPhysicsStateManager
+        private readonly Dictionary<int, int> _trackedBodyIndexByInstanceId = new Dictionary<int, int>(MaxTrackedBodies);
 
         private VaultBufferBinding<float3> _lastValidPositions = new VaultBufferBinding<float3>(BufferID.RigidbodyLastValidPositions, MaxTrackedBodies, OwnerSystemId);
         private VaultBufferBinding<double3> _rigidbodyAUPs = new VaultBufferBinding<double3>(BufferID.RigidbodyAUPs, MaxTrackedBodies, OwnerSystemId);
@@ -1071,6 +1089,7 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public void PostFixedTick(float fixedDeltaTime)
         {
+            TryCompletePhysicsCullingJobNonBlocking();
             ApplyAupJitterSentinel();
             TickSafeTeleportSpeculativeCcdGuards();
         }
@@ -1131,6 +1150,8 @@ namespace Hecton8.Physics
                 // COLD VAULT: PhysicsCullingTelemetryEntry[300] - black-box circular telemetry for sleep enforcer.
                 _physicsCullingTelemetry.Ensure();
             }
+
+            EnsureShinobu37PhysicsCullingState();
         }
 
         private void ReleaseUndersizedNativeState()
@@ -1143,7 +1164,8 @@ namespace Hecton8.Physics
                 (_rigidbodyAwakeResults.IsCreated && _rigidbodyAwakeResults.Length < MaxTrackedBodies) ||
                 (_rigidbodyCullingCommandResults.IsCreated && _rigidbodyCullingCommandResults.Length < MaxTrackedBodies) ||
                 (_rigidbodyDistanceSqResults.IsCreated && _rigidbodyDistanceSqResults.Length < MaxTrackedBodies) ||
-                (_physicsCullingTelemetry.IsCreated && _physicsCullingTelemetry.Length < PhysicsCullingTelemetryCapacity);
+                (_physicsCullingTelemetry.IsCreated && _physicsCullingTelemetry.Length < PhysicsCullingTelemetryCapacity) ||
+                HasUndersizedShinobu37PhysicsCullingState();
             if (!hasUndersizedLane)
                 return;
 
@@ -1156,6 +1178,7 @@ namespace Hecton8.Physics
             ReleaseUndersizedVaultBuffer(ref _rigidbodyCullingCommandResults, MaxTrackedBodies);
             ReleaseUndersizedVaultBuffer(ref _rigidbodyDistanceSqResults, MaxTrackedBodies);
             ReleaseUndersizedVaultBuffer(ref _physicsCullingTelemetry, PhysicsCullingTelemetryCapacity);
+            ReleaseUndersizedShinobu37PhysicsCullingState();
         }
 
         private static void ReleaseUndersizedVaultBuffer<T>(ref VaultBufferBinding<T> buffer, int requiredLength)
@@ -1184,7 +1207,8 @@ namespace Hecton8.Physics
                 _rigidbodyDistanceSqResults.IsCreated &&
                 _rigidbodyDistanceSqResults.Length >= MaxTrackedBodies &&
                 _physicsCullingTelemetry.IsCreated &&
-                _physicsCullingTelemetry.Length >= PhysicsCullingTelemetryCapacity;
+                _physicsCullingTelemetry.Length >= PhysicsCullingTelemetryCapacity &&
+                HasRequiredShinobu37PhysicsCullingState();
         }
 
         private void ReportNativeStateUnavailable()
@@ -1224,6 +1248,7 @@ namespace Hecton8.Physics
             _rigidbodyCullingCommandResults.ReleaseView();
             _rigidbodyDistanceSqResults.ReleaseView();
             _physicsCullingTelemetry.ReleaseView();
+            ReleaseShinobu37PhysicsCullingState();
 
             TryUnregisterService();
             _isInitialized = false;
@@ -1312,6 +1337,12 @@ namespace Hecton8.Physics
         public void WakeBodiesNear(in AbsoluteUniversePosition originAup, float radiusMeters)
         {
             WakeCulledBodiesNear(in originAup, radiusMeters);
+        }
+
+        /// <inheritdoc />
+        public void QueueWakeRequest(in WakeRequestSignal request)
+        {
+            QueuePhysicsWakeRequest(in request);
         }
 
         /// <inheritdoc />
@@ -1814,16 +1845,28 @@ namespace Hecton8.Physics
                     byte existingMeshColliderCount = existingState.MeshColliderCount;
                     if ((cullingFlags & PhysicsCullingFlags.HeavyCollider) != 0 && existingMeshColliderCount == 0)
                         existingMeshColliderCount = CacheMeshCollidersForBody(body, existingBodyIndex);
+                    byte existingSleepColliderCount = existingState.SleepColliderCount;
+                    if (existingSleepColliderCount == 0)
+                        existingSleepColliderCount = CacheSleepCollidersForBody(body, existingBodyIndex);
                     if (existingMeshColliderCount > 0)
                         cullingFlags |= PhysicsCullingFlags.HeavyCollider;
 
                     existingState.CullingFlags = cullingFlags;
                     existingState.MeshColliderCount = existingMeshColliderCount;
+                    existingState.SleepColliderCount = existingSleepColliderCount;
                     existingState.AllowDistanceKinematicSleep = ShouldAllowDistanceKinematicSleep(body, cullingFlags);
                     if ((cullingFlags & PhysicsCullingFlags.IgnoreCulling) != 0)
                         RestoreAllPhysicsCullingState(existingBodyIndex, body, ref existingState, forceWake: true);
 
                     _bodyStates[existingBodyIndex] = existingState;
+                    _trackedBodyIndexByInstanceId[body.GetInstanceID()] = existingBodyIndex;
+                    AbsoluteUniversePosition existingAup = existingState.HasLastValidAup && IsFinite(in existingState.LastValidAup)
+                        ? existingState.LastValidAup
+                        : IsFinite(body.position)
+                            ? AbsoluteUniversePosition.FromRuntimePosition(body.position)
+                            : default;
+                    WritePhysicsCullingDto(existingBodyIndex, body, in _bodyStates[existingBodyIndex], in existingAup);
+                    MarkPhysicsCullingSpatialHashDirty();
                     return;
                 }
 
@@ -1847,6 +1890,7 @@ namespace Hecton8.Physics
 
             int bodyIndex = _trackedBodyCount++;
             byte meshColliderCount = CacheMeshCollidersForBody(body, bodyIndex);
+            byte sleepColliderCount = CacheSleepCollidersForBody(body, bodyIndex);
             if (meshColliderCount > 0)
                 cullingFlags |= PhysicsCullingFlags.HeavyCollider;
 
@@ -1861,6 +1905,7 @@ namespace Hecton8.Physics
                 AllowDistanceKinematicSleep = ShouldAllowDistanceKinematicSleep(body, cullingFlags),
                 CullingFlags = cullingFlags,
                 MeshColliderCount = meshColliderCount,
+                SleepColliderCount = sleepColliderCount,
                 DistanceSleepActive = false,
                 DistanceKinematicSleepActive = false,
                 MeshColliderStripActive = false,
@@ -1884,9 +1929,11 @@ namespace Hecton8.Physics
             };
             ApplyTrackedBodyAngularVelocityClamp(body, _bodyStates[bodyIndex].MaxAngularVelocityClamp);
             _trackedBodyIndexByEntityId[bodyEntityId] = bodyIndex;
+            _trackedBodyIndexByInstanceId[body.GetInstanceID()] = bodyIndex;
             _lastValidPositions[bodyIndex] = hasFiniteBodyPosition
                 ? new float3(bodyPosition.x, bodyPosition.y, bodyPosition.z)
                 : float3.zero;
+            InitializePhysicsCullingDtoForBody(bodyIndex, body, in _bodyStates[bodyIndex]);
             EnsureReporter(body);
         }
 
@@ -2551,7 +2598,7 @@ namespace Hecton8.Physics
 
         private void RunPhysicsCullingSlowTick()
         {
-            if (!_isInitialized || _trackedBodyCount <= 0)
+            if (!_isInitialized || (_trackedBodyCount <= 0 && _physicsCullingMockBodyCount <= 0))
             {
                 _culledBodyCount = 0;
                 return;
@@ -2564,12 +2611,27 @@ namespace Hecton8.Physics
                     return;
             }
 
+            FlushPhysicsWakeRequests();
+            FlushPhysicsTargetWakeRequests();
+            TickPhysicsCullingCsvOverrideMonitor();
+
             if (HectonFloatingOrigin.IsShiftInProgress ||
                 !HasRequiredNativeState() ||
                 !TryResolvePhysicsCullingPlayerState(out AbsoluteUniversePosition playerAup, out float3 cameraForward, out float depthMeters))
             {
                 return;
             }
+
+            AbsoluteUniversePosition cameraAup = ResolvePhysicsCullingCameraAup(in playerAup, ref cameraForward);
+            double3 cameraAbsoluteAup = cameraAup.ToAbsoluteDouble3();
+            bool hasFrustumPlanes = TryResolvePhysicsCullingFrustumPlanes(
+                in cameraAup,
+                out float4 frustumPlane0,
+                out float4 frustumPlane1,
+                out float4 frustumPlane2,
+                out float4 frustumPlane3,
+                out float4 frustumPlane4,
+                out float4 frustumPlane5);
 
             int bodyIndex = 0;
             while (bodyIndex < _trackedBodyCount)
@@ -2592,39 +2654,62 @@ namespace Hecton8.Physics
                 }
 
                 _bodyStates[bodyIndex] = bodyState;
-                _rigidbodyAUPs[bodyIndex] = AbsoluteUniversePosition.DeltaMetersClamped(in bodyAup, in playerAup);
+                double3 relativeAup = AbsoluteUniversePosition.DeltaMetersClamped(in bodyAup, in cameraAup);
+                _rigidbodyAUPs[bodyIndex] = relativeAup;
                 _rigidbodyCullingStateSnapshot[bodyIndex] = BuildPhysicsCullingStateSnapshot(in bodyState);
+                WritePhysicsCullingDto(bodyIndex, body, in bodyState, in bodyAup);
                 bodyIndex++;
             }
 
-            int jobCount = _trackedBodyCount;
+            int jobCount = math.min(MaxTrackedBodies, _trackedBodyCount + _physicsCullingMockBodyCount);
             if (jobCount <= 0)
             {
                 _culledBodyCount = 0;
                 return;
             }
 
-            float sleepDistanceMeters = ResolveSleepDistanceMeters();
-            PhysicsDistanceCullingJob job = new PhysicsDistanceCullingJob
+            int candidateCount = BuildPhysicsCullingSpatialCandidates(in cameraAup, jobCount);
+            if (candidateCount <= 0)
             {
-                RigidbodyAUPs = _rigidbodyAUPs,
+                RecordShinobu37PhysicsCullingFrameTelemetry(0f, 0);
+                return;
+            }
+
+            ClearPhysicsStateChangedQueue();
+            float fixedDeltaTime = math.max(_lastFixedDeltaTime, PhysicsFixedStepSeconds);
+            PhysicsDistanceCullingJobShinobu37 job = new PhysicsDistanceCullingJobShinobu37
+            {
+                Dtos = _physicsCullingDtos,
                 CurrentStates = _rigidbodyCullingStateSnapshot,
+                CandidateIndices = _physicsCullingSpatialCandidates,
                 AwakeResults = _rigidbodyAwakeResults,
                 CommandResults = _rigidbodyCullingCommandResults,
                 DistanceSqResults = _rigidbodyDistanceSqResults,
+                StateAges = _physicsCullingStateAges,
+                ChangedIndices = _physicsStateChangedIndices.AsParallelWriter(),
+                CameraAbsoluteAup = cameraAbsoluteAup,
                 CameraForward = cameraForward,
-                SleepDistanceMeters = sleepDistanceMeters,
-                WakeDistanceMeters = ResolveWakeDistanceMeters(sleepDistanceMeters),
                 KinematicSleepDistanceMeters = KinematicCullDistanceMeters,
                 KinematicWakeDistanceMeters = KinematicRestoreDistanceMeters,
                 MeshColliderStripDistanceMeters = GlobalPhysicsStateManager.MeshColliderStripDistanceMeters,
                 MeshColliderRestoreDistanceMeters = GlobalPhysicsStateManager.MeshColliderRestoreDistanceMeters,
-                AbyssalDepthCull = depthMeters >= AbyssalDepthThresholdMeters ? (byte)1 : (byte)0
+                FrustumPlane0 = frustumPlane0,
+                FrustumPlane1 = frustumPlane1,
+                FrustumPlane2 = frustumPlane2,
+                FrustumPlane3 = frustumPlane3,
+                FrustumPlane4 = frustumPlane4,
+                FrustumPlane5 = frustumPlane5,
+                FrustumInnerSphereSq = ResolvePhysicsCullingFrustumInnerSphereSq(),
+                HardwareRadiusSqScale = ResolvePhysicsCullingHardwareRadiusSqScale(),
+                HysteresisSeconds = ResolvePhysicsCullingHysteresisSeconds(),
+                DeltaTimeSeconds = fixedDeltaTime,
+                AbyssalDepthCull = depthMeters >= AbyssalDepthThresholdMeters ? (byte)1 : (byte)0,
+                UseFrustum = hasFrustumPlanes ? (byte)1 : (byte)0
             };
 
             _physicsCullingJobCount = jobCount;
             _physicsCullingJobDiscardRequested = false;
-            _physicsCullingJobHandle = job.Schedule(jobCount, 32);
+            _physicsCullingJobHandle = job.Schedule(candidateCount, 32);
             _physicsCullingJobScheduled = true;
             JobHandle.ScheduleBatchedJobs();
         }
@@ -2650,7 +2735,9 @@ namespace Hecton8.Physics
                 _physicsCullingJobDiscardRequested = true;
 
             _physicsCullingJobHandle.Complete();
-            int jobCount = math.min(_physicsCullingJobCount, _trackedBodyCount);
+            int jobCount = math.min(
+                _physicsCullingJobCount,
+                math.max(_trackedBodyCount, _physicsCullingMockBodyCount));
             bool shouldDiscard = _physicsCullingJobDiscardRequested;
             _physicsCullingJobScheduled = false;
             _physicsCullingJobDiscardRequested = false;
@@ -2665,28 +2752,43 @@ namespace Hecton8.Physics
 
         private void DispatchPhysicsCullingResults(int jobCount)
         {
-            int culledCount = 0;
-            for (int i = jobCount - 1; i >= 0; i--)
+            long syncStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+            int changedCount = 0;
+            if (_physicsStateChangedIndices.IsCreated)
             {
-                Rigidbody body = _trackedBodies[i];
-                if (body == null)
+                int maxDrain = math.max(jobCount, MaxTrackedBodies);
+                while (changedCount < maxDrain && _physicsStateChangedIndices.TryDequeue(out int i))
                 {
-                    RemoveTrackedBodyAt(i);
-                    continue;
+                    changedCount++;
+                    if ((uint)i >= (uint)_trackedBodyCount)
+                        continue;
+
+                    Rigidbody body = _trackedBodies[i];
+                    if (body == null)
+                    {
+                        RemoveTrackedBodyAt(i);
+                        continue;
+                    }
+
+                    RigidbodyState bodyState = _bodyStates[i];
+                    byte awakeResult = _rigidbodyAwakeResults[i];
+                    byte command = _rigidbodyCullingCommandResults[i];
+                    float distanceSq = _rigidbodyDistanceSqResults[i];
+                    ApplyPhysicsCullingCommand(i, body, ref bodyState, awakeResult, command, distanceSq);
+
+                    _bodyStates[i] = bodyState;
+                    RecordPhysicsCullingTelemetry(in bodyState, awakeResult, command, distanceSq, _culledBodyCount);
                 }
-
-                RigidbodyState bodyState = _bodyStates[i];
-                byte awakeResult = _rigidbodyAwakeResults[i];
-                byte command = _rigidbodyCullingCommandResults[i];
-                float distanceSq = _rigidbodyDistanceSqResults[i];
-                if (ApplyPhysicsCullingCommand(i, body, ref bodyState, awakeResult, command, distanceSq))
-                    culledCount++;
-
-                _bodyStates[i] = bodyState;
-                RecordPhysicsCullingTelemetry(in bodyState, awakeResult, command, distanceSq, culledCount);
             }
 
+            int culledCount = CountCulledTrackedBodies(out int activeBodies, out int asleepBodies);
             _culledBodyCount = culledCount;
+
+            long syncEndTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+            float syncTimeMs = (float)((syncEndTicks - syncStartTicks) * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
+            RecordShinobu37PhysicsCullingFrameTelemetry(syncTimeMs, changedCount, activeBodies, asleepBodies);
+            if (syncTimeMs > PhysicsCullingStateSyncDumpThresholdMs)
+                DumpPhysicsCullingBlackBox("state_sync_over_1ms");
         }
 
         private bool ApplyPhysicsCullingCommand(
@@ -2722,13 +2824,13 @@ namespace Hecton8.Physics
 
             bool shouldKinematic = (command & CullingCommandKinematic) != 0;
             if (!shouldKinematic)
-                RestoreDistanceKinematicCull(body, ref bodyState, forceWake: awakeResult != 0);
+                RestoreDistanceKinematicCull(bodyIndex, body, ref bodyState, forceWake: awakeResult != 0);
 
             bool shouldSleep = awakeResult == 0;
             if (shouldSleep)
-                ApplyDistanceSleep(body, ref bodyState, distanceSq);
+                ApplyDistanceSleep(bodyIndex, body, ref bodyState, distanceSq);
             else
-                RestoreDistanceSleep(body, ref bodyState, forceWake: true);
+                RestoreDistanceSleep(bodyIndex, body, ref bodyState, forceWake: true);
 
             if (shouldKinematic)
                 ApplyDistanceKinematicCull(body, ref bodyState);
@@ -2738,7 +2840,7 @@ namespace Hecton8.Physics
                 bodyState.MeshColliderStripActive;
         }
 
-        private void ApplyDistanceSleep(Rigidbody body, ref RigidbodyState bodyState, float distanceSq)
+        private void ApplyDistanceSleep(int bodyIndex, Rigidbody body, ref RigidbodyState bodyState, float distanceSq)
         {
             if (body == null)
                 return;
@@ -2747,7 +2849,8 @@ namespace Hecton8.Physics
             {
                 if (!body.IsSleeping())
                 {
-                    DampenBodyVelocityForSleep(body);
+                    FreezeBodyVelocityForDistanceSleep(bodyIndex, body);
+                    DisableSleepColliders(bodyIndex, ref bodyState);
                     body.Sleep();
                 }
 
@@ -2760,24 +2863,15 @@ namespace Hecton8.Physics
             else
                 bodyState.StateMask &= ~PhysicsStateMask.WasAsleep;
 
-            DampenBodyVelocityForSleep(body);
+            FreezeBodyVelocityForDistanceSleep(bodyIndex, body);
+            DisableSleepColliders(bodyIndex, ref bodyState);
             body.Sleep();
             bodyState.DistanceSleepActive = true;
+            WritePhysicsCullingDtoSleepState(bodyIndex, 1);
             PublishRigidbodySleepSignal(in bodyState, body != null ? body.position : Vector3.zero, distanceSq, 1);
         }
 
-        private static void DampenBodyVelocityForSleep(Rigidbody body)
-        {
-            if (body == null || body.isKinematic)
-                return;
-
-            Vector3 linearVelocity = body.linearVelocity;
-            Vector3 angularVelocity = body.angularVelocity;
-            body.linearVelocity = IsFinite(linearVelocity) ? linearVelocity * DistanceSleepVelocityDampening : Vector3.zero;
-            body.angularVelocity = IsFinite(angularVelocity) ? angularVelocity * DistanceSleepVelocityDampening : Vector3.zero;
-        }
-
-        private void RestoreDistanceSleep(Rigidbody body, ref RigidbodyState bodyState, bool forceWake)
+        private void RestoreDistanceSleep(int bodyIndex, Rigidbody body, ref RigidbodyState bodyState, bool forceWake)
         {
             if (!bodyState.DistanceSleepActive)
                 return;
@@ -2790,12 +2884,19 @@ namespace Hecton8.Physics
 
             if (body != null && !body.isKinematic)
             {
+                RestoreSleepColliders(bodyIndex, ref bodyState);
+                RestoreFrozenVelocityForDistanceSleep(bodyIndex, body);
                 if (forceWake || !wasAsleepBeforeEviction)
                     body.WakeUp();
                 else
                     body.Sleep();
             }
+            else
+            {
+                RestoreSleepColliders(bodyIndex, ref bodyState);
+            }
 
+            WritePhysicsCullingDtoSleepState(bodyIndex, 0);
             PublishRigidbodySleepSignal(in bodyState, body != null ? body.position : Vector3.zero, 0d, 0);
         }
 
@@ -2822,7 +2923,7 @@ namespace Hecton8.Physics
             bodyState.DistanceKinematicSleepActive = true;
         }
 
-        private static void RestoreDistanceKinematicCull(Rigidbody body, ref RigidbodyState bodyState, bool forceWake)
+        private void RestoreDistanceKinematicCull(int bodyIndex, Rigidbody body, ref RigidbodyState bodyState, bool forceWake)
         {
             if (!bodyState.DistanceKinematicSleepActive)
                 return;
@@ -2831,6 +2932,8 @@ namespace Hecton8.Physics
             {
                 body.isKinematic = bodyState.KinematicModeBeforeDistanceSleep;
                 body.detectCollisions = bodyState.DetectCollisionsBeforeDistanceSleep;
+                if (!body.isKinematic)
+                    RestoreFrozenVelocityForDistanceSleep(bodyIndex, body);
                 if (forceWake && !body.isKinematic)
                     body.WakeUp();
             }
@@ -2843,8 +2946,8 @@ namespace Hecton8.Physics
             if ((uint)bodyIndex < (uint)_trackedBodyCount)
                 RestoreMeshColliderStrip(bodyIndex, ref bodyState);
 
-            RestoreDistanceKinematicCull(body, ref bodyState, forceWake);
-            RestoreDistanceSleep(body, ref bodyState, forceWake);
+            RestoreDistanceKinematicCull(bodyIndex, body, ref bodyState, forceWake);
+            RestoreDistanceSleep(bodyIndex, body, ref bodyState, forceWake);
         }
 
         private static byte BuildPhysicsCullingStateSnapshot(in RigidbodyState bodyState)
@@ -3089,34 +3192,43 @@ namespace Hecton8.Physics
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
-                string dumpPath = Path.Combine(logDirectory, "Dump_PHYSICS_CULLING_OVERSEER.bin");
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(reason ?? string.Empty);
-                    writer.Write(_physicsCullingTelemetryWriteIndex);
-                    writer.Write(PhysicsCullingTelemetryCapacity);
-                    for (int i = 0; i < PhysicsCullingTelemetryCapacity; i++)
-                    {
-                        PhysicsCullingTelemetryEntry entry = _physicsCullingTelemetry[i];
-                        writer.Write(entry.FrameIndex);
-                        writer.Write(entry.TrackedBodyCount);
-                        writer.Write(entry.CulledBodyCount);
-                        writer.Write(entry.BodyId);
-                        writer.Write(entry.DistanceSq);
-                        writer.Write(entry.Command);
-                        writer.Write(entry.AwakeResult);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Reserved);
-                        writer.Write(entry.CcdInterventions);
-                    }
-                }
+                string dumpPath = Path.Combine(logDirectory, "Dump_PHYSICS_CULLING.bin");
+                WritePhysicsCullingBlackBoxFile(dumpPath, reason);
+                if (!string.Equals(reason, "state_sync_over_1ms", StringComparison.Ordinal))
+                    WritePhysicsCullingBlackBoxFile(Path.Combine(logDirectory, "Dump_PHYSICS_CULLING.h8dump"), reason);
             }
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[GlobalPhysicsStateManager] Failed to dump physics culling black box: " + exception.Message);
 #endif
+            }
+        }
+
+        private void WritePhysicsCullingBlackBoxFile(string dumpPath, string reason)
+        {
+            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(reason ?? string.Empty);
+                writer.Write(_physicsCullingTelemetryWriteIndex);
+                writer.Write(PhysicsCullingTelemetryCapacity);
+                for (int i = 0; i < PhysicsCullingTelemetryCapacity; i++)
+                {
+                    PhysicsCullingTelemetryEntry entry = _physicsCullingTelemetry[i];
+                    writer.Write(entry.FrameIndex);
+                    writer.Write(entry.TrackedBodyCount);
+                    writer.Write(entry.CulledBodyCount);
+                    writer.Write(entry.BodyId);
+                    writer.Write(entry.DistanceSq);
+                    writer.Write(entry.Command);
+                    writer.Write(entry.AwakeResult);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.Reserved);
+                    writer.Write(entry.CcdInterventions);
+                }
+
+                WriteShinobu37PhysicsCullingFrameDump(writer);
             }
         }
 
@@ -3385,6 +3497,7 @@ namespace Hecton8.Physics
                 if (removedState.AddedMassTensorApplied)
                     RestoreAddedMassBaseline(removedBody, ref removedState);
                 _trackedBodyIndexByEntityId.Remove(EntityId.ToULong(removedBody.GetEntityId()));
+                _trackedBodyIndexByInstanceId.Remove(removedBody.GetInstanceID());
             }
 
             for (int i = _connectionCount - 1; i >= 0; i--)
@@ -3404,15 +3517,22 @@ namespace Hecton8.Physics
             _bodyStates[lastIndex] = default;
             _lastValidPositions[bodyIndex] = _lastValidPositions[lastIndex];
             _lastValidPositions[lastIndex] = default;
+            MovePhysicsCullingDtoLane(lastIndex, bodyIndex);
             MoveMeshColliderRefs(lastIndex, bodyIndex);
             ClearMeshColliderRefs(lastIndex);
+            MoveSleepColliderRefs(lastIndex, bodyIndex);
+            ClearSleepColliderRefs(lastIndex);
             if (bodyIndex != lastIndex)
             {
                 Rigidbody movedBody = _trackedBodies[bodyIndex];
                 if (movedBody != null)
+                {
                     _trackedBodyIndexByEntityId[EntityId.ToULong(movedBody.GetEntityId())] = bodyIndex;
+                    _trackedBodyIndexByInstanceId[movedBody.GetInstanceID()] = bodyIndex;
+                }
             }
             _trackedBodyCount--;
+            MarkPhysicsCullingSpatialHashDirty();
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
@@ -3714,8 +3834,11 @@ namespace Hecton8.Physics
             Array.Clear(_bodyStates, 0, _trackedBodyCount);
             Array.Clear(_trackedMeshColliders, 0, MaxTrackedMeshColliderRefs);
             Array.Clear(_trackedMeshColliderEnabledBeforeStrip, 0, MaxTrackedMeshColliderRefs);
+            Array.Clear(_trackedSleepColliders, 0, MaxTrackedSleepColliderRefs);
+            Array.Clear(_trackedSleepColliderEnabledBeforeSleep, 0, MaxTrackedSleepColliderRefs);
             Array.Clear(_connections, 0, _connectionCount);
             _trackedBodyIndexByEntityId.Clear();
+            _trackedBodyIndexByInstanceId.Clear();
             if (_lastValidPositions.IsCreated)
             {
                 for (int i = 0; i < _lastValidPositions.Length; i++)
@@ -3749,6 +3872,8 @@ namespace Hecton8.Physics
                 for (int i = 0; i < telemetryClearCount; i++)
                     _physicsCullingTelemetry[i] = default;
             }
+
+            ClearShinobu37PhysicsCullingState();
 
             _trackedBodyCount = 0;
             _connectionCount = 0;

@@ -1,0 +1,73 @@
+<SELF_AUDIT agent_id="SHINOBU_36" domain="INPUT_DETERMINISM_AND_HAPTICS" date="2026-05-18">
+  <TASK_CHECK>
+    <TASK id="01" status="PASS">Archive/graveyard prompt recovered from Batch008 and active CURRENT_BATCH rechecked; no authoritative input/haptic binary found, aligned defaults used.</TASK>
+    <TASK id="02" status="PASS">No SHINOBU authority use of Input.GetKey/GetAxis/GetButton or InputAction performed/canceled subscriptions.</TASK>
+    <TASK id="03" status="PASS">DTOs use raw unmanaged fields; Vault ref writes avoid CS1612 copies.</TASK>
+    <TASK id="04" status="PASS">InputStateDTO 24B, HapticCommandDTO 16B, PlayerInputState 64B, XRInputState 64B, BufferedActionEntry 16B, UniversalInputStateSignal 48B; Pack=1/Pack=4 removed from SHINOBU input runtime surface.</TASK>
+    <TASK id="05" status="PASS">Mock collision signal path exists and feeds haptic DTOs without KCC/tool direct dependency.</TASK>
+    <TASK id="06" status="PASS">PreSimulationInputTick is the authoritative poll/write point.</TASK>
+    <TASK id="07" status="PASS">Radial deadzone applies inner/outer/exponent with finite guards.</TASK>
+    <TASK id="08" status="PASS">512-entry InputStateDTO journal is Vault-owned.</TASK>
+    <TASK id="09" status="PASS">16-slot haptic DTO decay buffer is Vault-owned.</TASK>
+    <TASK id="10" status="PASS">Vault InputBlockMask blocks movement/look/tools/discrete controls.</TASK>
+    <TASK id="11" status="PASS">XR haptics use a scalar dear-lie impulse instead of controller-specific simulation.</TASK>
+    <TASK id="12" status="PASS">Ten-frame button mask window is Vault-owned; legacy action buffer now ages by deterministic frames, not Time.time.</TASK>
+    <TASK id="13" status="PASS">Mouse/look delta uses Screen.height normalization and never casts absolute AUP to float.</TASK>
+    <TASK id="14" status="PASS">Steam Deck/SystemHealth haptic throttle controls motor writes without lowering input tick rate.</TASK>
+    <TASK id="15" status="PASS">Button edges emit through current/previous mask XOR.</TASK>
+    <TASK id="16" status="PASS">Vault buffers use UninitializedMemory plus explicit UnsafeUtility.MemClear.</TASK>
+    <TASK id="17" status="PASS">300-frame telemetry ring records high-level state and dumps on fatal/stall path.</TASK>
+    <TASK id="18" status="PASS">Editor tuner facade exists for input curves and haptics.</TASK>
+    <TASK id="19" status="PASS">CSV override is watched; file I/O/parsing stages a scalar DTO outside gameplay tick, and PRE_SIMULATION only copies the staged DTO into Vault.</TASK>
+    <TASK id="20" status="PASS">Live editor oscilloscope reads Vault input samples.</TASK>
+  </TASK_CHECK>
+  <ARM64_CHECK>
+    <STRUCT name="InputStateDTO" size="24" alignment="natural">
+      <FIELD offset="0" name="LookDelta" type="float2" size="8" />
+      <FIELD offset="8" name="MoveAxis" type="float2" size="8" />
+      <FIELD offset="16" name="ButtonMask" type="uint" size="4" />
+      <FIELD offset="20" name="_pad0" type="uint" size="4" />
+    </STRUCT>
+    <STRUCT name="HapticCommandDTO" size="16" alignment="natural">
+      <FIELD offset="0" name="LowFreqIntensity" type="float" size="4" />
+      <FIELD offset="4" name="HighFreqIntensity" type="float" size="4" />
+      <FIELD offset="8" name="DecayRate" type="float" size="4" />
+      <FIELD offset="12" name="MotorMask" type="uint" size="4" />
+    </STRUCT>
+    <STRUCT name="UniversalInputStateSignal" size="48" alignment="natural">
+      <FIELD offset="0" name="Move" type="float2" size="8" />
+      <FIELD offset="8" name="Look" type="float2" size="8" />
+      <FIELD offset="16" name="Vertical" type="float" size="4" />
+      <FIELD offset="20" name="ActionsBitmask" type="uint" size="4" />
+      <FIELD offset="24" name="CurrentInputSchemeHash" type="uint" size="4" />
+      <FIELD offset="28" name="Frame" type="uint" size="4" />
+      <FIELD offset="32" name="Sequence" type="uint" size="4" />
+      <FIELD offset="36" name="Flags" type="byte" size="1" />
+      <FIELD offset="37" name="_pad0.._pad10" type="bytes" size="11" />
+    </STRUCT>
+    <STRUCT name="XRInputState" size="64" alignment="natural">
+      <FIELD offset="0" name="GripRotationWS" type="quaternion" size="16" />
+      <FIELD offset="16" name="GripPositionWS" type="float3" size="12" />
+      <FIELD offset="28" name="Joystick" type="float2" size="8" />
+      <FIELD offset="36" name="Trigger" type="float" size="4" />
+      <FIELD offset="40" name="Grip" type="float" size="4" />
+      <FIELD offset="44" name="Frame" type="int" size="4" />
+      <FIELD offset="48" name="ButtonsBitmask" type="uint" size="4" />
+      <FIELD offset="52" name="ActiveMask" type="uint" size="4" />
+      <FIELD offset="56" name="ControllerIndex/IsTracked/reserved/pad" type="bytes" size="8" />
+    </STRUCT>
+  </ARM64_CHECK>
+  <ZERO_GC_CHECK>Hot authority path uses cached InputAction references, Vault handles, fixed rings, for loops, no LINQ, no managed queues, and no InputAction performed/canceled callbacks. CSV file I/O is staged outside gameplay tick; PRE_SIMULATION only copies an unmanaged DTO. Unity profiler proof is still pending.</ZERO_GC_CHECK>
+  <AUP_CHECK>Input look math is viewport-local. XR look-at uses local runtime ray origin plus AUP offset helper; no absolute AUP is cast directly to float for input.</AUP_CHECK>
+  <DEAR_LIE_CHECK>Haptic physics is faked as a 16-byte motor command with bounded Pade-style decay; XR receives a scalar 0.02s impulse.</DEAR_LIE_CHECK>
+  <DEPENDENCY_CHECK>Input communicates through GlobalRegistry/DataVault/typed signals. No direct dependency was added on KCC, tool equip, UI PDA internals, or audio gameplay contracts.</DEPENDENCY_CHECK>
+  <H_PHI_CHECK>Current DTO, 512 journal, bridge ring, 10-frame mask window, block mask, profile, telemetry, replay snapshot, haptic commands, XR state, XR ray commands, and CSV scratch handle are Vault-owned. CSV staging uses a scalar DTO and stack line buffer, not a private NativeArray.</H_PHI_CHECK>
+  <BLACKBOX_CHECK>300-frame telemetry ring is active and dump target is Docs/AgentLogs/Dump_INPUT_DETERMINISM.bin.</BLACKBOX_CHECK>
+  <COMPILE_GUARD>
+    <PASS target="Hecton8.Core.csproj">9 warnings, 0 errors.</PASS>
+    <PASS target="Hecton8.Input.csproj">0 warnings, 0 errors.</PASS>
+    <PASS target="Hecton8.Editor.csproj">11 warnings, 0 errors.</PASS>
+    <BLOCKED target="Assembly-CSharp.csproj">External RealtimeCSG.csproj has 216 missing source file references.</BLOCKED>
+    <PENDING target="UnityRuntime">Play Mode, profiler GC, and hardware haptics not run in this CLI session.</PENDING>
+  </COMPILE_GUARD>
+</SELF_AUDIT>

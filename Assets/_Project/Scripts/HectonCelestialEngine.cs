@@ -118,7 +118,7 @@ namespace Hecton8.Celestial
     /// </summary>
     public static class CelestialEvents
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct CelestialEventPayload
         {
             public byte EventType;

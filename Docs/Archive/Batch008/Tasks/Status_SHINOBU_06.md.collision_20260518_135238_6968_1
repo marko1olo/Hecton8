@@ -1,0 +1,73 @@
+# Status_SHINOBU_06
+
+Agent: SHINOBU_06
+Role: SOMATIC_KINEMATICS_ARCHITECT
+Domain: ECHELON 4 - PLAYER, KINEMATICS & TOOLS / SOMATIC KINEMATICS
+Task Count: 20
+Status: CORE COMPLETE / ULTRA POLISH PASS 6 APPLIED / BUILD BLOCKED BY UNRELATED DEPENDENCIES
+
+## Mandates Selected
+
+- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
+- `MATH_AUP_Determinism_Sync.txt`
+- `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
+- `PHYS_Kinematic_Interaction_Hands.txt`
+- `PHYS_Physics_Integrity_Determinism_ForceMode.txt`
+- `ARCH_Execution_Phases.txt`
+- `ARCH_Signal_Lane_Segregation.txt`
+- `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
+- `TOOL_Designer_Facades_CSV_Binary_Bridge.txt`
+- `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
+
+## Task Matrix
+
+- [x] Task 01: Binary fallback and emergency tuning exist | DOD: cold-only archive path | Rejected: hard dependency on missing OSHINO binaries | Estimate: 0 us hot path.
+- [x] Task 02: Unity physics authority removed from SHINOBU KCC | DOD: math sphere/AUP state | Rejected: Rigidbody/CharacterController | Estimate: 35-90 us pending profiler.
+- [x] Task 03: CS1612-safe state mutation | DOD: public DTO fields/ref state | Rejected: property-backed NativeArray mutation | Estimate: 1-4 us pending profiler.
+- [x] Task 04: AUP local solver | DOD: double AUP authority, sector-local float solve | Rejected: float world authority | Estimate: jitter fix, not measured.
+- [x] Task 05: Mock SDF/LUT fallback | DOD: local SDF plane/cave and drag LUT | Rejected: waiting on world sampler | Estimate: 8-20 us pending profiler.
+- [x] Task 06: VR stroke kernel | DOD: 3-fixed-frame hand ring, finite guarded | Rejected: render-frame `Time.frameCount` ring | Estimate: 4-12 us pending profiler.
+- [x] Task 07: SDF squeeze resolver | DOD: tetra SDF push-out/projection | Rejected: PhysX depenetration | Estimate: 20-70 us pending profiler.
+- [x] Task 08: Drag evaluator | DOD: 1D LUT | Rejected: fluid displacement | Estimate: 15-60 us pending profiler.
+- [x] Task 09: Fatigue/O2 signal | DOD: preconfigured `ShinobuPlayerExertionSignal` lane | Rejected: orphan first-push allocation | Estimate: 0 us below threshold.
+- [x] Task 10: Seaglide motor | DOD: controller-forward motor | Rejected: camera-forward thrust | Estimate: 5-14 us pending profiler.
+- [x] Task 11: CCD | DOD: finite speed/radius SDF micro-step | Rejected: Unity continuous collision | Estimate: 25-120 us pending profiler.
+- [x] Task 12: Current advection | DOD: cached weather or triangle-wave fake | Rejected: concrete fluid engine | Estimate: 2-6 us cost pending profiler.
+- [x] Task 13: Tier throttle | DOD: low-tier single-step CCD | Rejected: always-on multi-step | Estimate: 30-100 us saved pending profiler.
+- [x] Task 14: Surface buoyancy | DOD: algebraic spring | Rejected: volume displacement | Estimate: 10-40 us pending profiler.
+- [x] Task 15: Acoustic output | DOD: canonical `MovementAcousticSignal` only | Rejected: duplicate `AcousticEchoTap` lane | Estimate: 0 us below threshold.
+- [x] Task 16: Haptic output | DOD: canonical `HapticRequest` only | Rejected: orphan haptic local lane | Estimate: 0 us below threshold.
+- [x] Task 17: Blackbox | DOD: 300-frame ring and `.h8dump`; origin shift id recorded | Rejected: suppressing failed dump before success | Estimate: 0 us healthy path.
+- [x] Task 18: Editor facade | DOD: editor-only Somatic Tuner | Rejected: recompiling constants | Estimate: editor-only.
+- [x] Task 19: CSV override | DOD: SlowTick vault-scratch parse | Rejected: hot-loop JSON/config | Estimate: 0 us fixed loop.
+- [x] Task 20: Gizmo vectors | DOD: SceneView velocity/thrust/push-out | Rejected: text-only telemetry | Estimate: editor-only.
+
+## Iteration Log
+
+### Loop 10 - Dependency Corridor / Cold I/O Firewall
+
+- Removed `Hecton8.Physics` import and `PhysicsDeterminismSignals` call from SHINOBU KCC velocity output.
+- `FixedTick` and `GetStateRef` now call `EnsureNativeState(false)`, preventing archive I/O or cold vault allocation from fixed cadence.
+
+### Loop 11 - Subagent Findings Closed
+
+- Removed duplicate local `AcousticEchoTap` and orphan local haptic lane; SHINOBU now uses canonical `MovementAcousticSignal` and `HapticRequest`.
+- Renamed exertion payload to `ShinobuPlayerExertionSignal` and preconfigured the lane in cold startup.
+- Replaced render-frame hand ring indexing with `_fixedFrameSequence`.
+- Stored origin-shift sequence in `ShiftFrameId`, mirrored it into blackbox `Reserved`, and emitted a `SyncFenceSignal`.
+- Sanitized hand/head vectors before NativeArray writes and clamped exertion before fatigue/scratch writes.
+- Blackbox dump now marks `_dumpWritten` only after stream flush succeeds.
+
+### Loop 12 - VR Somatic Provider Cleanup
+
+- Removed `DefaultExecutionOrder` from `VRSomaticProvider`.
+- Cached player camera, quality tier, and low-memory profile outside hot update/late-frame paths.
+- Converted provider persistent arrays to DataVault-backed `VaultNativeArray<T>` handles with new `BufferID.ShinobuVRSomatic*` slots.
+
+### Loop 13 - Verification
+
+- `dotnet restore Hecton8.Core.csproj` succeeded.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` fails only in unrelated files: `TetherInstance.cs`, `TetherManager.cs`, and `AI/Ecosystem/ShinobuEcosystemBalancer.cs`.
+- Filtered build output reported no `SomaticKinematicsRuntime`, `VRSomaticProvider`, `VRSomaticRuntimeBootstrap`, `H8Memory`, or SHINOBU-owned compile errors.
+- Forbidden scan of SHINOBU runtime/provider/bootstrap found no hits for local NativeArray ownership, `new NativeArray`, direct Unity physics authority, duplicate `AcousticEchoTap`, local haptic signal, physics facade, `DefaultExecutionOrder`, `ReadAllBytes`, `FileInfo`, `foreach`, LINQ list allocation, or direct `.Complete(`.

@@ -1,5 +1,8 @@
+using System;
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -11,14 +14,13 @@ namespace Hecton8.UI
     /// </summary>
     public static class GlitchEncoder
     {
-        [System.ThreadStatic] private static char[] _stagingBuffer;
-
         /// <summary>
         /// Burst path for corrupted diegetic text stored as UTF-16 code units in caller-owned native memory.
         /// </summary>
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public struct DiegeticGlitchXorJob : IJobParallelFor
         {
+            [NoAlias]
             public NativeArray<ushort> Buffer;
             public int Length;
             public float Intensity01;
@@ -45,41 +47,84 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Applies deterministic glyph decay into a thread-local staging buffer.
+        /// Legacy compatibility path. It never allocates; callers that need corruption must provide a destination buffer.
         /// </summary>
         public static void ApplyDecay(char[] source, int length, float intensity, int seed, out char[] buffer, out int outputLength)
         {
-            outputLength = Mathf.Max(0, length);
-            if (source == null || outputLength == 0)
+            if (source == null)
             {
                 buffer = source;
                 outputLength = 0;
                 return;
             }
 
-            buffer = GetBuffer(outputLength);
-            float clampedIntensity = Mathf.Clamp01(intensity);
-            uint state = unchecked((uint)seed * 747796405u + 2891336453u);
-            int decayThreshold = Mathf.Clamp(Mathf.RoundToInt(clampedIntensity * 1023f), 0, 1023);
+            buffer = source;
+            outputLength = math.clamp(length, 0, source.Length);
+        }
 
-            for (int i = 0; i < outputLength; i++)
+        /// <summary>
+        /// Applies deterministic glyph decay from a source buffer into a caller-owned destination buffer.
+        /// </summary>
+        public static void ApplyDecayToBuffer(char[] source, int length, char[] destination, float intensity, int seed, out int outputLength)
+        {
+            unsafe
+            {
+                ApplyDecayToBuffer(source, length, destination, intensity, seed, null, 0, 0, out outputLength);
+            }
+        }
+
+        /// <summary>
+        /// Applies deterministic glyph decay through a caller-supplied resident GlitchTable.bytes pointer.
+        /// </summary>
+        public static unsafe void ApplyDecayToBuffer(
+            char[] source,
+            int length,
+            char[] destination,
+            float intensity,
+            int seed,
+            byte* glitchTableBytes,
+            int tableLength,
+            int readabilityPrefixChars,
+            out int outputLength)
+        {
+            outputLength = 0;
+            if (source == null || destination == null)
+                return;
+
+            int safeLength = math.clamp(length, 0, math.min(source.Length, destination.Length));
+            if (safeLength == 0)
+                return;
+
+            float clampedIntensity = math.saturate(math.isfinite(intensity) ? intensity : 0f);
+            uint state = unchecked((uint)seed * 747796405u + 2891336453u);
+            uint decayThreshold = (uint)math.clamp((int)math.round(clampedIntensity * 1023f), 0, 1023);
+
+            for (int i = 0; i < safeLength; i++)
             {
                 char current = source[i];
                 if (current <= ' ')
                 {
-                    buffer[i] = current;
+                    destination[i] = current;
+                    continue;
+                }
+
+                if (i < readabilityPrefixChars && clampedIntensity < 0.9f)
+                {
+                    destination[i] = current;
                     continue;
                 }
 
                 state = unchecked(state * 1664525u + 1013904223u + (uint)(i * 31 + 17));
                 if ((state & 1023u) > decayThreshold)
                 {
-                    buffer[i] = current;
+                    destination[i] = current;
                     continue;
                 }
 
-                buffer[i] = ResolveDecayGlyph(current, state);
+                destination[i] = ResolveDecayGlyph(current, state, glitchTableBytes, tableLength);
             }
+
+            outputLength = safeLength;
         }
 
         /// <summary>
@@ -87,8 +132,11 @@ namespace Hecton8.UI
         /// </summary>
         public static void ApplyDecayInPlace(char[] buffer, int length, float intensity, int seed)
         {
-            int outputLength = Mathf.Max(0, length);
-            if (buffer == null || outputLength == 0)
+            if (buffer == null)
+                return;
+
+            int outputLength = Mathf.Clamp(length, 0, buffer.Length);
+            if (outputLength == 0)
                 return;
 
             float clampedIntensity = Mathf.Clamp01(intensity);
@@ -110,12 +158,60 @@ namespace Hecton8.UI
         }
 
         /// <summary>
+        /// Applies deterministic glyph decay directly into a caller-owned native Babel span.
+        /// </summary>
+        public static unsafe void ApplyDecayInPlace(Span<char> buffer, int length, float intensity, int seed, byte* glitchTableBytes, int tableLength, int readabilityPrefixChars)
+        {
+            int outputLength = math.clamp(length, 0, buffer.Length);
+            if (outputLength == 0)
+                return;
+
+            fixed (char* bufferPtr = buffer)
+            {
+                ApplyDecayInPlace(bufferPtr, outputLength, intensity, (uint)seed, glitchTableBytes, tableLength, readabilityPrefixChars);
+            }
+        }
+
+        /// <summary>
+        /// Applies deterministic glyph decay directly into unmanaged UTF-16 code units.
+        /// </summary>
+        public static unsafe void ApplyDecayInPlace(char* buffer, int length, float intensity, uint seed, byte* glitchTableBytes, int tableLength, int readabilityPrefixChars)
+        {
+            if (buffer == null || length <= 0)
+                return;
+
+            float clampedIntensity = math.saturate(math.isfinite(intensity) ? intensity : 0f);
+            uint state = unchecked(seed * 747796405u + 2891336453u);
+            uint threshold = (uint)math.clamp((int)math.round(clampedIntensity * 1023f), 0, 1023);
+            int safeReadabilityPrefix = math.max(0, readabilityPrefixChars);
+
+            for (int i = 0; i < length; i++)
+            {
+                char current = buffer[i];
+                if (current <= ' ' || current > 126)
+                    continue;
+
+                if (i < safeReadabilityPrefix && clampedIntensity < 0.9f)
+                    continue;
+
+                state = unchecked(state * 1664525u + 1013904223u + (uint)(i * 31 + 17));
+                if ((state & 1023u) > threshold)
+                    continue;
+
+                buffer[i] = ResolveDecayGlyph(current, state, glitchTableBytes, tableLength);
+            }
+        }
+
+        /// <summary>
         /// Managed mirror of the Burst XOR pass for char[] subtitle buffers that are already owned by UI code.
         /// </summary>
         public static void ApplyXorInPlace(char[] buffer, int length, float intensity, int seed)
         {
-            int outputLength = Mathf.Max(0, length);
-            if (buffer == null || outputLength == 0)
+            if (buffer == null)
+                return;
+
+            int outputLength = Mathf.Clamp(length, 0, buffer.Length);
+            if (outputLength == 0)
                 return;
 
             float clampedIntensity = Mathf.Clamp01(intensity);
@@ -142,18 +238,10 @@ namespace Hecton8.UI
             return GlitchTable.ResolveGlyph(source, state);
         }
 
-        private static char[] GetBuffer(int requiredLength)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe char ResolveDecayGlyph(char source, uint state, byte* glitchTableBytes, int tableLength)
         {
-            char[] buffer = _stagingBuffer;
-            if (buffer != null && buffer.Length >= requiredLength)
-                return buffer;
-
-            int capacity = 128;
-            while (capacity < requiredLength)
-                capacity <<= 1;
-
-            _stagingBuffer = new char[capacity]; // COLD ALLOC: char[capacity] — thread-local glitch staging buffer — owner: GlitchEncoder
-            return _stagingBuffer;
+            return GlitchTable.ResolveGlyph(source, state, glitchTableBytes, tableLength);
         }
     }
 }

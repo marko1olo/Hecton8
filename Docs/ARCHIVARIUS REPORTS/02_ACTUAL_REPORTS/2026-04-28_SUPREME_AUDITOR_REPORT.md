@@ -1,6 +1,14 @@
 # SUPREME AUDITOR â€” CONTINUOUS SMART AUDIT REPORT
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 
 ## Current-State Addendum (2026-04-29)
@@ -9,7 +17,7 @@ This file is a dated static bundle, not the preferred current-state authority.
 
 Known drift relative to current source/editor rechecks:
 
-- the old `514+` script-scale statement is stale; current first-party inventory is `1010` `.cs` under `Assets/_Project` and `970` under `Assets/_Project/Scripts`
+- the old `514+` script-scale statement is stale; historical `1010` / `970` counts are also stale. R18 late static scan sees `1743` `.cs` under `Assets/_Project` and `1690` under `Assets/_Project/Scripts`.
 - interface/service ownership changed materially from older assumptions:
   - `SpatialAudioManager -> IAudioService`
   - `SuitHUDV4CanvasOverlay -> IUIService`
@@ -53,8 +61,8 @@ Use `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md` and the refreshed `01_GENE
 8. Ð¡Ñ‚Ð°Ñ‚Ð¸ÑÑ‚Ð¸ÐºÐ° Ð¿Ñ€Ð¾ÐµÐºÑ‚Ð°
 
 ### ÐšÐ»ÑŽÑ‡ÐµÐ²Ñ‹Ðµ Ð½Ð°Ñ…Ð¾Ð´ÐºÐ¸:
-- **514+ C# ÑÐºÑ€Ð¸Ð¿Ñ‚Ð¾Ð²** Ð² `Assets/_Project/Scripts/`
-- **52 Ð¼Ð°Ð½Ð´Ð°Ñ‚Ð°** Ð² `.agents-skills/`
+- **Historical script scale:** `514+` under `Assets/_Project/Scripts/`; R18 late static scan sees `1690` under `Assets/_Project/Scripts/`
+- **Historical mandate scale:** `52` mandates in `.agents-skills/`; R18 filesystem scan sees `80` `.txt` mandate files / `81` files total
 - **60+ Ñ‚ÐµÐºÑÑ‚ÑƒÑ€** Ð² `Assets/_Project/Art/TEXTURES/`
 - **24 ÑÑ†ÐµÐ½Ñ‹** Ð² `_Recovery/` (Ñ‚Ñ€ÐµÐ±ÑƒÑŽÑ‚ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ¸)
 - **11 PDF Ð¼Ð°Ð½ÑƒÐ°Ð»Ð¾Ð²** third-party (Ñ‚Ñ€ÐµÐ±ÑƒÑŽÑ‚ Ð°Ñ€Ñ…Ð¸Ð²Ð°Ñ†Ð¸Ð¸)
@@ -482,7 +490,7 @@ git log --oneline --follow Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeath
 
 ---
 
-**STATUS:** PENDING VERIFICATION. Historical label was `ETA CODEX VERIFIED`; current authority does not accept it as runtime proof.
+**STATUS:** PENDING VERIFICATION. Historical ETA/Codex verified label is not accepted as runtime proof by current authority.
 
 ---
 

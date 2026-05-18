@@ -8,6 +8,7 @@ using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -190,6 +191,8 @@ namespace Hecton8.AI.Ecosystem
 
         private bool EnsureVaultState()
         {
+            EcosystemPopulationLayoutManifest.VerifyColdBoot();
+
             IDataVault vault = ResolveDataVaultDependency();
             if (vault == null)
             {
@@ -1364,7 +1367,7 @@ namespace Hecton8.AI.Ecosystem
         public const uint Prey = 1u << 1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct EcosystemPopulationCoefficient
     {
         [FieldOffset(0)]
@@ -1434,7 +1437,7 @@ namespace Hecton8.AI.Ecosystem
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 112)]
+    [StructLayout(LayoutKind.Explicit, Size = 112)]
     internal struct EcosystemPopulationSectorState
     {
         [FieldOffset(0)]
@@ -1471,7 +1474,7 @@ namespace Hecton8.AI.Ecosystem
         public uint Reserved2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     internal struct EcosystemPopulationCullEvent
     {
         [FieldOffset(0)]
@@ -1500,7 +1503,7 @@ namespace Hecton8.AI.Ecosystem
         public uint Reserved5;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct EcosystemPopulationFreeSlot
     {
         [FieldOffset(0)]
@@ -1519,7 +1522,7 @@ namespace Hecton8.AI.Ecosystem
         public uint Reserved2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct EcosystemPopulationTelemetryEntry
     {
         [FieldOffset(0)]
@@ -1554,6 +1557,38 @@ namespace Hecton8.AI.Ecosystem
         public uint Reserved4;
         [FieldOffset(60)]
         public uint Reserved5;
+    }
+
+    internal static class EcosystemPopulationLayoutManifest
+    {
+        private static bool _verified;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Reset()
+        {
+            _verified = false;
+        }
+
+        public static void VerifyColdBoot()
+        {
+            if (_verified)
+                return;
+
+            AssertSize<EcosystemPopulationCoefficient>(64);
+            AssertSize<EcosystemPopulationSectorState>(112);
+            AssertSize<EcosystemPopulationCullEvent>(96);
+            AssertSize<EcosystemPopulationFreeSlot>(32);
+            AssertSize<EcosystemPopulationTelemetryEntry>(64);
+            _verified = true;
+        }
+
+        private static void AssertSize<T>(int expected)
+            where T : struct
+        {
+            int observed = UnsafeUtility.SizeOf<T>();
+            if (observed != expected)
+                throw new CriticalBootException("[EcosystemPopulationLayoutManifest] Layout mismatch " + typeof(T).Name + " expected=" + expected + " observed=" + observed);
+        }
     }
 
     internal static class EcosystemPopulationMath

@@ -5,7 +5,7 @@ namespace Hecton8.Core.Persistence
     /// <summary>
     /// Marker for the isolated persistence assembly boundary.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public readonly struct PersistenceAssemblyMarker
     {
     }

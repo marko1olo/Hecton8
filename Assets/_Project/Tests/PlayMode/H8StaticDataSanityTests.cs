@@ -78,7 +78,7 @@ namespace Hecton8.Tests.PlayMode
                     Assert.AreEqual("Scrap Metal", Encoding.UTF8.GetString(utf8));
 
                     ReadOnlySpan<byte> missing = babel.GetUtf8(0xDEADBEEFu);
-                    Assert.AreEqual(0, missing.Length);
+                    Assert.AreEqual("ERROR", Encoding.UTF8.GetString(missing));
                     Assert.IsTrue(babel.TryReload(bake.BabelPath, expectedBabelCrc32));
                     Assert.AreEqual(expectedBabelCrc32, babel.PayloadCrc32);
                     babel.Shutdown();

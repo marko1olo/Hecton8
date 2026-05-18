@@ -2,6 +2,21 @@
 
 Date: 2026-05-17
 Status: ACTIVE PLAYER-LOOP GAP MATRIX / RUNTIME PENDING
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Owner: SUBNAUTICA_RESEARCHER
 Scope: clean-room external reference research plus current HECTON-8 source/data audit.
 
@@ -49,13 +64,13 @@ Primary public facts:
   entries, craftable recipes, vehicles, and world storage. Treat this as player
   observation, not source-of-truth.
 
-## HECTON-8 Current Proof
+## HECTON-8 Static Snapshot / Runtime Proof Pending
 
 Static counts from this pass:
 
 - `Assets/_Project/Data/Lore/AudioLogs`: 5 authored audio-log assets.
 - `Assets/_Project/Data/Crafting/Recipes`: 41 authored recipe assets.
-- `Assets/_Project/Data/Tools`: 24 authored tool metadata assets.
+- `Assets/_Project/Data/Tools`: 13 authored `ToolMetadata_*.asset` files. Current known orphan/extra metadata is `ToolMetadata_LogicSpanner.asset`.
 - `Assets/_Project/Data/Survival`: 13 authored survival/suit profile assets.
 - Scene/prefab search for `NarrativeDiscovery` or `AudioLogPickup`: 0 authored
   placement hits in prefabs/scenes/assets during this pass.

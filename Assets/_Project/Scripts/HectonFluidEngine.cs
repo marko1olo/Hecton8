@@ -103,7 +103,7 @@ namespace Hecton8.Physics
         public float Padding1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct FluidImpactEvent
     {
         public float3 PositionWS;
@@ -224,6 +224,8 @@ namespace Hecton8.Physics
         private const int FluidAdvectionTelemetryCapacity = 300;
         private const int FluidAdvectionSignalDrainBudget = 64;
         private const int FluidAdvectionGlobalTelemetryIntervalFrames = 30;
+        private const int DynamicWakeGpuCapacity = 16;
+        private const int DynamicWakeLowTierGpuCapacity = 4;
         private const int MaxAdvectedSiltCount = 4096;
         public const int MaxAdvectedDebrisCount = 1000;
         public const int MaxAdvectedBubbleCount = 2000;
@@ -422,6 +424,9 @@ namespace Hecton8.Physics
         private static readonly int _FluidAdvectionBuoyancyId = Shader.PropertyToID("_FluidAdvectionBuoyancy");
         private static readonly int _FluidAdvectionAupShiftDeltaId = Shader.PropertyToID("_FluidAdvectionAupShiftDelta");
         private static readonly int _FluidAdvectionSdfParamsId = Shader.PropertyToID("_FluidAdvectionSdfParams");
+        private static readonly int _DynamicWakesId = Shader.PropertyToID("_DynamicWakes");
+        private static readonly int _DynamicWakeVectorsId = Shader.PropertyToID("_DynamicWakeVectors");
+        private static readonly int _DynamicWakeParamsId = Shader.PropertyToID("_DynamicWakeParams");
         private static readonly int _GlobalWakeParamsId = Shader.PropertyToID("_GlobalWakeParams");
         private static readonly ProfilerMarker _gatherDataProfilerMarker = new ProfilerMarker("H8.Fluid.GatherData");
         private static readonly ProfilerMarker _jobScheduleProfilerMarker = new ProfilerMarker("H8.Fluid.ScheduleBuoyancyJob");
@@ -645,7 +650,9 @@ namespace Hecton8.Physics
             public Vector4 Params;
             public Vector4 Buoyancy;
             public Vector4 AupShiftDelta;
-            public Vector4 GlobalWakeParams;
+            public GraphicsBuffer DynamicWakeBuffer;
+            public GraphicsBuffer DynamicWakeVectorBuffer;
+            public Vector4 DynamicWakeParams;
             public Vector4 AbyssalGridResolution;
             public Vector4 AbyssalFlowCenter;
             public Vector4 AbyssalFlowSpacing;
@@ -843,7 +850,7 @@ namespace Hecton8.Physics
                 currentVector.y * currentStrength,
                 currentVector.z * currentStrength);
             float depthBelowSurface = math.max(0f, resolvedWaterLevel - position.y);
-            NativeArray<float3> vectorNoiseField = _prebakedVectorNoiseField.IsCreated
+            var vectorNoiseField = _prebakedVectorNoiseField.IsCreated
                 ? _prebakedVectorNoiseField
                 : default;
             int vectorNoiseLength = _prebakedVectorNoiseField.IsCreated ? _prebakedVectorNoiseField.Length : 0;
@@ -1352,6 +1359,10 @@ namespace Hecton8.Physics
         private GraphicsBuffer _emptyAdvectedBubbleBuffer;
         private GraphicsBuffer _emptyAdvectedDebrisBuffer;
         private GraphicsBuffer _emptyAbyssalFlowBuffer;
+        private GraphicsBuffer _dynamicWakeBuffer;
+        private GraphicsBuffer _dynamicWakeVectorBuffer;
+        private VaultBufferHandle<float4> _dynamicWakeBufferHandle;
+        private VaultBufferHandle<float4> _dynamicWakeVectorBufferHandle;
         private GraphicsBuffer _gpuSplashdownImpulseBuffer;
         private Texture3D _emptyFluidAdvectionTexture;
         private RTHandle _emptyFluidAdvectionTextureHandle;
@@ -2470,7 +2481,7 @@ namespace Hecton8.Physics
                 ConsumeGpuBuoyancyReadbacks();
                 TryDispatchGpuBuoyancySampling(weatherSnapshot, count, cinematicWaterLevel);
             }
-            NativeArray<float3> vectorNoiseField = _prebakedVectorNoiseField.IsCreated
+            var vectorNoiseField = _prebakedVectorNoiseField.IsCreated
                 ? _prebakedVectorNoiseField
                 : default;
             int vectorNoiseLength = _prebakedVectorNoiseField.IsCreated ? _prebakedVectorNoiseField.Length : 0;
@@ -2685,7 +2696,10 @@ namespace Hecton8.Physics
             }
 
             bool lowTier = ResolveFluidAdvectionLowTier();
-            Vector4 globalWakeParams = ResolveGlobalWakeParamsForFluidAdvection(lowTier);
+            TryGetDynamicWakeGpuPayload(
+                out GraphicsBuffer dynamicWakeBuffer,
+                out GraphicsBuffer dynamicWakeVectorBuffer,
+                out Vector4 dynamicWakeParams);
 
             Texture resolvedFlowTexture = hasFlowTexture ? flowTexture : _emptyFluidAdvectionTexture;
             Texture resolvedSdfTexture = sdfTexture != null ? sdfTexture : _emptyFluidAdvectionTexture;
@@ -2730,7 +2744,9 @@ namespace Hecton8.Physics
                     _pendingFluidAdvectionRuntimeShift.y,
                     _pendingFluidAdvectionRuntimeShift.z,
                     0f),
-                GlobalWakeParams = globalWakeParams,
+                DynamicWakeBuffer = dynamicWakeBuffer,
+                DynamicWakeVectorBuffer = dynamicWakeVectorBuffer,
+                DynamicWakeParams = dynamicWakeParams,
                 AbyssalGridResolution = gridResolution,
                 AbyssalFlowCenter = flowCenter,
                 AbyssalFlowSpacing = flowSpacing,
@@ -2759,13 +2775,15 @@ namespace Hecton8.Physics
             cmd.SetComputeBufferParam(compute, kernel, _DebrisReadId, payload.DebrisRead);
             cmd.SetComputeBufferParam(compute, kernel, _DebrisWriteId, payload.DebrisWrite);
             cmd.SetComputeBufferParam(compute, kernel, _AbyssalFlowFieldResultId, payload.AbyssalFlowBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DynamicWakesId, payload.DynamicWakeBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DynamicWakeVectorsId, payload.DynamicWakeVectorBuffer);
             cmd.SetComputeTextureParam(compute, kernel, _AbyssalFlowFieldTextureId, payload.AbyssalFlowTexture);
             cmd.SetComputeTextureParam(compute, kernel, _VoxelSdfTexture3DId, payload.VoxelSdfTexture);
             cmd.SetComputeVectorParam(compute, _FluidAdvectionCountsId, payload.Counts);
             cmd.SetComputeVectorParam(compute, _FluidAdvectionParamsId, payload.Params);
             cmd.SetComputeVectorParam(compute, _FluidAdvectionBuoyancyId, payload.Buoyancy);
             cmd.SetComputeVectorParam(compute, _FluidAdvectionAupShiftDeltaId, payload.AupShiftDelta);
-            cmd.SetComputeVectorParam(compute, _GlobalWakeParamsId, payload.GlobalWakeParams);
+            cmd.SetComputeVectorParam(compute, _DynamicWakeParamsId, payload.DynamicWakeParams);
             cmd.SetComputeVectorParam(compute, _AbyssalGridResolutionId, payload.AbyssalGridResolution);
             cmd.SetComputeVectorParam(compute, _AbyssalFlowCenterId, payload.AbyssalFlowCenter);
             cmd.SetComputeVectorParam(compute, _AbyssalFlowSpacingId, payload.AbyssalFlowSpacing);
@@ -2792,13 +2810,15 @@ namespace Hecton8.Physics
             cmd.SetComputeBufferParam(compute, kernel, _DebrisReadId, payload.DebrisRead);
             cmd.SetComputeBufferParam(compute, kernel, _DebrisWriteId, payload.DebrisWrite);
             cmd.SetComputeBufferParam(compute, kernel, _AbyssalFlowFieldResultId, payload.AbyssalFlowBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DynamicWakesId, payload.DynamicWakeBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DynamicWakeVectorsId, payload.DynamicWakeVectorBuffer);
             cmd.SetComputeTextureParam(compute, kernel, _AbyssalFlowFieldTextureId, abyssalFlowTexture);
             cmd.SetComputeTextureParam(compute, kernel, _VoxelSdfTexture3DId, voxelSdfTexture);
             cmd.SetComputeVectorParam(compute, _FluidAdvectionCountsId, payload.Counts);
             cmd.SetComputeVectorParam(compute, _FluidAdvectionParamsId, payload.Params);
             cmd.SetComputeVectorParam(compute, _FluidAdvectionBuoyancyId, payload.Buoyancy);
             cmd.SetComputeVectorParam(compute, _FluidAdvectionAupShiftDeltaId, payload.AupShiftDelta);
-            cmd.SetComputeVectorParam(compute, _GlobalWakeParamsId, payload.GlobalWakeParams);
+            cmd.SetComputeVectorParam(compute, _DynamicWakeParamsId, payload.DynamicWakeParams);
             cmd.SetComputeVectorParam(compute, _AbyssalGridResolutionId, payload.AbyssalGridResolution);
             cmd.SetComputeVectorParam(compute, _AbyssalFlowCenterId, payload.AbyssalFlowCenter);
             cmd.SetComputeVectorParam(compute, _AbyssalFlowSpacingId, payload.AbyssalFlowSpacing);
@@ -2821,6 +2841,8 @@ namespace Hecton8.Physics
             cmd.SetComputeBufferParam(compute, kernel, _DebrisReadId, payload.EmptyDebrisBuffer);
             cmd.SetComputeBufferParam(compute, kernel, _DebrisWriteId, payload.EmptyDebrisBuffer);
             cmd.SetComputeBufferParam(compute, kernel, _AbyssalFlowFieldResultId, payload.EmptyAbyssalFlowBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DynamicWakesId, payload.EmptyAbyssalFlowBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DynamicWakeVectorsId, payload.EmptyAbyssalFlowBuffer);
             cmd.SetComputeTextureParam(compute, kernel, _AbyssalFlowFieldTextureId, payload.EmptyVoxelSdfTexture);
             cmd.SetComputeTextureParam(compute, kernel, _VoxelSdfTexture3DId, payload.EmptyVoxelSdfTexture);
         }
@@ -2839,6 +2861,8 @@ namespace Hecton8.Physics
             cmd.SetComputeBufferParam(compute, kernel, _DebrisReadId, payload.EmptyDebrisBuffer);
             cmd.SetComputeBufferParam(compute, kernel, _DebrisWriteId, payload.EmptyDebrisBuffer);
             cmd.SetComputeBufferParam(compute, kernel, _AbyssalFlowFieldResultId, payload.EmptyAbyssalFlowBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DynamicWakesId, payload.EmptyAbyssalFlowBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DynamicWakeVectorsId, payload.EmptyAbyssalFlowBuffer);
             cmd.SetComputeTextureParam(compute, kernel, _AbyssalFlowFieldTextureId, emptyTexture);
             cmd.SetComputeTextureParam(compute, kernel, _VoxelSdfTexture3DId, emptyTexture);
         }
@@ -3241,7 +3265,7 @@ namespace Hecton8.Physics
             if (!IsFiniteVector(wakeParams))
                 return lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
 
-            float maxSlotLimit = lowTier ? 4f : 16f;
+            float maxSlotLimit = lowTier ? DynamicWakeLowTierGpuCapacity : DynamicWakeGpuCapacity;
             float slotLimit = math.clamp(wakeParams.x, 0f, maxSlotLimit);
             float activeCount = math.clamp(wakeParams.z, 0f, slotLimit);
             return new Vector4(
@@ -3249,6 +3273,105 @@ namespace Hecton8.Physics
                 lowTier ? 1f : 0f,
                 activeCount,
                 math.saturate(wakeParams.w));
+        }
+
+        public bool TryGetDynamicWakeGpuPayload(
+            out GraphicsBuffer dynamicWakeBuffer,
+            out GraphicsBuffer dynamicWakeVectorBuffer,
+            out Vector4 dynamicWakeParams)
+        {
+            dynamicWakeBuffer = _emptyAbyssalFlowBuffer;
+            dynamicWakeVectorBuffer = _emptyAbyssalFlowBuffer;
+
+            bool lowTier = ResolveFluidAdvectionLowTier();
+            dynamicWakeParams = ResolveGlobalWakeParamsForFluidAdvection(lowTier);
+            if (dynamicWakeParams.z <= 0.5f)
+            {
+                dynamicWakeParams = lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
+                return false;
+            }
+
+            if (!EnsureDynamicWakeGpuBuffers() ||
+                !TryResolveDynamicWakeVaultBuffers(
+                    out NativeArray<float4> dynamicWakes,
+                    out NativeArray<float4> dynamicWakeVectors))
+            {
+                dynamicWakeParams = lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
+                return false;
+            }
+
+            int uploadCount = math.min(DynamicWakeGpuCapacity, math.min(dynamicWakes.Length, dynamicWakeVectors.Length));
+            if (uploadCount <= 0)
+            {
+                dynamicWakeParams = lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
+                return false;
+            }
+
+            GraphicsBufferUploadUtility.UploadNativeArray(_dynamicWakeBuffer, dynamicWakes, uploadCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_dynamicWakeVectorBuffer, dynamicWakeVectors, uploadCount);
+
+            float slotLimit = math.clamp(dynamicWakeParams.x, 0f, math.min(uploadCount, lowTier ? DynamicWakeLowTierGpuCapacity : DynamicWakeGpuCapacity));
+            float activeCount = math.clamp(dynamicWakeParams.z, 0f, slotLimit);
+            dynamicWakeParams = new Vector4(slotLimit, lowTier ? 1f : 0f, activeCount, math.saturate(dynamicWakeParams.w));
+            dynamicWakeBuffer = _dynamicWakeBuffer;
+            dynamicWakeVectorBuffer = _dynamicWakeVectorBuffer;
+            return dynamicWakeBuffer != null &&
+                   dynamicWakeVectorBuffer != null &&
+                   dynamicWakeBuffer.IsValid() &&
+                   dynamicWakeVectorBuffer.IsValid();
+        }
+
+        private bool EnsureDynamicWakeGpuBuffers()
+        {
+            if (_emptyAbyssalFlowBuffer == null || !_emptyAbyssalFlowBuffer.IsValid())
+                return false;
+
+            if (_dynamicWakeBuffer == null || !_dynamicWakeBuffer.IsValid())
+                _dynamicWakeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(DynamicWakeGpuCapacity); // COLD ALLOC: GraphicsBuffer[16] - DataVault wake positions for dynamic VFX advection - owner: HectonFluidEngine
+            if (_dynamicWakeVectorBuffer == null || !_dynamicWakeVectorBuffer.IsValid())
+                _dynamicWakeVectorBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(DynamicWakeGpuCapacity); // COLD ALLOC: GraphicsBuffer[16] - DataVault wake vectors for dynamic VFX advection - owner: HectonFluidEngine
+
+            return _dynamicWakeBuffer != null &&
+                   _dynamicWakeVectorBuffer != null &&
+                   _dynamicWakeBuffer.IsValid() &&
+                   _dynamicWakeVectorBuffer.IsValid();
+        }
+
+        private bool TryResolveDynamicWakeVaultBuffers(
+            out NativeArray<float4> dynamicWakes,
+            out NativeArray<float4> dynamicWakeVectors)
+        {
+            dynamicWakes = default;
+            dynamicWakeVectors = default;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!_dynamicWakeBufferHandle.IsCreated)
+            {
+                _dynamicWakeBufferHandle = vault.GetBufferHandle<float4>(
+                    BufferID.WakeGlobalBuffer,
+                    DynamicWakeGpuCapacity,
+                    SystemID.Fluid,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_dynamicWakeVectorBufferHandle.IsCreated)
+            {
+                _dynamicWakeVectorBufferHandle = vault.GetBufferHandle<float4>(
+                    BufferID.WakeVectorBuffer,
+                    DynamicWakeGpuCapacity,
+                    SystemID.Fluid,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_dynamicWakeBufferHandle.IsCreated || !_dynamicWakeVectorBufferHandle.IsCreated)
+                return false;
+
+            dynamicWakes = _dynamicWakeBufferHandle.Resolve(vault);
+            dynamicWakeVectors = _dynamicWakeVectorBufferHandle.Resolve(vault);
+            return dynamicWakes.IsCreated && dynamicWakeVectors.IsCreated;
         }
 
         private bool HasActiveAdvectedParticles()
@@ -3516,7 +3639,7 @@ namespace Hecton8.Physics
             if (buffer == null || !buffer.IsValid() || slot < 0 || slot >= buffer.count)
                 return;
 
-            NativeArray<T> mapped = buffer.LockBufferForWrite<T>(slot, 1);
+            var mapped = buffer.LockBufferForWrite<T>(slot, 1);
             mapped[0] = value;
             buffer.UnlockBufferAfterWrite<T>(1);
         }
@@ -5378,6 +5501,10 @@ namespace Hecton8.Physics
             ReleaseGraphicsBuffer(ref _emptyAdvectedBubbleBuffer);
             ReleaseGraphicsBuffer(ref _emptyAdvectedDebrisBuffer);
             ReleaseGraphicsBuffer(ref _emptyAbyssalFlowBuffer);
+            ReleaseGraphicsBuffer(ref _dynamicWakeBuffer);
+            ReleaseGraphicsBuffer(ref _dynamicWakeVectorBuffer);
+            _dynamicWakeBufferHandle = default;
+            _dynamicWakeVectorBufferHandle = default;
 
             JobHandle dependency = _scheduledBuoyancyJobActive ? _scheduledBuoyancyHandle : default;
             DisposeNativeArray(ref _advectedSiltUpload, dependency);
@@ -6130,7 +6257,7 @@ namespace Hecton8.Physics
                     continue;
 
                 int readCount = math.min(_gpuReadbackCounts[requestIndex], _gpuBuoyancyReadback.Length);
-                NativeArray<float4> readbackData = request.GetData<float4>();
+                var readbackData = request.GetData<float4>();
                 for (int i = 0; i < readCount; i++)
                 {
                     float4 sample = readbackData[i];

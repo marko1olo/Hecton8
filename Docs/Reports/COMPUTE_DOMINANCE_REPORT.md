@@ -1,6 +1,21 @@
-﻿# COMPUTE DOMINANCE REPORT
+# COMPUTE DOMINANCE REPORT
 
-Status: AUDIT COMPLETE
+Status: HISTORICAL AUDIT SNAPSHOT / RUNTIME PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-18 R13 Report Snapshot Boundary
+
+This report file is a snapshot/provenance document. It is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/Reports/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+Historical `PASS`, `VERIFIED`, `current`, `latest`, counter, compile, runtime, 0-GC, frame-time, cost, and performance statements inside this report are not current proof unless the exact claim links a fresh artifact path, command/tool, timestamp, evidence class, and unresolved-error list. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied by this file alone.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 Agent: COMPUTE_LOGISTICS_AUDITOR
 Domain: Echelon 9 / Meta, Audit, Reporting, Evidence Accounting
 Audit timestamp: 2026-05-15T01:49:02+04:00
@@ -597,7 +612,8 @@ Cinematic cheats used: none. This was a forensic accounting pass, not a simulati
 
 Process microseconds saved: not claimed. There is no profiler for management confusion.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-17 H-Phi Live Rebase 15:39
 
@@ -645,11 +661,13 @@ SQLite live pulse 15:38:
 
 Verdict: the final interval is cleaner in managed-risk counters, but the H-Phi risk-score ROI worsened to 3.893B tokens per +0.001 risk. Integration is still moving; efficiency is weak.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-16 Continuation Addendum
 
-Status: AUDIT COMPLETE
+Status: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING
+
 Snapshot: 2026-05-16T03:56+04:00
 Scope: HECTON-8 only. Timaert excluded.
 
@@ -742,7 +760,8 @@ Canonical current files:
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_INDEX.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_BURN_RATE_LEDGER.md`
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## Continuation Addendum - Top-100 Value Audit
 
@@ -1332,7 +1351,8 @@ This is a live SQLite rebase, not a new full JSONL pass.
 
 Verdict: burn rate increased again. The current 60-second pulse is hotter than the 05:19 pulse and far hotter than the rolling 24h average from the full scan. Cache is still the only reason the public-price estimate does not look completely absurd.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-16 Last 6H JSONL Cadence
 
@@ -1358,7 +1378,8 @@ Window: 2026-05-16T09:55:54+04:00 to 2026-05-16T15:55:54+04:00.
 
 Verdict: the 14:57 pulse was a burst. The six-hour baseline is lower, but still burns 757.4M tokens and USD 607 cache-aware. Cache remains the economic shield.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-16 H-Phi Correlation
 
@@ -1398,7 +1419,8 @@ Verdict: local evidence shows moderate positive association between token burn a
 
 Latest token pulse: 49,767,593,348 SQLite thread tokens at 2026-05-16T23:14+04:00; 3,815,200 tokens in 30 seconds; 127,173.33 tokens/sec.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-17 Midnight Rebase
 
@@ -1420,7 +1442,8 @@ This is a SQLite live rebase and static source scan continuation.
 
 Strict H-Phi old-budget gate attempt timed out after 244 seconds and produced no completed artifact. Composite H-Phi improvement remains proven by the prior current scan. Strict old absolute-budget success is not proven and should not be claimed.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-17 Recent Rate Audit
 
@@ -1472,7 +1495,8 @@ SQLite live pulse at 2026-05-17T00:52+04:00:
 
 Verdict: the 24h average is already absurd at 62,084.39 tokens/sec. The 00:52 live pulse is hotter at 88,644.80 tokens/sec. Cache is suppressing cost, not compute consumption.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-17 Active Thread Burners
 
@@ -1497,7 +1521,8 @@ STATUS: AUDIT COMPLETE.
 
 This is burner attribution only. It does not prove waste without joined LOC/H-Phi/value deltas.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-17 H-Phi Live Rebase 02:17
 
@@ -1542,7 +1567,8 @@ Current live/code rebase:
 
 Verdict: H-Phi improved again, but marginal improvement is getting more expensive and old absolute budgets still fail on GlobalRegistry surface, NativeArray refs, ManagedFormat surface, JobComplete surface, and PrimaryManagedRuntimeRisk.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-17 Burn Spike 03:04
 
@@ -1574,7 +1600,8 @@ Top burners:
 
 SQLite total at 2026-05-17T03:15:49+04:00: 50,453,850,790 tokens. Estimated cache-aware total: USD 34,303.50. Energy: 2,522.69 MWh. Tokens per meaningful LOC: 60,234.20.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-17 H-Phi Live Rebase 04:12
 
@@ -1617,7 +1644,8 @@ Current live/code rebase:
 
 Verdict: H-Phi is now near plateau. The latest interval burned 418.7M tokens for a microscopic score lift while managed runtime debt worsened.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-17 Token Live Rebase 04:46
 
@@ -1683,7 +1711,8 @@ Top active burners:
 
 Verdict: the system had a quiet 30-second SQLite pulse at 04:38, then a JSONL-visible 04:41 burst, then a cooler but still active 04:46 per-thread burn. Token movement after 04:12 does not imply H-Phi movement until another static scan is run.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-17 Live Pulse 05:34
 
@@ -1735,7 +1764,8 @@ Top active burners:
 
 Verdict: burn re-accelerated relative to the 04:46 pulse, but remains below the post-04:12 JSONL window average. It is active, concentrated, and still not a waste conviction without code/value deltas.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-17 H-Phi Live Rebase 11:42
 
@@ -1783,7 +1813,8 @@ SQLite live pulse 11:38:
 
 Verdict: H-Phi moved again and the marginal risk score ROI recovered from the 04:12 plateau. This is still mixed: native ownership improved, but managed runtime debt worsened.
 
-STATUS: AUDIT COMPLETE.
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
+
 
 ## 2026-05-17 H-Phi Live Rebase 13:37
 
@@ -1831,5 +1862,4 @@ SQLite live pulse 13:36:
 
 Verdict: H-Phi moved again, but this was not clean progress. DataVault/ownership counters improved while GlobalRegistry and managed format debt grew. No "Compute Thief" conviction is made from this interval because high burn still needs diff/value/validation joins.
 
-STATUS: AUDIT COMPLETE.
-
+STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.

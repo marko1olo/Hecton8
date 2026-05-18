@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Narrative;
 using Hecton8.Physics;
@@ -170,6 +171,8 @@ namespace Hecton8.UI
         private const int MaxBufferedSubtitleCharacters = CharBufferPool.RequiredVrTextCapacity;
         private const int MaxTimedAudioLogCueCount = 32;
         private const int MaxSubtitleRenderCharacters = 2048;
+        private const byte SubtitleSignalInterruptFlag = 1;
+        private const byte SubtitleSignalCriticalPriority = 200;
         private const float AudioLogCueMinimumShakeIntensity = 0.025f;
         private const float AudioLogCueMinimumImpulseEnergyJoules = 8f;
         private const float AudioLogCueMaximumImpulseEnergyJoules = 120f;
@@ -182,8 +185,10 @@ namespace Hecton8.UI
         private static readonly Color BackdropColor = new Color(0.01f, 0.04f, 0.06f, 0.64f);
         private static readonly Color TextColor = new Color(0.86f, 0.96f, 1f, 0.96f);
         private static readonly Color WaveformColor = new Color(0.72f, 0.97f, 1f, 0.92f);
+        private static readonly char[] EmptyCueBuffer = new char[1]; // COLD ALLOC: char[1] - non-null empty cue sentinel - owner: SubtitleManager
 
         private readonly List<SubtitleRequest> _queue = new List<SubtitleRequest>(MaxQueuedSubtitles); // COLD ALLOC: List[8] - queued subtitle requests - owner: SubtitleManager
+        private readonly SubtitleCommandDTO[] _subtitleCommandQueue = new SubtitleCommandDTO[MaxQueuedSubtitles]; // COLD ALLOC: SubtitleCommandDTO[8] - zero-string Babel subtitle command ring - owner: SubtitleManager
         private readonly BufferedSubtitleRequest[] _bufferedQueue = new BufferedSubtitleRequest[MaxQueuedSubtitles]; // COLD ALLOC: BufferedSubtitleRequest[8] - zero-GC subtitle request ring - owner: SubtitleManager
         private readonly char[][] _bufferedQueueBuffers =
         {
@@ -206,6 +211,7 @@ namespace Hecton8.UI
         [SerializeField, Range(1f, 12f)] private float fadeSpeed = 5f;
         [SerializeField, Range(1, 10)] private int maxQueuedSubtitles = 6;
         [SerializeField, Range(0.1f, 2f)] private float repeatSuppressWindow = 0.4f;
+        [SerializeField, Range(12f, 96f)] private float typewriterCharactersPerSecond = 56f;
         [SerializeField] private TMP_FontAsset font;
 
         private RectTransform _root;
@@ -226,12 +232,23 @@ namespace Hecton8.UI
         private string _lastEnqueuedMessage;
         private SubtitleSource _lastEnqueuedSource;
         private float _lastEnqueueTime = -999f;
+        private int _subtitleCommandQueueHead;
+        private int _subtitleCommandQueueCount;
         private int _bufferedQueueHead;
         private int _bufferedQueueCount;
+        private SubtitleStateDTO _currentSubtitleState;
+        private uint _lastEnqueuedCommandTextHash;
+        private uint _lastEnqueuedCommandSpeakerHash;
+        private int _lastGlobalSubtitleSignalFrame = -1;
         private int _currentBufferedSubtitleLength;
         private int _lastEnqueuedBufferedSubtitleLength = -1;
         private bool _currentUsesBufferedSubtitle;
         private int _lastRenderedSubtitleLength = -1;
+        private bool _tmpTypewriterActive;
+        private bool _subtitleRichTextPolicyInitialized;
+        private bool _subtitleRichTextEnabled;
+        private float _tmpTypewriterElapsed;
+        private int _tmpTypewriterTargetCharacters;
         private bool _timedAudioLogActive;
         private bool _subtitleSwapPending;
         private float _timedAudioLogElapsed;
@@ -310,6 +327,7 @@ namespace Hecton8.UI
             NotificationEvents.Register(this);
             AudioLogEvents.Register(this);
             EnsureBuilt();
+            RegisterToTickManager();
         }
 
         private void OnDisable()
@@ -340,6 +358,8 @@ namespace Hecton8.UI
 
             GlobalRegistry.RegisterSubtitleRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Subtitles, this);
+            if (_serviceRegistered)
+                RegisterToTickManager();
         }
 
         private void TryUnregisterFromGlobalRegistry()
@@ -375,6 +395,103 @@ namespace Hecton8.UI
         }
 
         /// <summary>
+        /// Resolves a Babel hash and displays it through the zero-string subtitle command ring.
+        /// </summary>
+        public bool DisplaySubtitle(uint textHash, float duration)
+        {
+            SubtitleCommandDTO command = new SubtitleCommandDTO
+            {
+                TextHash = textHash,
+                Duration = duration
+            };
+            return DisplaySubtitle(in command, false);
+        }
+
+        /// <summary>
+        /// Resolves a Babel hash with numeric ^0..^3 replacements and displays it without a managed string.
+        /// </summary>
+        public bool DisplaySubtitle(uint textHash, float duration, BabelFormatArgs formatArgs)
+        {
+            if (textHash == 0u || !CharBufferPool.TryAcquireBabel(out CharBufferPool.BabelLease lease))
+                return false;
+
+            try
+            {
+                LocRegistry.TryWriteVisualSpanFromUtf8(
+                    textHash,
+                    lease.Span,
+                    out int length,
+                    formatArgs,
+                    ShouldStripBabelRichTextForCurrentTier());
+                length = lease.CopyToTmpBuffer(length);
+                return length > 0 &&
+                       EnqueueBuffered(lease.TmpBuffer.AsSpan(0, length), duration, SubtitleSource.Generic, false);
+            }
+            finally
+            {
+                CharBufferPool.Release(in lease);
+            }
+        }
+
+        /// <summary>
+        /// Displays a Babel subtitle command without creating a managed string.
+        /// </summary>
+        public bool DisplaySubtitle(in SubtitleCommandDTO command, bool interrupt = false)
+        {
+            if (command.TextHash == 0u)
+                return false;
+
+            EnsureBuilt();
+            SubtitleCommandDTO normalized = command;
+            if (float.IsNaN(normalized.Duration) || float.IsInfinity(normalized.Duration))
+            {
+                LocRegistry.DumpTelemetryForFault(normalized.TextHash);
+                normalized.Duration = defaultDuration;
+            }
+
+            normalized.Duration = Mathf.Max(0.5f, normalized.Duration > 0f ? normalized.Duration : defaultDuration);
+
+            if (_currentSubtitleState.TextHash == normalized.TextHash &&
+                _currentSubtitleState.SpeakerHash == normalized.SpeakerHash &&
+                _timer > 0f)
+            {
+                _timer = normalized.Duration;
+                _currentSubtitleState.TimeRemaining = normalized.Duration;
+                return true;
+            }
+
+            float now = Time.unscaledTime;
+            if (!interrupt &&
+                normalized.TextHash == _lastEnqueuedCommandTextHash &&
+                normalized.SpeakerHash == _lastEnqueuedCommandSpeakerHash &&
+                now - _lastEnqueueTime < repeatSuppressWindow)
+            {
+                return true;
+            }
+
+            _lastEnqueuedCommandTextHash = normalized.TextHash;
+            _lastEnqueuedCommandSpeakerHash = normalized.SpeakerHash;
+            _lastEnqueuedSource = SubtitleSource.Generic;
+            _lastEnqueueTime = now;
+
+            if (interrupt)
+                return ShowSubtitleCommand(in normalized);
+
+            if (_timer <= 0f &&
+                _queue.Count == 0 &&
+                _subtitleCommandQueueCount == 0 &&
+                _bufferedQueueCount == 0 &&
+                !_isShowing &&
+                _currentAlpha <= 0.01f)
+            {
+                return ShowSubtitleCommand(in normalized);
+            }
+
+            EnqueueSubtitleCommand(in normalized);
+            return true;
+        }
+
+        /// <summary>
         /// Resolves a localized hash and displays it through the zero-GC char-buffer path.
         /// </summary>
         /// <param name="keyHash">Stable localization hash.</param>
@@ -383,10 +500,10 @@ namespace Hecton8.UI
         /// <returns>True when a non-empty subtitle was accepted.</returns>
         public bool DisplaySubtitle(int keyHash, ReadOnlySpan<char> fallback, float duration)
         {
-            ReadOnlySpan<char> resolved = LocRegistry.TryGetRawBuffer(keyHash, out char[] buffer, out int length)
-                ? buffer.AsSpan(0, length)
-                : fallback;
-            return EnqueueBuffered(resolved, duration, SubtitleSource.Generic, false);
+            if (keyHash != 0)
+                return DisplaySubtitle(unchecked((uint)keyHash), duration);
+
+            return EnqueueBuffered(fallback, duration, SubtitleSource.Generic, false);
         }
 
         /// <summary>
@@ -413,12 +530,17 @@ namespace Hecton8.UI
             if (_root == null)
                 return;
 
+            DrainGlobalSubtitleSignals();
+
             if (_timedAudioLogActive && _currentSource == SubtitleSource.AudioLog)
                 AdvanceTimedAudioLog(deltaTime);
+            else if (_tmpTypewriterActive)
+                AdvanceTmpTypewriter(deltaTime);
 
             if (_timer > 0f)
             {
                 _timer -= deltaTime;
+                _currentSubtitleState.TimeRemaining = math.max(0f, _timer);
                 _currentAlpha = math.lerp(_currentAlpha, 1f, FastDecayBlend(fadeSpeed, deltaTime));
             }
             else
@@ -432,8 +554,14 @@ namespace Hecton8.UI
                     _currentUsesBufferedSubtitle = false;
                     _currentBufferedSubtitleLength = 0;
                     _currentSource = SubtitleSource.Generic;
+                    _currentSubtitleState = default;
+                    StopTmpTypewriter(0);
 
-                    if (TryDequeueBufferedSubtitle(out BufferedSubtitleRequest bufferedNext))
+                    if (TryDequeueSubtitleCommand(out SubtitleCommandDTO commandNext) &&
+                        ShowSubtitleCommand(in commandNext))
+                    {
+                    }
+                    else if (TryDequeueBufferedSubtitle(out BufferedSubtitleRequest bufferedNext))
                     {
                         ShowImmediate(bufferedNext);
                     }
@@ -446,7 +574,8 @@ namespace Hecton8.UI
                     else
                     {
                         ApplySubtitleBuffer(0);
-                        UnregisterFromTickManager();
+                        if (!_serviceRegistered)
+                            UnregisterFromTickManager();
                     }
                 }
             }
@@ -566,7 +695,11 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_timer <= 0f && _queue.Count == 0 && !_isShowing && _currentAlpha <= 0.01f)
+            if (_timer <= 0f &&
+                _queue.Count == 0 &&
+                _subtitleCommandQueueCount == 0 &&
+                !_isShowing &&
+                _currentAlpha <= 0.01f)
             {
                 ShowImmediate(normalized, resolvedDuration, source);
                 return;
@@ -581,6 +714,99 @@ namespace Hecton8.UI
                 Duration = resolvedDuration,
                 Source = source
             });
+        }
+
+        private void EnqueueSubtitleCommand(in SubtitleCommandDTO command)
+        {
+            int capacity = Mathf.Clamp(maxQueuedSubtitles, 1, _subtitleCommandQueue.Length);
+            if (_subtitleCommandQueueCount >= capacity)
+            {
+                _subtitleCommandQueueHead = (_subtitleCommandQueueHead + 1) & BufferedQueueMask;
+                _subtitleCommandQueueCount--;
+            }
+
+            int slot = (_subtitleCommandQueueHead + _subtitleCommandQueueCount) & BufferedQueueMask;
+            _subtitleCommandQueue[slot] = command;
+            _subtitleCommandQueueCount++;
+        }
+
+        private void DrainGlobalSubtitleSignals()
+        {
+            int frame = Time.frameCount;
+            if (_lastGlobalSubtitleSignalFrame == frame)
+                return;
+
+            _lastGlobalSubtitleSignalFrame = frame;
+            ReadOnlySpan<SubtitleSignal> signals = SignalBus<SubtitleSignal>.GetFrameSnapshot();
+            int count = math.min(signals.Length, MaxQueuedSubtitles);
+            for (int i = 0; i < count; i++)
+            {
+                SubtitleSignal signal = signals[i];
+                if (signal.SubtitleHash == 0u)
+                    continue;
+
+                SubtitleCommandDTO command = new SubtitleCommandDTO
+                {
+                    SpeakerHash = signal.SpeakerHash,
+                    TextHash = signal.SubtitleHash,
+                    Duration = signal.DurationSeconds
+                };
+                bool interrupt = signal.Priority >= SubtitleSignalCriticalPriority ||
+                                 (signal.Flags & SubtitleSignalInterruptFlag) != 0;
+                DisplaySubtitle(in command, interrupt);
+            }
+        }
+
+        private bool TryDequeueSubtitleCommand(out SubtitleCommandDTO command)
+        {
+            if (_subtitleCommandQueueCount <= 0)
+            {
+                command = default;
+                _subtitleCommandQueueHead = 0;
+                return false;
+            }
+
+            command = _subtitleCommandQueue[_subtitleCommandQueueHead];
+            _subtitleCommandQueue[_subtitleCommandQueueHead] = default;
+            _subtitleCommandQueueHead = (_subtitleCommandQueueHead + 1) & BufferedQueueMask;
+            _subtitleCommandQueueCount--;
+            if (_subtitleCommandQueueCount == 0)
+                _subtitleCommandQueueHead = 0;
+
+            return true;
+        }
+
+        private bool ShowSubtitleCommand(in SubtitleCommandDTO command)
+        {
+            if (!CharBufferPool.TryAcquireBabel(out CharBufferPool.BabelLease lease))
+                return false;
+
+            try
+            {
+                LocRegistry.TryWriteVisualSpanFromUtf8(
+                    command.TextHash,
+                    lease.Span,
+                    out int length,
+                    ShouldStripBabelRichTextForCurrentTier());
+                length = lease.CopyToTmpBuffer(length);
+                if (length <= 0)
+                    return false;
+
+                ShowImmediate(lease.TmpBuffer.AsSpan(0, length), command.Duration, SubtitleSource.Generic);
+                _currentSubtitleState = new SubtitleStateDTO
+                {
+                    SpeakerHash = command.SpeakerHash,
+                    TextHash = command.TextHash,
+                    TimeRemaining = command.Duration,
+                    VisibleCharacters = 0,
+                    Flags = (ushort)(ShouldStripBabelRichTextForCurrentTier() ? 1 : 0)
+                };
+                return true;
+            }
+            finally
+            {
+                CharBufferPool.Release(in lease);
+            }
         }
 
         private bool EnqueueBuffered(ReadOnlySpan<char> message, float duration, SubtitleSource source, bool interrupt)
@@ -628,7 +854,12 @@ namespace Hecton8.UI
                     return true;
                 }
 
-                if (_timer <= 0f && _queue.Count == 0 && _bufferedQueueCount == 0 && !_isShowing && _currentAlpha <= 0.01f)
+                if (_timer <= 0f &&
+                    _queue.Count == 0 &&
+                    _subtitleCommandQueueCount == 0 &&
+                    _bufferedQueueCount == 0 &&
+                    !_isShowing &&
+                    _currentAlpha <= 0.01f)
                 {
                     ShowImmediate(normalized.AsSpan(0, normalizedLength), resolvedDuration, source);
                     return true;
@@ -653,17 +884,21 @@ namespace Hecton8.UI
             _timer = duration;
             _currentAlpha = 0f;
             _isShowing = true;
+            _currentSubtitleState = default;
             _lastStressCorruptionBucket = int.MinValue;
 
             if (source == SubtitleSource.AudioLog)
             {
+                StopTmpTypewriter(int.MaxValue);
                 ApplySubtitleBuffer(BuildCurrentAudioLogFrame());
             }
             else
             {
                 string displayMessage = ResolveDisplayMessage(source, message);
                 CopyStringToRenderBuffer(displayMessage);
-                ApplySubtitleBuffer(Mathf.Min(displayMessage != null ? displayMessage.Length : 0, _subtitleRenderBuffer.Length));
+                int renderLength = Mathf.Min(displayMessage != null ? displayMessage.Length : 0, _subtitleRenderBuffer.Length);
+                ApplySubtitleBuffer(renderLength);
+                StartTmpTypewriter(renderLength);
             }
 
             if (_audioCueGroup != null)
@@ -688,10 +923,15 @@ namespace Hecton8.UI
             _timer = duration;
             _currentAlpha = 0f;
             _isShowing = safeLength > 0;
+            _currentSubtitleState = default;
             _lastStressCorruptionBucket = int.MinValue;
 
             int renderLength = CopyBufferedDisplayToRenderBuffer(source);
             ApplySubtitleBuffer(renderLength);
+            if (source == SubtitleSource.AudioLog)
+                StopTmpTypewriter(int.MaxValue);
+            else
+                StartTmpTypewriter(renderLength);
 
             if (_audioCueGroup != null)
                 _audioCueGroup.alpha = 0f;
@@ -813,6 +1053,70 @@ namespace Hecton8.UI
 
             return safeLength;
         }
+
+        private void StartTmpTypewriter(int targetCharacters)
+        {
+            _tmpTypewriterTargetCharacters = Mathf.Clamp(targetCharacters, 0, _subtitleRenderBuffer.Length);
+            _tmpTypewriterElapsed = 0f;
+            _tmpTypewriterActive = _tmpTypewriterTargetCharacters > 0;
+            if (_subtitleText == null)
+                return;
+
+            _subtitleText.maxVisibleCharacters = 0;
+        }
+
+        private void StopTmpTypewriter(int visibleCharacters)
+        {
+            _tmpTypewriterActive = false;
+            _tmpTypewriterElapsed = 0f;
+            _tmpTypewriterTargetCharacters = 0;
+            if (_subtitleText != null)
+                _subtitleText.maxVisibleCharacters = visibleCharacters;
+        }
+
+        private void AdvanceTmpTypewriter(float deltaTime)
+        {
+            if (_subtitleText == null || _tmpTypewriterTargetCharacters <= 0)
+            {
+                _tmpTypewriterActive = false;
+                return;
+            }
+
+            _tmpTypewriterElapsed += math.max(0f, deltaTime);
+            int visible = Mathf.Clamp(
+                Mathf.CeilToInt(_tmpTypewriterElapsed * math.max(1f, typewriterCharactersPerSecond)),
+                0,
+                _tmpTypewriterTargetCharacters);
+            if (_subtitleText.maxVisibleCharacters != visible)
+                _subtitleText.maxVisibleCharacters = visible;
+
+            _currentSubtitleState.VisibleCharacters = (ushort)math.min(visible, ushort.MaxValue);
+            if (visible >= _tmpTypewriterTargetCharacters)
+                _tmpTypewriterActive = false;
+        }
+
+        private static bool ShouldStripBabelRichTextForCurrentTier()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return tier == HectonQualityTier.Unknown ||
+                   tier == HectonQualityTier.Low ||
+                   tier == HectonQualityTier.Mx350;
+        }
+
+        private void RefreshSubtitleTextLodPolicy()
+        {
+            if (_subtitleText == null)
+                return;
+
+            bool enableRichText = !ShouldStripBabelRichTextForCurrentTier();
+            if (_subtitleRichTextPolicyInitialized && _subtitleRichTextEnabled == enableRichText)
+                return;
+
+            _subtitleText.richText = enableRichText;
+            _subtitleRichTextEnabled = enableRichText;
+            _subtitleRichTextPolicyInitialized = true;
+        }
+
         private void RefreshStressCorruptionIfNeeded()
         {
             if (_currentSource == SubtitleSource.AudioLog)
@@ -901,7 +1205,7 @@ namespace Hecton8.UI
                 }
                 else
                 {
-                    NotifyCueChanged(0f, Array.Empty<char>(), 0, 0, 0f);
+                    NotifyCueChanged(0f, EmptyCueBuffer, 0, 0, 0f);
                 }
             }
             else
@@ -1001,7 +1305,7 @@ namespace Hecton8.UI
             _timedAudioLogBodyLength = 0;
             _currentAudioLogHash = 0u;
             _lastStressCorruptionBucket = int.MinValue;
-            NotifyCueChanged(0f, Array.Empty<char>(), 0, 0, 0f);
+            NotifyCueChanged(0f, EmptyCueBuffer, 0, 0, 0f);
         }
 
         private float GetCueDuration(int cueIndex)
@@ -1274,6 +1578,7 @@ namespace Hecton8.UI
                 return;
 
             int safeLength = Mathf.Clamp(_pendingSubtitleSwapLength, 0, _pendingSubtitleSwapBuffer.Length);
+            RefreshSubtitleTextLodPolicy();
             if (_subtitleText != null)
                 _subtitleText.SetCharArray(_pendingSubtitleSwapBuffer, 0, safeLength);
 
@@ -1324,6 +1629,7 @@ namespace Hecton8.UI
             _subtitleText.textWrappingMode = TextWrappingModes.Normal;
             _subtitleText.raycastTarget = false;
             _subtitleText.color = TextColor;
+            RefreshSubtitleTextLodPolicy();
             LocalizedTMPAutoSizer.Configure(
                 _subtitleText,
                 16f,

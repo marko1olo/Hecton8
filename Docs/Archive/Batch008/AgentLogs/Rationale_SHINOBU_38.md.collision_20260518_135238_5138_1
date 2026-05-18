@@ -1,0 +1,221 @@
+# SHINOBU_38 Rationale
+
+Date: 2026-05-18
+Domain: Echelon 9 / QA Watchdog Bot
+Status: IMPLEMENTED; 10KM RUNTIME PROOF COMPLETE; EDITOR EXIT DIRTY OUTSIDE SHINOBU DOMAIN
+
+## Decision Log
+
+### R0 - Disk Memory Initialization
+
+Problem: SHINOBU_38 had no durable status or rationale file, so context compression would erase task state.
+
+Solution: Created `Docs/Tasks/Status_SHINOBU_38.md` and this rationale before code edits. Selected the zero-GC, native memory, crash telemetry, AUP, registry, execution phase, signal lane, and QA evidence mandates.
+
+Rejected Alternatives: Chat-only tracking and reading neighboring prompts were rejected because the batch protocol requires disk-backed state and strict prompt isolation.
+
+Scalability potential: Low = no runtime cost; Middle = avoids repeated work; High = keeps integration evidence tied to files; Ultra = supports long parallel-agent batches.
+
+Hardware Impact: 0 us runtime gain; prevents process churn on i3/MX350 by keeping implementation state recoverable.
+
+### R1 - Agent 36 Input ABI Mirror
+
+Problem: The watchdog must inject virtual input into Agent 36's unmanaged input DTO without pulling `Hecton8.Input.Determinism` into the QA assembly.
+
+Solution: Defined local `Shinobu38InputStateDTO` with the same ABI: `float2 LookDelta` at 0, `float2 MoveAxis` at 8, `uint ButtonMask` at 16, `uint _pad0` at 20, total 24 bytes. The runtime writes this payload into `BufferID.ShinobuInputCurrentDto` through `GlobalDataVault`.
+
+Rejected Alternatives: Unity Input System/XR synthetic events were rejected as managed and nondeterministic. Direct reference to Agent 36 assembly was rejected because it expands compile dependencies and risks rebuild churn.
+
+Scalability potential: Low = same one DTO write; Middle = add more virtual buttons by bitmask; High = batch multiple scripted profiles; Ultra = CI endurance matrix can feed deterministic input journals without gameplay coupling.
+
+Hardware Impact: Estimated 5-30 us/frame saved versus managed input path and no per-frame allocation. On i3/MX350 the write is one 24-byte cache-line-local payload.
+
+### R2 - DataVault Ownership Instead Of Private NativeArrays
+
+Problem: The first implementation still cached private `NativeArray` and `byte[]` fields, violating H-Phi data sovereignty after the polish mandate.
+
+Solution: Replaced persistent storage with `VaultBufferHandle<T>` for state, snapshot, Agent 36 input, waypoints, rebase signal, tuning, mock vault, 300-frame telemetry ring, CSV scratch, waypoint scratch, and dump scratch. Runtime aliases are resolved per use and buffers are locked with `IDataVault.TryLockBuffer`.
+
+Rejected Alternatives: Keeping local H8Memory allocations was rejected because ownership would be hidden from the vault and compaction watchdogs. Adding new public `BufferID` enum entries was rejected because it touches Core and increases compile-wall blast radius; QA-local numeric IDs are used for private lanes.
+
+Scalability potential: Low = vault-owned small buffers only; Middle = bigger route set by count; High = longer telemetry through a vault-resident ring; Ultra = CI farms can collect many runs without per-domain allocator fragmentation.
+
+Hardware Impact: Avoids duplicated persistent allocations and local array lifetime bugs. Estimated 0.1-0.4 ms cold-start churn avoided on weak silicon when compared with repeated local initialization paths.
+
+### R3 - Mock SDF Dear Lie
+
+Problem: A real cave traversal test must avoid terrain, but depending on the actual terrain sampler or NavMesh would create domain coupling and slow manual integration.
+
+Solution: Implemented `Shinobu38MockTerrainSdf` with sine-based cave radius and finite-difference normal. `BotNavigationJob` samples a point 12 m ahead; if distance < 10 m, it biases desired velocity along the SDF normal.
+
+Rejected Alternatives: NavMesh, raycast probes, and direct world terrain sampler calls were rejected because they add runtime dependencies, scene wiring assumptions, and heavier query costs.
+
+Scalability potential: Low = cheap sine SDF for smoke/endurance; Middle = CSV route overrides for authored paths; High = swap SDF coefficients from binary profiles; Ultra = actual terrain sampler can be bridged later through a contract, not a direct assembly reference.
+
+Hardware Impact: Estimated 20-200 us/frame saved versus physics/raycast/nav queries. The fake is deterministic and cheap enough for i3/MX350.
+
+### R4 - AUP Precision Policy
+
+Problem: Directly casting absolute 100 km AUP coordinates to `float3` creates float jitter and false drift failures.
+
+Solution: All float math subtracts the active target AUP first, then casts the local delta to float. Jitter audit reconstructs `target + float(localDelta)` and compares against the original double AUP.
+
+Rejected Alternatives: `(float3)CurrentAUP` was rejected. Floating-origin assumptions were rejected because the bot intentionally tests origin shifts.
+
+Scalability potential: Low/Middle/High/Ultra all use the same double truth plus local float math; visual overkill can consume local deltas without changing gameplay truth.
+
+Hardware Impact: Correctness gain; avoids false error-count growth and keeps math SIMD-friendly.
+
+### R5 - CSV And Dump Without Managed Per-Record Buffers
+
+Problem: A 10-hour endurance bot must log CSV and fault dumps without allocating strings or byte arrays per row.
+
+Solution: `Shinobu38CsvStreamer` encodes rows through a vault-owned `NativeArray<byte>` scratch and `Shinobu38AsciiBuffer`, an unsafe ASCII appender over raw bytes. The main tick enqueues the fixed payload into a vault-backed SPSC ring; a single background writer thread performs FileStream I/O. Binary dumps and result JSON use the same background writer path.
+
+Rejected Alternatives: `StreamWriter`, string interpolation, `StringBuilder`, `byte[]` staging, LINQ parsing, and main-thread FileStream appends were rejected due GC and disk-stall risk.
+
+Scalability potential: Low = low telemetry Hz; Middle = higher CSV Hz; High = longer endurance runs; Ultra = the same fixed ring can be swapped to MMF/WAL sink when that project contract is standardized.
+
+Hardware Impact: Estimated 10-80 us saved per CSV row, all row-level GC removed, and main-thread disk stalls are removed. Background writer reports actual CSV write micros into `Shinobu38FileWriterStateDTO`.
+
+### R6 - Blackbox Ring
+
+Problem: The bot cannot answer "why did it fail" after a stuck route, CSV stall, memory leak, or low FPS fault without prior state retention.
+
+Solution: Added `Shinobu38WatchdogTelemetryEntry` ring with 300 entries and deterministic binary dump to `Docs/AgentLogs/Dump_SHINOBU_38.bin` plus `Docs/AgentLogs/Dump_SHINOBU_38.h8dump`. Entry size is 64 bytes after the L1 pass: the entry stores local AUP millimeters, sector grid, origin shift frame, AUP hash, flags, and explicit padding. Dumps are enqueued to the background writer, not written from the simulation tick.
+
+Rejected Alternatives: Console logs and dynamically sized diagnostic collections were rejected because failure storms can allocate, truncate, or miss the previous frames.
+
+Scalability potential: Low = 19.2 KB ring; Middle/High/Ultra can raise ring count through vault sizing later without changing the DTO.
+
+Hardware Impact: <0.1 us/frame estimated ring write; 64-byte entries keep one telemetry sample per cache line and avoid torn forensic state; fault I/O occurs only after a terminal condition.
+
+### R7 - Editor Facade And CSV Override
+
+Problem: Designers need to tune speed/avoidance/telemetry and author waypoint routes without recompiling C#.
+
+Solution: Added `Shinobu38QaWatchdogCommanderWindow`, a batch runner menu command, live tuning write into the vault DTO, `qa_bot_waypoints.csv` ingestion, and SceneView handles for route/avoidance visualization.
+
+Rejected Alternatives: Hardcoded constants and runtime `OnDrawGizmos` in the headless host were rejected. The editor facade keeps normal runtime/batch paths clean.
+
+Scalability potential: Low = short local smoke route; Middle = longer authored CSV; High = profile matrix via command args; Ultra = CI-generated CSV suites.
+
+Hardware Impact: 0 us in player/batch hot path; waypoint file polling moved to the background writer/IO worker, and cold tick only consumes a published vault version.
+
+### R8 - Compile Wall Classification
+
+Problem: Full Unity batch launch did not reach Play Mode, so a fake "10 km completed" claim would be a lie.
+
+Solution: Ran isolated Mono/C# compile for `Hecton8.QA.Headless` and `Hecton8.QA.Headless.Editor` after the L1 polish; both exited 0. First Unity batch launch stopped on a Core.Database direct dependency to `Hecton8.Core.NativeMemorySentinel`; removed that cyclic call from `H8MacroDatabaseService` and verified `CORE_DATABASE_MONO_CSC_EXIT=0`. Follow-up Unity launch exposed two namespace collisions; disambiguated `System.Environment.NewLine` in `SabineReverbDspTunerWindow` and `UnityEngine.Graphics.RenderMeshPrimitives` in `TerminalOsRuntime`. Final Unity launch stopped before Play Mode on unrelated VFX/Tools/Editor compile walls in `Docs/AgentLogs/Unity_SHINOBU_38_Run_after_namespace_unblocks.log`: `BiolumPulseSyncRuntime.cs(291/308/317)`, `ToolKinematicsRuntime.cs(581/637/641/644)` missing `Hecton8.Core.Contracts` reference, root editor tuner windows missing `Hecton8.Core.Memory`, and `TerminalOsDesignerWindow.cs(3)` missing `Unity.Mathematics`.
+
+Rejected Alternatives: Continuing into unrelated VFX/Tools/root Editor asmdef fixes was rejected after three launch-blocking dependency layers because it crosses SHINOBU_38 domain boundaries and risks multi-agent overwrite. Reporting success without CSV/result artifact was rejected.
+
+Scalability potential: Low/Middle/High/Ultra require a clean project compile before the endurance route can generate real metrics.
+
+Hardware Impact: Avoided rebuild spam by using isolated QA/Core compile first. Full Unity launches were bounded batch attempts; no Play Mode endurance work executed on broken assemblies.
+
+### R9 - L1, Signal, And Worker Polish
+
+Problem: The first polish still had producer/writer cursors sharing managed cache lines, blackbox AUP state compressed into local float state only, and waypoint CSV ingest could touch disk from cold tick.
+
+Solution: Moved writer cursor and writer state into vault DTOs with 128-byte explicit layouts: producer-owned fields and writer-owned fields occupy separate 64-byte lines. Moved waypoint file polling/read into the background writer/IO worker and published only a versioned vault byte scratch for cold tick parsing. Expanded telemetry entry to 64 bytes and changed non-finite AUP sanitization into a fatal flag before zeroing. SHI now uses typed `SignalBus<SystemHealthIndexSignal>` snapshot/push, not a direct `HomeostasisBrain` reference or legacy global publish call.
+
+Rejected Alternatives: Managed fields for SPSC cursors were rejected because false sharing hides in profiler noise. Main-thread `File.Exists`/`FileStream` waypoint ingest was rejected because it violates the Steam Deck MicroSD pressure mandate. Direct origin/health domain calls were rejected because they reintroduce compile-wall coupling.
+
+Scalability potential: Low = no disk check in cold tick and one-cache-line telemetry samples; Middle = safe designer waypoint overrides; High = multi-hour bot runs with stable blackbox; Ultra = CI matrix can fan out runs without touching gameplay assemblies.
+
+Hardware Impact: Estimated 0.02-0.08 us/frame saved by removing false-sharing cursor traffic, plus avoided cold-tick disk stalls that can exceed 1 ms on MicroSD. The 64-byte telemetry entry trades 9.6 KB extra memory for deterministic forensic state.
+
+### R10 - Batch Driver And False Fault Cleanup
+
+Problem: The first real batch execution faulted at 141.667 m because fast-forward simulation delta was also used as real watchdog frame time. The next execution proved that `TelemetryFlagAvoidance` and `VaultFlagMemoryLeakDetected` shared bit 0, so the first SDF avoidance correction looked like a memory leak.
+
+Solution: Split `BotNavigationJob.DeltaTime` from `WallDeltaTime`. Movement and `TestDuration` still use scaled simulation time; FPS/leak windows and CSV `FrameTimeMs` use unscaled wall delta. Expanded `Shinobu38MockVaultDTO` from 32 to 40 bytes and added `FrameFlags`; `Flags` now stores persistent vault bits only, while `FrameFlags` stores avoidance/rebase/fatal telemetry bits for the 300-frame ring.
+
+Rejected Alternatives: Lowering fast-forward or suppressing the leak detector was rejected because it would hide the regression. Reusing the same bitfield was rejected because telemetry and persistent fault state have different lifetimes.
+
+Scalability potential: Low = correct smoke run timing; Middle = long authored path runs without false leak; High = CI fast-forward can run many profiles; Ultra = same wall/sim split supports heavy visual-overkill test scenes without poisoning watchdog time windows.
+
+Hardware Impact: Prevents false CI failures and keeps runtime math unchanged. Added 8 bytes to one QA-local vault DTO; no hot-path allocation.
+
+### R11 - Editor Batch Determinism
+
+Problem: In batch mode the project dispatcher did not reliably tick SHINOBU after scene transitions, and one-editor-update-per-step could stall behind project bootstrap/update behavior.
+
+Solution: Added a batch-only manual driver in `Shinobu38QaWatchdogBatchRunner`: it runs up to 128 deterministic `FastTick/LateFrameTick` pairs per editor update. `LateFrameTick` completes pending jobs in batch mode instead of waiting for `IsCompleted`, which is acceptable because this path is headless CI only and the job is a bounded QA math kernel.
+
+Rejected Alternatives: Depending on authored scene dispatcher order was rejected because the purpose of the watchdog is to test blind. A new public runtime API was rejected after isolated editor compile proved it creates a transient runtime/editor assembly visibility wall.
+
+Scalability potential: Low = deterministic local run; Middle/High = stable CI runs under scene loading; Ultra = larger profile matrices can finish without waiting on visual frame cadence.
+
+Hardware Impact: Converts the 10 km fast-forward proof into roughly 72 deterministic steps; no player-build overhead because the loop is editor-only.
+
+### R12 - File Queue And CSV-Slow Handling
+
+Problem: Burst-driving the simulation can enqueue more CSV rows than the original 16-slot SPSC queue if the background writer does not get scheduled immediately. Repeated CSV-slow dumps could also crowd out the result JSON.
+
+Solution: Increased the fixed SPSC command queue to 128 slots and throttled `DumpTelemetry()` for CSV-slow to the first persistent `VaultFlagCsvSlow` transition. The queue is still vault-owned and fixed-size; no dynamic collections were added.
+
+Rejected Alternatives: Writing result JSON synchronously from the main tick was rejected because the hot path must stay free of main-thread I/O. Ignoring CSV slow was rejected because disk pressure is part of the mandate.
+
+Scalability potential: Low = one terminal dump; Middle = normal telemetry cadence; High = fast-forward CI profile; Ultra = queue can absorb short writer stalls without losing the result artifact.
+
+Hardware Impact: Uses a 2 MB fixed payload ring in QA mode only. Removes queue overflow risk during accelerated batch runs.
+
+### R13 - Final Runtime Evidence And Exit Limitation
+
+Problem: After the bot completed, Unity Editor exit still returned a bad process code. `EditorApplication.Exit` goes through external project teardown and crashes in `GameBootstrapper.OnDestroy -> AcousticZoneEvents.ResetStaticState -> GlobalSignals.InitializeAllQueues -> GlobalDataVault.TryEnsureVaultBuffer<SignalTelemetryFrame> -> UnsafeUtility.MemClear`. A later Win32 `ExitProcess` experiment was too aggressive and left a terminating Unity process holding `Temp/UnityLockfile`.
+
+Solution: Reverted the unsafe `ExitProcess` path. Kept command-line batch detection so SHINOBU's manual driver does not depend on `Application.isBatchMode`. Recorded the exit issue as external teardown/lock, not as a SHINOBU runtime failure.
+
+Rejected Alternatives: Rewriting `GameBootstrapper`/`GlobalSignals` teardown was rejected as outside SHINOBU_38's domain. Leaving `ExitProcess` was rejected because it created an OS-level lock that blocked later Unity starts in the same session.
+
+Scalability potential: Low/Middle/High/Ultra runtime proof is valid. CI process exit remains an integration task for the bootstrap/global-signal owner.
+
+Hardware Impact: Avoids further destructive editor process experiments. Completed run evidence: `status=0`, `distanceMeters=10058.334`, `durationSeconds=118.333`, `errors=0`, `CSV_LINES=72`.
+
+## Struct Layout
+
+- `WatchdogStateDTO` size 40: `double3 CurrentTargetAUP` offset 0 size 24; `float DistanceTraveled` offset 24 size 4; `uint ErrorCount` offset 28 size 4; `float TestDuration` offset 32 size 4; `uint _pad0` offset 36 size 4.
+- `TelemetrySnapshotDTO` size 16: `FrameTimeMs` 0; `GcAllocBytes` 4; `VramUsed` 8; `AupJitterError` 12.
+- `Shinobu38InputStateDTO` size 24: `float2 LookDelta` offset 0 size 8; `float2 MoveAxis` offset 8 size 8; `uint ButtonMask` offset 16 size 4; `uint _pad0` offset 20 size 4.
+- `Shinobu38WatchdogTelemetryEntry` size 64: `Frame` 0; `TargetDistanceRemaining` 4; `AvoidanceCorrections` 8; `CsvWriteTimeMs` 12; `int3 LocalAupMillimeters` 16; `int3 SectorGrid` 28; `OriginShiftFrame` 40; `AupHash` 44; `Flags` 48; `_pad0/_pad1/_pad2` 52/56/60.
+- `Shinobu38FileWriteCommand` size 32: `long Sequence` 0; `int PayloadOffset` 8; `int PayloadLength` 12; `uint Target` 16; `uint Flags` 20; `uint _pad0` 24; `uint _pad1` 28.
+- `Shinobu38TuningDTO` size 32: `float SwimSpeedMetersPerSecond` 0; `float AvoidanceWeight` 4; `float TelemetryHz` 8; `float MaxDurationSeconds` 12; `uint Tier` 16; `_pad0/_pad1/_pad2` 20/24/28.
+- `Shinobu38MockVaultDTO` size 40: `double3 CurrentAUP` offset 0 size 24; `int CurrentWaypointIndex` offset 24 size 4; `uint Flags` offset 28 size 4; `uint FrameFlags` offset 32 size 4; `_pad0` offset 36 size 4.
+- `Shinobu38FileWriterStateDTO` size 128: writer cache line has `long LastWriteTicks` 0, `int LastCsvWriteMicros` 8, `int LastAnyWriteMicros` 12, `uint CompletedWrites` 16, `uint WriterFlags` 20, pads 24-60; producer cache line has `uint DroppedWrites` 64, `uint ProducerFlags` 68, pads 72-124.
+- `Shinobu38FileWriterCursorDTO` size 128: producer cache line has `int Running` 0, `int Head` 4, pads 8-60; writer cache line has `int Tail` 64, pads 68-124.
+- `Shinobu38WaypointIngestStateDTO` size 128: producer cache line has `long LastSeenTicks` 0, `int PendingLength` 8, `int PublishedVersion` 12, `uint ProducerFlags` 16, pads 20-60; consumer cache line has `int AppliedVersion` 64, `int AppliedCount` 68, `uint ConsumerFlags` 72, pads 76-124.
+
+## SELF_AUDIT
+
+<SELF_AUDIT>
+Task 01 [PASS] Archive scan executed; no usable legacy waypoint binary; emergency route active.
+Task 02 [PASS] No player-prefab autoplayer; QA-only centralized bootstrap host.
+Task 03 [PASS] Raw DTO fields and `UnsafeUtility.AsRef`; no CS1612-prone properties.
+Task 04 [PASS] ARM64 sizes: 40/16/24/64/128; no SHINOBU_38 runtime `Pack=1`.
+Task 05 [PASS] Mock rebase signal and target offset path implemented.
+Task 06 [PASS] Env/arg/temp flag activation gate; normal builds abort.
+Task 07 [PASS] Agent 36 ABI mirror writes `BufferID.ShinobuInputCurrentDto`.
+Task 08 [PASS] SDF cave avoidance with local AUP math.
+Task 09 [PASS] ProfilerRecorder memory sampling and leak slope fault.
+Task 10 [PASS] AUP jitter audit uses double truth and local float delta.
+Task 11 [PASS] CSV writer uses vault `NativeArray<byte>` scratch and background SPSC file writer; no string rows or main-thread disk append.
+Task 12 [PASS] SHI stress signal published through typed `SignalBus<SystemHealthIndexSignal>`.
+Task 13 [PASS] Hardware flags and tier DTO implemented.
+Task 14 [PASS] Sprint and primary-fire automation written as button bits.
+Task 15 [PASS] Fault dump enqueues 300-frame binary blackbox to `.bin` and `.h8dump`.
+Task 16 [PASS] Init resolves DataVault handles; no local persistent NativeArray ownership.
+Task 17 [PASS] 300-frame telemetry recorder active.
+Task 18 [PASS] Editor commander/tuner and batch menu implemented.
+Task 19 [PASS] CSV waypoint override parser uses vault byte scratch.
+Task 20 [PASS] SceneView path/normal visualizer implemented; runtime headless path remains clean.
+ARM64 CHECK: Primary DTO `Shinobu38InputStateDTO` is 24 bytes and 8-byte multiple; file writer state/cursor and waypoint ingest DTOs are 128 bytes with 64-byte producer/writer separation; no packed SHINOBU_38 runtime struct.
+ZERO-GC CHECK: `FastTick` schedules a job using vault aliases; no LINQ, closures, boxing, per-frame strings, managed byte arrays, or main-thread FileStream append in SHINOBU_38 runtime hot path.
+AUP CHECK: Absolute AUP is kept in `double3`; float math uses target-relative deltas.
+DEAR LIE CHECK: Cave avoidance is a sine SDF + finite-difference normal, not NavMesh or physics.
+DEPENDENCY CHECK: Cross-domain communication uses `GlobalDataVault`, `BufferID.ShinobuInputCurrentDto`, typed `SignalBus<SystemHealthIndexSignal>`, and command args; no direct Agent 36, Homeostasis, FloatingOrigin, or gameplay assembly reference.
+H-PHI CHECK: Persistent arrays are vault-owned handles; SHINOBU_38 only resolves aliases.
+BLACKBOX CHECK: 300-frame ring dumps to `Docs/AgentLogs/Dump_SHINOBU_38.bin` and `Docs/AgentLogs/Dump_SHINOBU_38.h8dump` on fault/slow CSV through the background writer.
+COMPILE GUARD: Final isolated QA assemblies compile; Unity Play Mode reached SHINOBU and completed 10058.334 m. Remaining failure is Editor process teardown/lock outside SHINOBU runtime.
+</SELF_AUDIT>

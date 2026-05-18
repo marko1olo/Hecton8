@@ -1,6 +1,14 @@
 # COMPUTE BUFFER LIFECYCLE AUDIT â€” HECTON-8 First-Party Code
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 
 **Date:** 2026-04-29
@@ -14,7 +22,7 @@ Status: PENDING VERIFICATION
 
 All **first-party** `GraphicsBuffer` / `ComputeBuffer` owners were audited for `.Release()` / `.Dispose()` calls in `OnDisable`, `OnDestroy`, or equivalent teardown paths.
 
-**Verdict:** Zero first-party Compute/GraphicsBuffer leaks detected. Every owning class implements a teardown path that releases its buffers. NativeArray fields are likewise disposed.
+**Verdict:** Static first-party buffer ownership scan found no obvious release-path gaps in that pass. Runtime leak proof is absent.
 
 > **WARNING:** This audit covers first-party code ONLY. Third-party Crest buffers (`WaveBuffers`, `FFTCompute` generators, `Query` compute buffers, `ShapeGerstner` cascade buffers) are EXCLUDED per the **3RD-PARTY INTEGRITY** mandate. Crest internally calls `.Release()` / `.Dispose()` in `OnDisable` / `OnDestroy` / `CleanUp()`.
 
@@ -60,7 +68,7 @@ All **first-party** `GraphicsBuffer` / `ComputeBuffer` owners were audited for `
 
 ## NATIVEARRAY DISPOSAL (ASSOCIATED AUDIT)
 
-Several classes own `NativeArray<T>` (Persistent allocator). All verified:
+Several classes own `NativeArray<T>` (Persistent allocator). These were statically scanned in that pass; this is not current runtime or profiler proof:
 
 | Owner | NativeArray Fields | Disposed In | Verdict |
 |-------|-------------------|-------------|---------|

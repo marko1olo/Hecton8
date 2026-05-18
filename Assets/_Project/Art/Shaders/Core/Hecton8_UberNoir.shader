@@ -8,6 +8,9 @@ Shader "Hecton8/Rendering/UberNoir"
         _RustDetailMap("Rust Height Normal", 2D) = "gray" {}
         _BlueNoiseTex("Blue Noise", 2D) = "gray" {}
         _HectonCausticsMap("Caustics Atlas", 2D) = "gray" {}
+        [NoScaleOffset] _H8UberNoirAlbedoArray("UberNoir Albedo Array", 2DArray) = "" {}
+        [NoScaleOffset] _H8UberNoirNormalArray("UberNoir Normal Array", 2DArray) = "" {}
+        [NoScaleOffset] _H8UberNoirMaskArray("UberNoir Mask Array", 2DArray) = "" {}
 
         [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [HDR] _EmissionColor("Emission Color", Color) = (0, 0, 0, 0)

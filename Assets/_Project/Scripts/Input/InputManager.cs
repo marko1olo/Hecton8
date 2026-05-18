@@ -592,175 +592,21 @@ namespace Hecton8.Input
         
         private void SubscribeToPlayerActions()
         {
-            if (_playerActionsSubscribed)
-                return;
-
-            _moveAction.performed += OnMovePerformed;
-            _moveAction.canceled += OnMoveCanceled;
-            
-            _lookAction.performed += OnLookPerformed;
-            _lookAction.canceled += OnLookCanceled;
-            
-            _jumpAction.performed += OnJumpPerformed;
-            _jumpAction.canceled += OnJumpCanceledPerformed;
-            
-            _sprintAction.performed += OnSprintPerformed;
-            _sprintAction.canceled += OnSprintCanceledPerformed;
-            
-            _interactAction.performed += OnInteractPerformed;
-            _flashlightAction.performed += OnFlashlightPerformed;
-            _pdaAction.performed += OnPDAPerformed;
-            if (_pauseAction != null)
-                _pauseAction.performed += OnPausePerformed;
-            _inventoryAction.performed += OnInventoryPerformed;
-            
-            _toolSlot1Action.performed += OnToolSlot1Performed;
-            _toolSlot2Action.performed += OnToolSlot2Performed;
-            _toolSlot3Action.performed += OnToolSlot3Performed;
-            _toolSlot4Action.performed += OnToolSlot4Performed;
-            
-            _primaryActionAction.performed += OnPrimaryActionPerformed;
-            _primaryActionAction.canceled += OnPrimaryActionCanceledPerformed;
-            
-            _secondaryActionAction.performed += OnSecondaryActionPerformed;
-            _secondaryActionAction.canceled += OnSecondaryActionCanceledPerformed;
-            
-            _verticalMovementAction.performed += OnVerticalMovementPerformed;
-            _verticalMovementAction.canceled += OnVerticalMovementCanceled;
-
-            _playerActionsSubscribed = true;
+            _playerActionsSubscribed = false;
         }
         
         private void SubscribeToUIActions()
         {
-            if (_uiActionsSubscribed)
-                return;
-
-            _navigateAction.performed += OnNavigatePerformed;
-            _navigateAction.canceled += OnNavigateCanceled;
-            _submitAction.performed += OnSubmitPerformed;
-            _cancelAction.performed += OnCancelPerformed;
-            _tabNextAction.performed += OnTabNextPerformed;
-            _tabPreviousAction.performed += OnTabPreviousPerformed;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_debugToggleBlackBoxDashboardAction != null)
-                _debugToggleBlackBoxDashboardAction.performed += OnDebugToggleBlackBoxDashboardPerformed;
-
-            if (_debugToggleEngineHealthOverlayAction != null)
-                _debugToggleEngineHealthOverlayAction.performed += OnDebugToggleEngineHealthOverlayPerformed;
-#endif
-
-            _uiActionsSubscribed = true;
+            _uiActionsSubscribed = false;
         }
 
         private void UnsubscribeFromPlayerActions()
         {
-            if (!_playerActionsSubscribed)
-                return;
-
-            if (_moveAction != null)
-            {
-                _moveAction.performed -= OnMovePerformed;
-                _moveAction.canceled -= OnMoveCanceled;
-            }
-
-            if (_lookAction != null)
-            {
-                _lookAction.performed -= OnLookPerformed;
-                _lookAction.canceled -= OnLookCanceled;
-            }
-
-            if (_jumpAction != null)
-            {
-                _jumpAction.performed -= OnJumpPerformed;
-                _jumpAction.canceled -= OnJumpCanceledPerformed;
-            }
-
-            if (_sprintAction != null)
-            {
-                _sprintAction.performed -= OnSprintPerformed;
-                _sprintAction.canceled -= OnSprintCanceledPerformed;
-            }
-
-            if (_interactAction != null)
-                _interactAction.performed -= OnInteractPerformed;
-
-            if (_flashlightAction != null)
-                _flashlightAction.performed -= OnFlashlightPerformed;
-
-            if (_pdaAction != null)
-                _pdaAction.performed -= OnPDAPerformed;
-
-            if (_pauseAction != null)
-                _pauseAction.performed -= OnPausePerformed;
-
-            if (_inventoryAction != null)
-                _inventoryAction.performed -= OnInventoryPerformed;
-
-            if (_toolSlot1Action != null)
-                _toolSlot1Action.performed -= OnToolSlot1Performed;
-
-            if (_toolSlot2Action != null)
-                _toolSlot2Action.performed -= OnToolSlot2Performed;
-
-            if (_toolSlot3Action != null)
-                _toolSlot3Action.performed -= OnToolSlot3Performed;
-
-            if (_toolSlot4Action != null)
-                _toolSlot4Action.performed -= OnToolSlot4Performed;
-
-            if (_primaryActionAction != null)
-            {
-                _primaryActionAction.performed -= OnPrimaryActionPerformed;
-                _primaryActionAction.canceled -= OnPrimaryActionCanceledPerformed;
-            }
-
-            if (_secondaryActionAction != null)
-            {
-                _secondaryActionAction.performed -= OnSecondaryActionPerformed;
-                _secondaryActionAction.canceled -= OnSecondaryActionCanceledPerformed;
-            }
-
-            if (_verticalMovementAction != null)
-            {
-                _verticalMovementAction.performed -= OnVerticalMovementPerformed;
-                _verticalMovementAction.canceled -= OnVerticalMovementCanceled;
-            }
-
             _playerActionsSubscribed = false;
         }
 
         private void UnsubscribeFromUIActions()
         {
-            if (!_uiActionsSubscribed)
-                return;
-
-            if (_navigateAction != null)
-            {
-                _navigateAction.performed -= OnNavigatePerformed;
-                _navigateAction.canceled -= OnNavigateCanceled;
-            }
-
-            if (_submitAction != null)
-                _submitAction.performed -= OnSubmitPerformed;
-
-            if (_cancelAction != null)
-                _cancelAction.performed -= OnCancelPerformed;
-
-            if (_tabNextAction != null)
-                _tabNextAction.performed -= OnTabNextPerformed;
-
-            if (_tabPreviousAction != null)
-                _tabPreviousAction.performed -= OnTabPreviousPerformed;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_debugToggleBlackBoxDashboardAction != null)
-                _debugToggleBlackBoxDashboardAction.performed -= OnDebugToggleBlackBoxDashboardPerformed;
-
-            if (_debugToggleEngineHealthOverlayAction != null)
-                _debugToggleEngineHealthOverlayAction.performed -= OnDebugToggleEngineHealthOverlayPerformed;
-#endif
-
             _uiActionsSubscribed = false;
         }
 

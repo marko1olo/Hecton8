@@ -75,6 +75,7 @@ using UnityEngine;
 using UnityEngine.Audio;
 using CoreAudioEvent = Hecton8.Core.AudioEvent;
 using AcousticAup = Hecton8.Core.Contracts.AcousticAup;
+using VirtualVoiceSdfSampler = Hecton8.Audio.Virtualization.MockSDFSampler;
 
 namespace Hecton8.Audio
 {
@@ -485,13 +486,18 @@ namespace Hecton8.Audio
         private const float PoolFullEditorLogIntervalSeconds = 5f;
         private const float NullClipEditorLogIntervalSeconds = 5f;
         private const int MaxQueuedAudioEvents = 32;
-        private const int MaxVirtualVoiceCapacity = 8192;
-        private const int MaxVirtualPhysicalVoices = 16;
-        private const int LowTierVirtualPhysicalVoices = 8;
+        private const int MaxVirtualVoiceCapacity = VirtualVoiceUtility.MaxVirtualVoiceCount;
+        private const int MaxVirtualPhysicalVoices = VirtualVoiceUtility.MaxPhysicalVoiceCount;
+        private const int LowTierVirtualPhysicalVoices = VirtualVoiceUtility.LowTierPhysicalVoiceCount;
         private const int VirtualVoiceTierHysteresisSlowTicks = 25;
         private const int VirtualVoiceBlackBoxFrameCount = 300;
         private const float VirtualVoiceStealFadeSeconds = 0.01f;
-        private const string VirtualVoiceDumpRelativePath = "Docs/AgentLogs/Dump_ACOUSTIC_OCCLUSION_CULLING.bin";
+        private const string VirtualVoiceDumpRelativePath = "Docs/AgentLogs/Dump_ACOUSTIC_DSP.bin";
+        private const BufferID SpatialAudioVirtualVoiceTuningBufferId = (BufferID)70015;
+        private const BufferID SpatialAudioVirtualVoiceWritePoolBufferId = (BufferID)70016;
+        private const BufferID SpatialAudioVirtualVoiceSortPoolBufferId = (BufferID)70017;
+        private const BufferID SpatialAudioVirtualVoiceDtoPoolBufferId = (BufferID)70018;
+        private const BufferID SpatialAudioVirtualVoiceSortKeyPoolBufferId = (BufferID)70019;
         private const int AcousticPortalMaxNodes = AcousticPortalConstants.MaxPathNodes;
         private const int AcousticPortalMaxEdges = AcousticPortalConstants.MaxPathEdges;
         private const int AcousticPortalCacheCapacity = 16;
@@ -513,6 +519,11 @@ namespace Hecton8.Audio
         private const int SabineReverbDecayLutMaxIndex = SabineReverbDecayLutSize - 1;
         private const float SabineReverbDepthReferenceMeters = 6000f;
         private const float SabineReverbModuleVolumeReferenceCubicMeters = 6000f;
+        private const int AcousticLutVolumeCount = 256;
+        private const int AcousticLutAbsorptionCount = 256;
+        private const int AcousticLutRecordBytes = 8;
+        private const int AcousticLutExpectedBytes = AcousticLutVolumeCount * AcousticLutAbsorptionCount * AcousticLutRecordBytes;
+        private const string AcousticLutRelativePath = "Data/Audio/Acoustic_LUT.bin";
 #if DEVELOPMENT_BUILD
         private const int AudioRamDebugTextCapacity = 48;
         private const int AudioRamDebugCanvasSortingOrder = 32760;
@@ -534,7 +545,7 @@ namespace Hecton8.Audio
             InventoryRunawayExplosion = 2
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         internal struct ActiveEmitterSample
         {
             public AbsoluteUniversePosition PositionAup;
@@ -542,14 +553,14 @@ namespace Hecton8.Audio
             public float Amplitude;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         internal struct ActiveImpactEmitterSample
         {
             public AbsoluteUniversePosition PositionAup;
             public float Amplitude;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         internal struct BinauralEmitterTelemetry
         {
             public Vector3 Position;
@@ -564,10 +575,9 @@ namespace Hecton8.Audio
             public int Valid;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 96)]
+        [StructLayout(LayoutKind.Sequential, Size = 96)]
         private struct DelayedAudioEvent
         {
-            public DelayedAudioEventKind Kind;
             public AbsoluteUniversePosition Aup;
             public float EventTimeSeconds;
             public float DelaySeconds;
@@ -579,24 +589,29 @@ namespace Hecton8.Audio
             public float TraumaRangeMeters;
             public float TraumaImpulse;
             public float TraumaWeight;
+            public DelayedAudioEventKind Kind;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 200)]
         private struct AcousticPortalCacheEntry
         {
-            public int Key;
-            public int Frame;
-            public byte Valid;
             public AcousticAup SourceAup;
             public AcousticAup ListenerAup;
             public AcousticPathResult Result;
+            public int Key;
+            public int Frame;
+            public byte Valid;
+            private byte _reserved0;
+            private ushort _reserved1;
+            private uint _reserved2;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
+        [StructLayout(LayoutKind.Sequential, Size = 80)]
         private struct ImpactEmitterSample
         {
+            public AbsoluteUniversePosition PositionAup;
             public Vector3 Position;
             public float Amplitude;
-            public AbsoluteUniversePosition PositionAup;
             public float SpawnAt;
             public float ExpireAt;
         }
@@ -821,6 +836,9 @@ namespace Hecton8.Audio
         private float _listenerSabineRt60Seconds;
         private float _listenerSabineVolumeCubicMeters;
         private float _listenerSabineSurfaceAreaSquareMeters;
+        private float _acousticLutFallbackRt60Seconds = VirtualVoiceUtility.SabineMinimumRt60Seconds;
+        private float _acousticLutFallbackDamping01 = 1f;
+        private bool _acousticLutFallbackLoaded;
 #if DEVELOPMENT_BUILD
         private TMPro.TextMeshProUGUI _audioRamDebugLabel;
         private char[] _audioRamDebugTextBuffer;
@@ -872,23 +890,41 @@ namespace Hecton8.Audio
         private int _audioEventQueueCount;
         private int _audioEventQueueDroppedCount;
         private NativeQueue<CoreAudioEvent> _audioEventQueue;
-        private NativeList<VirtualVoice> _virtualVoiceWriteQueue;
-        private NativeList<VirtualVoice> _virtualVoiceSortQueue;
+        private NativeParallelHashMap<uint, int> _audioClipHashToTableIndex;
+        private VaultBufferHandle<VirtualVoice> _virtualVoiceWritePoolHandle;
+        private VaultBufferHandle<VirtualVoice> _virtualVoiceSortPoolHandle;
+        private VaultBufferHandle<VirtualVoiceDTO> _virtualVoiceDtoPoolHandle;
+        private VaultBufferHandle<VirtualVoiceSortKey> _virtualVoiceSortKeyPoolHandle;
         private VaultBufferHandle<VirtualVoiceSelection> _virtualVoiceSelectionsHandle;
         private VaultBufferHandle<VirtualVoiceStatistics> _virtualVoiceStatisticsHandle;
         private VaultBufferHandle<VirtualVoiceTelemetryEntry> _virtualVoiceBlackBoxHandle;
+        private VaultBufferHandle<VirtualVoiceTuningSnapshot> _virtualVoiceTuningHandle;
+        private NativeArray<VirtualVoice> _virtualVoiceWritePool; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<VirtualVoice> _virtualVoiceSortPool; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<VirtualVoiceDTO> _virtualVoiceDtoPool; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<VirtualVoiceSortKey> _virtualVoiceSortKeyPool; // Vault alias; GlobalDataVault owns backing memory.
         private NativeArray<VirtualVoiceSelection> _virtualVoiceSelections; // Vault alias; GlobalDataVault owns backing memory.
         private NativeArray<VirtualVoiceStatistics> _virtualVoiceStatistics; // Vault alias; GlobalDataVault owns backing memory.
         private NativeArray<VirtualVoiceTelemetryEntry> _virtualVoiceBlackBox; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<VirtualVoiceTuningSnapshot> _virtualVoiceTuningVault; // Vault alias; GlobalDataVault owns backing memory.
         private JobHandle _virtualVoiceSortHandle;
         private VirtualVoiceStatistics _lastVirtualVoiceStatistics;
+        private VirtualVoiceTuningSnapshot _virtualVoiceTuning = VirtualVoiceTuningSnapshot.Default;
+        private int _virtualVoiceWriteCount;
+        private int _virtualVoiceSortCount;
+        private int _virtualVoiceDtoCount;
         private AcousticAup _virtualListenerAup;
+        private Vector3 _virtualPreviousListenerAbsolutePosition;
+        private float3 _virtualListenerVelocityMetersPerSecond;
+        private VirtualVoiceSdfSampler _virtualVoiceSdfSampler;
+        private float _virtualVoiceSortStartRealtimeSeconds;
         private int _virtualVoiceBlackBoxCursor;
         private int _virtualVoiceDroppedCount;
         private int _virtualPhysicalVoiceLimit = MaxVirtualPhysicalVoices;
         private int _virtualVoiceTierPendingSlowTicks;
         private bool _virtualVoiceSortScheduled;
         private bool _hasVirtualListenerAup;
+        private bool _hasVirtualPreviousListenerAbsolutePosition;
         private bool _virtualVoiceBlackBoxDumped;
         private bool _virtualVoiceLowTierTarget;
         private bool _virtualVoiceLowTierApplied;
@@ -1091,16 +1127,18 @@ namespace Hecton8.Audio
         /// <inheritdoc />
         public bool IsVirtualizationReady =>
             _runtimeResourcesInitialized &&
-            _virtualVoiceWriteQueue.IsCreated &&
-            _virtualVoiceSortQueue.IsCreated &&
+            _virtualVoiceWritePool.IsCreated &&
+            _virtualVoiceSortPool.IsCreated &&
+            _virtualVoiceDtoPool.IsCreated &&
+            _virtualVoiceSortKeyPool.IsCreated &&
             _virtualVoiceSelections.IsCreated &&
             _virtualVoiceStatistics.IsCreated;
 
         /// <inheritdoc />
-        public int PhysicalVoiceLimit => _virtualPhysicalVoiceLimit;
+        public int PhysicalVoiceLimit => math.min(_virtualPhysicalVoiceLimit, math.clamp(_virtualVoiceTuning.MaxHydratedVoices, 1, MaxVirtualPhysicalVoices));
 
         /// <inheritdoc />
-        public int VirtualVoiceCount => _virtualVoiceWriteQueue.IsCreated ? _virtualVoiceWriteQueue.Length : 0;
+        public int VirtualVoiceCount => _virtualVoiceWritePool.IsCreated ? _virtualVoiceWriteCount : 0;
 
         /// <inheritdoc />
         public int ActivePhysicalVoiceCount => _lastVirtualVoiceStatistics.ActivePhysicalVoices;
@@ -1211,6 +1249,7 @@ namespace Hecton8.Audio
             InitializePool();
             InitializePool2D();
             InitializeTelemetryCaches();
+            TryLoadAcousticLutFallbackCold();
             PrepareGlobalWindHowlSource();
 #if DEVELOPMENT_BUILD
             EnsureAudioRamDebugOverlay();
@@ -1406,10 +1445,18 @@ namespace Hecton8.Audio
         /// <param name="deltaTime">Dispatcher delta time.</param>
         public void FastTick(float deltaTime)
         {
-            CompleteVirtualVoiceSort();
+            if (!TryCompleteVirtualVoiceSort(false))
+            {
+                _virtualVoiceDroppedCount += math.clamp(_virtualVoiceWriteCount, 0, MaxVirtualVoiceCapacity);
+                _virtualVoiceWriteCount = 0;
+                _virtualVoiceDtoCount = 0;
+                return;
+            }
 
-            if (!_virtualVoiceWriteQueue.IsCreated ||
-                !_virtualVoiceSortQueue.IsCreated ||
+            if (!_virtualVoiceWritePool.IsCreated ||
+                !_virtualVoiceSortPool.IsCreated ||
+                !_virtualVoiceDtoPool.IsCreated ||
+                !_virtualVoiceSortKeyPool.IsCreated ||
                 !_virtualVoiceSelections.IsCreated ||
                 !_virtualVoiceStatistics.IsCreated)
             {
@@ -1419,12 +1466,15 @@ namespace Hecton8.Audio
             if (!TryResolveListenerFrame(
                     out _,
                     out _,
-                    out _,
+                    out Vector3 listenerAbsolutePosition,
                     out AbsoluteUniversePosition listenerAup))
             {
                 _hasVirtualListenerAup = false;
-                _virtualVoiceWriteQueue.Clear();
-                _virtualVoiceSortQueue.Clear();
+                _hasVirtualPreviousListenerAbsolutePosition = false;
+                _virtualListenerVelocityMetersPerSecond = float3.zero;
+                _virtualVoiceWriteCount = 0;
+                _virtualVoiceSortCount = 0;
+                _virtualVoiceDtoCount = 0;
                 ResetVirtualVoiceSelections();
                 _lastVirtualVoiceStatistics = default;
                 return;
@@ -1432,25 +1482,52 @@ namespace Hecton8.Audio
 
             AcousticAup acousticListener = ToAcousticAup(in listenerAup);
             SetVirtualListener(in acousticListener);
+            _virtualListenerVelocityMetersPerSecond = ResolveVirtualListenerVelocity(listenerAbsolutePosition, deltaTime);
+            _virtualVoiceSdfSampler = ResolveVirtualVoiceSdfSampler();
+            if (_virtualVoiceTuningVault.IsCreated && _virtualVoiceTuningVault.Length > 0)
+            {
+                VirtualVoiceTuningSnapshot tuning = _virtualVoiceTuningVault[0];
+                _virtualVoiceTuning = VirtualVoiceTuningSnapshot.Sanitize(in tuning);
+            }
 
-            NativeList<VirtualVoice> previousSortQueue = _virtualVoiceSortQueue;
-            _virtualVoiceSortQueue = _virtualVoiceWriteQueue;
-            _virtualVoiceWriteQueue = previousSortQueue;
-            _virtualVoiceWriteQueue.Clear();
+            NativeArray<VirtualVoice> previousSortPool = _virtualVoiceSortPool;
+            _virtualVoiceSortPool = _virtualVoiceWritePool;
+            _virtualVoiceWritePool = previousSortPool;
+            VaultBufferHandle<VirtualVoice> previousSortHandle = _virtualVoiceSortPoolHandle;
+            _virtualVoiceSortPoolHandle = _virtualVoiceWritePoolHandle;
+            _virtualVoiceWritePoolHandle = previousSortHandle;
+            _virtualVoiceSortCount = math.clamp(_virtualVoiceWriteCount, 0, MaxVirtualVoiceCapacity);
+            _virtualVoiceDtoCount = _virtualVoiceSortCount;
+            _virtualVoiceWriteCount = 0;
+            int tunedPhysicalLimit = math.min(
+                _virtualPhysicalVoiceLimit,
+                math.clamp(_virtualVoiceTuning.MaxHydratedVoices, 1, MaxVirtualPhysicalVoices));
 
             var sortJob = new VirtualVoiceSortJob
             {
-                Voices = _virtualVoiceSortQueue,
+                Voices = _virtualVoiceSortPool,
+                SortKeys = _virtualVoiceSortKeyPool,
                 Selections = _virtualVoiceSelections,
                 Statistics = _virtualVoiceStatistics,
                 ListenerAup = _virtualListenerAup,
-                PhysicalVoiceLimit = _virtualPhysicalVoiceLimit,
+                ListenerVelocityMetersPerSecond = _virtualListenerVelocityMetersPerSecond,
+                SdfSampler = _virtualVoiceSdfSampler,
+                DefaultSabineRt60Seconds = _listenerSabineRt60Seconds > 0f ? _listenerSabineRt60Seconds : _acousticLutFallbackRt60Seconds,
+                DefaultSabineRoomVolumeCubicMeters = _listenerSabineVolumeCubicMeters,
+                SoundSpeedMetersPerSecond = _virtualVoiceTuning.SoundSpeedMetersPerSecond,
+                GlobalOcclusionPenalty = _virtualVoiceTuning.GlobalOcclusionPenalty,
+                OccludedLowPassHertz = _virtualVoiceTuning.OccludedLowPassHertz,
+                SabineDecayScale = _virtualVoiceTuning.SabineDecayScale,
+                PhysicalVoiceLimit = tunedPhysicalLimit,
+                VoiceCount = _virtualVoiceSortCount,
                 DroppedVoiceCount = _virtualVoiceDroppedCount,
                 Frame = Time.frameCount,
+                DisableSdfOcclusion = _virtualVoiceLowTierApplied || _virtualVoiceTuning.DisableSdfOcclusion != 0 ? 1 : 0,
                 MinimumAudibleEnergy = VirtualVoiceUtility.MinimumAudibleEnergy
             };
 
             _virtualVoiceDroppedCount = 0;
+            _virtualVoiceSortStartRealtimeSeconds = Time.realtimeSinceStartup;
             _virtualVoiceSortHandle = sortJob.Schedule();
             _virtualVoiceSortScheduled = true;
         }
@@ -2081,12 +2158,12 @@ namespace Hecton8.Audio
 
         public bool QueueSoundEmissionSignal(in SoundEmissionSignal signal)
         {
-            if (!_virtualVoiceWriteQueue.IsCreated ||
-                _virtualVoiceWriteQueue.Length >= _virtualVoiceWriteQueue.Capacity ||
+            if (!_virtualVoiceWritePool.IsCreated ||
+                _virtualVoiceWriteCount >= MaxVirtualVoiceCapacity ||
                 !TryResolveAudioEventClip(signal.EventID, out AudioClip clip) ||
                 !AcousticAup.IsFinite(in signal.SourceAup))
             {
-                if (_virtualVoiceWriteQueue.IsCreated)
+                if (_virtualVoiceWritePool.IsCreated)
                     _virtualVoiceDroppedCount++;
                 return false;
             }
@@ -2095,17 +2172,35 @@ namespace Hecton8.Audio
             Vector3 runtimePosition = ToRuntimeVector3(in sourceAup);
             byte foveatedTier = ResolveVirtualVoiceFoveatedTier(runtimePosition);
             float priority = ResolveVirtualVoicePriority(signal.Volume, signal.Flags, foveatedTier);
+            uint clipHash = unchecked((uint)EntityId.ToULong(clip.GetEntityId()));
+            uint sourceEntityId = signal.StationaryCacheKey != 0
+                ? unchecked((uint)signal.StationaryCacheKey)
+                : (clipHash ^ signal.EventID);
+            byte acousticEnvironment = _listenerInsideBaseInteriorMuffle
+                ? (byte)1
+                : _listenerCaveInterior01 >= 0.35f ? (byte)2 : (byte)4;
+            VirtualVoiceDspFlags dspFlags = _listenerInsideBaseInteriorMuffle
+                ? VirtualVoiceDspFlags.InsideSubmarineHull
+                : VirtualVoiceDspFlags.None;
             var request = new VirtualVoiceRequest(
                 signal.EventID,
-                unchecked((uint)EntityId.ToULong(clip.GetEntityId())),
+                clipHash,
+                sourceEntityId,
                 in signal.SourceAup,
+                float3.zero,
                 signal.Volume,
                 priority,
                 signal.Pitch,
                 1f,
+                _listenerSabineRt60Seconds,
+                _listenerSabineVolumeCubicMeters,
+                VirtualVoiceUtility.OpenLowPassHertz,
+                0f,
                 signal.StationaryCacheKey,
                 signal.Flags,
-                foveatedTier);
+                foveatedTier,
+                acousticEnvironment,
+                dspFlags);
             AppendVirtualVoice(in request);
             return true;
         }
@@ -2217,6 +2312,32 @@ namespace Hecton8.Audio
             return clip != null;
         }
 
+        private bool TryResolveAudioEventClip(uint eventID, uint clipHash, out AudioClip clip)
+        {
+            if (TryResolveAudioEventClip(eventID, out clip))
+                return true;
+
+            return TryResolveAudioClipHash(clipHash, out clip);
+        }
+
+        private bool TryResolveAudioClipHash(uint clipHash, out AudioClip clip)
+        {
+            clip = null;
+            if (clipHash == 0u ||
+                !_audioClipHashToTableIndex.IsCreated ||
+                !_audioClipHashToTableIndex.TryGetValue(clipHash, out int tableIndex))
+            {
+                return false;
+            }
+
+            AudioClip[] table = _audioEventClipTable;
+            if (table == null || tableIndex < 0 || tableIndex >= table.Length)
+                return false;
+
+            clip = table[tableIndex];
+            return clip != null;
+        }
+
         private void DrainAudioEventQueue()
         {
             if (!_audioEventQueue.IsCreated || _audioEventQueueCount <= 0)
@@ -2235,12 +2356,13 @@ namespace Hecton8.Audio
         /// <inheritdoc />
         public bool EnqueueVirtualVoice(in VirtualVoiceRequest request)
         {
-            if (!_virtualVoiceWriteQueue.IsCreated ||
-                _virtualVoiceWriteQueue.Length >= _virtualVoiceWriteQueue.Capacity ||
+            if (!_virtualVoiceWritePool.IsCreated ||
+                !_virtualVoiceDtoPool.IsCreated ||
+                _virtualVoiceWriteCount >= MaxVirtualVoiceCapacity ||
                 !AcousticAup.IsFinite(in request.SourceAup) ||
-                !TryResolveAudioEventClip(request.EventID, out _))
+                !TryResolveAudioEventClip(request.EventID, request.ClipHash, out _))
             {
-                if (_virtualVoiceWriteQueue.IsCreated)
+                if (_virtualVoiceWritePool.IsCreated)
                     _virtualVoiceDroppedCount++;
                 return false;
             }
@@ -2260,14 +2382,21 @@ namespace Hecton8.Audio
             uint stableKey = VirtualVoiceUtility.ComputeStableKey(
                 request.EventID,
                 request.ClipHash,
+                request.SourceEntityID,
                 request.StationaryCacheKey,
                 in request.SourceAup);
-            _virtualVoiceWriteQueue.Add(new VirtualVoice
+            float3 sourceVelocity = math.all(math.isfinite(request.SourceVelocityMetersPerSecond))
+                ? request.SourceVelocityMetersPerSecond
+                : float3.zero;
+            int writeIndex = _virtualVoiceWriteCount;
+            _virtualVoiceWritePool[writeIndex] = new VirtualVoice
             {
                 EventID = request.EventID,
                 ClipHash = request.ClipHash,
                 StableKey = stableKey,
+                SourceEntityID = request.SourceEntityID,
                 SourceAup = request.SourceAup,
+                SourceVelocityMetersPerSecond = sourceVelocity,
                 Volume = math.saturate(SanitizeFinite(request.Volume, 0f)),
                 Priority = priority,
                 Pitch = math.clamp(SanitizeFinite(request.Pitch, 1f), 0.1f, 3f),
@@ -2275,10 +2404,31 @@ namespace Hecton8.Audio
                     SanitizeFinite(request.DopplerRatio, 1f),
                     VirtualVoiceUtility.MinimumDopplerRatio,
                     VirtualVoiceUtility.MaximumDopplerRatio),
+                SabineRt60Seconds = math.max(0f, SanitizeFinite(request.SabineRt60Seconds, 0f)),
+                SabineRoomVolumeCubicMeters = math.max(0f, SanitizeFinite(request.SabineRoomVolumeCubicMeters, 0f)),
+                LowPassCutoffHz = math.clamp(
+                    SanitizeFinite(request.LowPassCutoffHz, VirtualVoiceUtility.OpenLowPassHertz),
+                    80f,
+                    VirtualVoiceUtility.OpenLowPassHertz),
+                DelaySeconds = math.max(0f, SanitizeFinite(request.DelaySeconds, 0f)),
                 StationaryCacheKey = request.StationaryCacheKey,
                 PortalFlags = request.PortalFlags,
-                FoveatedTier = request.FoveatedTier
-            });
+                FoveatedTier = request.FoveatedTier,
+                AcousticEnvironment = request.AcousticEnvironment,
+                DspFlags = request.DspFlags
+            };
+            _virtualVoiceDtoPool[writeIndex] = new VirtualVoiceDTO
+            {
+                AupMeters = ToAbsoluteAcousticMeters(in request.SourceAup),
+                Volume = math.saturate(SanitizeFinite(request.Volume, 0f)),
+                Pitch = math.clamp(SanitizeFinite(request.Pitch, 1f), 0.1f, 3f),
+                ClipHash = request.ClipHash,
+                SourceEntityID = request.SourceEntityID,
+                Importance = priority,
+                Padding = 0u
+            };
+            _virtualVoiceWriteCount = writeIndex + 1;
+            _virtualVoiceDtoCount = math.max(_virtualVoiceDtoCount, _virtualVoiceWriteCount);
         }
 
         /// <inheritdoc />
@@ -2303,12 +2453,45 @@ namespace Hecton8.Audio
             _virtualPhysicalVoiceLimit = lowTier ? LowTierVirtualPhysicalVoices : MaxVirtualPhysicalVoices;
         }
 
+        private float3 ResolveVirtualListenerVelocity(Vector3 listenerAbsolutePosition, float deltaTime)
+        {
+            if (!_hasVirtualPreviousListenerAbsolutePosition || deltaTime <= 0.0001f)
+            {
+                _virtualPreviousListenerAbsolutePosition = listenerAbsolutePosition;
+                _hasVirtualPreviousListenerAbsolutePosition = true;
+                return float3.zero;
+            }
+
+            float deltaTimeInv = math.rcp(math.max(deltaTime, 0.0001f));
+            Vector3 velocity = (listenerAbsolutePosition - _virtualPreviousListenerAbsolutePosition) * deltaTimeInv;
+            _virtualPreviousListenerAbsolutePosition = listenerAbsolutePosition;
+            return new float3(velocity.x, velocity.y, velocity.z);
+        }
+
+        private VirtualVoiceSdfSampler ResolveVirtualVoiceSdfSampler()
+        {
+            bool enabled = !_virtualVoiceLowTierApplied &&
+                (_listenerInsideBaseInteriorMuffle || _listenerCaveInterior01 >= 0.35f);
+            return new VirtualVoiceSdfSampler
+            {
+                Center = float3.zero,
+                HalfExtents = new float3(0.001f),
+                WallPlaneY = 0f,
+                WallThickness = _listenerInsideBaseInteriorMuffle
+                    ? 0.08f
+                    : math.lerp(0.015f, 0.06f, math.saturate(_listenerCaveInterior01)),
+                Enabled = enabled ? (byte)1 : (byte)0,
+                UseBox = 0
+            };
+        }
+
         /// <inheritdoc />
         public void ApplyVirtualVoiceAupShift(long gridDeltaX, long gridDeltaY, long gridDeltaZ)
         {
             CompleteVirtualVoiceSort();
-            RebaseVirtualVoiceList(ref _virtualVoiceWriteQueue, gridDeltaX, gridDeltaY, gridDeltaZ);
-            RebaseVirtualVoiceList(ref _virtualVoiceSortQueue, gridDeltaX, gridDeltaY, gridDeltaZ);
+            RebaseVirtualVoicePool(_virtualVoiceWritePool, _virtualVoiceWriteCount, gridDeltaX, gridDeltaY, gridDeltaZ);
+            RebaseVirtualVoicePool(_virtualVoiceSortPool, _virtualVoiceSortCount, gridDeltaX, gridDeltaY, gridDeltaZ);
+            RebaseVirtualVoiceDtoPool(gridDeltaX, gridDeltaY, gridDeltaZ);
             RebaseVirtualVoiceSelections(gridDeltaX, gridDeltaY, gridDeltaZ);
             RebaseVirtualChannelPendingSelections(gridDeltaX, gridDeltaY, gridDeltaZ);
             if (_hasVirtualListenerAup)
@@ -2326,18 +2509,66 @@ namespace Hecton8.Audio
             return IsVirtualizationReady;
         }
 
+        public bool TryGetVirtualVoiceRuntimeTuning(out VirtualVoiceTuningSnapshot tuning)
+        {
+            if (_virtualVoiceTuningVault.IsCreated && _virtualVoiceTuningVault.Length > 0)
+            {
+                VirtualVoiceTuningSnapshot stored = _virtualVoiceTuningVault[0];
+                _virtualVoiceTuning = VirtualVoiceTuningSnapshot.Sanitize(in stored);
+            }
+
+            tuning = _virtualVoiceTuning;
+            return _virtualVoiceTuningVault.IsCreated && _virtualVoiceTuningVault.Length > 0;
+        }
+
+        public void ApplyVirtualVoiceRuntimeTuning(in VirtualVoiceTuningSnapshot tuning)
+        {
+            VirtualVoiceTuningSnapshot sanitized = VirtualVoiceTuningSnapshot.Sanitize(in tuning);
+            _virtualVoiceTuning = sanitized;
+            if (_virtualVoiceTuningVault.IsCreated && _virtualVoiceTuningVault.Length > 0)
+                _virtualVoiceTuningVault[0] = sanitized;
+        }
+
         private void CompleteVirtualVoiceSort()
         {
-            if (!_virtualVoiceSortScheduled)
-                return;
+            TryCompleteVirtualVoiceSort(true);
+        }
 
+        private bool TryCompleteVirtualVoiceSort(bool allowBlocking)
+        {
+            if (!_virtualVoiceSortScheduled)
+                return true;
+
+            if (!allowBlocking && !_virtualVoiceSortHandle.IsCompleted)
+            {
+                VirtualVoiceStatistics overrunStatistics = _lastVirtualVoiceStatistics;
+                overrunStatistics.Frame = Time.frameCount;
+                overrunStatistics.TotalVoices = math.clamp(_virtualVoiceSortCount, 0, MaxVirtualVoiceCapacity);
+                overrunStatistics.DroppedVoices += math.clamp(_virtualVoiceWriteCount, 0, MaxVirtualVoiceCapacity);
+                overrunStatistics.SortTimeMs = math.max(
+                    0.5f,
+                    (Time.realtimeSinceStartup - _virtualVoiceSortStartRealtimeSeconds) * 1000f);
+                PushVirtualVoiceTelemetry(in overrunStatistics);
+                PublishVirtualVoiceTelemetry(in overrunStatistics);
+                return false;
+            }
+
+            long sortWaitStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             _virtualVoiceSortHandle.Complete();
+            long sortWaitTicks = System.Diagnostics.Stopwatch.GetTimestamp() - sortWaitStartTicks;
             _virtualVoiceSortScheduled = false;
             if (_virtualVoiceStatistics.IsCreated && _virtualVoiceStatistics.Length > 0)
+            {
                 _lastVirtualVoiceStatistics = _virtualVoiceStatistics[0];
+                float elapsedMs = math.max(0f, (float)(sortWaitTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency));
+                _lastVirtualVoiceStatistics.SortTimeMs = elapsedMs;
+                _virtualVoiceStatistics[0] = _lastVirtualVoiceStatistics;
+                _virtualVoiceSortCount = math.clamp(_lastVirtualVoiceStatistics.AudibleVoices, 0, MaxVirtualVoiceCapacity);
+            }
 
             PushVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
             PublishVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
+            return true;
         }
 
         private void InjectVirtualVoiceSelections()
@@ -2416,11 +2647,11 @@ namespace Hecton8.Audio
                 Vector3 runtimePosition = ToRuntimeVector3(in sourceAup);
                 Vector3 absolutePosition = ToAbsoluteVector3(in sourceAup);
                 int sourceIndex = PlayAtPointResolved(
-                    TryResolveAudioEventClip(selection.EventID, out AudioClip clip) ? clip : null,
+                    TryResolveAudioEventClip(selection.EventID, selection.ClipHash, out AudioClip clip) ? clip : null,
                     runtimePosition,
                     in sourceAup,
                     absolutePosition,
-                    selection.Volume,
+                    ResolveVirtualSelectionVolume(in selection),
                     selection.Pitch,
                     ResolvedDefaultWorldMixerGroup,
                     selection.StationaryCacheKey,
@@ -2444,7 +2675,7 @@ namespace Hecton8.Audio
 
         private bool TryPlayVirtualSelectionOnSource(int channel, int sourceIndex, in VirtualVoiceSelection selection)
         {
-            if (!TryResolveAudioEventClip(selection.EventID, out AudioClip clip) ||
+            if (!TryResolveAudioEventClip(selection.EventID, selection.ClipHash, out AudioClip clip) ||
                 _pool == null ||
                 sourceIndex < 0 ||
                 sourceIndex >= _pool.Length ||
@@ -2463,6 +2694,8 @@ namespace Hecton8.Audio
                 out AbsoluteUniversePosition listenerAup);
             ResolveListenerBasis(listener, out float3 listenerRight, out _, out float3 listenerForward);
             float3 listenerAcousticForward = listenerForward;
+            if (hasListener)
+                runtimePosition = ToListenerRelativeRuntimeVector3(in sourceAup, true, in listenerAup, listenerRuntimePosition);
             Vector3 audiblePosition = runtimePosition;
             Vector3 audibleAbsolutePosition = sourceAbsolutePosition;
             AbsoluteUniversePosition audibleAup = sourceAup;
@@ -2479,7 +2712,7 @@ namespace Hecton8.Audio
             if (hasAcousticPortalPath)
             {
                 audibleAup = ToAbsoluteUniversePosition(in acousticPortalResult.LastPortalAup);
-                audiblePosition = ToRuntimeVector3(in audibleAup);
+                audiblePosition = ToListenerRelativeRuntimeVector3(in audibleAup, true, in listenerAup, listenerRuntimePosition);
                 audibleAbsolutePosition = ToAbsoluteVector3(in audibleAup);
                 PublishAcousticEchoPortalTap(
                     in sourceAup,
@@ -2509,7 +2742,7 @@ namespace Hecton8.Audio
             source.transform.position = audiblePosition;
             AudioResidencyCache.TouchClip(clip, ResolveWorldResidencyDomain(clip, ResolvedDefaultWorldMixerGroup), true);
             source.clip = clip;
-            float clampedVolume = math.saturate(selection.Volume);
+            float clampedVolume = ResolveVirtualSelectionVolume(in selection);
             if (hasAcousticPortalPath)
                 clampedVolume *= acousticPortalResult.Transmission01;
             source.volume = clampedVolume;
@@ -2544,9 +2777,15 @@ namespace Hecton8.Audio
                 true);
             if (hasAcousticPortalPath)
                 ApplyAcousticPortalPresentation(sourceIndex, source, in acousticPortalResult);
+            ApplyVirtualSelectionDspPresentation(sourceIndex, source, in selection);
             ApplyHaasMask(sourceIndex, in audibleAup, hasListener, in listenerAup, now);
             source.spatialBlend = ResolveTargetSpatialBlend(sourceIndex, now);
-            PlayAcousticSource(source, hasAcousticPortalPath ? acousticPortalResult.DelaySeconds : 0f);
+            PlayAcousticSource(
+                source,
+                hasAcousticPortalPath
+                    ? math.max(acousticPortalResult.DelaySeconds, selection.DelaySeconds)
+                    : selection.DelaySeconds);
+            PublishVirtualSelectionAcousticPing(in audibleAup, in selection, clampedVolume);
             _startTimes[sourceIndex] = now;
             CacheActiveWorldRuntimePosition(sourceIndex, audiblePosition, currentFrame);
             CacheActiveWorldAup(sourceIndex, in audibleAup, currentFrame);
@@ -2554,9 +2793,30 @@ namespace Hecton8.Audio
             return true;
         }
 
+        private static void PublishVirtualSelectionAcousticPing(
+            in AbsoluteUniversePosition audibleAup,
+            in VirtualVoiceSelection selection,
+            float volume01)
+        {
+            float intensity = math.saturate(volume01);
+            if (intensity < 0.35f)
+                return;
+
+            var ping = new AcousticPingSignal
+            {
+                PositionAup = audibleAup,
+                RadiusMeters = math.clamp(32f + intensity * 256f, 32f, 512f),
+                Intensity01 = intensity,
+                SourceId = selection.SourceEntityID != 0u ? selection.SourceEntityID : selection.EventID,
+                Channel = AcousticPingSignal.ChannelMetalStress,
+                Flags = 0
+            };
+            GlobalSignals.Publish(in ping);
+        }
+
         private void UpdateVirtualPhysicalVoice(int channel, int sourceIndex, in VirtualVoiceSelection selection)
         {
-            if (!TryResolveAudioEventClip(selection.EventID, out AudioClip clip) ||
+            if (!TryResolveAudioEventClip(selection.EventID, selection.ClipHash, out AudioClip clip) ||
                 _pool == null ||
                 sourceIndex < 0 ||
                 sourceIndex >= _pool.Length)
@@ -2574,6 +2834,14 @@ namespace Hecton8.Audio
 
             AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in selection.SourceAup);
             Vector3 runtimePosition = ToRuntimeVector3(in sourceAup);
+            if (TryResolveListenerFrame(
+                    out _,
+                    out Vector3 listenerRuntimePosition,
+                    out _,
+                    out AbsoluteUniversePosition listenerAup))
+            {
+                runtimePosition = ToListenerRelativeRuntimeVector3(in sourceAup, true, in listenerAup, listenerRuntimePosition);
+            }
             source.transform.position = runtimePosition;
             if (source.clip != clip)
             {
@@ -2581,7 +2849,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            float clampedVolume = math.saturate(selection.Volume);
+            float clampedVolume = ResolveVirtualSelectionVolume(in selection);
             source.volume = clampedVolume;
             if (_baseVolumes != null && sourceIndex < _baseVolumes.Length)
                 _baseVolumes[sourceIndex] = clampedVolume;
@@ -2597,11 +2865,51 @@ namespace Hecton8.Audio
             if (_smoothedDopplerRatios != null && sourceIndex < _smoothedDopplerRatios.Length)
                 _smoothedDopplerRatios[sourceIndex] = dopplerRatio;
             source.pitch = ResolveSourcePitch(sourceIndex, dopplerRatio);
+            ApplyVirtualSelectionDspPresentation(sourceIndex, source, in selection);
             int currentFrame = Time.frameCount;
             CacheActiveWorldRuntimePosition(sourceIndex, runtimePosition, currentFrame);
             CacheActiveWorldAup(sourceIndex, in sourceAup, currentFrame);
             _virtualChannelSourceIndices[channel] = sourceIndex;
             _virtualChannelStableKeys[channel] = selection.StableKey;
+        }
+
+        private static float ResolveVirtualSelectionVolume(in VirtualVoiceSelection selection)
+        {
+            float effective = SanitizeFinite(selection.EffectiveVolume, 0f);
+            if (effective > 0f)
+                return math.saturate(effective);
+
+            return math.saturate(SanitizeFinite(selection.Volume, 0f));
+        }
+
+        private void ApplyVirtualSelectionDspPresentation(
+            int sourceIndex,
+            AudioSource source,
+            in VirtualVoiceSelection selection)
+        {
+            if (source == null)
+                return;
+
+            float cutoff = math.clamp(
+                SanitizeFinite(selection.LowPassCutoffHz, VirtualVoiceUtility.OpenLowPassHertz),
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                VirtualVoiceUtility.OpenLowPassHertz);
+            if (_lowPassFilters != null && sourceIndex >= 0 && sourceIndex < _lowPassFilters.Length)
+            {
+                AudioLowPassFilter lowPass = _lowPassFilters[sourceIndex];
+                if (lowPass != null && lowPass.enabled)
+                    cutoff = math.min(cutoff, lowPass.cutoffFrequency);
+            }
+
+            if (cutoff < VirtualVoiceUtility.OpenLowPassHertz - 1f)
+                ApplyLowPassFilter(sourceIndex, true, cutoff);
+
+            float rt60 = SanitizeFinite(selection.SabineRt60Seconds, 0f);
+            if (rt60 > 0f)
+            {
+                float reverbMix = math.clamp(0.08f + rt60 * 0.065f, 0f, _virtualVoiceLowTierApplied ? 0.5f : 1f);
+                source.reverbZoneMix = math.max(source.reverbZoneMix, reverbMix);
+            }
         }
 
         private void BeginVirtualChannelSteal(int channel, in VirtualVoiceSelection nextSelection)
@@ -2810,10 +3118,9 @@ namespace Hecton8.Audio
         private void ClearVirtualVoiceQueues()
         {
             CompleteVirtualVoiceSort();
-            if (_virtualVoiceWriteQueue.IsCreated)
-                _virtualVoiceWriteQueue.Clear();
-            if (_virtualVoiceSortQueue.IsCreated)
-                _virtualVoiceSortQueue.Clear();
+            _virtualVoiceWriteCount = 0;
+            _virtualVoiceSortCount = 0;
+            _virtualVoiceDtoCount = 0;
             ResetVirtualVoiceSelections();
             _virtualVoiceDroppedCount = 0;
             _lastVirtualVoiceStatistics = default;
@@ -2838,17 +3145,17 @@ namespace Hecton8.Audio
             bool createdSourceIndices = _virtualChannelSourceIndices == null ||
                 _virtualChannelSourceIndices.Length != MaxVirtualPhysicalVoices;
             if (_virtualChannelStableKeys == null || _virtualChannelStableKeys.Length != MaxVirtualPhysicalVoices)
-                _virtualChannelStableKeys = new uint[MaxVirtualPhysicalVoices]; // COLD ALLOC: uint[16] - stable virtual voice key per physical channel - owner: SpatialAudioManager
+                _virtualChannelStableKeys = new uint[MaxVirtualPhysicalVoices]; // COLD ALLOC: uint[32] - stable virtual voice key per physical channel - owner: SpatialAudioManager
             if (createdSourceIndices)
-                _virtualChannelSourceIndices = new int[MaxVirtualPhysicalVoices]; // COLD ALLOC: int[16] - AudioSource pool index per virtual channel - owner: SpatialAudioManager
+                _virtualChannelSourceIndices = new int[MaxVirtualPhysicalVoices]; // COLD ALLOC: int[32] - AudioSource pool index per virtual channel - owner: SpatialAudioManager
             if (_virtualChannelPendingSelections == null || _virtualChannelPendingSelections.Length != MaxVirtualPhysicalVoices)
-                _virtualChannelPendingSelections = new VirtualVoiceSelection[MaxVirtualPhysicalVoices]; // COLD ALLOC: VirtualVoiceSelection[16] - deferred post-fade PCM injection payloads - owner: SpatialAudioManager
+                _virtualChannelPendingSelections = new VirtualVoiceSelection[MaxVirtualPhysicalVoices]; // COLD ALLOC: VirtualVoiceSelection[32] - deferred post-fade PCM injection payloads - owner: SpatialAudioManager
             if (_virtualChannelFadeRemaining == null || _virtualChannelFadeRemaining.Length != MaxVirtualPhysicalVoices)
-                _virtualChannelFadeRemaining = new float[MaxVirtualPhysicalVoices]; // COLD ALLOC: float[16] - 10ms steal fade countdowns - owner: SpatialAudioManager
+                _virtualChannelFadeRemaining = new float[MaxVirtualPhysicalVoices]; // COLD ALLOC: float[32] - 10ms steal fade countdowns - owner: SpatialAudioManager
             if (_virtualChannelFadeStartVolumes == null || _virtualChannelFadeStartVolumes.Length != MaxVirtualPhysicalVoices)
-                _virtualChannelFadeStartVolumes = new float[MaxVirtualPhysicalVoices]; // COLD ALLOC: float[16] - source volume captured at steal fade start - owner: SpatialAudioManager
+                _virtualChannelFadeStartVolumes = new float[MaxVirtualPhysicalVoices]; // COLD ALLOC: float[32] - source volume captured at steal fade start - owner: SpatialAudioManager
             if (_virtualChannelPendingFlags == null || _virtualChannelPendingFlags.Length != MaxVirtualPhysicalVoices)
-                _virtualChannelPendingFlags = new byte[MaxVirtualPhysicalVoices]; // COLD ALLOC: byte[16] - pending virtual channel fade/injection flags - owner: SpatialAudioManager
+                _virtualChannelPendingFlags = new byte[MaxVirtualPhysicalVoices]; // COLD ALLOC: byte[32] - pending virtual channel fade/injection flags - owner: SpatialAudioManager
 
             if (createdSourceIndices)
             {
@@ -2857,8 +3164,9 @@ namespace Hecton8.Audio
             }
         }
 
-        private void RebaseVirtualVoiceList(
-            ref NativeList<VirtualVoice> voices,
+        private void RebaseVirtualVoicePool(
+            NativeArray<VirtualVoice> voices,
+            int count,
             long gridDeltaX,
             long gridDeltaY,
             long gridDeltaZ)
@@ -2866,13 +3174,30 @@ namespace Hecton8.Audio
             if (!voices.IsCreated)
                 return;
 
-            for (int i = 0; i < voices.Length; i++)
+            int safeCount = math.clamp(count, 0, voices.Length);
+            for (int i = 0; i < safeCount; i++)
             {
                 VirtualVoice voice = voices[i];
                 voice.SourceAup.GridX += gridDeltaX;
                 voice.SourceAup.GridY += gridDeltaY;
                 voice.SourceAup.GridZ += gridDeltaZ;
                 voices[i] = voice;
+            }
+        }
+
+        private void RebaseVirtualVoiceDtoPool(long gridDeltaX, long gridDeltaY, long gridDeltaZ)
+        {
+            if (!_virtualVoiceDtoPool.IsCreated)
+                return;
+
+            double cellSize = AcousticAup.CellSizeMeters;
+            double3 deltaMeters = new double3(gridDeltaX * cellSize, gridDeltaY * cellSize, gridDeltaZ * cellSize);
+            int safeCount = math.clamp(_virtualVoiceDtoCount, 0, _virtualVoiceDtoPool.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                VirtualVoiceDTO dto = _virtualVoiceDtoPool[i];
+                dto.AupMeters += deltaMeters;
+                _virtualVoiceDtoPool[i] = dto;
             }
         }
 
@@ -3219,6 +3544,8 @@ namespace Hecton8.Audio
             float loudestWeight = 0f;
             if (_virtualVoiceSelections.IsCreated && statistics.ActivePhysicalVoices > 0)
                 loudestWeight = _virtualVoiceSelections[0].Weight;
+            if (statistics.LoudestWeight > loudestWeight)
+                loudestWeight = statistics.LoudestWeight;
             uint stateHash = ComputeVirtualVoiceStateHash(in statistics, loudestWeight);
             int index = _virtualVoiceBlackBoxCursor % _virtualVoiceBlackBox.Length;
             _virtualVoiceBlackBox[index] = new VirtualVoiceTelemetryEntry
@@ -3231,13 +3558,23 @@ namespace Hecton8.Audio
                 PhysicalVoiceLimit = (ushort)math.clamp(statistics.PhysicalVoiceLimit, 0, ushort.MaxValue),
                 StolenVoices = (ushort)math.clamp(statistics.StolenVoices, 0, ushort.MaxValue),
                 DroppedVoices = (ushort)math.clamp(statistics.DroppedVoices, 0, ushort.MaxValue),
-                Flags = (ushort)(_hasVirtualListenerAup ? 1 : 0),
+                Flags = (ushort)((_hasVirtualListenerAup ? 1 : 0) | (_virtualVoiceLowTierApplied ? 2 : 0)),
+                OccludedVoices = (ushort)math.clamp(statistics.OccludedVoices, 0, ushort.MaxValue),
+                DelayedVoices = (ushort)math.clamp(statistics.DelayedVoices, 0, ushort.MaxValue),
                 StateHash = stateHash,
-                LoudestWeight = loudestWeight
+                LoudestWeight = loudestWeight,
+                SortTimeMs = statistics.SortTimeMs,
+                AverageRt60Seconds = statistics.AverageRt60Seconds,
+                AverageLowPassHertz = statistics.AverageLowPassHertz,
+                MaximumDelaySeconds = statistics.MaximumDelaySeconds
             };
             _virtualVoiceBlackBoxCursor = (_virtualVoiceBlackBoxCursor + 1) % _virtualVoiceBlackBox.Length;
-            if (!math.isfinite(loudestWeight))
+            if (!math.isfinite(loudestWeight) ||
+                !math.isfinite(statistics.SortTimeMs) ||
+                statistics.SortTimeMs > 0.5f)
+            {
                 DumpVirtualVoiceBlackBox();
+            }
         }
 
         private void PublishVirtualVoiceTelemetry(in VirtualVoiceStatistics statistics)
@@ -3263,7 +3600,10 @@ namespace Hecton8.Audio
                 hash = (hash ^ (uint)statistics.CulledVoices) * 16777619u;
                 hash = (hash ^ (uint)statistics.ActivePhysicalVoices) * 16777619u;
                 hash = (hash ^ (uint)statistics.StolenVoices) * 16777619u;
+                hash = (hash ^ (uint)statistics.OccludedVoices) * 16777619u;
+                hash = (hash ^ (uint)statistics.DelayedVoices) * 16777619u;
                 hash = (hash ^ math.asuint(loudestWeight)) * 16777619u;
+                hash = (hash ^ math.asuint(statistics.SortTimeMs)) * 16777619u;
                 return hash;
             }
         }
@@ -3298,8 +3638,14 @@ namespace Hecton8.Audio
                         writer.Write(entry.StolenVoices);
                         writer.Write(entry.DroppedVoices);
                         writer.Write(entry.Flags);
+                        writer.Write(entry.OccludedVoices);
+                        writer.Write(entry.DelayedVoices);
                         writer.Write(entry.StateHash);
                         writer.Write(entry.LoudestWeight);
+                        writer.Write(entry.SortTimeMs);
+                        writer.Write(entry.AverageRt60Seconds);
+                        writer.Write(entry.AverageLowPassHertz);
+                        writer.Write(entry.MaximumDelaySeconds);
                     }
                 }
             }
@@ -3314,6 +3660,41 @@ namespace Hecton8.Audio
         private static float SanitizeFinite(float value, float fallback)
         {
             return math.isfinite(value) ? value : fallback;
+        }
+
+        private void TryLoadAcousticLutFallbackCold()
+        {
+            if (_acousticLutFallbackLoaded)
+                return;
+
+            _acousticLutFallbackLoaded = true;
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string path = Path.Combine(projectRoot, AcousticLutRelativePath);
+                if (!File.Exists(path))
+                    return;
+
+                byte[] bytes = File.ReadAllBytes(path); // COLD ALLOC: byte[524288] - one-shot Sabine RT60+damping fallback read - owner: SpatialAudioManager
+                if (bytes.Length != AcousticLutExpectedBytes)
+                    return;
+
+                int volumeIndex = 128;
+                int absorptionIndex = 128;
+                int byteOffset = ((volumeIndex * AcousticLutAbsorptionCount) + absorptionIndex) * AcousticLutRecordBytes;
+                float rt60Seconds = BitConverter.ToSingle(bytes, byteOffset);
+                float damping01 = BitConverter.ToSingle(bytes, byteOffset + 4);
+                if (math.isfinite(rt60Seconds) && rt60Seconds > 0f)
+                    _acousticLutFallbackRt60Seconds = math.clamp(rt60Seconds, VirtualVoiceUtility.SabineMinimumRt60Seconds, VirtualVoiceUtility.SabineMaximumRt60Seconds);
+                if (math.isfinite(damping01) && damping01 > 0f)
+                    _acousticLutFallbackDamping01 = math.saturate(damping01);
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception, this);
+#endif
+            }
         }
 
         private void DispatchQueuedAudioEvent(in CoreAudioEvent audioEvent)
@@ -4692,6 +5073,19 @@ namespace Hecton8.Audio
             return new Vector3(runtime.x, runtime.y, runtime.z);
         }
 
+        private static Vector3 ToListenerRelativeRuntimeVector3(
+            in AbsoluteUniversePosition sourceAup,
+            bool hasListener,
+            in AbsoluteUniversePosition listenerAup,
+            Vector3 listenerRuntimePosition)
+        {
+            if (!hasListener)
+                return ToRuntimeVector3(in sourceAup);
+
+            float3 relative = AbsoluteUniversePosition.ToCameraRelativeFloat3(in listenerAup, in sourceAup);
+            return listenerRuntimePosition + new Vector3(relative.x, relative.y, relative.z);
+        }
+
         private static AcousticAup ToAcousticAup(in AbsoluteUniversePosition aup)
         {
             return new AcousticAup(
@@ -4712,6 +5106,15 @@ namespace Hecton8.Audio
                 LocalY = aup.Local.y,
                 LocalZ = aup.Local.z
             };
+        }
+
+        private static double3 ToAbsoluteAcousticMeters(in AcousticAup aup)
+        {
+            double cellSize = AcousticAup.CellSizeMeters;
+            return new double3(
+                (aup.GridX * cellSize) + aup.Local.x,
+                (aup.GridY * cellSize) + aup.Local.y,
+                (aup.GridZ * cellSize) + aup.Local.z);
         }
 
         private bool TryResolvePlayerListenerAup(
@@ -6111,9 +6514,14 @@ namespace Hecton8.Audio
         {
             _acousticRadarIntensityBinsHandle = default;
             _acousticRadarGridHandle = default;
+            _virtualVoiceWritePoolHandle = default;
+            _virtualVoiceSortPoolHandle = default;
+            _virtualVoiceDtoPoolHandle = default;
+            _virtualVoiceSortKeyPoolHandle = default;
             _virtualVoiceSelectionsHandle = default;
             _virtualVoiceStatisticsHandle = default;
             _virtualVoiceBlackBoxHandle = default;
+            _virtualVoiceTuningHandle = default;
             _acousticPortalNodesHandle = default;
             _acousticPortalEdgesHandle = default;
             _acousticPortalResultHandle = default;
@@ -6123,9 +6531,14 @@ namespace Hecton8.Audio
             _acousticPortalBlackBoxHandle = default;
             _acousticRadarIntensityBins = default;
             _acousticRadarGrid = default;
+            _virtualVoiceWritePool = default;
+            _virtualVoiceSortPool = default;
+            _virtualVoiceDtoPool = default;
+            _virtualVoiceSortKeyPool = default;
             _virtualVoiceSelections = default;
             _virtualVoiceStatistics = default;
             _virtualVoiceBlackBox = default;
+            _virtualVoiceTuningVault = default;
             _acousticPortalNodes = default;
             _acousticPortalEdges = default;
             _acousticPortalResult = default;
@@ -6133,6 +6546,9 @@ namespace Hecton8.Audio
             _acousticPortalCameFrom = default;
             _acousticPortalStates = default;
             _acousticPortalBlackBox = default;
+            _virtualVoiceWriteCount = 0;
+            _virtualVoiceSortCount = 0;
+            _virtualVoiceDtoCount = 0;
         }
 
         private void InitializeTelemetryCaches()
@@ -6194,6 +6610,7 @@ namespace Hecton8.Audio
                     NativeAllocationLifetime.Session);
                 PrewarmAudioEventQueue();
             }
+            EnsureAudioClipHashMapCold();
 
             if (!_pendingDelayedAudioEvents.IsCreated)
             {
@@ -6205,25 +6622,30 @@ namespace Hecton8.Audio
                 NativeAllocationLifetime.Session);
             }
 
-            if (!_virtualVoiceWriteQueue.IsCreated)
-            {
-                _virtualVoiceWriteQueue = new NativeList<VirtualVoice>(MaxVirtualVoiceCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<VirtualVoice>[8192] - virtual acoustic emission write buffer - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeList(
-                    _virtualVoiceWriteQueue,
-                    nameof(SpatialAudioManager),
-                    nameof(_virtualVoiceWriteQueue),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_virtualVoiceSortQueue.IsCreated)
-            {
-                _virtualVoiceSortQueue = new NativeList<VirtualVoice>(MaxVirtualVoiceCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<VirtualVoice>[8192] - Burst-ranked virtual acoustic emission buffer - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeList(
-                    _virtualVoiceSortQueue,
-                    nameof(SpatialAudioManager),
-                    nameof(_virtualVoiceSortQueue),
-                    NativeAllocationLifetime.Session);
-            }
+            EnsureVaultBackedArray(
+                ref _virtualVoiceWritePoolHandle,
+                SpatialAudioVirtualVoiceWritePoolBufferId,
+                MaxVirtualVoiceCapacity,
+                NativeArrayOptions.ClearMemory,
+                ref _virtualVoiceWritePool);
+            EnsureVaultBackedArray(
+                ref _virtualVoiceSortPoolHandle,
+                SpatialAudioVirtualVoiceSortPoolBufferId,
+                MaxVirtualVoiceCapacity,
+                NativeArrayOptions.ClearMemory,
+                ref _virtualVoiceSortPool);
+            EnsureVaultBackedArray(
+                ref _virtualVoiceDtoPoolHandle,
+                SpatialAudioVirtualVoiceDtoPoolBufferId,
+                MaxVirtualVoiceCapacity,
+                NativeArrayOptions.ClearMemory,
+                ref _virtualVoiceDtoPool);
+            EnsureVaultBackedArray(
+                ref _virtualVoiceSortKeyPoolHandle,
+                SpatialAudioVirtualVoiceSortKeyPoolBufferId,
+                MaxVirtualVoiceCapacity,
+                NativeArrayOptions.ClearMemory,
+                ref _virtualVoiceSortKeyPool);
 
             EnsureVaultBackedArray(
                 ref _virtualVoiceSelectionsHandle,
@@ -6243,6 +6665,13 @@ namespace Hecton8.Audio
                 VirtualVoiceBlackBoxFrameCount,
                 NativeArrayOptions.ClearMemory,
                 ref _virtualVoiceBlackBox);
+            EnsureVaultBackedArray(
+                ref _virtualVoiceTuningHandle,
+                SpatialAudioVirtualVoiceTuningBufferId,
+                1,
+                NativeArrayOptions.ClearMemory,
+                ref _virtualVoiceTuningVault);
+            EnsureVirtualVoiceTuningState();
 
             EnsureVirtualChannelArrays();
 
@@ -6346,6 +6775,71 @@ namespace Hecton8.Audio
             _audioEventQueueDroppedCount = 0;
         }
 
+        private void EnsureAudioClipHashMapCold()
+        {
+            AudioClip[] table = _audioEventClipTable;
+            int requiredCapacity = math.max(1, table != null ? table.Length : 0);
+            if (!_audioClipHashToTableIndex.IsCreated)
+            {
+                _audioClipHashToTableIndex = new NativeParallelHashMap<uint, int>(requiredCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<uint,int>[audioEventClipTable] - clip hash to preloaded clip index - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeParallelHashMap(
+                    _audioClipHashToTableIndex,
+                    nameof(SpatialAudioManager),
+                    nameof(_audioClipHashToTableIndex),
+                    NativeAllocationLifetime.Session);
+            }
+            else if (_audioClipHashToTableIndex.Capacity < requiredCapacity)
+            {
+                ReleaseAudioClipHashMap();
+                _audioClipHashToTableIndex = new NativeParallelHashMap<uint, int>(requiredCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<uint,int>[audioEventClipTable] - resized clip hash lookup - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeParallelHashMap(
+                    _audioClipHashToTableIndex,
+                    nameof(SpatialAudioManager),
+                    nameof(_audioClipHashToTableIndex),
+                    NativeAllocationLifetime.Session);
+            }
+
+            _audioClipHashToTableIndex.Clear();
+            if (table == null)
+                return;
+
+            for (int i = 0; i < table.Length; i++)
+            {
+                AudioClip clip = table[i];
+                if (clip == null)
+                    continue;
+
+                uint clipHash = unchecked((uint)EntityId.ToULong(clip.GetEntityId()));
+                if (clipHash != 0u)
+                    _audioClipHashToTableIndex.TryAdd(clipHash, i);
+            }
+        }
+
+        private void ReleaseAudioClipHashMap()
+        {
+            if (!_audioClipHashToTableIndex.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(SpatialAudioManager), nameof(_audioClipHashToTableIndex));
+            _audioClipHashToTableIndex.Dispose();
+            _audioClipHashToTableIndex = default;
+        }
+
+        private void EnsureVirtualVoiceTuningState()
+        {
+            VirtualVoiceTuningSnapshot tuning = _virtualVoiceTuningVault.IsCreated && _virtualVoiceTuningVault.Length > 0
+                ? _virtualVoiceTuningVault[0]
+                : VirtualVoiceTuningSnapshot.Default;
+
+            if (tuning.SoundSpeedMetersPerSecond <= 0f || !math.isfinite(tuning.SoundSpeedMetersPerSecond))
+                tuning = VirtualVoiceTuningSnapshot.Default;
+
+            tuning = VirtualVoiceTuningSnapshot.Sanitize(in tuning);
+            _virtualVoiceTuning = tuning;
+            if (_virtualVoiceTuningVault.IsCreated && _virtualVoiceTuningVault.Length > 0)
+                _virtualVoiceTuningVault[0] = tuning;
+        }
+
         private void ReleaseTelemetryCaches()
         {
             CompleteVirtualVoiceSort();
@@ -6375,26 +6869,13 @@ namespace Hecton8.Audio
                 _audioEventQueue.Dispose();
                 _audioEventQueue = default;
             }
+            ReleaseAudioClipHashMap();
 
             if (_pendingDelayedAudioEvents.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeList(nameof(SpatialAudioManager), nameof(_pendingDelayedAudioEvents));
                 _pendingDelayedAudioEvents.Dispose();
                 _pendingDelayedAudioEvents = default;
-            }
-
-            if (_virtualVoiceWriteQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(nameof(SpatialAudioManager), nameof(_virtualVoiceWriteQueue));
-                _virtualVoiceWriteQueue.Dispose();
-                _virtualVoiceWriteQueue = default;
-            }
-
-            if (_virtualVoiceSortQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(nameof(SpatialAudioManager), nameof(_virtualVoiceSortQueue));
-                _virtualVoiceSortQueue.Dispose();
-                _virtualVoiceSortQueue = default;
             }
 
             if (_acousticPortalOpenSet.IsCreated)
@@ -6415,6 +6896,9 @@ namespace Hecton8.Audio
             _audioEventQueueCount = 0;
             _audioEventQueueDroppedCount = 0;
             _virtualVoiceDroppedCount = 0;
+            _virtualVoiceWriteCount = 0;
+            _virtualVoiceSortCount = 0;
+            _virtualVoiceDtoCount = 0;
             _virtualVoiceBlackBoxCursor = 0;
             _lastVirtualVoiceStatistics = default;
             _acousticPortalBlackBoxCursor = 0;
@@ -8193,23 +8677,71 @@ namespace Hecton8.Audio
         /// </summary>
         private void OnDrawGizmosSelected()
         {
-            if (_pool == null) return;
-
-            for (int i = 0; i < _poolSize; i++)
+            if (_pool != null)
             {
-                if (_pool[i] == null) continue;
+                for (int i = 0; i < _poolSize; i++)
+                {
+                    if (_pool[i] == null) continue;
 
-                if (_pool[i].isPlaying)
-                {
-                    Gizmos.color = new Color(0f, 1f, 0.6f, 0.7f); // Biolum green
-                    Gizmos.DrawWireSphere(_pool[i].transform.position, 0.3f);
-                    Gizmos.DrawLine(transform.position, _pool[i].transform.position);
+                    if (_pool[i].isPlaying)
+                    {
+                        Gizmos.color = new Color(0f, 1f, 0.6f, 0.7f); // Biolum green
+                        Gizmos.DrawWireSphere(_pool[i].transform.position, 0.3f);
+                        Gizmos.DrawLine(transform.position, _pool[i].transform.position);
+                    }
+                    else
+                    {
+                        Gizmos.color = new Color(0.3f, 0.3f, 0.3f, 0.2f);
+                        Gizmos.DrawWireSphere(_pool[i].transform.position, 0.1f);
+                    }
                 }
-                else
-                {
-                    Gizmos.color = new Color(0.3f, 0.3f, 0.3f, 0.2f);
-                    Gizmos.DrawWireSphere(_pool[i].transform.position, 0.1f);
-                }
+            }
+
+            DrawVirtualVoiceEditorGizmos();
+        }
+
+        public void DrawVirtualVoiceEditorGizmos()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            Vector3 listenerPosition = _listenerTransform != null ? _listenerTransform.position : transform.position;
+            int selectedCount = math.clamp(
+                _lastVirtualVoiceStatistics.ActivePhysicalVoices,
+                0,
+                _virtualVoiceSelections.IsCreated ? _virtualVoiceSelections.Length : 0);
+            for (int i = 0; i < selectedCount; i++)
+            {
+                VirtualVoiceSelection selection = _virtualVoiceSelections[i];
+                if (selection.StableKey == 0u)
+                    continue;
+
+                AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in selection.SourceAup);
+                Vector3 position = ToRuntimeVector3(in sourceAup);
+                float radius = math.clamp(0.18f + ResolveVirtualSelectionVolume(in selection) * 1.8f, 0.18f, 2.2f);
+                Gizmos.color = new Color(0f, 1f, 0.25f, 0.8f);
+                Gizmos.DrawWireSphere(position, radius);
+                Gizmos.color = new Color(1f, 0.08f, 0.02f, 0.35f);
+                Gizmos.DrawLine(position, listenerPosition);
+            }
+
+            if (!_virtualVoiceSortPool.IsCreated)
+                return;
+
+            int virtualCount = math.min(_virtualVoiceSortCount, MaxVirtualVoiceCapacity);
+            for (int i = selectedCount; i < virtualCount; i++)
+            {
+                VirtualVoice voice = _virtualVoiceSortPool[i];
+                if (voice.StableKey == 0u)
+                    continue;
+
+                AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in voice.SourceAup);
+                Vector3 position = ToRuntimeVector3(in sourceAup);
+                float radius = math.clamp(0.08f + voice.EffectiveVolume * 3f, 0.08f, 0.8f);
+                Gizmos.color = new Color(1f, 0.86f, 0.05f, 0.5f);
+                Gizmos.DrawWireSphere(position, radius);
+                Gizmos.color = new Color(1f, 0.08f, 0.02f, 0.18f);
+                Gizmos.DrawLine(position, listenerPosition);
             }
         }
 #endif
@@ -8285,11 +8817,11 @@ namespace Hecton8.Audio
     /// <summary>
     /// Unmanaged caption payload carried by the deferred audio-caption lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 88)]
     public struct AudioCaptionPayload
     {
-        public Vector3 WorldPosition;
         public AbsoluteUniversePosition WorldAup;
+        public Vector3 WorldPosition;
         public float DurationSeconds;
         public float Intensity;
         public uint CaptionHashId;

@@ -1,7 +1,21 @@
-﻿# 24 Verification Doc Trust And Evidence Model
+# 24 Verification Doc Trust And Evidence Model
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Mandates followed:
 - `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
@@ -19,11 +33,11 @@ Static snapshot:
 
 | Surface | Count |
 |---|---:|
-| `Docs` non-meta files | 584 |
-| docs `*.md`/`*.txt` files | 439 |
+| `Docs` non-meta files | Historical `584`; R18 late full-doc snapshot `4924` before final report writes |
+| docs `*.md`/`*.txt` files | Historical `439`; R18 late full-doc snapshot `2857` before final report writes |
 | audit docs by filename | not authoritative because naming is inconsistent |
-| runtime smoke testers (`*SmokeTester*.cs`) | 11 |
-| verifier scripts (`*Verifier*.cs`) | 3 |
+| runtime smoke testers (`*SmokeTester*.cs`) | Historical `11`; R18 static count `56` |
+| verifier scripts (`*Verifier*.cs`) | Historical `3`; R18 static count `4` |
 | `Assets/_Project/Tests` non-meta files | 6 |
 
 `Assets/_Project/Tests` currently contains:
@@ -41,8 +55,7 @@ Interpretation:
 ## 2. Formal tests are thin
 
 Evidence:
-- There are only four visible first-party test source files under `Assets/_Project/Tests`.
-- Three are editor tests and one is a playmode smoke test.
+- Historical pass saw only four visible first-party test source files under `Assets/_Project/Tests`. R18 static count sees `17` test `.cs` files: `13` Editor and `4` PlayMode.
 
 What this means:
 - Formal test confidence is low.
@@ -109,7 +122,7 @@ Verdict:
 ## 5. Documentation is a system, not a folder
 
 Evidence:
-- `Docs` contains `584` non-meta files.
+- Historical pass saw `Docs` contains `584` non-meta files; R18 late full-doc snapshot sees `4924` before final report writes.
 - Largest branches include:
   - `_Archive` (`156`)
   - `ARCHIVARIUS REPORTS` (`119` physical non-meta files)
@@ -117,8 +130,8 @@ Evidence:
   - `ARCHITECTURE` (`29`)
   - active Codex forensic bundle (`28` numbered markdown files)
 - `ARCHIVARIUS REPORTS` itself is structured into:
-  - `01_GENERAL_INFO` (`24`)
-  - `02_ACTUAL_REPORTS` (`56`)
+  - `01_GENERAL_INFO` historical `24`; R18 static markdown count `26`
+  - `02_ACTUAL_REPORTS` historical `56` direct non-meta; R18 static direct non-meta `58`, markdown `48`
   - `03_OBSOLETE` (`39`)
   - `04_DELETION_QUEUE` (`0`)
 - `DOC_GOVERNANCE.md` and `Docs/README.md` explicitly discuss archive rules and stale-doc management.
@@ -179,10 +192,10 @@ It does not yet have lightweight certainty.
 
 Current source/doc surface:
 
-- `Docs` now contains `584` non-meta files.
+- Historical pass saw `Docs` contains `584` non-meta files; R18 late full-doc snapshot sees `4924` before final report writes.
 - `Docs/ARCHIVARIUS REPORTS` now contains `119` non-meta files.
-- `ARCHIVARIUS REPORTS/01_GENERAL_INFO`: `24` direct files.
-- `ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS`: `56` direct non-meta files: `46` markdown, `9` patch files, `1` csv.
+- `ARCHIVARIUS REPORTS/01_GENERAL_INFO`: historical `24`; R18 static markdown count `26`.
+- `ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS`: historical `56` direct non-meta files: `46` markdown, `9` patch files, `1` csv; R18 static count sees `58` direct non-meta files: `48` markdown, `9` patch files, `1` csv.
 - `ARCHIVARIUS REPORTS/03_OBSOLETE`: `39` recursive non-meta files.
 - `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit`: `29` markdown files.
 - `Docs/Reports`: active May 1 additions include `DOOMSDAY_FLAW_REPORT.md`, `OMEGA_CORE_ENFORCEMENT_2026-05-01.md`, `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`, and `CI_VALIDATION_HOOKS_SURGERY_LOG.md`.

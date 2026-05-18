@@ -1,0 +1,15 @@
+# Rationale_DOC_GLOBAL_DOCS_REFRESH
+
+## Decision 13: R10 Long-Tail Interior Closure And Evidence Reconstruction
+
+Problem: R10 was interrupted after active docs linked a missing R10 report. Source counters drifted again under concurrent agents. During validation, DOC_GLOBAL status/rationale/log evidence was repeatedly absent from the working tree.
+
+Solution: Complete R10 as local-only static documentation/source evidence: regenerate atlas, recapture counters, patch active long-tail interiors, write the missing R10 report, and recreate DOC_GLOBAL evidence files when the task/log folders became writable again.
+
+Rejected Alternatives: Keeping partial R10 counters was rejected because live scans changed to `1739 / 1686 / 1722` C# files and `107` first-party asmdefs. Restoring unrelated deleted agent files was rejected as cross-agent interference. Runtime readiness language was rejected because no Unity/profiler/player-build artifact exists.
+
+Scalability potential: Low-tier readers get current boundaries without stale May 4/May 6/R9 counter traps. Middle-tier review gets current atlas/schema gates. High/Ultra review can spend time on actual runtime and visual proof instead of correcting false documentation claims.
+
+Hardware Impact: 0 us/frame. Documentation only. Process gain for low-end i3/MX350 is reduced engineering waste, not measured runtime speed.
+
+Evidence Class: STATIC_DOC / STATIC_SOURCE / FILESYSTEM / PY_TOOL. Runtime verification remains PENDING VERIFICATION.

@@ -1,6 +1,14 @@
 # RENDERGRAPH AUDIT â€” HECTON-8 First-Party URP Features
 Date: 2026-05-07
 Status: PENDING VERIFICATION
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## R4 Interior Actuality Boundary
+
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the latest DOC_GLOBAL reports.
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 
 
 **Date:** 2026-04-29
@@ -13,7 +21,7 @@ Status: PENDING VERIFICATION
 ## EXECUTIVE SUMMARY
 
 All **7 first-party** `ScriptableRendererFeature` implementations were audited for `RTHandle` / `RenderTexture` / `GraphicsBuffer` lifecycle hygiene.
-**Verdict:** Zero first-party RenderGraph resource leaks detected. Every pass that owns persistent GPU resources implements `IDisposable` and calls `Release()` in its `Dispose()` method. Every feature implements `Dispose(bool)` and forwards to its pass.
+**Verdict:** Static first-party RenderGraph lifecycle scan found no obvious release-path gaps in that pass. Runtime and Frame Debugger proof are absent.
 
 > **WARNING:** This audit covers first-party code ONLY. Third-party Crest URP passes (`UnderwaterEffectPass`, `UnderwaterMaskPass`, `WaterRenderer`, etc.) are EXCLUDED per the **3RD-PARTY INTEGRITY** mandate. Crest maintains its own `Release()` / `OnDestroy()` patterns â€” do NOT write wrappers.
 

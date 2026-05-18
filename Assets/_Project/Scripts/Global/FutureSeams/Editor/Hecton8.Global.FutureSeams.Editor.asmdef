@@ -1,0 +1,19 @@
+{
+    "name": "Hecton8.Global.FutureSeams.Editor",
+    "rootNamespace": "Hecton8.Global.FutureSeams.Editor",
+    "references": [
+        "Hecton8.Global.Contracts",
+        "Hecton8.Global.FutureSeams.Authoring"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

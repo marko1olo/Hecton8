@@ -1,10 +1,25 @@
 # HECTON-8 PBR Surface Doctrine
 
+Date: 2026-05-17
+Status: STATIC SURFACE DOCTRINE / UNITY IMPORT PENDING / RUNTIME PENDING VERIFICATION
 Owner: TECHNICAL_ARTIST_DATA
 Prompt: PBR_MATERIAL_REFACTOR_SCOUT
-Date: 2026-05-17
-Status: SURFACE DOCTRINE READY - PENDING UNITY IMPORT VERIFICATION
-Audit source: `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.json`
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+Audit source: absent in the R17 current filesystem check; rerun `Tools/MaterialAudit.py` before using current results.
 
 ## Audit Facts
 
@@ -37,7 +52,7 @@ Audit source: `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.json`
 - Machine-readable global detail overlay rows: 10, minimum expected detail gain 20%
 - Issue counts: `NO_PROMPT_ORM_SLOT` = 19, `NO_PACKED_ORM_OR_MASK_SLOT` = 10, `NO_DETAIL_MAP_SLOT` = 19, `UNRESOLVED_TEXTURE_GUID` = 9, `LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW` = 9
 
-Conclusion: the current albedo set does not break the offline energy test. The material system has zero prompt-authoritative ORM slots, nine legacy/unknown mask slots, and zero wired detail slots. Four texture import settings are suspect. Broad unresolved texture GUID debt remains at 9 materials / 27 refs, but only 2 materials / 8 refs are prompt-surface unresolved debt after non-surface filtering. Both prompt-surface unresolved materials are `BLOCKER` severity because base/normal slots are unresolved. Prologue planet/cloud materials are excluded from the prompt-surface migration queue because they are celestial/prologue content, not inspectable NASA-Punk worn surface materials. The offline residency estimate is not Unity profiler proof; it is a deterministic BC-class triage model for asset prioritization.
+Conclusion: the last recorded absent-artifact MaterialAudit text reported no offline albedo-energy failure. Rerun `Tools\MaterialAudit.py` and link current `Docs\AgentLogs` outputs before treating this as current material truth. Historical rows said the material system had zero prompt-authoritative ORM slots, nine legacy/unknown mask slots, zero wired detail slots, four suspect texture import settings, broad unresolved texture GUID debt at 9 materials / 27 refs, and prompt-surface unresolved debt at 2 materials / 8 refs after non-surface filtering. Prologue planet/cloud materials were excluded from that prompt-surface migration queue because they are celestial/prologue content, not inspectable NASA-Punk worn surface materials. The offline residency estimate is not Unity profiler proof; it is a deterministic BC-class triage model for asset prioritization.
 
 ## ORM Packing Spec
 
@@ -229,9 +244,9 @@ Load-shed:
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA --ci-surface-gates
 ```
 
-Current result: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `albedo_candidates=25`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=4`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `materials_with_detail=0`, `detail_map_missing_materials=19`, `channel_packing_candidates=19`, `channel_candidate_saved_mib=69.54`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `surface_materials_with_unresolved_texture_refs=2`, `surface_unresolved_texture_refs=8`, `surface_unresolved_blocker_materials=2`, `surface_migration_queue_rows=19`, `surface_migration_queue_priority_counts=BLOCKER=2, MEDIUM=9, LOW=8`, `materials_with_issues=26`.
+Last recorded static MaterialAudit result, artifact absent in the R17 current filesystem check; rerun before treating it as current: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `albedo_candidates=25`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=4`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `materials_with_detail=0`, `detail_map_missing_materials=19`, `channel_packing_candidates=19`, `channel_candidate_saved_mib=69.54`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `surface_materials_with_unresolved_texture_refs=2`, `surface_unresolved_texture_refs=8`, `surface_unresolved_blocker_materials=2`, `surface_migration_queue_rows=19`, `surface_migration_queue_priority_counts=BLOCKER=2, MEDIUM=9, LOW=8`, `materials_with_issues=26`.
 
-Generated CSV artifacts:
+Expected generated CSV artifacts after rerun; absent in the R17 current filesystem check:
 
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_import_issues.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_read_errors.csv`
@@ -285,13 +300,13 @@ python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py
 python -m unittest Tools.test_material_audit
 ```
 
-Current test result: 13 tests pass, including subprocess coverage for import-debt exit 2, material-debt exit 3, unresolved-reference exit 4, texture-budget exit 5, albedo-read-error exit 6, energy-warning exit 7, channel-packing exit 8, detail-map exit 9, surface-unresolved-reference exit 10, non-surface material exclusion, and the `--ci-surface-gates` profile.
+Expected regression command: `python -m unittest Tools.test_material_audit`. Current test result is `PENDING RERUN` until a timestamped artifact is linked.
 
 Generated lighting exclusion:
 
 - Scene-generated lighting/probe EXR/HDR files such as `Assets/_Project/Scenes/02_HECTON_WORLD/ReflectionProbe-0.exr` are excluded from the surface PBR scan. They are not albedo, ORM, normal, or detail maps.
 
-Known import issues from the current audit:
+Known import issues from the last recorded absent-artifact audit; rerun required:
 
 - `Assets/_Project/Art/TEXTURES/Detali/Soft Plume Noise - second try.png` - data texture has sRGB enabled.
 - `Assets/_Project/Art/TEXTURES/Detali/soft_plume_noise_-_kakoy_to_seryy_nu_norm.png` - normal/data texture has sRGB enabled and is not imported as Normal Map.

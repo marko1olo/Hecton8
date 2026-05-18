@@ -1,6 +1,8 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Burst;
@@ -15,9 +17,8 @@ namespace Hecton8.Gameplay
     /// VR-only somatic suit provider. PC/console code reads <see cref="IVRSomaticProvider"/> through GlobalRegistry.
     /// </summary>
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(-9915)]
     [AddComponentMenu("Hecton8/Gameplay/VR Somatic Provider")]
-    public sealed class VRSomaticProvider : MonoBehaviour, IVRSomaticProvider, IUpdatable, ILateFrameTickable, IOriginShiftListener
+    public sealed class VRSomaticProvider : MonoBehaviour, IVRSomaticProvider, IUpdatable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener
     {
         private const int HeadCollisionCommandCount = 6;
         private const int HeadCollisionMaxHitsPerCommand = 1;
@@ -112,6 +113,49 @@ namespace Hecton8.Gameplay
         private static readonly int VrComfortJerkStateId = Shader.PropertyToID("_HectonVRComfortJerkState");
         private static readonly int VrComfortVignetteId = Shader.PropertyToID("_VRComfortVignette");
 
+        private struct VaultNativeArray<T> where T : struct
+        {
+            private IDataVault _vault;
+            private VaultBufferHandle<T> _handle;
+
+            public static VaultNativeArray<T> Create(IDataVault vault, VaultBufferHandle<T> handle)
+            {
+                return new VaultNativeArray<T>
+                {
+                    _vault = vault,
+                    _handle = handle
+                };
+            }
+
+            public bool IsCreated => _handle.IsCreated;
+
+            public int Length => Resolve().Length;
+
+            public T this[int index]
+            {
+                get
+                {
+                    NativeArray<T> array = Resolve();
+                    return array[index];
+                }
+                set
+                {
+                    NativeArray<T> array = Resolve();
+                    array[index] = value;
+                }
+            }
+
+            public NativeArray<T> Resolve()
+            {
+                return _handle.Resolve(_vault);
+            }
+
+            public static implicit operator NativeArray<T>(VaultNativeArray<T> view)
+            {
+                return view.Resolve();
+            }
+        }
+
         [Header("Rig")]
         [SerializeField] private Transform hmdTransform;
         [SerializeField] private Transform visorHudRoot;
@@ -196,14 +240,15 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(200f, 22000f)] private float breathingLowPassOpenHz = 18000f;
         [SerializeField, Range(200f, 22000f)] private float breathingLowPassClosedHz = 680f;
 
-        private NativeArray<CapsulecastCommand> _headCollisionCommands;
-        private NativeArray<RaycastHit> _headCollisionHits;
-        private NativeArray<HeadCastSample> _headCollisionSamples;
-        private NativeArray<VRSomaticRootSyncInput> _rootSyncInput;
-        private NativeArray<VRSomaticRootSyncOutput> _rootSyncOutput;
-        private NativeArray<float3> HandTargets;
-        private NativeArray<float3> HandPhysicalPositions;
-        private NativeArray<VRSomaticBlackBoxEntry> _blackBox;
+        private VaultNativeArray<CapsulecastCommand> _headCollisionCommands;
+        private VaultNativeArray<RaycastHit> _headCollisionHits;
+        private VaultNativeArray<HeadCastSample> _headCollisionSamples;
+        private VaultNativeArray<VRSomaticRootSyncInput> _rootSyncInput;
+        private VaultNativeArray<VRSomaticRootSyncOutput> _rootSyncOutput;
+        private VaultNativeArray<float3> HandTargets;
+        private VaultNativeArray<float3> HandPhysicalPositions;
+        private VaultNativeArray<VRSomaticBlackBoxEntry> _blackBox;
+        private IDataVault _dataVault;
         private JobHandle _headCollisionHandle;
         private JobHandle _rootSyncHandle;
         private JobHandle _handKinematicsHandle;
@@ -220,6 +265,8 @@ namespace Hecton8.Gameplay
         private quaternion _lastRootRotation = quaternion.identity;
         private Transform _fallbackHmdTransform;
         private Transform _decoupledRootTransform;
+        private Camera _cachedPlayerCamera;
+        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
         private float _headLinearSpeedMetersPerSecond;
         private float _headAngularSpeedRadiansPerSecond;
         private float _headAngularAccelerationRadiansPerSecondSq;
@@ -262,6 +309,8 @@ namespace Hecton8.Gameplay
         private bool _blackBoxDumped;
         private bool _comfortFramePressureActive;
         private bool _useQuest2ComfortFallback;
+        private bool _cachedLowMemoryProfile;
+        private bool _registeredScalability;
         private VRSomaticChestSocketPose _pdaSocketPose;
         private VRSomaticChestSocketPose _flareSocketPose;
         private VRSomaticCollisionState _collisionState;
@@ -483,13 +532,16 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             CacheSocketRotations();
+            RefreshCachedGlobalState();
         }
 
         private void OnEnable()
         {
             CacheSocketRotations();
+            RefreshCachedGlobalState();
             TrySubscribeXRRuntime();
             HectonFloatingOrigin.RegisterListener(this);
+            TryRegisterScalability();
             RefreshRuntimeRegistration(IsVRSomaticRuntimeActive());
         }
 
@@ -514,6 +566,7 @@ namespace Hecton8.Gameplay
             bool hadRuntimeState = HasRuntimeRegistrationOrActiveSnapshot();
             TryUnsubscribeXRRuntime();
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterScalability();
             TryUnregisterLateFrame();
             TryUnregisterUpdate();
             TryUnregisterService();
@@ -524,6 +577,43 @@ namespace Hecton8.Gameplay
         private void OnValidate()
         {
             CacheSocketRotations();
+        }
+
+        public void OnScalabilityChanged(in Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent payload)
+        {
+            _cachedQualityTier = payload.CurrentQualityTier;
+        }
+
+        private void RefreshCachedGlobalState()
+        {
+            _cachedQualityTier = GlobalRegistry.ScalabilityTier;
+            _cachedLowMemoryProfile = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+            _cachedPlayerCamera = null;
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+                _cachedPlayerCamera = runtimeContext.PlayerCamera;
+            if (_cachedPlayerCamera == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                _cachedPlayerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            }
+        }
+
+        private void TryRegisterScalability()
+        {
+            if (_registeredScalability || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalability = true;
+        }
+
+        private void TryUnregisterScalability()
+        {
+            if (!_registeredScalability)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalability = false;
         }
 
         private void TrySubscribeXRRuntime()
@@ -566,6 +656,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            RefreshCachedGlobalState();
             RefreshComfortProfileSelection();
             EnsureNativeBuffers();
             TryRegisterService();
@@ -671,8 +762,7 @@ namespace Hecton8.Gameplay
 
             if (playerCamera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+                playerCamera = _cachedPlayerCamera;
             }
 
             if (playerCamera == null)
@@ -1372,7 +1462,7 @@ namespace Hecton8.Gameplay
             if (!HandTargets.IsCreated || !HandPhysicalPositions.IsCreated)
                 return 0u;
 
-            if (disableGhostHandsOnLowTier && IsLowTier(GlobalRegistry.ScalabilityTier))
+            if (disableGhostHandsOnLowTier && IsLowTier(_cachedQualityTier, _cachedLowMemoryProfile))
                 return 0u;
 
             float threshold = SanitizeMinimum(ghostHandDistanceMeters, 0.01f);
@@ -1826,7 +1916,7 @@ namespace Hecton8.Gameplay
                 flags |= BlackBoxFlagNearCollision;
             if (_lastObservedAupShiftSequence != 0u)
                 flags |= BlackBoxFlagAupShiftSeen;
-            if (IsLowTier(GlobalRegistry.ScalabilityTier))
+            if (IsLowTier(_cachedQualityTier, _cachedLowMemoryProfile))
                 flags |= BlackBoxFlagLowTier;
             if (_comfortFramePressureActive)
                 flags |= BlackBoxFlagFramePressure;
@@ -1989,12 +2079,12 @@ namespace Hecton8.Gameplay
             return new Vector3(value.x, value.y, value.z);
         }
 
-        private static bool IsLowTier(HectonQualityTier tier)
+        private static bool IsLowTier(HectonQualityTier tier, bool lowMemoryProfile)
         {
             return tier == HectonQualityTier.Low ||
                    tier == HectonQualityTier.Mx350 ||
                    tier == HectonQualityTier.Unknown ||
-                   GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+                   lowMemoryProfile;
         }
 
         private static void RebaseHandArray(NativeArray<float3> array, float3 shift)
@@ -2246,16 +2336,31 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private IDataVault ResolveDataVault()
+        {
+            if (_dataVault != null)
+                return _dataVault;
+
+            _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
+        }
+
         private void EnsureBlackBoxBuffer()
         {
             if (_blackBox.IsCreated)
                 return;
 
-            _blackBox = new NativeArray<VRSomaticBlackBoxEntry>(
-                BlackBoxFrameCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VRSomaticBlackBoxEntry>[300] - VR somatic postmortem black box - owner: VRSomaticProvider
-            NativeMemorySentinel.RegisterNativeArray(_blackBox, nameof(VRSomaticProvider), nameof(_blackBox), NativeAllocationLifetime.Scene);
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return;
+
+            _blackBox = VaultNativeArray<VRSomaticBlackBoxEntry>.Create(
+                vault,
+                vault.GetBufferHandle<VRSomaticBlackBoxEntry>(
+                    BufferID.ShinobuVRSomaticBlackBox,
+                    BlackBoxFrameCapacity,
+                    SystemID.GameplayPlayer,
+                    NativeArrayOptions.ClearMemory));
         }
 
         private void EnsureNativeBuffers()
@@ -2264,88 +2369,80 @@ namespace Hecton8.Gameplay
             if (!_headCollisionDisposeHandle.IsCompleted)
                 return;
 
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return;
+
             EnsureBlackBoxBuffer();
 
             if (!_headCollisionCommands.IsCreated)
             {
-                _headCollisionCommands = new NativeArray<CapsulecastCommand>(
-                    HeadCollisionCommandCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<CapsulecastCommand>[6] - VR somatic head near-field sweep commands - owner: VRSomaticProvider
-                _headCollisionHits = new NativeArray<RaycastHit>(
-                    HeadCollisionCommandCount * HeadCollisionMaxHitsPerCommand,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[6] - VR somatic head near-field sweep hits - owner: VRSomaticProvider
-                _headCollisionSamples = new NativeArray<HeadCastSample>(
-                    HeadCollisionCommandCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadCastSample>[6] - VR somatic processed contact samples - owner: VRSomaticProvider
-
-                NativeMemorySentinel.RegisterNativeArray(_headCollisionCommands, nameof(VRSomaticProvider), nameof(_headCollisionCommands), NativeAllocationLifetime.Scene);
-                NativeMemorySentinel.RegisterNativeArray(_headCollisionHits, nameof(VRSomaticProvider), nameof(_headCollisionHits), NativeAllocationLifetime.Scene);
-                NativeMemorySentinel.RegisterNativeArray(_headCollisionSamples, nameof(VRSomaticProvider), nameof(_headCollisionSamples), NativeAllocationLifetime.Scene);
+                _headCollisionCommands = VaultNativeArray<CapsulecastCommand>.Create(
+                    vault,
+                    vault.GetBufferHandle<CapsulecastCommand>(
+                        BufferID.ShinobuVRSomaticHeadCollisionCommands,
+                        HeadCollisionCommandCount,
+                        SystemID.GameplayPlayer,
+                        NativeArrayOptions.UninitializedMemory));
+                _headCollisionHits = VaultNativeArray<RaycastHit>.Create(
+                    vault,
+                    vault.GetBufferHandle<RaycastHit>(
+                        BufferID.ShinobuVRSomaticHeadCollisionHits,
+                        HeadCollisionCommandCount * HeadCollisionMaxHitsPerCommand,
+                        SystemID.GameplayPlayer,
+                        NativeArrayOptions.ClearMemory));
+                _headCollisionSamples = VaultNativeArray<HeadCastSample>.Create(
+                    vault,
+                    vault.GetBufferHandle<HeadCastSample>(
+                        BufferID.ShinobuVRSomaticHeadCollisionSamples,
+                        HeadCollisionCommandCount,
+                        SystemID.GameplayPlayer,
+                        NativeArrayOptions.ClearMemory));
             }
 
             if (!_rootSyncInput.IsCreated)
             {
-                _rootSyncInput = new NativeArray<VRSomaticRootSyncInput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VRSomaticRootSyncInput>[1] - decoupled VR root sync input - owner: VRSomaticProvider
-                _rootSyncOutput = new NativeArray<VRSomaticRootSyncOutput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VRSomaticRootSyncOutput>[1] - decoupled VR root sync output - owner: VRSomaticProvider
-                NativeMemorySentinel.RegisterNativeArray(_rootSyncInput, nameof(VRSomaticProvider), nameof(_rootSyncInput), NativeAllocationLifetime.Scene);
-                NativeMemorySentinel.RegisterNativeArray(_rootSyncOutput, nameof(VRSomaticProvider), nameof(_rootSyncOutput), NativeAllocationLifetime.Scene);
+                _rootSyncInput = VaultNativeArray<VRSomaticRootSyncInput>.Create(
+                    vault,
+                    vault.GetBufferHandle<VRSomaticRootSyncInput>(BufferID.ShinobuVRSomaticRootSyncInput, 1, SystemID.GameplayPlayer, NativeArrayOptions.ClearMemory));
+                _rootSyncOutput = VaultNativeArray<VRSomaticRootSyncOutput>.Create(
+                    vault,
+                    vault.GetBufferHandle<VRSomaticRootSyncOutput>(BufferID.ShinobuVRSomaticRootSyncOutput, 1, SystemID.GameplayPlayer, NativeArrayOptions.ClearMemory));
             }
 
             if (!HandTargets.IsCreated)
             {
-                HandTargets = new NativeArray<float3>(HandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[2] - OpenXR hand targets - owner: VRSomaticProvider
-                HandPhysicalPositions = new NativeArray<float3>(HandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[2] - spring-driven physical hand positions - owner: VRSomaticProvider
-                NativeMemorySentinel.RegisterNativeArray(HandTargets, nameof(VRSomaticProvider), nameof(HandTargets), NativeAllocationLifetime.Scene);
-                NativeMemorySentinel.RegisterNativeArray(HandPhysicalPositions, nameof(VRSomaticProvider), nameof(HandPhysicalPositions), NativeAllocationLifetime.Scene);
+                HandTargets = VaultNativeArray<float3>.Create(
+                    vault,
+                    vault.GetBufferHandle<float3>(BufferID.ShinobuVRSomaticHandTargets, HandCount, SystemID.GameplayPlayer, NativeArrayOptions.ClearMemory));
+                HandPhysicalPositions = VaultNativeArray<float3>.Create(
+                    vault,
+                    vault.GetBufferHandle<float3>(BufferID.ShinobuVRSomaticHandPhysicalPositions, HandCount, SystemID.GameplayPlayer, NativeArrayOptions.ClearMemory));
             }
         }
 
         private void DisposeNativeBuffers()
         {
             DispatcherJobSwap.TryFinalizeCompleted(ref _headCollisionDisposeHandle);
-            bool hasPendingDispose = !_headCollisionDisposeHandle.IsCompleted;
-            JobHandle activeJobs = JobHandle.CombineDependencies(
-                _headCollisionHandle,
-                JobHandle.CombineDependencies(_rootSyncHandle, _handKinematicsHandle));
-            JobHandle disposeHandle = hasPendingDispose
-                ? JobHandle.CombineDependencies(_headCollisionDisposeHandle, activeJobs)
-                : activeJobs;
-            bool scheduledDispose = false;
-
-            DisposeNativeArray(ref _headCollisionCommands, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _headCollisionHits, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _headCollisionSamples, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _rootSyncInput, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _rootSyncOutput, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref HandTargets, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref HandPhysicalPositions, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _blackBox, ref disposeHandle, ref scheduledDispose);
+            DispatcherJobSwap.TryComplete(ref _headCollisionHandle, true);
+            DispatcherJobSwap.TryComplete(ref _rootSyncHandle, true);
+            DispatcherJobSwap.TryComplete(ref _handKinematicsHandle, true);
+            _headCollisionCommands = default;
+            _headCollisionHits = default;
+            _headCollisionSamples = default;
+            _rootSyncInput = default;
+            _rootSyncOutput = default;
+            HandTargets = default;
+            HandPhysicalPositions = default;
+            _blackBox = default;
+            _dataVault = null;
             _headCollisionHandle = default;
             _rootSyncHandle = default;
             _handKinematicsHandle = default;
+            _headCollisionDisposeHandle = default;
             _blackBoxCursor = 0;
             _blackBoxLastRecordedFrame = -1;
             _stateFlags &= ~(StateHeadCollisionScheduled | StateRootSyncScheduled | StateHandKinematicsScheduled | StateHandsInitialized | StateRootInitialized);
-
-            if (!scheduledDispose)
-                return;
-
-            _headCollisionDisposeHandle = disposeHandle;
-            JobHandle.ScheduleBatchedJobs();
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle disposeHandle, ref bool scheduledDispose) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            disposeHandle = array.Dispose(disposeHandle);
-            array = default;
-            scheduledDispose = true;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

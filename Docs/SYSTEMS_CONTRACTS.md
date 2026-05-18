@@ -2,6 +2,21 @@
 ## ENGINE SYSTEMS CONTRACTS
 Date: 2026-05-15
 Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Verification: not runtime-measured in this pass
 Scope: Save, Steam, Audio, Telemetry, CI, Accessibility, Endgame
 
@@ -14,8 +29,8 @@ Current-state boundary, 2026-05-15:
 - Current save implementation authority is `SaveManager.cs` / `SaveBinaryStorage.cs`; versioning and migration requirements below remain contractual.
 - Current audio service authority is `SpatialAudioManager` plus procedural audio owners; older `UnderwaterAudioProcessor.cs` naming below is a target contract unless source confirms a concrete owner.
 - No line in this document is a zero-GC, Steam, CI, accessibility, or Play Mode verification claim without a fresh runtime/log artifact. May 11 report text claimed a completed Core dependency build at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player build, import, scene wiring, frame-time, memory, and visual quality proof remain absent.
-- 2026-05-15 current-disk systems boundary: latest observed `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` reports `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`. Latest observed `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` reports H-Phi static budget `EXIT=0` with all active budget gates passed, including `MemoryAlignment=0.506309148`, `RuntimeHPhiRisk=0.000636091`, `DataSovereignty=0.021306032`, `GlobalRegistrySurface=5060/5060`, `ManagedFormatSurface=534/534`, `PrimaryManagedRuntimeRisk=147/147`, `DuplicateSignalNames=0`, and `UnityUpdateMethods=0`. These are source/static/CLI system boundaries only; runtime save/load, Steam/cloud, audio mixer, telemetry dump, accessibility UI, CI, player-build, and endgame routes remain `PENDING VERIFICATION`.
-- DOC_HONEST_ANALYSIS R3 narrowed Core graph drift by clearing transient `Hecton8.World.GPR` Core asmdef reference state; post-prune H-Phi Core graph artifact `Docs/Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json` exits `0` with Core graph debt `25/10/14/8/6`. CurrentDisk53/BudgetGate22 supersede that same-day slice as the current top Core compile/H-Phi systems boundary after the later 22:38 source write.
+- 2026-05-15 current-disk systems boundary: latest observed archived `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` reported `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`. Latest observed archived `Docs/Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` reported H-Phi static budget `EXIT=0` with all active budget gates passed, including `MemoryAlignment=0.506309148`, `RuntimeHPhiRisk=0.000636091`, `DataSovereignty=0.021306032`, `GlobalRegistrySurface=5060/5060`, `ManagedFormatSurface=534/534`, `PrimaryManagedRuntimeRisk=147/147`, `DuplicateSignalNames=0`, and `UnityUpdateMethods=0`. These are archived source/static/CLI system boundaries only; current compile proof, runtime save/load, Steam/cloud, audio mixer, telemetry dump, accessibility UI, CI, player-build, and endgame routes remain `PENDING VERIFICATION`.
+- DOC_HONEST_ANALYSIS R3 narrowed Core graph drift by clearing transient `Hecton8.World.GPR` Core asmdef reference state; post-prune H-Phi Core graph artifact `Docs/Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json` exits `0` with Core graph debt `25/10/14/8/6`. CurrentDisk53/BudgetGate22 supersede that same-day slice as archived CLI/static boundary evidence only, not current compile proof for the active dirty workspace.
 
 2026-05-13 source x-ray:
 

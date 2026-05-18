@@ -37,13 +37,14 @@ using Hecton8.World;
 
 namespace Hecton8.Core
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 28)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public readonly struct CriticalMemoryPressureEvent
     {
-        public readonly int Frame;
+        public readonly double UsageRatio;
         public readonly long ReservedMemoryBytes;
         public readonly long PhysicalMemoryBytes;
-        public readonly double UsageRatio;
+        public readonly int Frame;
+        private readonly int _pad0;
 
         public CriticalMemoryPressureEvent(
             int frame,
@@ -51,10 +52,11 @@ namespace Hecton8.Core
             long physicalMemoryBytes,
             double usageRatio)
         {
+            UsageRatio = usageRatio;
             Frame = frame;
             ReservedMemoryBytes = reservedMemoryBytes;
             PhysicalMemoryBytes = physicalMemoryBytes;
-            UsageRatio = usageRatio;
+            _pad0 = 0;
         }
     }
 
@@ -86,8 +88,18 @@ namespace Hecton8.Core
         private const int DispatcherBlackBoxEntrySizeBytes = 64;
         private const string DispatcherBlackBoxDumpPath = "Docs/AgentLogs/Dump_CORE_TICK_DILATION.bin";
         private const string DispatcherBlackBoxMirrorDumpPath = "Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin";
+        private const int MasterDispatcherMaxSystems = 85;
+        private const int MasterDispatcherBucketCount = 64;
+        private const int MasterDispatcherBucketMask = MasterDispatcherBucketCount - 1;
+        private const int MasterDispatcherBlackBoxFrameCount = 300;
+        private const int MasterDispatcherSignalLaneCount = 33;
+        private const int MasterDispatcherDependencyScratchCapacity = 8;
+        private const float MasterDispatcherStallDumpThresholdMs = 8f;
+        private const string MasterDispatcherDumpPath = "Docs/AgentLogs/Dump_SYSTEM_DISPATCHER.bin";
+        private const string MasterDispatcherPriorityCsvPath = "Docs/Tasks/execution_priorities.csv";
         private const ulong DispatcherBlackBoxDumpMagic = 0x00384E4F54434548ul; // HECTON8\0
         private const uint DispatcherBlackBoxDumpVersion = 1u;
+        private const uint MasterDispatcherDumpVersion = 1u;
         private const int CameraJuiceResolveRetryFrames = 30;
         private const float AdrenalineHealthThreshold01 = 0.1f;
         private const float AdrenalineTargetTimeDilationScalar = 0.5f;
@@ -127,6 +139,10 @@ namespace Hecton8.Core
         private static readonly ProfilerMarker _foveatedCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Foveated.Complete");
         private static readonly ProfilerMarker _dispatcherRaycastScheduleProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Schedule");
         private static readonly ProfilerMarker _dispatcherRaycastCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Complete");
+        private static readonly ProfilerMarker _masterPreSimulationProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.PreSimulation");
+        private static readonly ProfilerMarker _masterSimulationProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.Simulation");
+        private static readonly ProfilerMarker _masterPostSimulationProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.PostSimulation");
+        private static readonly ProfilerMarker _masterVisualSyncProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.VisualSync");
         private const uint _ThreadSafeCommandQueueHash = 2371163900u;
         private const uint _StorageReservationCommitResolvedQueueHash = 1402202258u;
         private const uint _ModCommandDispatcherQueueHash = 1692095755u;
@@ -295,6 +311,45 @@ namespace Hecton8.Core
             new RegistryBucket<IUnscaledFastTickable>(32),
         };
 
+        // COLD ALLOC: IDispatcherSystem[85] - GlobalRegistry-facing master dispatcher registrations - owner: SystemDispatcher
+        private static readonly IDispatcherSystem[] _masterRegisteredSystems = new IDispatcherSystem[MasterDispatcherMaxSystems];
+        // COLD ALLOC: IDispatcherSystem[85] - Kahn-sorted execution order - owner: SystemDispatcher
+        private static readonly IDispatcherSystem[] _masterSortedSystems = new IDispatcherSystem[MasterDispatcherMaxSystems];
+        // COLD ALLOC: IDispatcherFixedSystem[8] - fixed-only bridge registrations - owner: SystemDispatcher
+        private static readonly IDispatcherFixedSystem[] _masterFixedSystems = new IDispatcherFixedSystem[8];
+        // COLD ALLOC: int[85] - Kahn in-degree scratch - owner: SystemDispatcher
+        private static readonly int[] _masterKahnInDegrees = new int[MasterDispatcherMaxSystems];
+        // COLD ALLOC: int[85] - Kahn queue scratch - owner: SystemDispatcher
+        private static readonly int[] _masterKahnQueue = new int[MasterDispatcherMaxSystems];
+        // COLD ALLOC: int[85] - stable reverse lookup scratch - owner: SystemDispatcher
+        private static readonly int[] _masterDependencySystemIndices = new int[MasterDispatcherMaxSystems];
+        // COLD ALLOC: bool[85] - fault-disabled master systems - owner: SystemDispatcher
+        private static readonly bool[] _masterSystemDisabled = new bool[MasterDispatcherMaxSystems];
+        // COLD ALLOC: uint[64] - visible bucket load counters - owner: SystemDispatcher
+        private static readonly uint[] _masterBucketLoadCounters = new uint[MasterDispatcherBucketCount];
+        // COLD ALLOC: uint[85] - CSV priority hash scratch - owner: SystemDispatcher
+        private static readonly uint[] _masterCsvSystemHashes = new uint[MasterDispatcherMaxSystems];
+        // COLD ALLOC: int[85] - CSV priority rank scratch - owner: SystemDispatcher
+        private static readonly int[] _masterCsvSystemPriorities = new int[MasterDispatcherMaxSystems];
+        // COLD ALLOC: float[4] - editor phase timing snapshot - owner: SystemDispatcher
+        private static readonly float[] _masterPhaseTimingSnapshotMs = new float[4];
+        // COLD ALLOC: uint[33] - deterministic late signal-lane facade hashes - owner: SystemDispatcher
+        private static readonly uint[] _masterSignalLaneHashes =
+        {
+            0x53494700u, 0x53494701u, 0x53494702u, 0x53494703u, 0x53494704u, 0x53494705u,
+            0x53494706u, 0x53494707u, 0x53494708u, 0x53494709u, 0x5349470Au, 0x5349470Bu,
+            0x5349470Cu, 0x5349470Du, 0x5349470Eu, 0x5349470Fu, 0x53494710u, 0x53494711u,
+            0x53494712u, 0x53494713u, 0x53494714u, 0x53494715u, 0x53494716u, 0x53494717u,
+            0x53494718u, 0x53494719u, 0x5349471Au, 0x5349471Bu, 0x5349471Cu, 0x5349471Du,
+            0x5349471Eu, 0x5349471Fu, 0x53494720u
+        };
+        private static int _masterRegisteredSystemCount;
+        private static int _masterSortedSystemCount;
+        private static int _masterFixedSystemCount;
+        private static bool _masterTopologyDirty = true;
+        private static bool _masterTopologyValid;
+        private static bool _masterEmergencyTopologyInstalled;
+
         private static IFoveatedDispatcher _foveatedSimulationManager = new FoveatedSimulationManager();
         private static long _homeostasisKillSwitchMaskBits;
         private static int _homeostasisPressureLevel;
@@ -326,6 +381,12 @@ namespace Hecton8.Core
         private VaultBufferHandle<double> _h8TimeHandle;
         private VaultBufferHandle<DispatcherBlackBoxEntry> _dispatcherBlackBoxHandle;
         private VaultBufferHandle<int> _dispatcherBlackBoxCursorHandle;
+        private VaultBufferHandle<JobHandle> _masterSimulationJobHandlesHandle;
+        private VaultBufferHandle<JobHandle> _masterDependencyScratchHandlesHandle;
+        private VaultBufferHandle<JobDependencyDTO> _masterJobDependencyTelemetryHandle;
+        private VaultBufferHandle<DispatcherPipelineTelemetryEntry> _masterPipelineTelemetryRingHandle;
+        private VaultBufferHandle<int> _masterPipelineTelemetryCursorHandle;
+        private VaultBufferHandle<MockTimeDilationSignal> _masterMockTimeDilationSignalsHandle;
         private double _fastTickAccumulator;
         private double _slowTickAccumulator;
         private double _coldTickAccumulator;
@@ -362,7 +423,28 @@ namespace Hecton8.Core
         private bool _coreTickDilationRestorePending;
         private H8TimeSnapshot _timeSnapshot;
         private uint _dispatcherBlackBoxSequence;
+        private DispatcherStateDTO _dispatcherState;
+        private JobHandle _masterSimulationCombinedHandle;
+        private JobHandle _masterFixedCombinedHandle;
+        private long _masterFrameStartTimestamp;
+        private long _masterPreSimulationStartTimestamp;
+        private long _masterPostSimulationStartTimestamp;
+        private long _masterVisualSyncStartTimestamp;
+        private float _masterLastPreSimulationMs;
+        private float _masterLastSimWaitMs;
+        private float _masterLastPostSimulationMs;
+        private float _masterLastVisualSyncMs;
+        private uint _masterFrameTelemetrySequence;
+        private int _masterPendingSimulationJobCount;
+        private int _masterPendingFixedJobCount;
+        private int _masterDisabledSystemCount;
+        private int _masterCsvPollFrame = -1;
+        private DateTime _masterPriorityCsvLastWriteUtc;
         private bool _dispatcherBlackBoxDumped;
+        private bool _masterSimulationJobsPending;
+        private bool _masterFixedJobsPending;
+        private bool _masterPipelineTelemetryDumped;
+        private bool _masterVisualSyncShedThisFrame;
         private bool _serviceRegistered;
         private int _lastMemoryDefragPressureWarningFrame = -1;
         private static int _lateFrameEventDispatchBudget;
@@ -456,7 +538,7 @@ namespace Hecton8.Core
         private static int _pendingDispatcherRaycastCount;
         private static int _scheduledDispatcherRaycastCount;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = DispatcherBlackBoxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Sequential, Size = DispatcherBlackBoxEntrySizeBytes)]
         private struct DispatcherBlackBoxEntry
         {
             public uint Frame;
@@ -1213,6 +1295,64 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers a master-dispatcher system into the Kahn-sorted pipeline.
+        /// </summary>
+        public static bool Register(IDispatcherSystem item)
+        {
+            if (item == null)
+                return false;
+
+            uint hash = item.GetSystemIdHash();
+            if (hash == 0u)
+                return false;
+
+            for (int i = 0; i < _masterRegisteredSystemCount; i++)
+            {
+                IDispatcherSystem existing = _masterRegisteredSystems[i];
+                if (ReferenceEquals(existing, item))
+                    return true;
+                if (existing != null && existing.GetSystemIdHash() == hash)
+                    return false;
+            }
+
+            if (_masterRegisteredSystemCount >= MasterDispatcherMaxSystems)
+                return false;
+
+            _masterRegisteredSystems[_masterRegisteredSystemCount++] = item;
+            _masterTopologyDirty = true;
+            _masterTopologyValid = false;
+            return true;
+        }
+
+        /// <summary>
+        /// Registers a fixed-only dispatcher system. Fixed jobs stay outside the frame job barrier.
+        /// </summary>
+        public static bool Register(IDispatcherFixedSystem item)
+        {
+            if (item == null)
+                return false;
+
+            uint hash = item.GetFixedSystemIdHash();
+            if (hash == 0u)
+                return false;
+
+            for (int i = 0; i < _masterFixedSystemCount; i++)
+            {
+                IDispatcherFixedSystem existing = _masterFixedSystems[i];
+                if (ReferenceEquals(existing, item))
+                    return true;
+                if (existing != null && existing.GetFixedSystemIdHash() == hash)
+                    return false;
+            }
+
+            if (_masterFixedSystemCount >= _masterFixedSystems.Length)
+                return false;
+
+            _masterFixedSystems[_masterFixedSystemCount++] = item;
+            return true;
+        }
+
+        /// <summary>
         /// Unregisters an update owner from a fixed priority lane.
         /// </summary>
         /// <param name="item">Update owner.</param>
@@ -1328,6 +1468,50 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Removes a master-dispatcher system from the sorted pipeline.
+        /// </summary>
+        public static void Unregister(IDispatcherSystem item)
+        {
+            if (item == null)
+                return;
+
+            for (int i = 0; i < _masterRegisteredSystemCount; i++)
+            {
+                if (!ReferenceEquals(_masterRegisteredSystems[i], item))
+                    continue;
+
+                int last = _masterRegisteredSystemCount - 1;
+                _masterRegisteredSystems[i] = _masterRegisteredSystems[last];
+                _masterRegisteredSystems[last] = null;
+                _masterRegisteredSystemCount = last;
+                _masterTopologyDirty = true;
+                _masterTopologyValid = false;
+                return;
+            }
+        }
+
+        /// <summary>
+        /// Removes a fixed-only dispatcher system.
+        /// </summary>
+        public static void Unregister(IDispatcherFixedSystem item)
+        {
+            if (item == null)
+                return;
+
+            for (int i = 0; i < _masterFixedSystemCount; i++)
+            {
+                if (!ReferenceEquals(_masterFixedSystems[i], item))
+                    continue;
+
+                int last = _masterFixedSystemCount - 1;
+                _masterFixedSystems[i] = _masterFixedSystems[last];
+                _masterFixedSystems[last] = null;
+                _masterFixedSystemCount = last;
+                return;
+            }
+        }
+
+        /// <summary>
         /// Clears every dispatcher lane.
         /// </summary>
         public static void ClearAllLanes()
@@ -1346,6 +1530,28 @@ namespace Hecton8.Core
             }
 
             _bucketedSlowTickableCount = 0;
+            for (int i = 0; i < MasterDispatcherMaxSystems; i++)
+            {
+                _masterRegisteredSystems[i] = null;
+                _masterSortedSystems[i] = null;
+                _masterKahnInDegrees[i] = 0;
+                _masterKahnQueue[i] = 0;
+                _masterDependencySystemIndices[i] = -1;
+                _masterSystemDisabled[i] = false;
+            }
+
+            for (int i = 0; i < _masterFixedSystems.Length; i++)
+                _masterFixedSystems[i] = null;
+
+            for (int i = 0; i < MasterDispatcherBucketCount; i++)
+                _masterBucketLoadCounters[i] = 0u;
+
+            _masterRegisteredSystemCount = 0;
+            _masterSortedSystemCount = 0;
+            _masterFixedSystemCount = 0;
+            _masterTopologyDirty = true;
+            _masterTopologyValid = false;
+            _masterEmergencyTopologyInstalled = false;
             _foveatedSimulationManager.ResetRuntimeState();
         }
 
@@ -1583,6 +1789,7 @@ namespace Hecton8.Core
                 DisposeDispatcherRaycastBuffers();
                 DisposeDispatcherBlackBox();
                 DisposeH8TimeArray();
+                DisposeMasterDispatcherRuntime();
                 ThreadSafeCommandQueue.Shutdown();
                 if (ReferenceEquals(GlobalRegistry.Dispatcher, this))
                     GlobalRegistry.UnregisterSystemDispatcher(this);
@@ -1618,6 +1825,14 @@ namespace Hecton8.Core
             _objectPool = null;
             _timeSnapshot = default;
             _dispatcherBlackBoxSequence = 0u;
+            _dispatcherState = default;
+            _masterSimulationCombinedHandle = default;
+            _masterFixedCombinedHandle = default;
+            _masterPendingSimulationJobCount = 0;
+            _masterPendingFixedJobCount = 0;
+            _masterDisabledSystemCount = 0;
+            _masterPipelineTelemetryDumped = false;
+            _masterVisualSyncShedThisFrame = false;
             _dispatcherBlackBoxDumped = false;
             CurrentFrameDeltaTime = 0f;
             CurrentFrameUnscaledDeltaTime = 0f;
@@ -1650,11 +1865,1028 @@ namespace Hecton8.Core
             EnsureDispatcherRaycastBuffers();
             EnsureH8TimeArray();
             EnsureDispatcherBlackBox();
+            InitializeMasterDispatcherRuntime();
             HomeostasisBrain.InitializeRuntime();
             GlobalRegistry.RegisterSystemDispatcher(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Dispatcher, this);
             EnsureDispatcherPlayerLoopInstalled();
             PublishTimeDilationState(0u);
+        }
+
+        private void InitializeMasterDispatcherRuntime()
+        {
+            EnsureMasterDispatcherNativeBuffers();
+            if (_masterRegisteredSystemCount == 0 && !_masterEmergencyTopologyInstalled && !HasLegacyDispatcherTopologyFile())
+                GenerateEmergencyMockTopology();
+
+            EnsureMasterDispatcherTopology();
+            _dispatcherState = default;
+            _dispatcherState.CurrentFrame = unchecked((uint)math.max(0, Time.frameCount));
+            _dispatcherState.ActiveBucket = unchecked((uint)(Time.frameCount & MasterDispatcherBucketMask));
+            _dispatcherState.SortedSystemCount = unchecked((uint)math.max(0, _masterSortedSystemCount));
+        }
+
+        private void EnsureMasterDispatcherNativeBuffers()
+        {
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null)
+            {
+                RefreshDataVaultDependency();
+                dataVault = _dataVault;
+            }
+
+            if (dataVault == null)
+                return;
+
+            if (!_masterSimulationJobHandlesHandle.IsCreated ||
+                !dataVault.ResolveBuffer(ref _masterSimulationJobHandlesHandle))
+            {
+                _masterSimulationJobHandlesHandle = dataVault.GetBufferHandle<JobHandle>(
+                    BufferID.SystemDispatcherMasterJobHandles,
+                    MasterDispatcherMaxSystems,
+                    SystemID.SystemDispatcher,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (!_masterDependencyScratchHandlesHandle.IsCreated ||
+                !dataVault.ResolveBuffer(ref _masterDependencyScratchHandlesHandle))
+            {
+                _masterDependencyScratchHandlesHandle = dataVault.GetBufferHandle<JobHandle>(
+                    BufferID.SystemDispatcherMasterDependencyScratch,
+                    MasterDispatcherDependencyScratchCapacity,
+                    SystemID.SystemDispatcher,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (!_masterJobDependencyTelemetryHandle.IsCreated ||
+                !dataVault.ResolveBuffer(ref _masterJobDependencyTelemetryHandle))
+            {
+                _masterJobDependencyTelemetryHandle = dataVault.GetBufferHandle<JobDependencyDTO>(
+                    BufferID.SystemDispatcherMasterJobDependencyTelemetry,
+                    MasterDispatcherMaxSystems,
+                    SystemID.SystemDispatcher,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (!_masterPipelineTelemetryRingHandle.IsCreated ||
+                !dataVault.ResolveBuffer(ref _masterPipelineTelemetryRingHandle))
+            {
+                _masterPipelineTelemetryRingHandle = dataVault.GetBufferHandle<DispatcherPipelineTelemetryEntry>(
+                    BufferID.SystemDispatcherMasterPipelineTelemetry,
+                    MasterDispatcherBlackBoxFrameCount,
+                    SystemID.SystemDispatcher,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (!_masterPipelineTelemetryCursorHandle.IsCreated ||
+                !dataVault.ResolveBuffer(ref _masterPipelineTelemetryCursorHandle))
+            {
+                _masterPipelineTelemetryCursorHandle = dataVault.GetBufferHandle<int>(
+                    BufferID.SystemDispatcherMasterPipelineCursor,
+                    1,
+                    SystemID.SystemDispatcher,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_masterMockTimeDilationSignalsHandle.IsCreated ||
+                !dataVault.ResolveBuffer(ref _masterMockTimeDilationSignalsHandle))
+            {
+                _masterMockTimeDilationSignalsHandle = dataVault.GetBufferHandle<MockTimeDilationSignal>(
+                    BufferID.SystemDispatcherMasterMockTimeDilationSignals,
+                    8,
+                    SystemID.SystemDispatcher,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+        }
+
+        private void DisposeMasterDispatcherRuntime()
+        {
+            if (_masterSimulationJobsPending)
+                _masterSimulationCombinedHandle.Complete();
+            if (_masterFixedJobsPending)
+                _masterFixedCombinedHandle.Complete();
+
+            _masterSimulationJobHandlesHandle = default;
+            _masterDependencyScratchHandlesHandle = default;
+            _masterJobDependencyTelemetryHandle = default;
+            _masterPipelineTelemetryRingHandle = default;
+            _masterPipelineTelemetryCursorHandle = default;
+            _masterMockTimeDilationSignalsHandle = default;
+            _masterSimulationCombinedHandle = default;
+            _masterFixedCombinedHandle = default;
+            _masterSimulationJobsPending = false;
+            _masterFixedJobsPending = false;
+        }
+
+        private bool TryResolveMasterSimulationBuffers(
+            out NativeArray<JobHandle> simulationJobHandles,
+            out NativeArray<JobHandle> dependencyScratchHandles,
+            out NativeArray<JobDependencyDTO> jobDependencyTelemetry,
+            out NativeArray<MockTimeDilationSignal> mockTimeDilationSignals)
+        {
+            simulationJobHandles = default;
+            dependencyScratchHandles = default;
+            jobDependencyTelemetry = default;
+            mockTimeDilationSignals = default;
+            EnsureMasterDispatcherNativeBuffers();
+
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null)
+                return false;
+
+            simulationJobHandles = _masterSimulationJobHandlesHandle.Resolve(dataVault);
+            dependencyScratchHandles = _masterDependencyScratchHandlesHandle.Resolve(dataVault);
+            jobDependencyTelemetry = _masterJobDependencyTelemetryHandle.Resolve(dataVault);
+            mockTimeDilationSignals = _masterMockTimeDilationSignalsHandle.Resolve(dataVault);
+
+            return simulationJobHandles.IsCreated &&
+                   simulationJobHandles.Length >= MasterDispatcherMaxSystems &&
+                   dependencyScratchHandles.IsCreated &&
+                   dependencyScratchHandles.Length >= MasterDispatcherDependencyScratchCapacity &&
+                   jobDependencyTelemetry.IsCreated &&
+                   jobDependencyTelemetry.Length >= MasterDispatcherMaxSystems &&
+                   mockTimeDilationSignals.IsCreated &&
+                   mockTimeDilationSignals.Length >= 8;
+        }
+
+        private bool TryResolveMasterTelemetryBuffers(
+            out NativeArray<DispatcherPipelineTelemetryEntry> telemetryRing,
+            out NativeArray<int> telemetryCursor)
+        {
+            telemetryRing = default;
+            telemetryCursor = default;
+            EnsureMasterDispatcherNativeBuffers();
+
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null)
+                return false;
+
+            telemetryRing = _masterPipelineTelemetryRingHandle.Resolve(dataVault);
+            telemetryCursor = _masterPipelineTelemetryCursorHandle.Resolve(dataVault);
+            return telemetryRing.IsCreated &&
+                   telemetryRing.Length >= MasterDispatcherBlackBoxFrameCount &&
+                   telemetryCursor.IsCreated &&
+                   telemetryCursor.Length >= 1;
+        }
+
+        private static bool HasLegacyDispatcherTopologyFile()
+        {
+            return File.Exists("Docs/Archive/dispatcher_phases.h8bin") ||
+                   File.Exists("Docs/Archive/system_priorities.bin");
+        }
+
+        private static void GenerateEmergencyMockTopology()
+        {
+            if (_masterRegisteredSystemCount > 0)
+                return;
+
+            MockTickableSystem input = default;
+            input.SystemIdHash = 0x53483001u;
+            input.PhaseId = (byte)DispatcherPhase.PreSimulation;
+            input.BucketId = byte.MaxValue;
+            input.SignalIndex = 0;
+            input.CostMicroseconds = 4u;
+            Register(input);
+
+            MockTickableSystem physics = default;
+            physics.SystemIdHash = 0x53483002u;
+            physics.Dependency0 = input.SystemIdHash;
+            physics.DependencyCount = 1;
+            physics.PhaseId = (byte)DispatcherPhase.Simulation;
+            physics.BucketId = 1;
+            physics.SignalIndex = 1;
+            physics.CostMicroseconds = 12u;
+            Register(physics);
+
+            MockTickableSystem ai = default;
+            ai.SystemIdHash = 0x53483003u;
+            ai.Dependency0 = physics.SystemIdHash;
+            ai.DependencyCount = 1;
+            ai.PhaseId = (byte)DispatcherPhase.Simulation;
+            ai.BucketId = 2;
+            ai.SignalIndex = 2;
+            ai.CostMicroseconds = 8u;
+            Register(ai);
+
+            MockTickableSystem visual = default;
+            visual.SystemIdHash = 0x53483004u;
+            visual.Dependency0 = physics.SystemIdHash;
+            visual.Dependency1 = ai.SystemIdHash;
+            visual.DependencyCount = 2;
+            visual.PhaseId = (byte)DispatcherPhase.VisualSync;
+            visual.BucketId = byte.MaxValue;
+            visual.SignalIndex = 3;
+            visual.CostMicroseconds = 6u;
+            Register(visual);
+
+            _masterEmergencyTopologyInstalled = true;
+            _masterTopologyDirty = true;
+        }
+
+        private static void EnsureMasterDispatcherTopology()
+        {
+            if (!_masterTopologyDirty && _masterTopologyValid)
+                return;
+
+            int count = _masterRegisteredSystemCount;
+            for (int i = 0; i < MasterDispatcherMaxSystems; i++)
+            {
+                _masterSortedSystems[i] = null;
+                _masterKahnInDegrees[i] = 0;
+                _masterKahnQueue[i] = 0;
+                _masterDependencySystemIndices[i] = -1;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                IDispatcherSystem system = _masterRegisteredSystems[i];
+                if (system == null)
+                    continue;
+
+                int dependencyCount = math.clamp(system.GetDependencyCount(), 0, MasterDispatcherDependencyScratchCapacity);
+                for (int dependencyIndex = 0; dependencyIndex < dependencyCount; dependencyIndex++)
+                {
+                    uint dependencyHash = system.GetDependencyHash(dependencyIndex);
+                    if (dependencyHash == 0u)
+                        continue;
+
+                    int providerIndex = FindRegisteredMasterSystemIndex(dependencyHash, count);
+                    if (providerIndex < 0)
+                        continue;
+
+                    _masterKahnInDegrees[i]++;
+                }
+            }
+
+            int head = 0;
+            int tail = 0;
+            for (int i = 0; i < count; i++)
+            {
+                if (_masterKahnInDegrees[i] == 0)
+                    _masterKahnQueue[tail++] = i;
+            }
+
+            int sortedCount = 0;
+            while (head < tail)
+            {
+                int providerIndex = _masterKahnQueue[head++];
+                IDispatcherSystem provider = _masterRegisteredSystems[providerIndex];
+                if (provider == null)
+                    continue;
+
+                _masterSortedSystems[sortedCount++] = provider;
+                uint providerHash = provider.GetSystemIdHash();
+                for (int candidateIndex = 0; candidateIndex < count; candidateIndex++)
+                {
+                    IDispatcherSystem candidate = _masterRegisteredSystems[candidateIndex];
+                    if (candidate == null || candidateIndex == providerIndex)
+                        continue;
+
+                    int dependencyCount = math.clamp(candidate.GetDependencyCount(), 0, MasterDispatcherDependencyScratchCapacity);
+                    for (int dependencyIndex = 0; dependencyIndex < dependencyCount; dependencyIndex++)
+                    {
+                        if (candidate.GetDependencyHash(dependencyIndex) != providerHash)
+                            continue;
+
+                        _masterKahnInDegrees[candidateIndex]--;
+                        if (_masterKahnInDegrees[candidateIndex] == 0)
+                            _masterKahnQueue[tail++] = candidateIndex;
+                        break;
+                    }
+                }
+            }
+
+            if (sortedCount != count)
+                throw new FatalArchitectureException("SystemDispatcher Kahn cycle detected in master topology.");
+
+            _masterSortedSystemCount = sortedCount;
+            _masterTopologyDirty = false;
+            _masterTopologyValid = true;
+        }
+
+        private static int FindRegisteredMasterSystemIndex(uint systemHash, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                IDispatcherSystem system = _masterRegisteredSystems[i];
+                if (system != null && system.GetSystemIdHash() == systemHash)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static int FindSortedMasterSystemIndex(uint systemHash)
+        {
+            for (int i = 0; i < _masterSortedSystemCount; i++)
+            {
+                IDispatcherSystem system = _masterSortedSystems[i];
+                if (system != null && system.GetSystemIdHash() == systemHash)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private ref DispatcherStateDTO GetDispatcherStateRef()
+        {
+            return ref _dispatcherState;
+        }
+
+        private DispatcherTimingDTO BuildMasterDispatcherTiming(float deltaTime, float unscaledDeltaTime, float fixedDeltaTime = 0f)
+        {
+            uint activeBucket = ResolveMasterActiveBucket();
+            uint activeBucketMask = 1u << (int)(activeBucket & 31u);
+            DispatcherTimingDTO timing = default;
+            timing.FrameDelta = deltaTime;
+            timing.FixedDelta = fixedDeltaTime;
+            timing.TimeScale = unscaledDeltaTime > 0f ? math.saturate(deltaTime / unscaledDeltaTime) : 0f;
+            timing.ActiveBucketMask = activeBucketMask;
+            return timing;
+        }
+
+        private static uint ResolveMasterActiveBucket()
+        {
+            return unchecked((uint)math.max(0, Time.frameCount)) & MasterDispatcherBucketMask;
+        }
+
+        private void SetMasterDispatcherPhase(DispatcherPhase phase, in DispatcherTimingDTO timing)
+        {
+            ref DispatcherStateDTO state = ref GetDispatcherStateRef();
+            state.CurrentPhaseId = (uint)phase;
+            state.CurrentFrame = unchecked((uint)math.max(0, Time.frameCount));
+            state.ActiveBucket = ResolveMasterActiveBucket();
+            state.ActiveBucketMask = timing.ActiveBucketMask;
+            state.SortedSystemCount = unchecked((uint)math.max(0, _masterSortedSystemCount));
+            state.DisabledSystemCount = unchecked((uint)math.max(0, _masterDisabledSystemCount));
+            state.PendingSimulationJobCount = unchecked((uint)math.max(0, _masterPendingSimulationJobCount));
+            state.Flags = _masterVisualSyncShedThisFrame ? 1u : 0u;
+        }
+
+        private void RunMasterPreSimulationPhase(in DispatcherTimingDTO timing)
+        {
+            _masterFrameStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            _masterPreSimulationStartTimestamp = _masterFrameStartTimestamp;
+            SetMasterDispatcherPhase(DispatcherPhase.PreSimulation, in timing);
+            TryReloadMasterExecutionPriorityCsv();
+            EnsureMasterDispatcherTopology();
+            uint activeBucket = ResolveMasterActiveBucket();
+
+            using (_masterPreSimulationProfilerMarker.Auto())
+            {
+                for (int i = 0; i < _masterSortedSystemCount; i++)
+                {
+                    if (_masterSystemDisabled[i])
+                        continue;
+
+                    IDispatcherSystem system = _masterSortedSystems[i];
+                    if (system == null || system.GetDispatcherPhase() != DispatcherPhase.PreSimulation)
+                        continue;
+                    if (!ShouldRunMasterSystemInActiveBucket(system, activeBucket))
+                        continue;
+
+                    try
+                    {
+                        system.PreSimulationTick(in timing);
+                    }
+                    catch (Exception exception) when (!(exception is FatalArchitectureException))
+                    {
+                        DisableMasterSystem(i, system);
+                    }
+                }
+            }
+
+            _masterLastPreSimulationMs = ElapsedMilliseconds(_masterPreSimulationStartTimestamp);
+            _masterPhaseTimingSnapshotMs[0] = _masterLastPreSimulationMs;
+        }
+
+        private void RunMasterSimulationPhase(in DispatcherTimingDTO timing)
+        {
+            SetMasterDispatcherPhase(DispatcherPhase.Simulation, in timing);
+            EnsureMasterDispatcherTopology();
+            if (!TryResolveMasterSimulationBuffers(
+                    out NativeArray<JobHandle> simulationJobHandles,
+                    out NativeArray<JobHandle> dependencyScratchHandles,
+                    out NativeArray<JobDependencyDTO> jobDependencyTelemetry,
+                    out NativeArray<MockTimeDilationSignal> mockTimeDilationSignals))
+            {
+                return;
+            }
+
+            _masterPendingSimulationJobCount = 0;
+            _masterSimulationJobsPending = false;
+
+            for (int i = 0; i < simulationJobHandles.Length; i++)
+                simulationJobHandles[i] = default;
+            for (int i = 0; i < jobDependencyTelemetry.Length; i++)
+                jobDependencyTelemetry[i] = default;
+            for (int i = 0; i < MasterDispatcherBucketCount; i++)
+                _masterBucketLoadCounters[i] = 0u;
+
+            DispatcherJobContext context = default;
+            context.MockTimeDilationSignals = mockTimeDilationSignals;
+            context.JobDependencyTelemetry = jobDependencyTelemetry;
+            context.Frame = unchecked((uint)math.max(0, Time.frameCount));
+            context.ActiveBucket = ResolveMasterActiveBucket();
+
+            using (_masterSimulationProfilerMarker.Auto())
+            {
+                for (int sortedIndex = 0; sortedIndex < _masterSortedSystemCount; sortedIndex++)
+                {
+                    if (_masterSystemDisabled[sortedIndex])
+                        continue;
+
+                    IDispatcherSystem system = _masterSortedSystems[sortedIndex];
+                    if (system == null || system.GetDispatcherPhase() != DispatcherPhase.Simulation)
+                        continue;
+                    if (!ShouldRunMasterSystemInActiveBucket(system, context.ActiveBucket))
+                        continue;
+
+                    JobHandle dependencyHandle = ResolveMasterDependencyHandle(
+                        system,
+                        simulationJobHandles,
+                        dependencyScratchHandles);
+                    try
+                    {
+                        JobHandle handle = system.ScheduleSimulation(in timing, in context, dependencyHandle);
+                        simulationJobHandles[sortedIndex] = handle;
+                        jobDependencyTelemetry[sortedIndex] = BuildJobDependencyTelemetry(system.GetSystemIdHash(), ref handle);
+                        _masterPendingSimulationJobCount++;
+                        int bucket = system.GetBucketId() & MasterDispatcherBucketMask;
+                        _masterBucketLoadCounters[bucket]++;
+                    }
+                    catch (Exception exception) when (!(exception is FatalArchitectureException))
+                    {
+                        DisableMasterSystem(sortedIndex, system);
+                    }
+                }
+            }
+
+            if (_masterPendingSimulationJobCount > 0)
+            {
+                _masterSimulationCombinedHandle = JobHandle.CombineDependencies(simulationJobHandles);
+                _masterSimulationJobsPending = true;
+                H8Memory.RegisterActiveJob(SystemID.SystemDispatcher, _masterSimulationCombinedHandle);
+            }
+
+            SetMasterDispatcherPhase(DispatcherPhase.Simulation, in timing);
+        }
+
+        private void RunMasterPostSimulationPhase(in DispatcherTimingDTO timing)
+        {
+            _masterPostSimulationStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            SetMasterDispatcherPhase(DispatcherPhase.PostSimulation, in timing);
+
+            using (_masterPostSimulationProfilerMarker.Auto())
+            {
+                if (_masterSimulationJobsPending)
+                {
+                    long waitStart = System.Diagnostics.Stopwatch.GetTimestamp();
+                    _masterSimulationCombinedHandle.Complete();
+                    _masterLastSimWaitMs = ElapsedMilliseconds(waitStart);
+                    _masterSimulationCombinedHandle = default;
+                    _masterSimulationJobsPending = false;
+                    _masterPendingSimulationJobCount = 0;
+                    ApplyMockTimeDilationSignals(unchecked((uint)math.max(0, Time.frameCount)));
+                }
+                else
+                {
+                    _masterLastSimWaitMs = 0f;
+                }
+
+                for (int i = 0; i < _masterSortedSystemCount; i++)
+                {
+                    if (_masterSystemDisabled[i])
+                        continue;
+
+                    IDispatcherSystem system = _masterSortedSystems[i];
+                    if (system == null || system.GetDispatcherPhase() != DispatcherPhase.PostSimulation)
+                        continue;
+                    if (!ShouldRunMasterSystemInActiveBucket(system, ResolveMasterActiveBucket()))
+                        continue;
+
+                    try
+                    {
+                        system.PostSimulationTick(in timing);
+                    }
+                    catch (Exception exception) when (!(exception is FatalArchitectureException))
+                    {
+                        DisableMasterSystem(i, system);
+                    }
+                }
+            }
+
+            _masterLastPostSimulationMs = ElapsedMilliseconds(_masterPostSimulationStartTimestamp);
+            _masterPhaseTimingSnapshotMs[1] = _masterLastSimWaitMs;
+            _masterPhaseTimingSnapshotMs[2] = _masterLastPostSimulationMs;
+        }
+
+        private void RunMasterVisualSyncPhase()
+        {
+            DispatcherTimingDTO timing = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+            _masterVisualSyncStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            SetMasterDispatcherPhase(DispatcherPhase.VisualSync, in timing);
+            _masterVisualSyncShedThisFrame = ShouldShedMasterVisualSync();
+            if (_masterVisualSyncShedThisFrame)
+            {
+                _masterLastVisualSyncMs = 0f;
+                RecordMasterPipelineTelemetry(unchecked((uint)math.max(0, Time.frameCount)));
+                return;
+            }
+
+            using (_masterVisualSyncProfilerMarker.Auto())
+            {
+                for (int i = 0; i < _masterSortedSystemCount; i++)
+                {
+                    if (_masterSystemDisabled[i])
+                        continue;
+
+                    IDispatcherSystem system = _masterSortedSystems[i];
+                    if (system == null || system.GetDispatcherPhase() != DispatcherPhase.VisualSync)
+                        continue;
+                    if (!ShouldRunMasterSystemInActiveBucket(system, ResolveMasterActiveBucket()))
+                        continue;
+
+                    try
+                    {
+                        system.VisualSyncTick(in timing);
+                    }
+                    catch (Exception exception) when (!(exception is FatalArchitectureException))
+                    {
+                        DisableMasterSystem(i, system);
+                    }
+                }
+            }
+
+            _masterLastVisualSyncMs = ElapsedMilliseconds(_masterVisualSyncStartTimestamp);
+            _masterPhaseTimingSnapshotMs[3] = _masterLastVisualSyncMs;
+            RecordMasterPipelineTelemetry(unchecked((uint)math.max(0, Time.frameCount)));
+        }
+
+        private void RunMasterFixedSimulationBridge(float fixedDeltaTime)
+        {
+            if (_masterFixedSystemCount <= 0)
+                return;
+
+            DispatcherTimingDTO timing = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime, fixedDeltaTime);
+            JobHandle combined = default;
+            _masterPendingFixedJobCount = 0;
+            for (int i = 0; i < _masterFixedSystemCount; i++)
+            {
+                IDispatcherFixedSystem system = _masterFixedSystems[i];
+                if (system == null)
+                    continue;
+
+                combined = system.ScheduleFixedSimulation(in timing, combined);
+                _masterPendingFixedJobCount++;
+            }
+
+            if (_masterPendingFixedJobCount > 0)
+            {
+                _masterFixedCombinedHandle = combined;
+                _masterFixedJobsPending = true;
+                H8Memory.RegisterActiveJob(SystemID.SystemDispatcher, _masterFixedCombinedHandle);
+            }
+        }
+
+        private void CompleteMasterFixedSimulationBridge(float fixedDeltaTime)
+        {
+            if (_masterFixedSystemCount <= 0)
+                return;
+
+            DispatcherTimingDTO timing = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime, fixedDeltaTime);
+            if (_masterFixedJobsPending)
+            {
+                _masterFixedCombinedHandle.Complete();
+                _masterFixedCombinedHandle = default;
+                _masterFixedJobsPending = false;
+            }
+
+            for (int i = 0; i < _masterFixedSystemCount; i++)
+            {
+                IDispatcherFixedSystem system = _masterFixedSystems[i];
+                if (system == null)
+                    continue;
+
+                system.PostFixedSimulation(in timing);
+            }
+
+            _masterPendingFixedJobCount = 0;
+        }
+
+        private JobHandle ResolveMasterDependencyHandle(
+            IDispatcherSystem system,
+            NativeArray<JobHandle> simulationJobHandles,
+            NativeArray<JobHandle> dependencyScratchHandles)
+        {
+            int dependencyCount = math.clamp(system.GetDependencyCount(), 0, MasterDispatcherDependencyScratchCapacity);
+            for (int i = 0; i < MasterDispatcherDependencyScratchCapacity; i++)
+                dependencyScratchHandles[i] = default;
+
+            int scratchCount = 0;
+            for (int i = 0; i < dependencyCount; i++)
+            {
+                uint dependencyHash = system.GetDependencyHash(i);
+                if (dependencyHash == 0u)
+                    continue;
+
+                int sortedIndex = FindSortedMasterSystemIndex(dependencyHash);
+                if (sortedIndex < 0)
+                    continue;
+
+                dependencyScratchHandles[scratchCount++] = simulationJobHandles[sortedIndex];
+            }
+
+            if (scratchCount == 0)
+                return default;
+            if (scratchCount == 1)
+                return dependencyScratchHandles[0];
+
+            return JobHandle.CombineDependencies(dependencyScratchHandles);
+        }
+
+        private static bool ShouldRunMasterSystemInActiveBucket(IDispatcherSystem system, uint activeBucket)
+        {
+            byte bucket = system.GetBucketId();
+            if (bucket == byte.MaxValue)
+                return true;
+
+            return (bucket & MasterDispatcherBucketMask) == (activeBucket & MasterDispatcherBucketMask);
+        }
+
+        private static JobDependencyDTO BuildJobDependencyTelemetry(uint systemHash, ref JobHandle handle)
+        {
+            JobDependencyDTO dto = default;
+            dto.JobHandlePtr = CaptureJobHandleBits(ref handle);
+            dto.SystemIdHash = systemHash;
+            dto._pad0 = 0u;
+            return dto;
+        }
+
+        private static unsafe ulong CaptureJobHandleBits(ref JobHandle handle)
+        {
+            void* ptr = UnsafeUtility.AddressOf(ref handle);
+            return ptr != null ? *((ulong*)ptr) : 0ul;
+        }
+
+        private void ApplyMockTimeDilationSignals(uint frame)
+        {
+            if (!TryResolveMasterSimulationBuffers(
+                    out NativeArray<JobHandle> _,
+                    out NativeArray<JobHandle> _,
+                    out NativeArray<JobDependencyDTO> _,
+                    out NativeArray<MockTimeDilationSignal> mockTimeDilationSignals))
+            {
+                return;
+            }
+
+            float scalar = 1f;
+            for (int i = 0; i < mockTimeDilationSignals.Length; i++)
+            {
+                MockTimeDilationSignal signal = mockTimeDilationSignals[i];
+                if (signal.Frame != frame)
+                    continue;
+                if (math.isfinite(signal.TimeScale) && signal.TimeScale > 0f)
+                    scalar = math.min(scalar, signal.TimeScale);
+            }
+
+            if (scalar < 0.999f)
+                CurrentFrameDeltaTime = CurrentFrameUnscaledDeltaTime * scalar;
+        }
+
+        private void DisableMasterSystem(int sortedIndex, IDispatcherSystem system)
+        {
+            if ((uint)sortedIndex >= (uint)MasterDispatcherMaxSystems || _masterSystemDisabled[sortedIndex])
+                return;
+
+            _masterSystemDisabled[sortedIndex] = true;
+            _masterDisabledSystemCount++;
+            uint systemHash = system != null ? system.GetSystemIdHash() : _SystemDispatcherHash;
+            PublishDispatcherComplianceViolation(_DispatcherBlackBoxFaultHash, systemHash, 4, 2);
+            GlobalTelemetryBus.PublishPerformanceWarning(_DispatcherBlackBoxFaultHash, systemHash, 1f);
+        }
+
+        private static bool ShouldShedMasterVisualSync()
+        {
+            System.ReadOnlySpan<SystemHealthIndexSignal> snapshot = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
+            for (int i = snapshot.Length - 1; i >= 0; i--)
+            {
+                SystemHealthIndexSignal signal = snapshot[i];
+                if ((math.isfinite(signal.Health01) && signal.Health01 > 0.9f) ||
+                    (math.isfinite(signal.Pressure01) && signal.Pressure01 > 0.9f))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void RecordMasterPipelineTelemetry(uint frame)
+        {
+            if (!TryResolveMasterTelemetryBuffers(
+                    out NativeArray<DispatcherPipelineTelemetryEntry> telemetryRing,
+                    out NativeArray<int> telemetryCursor))
+            {
+                return;
+            }
+
+            int cursor = telemetryCursor[0];
+            if ((uint)cursor >= (uint)MasterDispatcherBlackBoxFrameCount)
+                cursor = 0;
+
+            DispatcherPipelineTelemetryEntry entry = default;
+            entry.Frame = frame;
+            entry.PreSimulationTimeMs = SanitizeNonNegativeMilliseconds(_masterLastPreSimulationMs);
+            entry.SimWaitTimeMs = SanitizeNonNegativeMilliseconds(_masterLastSimWaitMs);
+            entry.PostSimulationTimeMs = SanitizeNonNegativeMilliseconds(_masterLastPostSimulationMs);
+            entry.VisualSyncTimeMs = SanitizeNonNegativeMilliseconds(_masterLastVisualSyncMs);
+            entry.ActiveBucket = _dispatcherState.ActiveBucket;
+            entry.SystemCount = unchecked((uint)math.max(0, _masterSortedSystemCount));
+            entry.Flags = _masterVisualSyncShedThisFrame ? 1u : 0u;
+            telemetryRing[cursor] = entry;
+
+            cursor++;
+            if (cursor >= MasterDispatcherBlackBoxFrameCount)
+                cursor = 0;
+            telemetryCursor[0] = cursor;
+            _masterFrameTelemetrySequence++;
+
+            if (entry.SimWaitTimeMs > MasterDispatcherStallDumpThresholdMs && !_masterPipelineTelemetryDumped)
+            {
+                _masterPipelineTelemetryDumped = true;
+                DumpMasterPipelineTelemetry(telemetryRing, cursor);
+            }
+        }
+
+        private static void DumpMasterPipelineTelemetry(NativeArray<DispatcherPipelineTelemetryEntry> ring, int cursor)
+        {
+            if (!ring.IsCreated || ring.Length < MasterDispatcherBlackBoxFrameCount)
+                return;
+
+            try
+            {
+                System.IO.Directory.CreateDirectory("Docs/AgentLogs");
+                using (System.IO.FileStream stream = System.IO.File.Open(
+                    MasterDispatcherDumpPath,
+                    System.IO.FileMode.Create,
+                    System.IO.FileAccess.Write,
+                    System.IO.FileShare.Read))
+                using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
+                {
+                    writer.Write(DispatcherBlackBoxDumpMagic);
+                    writer.Write(MasterDispatcherDumpVersion);
+                    writer.Write(MasterDispatcherBlackBoxFrameCount);
+                    writer.Write(32);
+                    writer.Write(cursor);
+                    for (int i = 0; i < MasterDispatcherBlackBoxFrameCount; i++)
+                    {
+                        int index = cursor + i;
+                        if (index >= MasterDispatcherBlackBoxFrameCount)
+                            index -= MasterDispatcherBlackBoxFrameCount;
+
+                        DispatcherPipelineTelemetryEntry entry = ring[index];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.PreSimulationTimeMs);
+                        writer.Write(entry.SimWaitTimeMs);
+                        writer.Write(entry.PostSimulationTimeMs);
+                        writer.Write(entry.VisualSyncTimeMs);
+                        writer.Write(entry.ActiveBucket);
+                        writer.Write(entry.SystemCount);
+                        writer.Write(entry.Flags);
+                    }
+                }
+            }
+            catch (System.IO.IOException)
+            {
+            }
+            catch (System.UnauthorizedAccessException)
+            {
+            }
+        }
+
+        private void TryReloadMasterExecutionPriorityCsv()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            int frame = Time.frameCount;
+            if (_masterCsvPollFrame == frame || (frame & MasterDispatcherBucketMask) != 0)
+                return;
+
+            _masterCsvPollFrame = frame;
+            if (!File.Exists(MasterDispatcherPriorityCsvPath))
+                return;
+
+            DateTime writeTimeUtc = File.GetLastWriteTimeUtc(MasterDispatcherPriorityCsvPath);
+            if (writeTimeUtc == _masterPriorityCsvLastWriteUtc)
+                return;
+
+            _masterPriorityCsvLastWriteUtc = writeTimeUtc;
+            ApplyMasterExecutionPriorityCsv();
+            _masterTopologyDirty = true;
+#endif
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static void ApplyMasterExecutionPriorityCsv()
+        {
+            for (int i = 0; i < MasterDispatcherMaxSystems; i++)
+            {
+                _masterCsvSystemHashes[i] = 0u;
+                _masterCsvSystemPriorities[i] = int.MaxValue;
+            }
+
+            int entryCount = ParseMasterExecutionPriorityCsv();
+            if (entryCount <= 0)
+                return;
+
+            for (int i = 1; i < _masterRegisteredSystemCount; i++)
+            {
+                IDispatcherSystem candidate = _masterRegisteredSystems[i];
+                int candidatePriority = ResolveMasterCsvPriority(candidate, entryCount);
+                int j = i - 1;
+                while (j >= 0 && ResolveMasterCsvPriority(_masterRegisteredSystems[j], entryCount) > candidatePriority)
+                {
+                    _masterRegisteredSystems[j + 1] = _masterRegisteredSystems[j];
+                    j--;
+                }
+
+                _masterRegisteredSystems[j + 1] = candidate;
+            }
+        }
+
+        private static int ResolveMasterCsvPriority(IDispatcherSystem system, int entryCount)
+        {
+            if (system == null)
+                return int.MaxValue;
+
+            uint hash = system.GetSystemIdHash();
+            for (int i = 0; i < entryCount; i++)
+            {
+                if (_masterCsvSystemHashes[i] == hash)
+                    return _masterCsvSystemPriorities[i];
+            }
+
+            return int.MaxValue - 1;
+        }
+
+        private static int ParseMasterExecutionPriorityCsv()
+        {
+            int entryCount = 0;
+            try
+            {
+                using (FileStream stream = File.Open(
+                    MasterDispatcherPriorityCsvPath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite))
+                {
+                    uint hash = 0u;
+                    int priority = 0;
+                    int column = 0;
+                    bool hasValue = false;
+                    bool hasHash = false;
+                    bool hasPriority = false;
+                    bool hex = false;
+                    bool comment = false;
+                    uint value = 0u;
+
+                    while (true)
+                    {
+                        int read = stream.ReadByte();
+                        bool end = read < 0;
+                        byte c = end ? (byte)'\n' : (byte)read;
+
+                        if (comment)
+                        {
+                            if (c == '\n' || c == '\r' || end)
+                                comment = false;
+                            else
+                                continue;
+                        }
+
+                        if (c == '#')
+                        {
+                            comment = true;
+                            continue;
+                        }
+
+                        bool separator = c == ',' || c == ';' || c == '\t' || c == ' ' || c == '\r' || c == '\n' || end;
+                        if (!separator)
+                        {
+                            if ((c == 'x' || c == 'X') && hasValue && value == 0u)
+                            {
+                                hex = true;
+                                continue;
+                            }
+
+                            int digit = ParseCsvDigit(c);
+                            if (digit >= 0)
+                            {
+                                uint radix = hex ? 16u : 10u;
+                                value = unchecked(value * radix + (uint)digit);
+                                hasValue = true;
+                            }
+
+                            if (!end)
+                                continue;
+                        }
+
+                        if (hasValue)
+                        {
+                            if (column == 0)
+                            {
+                                hash = value;
+                                hasHash = true;
+                            }
+                            else if (column == 1)
+                            {
+                                priority = unchecked((int)value);
+                                hasPriority = true;
+                            }
+
+                            value = 0u;
+                            hasValue = false;
+                            hex = false;
+                            column++;
+                        }
+
+                        if (c == '\n' || end)
+                        {
+                            if (hasHash && hasPriority && entryCount < MasterDispatcherMaxSystems)
+                            {
+                                _masterCsvSystemHashes[entryCount] = hash;
+                                _masterCsvSystemPriorities[entryCount] = priority;
+                                entryCount++;
+                            }
+
+                            hash = 0u;
+                            priority = 0;
+                            column = 0;
+                            hasHash = false;
+                            hasPriority = false;
+                        }
+
+                        if (end)
+                            break;
+                    }
+                }
+            }
+            catch (IOException)
+            {
+                return 0;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return 0;
+            }
+
+            return entryCount;
+        }
+
+        private static int ParseCsvDigit(byte c)
+        {
+            if (c >= '0' && c <= '9')
+                return c - '0';
+            if (c >= 'a' && c <= 'f')
+                return c - 'a' + 10;
+            if (c >= 'A' && c <= 'F')
+                return c - 'A' + 10;
+            return -1;
+        }
+#endif
+
+        private static float ElapsedMilliseconds(long startTimestamp)
+        {
+            return (float)((System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0d /
+                           System.Diagnostics.Stopwatch.Frequency);
+        }
+
+        public static bool TryGetExecutionPipelineXRaySnapshot(
+            float[] phaseMilliseconds,
+            uint[] bucketLoads,
+            out DispatcherStateDTO state)
+        {
+            state = default;
+            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return false;
+
+            state = dispatcher._dispatcherState;
+            if (phaseMilliseconds != null)
+            {
+                int count = math.min(phaseMilliseconds.Length, _masterPhaseTimingSnapshotMs.Length);
+                for (int i = 0; i < count; i++)
+                    phaseMilliseconds[i] = _masterPhaseTimingSnapshotMs[i];
+            }
+
+            if (bucketLoads != null)
+            {
+                int count = math.min(bucketLoads.Length, _masterBucketLoadCounters.Length);
+                for (int i = 0; i < count; i++)
+                    bucketLoads[i] = _masterBucketLoadCounters[i];
+            }
+
+            return true;
         }
 
         private bool EnsureH8TimeArray()
@@ -2454,6 +3686,9 @@ namespace Hecton8.Core
 
                 inputDeterminism?.PreSimulationInputTick(unscaledDeltaTime);
                 GlobalSignals.FlushPreSimulation();
+                if (SignalBusRegistry.IsSimulationHalted)
+                    return;
+
                 DrainScalabilityTierSignals();
                 byte scalabilityTierProfile = _scalabilityTierProfileByte;
                 RecordMemoryBlackBoxHeartbeat();
@@ -2480,6 +3715,8 @@ namespace Hecton8.Core
                 if (!math.isfinite(deltaTime) || deltaTime < 0f)
                     deltaTime = 0f;
                 CurrentFrameDeltaTime = deltaTime;
+                DispatcherTimingDTO masterTiming = BuildMasterDispatcherTiming(deltaTime, unscaledDeltaTime);
+                RunMasterPreSimulationPhase(in masterTiming);
                 UpdateH8TimeState(deltaTime, unscaledDeltaTime);
                 PublishTimeDilationState(0u);
                 IDataVault dispatcherDataVault = _dataVault;
@@ -2529,6 +3766,8 @@ namespace Hecton8.Core
                     return;
                 }
 
+                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+                RunMasterSimulationPhase(in masterTiming);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
 #endif
@@ -2544,6 +3783,9 @@ namespace Hecton8.Core
 
                 for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                 {
+                    if (SignalBusRegistry.IsSimulationHalted)
+                        return;
+
                     if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
                         continue;
 
@@ -2564,11 +3806,17 @@ namespace Hecton8.Core
 
                             updatable.Tick(effectiveDeltaTime);
                             _foveatedSimulationManager.NotifyTickCompleted(updatable);
+                            if (SignalBusRegistry.IsSimulationHalted)
+                                return;
+
                             if (IsOriginShiftFrameLockedForCurrentFrame)
                                 return;
                         }
                     }
                 }
+
+                if (SignalBusRegistry.IsSimulationHalted)
+                    return;
 
                 CombatDamageRuntime.FrameTick(deltaTime);
                 PredatorCognitionDomain.ScheduleFrameEvaluation(Time.frameCount);
@@ -2581,6 +3829,8 @@ namespace Hecton8.Core
                 RunColdTick(deltaTime, blockGameplayLanes);
                 RunFrostTick(deltaTime, blockGameplayLanes);
                 ScheduleDispatcherRaycasts();
+                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+                RunMasterPostSimulationPhase(in masterTiming);
                 IModdingBridge moddingBridge = _moddingBridgeProjectionRuntime;
                 if (moddingBridge != null)
                     moddingBridge.ProjectPostSimulation();
@@ -2791,6 +4041,7 @@ namespace Hecton8.Core
                 dispatcherPhaseTimingStarted = true;
 #endif
                 CompleteFoveatedFrameJobs();
+                RunMasterVisualSyncPhase();
                 BeginLateFrameEventBudget();
                 SetActiveLateFrameEventLane(_LateFrameTickablesQueueHash);
                 using (_lateFrameProfilerMarker.Auto())
@@ -3411,6 +4662,9 @@ namespace Hecton8.Core
 
         private void RunFixedStepAccumulator(float dilatedDeltaTime, bool blockGameplayLanes)
         {
+            if (SignalBusRegistry.IsSimulationHalted)
+                return;
+
             if (dilatedDeltaTime <= 0f)
             {
                 _temporalCompressionActive = false;
@@ -3433,6 +4687,9 @@ namespace Hecton8.Core
             int substepCount = 0;
             while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
             {
+                if (SignalBusRegistry.IsSimulationHalted)
+                    break;
+
                 DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
                 _fixedStepAccumulator -= FixedStepSeconds;
                 substepCount++;
@@ -3456,8 +4713,12 @@ namespace Hecton8.Core
 #endif
             using (_fixedUpdateProfilerMarker.Auto())
             {
+                RunMasterFixedSimulationBridge(fixedDeltaTime);
                 for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                 {
+                    if (SignalBusRegistry.IsSimulationHalted)
+                        return;
+
                     if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
                         continue;
 
@@ -3471,7 +4732,11 @@ namespace Hecton8.Core
                         int count = lane.Count;
 
                         for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                        {
                             rawArray[itemIndex].FixedTick(fixedDeltaTime);
+                            if (SignalBusRegistry.IsSimulationHalted)
+                                return;
+                        }
                     }
                 }
 
@@ -3480,8 +4745,12 @@ namespace Hecton8.Core
                     DispatcherJobSwap.BeginPostFixedSwapWindow();
                     try
                     {
+                        CompleteMasterFixedSimulationBridge(fixedDeltaTime);
                         for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                         {
+                            if (SignalBusRegistry.IsSimulationHalted)
+                                return;
+
                             if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
                                 continue;
 
@@ -3518,6 +4787,8 @@ namespace Hecton8.Core
 #else
                                 rawArray[itemIndex].PostFixedTick(fixedDeltaTime);
 #endif
+                                if (SignalBusRegistry.IsSimulationHalted)
+                                    return;
                             }
                         }
                     }
@@ -3564,7 +4835,7 @@ namespace Hecton8.Core
 
         private void RunFastTick(float deltaTime, bool blockGameplayLanes)
         {
-            if (deltaTime <= 0f)
+            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
                 return;
 
             _fastTickAccumulator += deltaTime;
@@ -3578,6 +4849,9 @@ namespace Hecton8.Core
                 {
                     for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                     {
+                        if (SignalBusRegistry.IsSimulationHalted)
+                            return;
+
                         if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
                             continue;
 
@@ -3591,7 +4865,11 @@ namespace Hecton8.Core
                             int count = lane.Count;
 
                             for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                            {
                                 rawArray[itemIndex].FastTick((float)FastTickIntervalSeconds);
+                                if (SignalBusRegistry.IsSimulationHalted)
+                                    return;
+                            }
                         }
                     }
                 }
@@ -3603,7 +4881,7 @@ namespace Hecton8.Core
 
         private void RunUnscaledFastTick(float unscaledDeltaTime, bool blockGameplayLanes)
         {
-            if (unscaledDeltaTime <= 0f)
+            if (unscaledDeltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
                 return;
 
             _unscaledFastTickAccumulator += unscaledDeltaTime;
@@ -3615,6 +4893,9 @@ namespace Hecton8.Core
 
                 for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                 {
+                    if (SignalBusRegistry.IsSimulationHalted)
+                        return;
+
                     if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
                         continue;
 
@@ -3628,7 +4909,11 @@ namespace Hecton8.Core
                         int count = lane.Count;
 
                         for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                        {
                             rawArray[itemIndex].UnscaledFastTick((float)FastTickIntervalSeconds);
+                            if (SignalBusRegistry.IsSimulationHalted)
+                                return;
+                        }
                     }
                 }
             }
@@ -3639,7 +4924,7 @@ namespace Hecton8.Core
 
         private void RunSlowTick(float deltaTime, bool blockGameplayLanes)
         {
-            if (deltaTime <= 0f)
+            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
                 return;
 
             double slowTickIntervalSeconds = ResolveSlowTickIntervalSeconds();
@@ -3656,6 +4941,9 @@ namespace Hecton8.Core
 
                     for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                     {
+                        if (SignalBusRegistry.IsSimulationHalted)
+                            return;
+
                         if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
                             continue;
 
@@ -3675,6 +4963,8 @@ namespace Hecton8.Core
                                     continue;
 
                                 tickable.SlowTick();
+                                if (SignalBusRegistry.IsSimulationHalted)
+                                    return;
                             }
                         }
                     }
@@ -3691,6 +4981,9 @@ namespace Hecton8.Core
 
         private void RunBucketedSlowTick(bool blockGameplayLanes)
         {
+            if (SignalBusRegistry.IsSimulationHalted)
+                return;
+
             ISimulationBucketer bucketer = _simulationBucketer;
             if (_bucketedSlowTickableCount <= 0 || bucketer == null || !bucketer.IsInitialized)
                 return;
@@ -3699,6 +4992,9 @@ namespace Hecton8.Core
             {
                 for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                 {
+                    if (SignalBusRegistry.IsSimulationHalted)
+                        return;
+
                     if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
                         continue;
 
@@ -3717,6 +5013,8 @@ namespace Hecton8.Core
                                 bucketer.IsSlowBucketActive(bucketedTickable.SimulationBucketId))
                             {
                                 bucketedTickable.SlowTick();
+                                if (SignalBusRegistry.IsSimulationHalted)
+                                    return;
                             }
                         }
                     }
@@ -3745,7 +5043,7 @@ namespace Hecton8.Core
 
         private void RunColdTick(float deltaTime, bool blockGameplayLanes)
         {
-            if (deltaTime <= 0f)
+            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
                 return;
 
             _coldTickAccumulator += deltaTime;
@@ -3759,6 +5057,9 @@ namespace Hecton8.Core
                 {
                     for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                     {
+                        if (SignalBusRegistry.IsSimulationHalted)
+                            return;
+
                         if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
                             continue;
 
@@ -3772,7 +5073,11 @@ namespace Hecton8.Core
                             int count = lane.Count;
 
                             for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                            {
                                 rawArray[itemIndex].ColdTick();
+                                if (SignalBusRegistry.IsSimulationHalted)
+                                    return;
+                            }
                         }
                     }
                 }
@@ -3784,7 +5089,7 @@ namespace Hecton8.Core
 
         private void RunFrostTick(float deltaTime, bool blockGameplayLanes)
         {
-            if (deltaTime <= 0f)
+            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
                 return;
 
             _frostTickAccumulator += deltaTime;
@@ -3797,6 +5102,9 @@ namespace Hecton8.Core
             {
                 for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                 {
+                    if (SignalBusRegistry.IsSimulationHalted)
+                        return;
+
                     if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
                         continue;
 
@@ -3810,7 +5118,11 @@ namespace Hecton8.Core
                         int count = lane.Count;
 
                         for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                        {
                             rawArray[itemIndex].FrostTick();
+                            if (SignalBusRegistry.IsSimulationHalted)
+                                return;
+                        }
                     }
                 }
             }

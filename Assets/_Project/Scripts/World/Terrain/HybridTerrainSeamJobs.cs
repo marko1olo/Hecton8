@@ -8,6 +8,7 @@ namespace Hecton8.World.Terrain
 {
     public struct HybridTerrainSeamPlanNative
     {
+        // Terrain-local meters. The applier subtracts the terrain AUP before casting to float to avoid 100km jitter.
         public float3 RuntimeContactPosition;
         public float3 RuntimeVoxelCenter;
         public float3 VoxelSize;
@@ -27,6 +28,7 @@ namespace Hecton8.World.Terrain
         public const float CloseHeightBandMeters = 5f;
         public const float RaymarchHalfSpanMeters = 5f;
         public const int RaymarchStepCount = 16;
+        public const float ExpensiveSamplingStartWeight = 0.30f;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SmoothMinNoTranscendental(float a, float b, float k)
@@ -48,17 +50,46 @@ namespace Hecton8.World.Terrain
         {
             return lengthSq * math.rsqrt(math.max(lengthSq, 0.0000001f));
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizeQualityWeight(float globalQualityWeight)
+        {
+            return math.isfinite(globalQualityWeight) ? math.saturate(globalQualityWeight) : 1f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveExpensiveSamplingWeight(float globalQualityWeight)
+        {
+            float q = SanitizeQualityWeight(globalQualityWeight);
+            float active = math.step(ExpensiveSamplingStartWeight, q);
+            float curve = SmoothStep01(math.saturate((q - ExpensiveSamplingStartWeight) * math.rcp(math.max(1f - ExpensiveSamplingStartWeight, 0.0001f))));
+            return active * curve;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveMaskDetailWeight(float globalQualityWeight)
+        {
+            float q = SanitizeQualityWeight(globalQualityWeight);
+            return SmoothStep01(math.saturate((q - 0.70f) * math.rcp(0.30f)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveRaymarchStepCount(float globalQualityWeight)
+        {
+            float expensiveWeight = ResolveExpensiveSamplingWeight(globalQualityWeight);
+            return math.max(1, (int)math.round(math.lerp(1f, RaymarchStepCount, expensiveWeight)));
+        }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HybridSdfHeightmapProjectionJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float> BaselineHeights01;
-        [ReadOnly] public NativeArray<ushort> QuantizedHeightSamples;
-        [ReadOnly] public NativeArray<HybridTerrainSeamPlanNative> Plans;
+        [NoAlias, ReadOnly] public NativeArray<float> BaselineHeights01;
+        [NoAlias, ReadOnly] public NativeArray<ushort> QuantizedHeightSamples;
+        [NoAlias, ReadOnly] public NativeArray<HybridTerrainSeamPlanNative> Plans;
 
-        public NativeArray<float> PatchHeights01;
-        public NativeArray<byte> BlendMask;
+        [NoAlias] public NativeArray<float> PatchHeights01;
+        [NoAlias] public NativeArray<byte> BlendMask;
 
         public int HeightmapResolution;
         public int PatchX;
@@ -66,8 +97,12 @@ namespace Hecton8.World.Terrain
         public int PatchWidth;
         public int PatchHeight;
         public float HeightmapInvMaxIndex;
+        // Legacy ABI field retained for stale generated csproj callers; projection math is terrain-local and expects zero.
         public float3 TerrainPosition;
         public float3 TerrainSize;
+        public float GlobalQualityWeight;
+        public byte GlobalQualityWeightValid;
+        // Legacy ABI field retained for stale generated csproj callers; runtime source math uses GlobalQualityWeight only.
         public byte LowTierVisualOnly;
 
         public void Execute(int index)
@@ -75,21 +110,25 @@ namespace Hecton8.World.Terrain
             if (PatchWidth <= 0 || PatchHeight <= 0 || HeightmapResolution <= 1)
                 return;
 
+            float qualityWeight = ResolveJobQualityWeight();
+            float expensiveWeight = HybridTerrainSeamMath.ResolveExpensiveSamplingWeight(qualityWeight);
+            int raymarchSteps = HybridTerrainSeamMath.ResolveRaymarchStepCount(qualityWeight);
+
             int localX = index % PatchWidth;
             int localZ = index / PatchWidth;
             int heightX = PatchX + localX;
             int heightZ = PatchZ + localZ;
             int terrainIndex = heightX + heightZ * HeightmapResolution;
             float height01 = ResolveHeight01(terrainIndex);
-            float worldX = TerrainPosition.x + heightX * HeightmapInvMaxIndex * TerrainSize.x;
-            float worldZ = TerrainPosition.z + heightZ * HeightmapInvMaxIndex * TerrainSize.z;
-            float worldY = TerrainPosition.y + height01 * TerrainSize.y;
+            float localTerrainX = heightX * HeightmapInvMaxIndex * TerrainSize.x;
+            float localTerrainZ = heightZ * HeightmapInvMaxIndex * TerrainSize.z;
+            float localTerrainY = height01 * TerrainSize.y;
             float mask01 = 0f;
 
             for (int i = 0; i < Plans.Length; i++)
             {
                 HybridTerrainSeamPlanNative plan = Plans[i];
-                float2 delta = new float2(worldX - plan.RuntimeContactPosition.x, worldZ - plan.RuntimeContactPosition.z);
+                float2 delta = new float2(localTerrainX - plan.RuntimeContactPosition.x, localTerrainZ - plan.RuntimeContactPosition.z);
                 float effectiveRadius = math.max(2f, plan.SeamBlendRadius + 2f);
                 float distanceSq = math.lengthsq(delta);
                 float effectiveRadiusSq = effectiveRadius * effectiveRadius;
@@ -108,25 +147,25 @@ namespace Hecton8.World.Terrain
                 float blendWeight = falloff * math.max(planWeight, math.saturate(plan.CaveBlendWeight));
                 mask01 = math.max(mask01, blendWeight);
 
-                if (LowTierVisualOnly != 0)
+                if (expensiveWeight <= 0.0001f)
                     continue;
 
-                float voxelSurfaceY = RaymarchDownToVoxelSurface(worldX, worldY, worldZ, plan);
-                float heightDelta = math.abs(voxelSurfaceY - worldY);
+                float voxelSurfaceY = RaymarchDownToVoxelSurface(localTerrainX, localTerrainY, localTerrainZ, plan, raymarchSteps);
+                float heightDelta = math.abs(voxelSurfaceY - localTerrainY);
                 if (heightDelta > HybridTerrainSeamMath.CloseHeightBandMeters)
                     continue;
 
                 float smoothTarget = HybridTerrainSeamMath.SmoothMinNoTranscendental(
-                    worldY,
+                    localTerrainY,
                     voxelSurfaceY,
                     HybridTerrainSeamMath.CloseHeightBandMeters);
                 float raise = math.max(0f, plan.TerrainDelta) + plan.SuggestedTerrainRaise;
                 float cut = math.max(0f, -plan.TerrainDelta) + plan.SuggestedTerrainCut * math.saturate(plan.CaveBlendWeight + 0.25f);
                 float biasedTarget = smoothTarget + (raise - cut) * 0.12f * falloff;
-                worldY = math.lerp(worldY, biasedTarget, blendWeight);
+                localTerrainY = math.lerp(localTerrainY, biasedTarget, blendWeight * expensiveWeight);
             }
 
-            PatchHeights01[index] = math.saturate((worldY - TerrainPosition.y) * math.rcp(math.max(TerrainSize.y, 0.0001f)));
+            PatchHeights01[index] = math.saturate(localTerrainY * math.rcp(math.max(TerrainSize.y, 0.0001f)));
             BlendMask[index] = (byte)math.round(math.saturate(mask01) * 255f);
         }
 
@@ -141,21 +180,31 @@ namespace Hecton8.World.Terrain
             return 0f;
         }
 
-        private static float RaymarchDownToVoxelSurface(
-            float worldX,
-            float terrainY,
-            float worldZ,
-            in HybridTerrainSeamPlanNative plan)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolveJobQualityWeight()
         {
-            float step = (HybridTerrainSeamMath.RaymarchHalfSpanMeters * 2f) * math.rcp(HybridTerrainSeamMath.RaymarchStepCount);
-            float y = terrainY + HybridTerrainSeamMath.RaymarchHalfSpanMeters;
-            float previousY = y;
-            float previousSdf = SampleAnalyticSdf(new float3(worldX, y, worldZ), plan);
+            return GlobalQualityWeightValid != 0 && math.isfinite(GlobalQualityWeight)
+                ? math.saturate(GlobalQualityWeight)
+                : 1f;
+        }
 
-            for (int i = 1; i <= HybridTerrainSeamMath.RaymarchStepCount; i++)
+        private static float RaymarchDownToVoxelSurface(
+            float localTerrainX,
+            float terrainLocalY,
+            float localTerrainZ,
+            in HybridTerrainSeamPlanNative plan,
+            int raymarchSteps)
+        {
+            raymarchSteps = math.max(raymarchSteps, 1);
+            float step = (HybridTerrainSeamMath.RaymarchHalfSpanMeters * 2f) * math.rcp(raymarchSteps);
+            float y = terrainLocalY + HybridTerrainSeamMath.RaymarchHalfSpanMeters;
+            float previousY = y;
+            float previousSdf = SampleAnalyticSdf(new float3(localTerrainX, y, localTerrainZ), plan);
+
+            for (int i = 1; i <= raymarchSteps; i++)
             {
                 y -= step;
-                float sdf = SampleAnalyticSdf(new float3(worldX, y, worldZ), plan);
+                float sdf = SampleAnalyticSdf(new float3(localTerrainX, y, localTerrainZ), plan);
                 if ((previousSdf >= 0f && sdf <= 0f) || (previousSdf <= 0f && sdf >= 0f))
                 {
                     float denominator = previousSdf - sdf;
@@ -184,11 +233,11 @@ namespace Hecton8.World.Terrain
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HybridTerrainSeamNormalJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float> PatchHeights01;
-        public NativeArray<float3> Normals;
+        [NoAlias, ReadOnly] public NativeArray<float> PatchHeights01;
+        [NoAlias] public NativeArray<float3> Normals;
 
         public int PatchWidth;
         public int PatchHeight;
@@ -221,17 +270,23 @@ namespace Hecton8.World.Terrain
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HybridTerrainSeamMaskDetailJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float3> Normals;
-        public NativeArray<byte> BlendMask;
+        [NoAlias, ReadOnly] public NativeArray<float3> Normals;
+        [NoAlias] public NativeArray<byte> BlendMask;
 
+        public float GlobalQualityWeight;
+        public byte GlobalQualityWeightValid;
         public byte EnableDetail;
 
         public void Execute(int index)
         {
-            if (EnableDetail == 0)
+            float qualityWeight = GlobalQualityWeightValid != 0 && math.isfinite(GlobalQualityWeight)
+                ? math.saturate(GlobalQualityWeight)
+                : 1f;
+            float detailWeight = HybridTerrainSeamMath.ResolveMaskDetailWeight(qualityWeight);
+            if (EnableDetail == 0 || detailWeight <= 0.0001f)
                 return;
 
             float3 normal = Normals[index];
@@ -239,7 +294,7 @@ namespace Hecton8.World.Terrain
                 return;
 
             float slope01 = math.saturate(1f - math.saturate(normal.y));
-            int slopeBoost = (int)math.round(slope01 * slope01 * 72f);
+            int slopeBoost = (int)math.round(slope01 * slope01 * 72f * detailWeight);
             BlendMask[index] = (byte)math.min(255, BlendMask[index] + slopeBoost);
         }
     }

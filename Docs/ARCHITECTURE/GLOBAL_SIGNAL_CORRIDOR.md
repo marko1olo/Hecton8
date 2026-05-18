@@ -1,7 +1,22 @@
 # Global Signal Corridor
 
 Date: 2026-05-12
-Status: SOURCE VERIFIED / RUNTIME PENDING
+Status: STATIC_SOURCE REVIEWED / RUNTIME PENDING
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-17 R4 Interior Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
 Owner Source: `Assets/_Project/Scripts/Core/GlobalSignals.cs`
 
 ## Authority
@@ -12,17 +27,18 @@ Source scan:
 
 | Fact | Value |
 |---|---:|
-| NativeQueue lanes | 33 |
-| public signal structs | 33 |
-| `ParallelWriter` lanes | 13 |
-| signal struct sizes | 32 or 64 bytes |
+| Direct `CreateQueue(...)` native queue slots in `InitializeAllQueues()` | 73 |
+| Typed `SignalBus<T>.EnsureInitialized()` lanes in `InitializeCategorySignalLanes()` | 133 |
+| Debug lane | `DebugSignal` via `ConfigureDebugSignalLane()` |
+| Modding validator source `ISignal` structs | 160 |
+| signal struct sizes | source-validated by `ValidateSignalSize` / `ValidateSignalPayload`; not profiler proof |
 | fallback SPSC container | `SpscSignalRingBuffer<T>` |
 
 ## Lane Table
 
 | Capacity | Lanes |
 |---:|---|
-| 256 | `DamageSignal`, `ImpactSignal`, `ControlSignal` |
+| 256 | Legacy direct queue examples: `DamageSignal`, `ImpactSignal`, `ControlSignal` |
 | 128 | `DebrisSpawnSignal`, `DeflectSignal`, `AnomalySignal`, `TelemetryAnomalySignal`, `InteractionUiSignal`, `SpectrumScanSignal`, `RigidbodySleepSignal`, `ScanCompleteSignal`, `ReconDataSignal` |
 | 64 | `AupPreShiftSignal`, `AupShiftSignal`, `BrownoutSignal`, `EntityDeathSignal`, `RebaseSignal`, `HabitatConstructionSignal`, `VocalWarningSignal`, `AcousticPingSignal`, `SonarPingSignal`, `ComplianceViolationSignal`, `ItemDecaySignal`, `PlayerStressSignal` |
 | 32 | `DataReloadSignal`, `HypoxiaSignal`, `OxygenCriticalSignal`, `WeatherStrengthSignal` |
@@ -98,4 +114,4 @@ Development/editor validation in `GlobalSignals` rejects managed-reference paylo
 - Signal structs above 64 bytes unless a source comment documents the cold-lane exception.
 - Managed allocations in hot signal production or drain code.
 
-STATUS: SOURCE VERIFIED / RUNTIME PENDING
+STATUS: STATIC_SOURCE REVIEWED / RUNTIME PENDING

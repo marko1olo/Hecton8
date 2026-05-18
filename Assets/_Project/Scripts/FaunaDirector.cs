@@ -3029,7 +3029,7 @@ namespace Hecton8.AI
                 angularVelocityY = state.angularVelocity.y,
                 angularVelocityZ = state.angularVelocity.z,
                 uniqueInstanceUid = state.uniqueInstanceUid,
-                isLargeThreat = state.isLargeThreat
+                flags = state.isLargeThreat ? HibernatedFaunaStateDTO.FlagLargeThreat : (byte)0
             };
             return true;
         }
@@ -3053,7 +3053,7 @@ namespace Hecton8.AI
             Vector3 runtimePosition = position.ToRuntimeFloat3();
             WorldChunkCoordinate chunkCoord = WorldChunkCoordinate.FromWorldPosition(runtimePosition, _runtimeChunkSize);
             WorldMacroZoneCoordinate macroZoneCoord = WorldMacroZoneCoordinate.FromWorldPosition(runtimePosition, _runtimeMacroZoneSize);
-            bool isLargeThreat = savedState.isLargeThreat || entry.isLargeThreat;
+            bool isLargeThreat = (savedState.flags & HibernatedFaunaStateDTO.FlagLargeThreat) != 0 || entry.isLargeThreat;
             uint uniqueInstanceUid = savedState.uniqueInstanceUid != 0u
                 ? savedState.uniqueInstanceUid
                 : BuildStandardFaunaInstanceUid(savedState.speciesId, biomeData.biomeIndex, chunkCoord, in position);
