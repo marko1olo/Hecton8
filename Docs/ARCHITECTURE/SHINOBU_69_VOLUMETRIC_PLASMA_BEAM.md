@@ -19,6 +19,11 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 
 Runtime owner: `Hecton8.VFX.PlasmaBeam.ShinobuPlasmaBeamRuntime`.
 
+Assembly isolation:
+- Runtime: `Assets/_Project/Scripts/VFX/PlasmaBeam/Hecton8.VFX.PlasmaBeam.Runtime.asmdef`
+- Editor: `Assets/_Project/Scripts/VFX/PlasmaBeam/Editor/Hecton8.VFX.PlasmaBeam.Editor.asmdef`
+- Direct sibling runtime assembly references: none. Runtime routes through Core, Core.Contracts, Core.Memory, and typed `SignalBus<T>`.
+
 Rendering path: vault-owned `BeamVertexDTO` triangle-list tube -> `GraphicsBuffer.LockBufferForWrite` -> `Graphics.DrawProceduralIndirect` -> `Hecton8/VFX/PlasmaBeamIndirect`.
 
 Memory ownership:
@@ -40,6 +45,7 @@ Core constraints:
 - `PlasmaBeamRuntimeScalarsDTO` is 64 bytes and carries `SectorHash` for deterministic mock/rollback seeding.
 - `VisualSyncTick` is an allocation firewall: boot may allocate GPU buffers/material, but VisualSync only draws if resources are already resident.
 - Shader flow uses `_H8PlasmaFrameTime` from dispatcher frame/fixed tick, not Unity `_Time`.
+- Vault handles and DTO layout validation are cold-path cached after initialization; steady dispatcher phases use generation-checked handle `Resolve` instead of repeating `GetBufferHandle`.
 - Standard tools use the Dear Lie: a UV-scrolled procedural tube, not true plasma simulation.
 
 Fault path: non-finite beam math writes a 300-frame telemetry ring dump to `Docs/AgentLogs/Dump_LASER_SURGEON.bin`.

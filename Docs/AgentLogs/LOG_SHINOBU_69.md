@@ -59,3 +59,13 @@ What was done: `VisualSyncTick` now calls `EnsureGraphicsResources(false)` and d
 Cinematic Cheats used: The beam remains a deterministic UV-scrolled tube; only the time source changed.
 
 Exact Microseconds saved: No normal-frame saving claimed. Prevents worst-case multi-ms VisualSync allocation hitch and removes CPU/GPU visual clock drift.
+
+## 2026-05-19 - PlasmaBeam Compile-Wall Isolation
+
+What was wrong: PlasmaBeam files were still under the parent source compile surface, and `EnsureVaultState` reacquired all vault handles plus layout sizes on every dispatcher phase after boot.
+
+What was done: Added `Hecton8.VFX.PlasmaBeam.Runtime.asmdef` and `Hecton8.VFX.PlasmaBeam.Editor.asmdef`. Runtime references Core/Core.Contracts/Core.Memory plus Unity packages only. Added `_layoutChecked/_layoutValid` and a fast path so initialized vault handles are reused through generation-checked `Resolve`.
+
+Cinematic Cheats used: None; this is compile-wall and hot-path hygiene. The visual cheat remains the UV-scrolled procedural tube.
+
+Exact Microseconds saved: Not measured. Static work removed from steady phases: 9 `GetBufferHandle` calls and 8 `UnsafeUtility.SizeOf` layout probes per phase after initialization. Unity asmdef import/build proof is still pending.

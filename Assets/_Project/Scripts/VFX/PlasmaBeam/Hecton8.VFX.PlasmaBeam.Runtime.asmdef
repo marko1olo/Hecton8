@@ -1,0 +1,23 @@
+{
+    "name": "Hecton8.VFX.PlasmaBeam.Runtime",
+    "rootNamespace": "Hecton8.VFX.PlasmaBeam",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.Profiling.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

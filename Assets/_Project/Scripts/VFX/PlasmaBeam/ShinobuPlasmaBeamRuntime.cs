@@ -229,6 +229,8 @@ namespace Hecton8.VFX.PlasmaBeam
         private bool _registeredVisualSync;
         private bool _vaultInitialized;
         private bool _defaultsInitialized;
+        private bool _layoutChecked;
+        private bool _layoutValid;
         private bool _simulationScheduled;
         private bool _dumpedNonFinite;
         private bool _shutdown;
@@ -381,6 +383,9 @@ namespace Hecton8.VFX.PlasmaBeam
             ReleaseGraphicsResources();
             _vault = null;
             _vaultInitialized = false;
+            _defaultsInitialized = false;
+            _layoutChecked = false;
+            _layoutValid = false;
             _simulationScheduled = false;
             if (ReferenceEquals(s_active, this))
                 s_active = null;
@@ -618,6 +623,9 @@ namespace Hecton8.VFX.PlasmaBeam
             if (vault == null)
                 return false;
 
+            if (_vaultInitialized && _defaultsInitialized)
+                return true;
+
             _statesHandle = vault.GetBufferHandle<BeamStateDTO>(BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _verticesHandle = vault.GetBufferHandle<BeamVertexDTO>(BufferID.ShinobuPlasmaBeamVertices, MaxVertexCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _trigHandle = vault.GetBufferHandle<BeamTrigLutEntry>(BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
@@ -641,7 +649,13 @@ namespace Hecton8.VFX.PlasmaBeam
             if (!_vaultInitialized)
                 return false;
 
-            if (!_defaultsInitialized || !IsLayoutValid())
+            if (!_layoutChecked)
+            {
+                _layoutValid = IsLayoutValid();
+                _layoutChecked = true;
+            }
+
+            if (!_defaultsInitialized || !_layoutValid)
                 GenerateEmergencyMockBeams(vault);
 
             return true;
@@ -657,7 +671,13 @@ namespace Hecton8.VFX.PlasmaBeam
             if (!states.IsCreated || !trig.IsCreated || !scalars.IsCreated || !args.IsCreated || !mockSignals.IsCreated)
                 return;
 
-            uint layoutFlags = IsLayoutValid() ? 0u : FlagLayoutFault;
+            if (!_layoutChecked)
+            {
+                _layoutValid = IsLayoutValid();
+                _layoutChecked = true;
+            }
+
+            uint layoutFlags = _layoutValid ? 0u : FlagLayoutFault;
             PlasmaBeamRuntimeScalarsDTO scalar = default;
             scalar.BaseRadius = s_pendingRadius;
             scalar.NoiseFrequency = s_pendingNoiseFrequency;

@@ -123,3 +123,15 @@ Rejected Alternatives: Lazy-recreating GPU resources in VisualSync was rejected 
 Scalability potential: Low/Middle/High/Ultra visual tiers are unchanged. The timing path now scales deterministically across all tiers instead of depending on render clock drift.
 
 Hardware Impact: No measured frame-time saving. Prevents a worst-case multi-ms resource recreation hitch on Quest-class hardware and removes one CPU/GPU visual desync vector.
+
+## Decision 10 - PlasmaBeam Assembly Isolation And Vault Handle Cache
+
+Problem: The new PlasmaBeam files lived under the parent source tree without a domain asmdef, so Unity import would bind them to a broader compile surface until the project regenerated assemblies. `EnsureVaultState` also reacquired every `VaultBufferHandle` and reran the struct layout audit on each dispatcher phase after boot.
+
+Solution: Add `Hecton8.VFX.PlasmaBeam.Runtime.asmdef` and `Hecton8.VFX.PlasmaBeam.Editor.asmdef`. Runtime references only Core, Core.Contracts, Core.Memory, and Unity Burst/Collections/Jobs/Mathematics packages; it does not reference sibling VFX, Tool, World, Audio, or Shader domain assemblies. Cache `_layoutChecked/_layoutValid` and return from `EnsureVaultState` once vault handles and defaults are initialized.
+
+Rejected Alternatives: Leaving the files inside the parent `Hecton8.Core` assembly was rejected because it expands the compile wall for a VFX-only change. Reacquiring vault handles every phase was rejected because the handles are generation-checked on `Resolve`, so repeated `GetBufferHandle` calls add no safety after initialization.
+
+Scalability potential: Low/Middle/High/Ultra visual output is unchanged. The benefit is iteration scalability and hot-path hygiene: beam quality still breathes through `GlobalQualityWeight`, while assembly and vault setup stay cold.
+
+Hardware Impact: Frame-time saving is not measured. Static delta removes 9 `GetBufferHandle` calls and 8 `UnsafeUtility.SizeOf` layout probes from steady dispatcher phases after initialization.

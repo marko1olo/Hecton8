@@ -95,8 +95,12 @@
     <Devirtualization status="PASS">Domain-local abstract/virtual phase adapter base was removed; sealed adapters implement the dispatcher contract directly.</Devirtualization>
   </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
   <COMPILE_GUARD status="PASS_STATIC">
-    No direct `using Hecton8.Tools`, `Hecton8.World`, `Hecton8.Audio`, or other sibling runtime imports exist in the new VFX runtime. Only Core/Memory/Signal contracts are used. No new asmdef was added.
+    No direct `using Hecton8.Tools`, `Hecton8.World`, `Hecton8.Audio`, or other sibling runtime imports exist in the VFX runtime. `Hecton8.VFX.PlasmaBeam.Runtime.asmdef` references Core, Core.Contracts, Core.Memory, and Unity packages only; `Hecton8.VFX.PlasmaBeam.Editor.asmdef` references the PlasmaBeam runtime plus Unity Collections/Mathematics. No sibling runtime assembly is referenced.
   </COMPILE_GUARD>
+  <COMPILE_WALL_POLISH>
+    <AsmdefIsolation status="PASS_STATIC">Runtime and editor PlasmaBeam assemblies are isolated from the parent compile surface.</AsmdefIsolation>
+    <VaultHandleCache status="PASS_STATIC">`EnsureVaultState` reacquires handles only until defaults are initialized; steady dispatcher phases rely on generation-checked `VaultBufferHandle.Resolve`.</VaultHandleCache>
+  </COMPILE_WALL_POLISH>
   <DEAR_LIE_CONFIRMATION>
     <Before complexity="particle/raymarch path">O(beams * particles_or_steps) plus renderer churn and potential SetPass expansion.</Before>
     <After complexity="procedural tube path">O(activeBeams * lengthSegments * radialSegments) in Burst plus one indirect draw.</After>
@@ -105,6 +109,6 @@
   <VERIFICATION>
     <StaticScan result="PASS">Forbidden constructs and sibling-domain imports are absent from the new PlasmaBeam path.</StaticScan>
     <DiffCheck result="PASS">`git diff --check` is clean for touched files.</DiffCheck>
-    <Compile result="BLOCKED_BY_EXISTING_CORE_ERRORS">After CPU dropped below 50% and no dotnet/csc was running, `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` failed on 6 non-SHINOBU errors: AI `math.reversebytes`, Homeostasis `sanitizedWeight`, Save codec `IndustrialLoreBitMask`, and Visor `HectonDrsRenderFeatureGate`. Generated csproj has not imported new PlasmaBeam files yet, so Unity/Burst import remains pending.</Compile>
+    <Compile result="BLOCKED_BY_EXISTING_CORE_ERRORS">After CPU dropped below 50% and no dotnet/csc was running, `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` failed on 6 non-SHINOBU errors: AI `math.reversebytes`, Homeostasis `sanitizedWeight`, Save codec `IndustrialLoreBitMask`, and Visor `HectonDrsRenderFeatureGate`. PlasmaBeam now has isolated asmdefs, but Unity/Burst import and generated csproj refresh are still pending.</Compile>
   </VERIFICATION>
 </SELF_AUDIT>

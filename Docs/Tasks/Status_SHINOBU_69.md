@@ -74,6 +74,12 @@ Status: ACTIVE - BLOCKED BY EXISTING CORE COMPILE ERRORS; UNITY/BURST IMPORT OF 
 - [x] Shader time determinism | DOD: shader uses `_H8PlasmaFrameTime` driven by dispatcher frame * fixed tick/fallback 1/60, not Unity `_Time.y` | Rejected: engine-clock visual drift between CPU noise and shader scroll | Estimate: no CPU saving; removes desync vector
 - [x] Upload generic tightening | DOD: `UploadNativeArray<T>` now uses `where T : unmanaged` to keep GPU upload DTOs blittable by construction | Rejected: broad `struct` constraint that could admit managed fields later | Estimate: compile-time guard
 
+## Loop 8 - Compile-Wall Assembly Isolation
+
+- [x] PlasmaBeam asmdef isolation | DOD: added `Hecton8.VFX.PlasmaBeam.Runtime.asmdef` and `Hecton8.VFX.PlasmaBeam.Editor.asmdef`; runtime references Core/Contracts/Memory and Unity packages only, no sibling VFX/World/Tool runtime assembly | Rejected: leaving PlasmaBeam under parent `Hecton8.Core` compile surface | Estimate: editor iteration saving, not frame-time
+- [x] Vault handle cold-path cache | DOD: `EnsureVaultState` returns immediately once handles/defaults are initialized; `GetBufferHandle` and layout `UnsafeUtility.SizeOf` audit are no longer repeated every dispatcher phase | Rejected: per-phase vault handle reacquisition after boot | Estimate: saves 9 handle resolution calls and 8 layout-size probes per phase after initialization
+- [x] Layout fault flag preserved | DOD: `_layoutChecked/_layoutValid` cache records the first layout audit and still routes boot defaults through `FlagLayoutFault` if validation fails | Rejected: hiding an invalid layout behind a fast path | Estimate: no normal-frame cost
+
 ## Compile Wall Record
 
 - [blocked] `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` | Result: 6 errors outside SHINOBU_69 domain: `ShinobuFloraFaunaSymbiosisSolver.cs` missing `math.reversebytes`, `HomeostasisBrain.ScalabilityDictator.cs` unassigned `sanitizedWeight`, `SaveBinaryPayloadCodec.cs` missing `IndustrialLoreBitMask`, two Visor features missing `HectonDrsRenderFeatureGate` | Note: generated `Hecton8.Core.csproj` has not imported new `Assets/_Project/Scripts/VFX/PlasmaBeam` files yet
