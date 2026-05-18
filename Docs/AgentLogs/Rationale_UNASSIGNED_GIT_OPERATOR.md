@@ -92,3 +92,9 @@ Solution: Staged only `H8BinaryWorldPager`, the minimal `H8Memory` BufferID/Syst
 Rejected Alternatives: `git add -A` was rejected because it would capture unrelated agents' work. Staging `ThermalGeyser.cs` alone was rejected because it depends on untracked `VolcanicUpdraftDirector`; staging `HectonNetworkManager.cs` alone was rejected because it depends on untracked rollback runtime/contracts.
 Scalability potential: Low/Middle/High/Ultra unchanged; this is source-control isolation preserving compile-wall boundaries.
 Hardware Impact: 0 us runtime. Prevents dependency breakage from partial cross-domain commits.
+
+Problem: The user explicitly requested git commit and push, but the post-commit worktree remains dirty with unrelated active-agent files.
+Solution: Pushed only scoped commit `23c5b933d` to `origin/main` and left unrelated local modifications unstaged. A docs-only follow-up records the push result.
+Rejected Alternatives: Pull/rebase gymnastics were not needed because the push was fast-forward. Force-push was not considered.
+Scalability potential: Low/Middle/High/Ultra unchanged; source-control evidence only.
+Hardware Impact: 0 us runtime.

@@ -92,3 +92,11 @@ What was done: staged only the save pager vault migration, minimal save pager `H
 Cinematic Cheats used: none new. This is commit hygiene.
 Exact Microseconds saved: 0 runtime us. The saved cost is integration risk: no partial cross-domain code is shipped in this capsule.
 Status: ready for commit/push after final staged-file verification.
+
+## 2026-05-18 Git push evidence
+
+What was wrong: user requested commit/push, while the working tree still contained unrelated parallel-agent changes that must not be shipped.
+What was done: committed scoped capsule as `23c5b933d` (`fix(save): move pager buffers to vault`) and pushed it to `origin/main` (`3088a0cbe..23c5b933d`). Remaining dirty files were not staged.
+Cinematic Cheats used: none.
+Exact Microseconds saved: 0 runtime us.
+Status: pushed.
