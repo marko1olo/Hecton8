@@ -120,3 +120,12 @@ Exact Microseconds saved: 0 runtime us. Build-time risk reduced: solution traver
 Verification: static only. `git diff --check -- Hecton8.slnx ProjectSettings/ProjectSettings.asset Docs/Tasks/Status_UNASSIGNED_GIT_OPERATOR.md Docs/AgentLogs/Rationale_UNASSIGNED_GIT_OPERATOR.md Docs/AgentLogs/LOG_UNASSIGNED_GIT_OPERATOR.md` clean. `dotnet build` not launched because CPU snapshot was 96%.
 Residual risk: Core/Atmosphere `WaterlineBreachSignal` remains an untracked-domain handoff; it was inspected but not mixed into this capsule.
 Git: pushed `9390aed32` (`build(unity): remove RealtimeCSG residue`) to `origin/main`.
+
+## 2026-05-19 Foveated telemetry ARM64 layout capsule
+
+What was wrong: `FoveatedRenderTelemetryEntry` is a 64-byte runtime blackbox DTO stored in `GlobalDataVault` at 300 entries, but it still used `Pack = 1`. That is invalid for ARM64 runtime memory even if the current fields happen to serialize correctly.
+What was done: removed `Pack = 1`, kept `Size = TelemetryRecordSizeBytes`, and added explicit `ulong _pad0` at the tail. The existing dump writer already emits an 8-byte `TelemetrySerializedPadding` after `VaultGeneration`, so the binary dump schema stays 64 bytes.
+Cinematic Cheats used: none. This is telemetry memory-layout hygiene.
+Exact Microseconds saved: 0 runtime us. The change removes unaligned-layout risk; exact frame gain is not claimed without Unity/IL2CPP profiling.
+Struct layout: `Frame` 0:4, `Sequence` 4:4, `TargetLevel01` 8:4, `AppliedLevel01` 12:4, `SystemStress01` 16:4, `GpuUtil01` 20:4, `GpuTimeMs` 24:4, `EyeWidth` 28:4, `EyeHeight` 32:4, `Flags` 36:4, `Caps` 40:4, six byte lanes 44-49, `DisplayCount` 50:2, `VaultGeneration` 52:4, `_pad0` 56:8. Total 64; `64 % 8 == 0` and `64 % 16 == 0`.
+Verification: static only. `rg Pack=1 Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs` clean; `git diff --check` clean. `dotnet build` not launched because CPU snapshot was 100%.
