@@ -247,6 +247,9 @@ namespace Hecton8.VFX.PlasmaBeam
             if (active == null)
                 return false;
 
+            if (active._simulationScheduled)
+                return false;
+
             return active.ApplyPendingEditorTuningImmediate();
         }
 
@@ -269,6 +272,9 @@ namespace Hecton8.VFX.PlasmaBeam
 
             ShinobuPlasmaBeamRuntime active = s_active;
             if (active == null)
+                return false;
+
+            if (active._simulationScheduled)
                 return false;
 
             IDataVault vault = active.ResolveVault();
@@ -302,6 +308,9 @@ namespace Hecton8.VFX.PlasmaBeam
 
             ShinobuPlasmaBeamRuntime active = s_active;
             if (active == null)
+                return false;
+
+            if (active._simulationScheduled)
                 return false;
 
             IDataVault vault = active.ResolveVault();
@@ -755,6 +764,9 @@ namespace Hecton8.VFX.PlasmaBeam
 
         private bool ApplyPendingEditorTuningImmediate()
         {
+            if (_simulationScheduled)
+                return false;
+
             IDataVault vault = ResolveVault();
             if (vault == null || !EnsureVaultState(vault))
                 return false;

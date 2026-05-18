@@ -69,3 +69,13 @@ What was done: Added `Hecton8.VFX.PlasmaBeam.Runtime.asmdef` and `Hecton8.VFX.Pl
 Cinematic Cheats used: None; this is compile-wall and hot-path hygiene. The visual cheat remains the UV-scrolled procedural tube.
 
 Exact Microseconds saved: Not measured. Static work removed from steady phases: 9 `GetBufferHandle` calls and 8 `UnsafeUtility.SizeOf` layout probes per phase after initialization. Unity asmdef import/build proof is still pending.
+
+## 2026-05-19 - Editor Facade Job-Fence Guard
+
+What was wrong: The editor tuner and SceneView mesh inspector could resolve vault scalar or vertex buffers while `_simulationScheduled` was true, creating a development-time race against Burst-owned producer memory.
+
+What was done: Added `_simulationScheduled` guards to editor tuning read/write and mesh snapshot APIs. Designer edits remain staged in sanitized static pending values and apply through the normal pre-simulation boundary instead of forcing a job completion or mutating active buffers.
+
+Cinematic Cheats used: None; this is safety around the human-control facade. The VFX cheat remains the UV-scrolled procedural tube.
+
+Exact Microseconds saved: No runtime saving claimed. Avoids editor-induced job serialization and unsafe vault reads without adding another persistent debug snapshot buffer.

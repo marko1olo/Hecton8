@@ -135,3 +135,15 @@ Rejected Alternatives: Leaving the files inside the parent `Hecton8.Core` assemb
 Scalability potential: Low/Middle/High/Ultra visual output is unchanged. The benefit is iteration scalability and hot-path hygiene: beam quality still breathes through `GlobalQualityWeight`, while assembly and vault setup stay cold.
 
 Hardware Impact: Frame-time saving is not measured. Static delta removes 9 `GetBufferHandle` calls and 8 `UnsafeUtility.SizeOf` layout probes from steady dispatcher phases after initialization.
+
+## Decision 11 - Editor Facade Job-Fence Guard
+
+Problem: The editor tuner and SceneView mesh inspector could resolve vault buffers while `_simulationScheduled` was true. That creates a dev-only race: the editor may read scalars or vertex DTOs while the scheduled Burst pipeline owns the same vault memory, and `TryWriteEditorTuning` could mutate scalar tuning during the producer window.
+
+Solution: Add a hard `_simulationScheduled` guard to `TryWriteEditorTuning`, `TryReadEditorTuning`, `TryGetEditorMeshSnapshot`, and `ApplyPendingEditorTuningImmediate`. Writes still sanitize and stage static pending values, but immediate vault mutation is deferred until `ApplyQualityAndEditorTuning` runs in the normal pre-simulation boundary.
+
+Rejected Alternatives: Calling `JobHandle.Complete()` from editor code was rejected because it would serialize the pipeline and violate the native job mandate. Returning a live read-only alias while the job is active was rejected because the vertex buffer is still the producer target. A second editor snapshot buffer was rejected because it adds persistent memory for a debug-only facade.
+
+Scalability potential: Low/Middle/High/Ultra rendering is unchanged. Designer control remains live, but it now obeys the same safe phase boundary as runtime quality changes.
+
+Hardware Impact: No runtime frame-time saving is claimed. This removes an editor/development safety race without adding hot-path allocation or main-thread blocking.

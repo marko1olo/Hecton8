@@ -87,6 +87,7 @@
     <VisualSyncAllocation status="PASS">`VisualSyncTick` calls `EnsureGraphicsResources(false)`; GPU buffers, shader lookup, and material allocation are boot-only.</VisualSyncAllocation>
     <UploadConstraint status="PASS">`UploadNativeArray&lt;T&gt;` is constrained to `where T : unmanaged`.</UploadConstraint>
     <ShaderTime status="PASS">Shader scroll/flicker consumes `_H8PlasmaFrameTime`, bound from dispatcher frame * fixed tick/fallback 1/60.</ShaderTime>
+    <EditorFacadeFence status="PASS">Editor tuning and SceneView mesh snapshot APIs refuse vault access while `_simulationScheduled` is true; pending edits are staged and applied at the pre-simulation boundary.</EditorFacadeFence>
   </ZERO_GC_HOT_PATH>
   <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
     <NoAlias status="PASS">Burst jobs annotate NativeArray fields with `[NoAlias]`; vertex writes use `NativeDisableParallelForRestriction` for disjoint beam chunks.</NoAlias>

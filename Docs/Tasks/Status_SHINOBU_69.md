@@ -80,6 +80,12 @@ Status: ACTIVE - BLOCKED BY EXISTING CORE COMPILE ERRORS; UNITY/BURST IMPORT OF 
 - [x] Vault handle cold-path cache | DOD: `EnsureVaultState` returns immediately once handles/defaults are initialized; `GetBufferHandle` and layout `UnsafeUtility.SizeOf` audit are no longer repeated every dispatcher phase | Rejected: per-phase vault handle reacquisition after boot | Estimate: saves 9 handle resolution calls and 8 layout-size probes per phase after initialization
 - [x] Layout fault flag preserved | DOD: `_layoutChecked/_layoutValid` cache records the first layout audit and still routes boot defaults through `FlagLayoutFault` if validation fails | Rejected: hiding an invalid layout behind a fast path | Estimate: no normal-frame cost
 
+## Loop 9 - Editor Facade Job-Fence Guard
+
+- [x] Editor read fence | DOD: `TryReadEditorTuning` returns false while `_simulationScheduled` is true, preventing editor UI from resolving or reading vault scalar buffers during a live producer job | Rejected: optimistic editor reads against job-owned vault memory | Estimate: editor-only; prevents safety race, not frame-time saving
+- [x] Editor mesh snapshot fence | DOD: `TryGetEditorMeshSnapshot` returns false while `_simulationScheduled` is true, so SceneView wireframe inspection never exposes the active vertex buffer while Burst meshing can mutate it | Rejected: live gizmo reads of back-buffer geometry | Estimate: editor-only; avoids safety violation
+- [x] Editor write deferral | DOD: `TryWriteEditorTuning` still stages sanitized pending values but refuses immediate vault mutation while `_simulationScheduled` is true; pending values apply at the next pre-simulation boundary | Rejected: writing designer scalars into vault memory while the scheduled job may read them | Estimate: editor-only; preserves zero-GC staged tuning
+
 ## Compile Wall Record
 
 - [blocked] `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` | Result: 6 errors outside SHINOBU_69 domain: `ShinobuFloraFaunaSymbiosisSolver.cs` missing `math.reversebytes`, `HomeostasisBrain.ScalabilityDictator.cs` unassigned `sanitizedWeight`, `SaveBinaryPayloadCodec.cs` missing `IndustrialLoreBitMask`, two Visor features missing `HectonDrsRenderFeatureGate` | Note: generated `Hecton8.Core.csproj` has not imported new `Assets/_Project/Scripts/VFX/PlasmaBeam` files yet
