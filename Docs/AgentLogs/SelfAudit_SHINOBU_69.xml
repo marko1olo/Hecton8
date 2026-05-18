@@ -7,7 +7,7 @@
     <Task id="05" name="BLIND_DEPENDENCY_MOCKING" result="PASS">`MockLaserFireSignal` and `PlasmaBeamMockLaserFireJob` isolate ToolKinematics dependency.</Task>
     <Task id="06" name="BURST_CYLINDER_GENERATION_KERNEL" result="PASS">`PlasmaBeamTubeMeshingJob` builds tube triangle vertices in Burst.</Task>
     <Task id="07" name="SIMPLEX_NOISE_CRACKLE_INJECTION" result="PASS">`noise.snoise` offsets radius with deterministic SectorHash/Frame seed and `math.step` quality gate.</Task>
-    <Task id="08" name="THE_DEAR_LIE_UV_SCROLLING" result="PASS">UV.y is generated 0..1 and shader scrolls energy flow.</Task>
+    <Task id="08" name="THE_DEAR_LIE_UV_SCROLLING" result="PASS">UV.y is generated 0..1 and shader scrolls energy flow from `_H8PlasmaFrameTime`, not Unity `_Time`.</Task>
     <Task id="09" name="DYNAMIC_INTENSITY_THICKNESS" result="PASS">Heat and energy continuously scale tube radius.</Task>
     <Task id="10" name="TARGET_IMPACT_FLARING" result="PASS">Final ring radius is multiplied by 1.5 and color is forced white.</Task>
     <Task id="11" name="CONTINUOUS_SCALABILITY_SEGMENT_CULLING" result="PASS">Length segments stay exactly 2 below q=0.3, then lerp 2..20; radial segments lerp 3..8 from `GlobalQualityWeight`.</Task>
@@ -83,6 +83,11 @@
     <VaultBuffer id="ShinobuPlasmaBeamAcousticTaps"/>
     <VaultBuffer id="ShinobuPlasmaBeamCsvScratch"/>
   </H_PHI_VAULT_STATUS>
+  <ZERO_GC_HOT_PATH>
+    <VisualSyncAllocation status="PASS">`VisualSyncTick` calls `EnsureGraphicsResources(false)`; GPU buffers, shader lookup, and material allocation are boot-only.</VisualSyncAllocation>
+    <UploadConstraint status="PASS">`UploadNativeArray&lt;T&gt;` is constrained to `where T : unmanaged`.</UploadConstraint>
+    <ShaderTime status="PASS">Shader scroll/flicker consumes `_H8PlasmaFrameTime`, bound from dispatcher frame * fixed tick/fallback 1/60.</ShaderTime>
+  </ZERO_GC_HOT_PATH>
   <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
     <NoAlias status="PASS">Burst jobs annotate NativeArray fields with `[NoAlias]`; vertex writes use `NativeDisableParallelForRestriction` for disjoint beam chunks.</NoAlias>
     <JobGraph>dispatcher dependsOn -> PlasmaBeamMockLaserFireJob -> PlasmaBeamTubeMeshingJob -> PlasmaBeamArgsTelemetryJob -> returned JobHandle</JobGraph>

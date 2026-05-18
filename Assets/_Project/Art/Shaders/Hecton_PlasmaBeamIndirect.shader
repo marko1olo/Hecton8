@@ -6,6 +6,7 @@ Shader "Hecton8/VFX/PlasmaBeamIndirect"
         _H8PlasmaIntensity("Intensity", Float) = 2.4
         _H8PlasmaGlobalQualityWeight("Quality Weight", Range(0, 1)) = 1.0
         _H8PlasmaNoirScatter("Noir Scatter", Range(0, 1)) = 0.18
+        _H8PlasmaFrameTime("Frame Time", Float) = 0.0
     }
 
     SubShader
@@ -49,6 +50,7 @@ Shader "Hecton8/VFX/PlasmaBeamIndirect"
                 float _H8PlasmaIntensity;
                 float _H8PlasmaGlobalQualityWeight;
                 float _H8PlasmaNoirScatter;
+                float _H8PlasmaFrameTime;
             CBUFFER_END
 
             struct Varyings
@@ -94,9 +96,9 @@ Shader "Hecton8/VFX/PlasmaBeamIndirect"
 
             half4 Frag(Varyings input) : SV_Target
             {
-                float scroll = input.uv.y - _Time.y * max(0.01, _H8PlasmaUvScroll);
+                float scroll = input.uv.y - _H8PlasmaFrameTime * max(0.01, _H8PlasmaUvScroll);
                 float flowBand = Triangle01(scroll * 7.0 + input.uv.x * 3.0);
-                float spark = Hash21(float2(floor(scroll * 32.0), floor(input.uv.x * 16.0) + _Time.y * 0.25));
+                float spark = Hash21(float2(floor(scroll * 32.0), floor(input.uv.x * 16.0) + _H8PlasmaFrameTime * 0.25));
                 float core = smoothstep(0.08, 0.58, flowBand);
                 float scatterDim = lerp(1.0, 0.46, saturate(_H8PlasmaNoirScatter));
                 float qualityFlicker = lerp(0.82, 1.18, saturate(_H8PlasmaGlobalQualityWeight));

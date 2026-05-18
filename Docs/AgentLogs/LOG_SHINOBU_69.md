@@ -49,3 +49,13 @@ What was done: Waited until CPU dropped below 50% with no `dotnet`/`csc`, then l
 Cinematic Cheats used: None.
 
 Exact Microseconds saved: No runtime savings. Build failed after 42.5s on 6 non-VFX errors: `ShinobuFloraFaunaSymbiosisSolver.cs` missing `math.reversebytes`, `HomeostasisBrain.ScalabilityDictator.cs` unassigned `sanitizedWeight`, `SaveBinaryPayloadCodec.cs` missing `IndustrialLoreBitMask`, and two Visor files missing `HectonDrsRenderFeatureGate`. Generated `Hecton8.Core.csproj` does not yet include new `Assets/_Project/Scripts/VFX/PlasmaBeam` files, so Unity/Burst validation remains pending.
+
+## 2026-05-19 - VisualSync Allocation Firewall
+
+What was wrong: GPU resource creation was cold-path intended but still reachable from `VisualSyncTick` if a resource became invalid. Shader motion used Unity `_Time.y`, separate from the CPU Simplex phase.
+
+What was done: `VisualSyncTick` now calls `EnsureGraphicsResources(false)` and draws only when buffers/material are already resident. Boot remains the only path allowed to allocate GPU buffers/material. Shader scroll/flicker now uses `_H8PlasmaFrameTime` bound from dispatcher frame * fixed tick/fallback 1/60.
+
+Cinematic Cheats used: The beam remains a deterministic UV-scrolled tube; only the time source changed.
+
+Exact Microseconds saved: No normal-frame saving claimed. Prevents worst-case multi-ms VisualSync allocation hitch and removes CPU/GPU visual clock drift.

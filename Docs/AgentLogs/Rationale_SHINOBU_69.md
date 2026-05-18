@@ -111,3 +111,15 @@ Rejected Alternatives: Registering one all-phase object was rejected because the
 Scalability potential: No visual-tier effect. It preserves the compile wall and dispatcher contract while reducing local polymorphism.
 
 Hardware Impact: Sub-microsecond dispatch hygiene. Main performance value is architectural: less virtual surface in a phase called every frame.
+
+## Decision 09 - VisualSync Allocation Firewall And Shader-Time Rebind
+
+Problem: The boot resource path was also callable from `VisualSyncTick`, which meant an invalidated GPU buffer or material could trigger `new GraphicsBuffer`, `Shader.Find`, or `new Material` during gameplay. The shader also used Unity `_Time.y`, while CPU beam crackle used dispatcher frame-derived time.
+
+Solution: Split resource validation into `EnsureGraphicsResources(allowAllocation)`. Boot calls it with allocation enabled; VisualSync calls it with allocation disabled and skips draw if resources are not already resident. Add `_H8PlasmaFrameTime`, driven by `context.Frame * ResolveSimulationTickDelta(timing)`, and bind it to the material so shader scroll and CPU Simplex phase share deterministic frame time.
+
+Rejected Alternatives: Lazy-recreating GPU resources in VisualSync was rejected because it can produce a visible hitch. Using Unity `_Time` was rejected because it divorces shader flow from deterministic simulation frame progression. Broad `where T : struct` upload constraints were rejected in favor of `where T : unmanaged`.
+
+Scalability potential: Low/Middle/High/Ultra visual tiers are unchanged. The timing path now scales deterministically across all tiers instead of depending on render clock drift.
+
+Hardware Impact: No measured frame-time saving. Prevents a worst-case multi-ms resource recreation hitch on Quest-class hardware and removes one CPU/GPU visual desync vector.

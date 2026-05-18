@@ -183,6 +183,7 @@ namespace Hecton8.VFX.PlasmaBeam
         private static readonly int IntensityId = Shader.PropertyToID("_H8PlasmaIntensity");
         private static readonly int QualityId = Shader.PropertyToID("_H8PlasmaGlobalQualityWeight");
         private static readonly int ScatterId = Shader.PropertyToID("_H8PlasmaNoirScatter");
+        private static readonly int FrameTimeId = Shader.PropertyToID("_H8PlasmaFrameTime");
 
         private static ShinobuPlasmaBeamRuntime s_active;
         private static bool s_hasPendingEditorTuning;
@@ -218,6 +219,7 @@ namespace Hecton8.VFX.PlasmaBeam
         private int _lockedBufferMask;
         private int _lastVertexCount;
         private int _lastActiveBeamCount;
+        private float _lastDeterministicTimeSeconds;
         private uint _lastDispatcherFrame;
         private uint _csvGeneration = 1u;
         private uint _runtimeFlags = FlagMockInputEnabled;
@@ -361,7 +363,7 @@ namespace Hecton8.VFX.PlasmaBeam
             _vault = GlobalRegistry.DataVault;
             SignalBus<AcousticEchoTap>.Configure(MaxBeamCount, maxFrameSignals: MaxBeamCount, lowTierFrameSignals: 4, laneHash: 0x504C4153u);
             SignalBus<AcousticEchoTap>.EnsureInitialized();
-            EnsureGraphicsResources();
+            EnsureGraphicsResources(allowAllocation: true);
             RegisterDispatcherPhases();
             Application.quitting -= ShutdownActive;
             Application.quitting += ShutdownActive;
@@ -476,8 +478,9 @@ namespace Hecton8.VFX.PlasmaBeam
 
             try
             {
-                float deltaSeconds = SanitizeFloat(timing.FrameDelta, 1.0f / 60.0f);
-                float timeSeconds = (float)((double)context.Frame * (double)deltaSeconds);
+                float tickDelta = ResolveSimulationTickDelta(in timing);
+                float timeSeconds = (float)((double)context.Frame * (double)tickDelta);
+                _lastDeterministicTimeSeconds = timeSeconds;
                 PlasmaBeamRuntimeScalarsDTO scalar = scalars[0];
                 uint mockEnabled = (scalar.Flags & FlagMockInputEnabled) != 0u ? 1u : 0u;
 
@@ -573,7 +576,7 @@ namespace Hecton8.VFX.PlasmaBeam
         private void VisualSyncTick(in DispatcherTimingDTO timing)
         {
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultState(vault) || !EnsureGraphicsResources())
+            if (vault == null || !EnsureVaultState(vault) || !EnsureGraphicsResources(allowAllocation: false))
                 return;
 
             NativeArray<BeamVertexDTO> vertices = _verticesHandle.Resolve(vault);
@@ -595,6 +598,7 @@ namespace Hecton8.VFX.PlasmaBeam
             _material.SetFloat(IntensityId, math.lerp(1.15f, 4.0f, SmoothStep01(scalar.GlobalQualityWeight)));
             _material.SetFloat(QualityId, scalar.GlobalQualityWeight);
             _material.SetFloat(ScatterId, scalar.BiomeExtinction01);
+            _material.SetFloat(FrameTimeId, _lastDeterministicTimeSeconds);
 
             Graphics.DrawProceduralIndirect(
                 _material,
@@ -739,10 +743,13 @@ namespace Hecton8.VFX.PlasmaBeam
             return true;
         }
 
-        private bool EnsureGraphicsResources()
+        private bool EnsureGraphicsResources(bool allowAllocation)
         {
             if (_vertexGpuBuffer == null || !_vertexGpuBuffer.IsValid())
             {
+                if (!allowAllocation)
+                    return false;
+
                 // COLD ALLOC: GraphicsBuffer[19200] - persistent procedural beam vertex stream - owner: SHINOBU_69
                 _vertexGpuBuffer = new GraphicsBuffer(
                     GraphicsBuffer.Target.Structured,
@@ -753,6 +760,9 @@ namespace Hecton8.VFX.PlasmaBeam
 
             if (_indirectArgsGpuBuffer == null || !_indirectArgsGpuBuffer.IsValid())
             {
+                if (!allowAllocation)
+                    return false;
+
                 // COLD ALLOC: GraphicsBuffer[1] - persistent DrawProceduralIndirect args - owner: SHINOBU_69
                 _indirectArgsGpuBuffer = new GraphicsBuffer(
                     GraphicsBuffer.Target.IndirectArguments,
@@ -763,6 +773,9 @@ namespace Hecton8.VFX.PlasmaBeam
 
             if (_material == null)
             {
+                if (!allowAllocation)
+                    return false;
+
                 Shader shader = Shader.Find(ShaderName);
                 if (shader == null)
                 {
@@ -998,7 +1011,7 @@ namespace Hecton8.VFX.PlasmaBeam
         }
 
         private static void UploadNativeArray<T>(GraphicsBuffer destination, NativeArray<T> source, int count)
-            where T : struct
+            where T : unmanaged
         {
             if (destination == null || !destination.IsValid() || !source.IsCreated || count <= 0)
                 return;
@@ -1051,6 +1064,12 @@ namespace Hecton8.VFX.PlasmaBeam
                 UnsafeUtility.SizeOf<AcousticEchoTap>() == 32 &&
                 UnsafeUtility.SizeOf<PlasmaBeamIndirectArgsDTO>() == 16 &&
                 UnsafeUtility.SizeOf<PlasmaBeamTelemetryEntry>() == 64;
+        }
+
+        private static float ResolveSimulationTickDelta(in DispatcherTimingDTO timing)
+        {
+            float fixedDelta = SanitizeFloat(timing.FixedDelta, 0.0f);
+            return fixedDelta > 0.00001f ? math.clamp(fixedDelta, 1.0f / 240.0f, 1.0f / 5.0f) : 1.0f / 60.0f;
         }
 
         private static float ResolveGlobalQualityWeight()

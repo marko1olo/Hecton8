@@ -68,6 +68,12 @@ Status: ACTIVE - BLOCKED BY EXISTING CORE COMPILE ERRORS; UNITY/BURST IMPORT OF 
 - [x] Explicit noise branch gate | DOD: `noise.snoise` executes only when `math.step(0.30, q)` is 1; q<0.3 has no Simplex call | Rejected: amplitude-only zeroing with possible branch ambiguity | Estimate: saves one Simplex evaluation per vertex at thermal low
 - [x] Internal devirtualization polish | DOD: removed abstract/virtual phase adapter base; four sealed dispatcher adapters implement `IDispatcherSystem` directly | Rejected: local virtual override chain before dispatcher interface call | Estimate: sub-us dispatch hygiene
 
+## Loop 7 - Determinism And Hot-Path Allocation Recut
+
+- [x] VisualSync allocation firewall | DOD: `EnsureGraphicsResources(allowAllocation: false)` is used in `VisualSyncTick`; `new GraphicsBuffer`, `Shader.Find`, and `new Material` are boot-only | Rejected: lazy GPU resource resurrection from the draw path | Estimate: prevents multi-ms hitch if a buffer invalidates mid-play
+- [x] Shader time determinism | DOD: shader uses `_H8PlasmaFrameTime` driven by dispatcher frame * fixed tick/fallback 1/60, not Unity `_Time.y` | Rejected: engine-clock visual drift between CPU noise and shader scroll | Estimate: no CPU saving; removes desync vector
+- [x] Upload generic tightening | DOD: `UploadNativeArray<T>` now uses `where T : unmanaged` to keep GPU upload DTOs blittable by construction | Rejected: broad `struct` constraint that could admit managed fields later | Estimate: compile-time guard
+
 ## Compile Wall Record
 
 - [blocked] `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` | Result: 6 errors outside SHINOBU_69 domain: `ShinobuFloraFaunaSymbiosisSolver.cs` missing `math.reversebytes`, `HomeostasisBrain.ScalabilityDictator.cs` unassigned `sanitizedWeight`, `SaveBinaryPayloadCodec.cs` missing `IndustrialLoreBitMask`, two Visor features missing `HectonDrsRenderFeatureGate` | Note: generated `Hecton8.Core.csproj` has not imported new `Assets/_Project/Scripts/VFX/PlasmaBeam` files yet

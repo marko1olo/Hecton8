@@ -38,6 +38,8 @@ Core constraints:
 - Geometry is AUP-local before float trigonometry.
 - `GlobalQualityWeight` controls length segments, radial segments, noise amplitude, and shader intensity. Below 0.3, length density is hard-gated by `math.step` to the 2-segment survival path and Simplex noise is not evaluated.
 - `PlasmaBeamRuntimeScalarsDTO` is 64 bytes and carries `SectorHash` for deterministic mock/rollback seeding.
+- `VisualSyncTick` is an allocation firewall: boot may allocate GPU buffers/material, but VisualSync only draws if resources are already resident.
+- Shader flow uses `_H8PlasmaFrameTime` from dispatcher frame/fixed tick, not Unity `_Time`.
 - Standard tools use the Dear Lie: a UV-scrolled procedural tube, not true plasma simulation.
 
 Fault path: non-finite beam math writes a 300-frame telemetry ring dump to `Docs/AgentLogs/Dump_LASER_SURGEON.bin`.
