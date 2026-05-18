@@ -129,3 +129,4 @@ Cinematic Cheats used: none. This is telemetry memory-layout hygiene.
 Exact Microseconds saved: 0 runtime us. The change removes unaligned-layout risk; exact frame gain is not claimed without Unity/IL2CPP profiling.
 Struct layout: `Frame` 0:4, `Sequence` 4:4, `TargetLevel01` 8:4, `AppliedLevel01` 12:4, `SystemStress01` 16:4, `GpuUtil01` 20:4, `GpuTimeMs` 24:4, `EyeWidth` 28:4, `EyeHeight` 32:4, `Flags` 36:4, `Caps` 40:4, six byte lanes 44-49, `DisplayCount` 50:2, `VaultGeneration` 52:4, `_pad0` 56:8. Total 64; `64 % 8 == 0` and `64 % 16 == 0`.
 Verification: static only. `rg Pack=1 Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs` clean; `git diff --check` clean. `dotnet build` not launched because CPU snapshot was 100%.
+Git: pushed source commit `bad9b08f4` and audit commit `d286f42ff` to `origin/main` (`c597cf709..d286f42ff`).
