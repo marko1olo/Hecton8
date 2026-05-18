@@ -119,3 +119,4 @@ Cinematic Cheats used: none. This is compile-wall hygiene.
 Exact Microseconds saved: 0 runtime us. Build-time risk reduced: solution traversal no longer points at a deleted vendor project, and platform define state no longer claims a missing package.
 Verification: static only. `git diff --check -- Hecton8.slnx ProjectSettings/ProjectSettings.asset Docs/Tasks/Status_UNASSIGNED_GIT_OPERATOR.md Docs/AgentLogs/Rationale_UNASSIGNED_GIT_OPERATOR.md Docs/AgentLogs/LOG_UNASSIGNED_GIT_OPERATOR.md` clean. `dotnet build` not launched because CPU snapshot was 96%.
 Residual risk: Core/Atmosphere `WaterlineBreachSignal` remains an untracked-domain handoff; it was inspected but not mixed into this capsule.
+Git: pushed `9390aed32` (`build(unity): remove RealtimeCSG residue`) to `origin/main`.
