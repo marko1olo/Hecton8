@@ -56,11 +56,9 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Rigidbody))]
     public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IInitializable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener, IPlayerMovementContracts
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential, Size = 88)]
         private struct CinematicFocusTelemetryEntry
         {
-            public uint Frame;
-            public uint FocusHash;
             public long PlayerGridX;
             public long PlayerGridY;
             public long PlayerGridZ;
@@ -71,7 +69,12 @@ namespace Hecton8.Gameplay
             public float DistanceSq;
             public float PullWeight;
             public float SubtitleAlpha01;
+            public uint Frame;
+            public uint FocusHash;
             public byte Flags;
+            private byte _pad0;
+            private ushort _pad1;
+            private uint _pad2;
         }
 
         private const float GroundCheckSkin = 0.02f;
@@ -1586,7 +1589,7 @@ namespace Hecton8.Gameplay
         private const float ParasiteLatchMaxLeverArm = 0.85f;
         private const float ParasiteLatchMaxAngularAcceleration = 12f;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential, Size = 40)]
         private struct RenderInterpolationState
         {
             public Vector3 BodyPosition;
@@ -1594,6 +1597,7 @@ namespace Hecton8.Gameplay
             public float BodyYaw;
             public Vector3 LinearVelocity;
             public float VerticalVelocity;
+            private uint _pad0;
         }
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -1906,7 +1910,7 @@ namespace Hecton8.Gameplay
                    _heavyTowWinch.TryTransferTowToTransport(transportBody, transportAnchor);
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct QueuedCollisionEvent
         {
             public float RelativeSpeed;
@@ -1918,7 +1922,7 @@ namespace Hecton8.Gameplay
             public bool IsTrigger;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct ColliderCallbackMetadata
         {
             public int Layer;

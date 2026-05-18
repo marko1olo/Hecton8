@@ -33,6 +33,7 @@ namespace Hecton8.Core.Memory
         GameplayTools = 70,
         Construction = 71,
         Power = 72,
+        SavePersistence = 132,
         WorldStreaming = 128,
         TerrainSeams = 129,
         WorldSargassum = 130,
@@ -611,7 +612,17 @@ namespace Hecton8.Core.Memory
         RtgCurrentOutput = 546,
         RtgOutputNormalized = 547,
         RtgFlags = 548,
-        RtgTelemetryRing = 549
+        RtgTelemetryRing = 549,
+        SaveWorldPagerWriteArena = 70200,
+        SaveWorldPagerReadArena = 70201,
+        SaveWorldPagerReadSlotStates = 70202,
+        SaveWorldPagerCompressionScratch = 70203,
+        SaveWorldPagerHotState = 70204,
+        SaveWorldPagerTelemetryRing = 70205,
+        SaveWorldPagerReadStaging = 70206,
+        SaveWorldPagerWriteCommands = 70207,
+        SaveWorldPagerReadCommands = 70208,
+        SaveWorldPagerReadResults = 70209
     }
 
     [Flags]
