@@ -110,3 +110,12 @@ Exact Microseconds saved: 0 runtime us. The fix prevents DataVault alias corrupt
 Verification: static only. `git diff --check -- Assets/_Project/Scripts/Core/Memory/H8Memory.cs` clean. `dotnet build` not launched because CPU snapshot was 60%, above local guardrail.
 Git: pushed `7110cdceb` to `origin/main`.
 Status: pending compile / Unity import verification.
+
+## 2026-05-19 RealtimeCSG tracked graph cleanup capsule
+
+What was wrong: `Assets/RealtimeCSG` is absent, but tracked Unity project state still carried package residue in two places: `Hecton8.slnx` referenced `RealtimeCSG.csproj`, and `ProjectSettings.asset` advertised `RealtimeCSG`, `RealtimeCSG_1`, `RealtimeCSG_1_6`, and `RealtimeCSG_1_6_01` scripting symbols across platform targets.
+What was done: kept the cleanup to tracked source-of-truth graph/define files only: `Hecton8.slnx` drops the deleted project, and `ProjectSettings.asset` removes only the stale RealtimeCSG define tokens. The ignored generated `RealtimeCSG.csproj` no-source stub remains local CLI insulation until Unity regenerates project files; it is not staged.
+Cinematic Cheats used: none. This is compile-wall hygiene.
+Exact Microseconds saved: 0 runtime us. Build-time risk reduced: solution traversal no longer points at a deleted vendor project, and platform define state no longer claims a missing package.
+Verification: static only. `git diff --check -- Hecton8.slnx ProjectSettings/ProjectSettings.asset Docs/Tasks/Status_UNASSIGNED_GIT_OPERATOR.md Docs/AgentLogs/Rationale_UNASSIGNED_GIT_OPERATOR.md Docs/AgentLogs/LOG_UNASSIGNED_GIT_OPERATOR.md` clean. `dotnet build` not launched because CPU snapshot was 96%.
+Residual risk: Core/Atmosphere `WaterlineBreachSignal` remains an untracked-domain handoff; it was inspected but not mixed into this capsule.

@@ -1,6 +1,5 @@
 ﻿<Solution>
   <Project Path="Unity.ShaderGraph.Editor.csproj" />
-  <Project Path="RealtimeCSG.csproj" />
   <Project Path="WaveHarmonic.Crest.csproj" />
   <Project Path="Hecton8.Core.csproj" />
   <Project Path="MoreMountains.Feedbacks.csproj" />
