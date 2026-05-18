@@ -159,3 +159,15 @@ Rejected Alternatives: Keeping `DEVELOPMENT_BUILD` polling was rejected because 
 Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The editor can still tune all tiers through the same `GlobalQualityWeight`, radius, noise, and radial override scalars.
 
 Hardware Impact: Removes one filesystem existence/write-time probe every 64 frames from development players. No measured microsecond claim; impact depends on platform filesystem cache, but the correctness gain is eliminating runtime file-I/O cadence.
+
+## Decision 13 - Blackbox Dump Fail-Closed Guard
+
+Problem: `DumpTelemetry` executed in the non-finite fault path and could throw if `Docs/AgentLogs` was unavailable, locked, or rejected by the platform filesystem. A forensic dump attempt must not create a secondary post-simulation exception that hides the original beam math fault.
+
+Solution: Wrap directory creation and dump file writes in a fail-closed `try/catch`. On failure, set `FlagDumpFailed` in the runtime flag word. No DTO layout changes were made; the existing 64B telemetry entries and 32B dump header remain unchanged.
+
+Rejected Alternatives: Letting IO exceptions propagate was rejected because it turns telemetry into a crash amplifier. Adding a new telemetry field was rejected because it would change the fixed 64B blackbox DTO layout. Logging through `Debug.LogException` was rejected because the fault path must avoid managed string/log noise.
+
+Scalability potential: No visual-tier effect. Low/Middle/High/Ultra all preserve the same forensic ring; high-tier visuals do not get a different dump contract.
+
+Hardware Impact: Normal frame cost is zero. Fault-path behavior becomes bounded to a flag set if the filesystem refuses the dump.

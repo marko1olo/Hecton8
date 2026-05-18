@@ -154,6 +154,7 @@ namespace Hecton8.VFX.PlasmaBeam
         private const uint SystemHash = 0x53363950u; // S69P
         private const uint FlagMockInputEnabled = 1u << 0;
         private const uint FlagCsvLoaded = 1u << 1;
+        private const uint FlagDumpFailed = 1u << 28;
         private const uint FlagLayoutFault = 1u << 29;
         private const uint FlagNonFinite = 1u << 30;
         private const uint FlagShaderMissing = 1u << 31;
@@ -1064,25 +1065,32 @@ namespace Hecton8.VFX.PlasmaBeam
             if (!telemetry.IsCreated)
                 return;
 
-            string directory = Path.GetDirectoryName(_dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            try
             {
-                PlasmaBeamDumpHeader header = default;
-                header.Magic = DumpMagic;
-                header.Version = DumpVersion;
-                header.FrameCount = (uint)math.min(telemetry.Length, TelemetryFrameCount);
-                header.EntrySize = (uint)UnsafeUtility.SizeOf<PlasmaBeamTelemetryEntry>();
-                header.Flags = _runtimeFlags;
-                stream.Write(new ReadOnlySpan<byte>((byte*)&header, UnsafeUtility.SizeOf<PlasmaBeamDumpHeader>()));
+                string directory = Path.GetDirectoryName(_dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
 
-                for (int i = 0; i < telemetry.Length; i++)
+                using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    PlasmaBeamTelemetryEntry entry = telemetry[i];
-                    stream.Write(new ReadOnlySpan<byte>((byte*)&entry, UnsafeUtility.SizeOf<PlasmaBeamTelemetryEntry>()));
+                    PlasmaBeamDumpHeader header = default;
+                    header.Magic = DumpMagic;
+                    header.Version = DumpVersion;
+                    header.FrameCount = (uint)math.min(telemetry.Length, TelemetryFrameCount);
+                    header.EntrySize = (uint)UnsafeUtility.SizeOf<PlasmaBeamTelemetryEntry>();
+                    header.Flags = _runtimeFlags;
+                    stream.Write(new ReadOnlySpan<byte>((byte*)&header, UnsafeUtility.SizeOf<PlasmaBeamDumpHeader>()));
+
+                    for (int i = 0; i < telemetry.Length; i++)
+                    {
+                        PlasmaBeamTelemetryEntry entry = telemetry[i];
+                        stream.Write(new ReadOnlySpan<byte>((byte*)&entry, UnsafeUtility.SizeOf<PlasmaBeamTelemetryEntry>()));
+                    }
                 }
+            }
+            catch (Exception)
+            {
+                _runtimeFlags |= FlagDumpFailed;
             }
         }
 

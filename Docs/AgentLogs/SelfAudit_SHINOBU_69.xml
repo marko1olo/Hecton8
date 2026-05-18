@@ -90,6 +90,10 @@
     <EditorFacadeFence status="PASS">Editor tuning and SceneView mesh snapshot APIs refuse vault access while `_simulationScheduled` is true; pending edits are staged and applied at the pre-simulation boundary.</EditorFacadeFence>
     <CsvFileIoFence status="PASS">CSV polling and file reads are compiled for `UNITY_EDITOR` only; development/player gameplay builds do not poll files from pre-simulation.</CsvFileIoFence>
   </ZERO_GC_HOT_PATH>
+  <BLACKBOX_FORENSICS>
+    <DumpPath status="PASS">Non-finite beam math attempts to write `Docs/AgentLogs/Dump_LASER_SURGEON.bin` from the 300-frame telemetry ring.</DumpPath>
+    <FailClosed status="PASS">Filesystem failures during dump creation are caught and recorded in runtime `FlagDumpFailed` bit 28; no telemetry DTO layout change.</FailClosed>
+  </BLACKBOX_FORENSICS>
   <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
     <NoAlias status="PASS">Burst jobs annotate NativeArray fields with `[NoAlias]`; vertex writes use `NativeDisableParallelForRestriction` for disjoint beam chunks.</NoAlias>
     <JobGraph>dispatcher dependsOn -> PlasmaBeamMockLaserFireJob -> PlasmaBeamTubeMeshingJob -> PlasmaBeamArgsTelemetryJob -> returned JobHandle</JobGraph>

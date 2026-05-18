@@ -91,6 +91,11 @@ Status: ACTIVE - BLOCKED BY EXISTING CORE COMPILE ERRORS; UNITY/BURST IMPORT OF 
 - [x] CSV polling editor-only | DOD: `MonitorBeamCsv` and its pre-simulation polling call are now compiled under `#if UNITY_EDITOR` only, not `DEVELOPMENT_BUILD`; player/dev gameplay builds do not perform periodic file probes | Rejected: polling `File.Exists`/`File.GetLastWriteTimeUtc`/`FileStream` from a development gameplay build | Estimate: saves one filesystem probe every 64 frames in dev players
 - [x] Designer bridge preserved | DOD: editor hot reload still parses bytes from vault-owned scratch and writes unmanaged scalar DTOs without runtime strings | Rejected: deleting the facade parser and forcing C# recompiles for tuning | Estimate: editor-only
 
+## Loop 11 - Blackbox Dump Fail-Closed Guard
+
+- [x] Fault dump IO isolation | DOD: `DumpTelemetry` catches filesystem failures and sets `FlagDumpFailed` instead of throwing from post-simulation fault handling | Rejected: allowing a NaN forensic dump attempt to crash the runtime with a secondary IO exception | Estimate: fault-path only
+- [x] Runtime flag preserved | DOD: `FlagDumpFailed` occupies bit 28 below layout/non-finite/shader fault flags; no DTO layout changed | Rejected: adding a new telemetry field and changing the 64B DTO contract | Estimate: 0 us normal frame
+
 ## Compile Wall Record
 
 - [blocked] `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` | Result: 6 errors outside SHINOBU_69 domain: `ShinobuFloraFaunaSymbiosisSolver.cs` missing `math.reversebytes`, `HomeostasisBrain.ScalabilityDictator.cs` unassigned `sanitizedWeight`, `SaveBinaryPayloadCodec.cs` missing `IndustrialLoreBitMask`, two Visor features missing `HectonDrsRenderFeatureGate` | Note: generated `Hecton8.Core.csproj` has not imported new `Assets/_Project/Scripts/VFX/PlasmaBeam` files yet

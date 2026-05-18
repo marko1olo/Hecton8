@@ -89,3 +89,13 @@ What was done: Restricted CSV polling and file reads to `UNITY_EDITOR` only. The
 Cinematic Cheats used: None; this is hot-path hygiene around the human-control bridge.
 
 Exact Microseconds saved: Not measured. Static work removed from development players: one CSV existence/write-time probe every 64 frames and any accidental `FileStream` read during gameplay captures.
+
+## 2026-05-19 - Blackbox Dump Fail-Closed Guard
+
+What was wrong: The non-finite telemetry dump path could throw a secondary IO exception if the dump directory or file was unavailable.
+
+What was done: Wrapped blackbox dump directory/file writes in a fail-closed guard and added `FlagDumpFailed` bit 28. The 64B telemetry DTO and 32B dump header layouts were not changed.
+
+Cinematic Cheats used: None; this is forensic survivability.
+
+Exact Microseconds saved: Normal frame 0 us. Fault path avoids a secondary crash while preserving the original non-finite flag trail.
