@@ -15,10 +15,8 @@ namespace Hecton8.Habitat.Deformation
     public static class HullIntegrityConstants
     {
         public const int MaxDentCapacity = 512;
-        public const int LowTierDentCapacity = 16;
-        public const int MediumTierDentCapacity = 64;
-        public const int HighTierDentCapacity = 256;
-        public const int UltraTierDentCapacity = 512;
+        public const int MinTrackedDentCapacity = 16;
+        public const int MaxTrackedDentCapacity = 512;
         public const int MinShaderDentCapacity = 4;
         public const int MaxShaderDentCapacity = 256;
         public const int TelemetryFrameCapacity = 300;
@@ -41,6 +39,7 @@ namespace Hecton8.Habitat.Deformation
         public const int CounterBreachJetCount = 11;
         public const int CounterMaxObservedDentCount = 12;
         public const int CounterActiveDeformationCount = 13;
+        public const int CounterPendingVisualImpactCount = 14;
         public const int CounterCount = 16;
 
         public const byte ModuleFlagBreached = 1 << 0;
@@ -937,9 +936,7 @@ namespace Hecton8.Habitat.Deformation
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct AccumulateHullDamageJob : IJob
     {
-        [NativeDisableContainerSafetyRestriction]
-        [NoAlias]
-        public NativeQueue<HullImpactDTO> Impacts;
+        [ReadOnly] [NoAlias] public NativeArray<HullImpactDTO> Impacts;
         [NoAlias] public NativeArray<DeformationStateDTO> States;
         [NoAlias] public NativeArray<int> Counters;
         [ReadOnly] [NoAlias] public NativeArray<HullMaterialStrengthDTO> MaterialStrengths;
@@ -957,7 +954,9 @@ namespace Hecton8.Habitat.Deformation
             if (!Impacts.IsCreated || !States.IsCreated || !Counters.IsCreated)
                 return;
 
+            HullImpactDTO* impactsPtr = (HullImpactDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Impacts);
             DeformationStateDTO* statesPtr = (DeformationStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(States);
+            int pendingImpactCount = math.clamp(ReadCounter(HullIntegrityConstants.CounterPendingVisualImpactCount), 0, Impacts.Length);
             int capacity = math.clamp(Capacity, 0, math.min(States.Length, HullIntegrityConstants.MaxDentCapacity));
             int shaderLimit = math.clamp(MaxActiveDents, HullIntegrityConstants.MinShaderDentCapacity, math.min(capacity, HullIntegrityConstants.MaxShaderDentCapacity));
             int active = math.clamp(ReadCounter(HullIntegrityConstants.CounterActiveDeformationCount), 0, capacity);
@@ -970,11 +969,12 @@ namespace Hecton8.Habitat.Deformation
                 new float3(0.25f, 0.25f, 0.25f));
             int dirty = 0;
 
-            while (Impacts.TryDequeue(out HullImpactDTO impact))
+            for (int impactIndex = 0; impactIndex < pendingImpactCount; impactIndex++)
             {
+                HullImpactDTO impact = impactsPtr[impactIndex];
                 if (!TryLocalizeImpact(impact, SubmarineAup, out float3 local))
                 {
-                    discarded++;
+                    discarded = SaturatingIncrement(discarded);
                     continue;
                 }
 
@@ -1007,7 +1007,7 @@ namespace Hecton8.Habitat.Deformation
 
                 if (active >= shaderLimit)
                 {
-                    discarded++;
+                    discarded = SaturatingIncrement(discarded);
                     continue;
                 }
 
@@ -1030,11 +1030,18 @@ namespace Hecton8.Habitat.Deformation
                 dirty = 1;
             }
 
+            WriteCounter(HullIntegrityConstants.CounterPendingVisualImpactCount, 0);
             WriteCounter(HullIntegrityConstants.CounterActiveDeformationCount, active);
             WriteCounter(HullIntegrityConstants.CounterDiscardedImpactCount, discarded);
             WriteCounter(HullIntegrityConstants.CounterMaxObservedDentCount, math.max(ReadCounter(HullIntegrityConstants.CounterMaxObservedDentCount), active));
             if (dirty != 0)
                 WriteCounter(HullIntegrityConstants.CounterDentDirty, 1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SaturatingIncrement(int value)
+        {
+            return value < 0x3FFFFFFF ? value + 1 : value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

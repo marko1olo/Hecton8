@@ -67,6 +67,9 @@ namespace Hecton8.Editor
             if (layout != null && layout.Pack == 1)
                 Append(ref report, type, "Pack=1 is forbidden for ARM64 signal payloads.");
 
+            if (layout == null || layout.Value != LayoutKind.Explicit)
+                Append(ref report, type, "Signal payloads must declare [StructLayout(LayoutKind.Explicit, Size = N)].");
+
             int size = ResolveUnsafeSize(type, ref report);
             if (size > 0 && (size & 7) != 0)
                 Append(ref report, type, "UnsafeUtility.SizeOf<T>() must be a multiple of 8 bytes.");

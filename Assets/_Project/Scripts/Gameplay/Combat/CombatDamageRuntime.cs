@@ -454,6 +454,7 @@ namespace Hecton8.Gameplay
                 _targetForwardVectors[slot] = targetForward;
                 _targetHeights[slot] = targetHeight;
                 _targetFlags[slot] = PackTargetFlags(kind, armorClass);
+                RegisterBallisticRootPrimitive(targetId, receiver, targetHeight, armorClass);
                 return true;
             }
 
@@ -479,6 +480,7 @@ namespace Hecton8.Gameplay
             _statusDurations0123[slot] = float4.zero;
             _legacyStatusDurations4567[slot] = float4.zero;
             _brittleDurations[slot] = 0f;
+            RegisterBallisticRootPrimitive(targetId, receiver, targetHeight, armorClass);
             return true;
         }
 
@@ -497,6 +499,7 @@ namespace Hecton8.Gameplay
             if (receiver != null && !ReferenceEquals(_receivers[slot], receiver))
                 return false;
 
+            BallisticsRuntime.TombstonePrimitivesForTarget(unchecked((uint)targetId));
             int lastSlot = _targetCount - 1;
             _slotByTargetId.Remove(targetId);
             if (slot != lastSlot)
@@ -632,6 +635,10 @@ namespace Hecton8.Gameplay
 
         public static void FrameTick(float deltaTime)
         {
+            if (BallisticsRuntime.PrepareFrameForTargetRefresh())
+                RefreshBallisticTargetAabbs();
+
+            BallisticsRuntime.FrameTick(deltaTime);
             DrainGlobalDamageSignals(MaxGlobalDamageSignalsPerFrame);
 
             if (!_damageSignals.IsCreated || _queuedSignalCount <= 0 || _damageJobScheduled || _statusJobScheduled)
@@ -820,6 +827,7 @@ namespace Hecton8.Gameplay
 
         public static void LateFrameTick()
         {
+            BallisticsRuntime.LateFrameTick();
             if (!_damageJobScheduled && !_statusJobScheduled)
                 return;
 
@@ -852,6 +860,8 @@ namespace Hecton8.Gameplay
 
         public static void Shutdown()
         {
+            BallisticsRuntime.Shutdown();
+
             if (_damageJobScheduled)
             {
                 DispatcherJobSwap.TryComplete(ref _damageJobHandle, forceComplete: true);
@@ -1491,6 +1501,36 @@ namespace Hecton8.Gameplay
             _receivers[slot] = receiver;
             _receiverTransforms[slot] = ResolveReceiverTransform(receiver);
             _targetBodies[slot] = ResolveReceiverBody(receiver);
+        }
+
+        private static void RegisterBallisticRootPrimitive(
+            int targetId,
+            IDamageReceiver receiver,
+            float targetHeight,
+            CombatArmorClass armorClass)
+        {
+            Transform receiverTransform = ResolveReceiverTransform(receiver);
+            if (receiverTransform == null)
+                return;
+
+            BallisticsRuntime.RegisterCombatTargetAabb(targetId, receiverTransform, targetHeight, armorClass);
+        }
+
+        private static void RefreshBallisticTargetAabbs()
+        {
+            if (_targetCount <= 0 || _receiverTransforms == null)
+                return;
+
+            for (int i = 0; i < _targetCount; i++)
+            {
+                Transform receiverTransform = _receiverTransforms[i];
+                int targetId = _instanceIds[i];
+                if (receiverTransform == null || targetId == 0)
+                    continue;
+
+                CombatArmorClass armorClass = (CombatArmorClass)(_targetFlags[i] & TargetFlagArmorMask);
+                BallisticsRuntime.RegisterCombatTargetAabb(targetId, receiverTransform, _targetHeights[i], armorClass);
+            }
         }
 
         private static Transform ResolveReceiverTransform(IDamageReceiver receiver)

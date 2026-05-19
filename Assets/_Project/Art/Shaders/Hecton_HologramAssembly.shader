@@ -67,6 +67,20 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 float4x4 _AssemblyWorldToFabricator;
             CBUFFER_END
 
+            struct H8FabricationAssemblyPayload
+            {
+                float4 BoundsProgress;
+                float4 FlagsPause;
+                float4 WorldToFabricatorRow0;
+                float4 WorldToFabricatorRow1;
+                float4 WorldToFabricatorRow2;
+                float4 WorldToFabricatorRow3;
+            };
+
+            StructuredBuffer<H8FabricationAssemblyPayload> _H8FabricationAssemblyPayloads;
+            int _H8FabricationAssemblyPayloadCount;
+            float _H8FabricationAssemblyQuality;
+
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -82,11 +96,14 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 float3 normalWS : TEXCOORD2;
                 float height01 : TEXCOORD3;
                 float fabricatorLocalY : TEXCOORD4;
+                float clipHeightY : TEXCOORD5;
+                float quality01 : TEXCOORD6;
+                float powerPause01 : TEXCOORD7;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            Varyings Vert(Attributes input)
+            Varyings Vert(Attributes input, uint instanceID : SV_InstanceID)
             {
                 Varyings output;
                 UNITY_SETUP_INSTANCE_ID(input);
@@ -96,7 +113,24 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 float bottomY = _AssemblyBaseY;
                 float topY = max(bottomY + 0.001, _AssemblyTopY);
+                float progress01 = saturate((_AssemblyHeightY - bottomY) / max(0.001, topY - bottomY));
+                float quality01 = saturate(_AssemblyQuality);
+                float pause01 = saturate(_PowerPause01);
                 float fabricatorLocalY = mul(_AssemblyWorldToFabricator, float4(positionWS, 1.0)).y;
+
+                if (_H8FabricationAssemblyPayloadCount > 0)
+                {
+                    uint payloadIndex = min(instanceID, (uint)(_H8FabricationAssemblyPayloadCount - 1));
+                    H8FabricationAssemblyPayload payload = _H8FabricationAssemblyPayloads[payloadIndex];
+                    bottomY = payload.BoundsProgress.x;
+                    topY = max(bottomY + 0.001, payload.BoundsProgress.y);
+                    progress01 = saturate(payload.BoundsProgress.z);
+                    quality01 = saturate(payload.BoundsProgress.w * max(0.001, _H8FabricationAssemblyQuality));
+                    pause01 = saturate(payload.FlagsPause.x);
+                    fabricatorLocalY = dot(payload.WorldToFabricatorRow1, float4(positionWS, 1.0));
+                }
+
+                float clipHeightY = lerp(bottomY, topY, progress01);
 
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.positionOS = input.positionOS.xyz;
@@ -104,6 +138,9 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 output.height01 = saturate((fabricatorLocalY - bottomY) / (topY - bottomY));
                 output.fabricatorLocalY = fabricatorLocalY;
+                output.clipHeightY = clipHeightY;
+                output.quality01 = quality01;
+                output.powerPause01 = pause01;
                 return output;
             }
 
@@ -120,14 +157,10 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float fabricatorLocalY = input.fabricatorLocalY;
-                clip(_AssemblyHeightY - fabricatorLocalY);
+                clip(input.clipHeightY - fabricatorLocalY);
 
-                float edgeMask = 0.0;
-                if (_AssemblyQuality > 0.5)
-                {
-                    float edgeWidth = max(0.001, _AssemblyEdgeWidth);
-                    edgeMask = 1.0 - smoothstep(0.0, edgeWidth, abs(fabricatorLocalY - _AssemblyHeightY));
-                }
+                float edgeWidth = max(0.001, _AssemblyEdgeWidth);
+                float edgeMask = input.quality01 * (1.0 - smoothstep(0.0, edgeWidth, abs(fabricatorLocalY - input.clipHeightY)));
 
                 float3 normalWS = HectonCoreLitSafeNormalize(input.normalWS);
                 float3 viewDirWS = HectonCoreLitSafeNormalize(GetCameraPositionWS() - input.positionWS);
@@ -135,7 +168,7 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 float fresnelSq = fresnelBase * fresnelBase;
                 float fresnel = lerp(fresnelSq, fresnelSq * fresnelBase, saturate((_FresnelPower - 2.0) * 0.25));
                 float wire = HectonAssemblyGridLine(input.positionOS.xz, _WireDensity);
-                float pausePulse = saturate(_PowerPause01) *
+                float pausePulse = saturate(input.powerPause01) *
                     (0.55 + 0.45 * HectonCoreLitTrianglePulse01(_Time.y * max(0.001, _PulseSpeed) + input.height01 * 7.0));
 
                 half3 baseColor = lerp(_BaseColor.rgb, _PausedColor.rgb, (half)pausePulse);

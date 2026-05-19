@@ -47,6 +47,53 @@ Batch B only if Batch A works:
 - 50 more verified creators;
 - no paid slots yet unless demo retention is strong.
 
+## 2026-05-19 Demo Access Batch Scoring V0
+
+Before sending a demo/key to any creator or press contact, score the row. Use the current CRM/contact file and do not infer contact permission from a third-party index.
+
+| Field | Score |
+|---|---:|
+| Official contact route verified this week | 0-2 |
+| Recent relevant upload/stream activity | 0-2 |
+| Audience fit for single-player pressure/machinery/survival | 0-3 |
+| Required proof asset matches the creator format | 0-3 |
+| Demo route fits the creator's normal video length | 0-2 |
+| Brand-safety and scam risk cleared | 0-2 |
+| Coverage value for a small project | 0-2 |
+| Risk penalty: stale, broad variety, co-op-focused, drama-prone, or paid-only | -3 to 0 |
+
+### Send Thresholds
+
+| Total | State | Action |
+|---:|---|---|
+| 11+ | `SEND_CANDIDATE` | Human may send after asset/build/key gates pass. |
+| 8-10 | `HOLD_FOR_BETTER_ASSET` | Wait for a more specific clip, demo beat, or Steam proof. |
+| 5-7 | `LOW_PRIORITY_VERIFY_LATER` | Do not include in the first two waves. |
+| 0-4 | `DO_NOT_CONTACT_NOW` | Leave out unless the project changes substantially. |
+
+### Batch A Composition Rule
+
+Batch A is max 30 sends, but the first live cut is smaller:
+
+| Slice | Count | Required proof |
+|---|---:|---|
+| A1 direct underwater/survival | 8-10 | Demo route + Steam page + 2 matching screenshots. |
+| A2 engineering/base systems | 4-6 | Machine/base clip proving interaction, not decoration. |
+| A3 horror/abyss pressure | 4-6 | Sound/visibility/threat clip with clear objective. |
+| A4 regional/native language | 2-4 | Reviewed localized pitch and region-safe page copy. |
+| A5 press-friendly creators | 2-4 | Presskit and no-embargo access terms. |
+
+### Stop Rules During Batch A
+
+Stop sending more demo outreach for 48 hours if any of these occur:
+
+- two creators cannot explain the objective after 10 minutes;
+- two creators ask if co-op is planned because the copy implies it;
+- two creators say the footage is too dark to read;
+- one credible creator reports a first-route crash/save/load blocker;
+- one key/access leak or impersonation issue appears;
+- Steam page conversion or demo completion is unreadable because links/UTMs were wrong.
+
 ## Key Policy
 
 Use Steam keys only after:
@@ -116,4 +163,3 @@ Stop sending keys if:
 - more than 30% complain about controls/readability;
 - players say "this is just a mood demo";
 - Steam conversion does not move after coverage.
-

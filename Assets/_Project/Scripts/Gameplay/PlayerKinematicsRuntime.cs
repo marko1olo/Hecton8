@@ -1625,7 +1625,9 @@ namespace Hecton8.Gameplay
                 _lastInputStateSignal = inputSignal;
             }
 
-            float2 planar = inputSignal.State.Move;
+            float2 planar = new float2(
+                inputSignal.State.MoveX * InputState.AxisInvQuantizeScale,
+                inputSignal.State.MoveY * InputState.AxisInvQuantizeScale);
             planar = math.select(planar, float2.zero, !math.all(math.isfinite(planar)));
             float planarSq = math.lengthsq(planar);
             if (!math.isfinite(planarSq))
@@ -1639,7 +1641,7 @@ namespace Hecton8.Gameplay
             right.y = 0.0f;
             forward = SafeNormalize(forward, new float3(0.0f, 0.0f, 1.0f));
             right = SafeNormalize(right, new float3(1.0f, 0.0f, 0.0f));
-            float vertical = SanitizeSignedUnit(inputSignal.State.VerticalAxis);
+            float vertical = SanitizeSignedUnit(inputSignal.State.Vertical * InputState.AxisInvQuantizeScale);
             float3 intended = (right * planar.x) + (forward * planar.y) + new float3(0.0f, vertical, 0.0f);
             _intendedMovement[0] = SanitizeFloat3(intended, float3.zero);
         }

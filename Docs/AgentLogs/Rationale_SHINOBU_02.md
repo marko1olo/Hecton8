@@ -1,7 +1,7 @@
 # SHINOBU_02 Rationale
 
 Date: 2026-05-19
-Status: PENDING VERIFICATION - CURRENT24 STATIC DOC ACTUALITY PATCHED; CURRENT22 BUILD/AUDIT/H-PHI STILL PENDING
+Status: PENDING VERIFICATION - CURRENT25 STATIC DOC/TOOL ACTUALITY PATCHED; CURRENT22 BUILD/AUDIT/H-PHI STILL PENDING
 
 ## Active Ledger Restoration
 
@@ -619,3 +619,46 @@ Evidence:
 - `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` now separates `STATIC_SOURCE` evidence from Unity import, scene host, runtime file I/O success, GC, profiler, and Frame Debugger proof. Biolum Dear Lie wording now distinguishes per-instance squared-distance wavefront/falloff from the remaining cold/control-path sqrt on damage magnitude.
 - `PROJECT_CONTENT_LEDGER.md` now marks resource/flora runtime routes as authored/source-intended and explicitly keeps scene wiring, Unity serialization, runtime spawn path, save/load, and visual proof pending.
 - `HECTON_PHI_STATIC_METRIC.md` now records that current21 trend still has duplicate signal-name debt `10` against `MaxDuplicateSignalNames=0`; clean SignalCritical does not imply full-project duplicate closeout.
+
+## Current25 Documentation And Save Hash Tool Truth Repair
+
+Problem: The active documentation and save-hash helper tools had drifted from current source truth. Several docs still treated an absent R32 root/architecture report as the current boundary, old save docs/tools expected an 80-byte SaveMasterHash preimage without contract-version hashes, and current docs still had stale wording around StreamingAssets, audio authority, and active save header sentinels.
+
+Solution: Demoted R32 references to an absent-path note and restored R31 as the latest artifact-backed local static DOC_GLOBAL boundary. Updated active save docs to the current writer sentinels: `CurrentVersion = 0x000B`, `CurrentHeaderSize = 56`, and `AlignedSectionHeaderVersion = 0x000B`. Updated `Tools/Security/ReplayHasher.py` and `Tools/Security/ValidateSaveMasterHashCSharp.py` to require the current 96-byte SaveMasterHash preimage, including `HectonContractVersion.HashLo` and `HectonContractVersion.HashHi`. Corrected StreamingAssets docs to the current folder reality: only `signal_tuning_profiles.csv` exists, and DataMonolith binaries/manifests are absent. Corrected audio docs to name `SpatialAudioManager` plus procedural/audio virtualization as current concrete authority; `UnderwaterAudioProcessor.cs` and `AudioMixer.mixer` are absent target-contract residue.
+
+Rejected Alternatives: Running dotnet or Unity was rejected because Current25 was a docs/tool oracle pass and did not require script compilation. Pretending the R32 report exists was rejected because the file is absent under `Docs/Reports`. Reverting current C# SaveMasterHash source to the old Python oracle was rejected; the tool was stale, not the current source. Treating the v10 helper as the active save writer was rejected because active sentinels in `SaveBinaryStorage` are v0x000B/56.
+
+Scalability potential: Low = documentation no longer tells low-end/VR owners to chase absent binary payloads or old save headers. Middle = Python guards now catch contract-version omission before a stale save hash oracle reaches CI. High/Ultra = visual/content systems can plan from current StreamingAssets and audio ownership without inventing binary payload dependencies.
+
+Hardware Impact: 0 measured us. This is documentation and cold security-tool oracle repair only; no runtime path, profiler, GC, Unity import, or IL2CPP player evidence exists.
+
+Evidence:
+- `python Tools/Security/ReplayHasher.py self-test` -> `SELFTEST_OK`.
+- `python Tools/Security/ValidateSaveMasterHashCSharp.py` -> `SAVE_MASTER_HASH_CSHARP_GUARD=PASS ... preimageEnd=96 ... activeWriterSentinels=3`.
+- Active user-facing doc scans, excluding append-only AgentLogs/Tasks, are clean for R32-as-current, empty/missing StreamingAssets, active `CurrentVersion = 0x0009`, and `HeaderSize = 48`, except for historical `Docs/Reports/2026-05-17_DOCUMENTATION_ACTUALITY_SUBNAUTICA_RESEARCHER.md`, which remains archived report evidence and is not current guidance.
+- Scoped `git diff --check` on touched docs/tool/source-comment files returned no whitespace errors, only CRLF warnings.
+- No dotnet build, Unity import, profiler, H-Phi trend rerun, or runtime/player build was launched in Current25.
+
+## Current26 R32 And Save-Hash Documentation Reconciliation
+
+Problem: Current25 correctly acted on the then-observed absence of `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`, but concurrent DOC_GLOBAL work later created that report as a substantive untracked artifact. Active docs became internally contradictory: some top-level boundaries pointed to R32 while other root/architecture interiors still said the R32 report path was absent. A second read-only sidecar also found save-hash doc residue: `Save_Binary_Header.md` still omitted `HectonContractVersion.HashLo/HashHi` from the master preimage and reported stale `preimageEnd=80` / `activeWriterSentinels=2`.
+
+Solution: Promoted R32 in active root/architecture docs as the current STATIC_DOC/STATIC_SOURCE/FILESYSTEM boundary and retained R31 as prior current-boundary propagation. Corrected architecture interiors with stale R31/R32 absence notes to use R32 while preserving proof limits. Updated save documentation only: `Save_Binary_Header.md` now lists the 96-byte preimage tail (`HashLo`, `HashHi`) and current guard output; `SAVE_V8_BINARY_SPEC.md` and `SAVE_PAGING_PROTOCOL.md` now state active writer `0x000B`, `CurrentHeaderSize = 56`, and staged `SaveMasterHashV10.HeaderVersion = 0x000A` helper context.
+
+Rejected Alternatives: Reverting the newly present R32 artifact was rejected because it is current filesystem evidence from another agent. Treating R32 as runtime proof was rejected because its report explicitly says runtime proof is absent. Editing C# save code or Python again was rejected because source/tool verification already matched: `SaveMasterHashV10.MasterPreimageBytes = 96`, appended `HectonContractVersion.HashLo/HashHi`, and active writer sentinels `0x000B`/56/`0x000B`.
+
+Scalability potential: Low = documentation no longer sends low-end/VR work toward absent R32 or stale v9 save assumptions. Middle = save tooling and docs now agree on contract-version hash bytes before CI uses the Python oracle. High/Ultra = root architecture read order is consistent for further visual/system polish without promoting static docs to runtime proof.
+
+Hardware Impact: 0 measured us. This is documentation/tooling reconciliation only; no dotnet build, Unity import, profiler, GCMonitor, H-Phi rerun, IL2CPP, or runtime frame-time proof.
+
+Evidence:
+- Read-only sidecar `Dewey`: R32 report exists, is substantive, and should be promoted as current static root/architecture boundary; R31 remains prior layer. R32 report is untracked, so this is filesystem-current evidence, not committed-state evidence.
+- Read-only sidecar `Godel`: 96-byte Python oracle is source-correct; contract hashes match source (`0x3896D9732E4BE5E9`, `0x3D8F5142E842BDF3`); live writer is `Assets/_Project/Scripts/SaveBinaryStorage.cs` with `CurrentVersion = 0x000B`, `CurrentHeaderSize = 56`, `AlignedSectionHeaderVersion = 0x000B`.
+- `python Tools/Security/ReplayHasher.py self-test` -> `SELFTEST_OK`.
+- `python Tools/Security/ValidateSaveMasterHashCSharp.py` -> `SAVE_MASTER_HASH_CSHARP_GUARD=PASS ... preimageEnd=96 ... activeWriterSentinels=3`.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> `Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`.
+- `python Tools/test_architecture_atlas.py` -> `Ran 10 tests`, `OK`.
+- `python Tools/AtlasCheck.py` remains red: `ATLAS_CHECK_FAIL references=6549 missing=59`; missing refs are RealtimeCSG vendor icon/readme images plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`.
+- Active R32 stale-absence scan returned `R32_STALE_SCAN_OK=1`.
+- Touched save-doc scan found no `preimageEnd=80`, `activeWriterSentinels=2`, `current save truth is v9/v10`, or active-v9 residue.
+- Scoped `git diff --check` on touched docs/tools returned exit 0 with CRLF warnings only.

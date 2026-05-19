@@ -2,11 +2,12 @@
 using System;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace Hecton8.Core.Memory
+namespace Hecton8.Core.Diagnostics.Visuals
 {
     [ExecuteAlways]
     [AddComponentMenu("Hecton8/Core/Vault Memory Gizmo Visualizer")]
@@ -60,7 +61,7 @@ namespace Hecton8.Core.Memory
                 (aup.SectorX * sectorSize) + aup.LocalX,
                 (aup.SectorY * sectorSize) + aup.LocalY,
                 (aup.SectorZ * sectorSize) + aup.LocalZ);
-            double3 runtime = absolute - global::Hecton8.Core.HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            double3 runtime = absolute - HectonFloatingOrigin.CurrentTotalOffsetDouble;
             double3 clamped = math.clamp(runtime, new double3(-100000.0d), new double3(100000.0d));
             return math.all(math.isfinite(clamped))
                 ? new Vector3((float)clamped.x, (float)clamped.y, (float)clamped.z)

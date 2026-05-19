@@ -742,6 +742,7 @@ namespace Hecton8.World.ProceduralWreckage
             int debrisCount = math.clamp((int)math.round(math.lerp(64f, maxDebris, curve)), 0, DebrisNodes.Length);
             float radius = math.max(tuning.DebrisScatterRadius, 1f);
             uint seed = trigger.Seed == 0u ? 1u : trigger.Seed;
+            uint faultFlags = 0u;
 
             for (int i = 0; i < DebrisNodes.Length; i++)
                 DebrisNodes[i] = default;
@@ -775,6 +776,16 @@ namespace Hecton8.World.ProceduralWreckage
                 node.ModuleId = 0;
                 node.GraphDegree = 0;
                 node.StableId = h;
+                if (!ProceduralWreckageMath.IsFinite(node.LocalMatrix) || !ProceduralWreckageMath.IsFinite(node.SectorAUP))
+                {
+                    node.LocalMatrix = float4x4.TRS(float3.zero, quaternion.identity, new float3(0.5f));
+                    node.SectorAUP = trigger.RootAUP;
+                    node.BoundsExtents = new float3(0.5f);
+                    node.BoundsRadius = 0.5f;
+                    node.StateFlags |= WreckageNodeFlags.NonFiniteFallback;
+                    faultFlags |= ProceduralWreckageConstants.FaultNonFinite;
+                }
+
                 DebrisNodes[i] = node;
             }
 
@@ -782,6 +793,7 @@ namespace Hecton8.World.ProceduralWreckage
             {
                 WreckagePaddedCounterDTO counter = Counters[0];
                 counter.DebrisCount = debrisCount;
+                counter.FaultFlags |= (int)faultFlags;
                 counter.StateHash ^= (uint)debrisCount * 16777619u;
                 Counters[0] = counter;
             }
@@ -1082,6 +1094,7 @@ namespace Hecton8.World.ProceduralWreckage
             int probeLimit = math.min(nodeCount, 256);
             int overlapPairs = 0;
             float maxOverlap = 0f;
+            uint faultFlags = 0u;
 
             for (int i = 0; i < nodeCount; i++)
             {
@@ -1109,6 +1122,12 @@ namespace Hecton8.World.ProceduralWreckage
                         continue;
 
                     double3 deltaD = nodeA.SectorAUP - nodeB.SectorAUP;
+                    if (!ProceduralWreckageMath.IsFinite(deltaD))
+                    {
+                        faultFlags |= ProceduralWreckageConstants.FaultNonFinite;
+                        continue;
+                    }
+
                     float3 delta = new float3((float)deltaD.x, (float)deltaD.y, (float)deltaD.z);
                     float distanceSq = math.max(math.dot(delta, delta), ProceduralWreckageConstants.Epsilon);
                     float distance = distanceSq * math.rsqrt(distanceSq);
@@ -1131,6 +1150,7 @@ namespace Hecton8.World.ProceduralWreckage
             result.StateHash = stateHash;
             result.MaxOverlapDepth = maxOverlap;
             result.ClosedHullRatio = live > 0 ? 1f - ((float)openHull * math.rcp(math.max(live, 1))) : 0f;
+            result.Flags |= faultFlags;
             if (openHull > math.max(2, live / 3))
                 result.Flags |= ProceduralWreckageConstants.FaultOpenHull;
             if (overlapPairs > 0)

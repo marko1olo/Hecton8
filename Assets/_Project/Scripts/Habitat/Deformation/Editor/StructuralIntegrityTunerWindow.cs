@@ -23,8 +23,14 @@ namespace Hecton8.Habitat.Deformation.Editor
         public static void Open()
         {
             StructuralIntegrityTunerWindow window = GetWindow<StructuralIntegrityTunerWindow>();
-            window.titleContent = new GUIContent("Structural Integrity");
+            window.titleContent = new GUIContent("Hull Integrity Tuner");
             window.minSize = new Vector2(420f, 320f);
+        }
+
+        [MenuItem("Hecton-8/Habitat/Hull Integrity Tuner")]
+        public static void OpenHullIntegrityTuner()
+        {
+            Open();
         }
 
         private void OnEnable()
@@ -134,8 +140,16 @@ namespace Hecton8.Habitat.Deformation.Editor
         private void RegenerateMockGraph()
         {
             StructuralIntegrityCalculatorRuntime runtime = StructuralIntegrityCalculatorRuntime.ActiveRuntime;
-            if (runtime != null)
-                runtime.RegenerateMockGraph();
+            if (runtime == null)
+            {
+                if (_status != null)
+                    _status.text = "Runtime not bound";
+                return;
+            }
+
+            bool regenerated = runtime.RegenerateMockGraph();
+            if (_status != null)
+                _status.text = regenerated ? "Mock graph regenerated" : "Mock graph busy or locked";
         }
 
         private static void DrawSceneHeatmap(SceneView sceneView)
@@ -194,27 +208,35 @@ namespace Hecton8.Habitat.Deformation.Editor
                 painter.LineTo(new Vector2(r.xMax, r.yMax - 1f));
                 painter.Stroke();
 
-                if (Runtime == null || Runtime.ActiveNodeCount <= 0)
+                if (Runtime == null)
                     return;
 
-                int samples = Mathf.Min(Runtime.ActiveNodeCount, 128);
+                int samples = Mathf.Min(StructuralIntegrityConstants.TelemetryFrameCapacity, 128);
+                bool hasPoint = false;
                 painter.strokeColor = new Color(0.9f, 0.18f, 0.1f, 1f);
                 painter.lineWidth = 2f;
                 painter.BeginPath();
                 for (int i = 0; i < samples; i++)
                 {
-                    if (!Runtime.TryGetState(i, out IntegrityStateDTO state, out _))
+                    int framesBack = samples - 1 - i;
+                    if (!Runtime.TryGetTelemetrySample(framesBack, out StructuralTelemetryEntry entry))
                         continue;
 
                     float x = samples <= 1 ? r.xMin : Mathf.Lerp(r.xMin, r.xMax, i / (float)(samples - 1));
-                    float y = Mathf.Lerp(r.yMax - 4f, r.yMin + 4f, Mathf.Clamp01(state.CurrentStress));
-                    if (i == 0)
+                    float y = Mathf.Lerp(r.yMax - 4f, r.yMin + 4f, Mathf.Clamp01(entry.MaxStress01));
+                    if (!hasPoint)
+                    {
                         painter.MoveTo(new Vector2(x, y));
+                        hasPoint = true;
+                    }
                     else
+                    {
                         painter.LineTo(new Vector2(x, y));
+                    }
                 }
 
-                painter.Stroke();
+                if (hasPoint)
+                    painter.Stroke();
             }
         }
     }

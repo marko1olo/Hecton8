@@ -868,20 +868,23 @@ namespace Hecton8.Power
                     consumerVoltageSupplyRatio = _supplyRatio;
 
                 consumerVoltageSupplyRatio = math.saturate(math.isfinite(consumerVoltageSupplyRatio) ? consumerVoltageSupplyRatio : 0f);
-                if (consumer is IContinuousPowerComponent continuousPower &&
+                BaseModule baseModule = consumer as BaseModule;
+                IContinuousPowerComponent continuousPower = baseModule == null ? consumer as IContinuousPowerComponent : null;
+                if (baseModule == null &&
+                    continuousPower != null &&
                     math.abs(continuousPower.Voltage01 - consumerVoltageSupplyRatio) > 0.0005f)
                 {
                     continuousPower.OnVoltageChanged(consumerVoltageSupplyRatio);
                 }
 
                 bool voltageBrownout = consumerVoltageSupplyRatio < BrownoutPotentialThreshold;
-                if (consumer is BaseModule baseModule)
+                if (baseModule != null)
                     baseModule.SetAmbientPowerVisualState(
                         ambientLightsBrownedOut || consumerVoltageSupplyRatio < 0.80f,
                         consumerVoltageSupplyRatio);
 
                 bool shouldHavePower = _logisticsGraph.IsConsumerPowered(consumerIndex);
-                if (voltageBrownout)
+                if (voltageBrownout && baseModule == null && continuousPower == null)
                     shouldHavePower = false;
                 if (_batteryEmergencyReserveActive && !ShouldRemainPoweredDuringBatteryReserve(consumer))
                     shouldHavePower = false;
@@ -1381,13 +1384,11 @@ namespace Hecton8.Power
             node.SetShortCircuited(true);
             binding.BaseModule.SetAmbientPowerVisualState(true, math.saturate(1f - stress01));
             PublishNodeBrownoutSignal(nodeId, math.saturate(1f - stress01), 100);
-            global::Hecton8.Audio.StructuralStressAudioInfo structuralStress =
-                new global::Hecton8.Audio.StructuralStressAudioInfo(
+            global::Hecton8.Core.Contracts.Signals.AudioEvent audioEvent =
+                global::Hecton8.Core.Contracts.Signals.AudioEvent.FromStructuralStress(
                     binding.BaseModule.transform.position,
                     math.max(0.25f, stress01),
                     math.lerp(0.95f, 0.55f, stress01));
-            global::Hecton8.Core.Contracts.Signals.AudioEvent audioEvent =
-                global::Hecton8.Core.Contracts.Signals.AudioEvent.FromStructuralStress(in structuralStress);
             global::Hecton8.Core.Contracts.Signals.SignalBus<global::Hecton8.Core.Contracts.Signals.AudioEvent>.Push(in audioEvent);
         }
 

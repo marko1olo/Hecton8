@@ -1,0 +1,1163 @@
+using System;
+using System.IO;
+using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Determinism;
+using Hecton8.Core.Memory;
+using Hecton8.Gameplay;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace Hecton8.Animation.KineticCharacter
+{
+    [DisallowMultipleComponent]
+    [AddComponentMenu("Hecton8/Animation/Kinetic Character Animator Runtime")]
+    public sealed class KineticCharacterAnimatorRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
+    {
+        private const int LockRigs = 1 << 0;
+        private const int LockInputs = 1 << 1;
+        private const int LockParents = 1 << 2;
+        private const int LockBindPoses = 1 << 3;
+        private const int LockBoneOutputs = 1 << 4;
+        private const int LockMatrices = 1 << 5;
+        private const int LockIkTargets = 1 << 6;
+        private const int LockStats = 1 << 7;
+        private const int LockTelemetry = 1 << 8;
+        private const int LockCursor = 1 << 9;
+        private const int LockTuning = 1 << 10;
+        private const int LockSdf = 1 << 11;
+        private const int LockPlayerHands = 1 << 12;
+
+        private static readonly int KineticBoneMatricesId = Shader.PropertyToID("_H8KineticCharacterBoneMatrices");
+        private static readonly int KineticBoneMatrixCountId = Shader.PropertyToID("_H8KineticCharacterBoneMatrixCount");
+        private static readonly int KineticActiveCharactersId = Shader.PropertyToID("_H8KineticCharacterActiveCharacters");
+        private static readonly int KineticQualityId = Shader.PropertyToID("_H8KineticCharacterQuality");
+        private static readonly int KineticGpuSkinningId = Shader.PropertyToID("_H8KineticCharacterGpuSkinning");
+
+        [SerializeField, Range(KineticCharacterAnimatorConstants.EmergencyMockBoneCount, KineticCharacterAnimatorConstants.DefaultBoneCapacity)]
+        private int _boneCapacity = KineticCharacterAnimatorConstants.DefaultBoneCapacity;
+
+        [SerializeField] private Material _gpuSkinningMaterial;
+        [SerializeField] private bool _publishGlobalBuffer = true;
+        [SerializeField] private bool _seedEmergencyMockRig = true;
+        [SerializeField] private Transform _cameraTransform;
+        [SerializeField] private Vector3Int _sdfDimensions = new Vector3Int(64, 64, 64);
+        [SerializeField] private Vector3 _sdfOrigin = new Vector3(-32f, -32f, -32f);
+        [SerializeField] private Vector3 _sdfCellSize = Vector3.one;
+        [SerializeField, Min(0.01f)] private float _sdfRangeMeters = 2f;
+
+        private IDataVault _dataVault;
+        private VaultBufferHandle<KineticCharacterRigDTO> _rigsHandle;
+        private VaultBufferHandle<KineticCharacterFrameInputDTO> _inputsHandle;
+        private VaultBufferHandle<int> _parentIndicesHandle;
+        private VaultBufferHandle<float4x4> _bindPosesHandle;
+        private VaultBufferHandle<ProceduralBoneDTO> _boneOutputsHandle;
+        private VaultBufferHandle<float4x4> _matricesHandle;
+        private VaultBufferHandle<ProceduralIKTargetDTO> _ikTargetsHandle;
+        private VaultBufferHandle<KineticCharacterFrameStatsDTO> _statsHandle;
+        private VaultBufferHandle<KineticAnimationTelemetryEntry> _telemetryHandle;
+        private VaultBufferHandle<int> _telemetryCursorHandle;
+        private VaultBufferHandle<KineticCharacterTuningDTO> _tuningHandle;
+
+        private GraphicsBuffer _matrixBufferA;
+        private GraphicsBuffer _matrixBufferB;
+        private JobHandle _pendingHandle;
+        private uint _frameCounter;
+        private float _simulationTime;
+        private float _submittedBreathingPhase;
+        private float _submittedWaveForward;
+        private float _submittedWaveLateral;
+        private float _submittedCrestReach;
+        private float _submittedDescentTuck;
+        private float _submittedLeanWeight;
+        private float _submittedImmersionDepth;
+        private float _submittedToolWeight;
+        private float3 _submittedDamageImpulseLocal;
+        private float _submittedDamageImpulse01;
+        private float4x4 _submittedToolPose = float4x4.identity;
+        private uint _latestStateHash;
+        private uint _uploadedStateHash;
+        private int _gpuUploadBufferIndex;
+        private int _activeMatrixUploadCount;
+        private int _uploadedMatrixCount;
+        private int _activeCharacterCount;
+        private int _uploadedCharacterCount;
+        private int _lockedBuffers;
+        private float _lastQuality = 1f;
+        private float _uploadedQuality = -1f;
+        private bool _solverScheduled;
+        private bool _registeredUpdate;
+        private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
+        private bool _gpuUploadDirty;
+        private bool _gpuConstantsDirty;
+        private bool _gpuBufferDataValid;
+        private bool _globalGpuSkinningPublished;
+        private bool _disposed;
+        private bool _dumpedFault;
+
+        private static KineticCharacterAnimatorRuntime _activeRuntimeInstance;
+
+        public static bool TryGetActiveRuntimeInstance(out KineticCharacterAnimatorRuntime runtime)
+        {
+            runtime = _activeRuntimeInstance;
+            return runtime != null && !runtime._disposed;
+        }
+
+        public bool TryGetKineticGraphicsBuffer(out GraphicsBuffer buffer, out int matrixCount)
+        {
+            matrixCount = _activeMatrixUploadCount;
+            GraphicsBuffer candidate = _gpuUploadBufferIndex == 0 ? _matrixBufferB : _matrixBufferA;
+            if (!_disposed &&
+                !_gpuUploadDirty &&
+                _gpuBufferDataValid &&
+                HasValidGraphicsBuffer(candidate, matrixCount))
+            {
+                buffer = candidate;
+                return matrixCount > 0;
+            }
+
+            buffer = null;
+            matrixCount = 0;
+            return false;
+        }
+
+        public bool TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning)
+        {
+            tuning = default;
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            if (!_tuningHandle.IsCreated)
+                EnsureVaultBuffers();
+
+            tuning = _tuningHandle.Resolve(vault);
+            return tuning.IsCreated && tuning.Length >= KineticCharacterAnimatorConstants.TuningCapacity;
+        }
+
+        public bool TryResolveMatricesForEditor(out NativeArray<float4x4> matrices, out NativeArray<int> parents, out int matrixCount)
+        {
+            matrices = default;
+            parents = default;
+            matrixCount = 0;
+            if (_solverScheduled)
+                return false;
+
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            matrices = _matricesHandle.Resolve(vault);
+            parents = _parentIndicesHandle.Resolve(vault);
+            if (!matrices.IsCreated || !parents.IsCreated)
+                return false;
+
+            matrixCount = math.min(math.min(_activeMatrixUploadCount, matrices.Length), parents.Length);
+            return matrixCount > 0;
+        }
+
+        public bool TryApplyCsvProfile(string csvText)
+        {
+            if (string.IsNullOrEmpty(csvText) || !TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning))
+                return false;
+
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            NativeArray<KineticCharacterRigDTO> rigs = _rigsHandle.Resolve(vault);
+            if (!rigs.IsCreated || rigs.Length <= 0)
+                return false;
+
+            if (rigs[0].BoneCount <= 0)
+                GenerateEmergencyMockRig();
+
+            rigs = _rigsHandle.Resolve(vault);
+            KineticCharacterTuningDTO tuningDto = tuning[0];
+            KineticCharacterRigDTO rig = rigs[0];
+            bool result = KineticCharacterRigCsvParser.TryApply(csvText.AsSpan(), ref tuningDto, ref rig);
+            tuning[0] = tuningDto;
+            rigs[0] = rig;
+            return result;
+        }
+
+        public void SubmitSwimPresentation(
+            float waveForward,
+            float waveLateral,
+            float crestReach,
+            float descentTuck,
+            float leanWeight,
+            float immersionDepth,
+            float breathingPhase,
+            float activeToolWeight)
+        {
+            _submittedWaveForward = math.clamp(waveForward, -1f, 1f);
+            _submittedWaveLateral = math.clamp(waveLateral, -1f, 1f);
+            _submittedCrestReach = math.saturate(crestReach);
+            _submittedDescentTuck = math.saturate(descentTuck);
+            _submittedLeanWeight = math.saturate(leanWeight);
+            _submittedImmersionDepth = math.max(0f, math.select(0f, immersionDepth, math.isfinite(immersionDepth)));
+            _submittedBreathingPhase = math.clamp(breathingPhase, -1f, 1f);
+            _submittedToolWeight = math.saturate(activeToolWeight);
+        }
+
+        public void SubmitToolPose(float4x4 localToCameraMatrix, float weight01, uint toolHash)
+        {
+            if (KineticCharacterMath.IsFinite(localToCameraMatrix))
+                _submittedToolPose = localToCameraMatrix;
+            _submittedToolWeight = math.max(_submittedToolWeight, math.saturate(weight01));
+        }
+
+        public void SubmitDamageImpulse(Vector3 localImpulse, float weight01)
+        {
+            float weight = math.saturate(weight01);
+            if (weight <= 0f)
+                return;
+
+            float3 impulse = new float3(localImpulse.x, localImpulse.y, localImpulse.z);
+            _submittedDamageImpulseLocal = KineticCharacterMath.SanitizeFinite(_submittedDamageImpulseLocal + impulse * weight, float3.zero);
+            _submittedDamageImpulse01 = math.max(_submittedDamageImpulse01, weight);
+        }
+
+        private void Awake()
+        {
+            if (_activeRuntimeInstance == null)
+                _activeRuntimeInstance = this;
+
+            RefreshColdDependencies();
+            if (EnsureVaultBuffers())
+                EnsureGraphicsBuffers();
+            if (_seedEmergencyMockRig)
+                GenerateEmergencyMockRig();
+        }
+
+        private void OnEnable()
+        {
+            if (_disposed || !Application.isPlaying)
+                return;
+
+            CompletePendingSolver(true);
+            RefreshColdDependencies();
+            if (EnsureVaultBuffers())
+                EnsureGraphicsBuffers();
+            if (_seedEmergencyMockRig)
+                GenerateEmergencyMockRig();
+            TryRegister();
+        }
+
+        private void OnDisable()
+        {
+            if (_disposed || !Application.isPlaying)
+                return;
+
+            TryUnregister();
+            CompletePendingSolver(true);
+            ClearGpuSkinningBinding();
+        }
+
+        private void OnDestroy()
+        {
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            TryUnregister();
+            CompletePendingSolver(true);
+            UnlockJobBuffers();
+            ClearGpuSkinningBinding();
+            ReleaseGraphicsBuffers();
+            ClearHandles();
+            if (_activeRuntimeInstance == this)
+                _activeRuntimeInstance = null;
+            _disposed = true;
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (_disposed || !Application.isPlaying)
+                return;
+
+            if (_solverScheduled && !CompletePendingSolver(false))
+                return;
+
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null || !EnsureVaultBuffers())
+                return;
+
+            _dataVault = vault;
+            float dt = math.clamp(deltaTime, KineticCharacterAnimatorConstants.MinDeltaTime, KineticCharacterAnimatorConstants.MaxDeltaTime);
+            _simulationTime += dt;
+            float quality = ResolveGlobalQualityWeight(vault);
+            _lastQuality = quality;
+
+            if (!TryResolveRuntimeBuffers(
+                    vault,
+                    out NativeArray<KineticCharacterRigDTO> rigs,
+                    out NativeArray<KineticCharacterFrameInputDTO> inputs,
+                    out NativeArray<int> parents,
+                    out NativeArray<float4x4> bindPoses,
+                    out NativeArray<ProceduralBoneDTO> boneOutputs,
+                    out NativeArray<float4x4> matrices,
+                    out NativeArray<ProceduralIKTargetDTO> ikTargets,
+                    out NativeArray<KineticCharacterFrameStatsDTO> stats,
+                    out NativeArray<KineticAnimationTelemetryEntry> telemetry,
+                    out NativeArray<int> cursor,
+                    out NativeArray<KineticCharacterTuningDTO> tuning))
+            {
+                return;
+            }
+
+            bool hasPlayerState = WriteFrameInput(vault, inputs, dt, quality);
+            bool includeSdf = vault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> sdf) && sdf.IsCreated && sdf.Length > 0;
+            bool includeHands = vault.TryGetBuffer<PlayerKinematicsHandTarget>(BufferID.PlayerKinematicSmoothedHandTargets, out NativeArray<PlayerKinematicsHandTarget> playerHands) &&
+                                playerHands.IsCreated &&
+                                playerHands.Length >= 2;
+            if (!TryLockJobBuffers(vault, ref includeSdf, ref includeHands))
+                return;
+
+            if (!includeSdf)
+                sdf = default;
+            if (!includeHands)
+                playerHands = default;
+
+            JobHandle dependency = default;
+            if (!hasPlayerState)
+            {
+                dependency = new MockCharacterKinematicsJob
+                {
+                    Inputs = inputs,
+                    Frame = _frameCounter,
+                    DeltaTime = dt,
+                    SimulationTime = _simulationTime,
+                    GlobalQualityWeight = quality
+                }.Schedule(KineticCharacterAnimatorConstants.CharacterCapacity, 1, dependency);
+            }
+
+            JobHandle ikHandle = new EvaluateWallProximityJob
+            {
+                Inputs = inputs,
+                Targets = ikTargets,
+                VoxelSdfTexture3D = sdf,
+                PlayerHandTargets = playerHands,
+                SdfDimensions = new int3(math.max(0, _sdfDimensions.x), math.max(0, _sdfDimensions.y), math.max(0, _sdfDimensions.z)),
+                SdfOrigin = new float3(_sdfOrigin.x, _sdfOrigin.y, _sdfOrigin.z),
+                SdfCellSize = new float3(math.max(0.0001f, _sdfCellSize.x), math.max(0.0001f, _sdfCellSize.y), math.max(0.0001f, _sdfCellSize.z)),
+                SdfRangeMeters = math.max(0.01f, _sdfRangeMeters),
+                WallBraceDistanceMeters = tuning.IsCreated && tuning.Length > 0 ? KineticCharacterSanitizer.SanitizeTuning(tuning[0]).WallBraceDistanceMeters : 0.72f,
+                AupSectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble
+            }.Schedule(KineticCharacterAnimatorConstants.CharacterCapacity, 1, dependency);
+
+            JobHandle solveHandle = new ProceduralLocomotionPhaseJob
+            {
+                Rigs = rigs,
+                Inputs = inputs,
+                ParentIndices = parents,
+                BindPoses = bindPoses,
+                BoneOutputs = boneOutputs,
+                Stats = stats,
+                IkTargets = ikTargets,
+                Tuning = tuning,
+                GlobalQualityWeight = quality,
+                DeltaTime = dt,
+                SimulationTime = _simulationTime,
+                Frame = _frameCounter,
+                AupSectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble
+            }.Schedule(KineticCharacterAnimatorConstants.CharacterCapacity, 1, ikHandle);
+
+            JobHandle matrixHandle = new ComputeFinalBoneMatricesJob
+            {
+                BoneOutputs = boneOutputs,
+                Matrices = matrices
+            }.Schedule(math.min(_boneCapacity, matrices.Length), 32, solveHandle);
+
+            _pendingHandle = new KineticAnimationTelemetryJob
+            {
+                Stats = stats,
+                Inputs = inputs,
+                Telemetry = telemetry,
+                Cursor = cursor,
+                Frame = _frameCounter
+            }.Schedule(matrixHandle);
+
+            H8Memory.RegisterActiveJob(SystemID.AnimationLocomotion, _pendingHandle);
+            _solverScheduled = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (_disposed || !Application.isPlaying)
+                return;
+
+            CompletePendingSolver(false);
+            if (_gpuUploadDirty)
+                UploadMatricesToGpu();
+            else if (_gpuConstantsDirty)
+                PublishCurrentGpuSkinningBinding();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            CompletePendingSolver(true);
+            UnlockJobBuffers();
+            _dataVault = currentService as IDataVault;
+            ClearHandles();
+            _dumpedFault = false;
+            if (_dataVault != null)
+            {
+                EnsureVaultBuffers();
+                if (_seedEmergencyMockRig)
+                    GenerateEmergencyMockRig();
+            }
+        }
+
+        public void GenerateEmergencyMockRig()
+        {
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null || !EnsureVaultBuffers())
+                return;
+
+            NativeArray<KineticCharacterRigDTO> rigs = _rigsHandle.Resolve(vault);
+            NativeArray<int> parents = _parentIndicesHandle.Resolve(vault);
+            NativeArray<float4x4> bindPoses = _bindPosesHandle.Resolve(vault);
+            NativeArray<KineticCharacterTuningDTO> tuning = _tuningHandle.Resolve(vault);
+            NativeArray<KineticCharacterFrameInputDTO> inputs = _inputsHandle.Resolve(vault);
+            NativeArray<ProceduralIKTargetDTO> targets = _ikTargetsHandle.Resolve(vault);
+            if (!rigs.IsCreated || !parents.IsCreated || !bindPoses.IsCreated || !tuning.IsCreated || !inputs.IsCreated || !targets.IsCreated)
+                return;
+
+            KineticCharacterRigDTO rig = default;
+            rig.SkeletonHash = 0x53484E88u;
+            rig.Flags = KineticCharacterAnimatorConstants.RigFlagEmergencyMock |
+                        KineticCharacterAnimatorConstants.RigFlagVisible |
+                        KineticCharacterAnimatorConstants.RigFlagHasToolSocket;
+            rig.BoneStart = 0;
+            rig.BoneCount = KineticCharacterAnimatorConstants.EmergencyMockBoneCount;
+            rig.RootIndex = 0;
+            rig.SpineIndex = 1;
+            rig.ChestIndex = 2;
+            rig.NeckIndex = 3;
+            rig.HeadIndex = 4;
+            rig.LeftShoulderIndex = 5;
+            rig.LeftElbowIndex = 6;
+            rig.LeftHandIndex = 7;
+            rig.RightShoulderIndex = 8;
+            rig.RightElbowIndex = 9;
+            rig.RightHandIndex = 10;
+            rig.LeftHipIndex = 11;
+            rig.LeftKneeIndex = 12;
+            rig.LeftFootIndex = 13;
+            rig.RightHipIndex = 14;
+            rig.RightKneeIndex = 15;
+            rig.RightFootIndex = 16;
+            rig.ToolSocketIndex = 17;
+            rig.ShoulderWidth = 0.42f;
+            rig.HipWidth = 0.32f;
+            rig.ArmUpperLength = 0.34f;
+            rig.ArmLowerLength = 0.32f;
+            rig.LegUpperLength = 0.46f;
+            rig.LegLowerLength = 0.45f;
+            rig.SpineLength = 0.54f;
+            rig.NeckLength = 0.12f;
+            rig.BreathAmplitudeMeters = 0.01f;
+            rig.LocomotionAmplitudeMeters = 0.08f;
+            rig.DamageDecayHz = 1f;
+            rig.StableSeed = 0x53484E42u;
+            rig.ActiveBoneCount = rig.BoneCount;
+            rig.MaxIkIterations = 6;
+            rigs[0] = rig;
+
+            WriteParent(parents, 0, -1);
+            WriteParent(parents, 1, 0);
+            WriteParent(parents, 2, 1);
+            WriteParent(parents, 3, 2);
+            WriteParent(parents, 4, 3);
+            WriteParent(parents, 5, 2);
+            WriteParent(parents, 6, 5);
+            WriteParent(parents, 7, 6);
+            WriteParent(parents, 8, 2);
+            WriteParent(parents, 9, 8);
+            WriteParent(parents, 10, 9);
+            WriteParent(parents, 11, 0);
+            WriteParent(parents, 12, 11);
+            WriteParent(parents, 13, 12);
+            WriteParent(parents, 14, 0);
+            WriteParent(parents, 15, 14);
+            WriteParent(parents, 16, 15);
+            WriteParent(parents, 17, 10);
+
+            for (int i = 0; i < math.min(bindPoses.Length, _boneCapacity); i++)
+                bindPoses[i] = float4x4.identity;
+
+            tuning[0] = KineticCharacterSanitizer.SanitizeTuning(tuning[0].LocomotionFrequencyHz > 0f ? tuning[0] : KineticCharacterTuningDTO.Default());
+            KineticCharacterFrameInputDTO input = default;
+            input.RootRotation = quaternion.identity;
+            input.ToolPoseMatrix = float4x4.identity;
+            input.Visible01 = 1f;
+            input.GlobalQualityWeight = 1f;
+            input.OxygenLevel01 = 1f;
+            input.CameraForwardLocal = new float3(0f, 0f, 1f);
+            input.Flags = KineticCharacterAnimatorConstants.InputFlagVisible | KineticCharacterAnimatorConstants.InputFlagMock;
+            inputs[0] = input;
+
+            for (int i = 0; i < targets.Length; i++)
+                targets[i] = default;
+        }
+
+        private static void WriteParent(NativeArray<int> parents, int child, int parent)
+        {
+            if ((uint)child < (uint)parents.Length)
+                parents[child] = parent;
+        }
+
+        private void RefreshColdDependencies()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+            if (_cameraTransform == null)
+            {
+                Camera camera = GetComponentInChildren<Camera>();
+                if (camera != null)
+                    _cameraTransform = camera.transform;
+            }
+        }
+
+        private bool EnsureVaultBuffers()
+        {
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null || !KineticCharacterAnimatorLayout.Validate())
+                return false;
+
+            _dataVault = vault;
+            int boneCapacity = math.clamp(_boneCapacity, KineticCharacterAnimatorConstants.EmergencyMockBoneCount, KineticCharacterAnimatorConstants.DefaultBoneCapacity);
+            _rigsHandle = vault.GetBufferHandle<KineticCharacterRigDTO>(
+                KineticCharacterAnimatorBufferIds.Rigs,
+                KineticCharacterAnimatorConstants.CharacterCapacity,
+                SystemID.AnimationLocomotion,
+                NativeArrayOptions.UninitializedMemory);
+            _inputsHandle = vault.GetBufferHandle<KineticCharacterFrameInputDTO>(
+                KineticCharacterAnimatorBufferIds.FrameInputs,
+                KineticCharacterAnimatorConstants.CharacterCapacity,
+                SystemID.AnimationLocomotion,
+                NativeArrayOptions.UninitializedMemory);
+            _parentIndicesHandle = vault.GetBufferHandle<int>(
+                KineticCharacterAnimatorBufferIds.ParentIndices,
+                boneCapacity,
+                SystemID.AnimationLocomotion,
+                NativeArrayOptions.UninitializedMemory);
+            _bindPosesHandle = vault.GetBufferHandle<float4x4>(
+                KineticCharacterAnimatorBufferIds.BindPoses,
+                boneCapacity,
+                SystemID.AnimationLocomotion,
+                NativeArrayOptions.UninitializedMemory);
+            _boneOutputsHandle = vault.GetBufferHandle<ProceduralBoneDTO>(
+                KineticCharacterAnimatorBufferIds.BoneOutputs,
+                boneCapacity,
+                SystemID.AnimationLocomotion,
+                NativeArrayOptions.UninitializedMemory);
+            _matricesHandle = vault.GetBufferHandle<float4x4>(
+                KineticCharacterAnimatorBufferIds.BoneMatrices,
+                boneCapacity,
+                SystemID.AnimationLocomotion,
+                NativeArrayOptions.UninitializedMemory);
+            _ikTargetsHandle = vault.GetBufferHandle<ProceduralIKTargetDTO>(
+                KineticCharacterAnimatorBufferIds.IkTargets,
+                KineticCharacterAnimatorConstants.CharacterCapacity * KineticCharacterAnimatorConstants.IkTargetCount,
+                SystemID.AnimationLocomotion,
+                NativeArrayOptions.UninitializedMemory);
+            _statsHandle = vault.GetBufferHandle<KineticCharacterFrameStatsDTO>(
+                KineticCharacterAnimatorBufferIds.FrameStats,
+                KineticCharacterAnimatorConstants.CharacterCapacity,
+                SystemID.AnimationLocomotion,
+                NativeArrayOptions.ClearMemory);
+            _telemetryHandle = vault.GetBufferHandle<KineticAnimationTelemetryEntry>(
+                KineticCharacterAnimatorBufferIds.TelemetryRing,
+                KineticCharacterAnimatorConstants.TelemetryCapacity,
+                SystemID.AnimationLocomotion,
+                NativeArrayOptions.ClearMemory);
+            _telemetryCursorHandle = vault.GetBufferHandle<int>(
+                KineticCharacterAnimatorBufferIds.TelemetryCursor,
+                1,
+                SystemID.AnimationLocomotion,
+                NativeArrayOptions.ClearMemory);
+            _tuningHandle = vault.GetBufferHandle<KineticCharacterTuningDTO>(
+                KineticCharacterAnimatorBufferIds.Tuning,
+                KineticCharacterAnimatorConstants.TuningCapacity,
+                SystemID.AnimationLocomotion,
+                NativeArrayOptions.ClearMemory);
+
+            if (_tuningHandle.IsCreated)
+            {
+                NativeArray<KineticCharacterTuningDTO> tuning = _tuningHandle.Resolve(vault);
+                if (tuning.IsCreated && tuning.Length > 0)
+                    tuning[0] = KineticCharacterSanitizer.SanitizeTuning(tuning[0].LocomotionFrequencyHz > 0f ? tuning[0] : KineticCharacterTuningDTO.Default());
+            }
+
+            return _rigsHandle.IsCreated &&
+                   _inputsHandle.IsCreated &&
+                   _parentIndicesHandle.IsCreated &&
+                   _bindPosesHandle.IsCreated &&
+                   _boneOutputsHandle.IsCreated &&
+                   _matricesHandle.IsCreated &&
+                   _ikTargetsHandle.IsCreated &&
+                   _statsHandle.IsCreated &&
+                   _telemetryHandle.IsCreated &&
+                   _telemetryCursorHandle.IsCreated &&
+                   _tuningHandle.IsCreated;
+        }
+
+        private bool TryResolveRuntimeBuffers(
+            IDataVault vault,
+            out NativeArray<KineticCharacterRigDTO> rigs,
+            out NativeArray<KineticCharacterFrameInputDTO> inputs,
+            out NativeArray<int> parents,
+            out NativeArray<float4x4> bindPoses,
+            out NativeArray<ProceduralBoneDTO> boneOutputs,
+            out NativeArray<float4x4> matrices,
+            out NativeArray<ProceduralIKTargetDTO> ikTargets,
+            out NativeArray<KineticCharacterFrameStatsDTO> stats,
+            out NativeArray<KineticAnimationTelemetryEntry> telemetry,
+            out NativeArray<int> cursor,
+            out NativeArray<KineticCharacterTuningDTO> tuning)
+        {
+            rigs = _rigsHandle.Resolve(vault);
+            inputs = _inputsHandle.Resolve(vault);
+            parents = _parentIndicesHandle.Resolve(vault);
+            bindPoses = _bindPosesHandle.Resolve(vault);
+            boneOutputs = _boneOutputsHandle.Resolve(vault);
+            matrices = _matricesHandle.Resolve(vault);
+            ikTargets = _ikTargetsHandle.Resolve(vault);
+            stats = _statsHandle.Resolve(vault);
+            telemetry = _telemetryHandle.Resolve(vault);
+            cursor = _telemetryCursorHandle.Resolve(vault);
+            tuning = _tuningHandle.Resolve(vault);
+            return rigs.IsCreated &&
+                   inputs.IsCreated &&
+                   parents.IsCreated &&
+                   bindPoses.IsCreated &&
+                   boneOutputs.IsCreated &&
+                   matrices.IsCreated &&
+                   ikTargets.IsCreated &&
+                   stats.IsCreated &&
+                   telemetry.IsCreated &&
+                   cursor.IsCreated &&
+                   tuning.IsCreated;
+        }
+
+        private bool WriteFrameInput(IDataVault vault, NativeArray<KineticCharacterFrameInputDTO> inputs, float dt, float quality)
+        {
+            bool hasPlayerState = vault.TryGetBuffer<LockstepPlayerKinematicState>(BufferID.PlayerKinematicState, out NativeArray<LockstepPlayerKinematicState> playerStates) &&
+                                  playerStates.IsCreated &&
+                                  playerStates.Length > 0;
+            if (!hasPlayerState)
+                return false;
+
+            LockstepPlayerKinematicState player = playerStates[0];
+            KineticCharacterFrameInputDTO input = inputs[0];
+            input.RootSectorX = player.SectorX;
+            input.RootSectorY = player.SectorY;
+            input.RootSectorZ = player.SectorZ;
+            input.RootLocalPosition = player.LocalPosition;
+            input.GlobalQualityWeight = quality;
+            input.RootRotation = ResolveRootRotation(player.Forward);
+            input.VelocityLocal = player.Velocity;
+            input.Visible01 = 1f;
+            input.CameraSectorX = player.SectorX;
+            input.CameraSectorY = player.SectorY;
+            input.CameraSectorZ = player.SectorZ;
+            input.CameraLocalPosition = ResolveCameraLocal(player.LocalPosition);
+            input.StressLevel01 = 1f - quality;
+            input.CameraForwardLocal = ResolveCameraForward(input.RootRotation);
+            input.OxygenLevel01 = 1f;
+            input.DamageImpulseLocal = _submittedDamageImpulseLocal;
+            input.DamageImpulse01 = _submittedDamageImpulse01;
+            input.ToolPoseMatrix = _submittedToolPose;
+            input.SimulationTickDelta = dt;
+            input.SimulationTime = _simulationTime;
+            input.SwimWaveForward = _submittedWaveForward;
+            input.SwimWaveLateral = _submittedWaveLateral;
+            input.SwimCrestReach = _submittedCrestReach;
+            input.SwimDescentTuck = _submittedDescentTuck;
+            input.SwimLeanWeight = _submittedLeanWeight;
+            input.ImmersionDepth = _submittedImmersionDepth;
+            input.BreathingPhase = _submittedBreathingPhase;
+            input.ActiveToolWeight01 = _submittedToolWeight;
+            input.Frame = player.Frame != 0u ? player.Frame : _frameCounter;
+            input.Flags = KineticCharacterAnimatorConstants.InputFlagVisible;
+            if (_submittedToolWeight > 0.0001f)
+                input.Flags |= KineticCharacterAnimatorConstants.InputFlagToolActive;
+            if (_submittedDamageImpulse01 > 0.0001f)
+                input.Flags |= KineticCharacterAnimatorConstants.InputFlagDamageImpulse;
+            if (_submittedLeanWeight > 0.0001f || _submittedCrestReach > 0.0001f || _submittedDescentTuck > 0.0001f)
+                input.Flags |= KineticCharacterAnimatorConstants.InputFlagSurfaceSwim;
+            inputs[0] = input;
+
+            _submittedDamageImpulseLocal = math.lerp(_submittedDamageImpulseLocal, float3.zero, math.saturate(dt * 8f));
+            _submittedDamageImpulse01 = math.max(0f, _submittedDamageImpulse01 - dt * 3f);
+            _submittedToolWeight = math.saturate(_submittedToolWeight * math.exp(-dt * 2f));
+            return true;
+        }
+
+        private quaternion ResolveRootRotation(float3 forward)
+        {
+            float3 safeForward = KineticCharacterMath.NormalizeSafe(forward, transform.forward);
+            return quaternion.LookRotationSafe(safeForward, KineticCharacterMath.Float3(0f, 1f, 0f));
+        }
+
+        private float3 ResolveCameraLocal(float3 fallbackRootLocal)
+        {
+            if (_cameraTransform == null)
+                return fallbackRootLocal + KineticCharacterMath.Float3(0f, 1.58f, -0.08f);
+
+            Vector3 cameraPosition = _cameraTransform.position;
+            return new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+        }
+
+        private float3 ResolveCameraForward(quaternion fallbackRotation)
+        {
+            if (_cameraTransform == null)
+                return math.mul(fallbackRotation, KineticCharacterMath.Float3(0f, 0f, 1f));
+
+            Vector3 forward = _cameraTransform.forward;
+            return KineticCharacterMath.NormalizeSafe(new float3(forward.x, forward.y, forward.z), math.mul(fallbackRotation, KineticCharacterMath.Float3(0f, 0f, 1f)));
+        }
+
+        private bool CompletePendingSolver(bool forceComplete)
+        {
+            if (!_solverScheduled)
+                return true;
+
+            if (!forceComplete && !_pendingHandle.IsCompleted)
+                return false;
+
+            _pendingHandle.Complete();
+            _pendingHandle = default;
+            _solverScheduled = false;
+            UnlockJobBuffers();
+            _frameCounter++;
+            ReadLatestTelemetry();
+            _gpuUploadDirty = ShouldUploadMatrices();
+            if (!_dumpedFault && LatestTelemetryHasInvalidFlag())
+                DumpBlackBoxOnce();
+            return true;
+        }
+
+        private bool TryLockJobBuffers(IDataVault vault, ref bool includeSdf, ref bool includeHands)
+        {
+            _lockedBuffers = 0;
+            if (!TryLockRequired(vault, KineticCharacterAnimatorBufferIds.Rigs, LockRigs) ||
+                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.FrameInputs, LockInputs) ||
+                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.ParentIndices, LockParents) ||
+                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.BindPoses, LockBindPoses) ||
+                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.BoneOutputs, LockBoneOutputs) ||
+                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.BoneMatrices, LockMatrices) ||
+                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.IkTargets, LockIkTargets) ||
+                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.FrameStats, LockStats) ||
+                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.TelemetryRing, LockTelemetry) ||
+                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, LockCursor) ||
+                !TryLockRequired(vault, KineticCharacterAnimatorBufferIds.Tuning, LockTuning))
+            {
+                UnlockJobBuffers();
+                includeSdf = false;
+                includeHands = false;
+                return false;
+            }
+
+            if (includeSdf && vault.TryLockBuffer(BufferID.VoxelSdfTexture3D, SystemID.AnimationLocomotion))
+                _lockedBuffers |= LockSdf;
+            else
+                includeSdf = false;
+
+            if (includeHands && vault.TryLockBuffer(BufferID.PlayerKinematicSmoothedHandTargets, SystemID.AnimationLocomotion))
+                _lockedBuffers |= LockPlayerHands;
+            else
+                includeHands = false;
+
+            return true;
+        }
+
+        private bool TryLockRequired(IDataVault vault, BufferID bufferId, int bit)
+        {
+            if (vault.TryLockBuffer(bufferId, SystemID.AnimationLocomotion))
+            {
+                _lockedBuffers |= bit;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void UnlockJobBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || _lockedBuffers == 0)
+            {
+                _lockedBuffers = 0;
+                return;
+            }
+
+            Unlock(vault, KineticCharacterAnimatorBufferIds.Rigs, LockRigs);
+            Unlock(vault, KineticCharacterAnimatorBufferIds.FrameInputs, LockInputs);
+            Unlock(vault, KineticCharacterAnimatorBufferIds.ParentIndices, LockParents);
+            Unlock(vault, KineticCharacterAnimatorBufferIds.BindPoses, LockBindPoses);
+            Unlock(vault, KineticCharacterAnimatorBufferIds.BoneOutputs, LockBoneOutputs);
+            Unlock(vault, KineticCharacterAnimatorBufferIds.BoneMatrices, LockMatrices);
+            Unlock(vault, KineticCharacterAnimatorBufferIds.IkTargets, LockIkTargets);
+            Unlock(vault, KineticCharacterAnimatorBufferIds.FrameStats, LockStats);
+            Unlock(vault, KineticCharacterAnimatorBufferIds.TelemetryRing, LockTelemetry);
+            Unlock(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, LockCursor);
+            Unlock(vault, KineticCharacterAnimatorBufferIds.Tuning, LockTuning);
+            Unlock(vault, BufferID.VoxelSdfTexture3D, LockSdf);
+            Unlock(vault, BufferID.PlayerKinematicSmoothedHandTargets, LockPlayerHands);
+            _lockedBuffers = 0;
+        }
+
+        private void Unlock(IDataVault vault, BufferID bufferId, int bit)
+        {
+            if ((_lockedBuffers & bit) != 0)
+                vault.TryUnlockBuffer(bufferId, SystemID.AnimationLocomotion);
+        }
+
+        private float ResolveGlobalQualityWeight(IDataVault vault)
+        {
+            float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            if (_tuningHandle.IsCreated)
+            {
+                NativeArray<KineticCharacterTuningDTO> tuning = _tuningHandle.Resolve(vault);
+                if (tuning.IsCreated && tuning.Length > 0)
+                    quality = math.min(quality, KineticCharacterSanitizer.SanitizeTuning(tuning[0]).GlobalQualityWeight);
+            }
+
+            return math.saturate(math.select(_lastQuality, quality, math.isfinite(quality)));
+        }
+
+        private void ReadLatestTelemetry()
+        {
+            _activeMatrixUploadCount = 0;
+            _activeCharacterCount = 0;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            NativeArray<KineticAnimationTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
+            NativeArray<int> cursor = _telemetryCursorHandle.Resolve(vault);
+            if (!telemetry.IsCreated || !cursor.IsCreated || telemetry.Length <= 0 || cursor.Length <= 0 || cursor[0] <= 0)
+                return;
+
+            int index = KineticCharacterMath.PositiveModulo(cursor[0] - 1, telemetry.Length);
+            KineticAnimationTelemetryEntry entry = telemetry[index];
+            int matrixCount = math.clamp(entry.BonesEvaluated, 0, _boneCapacity);
+            float quality = math.saturate(math.select(_lastQuality, entry.GlobalQualityWeight, math.isfinite(entry.GlobalQualityWeight)));
+            _gpuConstantsDirty |= matrixCount != _uploadedMatrixCount ||
+                                  _activeCharacterCount != _uploadedCharacterCount ||
+                                  math.abs(quality - _uploadedQuality) > 0.0001f;
+            _activeMatrixUploadCount = matrixCount;
+            _activeCharacterCount = entry.BonesEvaluated > 0 ? 1 : 0;
+            _latestStateHash = entry.StateHash;
+            _lastQuality = quality;
+        }
+
+        private bool ShouldUploadMatrices()
+        {
+            return _activeMatrixUploadCount > 0 &&
+                   (!_gpuBufferDataValid ||
+                    _activeMatrixUploadCount != _uploadedMatrixCount ||
+                    _latestStateHash != _uploadedStateHash);
+        }
+
+        private bool LatestTelemetryHasInvalidFlag()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            NativeArray<KineticAnimationTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
+            NativeArray<int> cursor = _telemetryCursorHandle.Resolve(vault);
+            if (!telemetry.IsCreated || !cursor.IsCreated || telemetry.Length <= 0 || cursor.Length <= 0 || cursor[0] <= 0)
+                return false;
+
+            int index = KineticCharacterMath.PositiveModulo(cursor[0] - 1, telemetry.Length);
+            return (telemetry[index].Flags & KineticCharacterAnimatorConstants.TelemetryFlagInvalid) != 0u;
+        }
+
+        private void DumpBlackBoxOnce()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            NativeArray<KineticAnimationTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
+            NativeArray<int> cursor = _telemetryCursorHandle.Resolve(vault);
+            _dumpedFault = KineticCharacterBlackBox.TryDumpTelemetry(ResolveProjectRoot(), telemetry, cursor);
+        }
+
+        private bool UploadMatricesToGpu()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                ClearGpuSkinningBinding();
+                return false;
+            }
+
+            NativeArray<float4x4> matrices = _matricesHandle.Resolve(vault);
+            if (!matrices.IsCreated)
+            {
+                ClearGpuSkinningBinding();
+                return false;
+            }
+
+            int count = math.min(math.min(_activeMatrixUploadCount, matrices.Length), _boneCapacity);
+            if (count <= 0 || (_gpuSkinningMaterial == null && !_publishGlobalBuffer))
+            {
+                ClearGpuSkinningBinding();
+                return true;
+            }
+
+            EnsureGraphicsBuffers();
+            GraphicsBuffer writeBuffer = _gpuUploadBufferIndex == 0 ? _matrixBufferA : _matrixBufferB;
+            if (!HasValidGraphicsBuffer(writeBuffer, count))
+            {
+                ClearGpuSkinningBinding();
+                return false;
+            }
+
+            KineticCharacterGraphicsBufferUpload.UploadNativeArray(writeBuffer, matrices, count);
+            PublishGpuSkinningBinding(writeBuffer, count);
+            _gpuUploadBufferIndex ^= 1;
+            _gpuBufferDataValid = true;
+            _uploadedStateHash = _latestStateHash;
+            _uploadedMatrixCount = count;
+            _uploadedCharacterCount = _activeCharacterCount;
+            _uploadedQuality = _lastQuality;
+            _gpuConstantsDirty = false;
+            _gpuUploadDirty = false;
+            return true;
+        }
+
+        private bool PublishCurrentGpuSkinningBinding()
+        {
+            int count = _uploadedMatrixCount;
+            GraphicsBuffer buffer = _gpuUploadBufferIndex == 0 ? _matrixBufferB : _matrixBufferA;
+            if (!_gpuBufferDataValid || count <= 0 || (_gpuSkinningMaterial == null && !_publishGlobalBuffer) || !HasValidGraphicsBuffer(buffer, count))
+                return false;
+
+            PublishGpuSkinningBinding(buffer, count);
+            _uploadedCharacterCount = _activeCharacterCount;
+            _uploadedQuality = _lastQuality;
+            _gpuConstantsDirty = false;
+            return true;
+        }
+
+        private void PublishGpuSkinningBinding(GraphicsBuffer buffer, int count)
+        {
+            if (_gpuSkinningMaterial != null)
+            {
+                _gpuSkinningMaterial.SetBuffer(KineticBoneMatricesId, buffer);
+                _gpuSkinningMaterial.SetFloat(KineticBoneMatrixCountId, count);
+                _gpuSkinningMaterial.SetFloat(KineticActiveCharactersId, _activeCharacterCount);
+                _gpuSkinningMaterial.SetFloat(KineticQualityId, _lastQuality);
+                _gpuSkinningMaterial.SetFloat(KineticGpuSkinningId, 1f);
+            }
+
+            if (_publishGlobalBuffer)
+            {
+                Shader.SetGlobalBuffer(KineticBoneMatricesId, buffer);
+                Shader.SetGlobalFloat(KineticBoneMatrixCountId, count);
+                Shader.SetGlobalFloat(KineticActiveCharactersId, _activeCharacterCount);
+                Shader.SetGlobalFloat(KineticQualityId, _lastQuality);
+                Shader.SetGlobalFloat(KineticGpuSkinningId, 1f);
+                _globalGpuSkinningPublished = true;
+            }
+        }
+
+        private void EnsureGraphicsBuffers()
+        {
+            int count = math.clamp(_boneCapacity, KineticCharacterAnimatorConstants.EmergencyMockBoneCount, KineticCharacterAnimatorConstants.DefaultBoneCapacity);
+            if (!HasValidGraphicsBuffer(_matrixBufferA, count))
+            {
+                ReleaseGraphicsBuffer(ref _matrixBufferA);
+                _matrixBufferA = KineticCharacterGraphicsBufferUpload.CreateStructuredLockBuffer<float4x4>(count);
+                _gpuBufferDataValid = false;
+            }
+
+            if (!HasValidGraphicsBuffer(_matrixBufferB, count))
+            {
+                ReleaseGraphicsBuffer(ref _matrixBufferB);
+                _matrixBufferB = KineticCharacterGraphicsBufferUpload.CreateStructuredLockBuffer<float4x4>(count);
+                _gpuBufferDataValid = false;
+            }
+        }
+
+        private void ClearGpuSkinningBinding()
+        {
+            _gpuBufferDataValid = false;
+            _gpuUploadDirty = false;
+            _gpuConstantsDirty = false;
+            _uploadedStateHash = 0u;
+            _uploadedMatrixCount = 0;
+            _uploadedCharacterCount = 0;
+            _uploadedQuality = -1f;
+            if (_gpuSkinningMaterial != null)
+            {
+                _gpuSkinningMaterial.SetFloat(KineticBoneMatrixCountId, 0f);
+                _gpuSkinningMaterial.SetFloat(KineticActiveCharactersId, 0f);
+                _gpuSkinningMaterial.SetFloat(KineticQualityId, 0f);
+                _gpuSkinningMaterial.SetFloat(KineticGpuSkinningId, 0f);
+            }
+
+            if (_publishGlobalBuffer || _globalGpuSkinningPublished)
+            {
+                Shader.SetGlobalFloat(KineticBoneMatrixCountId, 0f);
+                Shader.SetGlobalFloat(KineticActiveCharactersId, 0f);
+                Shader.SetGlobalFloat(KineticQualityId, 0f);
+                Shader.SetGlobalFloat(KineticGpuSkinningId, 0f);
+                _globalGpuSkinningPublished = false;
+            }
+        }
+
+        private void ReleaseGraphicsBuffers()
+        {
+            ReleaseGraphicsBuffer(ref _matrixBufferA);
+            ReleaseGraphicsBuffer(ref _matrixBufferB);
+            _gpuBufferDataValid = false;
+        }
+
+        private void ClearHandles()
+        {
+            _rigsHandle = default;
+            _inputsHandle = default;
+            _parentIndicesHandle = default;
+            _bindPosesHandle = default;
+            _boneOutputsHandle = default;
+            _matricesHandle = default;
+            _ikTargetsHandle = default;
+            _statsHandle = default;
+            _telemetryHandle = default;
+            _telemetryCursorHandle = default;
+            _tuningHandle = default;
+        }
+
+        private void TryRegister()
+        {
+            if (!_registeredUpdate)
+                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            if (!_registeredHotSwap)
+                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregister()
+        {
+            if (_registeredUpdate)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registeredUpdate = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
+            }
+
+            if (_registeredHotSwap)
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _registeredHotSwap = false;
+            }
+        }
+
+        private static bool HasValidGraphicsBuffer(GraphicsBuffer buffer, int requiredCount)
+        {
+            return buffer != null && buffer.IsValid() && buffer.count >= requiredCount && buffer.stride == UnsafeUtility.SizeOf<float4x4>();
+        }
+
+        private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            if (buffer.IsValid())
+                buffer.Release();
+            buffer = null;
+        }
+
+        private static string ResolveProjectRoot()
+        {
+            string dataPath = Application.dataPath;
+            return string.IsNullOrEmpty(dataPath) ? "." : Path.GetFullPath(Path.Combine(dataPath, ".."));
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (!TryResolveMatricesForEditor(out NativeArray<float4x4> matrices, out NativeArray<int> parents, out int count))
+                return;
+
+            int drawCount = math.min(count, 128);
+            for (int i = 0; i < drawCount; i++)
+            {
+                int parent = parents[i];
+                if (parent < 0 || parent >= drawCount)
+                    continue;
+
+                Vector3 a = (Vector3)matrices[i].c3.xyz;
+                Vector3 b = (Vector3)matrices[parent].c3.xyz;
+                Gizmos.color = i >= 5 && i <= 10 ? Color.red : Color.cyan;
+                Gizmos.DrawLine(a, b);
+            }
+        }
+    }
+
+    internal static class KineticCharacterGraphicsBufferUpload
+    {
+        public static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : struct
+        {
+            return new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                count,
+                UnsafeUtility.SizeOf<T>());
+        }
+
+        public static void UploadNativeArray<T>(GraphicsBuffer destination, NativeArray<T> source, int count) where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(destination, source.IsCreated ? source.Length : 0, count);
+            if (safeCount <= 0)
+                return;
+
+            NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
+            unsafe
+            {
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
+            }
+
+            destination.UnlockBufferAfterWrite<T>(safeCount);
+        }
+
+        private static int ResolveSafeWriteCount<T>(GraphicsBuffer destination, int sourceLength, int requestedCount) where T : struct
+        {
+            if (destination == null || requestedCount <= 0 || sourceLength <= 0 || destination.count <= 0)
+                return 0;
+
+            int stride = UnsafeUtility.SizeOf<T>();
+            if (destination.stride != stride)
+                return 0;
+
+            return math.min(math.min(requestedCount, sourceLength), destination.count);
+        }
+    }
+}

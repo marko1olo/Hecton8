@@ -60,6 +60,7 @@ namespace Hecton8.Power
         private float _pendingWirelessToolDemandWattSeconds;
         private float _nextPowerColdTickTime;
         private float _nextSubmarineThermalGridTickTime;
+        private uint _submarineThermalGridSimulationFrame;
         private WfcOutpostPowerBootRuntime _wfcOutpostPowerBoot; // COLD ALLOC: WfcOutpostPowerBootRuntime[1] - WFC outpost signal boot owner - owner: PowerGridManager
         private ShinobuLogisticsRouter _shinobuLogisticsRouter; // COLD ALLOC: ShinobuLogisticsRouter[1] - zero-GC WFC logistics BFS owner - owner: PowerGridManager
         private SubmarineOsThermalGridRuntime _submarineThermalGridRuntime; // COLD ALLOC: SubmarineOsThermalGridRuntime[1] - submarine OS thermal grid owner - owner: PowerGridManager
@@ -181,6 +182,8 @@ namespace Hecton8.Power
             _debugPendingWirelessToolDemandWattSeconds = 0f;
             _slowTickFinalizationPending = false;
             _nextPowerColdTickTime = 0f;
+            _nextSubmarineThermalGridTickTime = 0f;
+            _submarineThermalGridSimulationFrame = 0u;
         }
 
         private void UnregisterRuntimeHooks()
@@ -268,6 +271,8 @@ namespace Hecton8.Power
                 _shinobuLogisticsRouter = null;
                 _submarineThermalGridRuntime?.Dispose();
                 _submarineThermalGridRuntime = null;
+                _nextSubmarineThermalGridTickTime = 0f;
+                _submarineThermalGridSimulationFrame = 0u;
                 if (currentService is IDataVault)
                 {
                     EnsureShinobuLogisticsRouter();
@@ -709,8 +714,13 @@ namespace Hecton8.Power
             if (now + 0.0001f < _nextSubmarineThermalGridTickTime)
                 return;
 
-            if (runtime.ScheduleSolve(cadenceSeconds, quality, (uint)Time.frameCount, default, out _))
+            uint candidateSimulationFrame = unchecked(_submarineThermalGridSimulationFrame + 1u);
+            if (candidateSimulationFrame == 0u)
+                candidateSimulationFrame = 1u;
+
+            if (runtime.ScheduleSolve(cadenceSeconds, quality, candidateSimulationFrame, default, out _))
             {
+                _submarineThermalGridSimulationFrame = candidateSimulationFrame;
                 _nextSubmarineThermalGridTickTime = now + cadenceSeconds;
                 return;
             }

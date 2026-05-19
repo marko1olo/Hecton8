@@ -16,11 +16,19 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+
+R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
-## 2026-05-19 DOC_GLOBAL R31 Current Boundary Note
+## 2026-05-19 DOC_GLOBAL Current Boundary Note
 
-R31 reread confirmed this ledger remains static binary/documentation orientation, not runtime payload load, memory, or platform proof. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`; R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `57` RealtimeCSG vendor references; `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=15`, `SourceSignals=161`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
+This ledger remains static binary/documentation orientation, not runtime payload load, memory, or platform proof. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`; R31 remains the prior current-boundary propagation correction. R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`); `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
+
+## 2026-05-19 SHINOBU_143 Tether AUP Vault Lane
+
+- Added SHINOBU_143 Vault buffer IDs `71280..71289` for AUP tether nodes, constraints, endpoints, spline vertices, force packets, telemetry ring/head, cable materials, CSV scratch, and bootstrap state.
+- Primary DTO: `TetherNodeDTO` is 64 bytes with explicit offsets `0/24/48/52/56`, matching one cache-line node stride.
+- Runtime boundary: mock bootstrap and parser paths are static/source verified only; compile proof is blocked by unrelated Visor/Somatic/Equipment missing DTO contracts recorded in `Docs/AgentLogs/LOG_SHINOBU_143.md`.
 
 ## Purpose
 
@@ -31,6 +39,17 @@ agent logs and CSV scans are evidence trails, not durable project authority.
 This ledger does not authorize deletion by itself. A file is safe to delete or quarantine only
 after its owning gameplay/rendering/data system confirms that no build, bake, runtime convention,
 Addressables hook, StreamingAssets copy step, or external packager consumes it.
+
+## 2026-05-19 SHINOBU_117 Thermodynamics Source Lane
+
+- Added `ThermalSourceSignal` as a 64-byte typed signal payload for producer-agnostic heat source registration into the abyssal thermodynamics field.
+- Layout: `AbsoluteUniversePosition PositionAup` offset `0` size `48`; `float RadiusMeters` offset `48`; `float IntensityCelsiusPerSecond` offset `52`; `uint SourceId` offset `56`; `uint Frame` offset `60`.
+- Route: heat producers call the existing `IThermodynamicsService` facade; `AbyssalThermalManager` publishes `ThermalSourceSignal`; `AbyssalThermodynamicsSolver` ingests the frame snapshot into Vault `HeatSourceDTO` slots. No Thermodynamics-to-World assembly reference was added.
+- Dispatch: `ThermalSourceSignal` is now a direct registry lane with deterministic mutation order and a stable sort key from `SourceId` or folded AUP/radius/intensity. Capacity is `128`, with low-tier frame cap `32`.
+- Damage ownership: thermodynamics runtime no longer emits `CombatDamageSignal` or thermodynamics mock damage. Heat damage must be owned by consumers that sample the scalar field.
+- Determinism polish: legacy thermodynamics source accumulation is serial deterministic, updraft extraction is telemetry-scan ordered, and thermal source signal frame metadata no longer depends on Unity `Time.frameCount`.
+- Sample/visual polish: abyssal owner samples now scale from nearest-cell reads to trilinear field sampling through `GlobalQualityWeight`, active resolution has a 3 second hysteresis band, legacy debug load shedding uses continuous `qualityCeiling`, and shader upload uses double-buffered `GraphicsBuffer.LockBufferForWrite` plus `UnsafeUtility.MemCpy`.
+- Verification status: static layout and zero-GC route only. A narrow `Hecton8.Core.csproj` build was attempted after CPU opened to 19 percent and failed in unrelated Visor/Somatic missing DTO/id dependencies, not in thermodynamics.
 
 ## Evidence
 
@@ -109,7 +128,10 @@ scope was binary assets, not only the verifier's `.bin` / `.h8bin` extension set
 - 2026-05-19 SHINOBU_103 update: `static_data.h8bin` authority is now represented by
   `H8DataMonolithCompiler`, `H8StaticDataArena`, and the editor-only Data Monolith compiler window.
   The monolith ABI uses a 16-byte checksum header, 64-byte directory, 16-byte section entries,
-  explicit-layout ARM64-safe DTOs, and runtime XXHash3 validation of bytes `[16..blobLength)`.
+  explicit-layout ARM64-safe DTOs, unsigned UTF-8 pool offsets, final 16-byte blob padding, and
+  runtime XXHash3 validation of bytes `[16..blobLength)`. Runtime payload bytes are now owned by
+  `GlobalDataVault` BufferID `71103`; the arena fails closed if the Vault is absent instead of
+  allocating a private persistent byte fallback.
   Designer CSV rows under `Data/Balance` are compiled into fixed sections; runtime boot must consume
   the binary arena, not CSV/JSON text. Generated `Data/Balance/Baked` manifests and schema templates
   are excluded from compiler source discovery. Same-domain SoA reconstruction jobs now use explicit

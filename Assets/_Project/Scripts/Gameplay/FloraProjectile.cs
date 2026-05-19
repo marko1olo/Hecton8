@@ -1,4 +1,3 @@
-using Hecton8.Audio;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
@@ -7,205 +6,101 @@ using UnityEngine.Events;
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// Physics projectile fired by hostile flora.
-    /// Implements ITickable for centralized tick dispatch (no native Update).
-    /// Implements IPoolable for ObjectPoolManager lifecycle compliance.
+    /// Legacy pooled flora projectile facade. Damage is queued into BallisticsRuntime; no physics body or collision callback is used.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Rigidbody))]
-    [RequireComponent(typeof(Collider))]
-    public sealed class FloraProjectile : MonoBehaviour, ITickable, IUpdatable, IPoolable
+    public sealed class FloraProjectile : MonoBehaviour, IPoolable
     {
-        private const string PlayerTag = "Player";
         private const float MaxProjectileSpeedMetersPerSecond = 64f;
         private const float MaxProjectileSpeedSq = MaxProjectileSpeedMetersPerSecond * MaxProjectileSpeedMetersPerSecond;
 
         [Header("Damage")]
-        [Tooltip("Damage dealt to the player on hit.")]
+        [Tooltip("Damage scalar preserved for legacy prefabs; mathematical shots use it as mass bias.")]
         [SerializeField, Range(1f, 50f)] private float damage = 10f;
 
         [Header("Lifetime")]
-        [Tooltip("Maximum lifetime in seconds before auto destroy.")]
+        [Tooltip("Legacy lifetime field retained for prefab compatibility. Mathematical shots despawn immediately.")]
         [SerializeField, Range(1f, 30f)] private float maxLifetime = 5f;
 
         [Header("VFX / Audio")]
-        [Tooltip("Particle system played on non-player impact.")]
+        [Tooltip("Legacy impact particle reference retained for serialized prefab compatibility.")]
         [SerializeField] private ParticleSystem impactParticles;
 
-        [Tooltip("Sound played on non-player impact.")]
+        [Tooltip("Legacy impact sound reference retained for serialized prefab compatibility.")]
         [SerializeField] private AudioClip impactSound;
 
-        [Tooltip("Sound played on player hit.")]
+        [Tooltip("Legacy player-hit sound reference retained for serialized prefab compatibility.")]
         [SerializeField] private AudioClip hitPlayerSound;
 
-        [Tooltip("Volume for impact sounds.")]
+        [Tooltip("Legacy impact volume retained for serialized prefab compatibility.")]
         [SerializeField, Range(0f, 1f)] private float impactVolume = 0.5f;
 
         [Header("Events")]
-        [Tooltip("Invoked when the projectile hits the player. Passes damage.")]
+        [Tooltip("Legacy event retained for prefab compatibility. Combat damage now routes through CombatDamageSignal.")]
         [SerializeField] private UnityEvent<float> OnHitPlayer;
 
-        [Tooltip("Invoked when the projectile hits anything except the player.")]
+        [Tooltip("Legacy event retained for prefab compatibility. Combat damage now routes through CombatDamageSignal.")]
         [SerializeField] private UnityEvent OnHitEnvironment;
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
-
         private Transform _cachedTransform;
-        private Rigidbody _rigidbody;
-        private Collider _collider;
-        private float _lifetimeTimer;
-        private bool _initialized;
         private Vector3 _initialVelocity;
-        private bool _registered;
+        private bool _initialized;
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC PROPERTIES
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>Damage dealt on player hit.</summary>
+        /// <summary>Legacy damage scalar retained for old prefab inspectors.</summary>
         public float Damage => damage;
-
-        // ══════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
 
         private void Awake()
         {
             _cachedTransform = transform;
-            TryGetComponent(out _rigidbody);
-            TryGetComponent(out _collider);
-
-            if (_collider != null)
-                _collider.isTrigger = false;
         }
 
-        private void OnEnable()
-        {
-            TryRegister();
-        }
-
-        private void OnDisable()
-        {
-            TryUnregister();
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  ITickable — replaces native Update()
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Called every frame via GameTickManager. Uses dt parameter, not Time.deltaTime.
-        /// </summary>
-        /// <param name="dt">Frame delta time from GameTickManager.</param>
-        public void Tick(float dt)
-        {
-            _lifetimeTimer += dt;
-            if (_lifetimeTimer >= maxLifetime)
-                DespawnSelf();
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  IPoolable — ObjectPoolManager lifecycle
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Called when spawned from pool. Resets ALL state for reuse.
-        /// </summary>
+        /// <summary>Called by ObjectPoolManager when this legacy facade is reused.</summary>
         public void OnSpawn()
         {
-            _lifetimeTimer = 0f;
             _initialized = false;
             _initialVelocity = Vector3.zero;
-
-            if (_rigidbody != null)
-            {
-                _rigidbody.linearVelocity = Vector3.zero;
-                _rigidbody.angularVelocity = Vector3.zero;
-            }
-
-            TryRegister();
         }
 
-        /// <summary>
-        /// Called when returned to pool. Unregisters from tick and clears state.
-        /// </summary>
+        /// <summary>Called by ObjectPoolManager when returned to the pool.</summary>
         public void OnDespawn()
         {
-            TryUnregister();
-
-            _lifetimeTimer = 0f;
             _initialized = false;
             _initialVelocity = Vector3.zero;
-
-            if (_rigidbody != null)
-            {
-                _rigidbody.linearVelocity = Vector3.zero;
-                _rigidbody.angularVelocity = Vector3.zero;
-            }
         }
 
-        /// <summary>
-        /// Sets the initial projectile velocity after spawn.
-        /// </summary>
+        /// <summary>Queues a mathematical ballistic trajectory and immediately returns the visual shell.</summary>
         public void Initialize(Vector3 velocity)
         {
             Vector3 safeVelocity = ResolveSafeVelocity(velocity);
             _initialVelocity = safeVelocity;
             _initialized = true;
 
-            if (_rigidbody != null)
-                _rigidbody.linearVelocity = safeVelocity;
-        }
-
-        private void OnCollisionEnter(Collision collision)
-        {
-            if (collision == null)
-                return;
-
-            Vector3 hitPoint = collision.contactCount > 0
-                ? collision.GetContact(0).point
-                : _cachedTransform.position;
-
-            if (collision.gameObject.CompareTag(PlayerTag))
+            if (safeVelocity.sqrMagnitude > 0.000001f)
             {
-                HitPlayer(
-                    hitPoint,
-                    collision.gameObject.GetComponentInParent<PlayerActionController>());
+                float mass = math.max(0.001f, damage * 0.0018f);
+                uint source = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId()));
+                BallisticsRuntime.QueueTrajectoryFromVelocity(
+                    _cachedTransform != null ? _cachedTransform.position : transform.position,
+                    safeVelocity,
+                    mass,
+                    BallisticWeaponHashes.FloraSpike,
+                    source,
+                    BallisticTrajectoryFlags.LegacyFacade | BallisticTrajectoryFlags.HostileFlora);
             }
-            else
-            {
-                HitEnvironment(hitPoint);
-            }
-        }
-
-        private void HitPlayer(Vector3 hitPoint, PlayerActionController actionController)
-        {
-            if (hitPlayerSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
-                audio.PlayAtPoint(hitPlayerSound, hitPoint, impactVolume);
-
-            OnHitPlayer?.Invoke(damage);
-
-            if (actionController != null)
-                actionController.OnDamageTaken();
 
             DespawnSelf();
         }
 
-        private void HitEnvironment(Vector3 hitPoint)
+        /// <summary>Sets projectile damage at runtime for legacy callers.</summary>
+        public void SetDamage(float amount)
         {
-            if (impactParticles != null)
-            {
-                impactParticles.transform.position = hitPoint;
-                impactParticles.Play();
-            }
+            damage = float.IsFinite(amount) ? math.max(0f, amount) : 0f;
+        }
 
-            if (impactSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
-                audio.PlayAtPoint(impactSound, hitPoint, impactVolume);
-
-            OnHitEnvironment?.Invoke();
-            DespawnSelf();
+        /// <summary>Resets the projectile facade for pooling reuse.</summary>
+        public void ResetProjectile()
+        {
+            OnSpawn();
         }
 
         private void DespawnSelf()
@@ -218,43 +113,6 @@ namespace Hecton8.Gameplay
             }
 
             Destroy(gameObject);
-        }
-
-        /// <summary>
-        /// Sets projectile damage at runtime.
-        /// </summary>
-        public void SetDamage(float amount)
-        {
-            damage = float.IsFinite(amount) ? math.max(0f, amount) : 0f;
-        }
-
-        /// <summary>
-        /// Resets the projectile for pooling reuse.
-        /// Delegates to OnSpawn for single-owner reset logic.
-        /// </summary>
-        public void ResetProjectile()
-        {
-            OnSpawn();
-        }
-
-        private void TryRegister()
-        {
-            if (_registered || !Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-        }
-
-        private void TryUnregister()
-        {
-            if (!_registered)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registered = false;
         }
 
         private static Vector3 ResolveSafeVelocity(Vector3 velocity)
@@ -282,10 +140,9 @@ namespace Hecton8.Gameplay
             if (!_initialized)
                 return;
 
-            Gizmos.color = Color.red;
+            Gizmos.color = Color.yellow;
             Gizmos.DrawRay(transform.position, _initialVelocity.normalized * 2f);
         }
 #endif
     }
 }
-

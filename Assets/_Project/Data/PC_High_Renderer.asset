@@ -230,7 +230,8 @@ MonoBehaviour:
   - {fileID: -3471827618286992026}
   - {fileID: 5943226787261363979}
   - {fileID: -5081531551300358816}
-  m_RendererFeatureMap: abf8db7c8ef6cf00a15e49751debe464b188e97609222e1afb2b45d40b3759c73a85dbb5fc1268c239d6e6b8d359d04956c384f42fa5998549e146248add7c757e0e6818d6f8b0e342f85f998309d70566059dfa2c97d1cf0bb74c4246957a52606dcd29fac57ab9
+  - {fileID: 149000149001}
+  m_RendererFeatureMap: abf8db7c8ef6cf00a15e49751debe464b188e97609222e1afb2b45d40b3759c73a85dbb5fc1268c239d6e6b8d359d04956c384f42fa5998549e146248add7c757e0e6818d6f8b0e342f85f998309d70566059dfa2c97d1cf0bb74c4246957a52606dcd29fac57ab909d819b122000000
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -341,7 +342,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1614fc811f8f184697d9bee70ab9fe5, type: 3}
   m_Name: DecalRendererFeature
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalRendererFeature
-  m_Active: 1
+  m_Active: 0
   m_Settings:
     technique: 1
     maxDrawDistance: 200
@@ -350,6 +351,27 @@ MonoBehaviour:
       surfaceData: 2
     screenSpaceSettings:
       normalBlend: 0
+--- !u!114 &149000149001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e26e06fe59eb56b4eae04f2fd7fdae2a, type: 3}
+  m_Name: HectonDynamicDeferredDecalFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.DeferredDecalPass
+  m_Active: 1
+  settings:
+    deferredDecalShader: {fileID: 4800000, guid: f131ac2c33bf6964b924e6c8253c598e, type: 3}
+    decalAtlas: {fileID: 0}
+    maxDecals: 1024
+    baseFadeTimeSeconds: 7.5
+    atlasSlices: 16
+    decalTint: {r: 0.72, g: 0.44, b: 0.32, a: 1}
+    intensity: 1
 --- !u!114 &8465884984933540169
 MonoBehaviour:
   m_ObjectHideFlags: 0

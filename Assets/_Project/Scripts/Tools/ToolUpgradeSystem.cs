@@ -41,7 +41,7 @@ namespace Hecton8.Tools
     /// <summary>
     /// Mutable per-tool runtime state stored in contiguous native memory.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct ToolState
     {
         public float CurrentBattery;
@@ -58,7 +58,7 @@ namespace Hecton8.Tools
     /// <summary>
     /// Cold-path authored profile copied from tool components into the modular runtime.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct ToolRuntimeProfile
     {
         public uint ToolId;
@@ -81,7 +81,7 @@ namespace Hecton8.Tools
     /// <summary>
     /// Hot-path compiled stats stored beside <see cref="ToolState"/> in native memory.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 40)]
     public struct ToolRuntimeStats
     {
         public float MaxRange;

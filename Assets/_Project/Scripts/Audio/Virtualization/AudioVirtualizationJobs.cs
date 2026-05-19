@@ -11,7 +11,7 @@ namespace Hecton8.Audio.Virtualization
     /// <summary>
     /// Burst ranking pass for virtual acoustic emitters.
     /// </summary>
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VirtualVoiceSortJob : IJob
     {
         [NoAlias] public NativeArray<VirtualVoice> Voices;
@@ -224,7 +224,8 @@ namespace Hecton8.Audio.Virtualization
                     LoudestWeight = selectedCount > 0 ? SortKeys[0].Weight : 0f,
                     AverageRt60Seconds = rt60Sum * invAudible,
                     AverageLowPassHertz = lowPassSum * invAudible,
-                    MaximumDelaySeconds = maxDelay
+                    MaximumDelaySeconds = maxDelay,
+                    AcousticOcclusionTimeMs = 0f
                 };
             }
         }
@@ -405,7 +406,7 @@ namespace Hecton8.Audio.Virtualization
     /// <summary>
     /// Deterministic mock emitter fill for CI and Burst stress tests when baked acoustics are absent.
     /// </summary>
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct MockAcousticEmitterJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<AcousticSourceDTO> Sources;

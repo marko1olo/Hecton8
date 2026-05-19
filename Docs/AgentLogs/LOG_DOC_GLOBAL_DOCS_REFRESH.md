@@ -1,7 +1,7 @@
 # DOC_GLOBAL_DOCS_REFRESH Log
 
 Date: 2026-05-19
-Status: ACTIVE R31 / PRIOR HISTORY ARCHIVED
+Status: ACTIVE R32 / PRIOR HISTORY ARCHIVED
 
 Prior full log history is archived at `Docs/Archive/Batch009/AgentLogs/LOG_DOC_GLOBAL_DOCS_REFRESH.md`. The active file was absent during R27 closeout, so this file records the current live completion without rewriting archived history.
 
@@ -64,3 +64,15 @@ Cinematic Cheats used: none. This was documentation evidence hygiene, not runtim
 Exact Microseconds saved: 0 claimed. R31 did not run Unity/profiler/GCMonitor/player-build proof.
 
 Validation: targeted stale-current/proof scan returned `missing=0`; markdown/txt R4 marker scan `ScopeFiles=89`, missing `0`, duplicate `0`; local markdown link scan `ScopeFiles=88`, missing links `0`; `python Tools\test_architecture_atlas.py` passed `10` tests; JSON parse spot check passed `5`, bad `0`, missing `0`; `Docs\Modding\Validate_Mod_API_Static.ps1` passed (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`); `python Tools\AtlasCheck.py` still fails with `ATLAS_CHECK_FAIL references=6549 missing=57`; scoped `git diff --check` excluding volatile task/log/archive/modding paths exited `0` with line-ending warnings only. Runtime proof remains absent.
+
+## R32 Architecture R4 And Proof-Wording Local
+
+What was wrong: R31 did not close the next interior layer. Active architecture docs still labeled a May 17 actuality manifest as current, `SHINOBU_125_SCAVENGING_LOOT_ORACLE_ROUTE_CARD.md` used `STATIC GREEN` without a linked GREEN review artifact tuple, `PDA_ENCYCLOPEDIA_STREAMER.md` and the procedural-wreckage global-authority route card lacked R4 boundaries, several runtime-contract docs lacked local source anchors, Subnautica2 sections used current-proof wording for static snapshots, temporary Roslyn/net10 wording was too strong, and concurrent SHINOBU_02 edits marked R32 absent before the R32 report artifact existed.
+
+What was done: Wrote `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`; promoted R32 through active root/architecture/report entrypoints; added R4/current-boundary wording; added source anchors for thermodynamics, flora sway, HFI, macro ecosystem, procedural wreckage, loot oracle, PDA streamer, voxel surface nets, and flora/fauna symbiosis; demoted the May 17 actuality manifest to historical snapshot wording; demoted `STATIC GREEN`; corrected Mod API static validator tuple to `SchemaRevision=16`, `SourceSignals=162`; and preserved runtime-proof absence.
+
+Cinematic Cheats used: none. This was documentation evidence hygiene, not runtime simulation.
+
+Exact Microseconds saved: 0 claimed. R32 did not run Unity/profiler/GCMonitor/player-build proof.
+
+Validation: targeted stale-current/proof scan returned no hits; R4 marker scan `ScopeFiles=81`, missing `0`, duplicate `0`; local markdown link scan `ScopeFiles=81`, missing links `0`; `python Tools\test_architecture_atlas.py` passed `10` tests; active non-archive docs JSON parse `JsonFiles=131`, ok `131`, bad `0`; `Docs\Modding\Validate_Mod_API_Static.ps1` passed (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`); `python Tools\AtlasCheck.py` still fails with `ATLAS_CHECK_FAIL references=6549 missing=59`; scoped `git diff --check` excluding volatile task/log/archive/modding paths exited `0` with line-ending warnings only. Runtime proof remains absent.

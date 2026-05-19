@@ -112,113 +112,113 @@ namespace Hecton8.Inventory
         public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockItemAcquiredSignal : ISignal
     {
-        public ulong Sequence;
-        public uint ItemHash;
-        public uint FrameIndex;
-        public int Quantity;
-        public int SourceEntityIndex;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public ulong Sequence;
+        [FieldOffset(8)] public uint ItemHash;
+        [FieldOffset(12)] public uint FrameIndex;
+        [FieldOffset(16)] public int Quantity;
+        [FieldOffset(20)] public int SourceEntityIndex;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockCraftingRequestSignal : ISignal
     {
-        public ulong Sequence;
-        public uint RecipeHash;
-        public uint ActorHash;
-        public uint FrameIndex;
-        public int RequestedQuantity;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public ulong Sequence;
+        [FieldOffset(8)] public uint RecipeHash;
+        [FieldOffset(12)] public uint ActorHash;
+        [FieldOffset(16)] public uint FrameIndex;
+        [FieldOffset(20)] public int RequestedQuantity;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockConsumeSignal : ISignal
     {
-        public ulong Sequence;
-        public uint ItemHash;
-        public uint ActorHash;
-        public uint FrameIndex;
-        public int Quantity;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public ulong Sequence;
+        [FieldOffset(8)] public uint ItemHash;
+        [FieldOffset(12)] public uint ActorHash;
+        [FieldOffset(16)] public uint FrameIndex;
+        [FieldOffset(20)] public int Quantity;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockToolUsedSignal : ISignal
     {
-        public ulong Sequence;
-        public uint ToolHash;
-        public uint FrameIndex;
-        public float Wear01;
-        public int SlotIndex;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public ulong Sequence;
+        [FieldOffset(8)] public uint ToolHash;
+        [FieldOffset(12)] public uint FrameIndex;
+        [FieldOffset(16)] public float Wear01;
+        [FieldOffset(20)] public int SlotIndex;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct ToolBrokenSignal : ISignal
     {
-        public ulong Sequence;
-        public uint ToolHash;
-        public uint FrameIndex;
-        public int SlotIndex;
-        public uint Flags;
-        public uint Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public ulong Sequence;
+        [FieldOffset(8)] public uint ToolHash;
+        [FieldOffset(12)] public uint FrameIndex;
+        [FieldOffset(16)] public int SlotIndex;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public uint Reserved0;
+        [FieldOffset(28)] public uint Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct EncumbranceSignal : ISignal
     {
-        public float Load01;
-        public float MassKg;
-        public float VolumeLiters;
-        public float MovementMultiplier;
-        public uint FrameIndex;
-        public uint Flags;
-        public uint Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public float Load01;
+        [FieldOffset(4)] public float MassKg;
+        [FieldOffset(8)] public float VolumeLiters;
+        [FieldOffset(12)] public float MovementMultiplier;
+        [FieldOffset(16)] public uint FrameIndex;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public uint Reserved0;
+        [FieldOffset(28)] public uint Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct EquipItemSignal : ISignal
     {
-        public ulong Sequence;
-        public uint ItemHash;
-        public uint FrameIndex;
-        public int InventorySlot;
-        public int HotbarSlot;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public ulong Sequence;
+        [FieldOffset(8)] public uint ItemHash;
+        [FieldOffset(12)] public uint FrameIndex;
+        [FieldOffset(16)] public int InventorySlot;
+        [FieldOffset(20)] public int HotbarSlot;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockHotbarSelectSignal : ISignal
     {
-        public ulong Sequence;
-        public uint ActorHash;
-        public uint FrameIndex;
-        public int HotbarSlot;
-        public uint Flags;
-        public uint Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public ulong Sequence;
+        [FieldOffset(8)] public uint ActorHash;
+        [FieldOffset(12)] public uint FrameIndex;
+        [FieldOffset(16)] public int HotbarSlot;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public uint Reserved0;
+        [FieldOffset(28)] public uint Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct DebrisDestroyedSignal : ISignal
     {
-        public ulong Sequence;
-        public uint LootHash;
-        public uint FrameIndex;
-        public int Quantity;
-        public int DebrisIndex;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public ulong Sequence;
+        [FieldOffset(8)] public uint LootHash;
+        [FieldOffset(12)] public uint FrameIndex;
+        [FieldOffset(16)] public int Quantity;
+        [FieldOffset(20)] public int DebrisIndex;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 32)]

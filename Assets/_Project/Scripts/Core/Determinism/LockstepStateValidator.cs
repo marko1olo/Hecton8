@@ -488,10 +488,16 @@ namespace Hecton8.Core.Determinism
             {
                 InputState state = signal.State;
                 uint replayFlags = state.Flags;
+                float2 moveDelta = new float2(
+                    state.MoveX * InputState.AxisInvQuantizeScale,
+                    state.MoveY * InputState.AxisInvQuantizeScale);
+                float2 lookDelta = new float2(
+                    state.LookX * InputState.LookInvQuantizeScale,
+                    state.LookY * InputState.LookInvQuantizeScale);
                 replayInput.ActionsBitmask = state.ButtonsBitmask;
-                replayInput.MoveDelta = SanitizeReplayInput(state.Move, float2.zero, ref replayFlags);
-                replayInput.LookDelta = SanitizeReplayInput(state.Look, float2.zero, ref replayFlags);
-                replayInput.VerticalDelta = SanitizeReplayInput(state.VerticalAxis, 0f, ref replayFlags);
+                replayInput.MoveDelta = SanitizeReplayInput(moveDelta, float2.zero, ref replayFlags);
+                replayInput.LookDelta = SanitizeReplayInput(lookDelta, float2.zero, ref replayFlags);
+                replayInput.VerticalDelta = SanitizeReplayInput(state.Vertical * InputState.AxisInvQuantizeScale, 0f, ref replayFlags);
                 replayInput.CurrentInputSchemeHash = signal.CurrentInputSchemeHash;
                 replayInput.Flags = replayFlags;
                 replayInput.Sequence = state.Sequence;

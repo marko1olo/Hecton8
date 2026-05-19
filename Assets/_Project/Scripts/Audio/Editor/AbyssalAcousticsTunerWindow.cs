@@ -204,6 +204,7 @@ namespace Hecton8.Audio.Editor
             _statsLabel.text =
                 "Voices " + _stats.ActivePhysicalVoices + "/" + _stats.PhysicalVoiceLimit +
                 " | Virtual " + _stats.AudibleVoices + "/" + _stats.TotalVoices +
+                " | SDF " + _stats.AcousticOcclusionTimeMs.ToString("0.000") + "ms" +
                 " | RT60 " + _stats.AverageRt60Seconds.ToString("0.00") +
                 " | LPF " + _stats.AverageLowPassHertz.ToString("0");
         }

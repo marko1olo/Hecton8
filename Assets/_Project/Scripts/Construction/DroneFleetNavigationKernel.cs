@@ -659,39 +659,42 @@ namespace Hecton8.Construction
         public float AStarCellSize;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DroneFleetMockRepairSignal : ISignal
     {
-        public int DroneId;
-        public int TargetModuleId;
-        public float RepairUnits;
-        public float3 Position;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public int DroneId;
+        [FieldOffset(4)] public int TargetModuleId;
+        [FieldOffset(8)] public float RepairUnits;
+        [FieldOffset(12)] public float3 Position;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DroneFleetMockMiningSignal : ISignal
     {
-        public int DroneId;
-        public int TargetNodeId;
-        public float WorkSeconds;
-        public float3 Position;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public int DroneId;
+        [FieldOffset(4)] public int TargetNodeId;
+        [FieldOffset(8)] public float WorkSeconds;
+        [FieldOffset(12)] public float3 Position;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct DroneFleetInventoryTransactionSignal : ISignal
     {
-        public int DroneId;
-        public int SourceId;
-        public int DestinationId;
-        public int ItemHash;
-        public int Quantity;
-        public float3 Position;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public int DroneId;
+        [FieldOffset(4)] public int SourceId;
+        [FieldOffset(8)] public int DestinationId;
+        [FieldOffset(12)] public int ItemHash;
+        [FieldOffset(16)] public int Quantity;
+        [FieldOffset(20)] public float3 Position;
+        [FieldOffset(32)] public uint Flags;
+        [FieldOffset(36)] public uint Reserved0;
+        [FieldOffset(40)] public ulong Reserved1;
+        [FieldOffset(48)] public ulong Reserved2;
+        [FieldOffset(56)] public ulong Reserved3;
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 64)]
@@ -1028,16 +1031,16 @@ namespace Hecton8.Construction
         private const float VerticalPenalty = 1.85f;
         private const float HugeCost = 3.402823e+38f;
 
-        [ReadOnly] public NativeArray<HeadlessDroneState> Drones;
-        public NativeArray<PathWaypointDTO> Waypoints;
-        public NativeArray<byte> WaypointStates;
-        public NativeArray<DroneNativeMinHeapNode> OpenHeap;
-        public NativeArray<float> GCosts;
-        public NativeArray<int> CameFrom;
-        public NativeArray<byte> NodeStates;
-        public NativeArray<int> RouteNodes;
-        public NativeArray<byte> RouteNodeCounts;
-        public NativeArray<DroneAStarTelemetry> Telemetry;
+        [ReadOnly, NoAlias] public NativeArray<HeadlessDroneState> Drones;
+        [NoAlias] public NativeArray<PathWaypointDTO> Waypoints;
+        [NoAlias] public NativeArray<byte> WaypointStates;
+        [NoAlias] public NativeArray<DroneNativeMinHeapNode> OpenHeap;
+        [NoAlias] public NativeArray<float> GCosts;
+        [NoAlias] public NativeArray<int> CameFrom;
+        [NoAlias] public NativeArray<byte> NodeStates;
+        [NoAlias] public NativeArray<int> RouteNodes;
+        [NoAlias] public NativeArray<byte> RouteNodeCounts;
+        [NoAlias] public NativeArray<DroneAStarTelemetry> Telemetry;
         public MockSDFGrid SdfGrid;
         public int FrameIndex;
         public int MaxSolves;

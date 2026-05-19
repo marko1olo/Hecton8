@@ -324,11 +324,40 @@ namespace Hecton8.Audio.Virtualization
         public float AverageRt60Seconds;
         public float AverageLowPassHertz;
         public float MaximumDelaySeconds;
-        private int _reserved0;
+        public float AcousticOcclusionTimeMs;
     }
 
     /// <summary>
-    /// Fixed-size black-box entry for the last 300 virtual voice frames.
+    /// Fixed-size black-box entry for the last 300 SDF acoustic occlusion frames.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    public struct AcousticTelemetryEntry
+    {
+        public int Frame;
+        public uint StateHash;
+        public float LoudestWeight;
+        public float SortTimeMs;
+        public float AverageRt60Seconds;
+        public float AverageLowPassHertz;
+        public float MaximumDelaySeconds;
+        public float AcousticOcclusionTimeMs;
+        public ushort TotalVoices;
+        public ushort AudibleVoices;
+        public ushort CulledVoices;
+        public ushort ActiveVoices;
+        public ushort PhysicalVoiceLimit;
+        public ushort StolenVoices;
+        public ushort DroppedVoices;
+        public ushort Flags;
+        public ushort OccludedVoices;
+        public ushort DelayedVoices;
+        private uint _reserved1;
+        private uint _reserved2;
+        private uint _reserved3;
+    }
+
+    /// <summary>
+    /// Fixed-size compatibility black-box entry for virtual voice consumers.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct VirtualVoiceTelemetryEntry
@@ -340,6 +369,7 @@ namespace Hecton8.Audio.Virtualization
         public float AverageRt60Seconds;
         public float AverageLowPassHertz;
         public float MaximumDelaySeconds;
+        public float AcousticOcclusionTimeMs;
         public ushort TotalVoices;
         public ushort AudibleVoices;
         public ushort CulledVoices;
@@ -350,9 +380,9 @@ namespace Hecton8.Audio.Virtualization
         public ushort Flags;
         public ushort OccludedVoices;
         public ushort DelayedVoices;
-        private uint _reserved0;
         private uint _reserved1;
         private uint _reserved2;
+        private uint _reserved3;
     }
 
     /// <summary>

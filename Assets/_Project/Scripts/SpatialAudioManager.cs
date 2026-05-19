@@ -76,6 +76,8 @@ using UnityEngine;
 using UnityEngine.Audio;
 using CoreAudioEvent = Hecton8.Core.AudioEvent;
 using AcousticAup = Hecton8.Core.Contracts.AcousticAup;
+using AcousticOcclusionTelemetryEntry = Hecton8.Audio.Virtualization.AcousticTelemetryEntry;
+using AcousticPortalTelemetryEntry = Hecton8.Audio.Propagation.AcousticTelemetryEntry;
 using VirtualVoiceSdfSampler = Hecton8.Audio.Virtualization.MockSDFSampler;
 
 namespace Hecton8.Audio
@@ -912,7 +914,7 @@ namespace Hecton8.Audio
         private VaultBufferHandle<VirtualVoiceSortKey> _virtualVoiceSortKeyPoolHandle;
         private VaultBufferHandle<VirtualVoiceSelection> _virtualVoiceSelectionsHandle;
         private VaultBufferHandle<VirtualVoiceStatistics> _virtualVoiceStatisticsHandle;
-        private VaultBufferHandle<VirtualVoiceTelemetryEntry> _virtualVoiceBlackBoxHandle;
+        private VaultBufferHandle<AcousticOcclusionTelemetryEntry> _virtualVoiceBlackBoxHandle;
         private VaultBufferHandle<VirtualVoiceTuningSnapshot> _virtualVoiceTuningHandle;
         private VaultBufferHandle<AcousticSourceDTO> _acousticSourceWritePoolHandle;
         private VaultBufferHandle<AcousticSourceDTO> _acousticSourceSortPoolHandle;
@@ -930,7 +932,7 @@ namespace Hecton8.Audio
         private NativeArray<VirtualVoiceSortKey> _virtualVoiceSortKeyPool; // Vault alias; GlobalDataVault owns backing memory.
         private NativeArray<VirtualVoiceSelection> _virtualVoiceSelections; // Vault alias; GlobalDataVault owns backing memory.
         private NativeArray<VirtualVoiceStatistics> _virtualVoiceStatistics; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<VirtualVoiceTelemetryEntry> _virtualVoiceBlackBox; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<AcousticOcclusionTelemetryEntry> _virtualVoiceBlackBox; // Vault alias; GlobalDataVault owns backing memory.
         private NativeArray<VirtualVoiceTuningSnapshot> _virtualVoiceTuningVault; // Vault alias; GlobalDataVault owns backing memory.
         private NativeArray<AcousticSourceDTO> _acousticSourceWritePool; // Vault alias; GlobalDataVault owns backing memory.
         private NativeArray<AcousticSourceDTO> _acousticSourceSortPool; // Vault alias; GlobalDataVault owns backing memory.
@@ -955,9 +957,12 @@ namespace Hecton8.Audio
         private float3 _virtualListenerVelocityMetersPerSecond;
         private VirtualVoiceSdfSampler _virtualVoiceSdfSampler;
         private float3 _virtualListenerRight = new float3(1f, 0f, 0f);
+        private float3 _virtualListenerSdfProbePosition;
         private float _virtualListenerDepthMeters;
         private float _virtualSimulationTickDeltaSeconds = 1f / 60f;
         private float _virtualVoiceSortStartRealtimeSeconds;
+        private long _acousticOcclusionStartTicks;
+        private float _lastAcousticOcclusionTimeMs;
         private int _virtualVoiceBlackBoxCursor;
         private int _virtualVoiceDroppedCount;
         private int _virtualPhysicalVoiceLimit = MaxVirtualPhysicalVoices;
@@ -991,8 +996,8 @@ namespace Hecton8.Audio
         private NativeArray<byte> _acousticPortalStates; // Vault alias; GlobalDataVault owns backing memory.
         private NativeList<int> _acousticPortalOpenSet;
         private NativeList<int> _acousticPortalClosedSet;
-        private VaultBufferHandle<AcousticTelemetryEntry> _acousticPortalBlackBoxHandle;
-        private NativeArray<AcousticTelemetryEntry> _acousticPortalBlackBox; // Vault alias; GlobalDataVault owns backing memory.
+        private VaultBufferHandle<AcousticPortalTelemetryEntry> _acousticPortalBlackBoxHandle;
+        private NativeArray<AcousticPortalTelemetryEntry> _acousticPortalBlackBox; // Vault alias; GlobalDataVault owns backing memory.
         private int _acousticPortalBlackBoxCursor;
         private Vector3[] _acousticPortalWaypointScratch;
         private int[] _acousticHabitatNodeMap;
@@ -1532,6 +1537,7 @@ namespace Hecton8.Audio
                 _hasVirtualListenerAup = false;
                 _hasVirtualPreviousListenerAbsolutePosition = false;
                 _virtualListenerVelocityMetersPerSecond = float3.zero;
+                _virtualListenerSdfProbePosition = float3.zero;
                 _virtualVoiceWriteCount = 0;
                 _virtualVoiceSortCount = 0;
                 _virtualVoiceDtoCount = 0;
@@ -1549,6 +1555,7 @@ namespace Hecton8.Audio
             float listenerDepthMeters = math.max(0f, -listenerAbsolutePosition.y);
             _virtualListenerDepthMeters = listenerDepthMeters;
             _virtualSimulationTickDeltaSeconds = math.max(0.0001f, SanitizeFinite(deltaTime, 1f / 60f));
+            _virtualListenerSdfProbePosition = new float3(listenerAbsolutePosition.x, listenerAbsolutePosition.y, listenerAbsolutePosition.z);
             Vector3 listenerRightVector = listener != null && listener.right.sqrMagnitude > 0.000001f
                 ? listener.right.normalized
                 : Vector3.right;
@@ -2665,14 +2672,21 @@ namespace Hecton8.Audio
             if (count <= 0)
             {
                 _acousticOcclusionOutputCount = 0;
+                _acousticOcclusionStartTicks = 0L;
+                _lastAcousticOcclusionTimeMs = 0f;
                 return;
             }
             _acousticOcclusionOutputCount = count;
 
             double3 listenerMeters = ToAbsoluteAcousticMeters(in listenerAup);
             float safeDelta = math.max(0.0001f, SanitizeFinite(deltaTime, 1f / 60f));
-            bool hasVoxelSdf = _acousticVoxelSdfTexture3D.IsCreated &&
-                _acousticVoxelSdfTexture3D.Length >= AcousticSdfDefaultVoxelCount;
+            bool hasVoxelSdf = TrySnapshotAcousticSdfPayload(
+                new Vector3(_virtualListenerSdfProbePosition.x, _virtualListenerSdfProbePosition.y, _virtualListenerSdfProbePosition.z),
+                out NativeArray<byte> sdfVoxels,
+                out int3 sdfDimensions,
+                out float3 sdfOrigin,
+                out float3 sdfCellSize,
+                out float sdfRange);
             double3 listenerVelocity = new double3(
                 _virtualListenerVelocityMetersPerSecond.x,
                 _virtualListenerVelocityMetersPerSecond.y,
@@ -2687,23 +2701,16 @@ namespace Hecton8.Audio
                 Sources = _acousticSelectedSourcePool,
                 Outputs = _acousticDspOutputPool,
                 PreviousSourceAup = _acousticSelectedPreviousAupPool,
-                SdfVoxels = hasVoxelSdf ? _acousticVoxelSdfTexture3D : default,
+                SdfVoxels = hasVoxelSdf ? sdfVoxels : default,
                 Materials = _acousticMaterialRows,
                 FallbackSdf = _virtualVoiceSdfSampler,
                 ListenerAup = listenerMeters,
                 PreviousListenerAup = previousListenerMeters,
                 ListenerRight = right,
-                SdfOriginMeters = hasVoxelSdf
-                    ? new float3(
-                        -AcousticSdfDefaultWidth * AcousticSdfDefaultCellMeters * 0.5f,
-                        -AcousticSdfDefaultHeight * AcousticSdfDefaultCellMeters * 0.5f,
-                        -AcousticSdfDefaultDepth * AcousticSdfDefaultCellMeters * 0.5f)
-                    : float3.zero,
-                SdfCellSizeMeters = hasVoxelSdf ? new float3(AcousticSdfDefaultCellMeters) : new float3(1f),
-                SdfDimensions = hasVoxelSdf
-                    ? new int3(AcousticSdfDefaultWidth, AcousticSdfDefaultHeight, AcousticSdfDefaultDepth)
-                    : new int3(0, 0, 0),
-                SdfDistanceScaleMeters = hasVoxelSdf ? AcousticSdfDefaultRangeMeters : 1f,
+                SdfOriginMeters = hasVoxelSdf ? sdfOrigin - _virtualListenerSdfProbePosition : float3.zero,
+                SdfCellSizeMeters = hasVoxelSdf ? sdfCellSize : new float3(1f),
+                SdfDimensions = hasVoxelSdf ? sdfDimensions : new int3(0, 0, 0),
+                SdfDistanceScaleMeters = hasVoxelSdf ? sdfRange : 1f,
                 SimulationTickDeltaSeconds = safeDelta,
                 SoundSpeedMetersPerSecond = _virtualVoiceTuning.SoundSpeedMetersPerSecond,
                 ListenerDepthMeters = listenerDepthMeters,
@@ -2712,8 +2719,88 @@ namespace Hecton8.Audio
                 SourceCount = count
             };
 
+            _acousticOcclusionStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             _acousticOcclusionHandle = occlusionJob.Schedule(count, 16);
             _acousticOcclusionScheduled = true;
+        }
+
+        private bool TrySnapshotAcousticSdfPayload(
+            Vector3 targetRuntimePosition,
+            out NativeArray<byte> sdfVoxels,
+            out int3 sdfDimensions,
+            out float3 sdfOrigin,
+            out float3 sdfCellSize,
+            out float sdfRange)
+        {
+            sdfVoxels = default;
+            sdfDimensions = default;
+            sdfOrigin = float3.zero;
+            sdfCellSize = float3.zero;
+            sdfRange = 0f;
+
+            if (!HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload(
+                    targetRuntimePosition,
+                    out NativeArray<byte> publishedSdf,
+                    out _,
+                    out Vector3Int publishedDimensions,
+                    out Vector3 publishedOrigin,
+                    out Vector3 publishedCellSize,
+                    out float publishedRange,
+                    out _))
+            {
+                return false;
+            }
+
+            int3 resolvedDimensions = new int3(publishedDimensions.x, publishedDimensions.y, publishedDimensions.z);
+            if (!TryResolveAcousticSdfVoxelCount(resolvedDimensions, out int expectedLength) ||
+                !publishedSdf.IsCreated ||
+                publishedSdf.Length < expectedLength)
+            {
+                return false;
+            }
+
+            NativeArray<byte> resolvedSdf = publishedSdf;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault != null &&
+                vault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> vaultSdfTexture3D) &&
+                vaultSdfTexture3D.IsCreated &&
+                vaultSdfTexture3D.Length >= expectedLength)
+            {
+                resolvedSdf = vaultSdfTexture3D;
+            }
+
+            float3 resolvedOrigin = new float3(publishedOrigin.x, publishedOrigin.y, publishedOrigin.z);
+            float3 resolvedCellSize = new float3(publishedCellSize.x, publishedCellSize.y, publishedCellSize.z);
+            float resolvedRange = math.max(0f, SanitizeFinite(publishedRange, 0f));
+            if (!math.all(math.isfinite(resolvedOrigin)) ||
+                !math.all(math.isfinite(resolvedCellSize)) ||
+                math.any(math.abs(resolvedCellSize) <= new float3(0.0001f)) ||
+                resolvedRange <= 0.0001f)
+            {
+                return false;
+            }
+
+            _acousticVoxelSdfTexture3D = resolvedSdf;
+            sdfVoxels = resolvedSdf;
+            sdfDimensions = resolvedDimensions;
+            sdfOrigin = resolvedOrigin;
+            sdfCellSize = resolvedCellSize;
+            sdfRange = resolvedRange;
+            return true;
+        }
+
+        private static bool TryResolveAcousticSdfVoxelCount(int3 dimensions, out int voxelCount)
+        {
+            voxelCount = 0;
+            if (dimensions.x <= 1 || dimensions.y <= 1 || dimensions.z <= 1)
+                return false;
+
+            long count = (long)dimensions.x * dimensions.y * dimensions.z;
+            if (count <= 0L || count > int.MaxValue)
+                return false;
+
+            voxelCount = (int)count;
+            return true;
         }
 
         private int PopulateSelectedAcousticSources(int selectedCount)
@@ -2771,6 +2858,26 @@ namespace Hecton8.Audio
 
             _acousticOcclusionHandle.Complete();
             _acousticOcclusionScheduled = false;
+            if (_acousticOcclusionStartTicks > 0L)
+            {
+                long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _acousticOcclusionStartTicks;
+                _lastAcousticOcclusionTimeMs = math.max(
+                    0f,
+                    (float)(elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency));
+                if (!math.isfinite(_lastAcousticOcclusionTimeMs))
+                    _lastAcousticOcclusionTimeMs = 0f;
+            }
+            else
+            {
+                _lastAcousticOcclusionTimeMs = 0f;
+            }
+
+            _acousticOcclusionStartTicks = 0L;
+            _lastVirtualVoiceStatistics.AcousticOcclusionTimeMs = _lastAcousticOcclusionTimeMs;
+            if (_virtualVoiceStatistics.IsCreated && _virtualVoiceStatistics.Length > 0)
+                _virtualVoiceStatistics[0] = _lastVirtualVoiceStatistics;
+            PushVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
+            PublishVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
             return true;
         }
 
@@ -2788,6 +2895,7 @@ namespace Hecton8.Audio
                 overrunStatistics.SortTimeMs = math.max(
                     0.5f,
                     (Time.realtimeSinceStartup - _virtualVoiceSortStartRealtimeSeconds) * 1000f);
+                overrunStatistics.AcousticOcclusionTimeMs = _lastAcousticOcclusionTimeMs;
                 PushVirtualVoiceTelemetry(in overrunStatistics);
                 PublishVirtualVoiceTelemetry(in overrunStatistics);
                 return false;
@@ -2802,6 +2910,7 @@ namespace Hecton8.Audio
                 _lastVirtualVoiceStatistics = _virtualVoiceStatistics[0];
                 float elapsedMs = math.max(0f, (float)(sortWaitTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency));
                 _lastVirtualVoiceStatistics.SortTimeMs = elapsedMs;
+                _lastVirtualVoiceStatistics.AcousticOcclusionTimeMs = _lastAcousticOcclusionTimeMs;
                 _virtualVoiceStatistics[0] = _lastVirtualVoiceStatistics;
                 _virtualVoiceSortCount = math.clamp(_lastVirtualVoiceStatistics.AudibleVoices, 0, MaxVirtualVoiceCapacity);
             }
@@ -2813,8 +2922,14 @@ namespace Hecton8.Audio
                 _virtualListenerDepthMeters,
                 _virtualVoiceQualityWeight,
                 _virtualSimulationTickDeltaSeconds);
-            PushVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
-            PublishVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
+            if (!_acousticOcclusionScheduled)
+            {
+                _lastVirtualVoiceStatistics.AcousticOcclusionTimeMs = _lastAcousticOcclusionTimeMs;
+                if (_virtualVoiceStatistics.IsCreated && _virtualVoiceStatistics.Length > 0)
+                    _virtualVoiceStatistics[0] = _lastVirtualVoiceStatistics;
+                PushVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
+                PublishVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
+            }
             return true;
         }
 
@@ -3921,7 +4036,7 @@ namespace Hecton8.Audio
                 loudestWeight = statistics.LoudestWeight;
             uint stateHash = ComputeVirtualVoiceStateHash(in statistics, loudestWeight);
             int index = _virtualVoiceBlackBoxCursor % _virtualVoiceBlackBox.Length;
-            _virtualVoiceBlackBox[index] = new VirtualVoiceTelemetryEntry
+            _virtualVoiceBlackBox[index] = new AcousticOcclusionTelemetryEntry
             {
                 Frame = statistics.Frame,
                 TotalVoices = (ushort)math.clamp(statistics.TotalVoices, 0, ushort.MaxValue),
@@ -3939,12 +4054,15 @@ namespace Hecton8.Audio
                 SortTimeMs = statistics.SortTimeMs,
                 AverageRt60Seconds = statistics.AverageRt60Seconds,
                 AverageLowPassHertz = statistics.AverageLowPassHertz,
-                MaximumDelaySeconds = statistics.MaximumDelaySeconds
+                MaximumDelaySeconds = statistics.MaximumDelaySeconds,
+                AcousticOcclusionTimeMs = statistics.AcousticOcclusionTimeMs
             };
             _virtualVoiceBlackBoxCursor = (_virtualVoiceBlackBoxCursor + 1) % _virtualVoiceBlackBox.Length;
             if (!math.isfinite(loudestWeight) ||
                 !math.isfinite(statistics.SortTimeMs) ||
-                statistics.SortTimeMs > 0.5f)
+                !math.isfinite(statistics.AcousticOcclusionTimeMs) ||
+                statistics.SortTimeMs > 0.5f ||
+                statistics.AcousticOcclusionTimeMs > 1.0f)
             {
                 DumpVirtualVoiceBlackBox();
             }
@@ -3977,6 +4095,7 @@ namespace Hecton8.Audio
                 hash = (hash ^ (uint)statistics.DelayedVoices) * 16777619u;
                 hash = (hash ^ math.asuint(loudestWeight)) * 16777619u;
                 hash = (hash ^ math.asuint(statistics.SortTimeMs)) * 16777619u;
+                hash = (hash ^ math.asuint(statistics.AcousticOcclusionTimeMs)) * 16777619u;
                 return hash;
             }
         }
@@ -4001,7 +4120,7 @@ namespace Hecton8.Audio
                     writer.Write(_virtualVoiceBlackBox.Length);
                     for (int i = 0; i < _virtualVoiceBlackBox.Length; i++)
                     {
-                        VirtualVoiceTelemetryEntry entry = _virtualVoiceBlackBox[i];
+                        AcousticOcclusionTelemetryEntry entry = _virtualVoiceBlackBox[i];
                         writer.Write(entry.Frame);
                         writer.Write(entry.TotalVoices);
                         writer.Write(entry.AudibleVoices);
@@ -4019,6 +4138,7 @@ namespace Hecton8.Audio
                         writer.Write(entry.AverageRt60Seconds);
                         writer.Write(entry.AverageLowPassHertz);
                         writer.Write(entry.MaximumDelaySeconds);
+                        writer.Write(entry.AcousticOcclusionTimeMs);
                     }
                 }
             }
@@ -6705,7 +6825,7 @@ namespace Hecton8.Audio
                 flags |= 4u;
 
             int index = _acousticPortalBlackBoxCursor % _acousticPortalBlackBox.Length;
-            _acousticPortalBlackBox[index] = new AcousticTelemetryEntry
+            _acousticPortalBlackBox[index] = new AcousticPortalTelemetryEntry
             {
                 Frame = frame,
                 NodeCount = result.NodeCount,
@@ -6754,7 +6874,7 @@ namespace Hecton8.Audio
                     writer.Write(_acousticPortalBlackBoxCursor);
                     for (int i = 0; i < _acousticPortalBlackBox.Length; i++)
                     {
-                        AcousticTelemetryEntry entry = _acousticPortalBlackBox[i];
+                        AcousticPortalTelemetryEntry entry = _acousticPortalBlackBox[i];
                         writer.Write(entry.Frame);
                         writer.Write(entry.NodeCount);
                         writer.Write(entry.CornerCount);

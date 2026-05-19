@@ -83,6 +83,56 @@ Before publishing:
 - Can every "current" item be shown in game?
 - Would a player feel misled after buying today?
 
+## 2026-05-19 Promise Lint Gate V0
+
+Run this gate on every public roadmap, Steam block, site block, press pitch, creator pitch, social bio, pinned post, demo page, and launch announcement before publication.
+
+### Lint Classification
+
+Every public sentence must be tagged internally as one of:
+
+| Tag | Meaning | Required proof |
+|---|---|---|
+| `CURRENT_BUILD` | Present in the build players can access now. | Build ID, screenshot/clip/demo proof, or release note. |
+| `ACTIVE_WORK` | Implemented enough to show, but not stable. | Internal build evidence and owner approval. |
+| `PLANNED_FOCUS` | Direction, not commitment. | Roadmap owner approval and non-date wording. |
+| `INVESTIGATING` | Possible future direction. | No sales CTA tied to the sentence. |
+| `NOT_PLANNED` | Explicit expectation control. | Scope owner approval. |
+| `REMOVE` | Unproved, misleading, or too expensive to defend. | None. Delete or rewrite. |
+
+### Forbidden-To-Allowed Rewrite Matrix
+
+| Risk family | Reject wording | Safer replacement | Public proof required |
+|---|---|---|---|
+| Co-op | "co-op", "multiplayer", "play with friends" | "single-player-first" or "not part of the current public plan" | Scope decision only; no feature tease. |
+| Scale | "massive open world", "100km ocean", "seamless world" | "large hostile underwater spaces" | In-game traversal clip or remove. |
+| Performance | "zero stutter", "locked 60 FPS", "runs great on low-end" | "performance work is ongoing" | Hardware/settings matrix, profiler capture, build ID. |
+| Simulation | "fully simulated ocean", "realistic ecosystem" | "systems-driven pressure, salvage, and machinery" | Gameplay capture showing player-facing behavior. |
+| Visuals | "ray-traced", "cinematic", "AAA graphics" | "industrial deep-sea noir art direction" | Real screenshot/capture, not concept art. |
+| Release timing | "coming soon", "monthly updates", "launching this year" | "date TBD" or omit | Production lock and platform page. |
+| Demo/access | "demo now", "keys available" | "demo/access will be announced when ready" | Stable build, key/access log, public link. |
+| Competitor | "Subnautica killer", "better than Subnautica" | "for players who want pressure, machinery, and black-water survival" | Never use direct attack copy. |
+| AI/assets | "handmade everything" when unverified | "real in-game capture only in public assets" | Asset metadata source and approval. |
+
+### Mechanical Lint Procedure
+
+1. Copy the public text into a review scratchpad.
+2. Mark every sentence with one classification tag from the table above.
+3. Search manually for these terms before publish: `co-op`, `multiplayer`, `zero`, `locked`, `massive`, `seamless`, `fully simulated`, `realistic ecosystem`, `Subnautica killer`, `coming soon`, `soon`, `guarantee`, `promise`.
+4. For every `CURRENT_BUILD` sentence, attach a build ID or asset ID.
+5. For every `ACTIVE_WORK` or `PLANNED_FOCUS` sentence, remove dates, guarantees, and sales pressure.
+6. Delete any sentence that cannot survive the proof check in under five minutes.
+
+### Approved Public Scope Lines
+
+```text
+HECTON-8 is single-player-first.
+Co-op is not part of the current public plan.
+We are not making performance claims without measured hardware and build proof.
+Public screenshots and videos should be real in-game capture, not target renders.
+Dates and scope may change until a build is publicly locked.
+```
+
 ## Current HECTON-8 Decision
 
 Do not publish public roadmap until a Steam page/demo state exists. Use this policy internally now.

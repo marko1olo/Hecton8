@@ -20,6 +20,64 @@ CompileRun: false
 Reason: Missing SHINOBU_123 XML block in Docs/Tasks/CURRENT_BATCH.md
 </SELF_AUDIT>
 
+## 2026-05-19 - SHINOBU_123 Polish Pass 3 Audit
+
+What was wrong:
+- Task 16 evidence was not literal enough: root AUP and solve time were not named telemetry lanes.
+- Task 17 still looked like a layout/tuning facade rather than a live generation readout.
+- Task 19 used one debug color instead of the specified green/red/blue rig semantics.
+
+What was done:
+- Repacked `LeviathanTerrainIkTelemetryEntry` without changing the 96B stride: byte 60 quality, byte 64 `double3 RootAup`, byte 88 average iterations, byte 92 solver microseconds.
+- Added offset checks through `UnsafeUtility.GetFieldOffset` inside `LeviathanTerrainIkLayout.Validate()`.
+- Added `LeviathanProceduralTunerSnapshot` and `ILeviathanProceduralTunerSource`; the editor window now reads live active bones, solver microseconds, iterations, and quality through the snapshot contract.
+- Patched `OnDrawGizmos` to draw green spine lines, red active IK/head-target chain, and blue tail secondary spring overlay.
+
+Cinematic cheats used:
+- Still no Animator path. Spine motion remains deterministic sine/FABRIK math; tail/secondary motion remains spring/Verlet visual fakery rather than rigidbody chains.
+
+Exact microseconds saved estimate:
+- Telemetry repack: runtime cost below 1 us; avoids post-crash manual reconstruction.
+- Snapshot interface vs editor reflection: player runtime 0 us; editor inspection avoids reflection boxing churn.
+- Gizmo color semantics: player runtime 0 us; editor-only.
+
+<SELF_AUDIT agent_id="SHINOBU_123" pass="3" compile_status="PENDING_CPU_GATE">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS_PENDING_COMPILE">Binary rig scan and deterministic mock rig fallback remain in place.</TASK>
+    <TASK id="02" status="PASS_PENDING_COMPILE">Touched giant-fauna path remains Animator-free.</TASK>
+    <TASK id="03" status="PASS_PENDING_COMPILE">Hot animation DTOs remain public-field explicit layouts.</TASK>
+    <TASK id="04" status="PASS_PENDING_COMPILE">`LeviathanBoneDTO` is 64B at offset 0; layout validation now checks field offsets, not only sizes.</TASK>
+    <TASK id="05" status="PASS_PENDING_COMPILE">`MockLeviathanTargetJob` remains deterministic AUP test input.</TASK>
+    <TASK id="06" status="PASS_PENDING_COMPILE">Serpentine spine job and runtime sine swim parameters remain wired.</TASK>
+    <TASK id="07" status="PASS_PENDING_COMPILE">FABRIK job remains present with quality-driven iterations.</TASK>
+    <TASK id="08" status="PASS_PENDING_COMPILE">Secondary spring job and tail visual fake remain present.</TASK>
+    <TASK id="09" status="PASS_PENDING_COMPILE">64B bone DTOs are uploaded through `GraphicsBufferUploadUtility.UploadNativeArray`, which uses `LockBufferForWrite` plus guarded memcpy.</TASK>
+    <TASK id="10" status="PASS_PENDING_COMPILE">`GlobalQualityWeight` still drives segment and iteration curves continuously.</TASK>
+    <TASK id="11" status="PASS_PENDING_COMPILE">Procedural strike remains array/matrix-driven; Animator trigger route remains removed.</TASK>
+    <TASK id="12" status="PASS_PENDING_COMPILE">Root AUP is now also recorded in telemetry; bite solve still subtracts AUP before float math.</TASK>
+    <TASK id="13" status="PASS_PENDING_COMPILE">64B collider proxy staging remains in Vault.</TASK>
+    <TASK id="14" status="PASS_PENDING_COMPILE">Rollback-relevant touched Burst jobs remain deterministic.</TASK>
+    <TASK id="15" status="PASS_PENDING_COMPILE">Large Vault buffers still use uninitialized memory with explicit seed/hydration writes.</TASK>
+    <TASK id="16" status="PASS_PENDING_COMPILE">300-frame terrain telemetry now records root AUP, active bones, average iterations, quality, and solver microseconds; dump path unchanged.</TASK>
+    <TASK id="17" status="PASS_PENDING_COMPILE">UI Toolkit tuner now shows live bone count, solver time, iteration count, and quality through a snapshot interface.</TASK>
+    <TASK id="18" status="PASS_PENDING_COMPILE">CSV byte parser and endian-guard binary rig hydration remain unchanged.</TASK>
+    <TASK id="19" status="PASS_PENDING_COMPILE">Gizmo x-ray now uses green/red/blue semantic colors from Vault matrices.</TASK>
+    <TASK id="20" status="PASS_PENDING_COMPILE">Self-audit now includes layout offset validation and matrix/Vault checks.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <LeviathanBoneDTO size="64">0..63 `float4x4 LocalToWorld`. `UnsafeUtility.SizeOf=64`; `GetFieldOffset(LocalToWorld)=0`.</LeviathanBoneDTO>
+    <LeviathanBoneConstraintsDTO size="16">0 int ParentIndex; 4 ushort ChainId; 6 ushort Flags; 8 float SegmentLengthMeters; 12 float MaxBendRadians.</LeviathanBoneConstraintsDTO>
+    <LeviathanCapsuleColliderDTO size="64">0 float3 Center; 12 float Radius; 16 float3 Axis; 28 float HalfHeight; 32 uint OwnerHash; 36 uint Flags; 40 int BoneIndex; 44 int FrameIndex; 48 float3 AabbExtents; 60 uint Padding0.</LeviathanCapsuleColliderDTO>
+    <LeviathanTerrainIkTelemetryEntry size="96">0 int FrameIndex; 4 int ActiveSegmentCount; 8 uint Flags; 12 uint StateHash; 16 float3 HeadPosition; 28 float3 TailPosition; 40 float3 IntendedVelocity; 52 float MaxTerrainPushMeters; 56 float TailWhipSecondsRemaining; 60 float GlobalQualityWeight; 64 double3 RootAup; 88 float AverageFabrikIterations; 92 float BurstSolveMicros. 96 % 16 = 0.</LeviathanTerrainIkTelemetryEntry>
+    <LeviathanProceduralTunerSnapshot size="16">0 int ActiveSegmentCount; 4 int ConstraintIterations; 8 float BurstSolveMicros; 12 float GlobalQualityWeight.</LeviathanProceduralTunerSnapshot>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE_EXPLANATION>Below `GlobalQualityWeight=0.3`, the terrain path marks low-tier flags, active segment budget collapses toward eight, iterations collapse toward one, and SDF work uses the nearest/cheapest route. Middle, high, and ultra grow the same Vault-backed math toward 20 segments and 10 pulls without hardware if/else switches.</SCALABILITY_CURVE_EXPLANATION>
+  <H_PHI_VAULT_STATUS>Zero private persistent `NativeArray`, `NativeList`, or `NativeHashMap` fields in `FaunaKinematicsRuntime`. Handles requested: LeviathanSegmentPositions, LeviathanPreviousSegmentPositions, LeviathanBoneMatrices, LeviathanProceduralBoneConstraints, LeviathanCreatureColliderProxies, LeviathanRigCsvScratch, LeviathanProceduralRigState, LeviathanTerrainIkTelemetryRing, LeviathanTerrainIkTelemetryCursor, JawIkTargets, CurrentJawPos, BiteIkSolveEvents, BiteIkTelemetryCursor.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Terrain IK consumes resolved Vault arrays and outputs one scheduled `JobHandle`; bite IK chains after terrain IK when a target is ready. `[NoAlias]` remains on touched NativeArray job fields. LateFrame still uses `DispatcherJobSwap.TryComplete(false)`; no arbitrary blocking complete was added to gameplay tick.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef, no sibling runtime dependency, and no new direct concrete cross-domain reference was added. Compile proof is pending CPU gate.</COMPILE_GUARD>
+  <THE_DEAR_LIE_CONFIRMATION>Physics/Animator truth is replaced by deterministic sine travel, bounded FABRIK pulls, damped follower/spring visual motion, and direct 64B matrix upload. Before: Animator/joint/Transform work with managed graph overhead, roughly `O(bones * layers + joints)`. After: Burst `O(activeSegments * qualityIterations)` plus constant-stride memcpy; low quality sheds entire hidden work by reducing segments/iterations rather than changing assets.</THE_DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
 ## 2026-05-19 - SHINOBU_123 Leviathan Procedural IK Pass 2
 
 What was wrong:
@@ -329,4 +387,53 @@ Exact microseconds saved estimate:
   <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>`[NoAlias]` applied on touched Burst NativeArray fields. Spine schedules terrain IK then bite IK. Tentacle schedules one Verlet/matrix/telemetry job. Residual risk: existing late-frame `TryComplete(false)` swap pattern remains; pure dispatcher-returned JobHandle integration is not complete.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
   <COMPILE_GUARD>No asmdef or sibling runtime dependency was added. Build not run because CPU gate blocked it.</COMPILE_GUARD>
   <THE_DEAR_LIE_CONFIRMATION>Before: Animator graph plus Transform hierarchy plus possible joint appendage simulation. After: `O(activeSegments * qualityIterations)` Burst body solve and `O(activeTentacles * integratedNodes * qualityIterations)` tentacle solve, with low-quality visual tail fill replacing hidden constraint work.</THE_DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
+## 2026-05-19 - SHINOBU_123 Canonical Bottom Audit Pass 3
+
+What was wrong:
+- Terrain telemetry carried anonymous padding instead of explicit root AUP and solve-time forensic data.
+- The tuner had sliders and byte layout proof, but not a live generation-time/bone-count readout.
+- The gizmo x-ray read Vault matrices but did not encode green spine, red IK, and blue secondary spring semantics.
+
+What was done:
+- Repacked `LeviathanTerrainIkTelemetryEntry` at the same 96B stride: 60 quality, 64 `double3 RootAup`, 88 average iterations, 92 solver microseconds.
+- Added offset validation with `UnsafeUtility.GetFieldOffset` for bone, constraint, collider, telemetry, and mock target DTO lanes.
+- Added `LeviathanProceduralTunerSnapshot` plus `ILeviathanProceduralTunerSource`; the editor reads live active bones, solver microseconds, iterations, and quality through the interface.
+- Changed `OnDrawGizmos` to green standard spine, red active IK/head target, and blue tail secondary spring overlay.
+
+Microseconds saved / protected:
+- Runtime telemetry repack: under 1 us expected; protects postmortem time by writing the missing facts into the dump.
+- Snapshot interface: 0 us in player builds unless queried; avoids editor private-field reflection churn.
+- Gizmo semantics: 0 us in player builds.
+
+<SELF_AUDIT agent_id="SHINOBU_123" pass="3_canonical_bottom" compile_status="PENDING_CPU_GATE">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS_PENDING_COMPILE">Binary rig scan and deterministic mock rig fallback remain present.</TASK>
+    <TASK id="02" status="PASS_PENDING_COMPILE">Touched giant-fauna path remains free of Animator/GetComponent Animator/LookAt routes.</TASK>
+    <TASK id="03" status="PASS_PENDING_COMPILE">Hot DTOs use explicit public fields, not properties.</TASK>
+    <TASK id="04" status="PASS_PENDING_COMPILE">64B `LeviathanBoneDTO` offset 0 matrix and related DTO offsets are now mechanically checked.</TASK>
+    <TASK id="05" status="PASS_PENDING_COMPILE">`MockLeviathanTargetJob` remains deterministic AUP input.</TASK>
+    <TASK id="06" status="PASS_PENDING_COMPILE">Serpentine Burst swim job and runtime sine parameters remain wired.</TASK>
+    <TASK id="07" status="PASS_PENDING_COMPILE">FABRIK job remains guarded and quality-iterated.</TASK>
+    <TASK id="08" status="PASS_PENDING_COMPILE">Secondary motion spring fake remains in the IK stage surface.</TASK>
+    <TASK id="09" status="PASS_PENDING_COMPILE">64B matrix DTOs upload through `LockBufferForWrite` plus guarded memcpy.</TASK>
+    <TASK id="10" status="PASS_PENDING_COMPILE">Continuous `GlobalQualityWeight` still controls segment/iteration cost.</TASK>
+    <TASK id="11" status="PASS_PENDING_COMPILE">Procedural strike path remains matrix/IK-driven.</TASK>
+    <TASK id="12" status="PASS_PENDING_COMPILE">AUP-relative float solving remains; root AUP is now in telemetry.</TASK>
+    <TASK id="13" status="PASS_PENDING_COMPILE">64B capsule collider proxy staging remains present.</TASK>
+    <TASK id="14" status="PASS_PENDING_COMPILE">Touched rollback-relevant jobs remain deterministic Burst.</TASK>
+    <TASK id="15" status="PASS_PENDING_COMPILE">Large Vault buffers still use uninitialized memory with explicit writes.</TASK>
+    <TASK id="16" status="PASS_PENDING_COMPILE">300-frame telemetry now stores root AUP, bone count, average iterations, quality, and solver microseconds.</TASK>
+    <TASK id="17" status="PASS_PENDING_COMPILE">Editor tuner now provides live bone/time/iteration/quality readout through a snapshot interface.</TASK>
+    <TASK id="18" status="PASS_PENDING_COMPILE">CSV byte parser and endian-safe binary hydration remain present.</TASK>
+    <TASK id="19" status="PASS_PENDING_COMPILE">Gizmos now use green/red/blue semantic colors from Vault matrices.</TASK>
+    <TASK id="20" status="PASS_PENDING_COMPILE">Self-audit validates size/offset layout, Vault buffers, and finite matrices.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>Bone 64B: offset 0 `float4x4 LocalToWorld`. Constraint 16B: 0/4/6/8/12. Collider 64B: 0/12/16/28/32/36/40/44/48/60. Telemetry 96B: 0 frame, 4 bones, 8 flags, 12 hash, 16 head, 28 tail, 40 velocity, 52 terrain push, 56 tail whip, 60 quality, 64 `double3 RootAup`, 88 avg iterations, 92 solve micros. 96 % 16 = 0.</STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE_EXPLANATION>Below weight 0.3, low-tier flags collapse terrain/spine work toward nearest SDF, eight segments, and one pull. Middle/high/ultra grow the same buffers toward 20 segments and 10 pulls through math curves, no binary hardware switch.</SCALABILITY_CURVE_EXPLANATION>
+  <H_PHI_VAULT_STATUS>Zero private persistent NativeArray/List/HashMap fields. Handles: LeviathanSegmentPositions, LeviathanPreviousSegmentPositions, LeviathanBoneMatrices, LeviathanProceduralBoneConstraints, LeviathanCreatureColliderProxies, LeviathanRigCsvScratch, LeviathanProceduralRigState, LeviathanTerrainIkTelemetryRing, LeviathanTerrainIkTelemetryCursor, JawIkTargets, CurrentJawPos, BiteIkSolveEvents, BiteIkTelemetryCursor.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Terrain IK schedules one job; bite IK chains after it when ready. `[NoAlias]` remains on touched NativeArray job fields. Late frame uses `DispatcherJobSwap.TryComplete(false)`; no new gameplay tick blocking complete was added.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef, no sibling runtime dependency, no new direct concrete cross-domain route. Build proof remains pending because CPU gate must be checked and obeyed.</COMPILE_GUARD>
+  <THE_DEAR_LIE_CONFIRMATION>Animator/joint/Transform simulation is replaced by deterministic sine travel, bounded FABRIK pulls, damped spring/Verlet visual motion, and direct 64B matrix upload. Before `O(bones * layers + joints)` managed/physics work; after `O(activeSegments * qualityIterations)` Burst plus constant-stride memcpy.</THE_DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>

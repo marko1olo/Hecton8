@@ -279,3 +279,83 @@ Hardware Impact: Test-only path adds one baseline write per cell but removes non
 Verification: Guarded filtered compile at CPU 9.4% with no active compiler produced the same 17 foreign errors and no SHINOBU_111 errors. Temporary MSBuild filter was removed.
 
 Correction: After making the mock write `BaselineDensity`, removed the stale `[ReadOnly]` attribute from that NativeArray field. Guarded filtered compile at CPU 10.7% again reports the same 17 foreign errors and no SHINOBU_111 errors. This is a Unity safety-handle fix, not a syntax-only fix.
+
+## Decision 22 - Async Latency Is A Completion Fact
+
+Problem: `VoxelDeltaTelemetryRecordJob` could record bytes and compression ratio at schedule time, but real disk latency is only known after the async pager completes the write. Writing `0 ms` into the ring made Task 16 look implemented while hiding the only I/O spike number designers need.
+
+Solution: Added `ScheduleDiskLatencyTelemetryPatch`, a Burst job that scans the fixed 300-entry telemetry ring for `SectorHash` and `SimulationFrame`, patches `DiskWriteLatencyMs`, and marks either `TelemetryFlagDiskLatencyPatched` or `TelemetryFlagDiskLatencySpike` against the tuning threshold. The method consumes caller-provided async completion latency and does not reference a concrete pager.
+
+Rejected Alternatives: Polling `H8BinaryWorldPager` directly, storing a managed callback list, or leaving schedule-time `0 ms`. Concrete polling breaks the compile wall; managed callback state violates Zero-GC; fake zero latency destroys black-box value.
+
+Scalability potential: Low and middle devices get honest write-spike detection for throttling and QA dumps. High/Ultra can raise byte budgets while still correlating disk latency to compressed payload size.
+
+Hardware Impact: No hot compression cost. The patch job is a bounded 300-entry scan only after write completion, expected below 5 us on low-end CPUs, pending profiler proof.
+
+Verification: Guarded filtered compile at CPU 40% with no active compiler produced 21 foreign errors and no SHINOBU_111 errors. Temporary MSBuild filter was removed.
+
+## Decision 23 - CSV Profiles Need Domain Meaning, Not Only Knobs
+
+Problem: The CSV parser accepted scalar compression knobs but not the requested biome/depth profile identity. That left designers unable to bind a compression profile to a world context without recompiling code or adding managed parsing.
+
+Solution: Extended `VoxelDeltaCompressionTuningDTO` to explicit 64B with `DepthMinMeters` at offset 52, `DepthMaxMeters` at offset 56, and `_pad0` at offset 60. The zero-GC byte parser now accepts `biome,<ascii>` and hashes the lowercase biome token into `ProfileHash`, plus `depth_min_m` and `depth_max_m` scalar keys. `BinaryLayoutManifest` asserts the new offsets.
+
+Rejected Alternatives: Using managed strings, keeping biome only in comments, or adding a separate variable-size profile record. Managed strings allocate; comments are not data; a variable record would complicate Burst hydration and WAL audit proof.
+
+Scalability potential: Low/Middle/High/Ultra all consume the same continuous numeric profile. Biome/depth ranges provide designer routing without binary device tiers.
+
+Hardware Impact: Profile hydration remains cold and allocation-free. Runtime compression cost is unchanged except for reading an already-resolved 64B tuning DTO.
+
+Verification: Static scans confirm no `string.Split`, JSON, or managed text parser in the SHINOBU path. Guarded filtered compile reports no SHINOBU_111 errors; global build remains foreign-blocked.
+
+## Decision 24 - Blackbox Dump Must Be Decodable
+
+Problem: The 300-frame telemetry dump wrote only raw 64-byte entries. Without a magic, version, stride, cursor, reason flags, or ordered emission, the dump could not reliably reconstruct the last 300 frames after a disk-latency failure.
+
+Solution: Added `VoxelDeltaTelemetryDumpHeaderDTO`, explicit 64B. `TryDumpTelemetryRing` now writes the header and then emits telemetry entries oldest-to-newest based on the ring cursor. Added cursor-aware latency spike dump helpers and spike-flag dump detection.
+
+Rejected Alternatives: Keeping the raw blob because entries are fixed-size, or writing managed JSON metadata. A raw blob is forensic guesswork after wraparound; JSON violates the binary/zero-GC direction.
+
+Scalability potential: Low devices get actionable MicroSD latency forensic dumps; high/ultra devices can correlate NVMe write latency with compression effort and payload size using the same ring layout.
+
+Hardware Impact: Fault path only. Hot compression path cost is 0 us; dump path writes one 64B header plus bounded ring bytes.
+
+## Decision 25 - LZ4 Tail Rules Are Compatibility, Not Decoration
+
+Problem: The custom LZ4-compatible encoder produced standard-looking sequences but did not enforce the LZ4 block end constraints: final 5 bytes must remain literals and a match must not start in the final 12-byte region. That makes native `LZ4_decompress_safe` compatibility unproven.
+
+Solution: Added `Lz4LastLiterals=5` and `Lz4MfLimit=12`. Match search now ends before the forbidden tail region, and match extension stops before the final literal tail. If compression cannot beat raw bytes, the path stores raw RLE bytes with the raw flag.
+
+Rejected Alternatives: Renaming the codec to custom-only or claiming compatibility without a tail-rule proof. Custom-only would break Task 07 intent; false compatibility would create corrupt WAL loads.
+
+Scalability potential: Low pressure still stores raw/RLE when compression is not worth CPU. High/Ultra keep denser LZ4 search while respecting decode compatibility.
+
+Hardware Impact: Possible tiny compression-ratio loss from reserved tail literals. Benefit is avoiding bad decode/retry paths and sector fallback stalls.
+
+## Decision 26 - Legacy Voxel Processor Hot Registry Cache
+
+Problem: The legacy `VoxelDeltaProcessor.Tick()` path called save registration and queued-carve helpers that could reach `GlobalRegistry.Save`, `GlobalRegistry.ScalabilityTier`, and `GlobalRegistry.SimulationBucketer` every frame.
+
+Solution: Cache `IDataVault`, `ISimulationBucketer`, `ISaveService`, and `HectonQualityTier` in `OnEnable`. Runtime drain/register helpers now consume cached references only. This removes hot-path service discovery without changing save/compression ownership.
+
+Rejected Alternatives: Leaving the old path because the new WAL compressor is clean, or adding a broad service-rebind framework from the voxel lane. Ignoring it leaves technical rot visible; broad rebind infrastructure is not SHINOBU_111 ownership.
+
+Scalability potential: All tiers avoid per-frame registry lookups. Tier value remains cached until a proper typed rebound signal is wired by the global-authority owner.
+
+Hardware Impact: Static microsecond estimate is small per frame, but it removes branch/cache noise from the legacy carve Tick lane.
+
+Residual Debt: `ChunkDeltaState` still owns old per-chunk persistent NativeArrays. Migrating that state to Vault handles safely requires a dedicated legacy carve-state migration and save/load replay proof; it was not rewritten blindly in this WAL compression pass.
+
+## Decision 27 - Designer CSV And Editor Facade Must Survive Real Edits
+
+Problem: The CSV parser accepted only the clean sample format, and the editor telemetry reads mixed direct `TryGetBuffer` with handle-based tuning writes.
+
+Solution: CSV parsing now strips UTF-8 BOM on the first key, accepts optional `+`, supports exponent notation through deterministic multiply loops, and cuts inline comments before float parsing. The editor facade resolves telemetry/cursor/sector stats through `TryGetBufferHandle(...).Resolve(vault)`.
+
+Rejected Alternatives: Requiring perfectly formatted CSV files, or leaving editor reads on direct buffer views. Designer files drift; mixed access weakens generation/stale-handle evidence.
+
+Scalability potential: Biome/depth/tuning profiles remain continuous and editable across low, middle, high, and ultra device targets.
+
+Hardware Impact: CSV and editor work are cold/editor paths. Hot compression path remains allocation-free.
+
+Verification: Guarded filtered compile after these patches reports 22 foreign errors and no SHINOBU_111 errors. Foreign blockers are Visor reconstruction contracts and Somatic VR comfort DTOs; the temporary build filter was removed.

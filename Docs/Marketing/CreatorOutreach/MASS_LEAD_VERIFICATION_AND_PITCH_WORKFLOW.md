@@ -165,6 +165,7 @@ Status: blocked until real screenshots/Steam page/demo proof exists. This is an 
 Use this only after:
 
 - `PLAN-SHOT-001`, `PLAN-SHOT-003`, and one base/machinery shot pass QA;
+- every creator-facing asset in the packet has creator utility 3/4+ in `QA/MARKETING_ASSET_QA_CHECKLIST.md` and maps to the recipient's CRM row;
 - official Steam page or presskit URL exists if the message mentions it;
 - YouTube About/site contact route is verified by the human owner where required;
 - the final email contains no co-op, clone-war, or performance claim;
@@ -174,18 +175,18 @@ Use this only after:
 
 Ask: "Would this be a fit for future coverage or feedback when the preview slice is ready?" Do not ask for coverage now.
 
-| Send order | Creator | Current CRM gate | Required asset before send | Pitch angle | Notes |
-|---:|---|---|---|---|---|
-| 1 | Kage848 | `VERIFY_BEFORE_CONTACT` | `PLAN-SHOT-001`, `PLAN-SHOT-003`, Steam/presskit link | UNDERWATER_SURVIVAL | Hot SN2-active draft exists; human must reveal gated YouTube email. |
-| 2 | AldemarHD | `VERIFY_BEFORE_CONTACT` | German-ready screenshot pack | REGIONAL_FIRST_LOOK | Use German draft; no auto-translated hype. |
-| 3 | Zombyra | `VERIFY_BEFORE_CONTACT` | German base/machinery screenshot | REGIONAL_FIRST_LOOK | Explicit no-coop line. |
-| 4 | SpielbaerLP | `VERIFY_BEFORE_CONTACT` | German machinery/base shot or clip | REGIONAL_FIRST_LOOK | Long-form fit; do not send without gameplay proof. |
-| 5 | Keith Ballard | `VERIFY_BEFORE_CONTACT` | Screenshot/Steam proof and no-pressure opener | UNDERWATER_SURVIVAL | Confirm official YouTube RSS/About first. |
-| 6 | Accurize2 | `VERIFY_BEFORE_CONTACT` | Survival screenshot plus Steam/presskit link | UNDERWATER_SURVIVAL | Verify official route before contact. |
-| 7 | Aavak | `NEEDS_ASSET` | Machinery/base gameplay clip | BASE_SYSTEMS | Do not use Twitch chat/DM as cold route. |
-| 8 | Wanderbots | `NEEDS_ASSET` | Real gameplay clip, no AI-looking asset risk | INDIE_DEMO | Confirm official contact policy and AI-asset boundary. |
-| 9 | GameEdged | `NEEDS_ASSET` | Steam page plus survival/base clip | SURVIVAL_ROUTE_RISK | Verify official YouTube route after asset exists. |
-| 10 | Splattercatgaming | `NEEDS_ASSET` | Strong indie first-look clip/Steam page | INDIE_DEMO | Needs asset strength; avoid generic email. |
+| Send order | Creator | Current CRM gate | Required asset before send | Creator utility gate | Pitch angle | Notes |
+|---:|---|---|---|---|---|---|
+| 1 | Kage848 | `VERIFY_BEFORE_CONTACT` | `PLAN-SHOT-001`, `PLAN-SHOT-003`, Steam/presskit link | 3/4+ for direct underwater survival and salvage-route read | UNDERWATER_SURVIVAL | Hot SN2-active draft exists; human must reveal gated YouTube email. |
+| 2 | AldemarHD | `VERIFY_BEFORE_CONTACT` | German-ready screenshot pack | 3/4+ plus localization QA pass | REGIONAL_FIRST_LOOK | Use German draft; no auto-translated hype. |
+| 3 | Zombyra | `VERIFY_BEFORE_CONTACT` | German base/machinery screenshot | 3/4+ plus localization QA pass | REGIONAL_FIRST_LOOK | Explicit no-coop line. |
+| 4 | SpielbaerLP | `VERIFY_BEFORE_CONTACT` | German machinery/base shot or clip | 3/4+ plus gameplay proof, not static mood | REGIONAL_FIRST_LOOK | Long-form fit; do not send without gameplay proof. |
+| 5 | Keith Ballard | `VERIFY_BEFORE_CONTACT` | Screenshot/Steam proof and no-pressure opener | 3/4+ for underwater-survival clarity | UNDERWATER_SURVIVAL | Confirm official YouTube RSS/About first. |
+| 6 | Accurize2 | `VERIFY_BEFORE_CONTACT` | Survival screenshot plus Steam/presskit link | 3/4+ for survival route and identity | UNDERWATER_SURVIVAL | Verify official route before contact. |
+| 7 | Aavak | `NEEDS_ASSET` | Machinery/base gameplay clip | 3/4+ for base systems and visible consequence | BASE_SYSTEMS | Do not use Twitch chat/DM as cold route. |
+| 8 | Wanderbots | `NEEDS_ASSET` | Real gameplay clip, no AI-looking asset risk | 3/4+ for indie discovery and player verb | INDIE_DEMO | Confirm official contact policy and AI-asset boundary. |
+| 9 | GameEdged | `NEEDS_ASSET` | Steam page plus survival/base clip | 3/4+ for survival-route risk | SURVIVAL_ROUTE_RISK | Verify official YouTube route after asset exists. |
+| 10 | Splattercatgaming | `NEEDS_ASSET` | Strong indie first-look clip/Steam page | 3/4+ for indie discovery and first-look clarity | INDIE_DEMO | Needs asset strength; avoid generic email. |
 
 ### Wave B - Demo/Preview Only
 
@@ -200,6 +201,7 @@ outreach_batch:
 sent_date:
 contact_route_verified:
 asset_ids_sent:
+creator_utility_score:
 utm_content:
 reply_deadline:
 followup_allowed: yes/no
@@ -207,6 +209,45 @@ notes:
 ```
 
 One follow-up only, and only if a new asset or demo exists.
+
+## 2026-05-19 CRM-100 Asset Unlock Map V0
+
+Current CRM state: 100 rows, 0 raw. Distribution: 23 `VERIFY_BEFORE_CONTACT`, 22 `NEEDS_ASSET`, 52 `LOW_PRIORITY_VERIFY_LATER`, 3 `DO_NOT_CONTACT`.
+
+The next useful creator work is not more names. It is proving the planned assets below and then rechecking exact official contact routes.
+
+| Planned asset | Unlocks first | Creator rows affected | Why this asset matters | Still blocked by |
+|---|---|---|---|---|
+| `PLAN-SHOT-001` Identity hero | Warm screenshot/Steam proof | Kage848, Keith Ballard, Accurize2, CohhCarnage, Dad's Gaming Addiction, Games4Kickz, Timm Plays Games | Direct underwater-survival creators need to see the project is not bright reef clone art. | QA score 10/12, Steam/presskit URL if mentioned, human contact-route reveal. |
+| `PLAN-SHOT-002` Pressure room | Base/system proof | NOOBLETS, Nerdzeitalter, Boubers, Aavak, TotalXclipse | Engineering/base-system creators need machinery, gauges, leaks, and pressure-vessel logic, not scenery. | Real gameplay state, not decorative room; official route recheck. |
+| `PLAN-SHOT-003` Salvage contact | First outreach hook | Kage848, Jade PG, GameEdged, EnterElysium, Welonz, paulsoaresjr | Survival-route creators need one readable action: tool, target, hazard, reward. | Player verb readable without caption; Steam/presskit link if used. |
+| `PLAN-SHOT-004` Heavy machine | Machine fantasy proof | NOOBLETS, TotalXclipse, Aavak, BringTheParty, Nerdzeitalter | Systems audiences need heavy interaction and mass. This shot also separates HECTON-8 from generic underwater horror. | Reject if toy-like, clean sci-fi, or static prop. |
+| `PLAN-SHOT-005` Base stress | Base-as-risk proof | Aavak, TotalXclipse, Wanderbots, GameEdged, Splattercatgaming | The base must look like a pressure vessel under failure, not a cozy room. | Failure must be actionable and fair. |
+| `PLAN-SHOT-006` Threat silhouette | Abyss pressure proof | Neyreyan, IGP, Insym VODS, Game Advisor, Splattercatgaming | Horror/pressure rows need dread through instruments, floodlight, and scale, not a monster-pose thumbnail. | Do not send if threat reads as random terrain or AI-looking concept. |
+| `PLAN-SHOT-007` Seed Ship signal | Narrative/system hook | Wanderbots, Welonz, Praetorian HiJynx, EnterElysium | Indie/long-form creators need a reason this is more than a survival clone. | Use only if the build shows system interference honestly. |
+| `PLAN-CLIP-001` Pressure leak decision | First gameplay proof | Aavak, TotalXclipse, GameEdged, Wanderbots, Splattercatgaming | A 10-20s clip can prove player action, consequence, and machinery better than screenshots. | No route crash, no unclear objective, no performance claim. |
+| `PLAN-CLIP-002` Sonar saw it first | Horror/abyss proof | Neyreyan, IGP, Insym VODS, Game Advisor, Crowmeda | The clip should sell sound/instrument dread to horror-adjacent audiences. | Audio/readability must work without caption. |
+| `PLAN-CLIP-003` Salvage failure | Survival-route proof | Kage848, GameEdged, paulsoaresjr, Welonz, Jade PG | Demonstrates route risk and consequence, not mood. | Escalation must follow player action. |
+| `PLAN-CLIP-004` Heavy machine startup | Engineering/base proof | NOOBLETS, Nerdzeitalter, Aavak, TotalXclipse, BringTheParty | Proves machinery interaction and weight for systems audiences. | Reject if it looks like an animation showcase without gameplay consequence. |
+
+### Regional Unlock Notes
+
+| Region/language | Rows | Required before send |
+|---|---|---|
+| German | AldemarHD, Zombyra, SpielbaerLP, HelyaLP, Hirnsturz, KeysJore, Dhalucard, TobinatorLetsPlay, Emmis Zockt, Boubers, Nerdzeitalter | `PLAN-SHOT-001` plus one machinery/base shot, German-safe one-pager, localization QA, official route recheck. |
+| French | STAF_52 | Screenshot/Steam proof plus reviewed French one-liner; no machine-translated send. |
+| Spanish / ES-or-EN | Crowmeda | Strong demo/clip and Spanish-safe pitch; no early screenshot-only contact. |
+| Slovenian-or-English | Kokoplays MB | English-safe route is acceptable only after official contact and current content fit are confirmed. |
+
+### Capture Priority From Creator Utility
+
+1. `PLAN-SHOT-001` plus `PLAN-SHOT-003`: unlocks the largest direct-survival warm packet.
+2. `PLAN-SHOT-002` or `PLAN-SHOT-005`: unlocks engineering/base-system differentiation.
+3. `PLAN-CLIP-001`: unlocks the first real gameplay message to `NEEDS_ASSET` rows.
+4. `PLAN-CLIP-002`: unlocks horror/abyss rows.
+5. `PLAN-SHOT-007`: use later unless the build genuinely supports Seed Ship/system interference.
+
+Do not promote any row to send-ready from this table alone. The asset must pass QA and exact contact route must be verified after the asset exists.
 
 ## What Agents Must Not Do
 

@@ -38,9 +38,9 @@ Task count: 20.
 - [x] Task 12: THE_DEAR_LIE_KINEMATIC_PROXY | DOD: Submarine6DIntegrator skipped stride frames dead-reckon; VehicleMotor headless presentation uses cubic Hermite over local float3 with velocity tangent and GlobalQualityWeight blend | Alternatives rejected: freezing presentation on skipped simulation frames | Estimate: saves 10-40us per 16-vehicle low-quality batch, visual continuity retained.
 - [x] Task 13: AUP_PRECISION_DELTA_COMPACTION | DOD: added explicit 64B `VaultAupSectorLocal32` buffer and deterministic `VaultAupPrecisionDeltaCompactionJob` that wraps local offsets across 5000m sectors and writes local float3 hot rows | Alternatives rejected: running hot physics on absolute doubles | Estimate: 6-18us per 1k active rows static.
 - [x] Task 14: TELEMETRY_BLACKBOX_RING_BUFFER | DOD: dispatcher POST_SIMULATION heartbeat writes `VaultSovereigntyTelemetryEntry` ring with generation-miss delta, stride, quality and last memory-job us; fault path dumps `Docs/AgentLogs/Dump_SHINOBU_100.bin` | Alternatives rejected: reporting profiler proof without compile/profiler run | Estimate: <2us per record static.
-- [x] Task 15: ORPHANED_POINTER_SWEEP_JOB | DOD: added Frost cadence `VaultOrphanedPointerSweepJob` for SHINOBU-owned Vault hot/AUP rows using O(1) swap-pop and active count buffer; SHINOBU_37 culling containers remain documented cross-domain debt | Alternatives rejected: O(n) render-side scans and blind culling rewrite | Estimate: 8-35us per Frost pass budget window static.
+- [x] Task 15: ORPHANED_POINTER_SWEEP_JOB | DOD: added Frost cadence `VaultOrphanedPointerSweepJob` for SHINOBU-owned Vault hot/AUP rows using O(1) swap-pop and active count buffer; Loop 4 also removed SHINOBU_37 local physics culling `NativeQueue`/`NativeParallelMultiHashMap` ownership into Vault SoA buffers | Alternatives rejected: O(n) render-side scans and blind culling rewrite | Estimate: 8-35us per Frost pass budget window static; physics culling hash remains O(N + C) rebuild/query with no owner-local persistent native containers.
 - [x] Task 16: DEPENDENCY_INJECTION_CACHE_WARMUP | DOD: migrated Fauna/Vehicle/Submarine/Acoustic hot paths hold cached `IDataVault` fields and static scan found no `GlobalRegistry.DataVault/Get/TryGet` in those target files; cold fallback uses `GlobalDataVault.TryGetLatestCreated` | Alternatives rejected: per-access service locator fallback in hot ref access | Estimate: 1-2us avoided per hot ref access.
-- [x] Task 17: SIGNAL_BUS_MUTATION_BROADCAST | DOD: expanded `MemoryAddressShiftSignal`/mock signal to 64B with old/new index, moved entity, source frame/hash and compacted count; sweep pushes `FlagSwapPopIndexMove` into `SignalBus<MemoryAddressShiftSignal>` | Alternatives rejected: presentation querying memory manager | Estimate: 1 queue enqueue per moved entity.
+- [x] Task 17: SIGNAL_BUS_MUTATION_BROADCAST | DOD: expanded `MemoryAddressShiftSignal` to 64B and added 64B `VaultMemoryAddressShiftRecord`; sweep writes Vault-owned records/count, then `SystemDispatcher` publishes `FlagSwapPopIndexMove` into `SignalBus<MemoryAddressShiftSignal>` from the Core boundary | Alternatives rejected: Core.Memory direct SignalBus dependency and presentation querying memory manager | Estimate: 1 record write plus 1 main-thread publish per moved entity.
 - [x] Task 18: VAULT_SOVEREIGNTY_EDITOR_WINDOW | DOD: existing `VaultXRayWindow` rebuilt on UI Toolkit; displays block heatmap, generation, allocation/arena bytes, fragmentation, and GlobalQualityWeight-derived stride | Alternatives rejected: second duplicate window and IMGUI-only facade | Estimate: editor-only, 0 runtime us.
 - [x] Task 19: ZERO_GC_CSV_MEMORY_PROFILE_INGESTOR | DOD: `VaultLegacyBinaryArchaeology` streams `memory_overrides.csv` into Vault-owned byte scratch, parses ASCII spans/FNV keys, applies memory capacities and `stride_aggressiveness`; dispatcher polls on Frost cadence in editor/development | Alternatives rejected: `ReadAllBytes`, `string.Split`, managed `List` parser | Estimate: cold/Frost only, 0 hot-path us.
 - [x] Task 20: DETERMINISTIC_GIZMO_MEMORY_VISUALIZER | DOD: editor-only `VaultMemoryGizmoVisualizer` reads Vault AUP/hot rows, reconstructs sector-local runtime positions, draws green contiguous rows and yellow swap-pop moved rows from SignalBus snapshot | Alternatives rejected: mutating debug state or GameObject probes | Estimate: editor-only, 0 runtime build impact.
@@ -68,7 +68,7 @@ Task count: 20.
 ### Loop 2 - Frost Maintenance / Human Control Pass
 
 - Re-read Status/Rationale and re-extracted SHINOBU_100 XML with a bounded regex after `Select-String` matched neighboring agent blocks.
-- Added Vault-owned `VaultAupSectorLocal32`, `VaultSovereigntyActiveEntityCount`, and `VaultMemoryProfileCsvScratch` BufferIDs in the 550-563 SHINOBU range.
+- Added Vault-owned `VaultAupSectorLocal32`, `VaultSovereigntyActiveEntityCount`, and `VaultMemoryProfileCsvScratch` BufferIDs.
 - Added deterministic AUP sector-local compaction and orphaned-row swap-pop sweep in `VaultSovereigntyMaintenance`, scheduled from `SystemDispatcher.RunPreSimulationMemoryDefrag`.
 - Expanded `MemoryAddressShiftSignal` to 64B and wired swap-pop broadcasts through `SignalBus<MemoryAddressShiftSignal>`.
 - Routed dispatcher POST_SIMULATION heartbeat into the 300-frame sovereignty ring; Frost defrag updates generation-miss and max memory job us values.
@@ -76,3 +76,52 @@ Task count: 20.
 - Static checks: `git diff --check` clean except LF/CRLF warnings; no `Pack=1` or Sequential layouts in touched memory files; no missing `CompileSynchronously` in touched Burst job files; no `ReadAllBytes`, `string.Split`, `Regex`, `foreach`, `Dictionary<>`, or `new List<>` in SHINOBU memory facade/parser/gizmo files.
 - Reporting: `Docs/AgentLogs/LOG_SHINOBU_100.md` written with `<SELF_AUDIT>` and explicit byte layouts.
 - Compile status: not run. CPU counter returned 96.9% then 80.3%, so build remains forbidden by AGENTS/user CPU gate.
+
+### Loop 3 - Compile Wall / ABI Collision Hardening
+
+- Re-read Status/Rationale and re-extracted SHINOBU_100 XML with a bounded regex; task count remains 20.
+- Removed the illegal `SignalBus<MemoryAddressShiftSignal>` writer from `Hecton8.Core.Memory`; `VaultOrphanedPointerSweepJob` now writes `VaultMemoryAddressShiftRecord` plus `VaultMemoryAddressShiftCount` into GlobalDataVault.
+- Added the Core-side bridge in `SystemDispatcher.PublishVaultSovereigntyAddressShiftRecords`, preserving one broadcast route without making Core.Memory reference Hecton8.Core.
+- Moved editor/debug facades out of the Core.Memory asmdef: `VaultXRayWindow` now lives in `Assets/_Project/Scripts/Editor`, and `VaultMemoryGizmoVisualizer` lives under Core diagnostics where Core dependencies are legal.
+- Found and removed SHINOBU-created BufferID collisions with WristHud IDs 560-565; late SHINOBU Vault IDs now use 636-641, and `VaultBufferContract.OwnsBufferId` is explicit rather than range-based.
+- Remaining BufferID duplicate scan output is external to SHINOBU_100: 70150-70157 VRSomatic/QuestDag and 70200 SaveWorldPager/ConstructionBuilder.
+- Static checks: no Core.Memory references to `SignalBus<MemoryAddressShiftSignal>`, Core `MemoryAddressShiftSignal`, `HectonFloatingOrigin`, or `HomeostasisBrain`; touched-file `git diff --check` reports only LF/CRLF warnings.
+- Compile status: not run. CPU counter returned 100%, so build remains forbidden by AGENTS/user CPU gate.
+
+### Loop 4 - Physics Culling Vault Closure / Prewarm Repair
+
+- Re-read Status/Rationale before responding and inspected `GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs` after the static scan still showed three persistent native containers.
+- Replaced `_physicsSpatialHash` (`NativeParallelMultiHashMap<int,int>`) with Vault-backed SoA: `ShinobuPhysicsCullingSpatialBucketHeads`, `ShinobuPhysicsCullingSpatialNext`, and `ShinobuPhysicsCullingSpatialCellHashes`. Query remains exact by storing the full cell hash, not bucket-only approximation.
+- Replaced `_physicsStateChangedIndices` `NativeQueue<int>` with `ShinobuPhysicsCullingChangedIndices` plus 64B `PhysicsCullingCounter64` at `ShinobuPhysicsCullingChangedCount`. Burst jobs use atomic `Interlocked.Increment` and `[NoAlias]`.
+- Replaced targeted wake `NativeQueue<PhysicsCullingTargetWakeRequestSignal>` with the existing Vault wake mirror plus 64B `ShinobuPhysicsCullingWakeRequestCount`.
+- Replaced `VaultBufferBinding<T>` hot-path DataVault resolution from `GlobalRegistry.DataVault` service lookup to cached `IDataVault` with `GlobalDataVault.TryGetLatestCreated` cold fallback.
+- Relocated new physics culling BufferIDs to 70630-70635 after finding 70609-70619 are reserved by `ShinobuApexBrainVault` constants even though they are not in the `BufferID` enum.
+- Converted physics culling Burst jobs touched in this pass to `CompileSynchronously = true` and deterministic float mode; hardware radius/sleep/wake scale now consumes continuous `HomeostasisBrain.GlobalQualityWeight` with lerp/smooth polynomial/step instead of binary tier logic.
+- Added boot prewarm for SHINOBU_100 Vault maintenance buffers in `GameBootstrapper.PreallocateDataVaultPrimaryBuffers` and repaired `VaultSurgeryEditTests` expectations for the expanded VaultBufferContract and new aligned DTOs.
+- Static checks: target physics culling file has no `NativeQueue`, `NativeParallelMultiHashMap`, or `Allocator.Persistent`; target Burst attributes all include `CompileSynchronously`; duplicate BufferID enum scan reports only external `70200 SaveWorldPagerWriteArena/ConstructionBuilderOccupancy`.
+- Compile status: not run. Last CPU gate was above 50% with a running `dotnet` process, so build remains forbidden until a later low-load window.
+
+### Loop 5 - Core ABI Explicit Layout / Registry Closure
+
+- Re-read Status/Rationale, `AGENTS.md`, `BINARY_PAYLOAD_INTEGRATION_LEDGER.md`, and re-extracted SHINOBU_100 from `CURRENT_BATCH.md` with `Select-String`; task count remains 20.
+- Converted Core.Memory non-generic memory DTOs to explicit layout without changing sizes: `BlockDescriptor` 40B, `H8AllocationRecord` 48B, `H8MemoryTelemetryEntry` 64B, `VaultRelocationRecord` 32B, `VaultBufferMeta` 48B, `VaultMemoryBlockSnapshot` 48B, `VaultArenaBlock` 32B, and `MemoryDefragTelemetryEntry` 128B.
+- Left generic `VaultBufferHandle<T>` and `VaultBufferSlice<T>` as sequential with size assertions because explicit layout on generic value types is a CLR/IL2CPP compile-risk; they are handles/views, not hot DTO rows.
+- Converted touched dispatcher DTOs to explicit layout: `CriticalMemoryPressureEvent` 32B and `DispatcherBlackBoxEntry` 64B.
+- Removed remaining direct `GlobalRegistry.DataVault` fallback from `SystemDispatcher`; the dispatcher now uses cached `_dataVault` or `GlobalDataVault.TryGetLatestCreated` cold fallback.
+- Added a missing `.meta` for the moved `VaultMemoryGizmoVisualizer.cs` diagnostics file; the old source had no tracked meta to preserve.
+- Static checks: no direct `GlobalRegistry.DataVault/Get/TryGet` remains in SHINOBU-touched memory/physics route; no persistent native allocations remain in `Assets/_Project/Scripts/AI` or `Assets/_Project/Scripts/Physics`; touched Burst scan is clean; touched-file `git diff --check` reports only LF/CRLF warnings.
+- BufferID proof: SHINOBU IDs 636-641 and 70630-70635 have no source collisions outside their enum declarations; broad enum duplicate scan currently reports external collisions at 70200, 70550, and 70800-70807.
+- External debt found and not hijacked: `Assets/_Project/Scripts/AI/Pathfinding/PathFunnelContracts.cs` and `Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs` still contain `Pack=1` / non-synchronous Burst flags in separate AI ownership lanes.
+- Compile status: not run. CPU gate measured 97.9%, so AGENTS/user rules forbid `dotnet build`.
+
+### Loop 6 - Physics Culling Scratch Vault Closure
+
+- Re-read Status/Rationale and re-extracted the SHINOBU_100 XML block from `CURRENT_BATCH.md` using a bounded `IndexOf` command; task count remains 20.
+- Moved cold physics-culling CSV scratch from a managed `byte[]` into Vault buffer `ShinobuPhysicsCullingCsvScratch` (70636), capacity 4096 bytes.
+- Moved legacy binary radii header scratch from a managed `byte[]` into Vault buffer `ShinobuPhysicsCullingLegacyRadiiScratch` (70637), capacity 64 bytes.
+- Changed CSV and legacy `.h8bin` hydration to read `FileStream` bytes directly into Vault-backed `NativeArray<byte>` spans using `NativeArrayUnsafeUtility`, then parse `ReadOnlySpan<byte>` without managed staging arrays.
+- Removed the 9-cell managed `int3[]` neighbor scratch by iterating the 3x3 cell neighborhood directly in `BuildPhysicsCullingSpatialCandidates`.
+- Kept `_physicsFrustumPlaneScratch = new Plane[6]` as a pre-existing Unity API interop scratch for `GeometryUtility.CalculateFrustumPlanes(Camera, Plane[])`; it is not authoritative state and is not a native persistent allocation.
+- Static checks: no `NativeQueue`, `NativeParallelMultiHashMap`, `Allocator.Persistent`, private byte-array scratch, or private int3-array scratch remains in `GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs`; no `GlobalRegistry.DataVault/Get/TryGet` remains in the SHINOBU-touched memory/physics route; touched Burst scan is clean.
+- BufferID proof: 70636 and 70637 have no source collisions outside their enum declarations.
+- Compile status: not run. CPU measured 18.0%, but seven `dotnet` processes were active, so AGENTS/user rules still forbid launching `dotnet build`.

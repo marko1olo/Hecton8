@@ -30,6 +30,7 @@ Current-state boundary, 2026-05-19:
 - Current audio service authority is `SpatialAudioManager` plus procedural audio owners; older `UnderwaterAudioProcessor.cs` naming below is a target contract unless source confirms a concrete owner.
 - No line in this document is a zero-GC, Steam, CI, accessibility, or Play Mode verification claim without a fresh runtime/log artifact. May 11 report text claimed a completed Core dependency build at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player build, import, scene wiring, frame-time, memory, and visual quality proof remain absent.
 - 2026-05-15 current-disk systems boundary: latest observed archived `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` reported `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`. Latest observed archived `Docs/Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` reported H-Phi static budget `EXIT=0` with all active budget gates passed, including `MemoryAlignment=0.506309148`, `RuntimeHPhiRisk=0.000636091`, `DataSovereignty=0.021306032`, `GlobalRegistrySurface=5060/5060`, `ManagedFormatSurface=534/534`, `PrimaryManagedRuntimeRisk=147/147`, `DuplicateSignalNames=0`, and `UnityUpdateMethods=0`. These are archived source/static/CLI system boundaries only; current compile proof, runtime save/load, Steam/cloud, audio mixer, telemetry dump, accessibility UI, CI, player-build, and endgame routes remain `PENDING VERIFICATION`.
+- Current SHINOBU_02 source/status boundary is stricter than the archived green slice: Current21 Core CLI compile returned `0` errors with `8` known CS0649 warnings, Current21 SignalCritical/Full audits are the latest artifact-backed signal audits, and Current22 compile/audit/H-Phi reruns remain pending. The archived `DuplicateSignalNames=0` counter is not current duplicate-signal status; the Current21 trend reports duplicate signal-name debt `10`.
 - DOC_HONEST_ANALYSIS R3 narrowed Core graph drift by clearing transient `Hecton8.World.GPR` Core asmdef reference state; post-prune H-Phi Core graph artifact `Docs/Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json` exits `0` with Core graph debt `25/10/14/8/6`. CurrentDisk53/BudgetGate22 supersede that same-day slice as archived CLI/static boundary evidence only, not current compile proof for the active dirty workspace.
 - 2026-05-19 SHINOBU_02 Core/SignalBus boundary: current source scan shows scoped Core signal exact `Pack = 1` count `0` and broader Core exact `Pack = 1` count `3`. Latest artifact-backed SHINOBU_02 SignalCritical audit is current21 with `0` errors/warnings; latest Full audit is current21 with `0` errors, `432` warnings, `454` infos, and `0` confirmed/probable errors. Current22 source changed after those artifacts; compile/audit/H-Phi reruns remain pending because the build guard observed saturated CPU.
 
@@ -137,7 +138,7 @@ File: SteamManager.cs, CloudSaveSync.cs
 
 ## UNDERWATER AUDIO
 
-File: UnderwaterAudioProcessor.cs, AudioMixer.mixer
+Source authority: `SpatialAudioManager.cs` plus procedural audio/virtualization contracts. `UnderwaterAudioProcessor.cs` and `AudioMixer.mixer` are absent in the current checkout; older file names are target-contract residue, not concrete implementation proof.
 
 [REQ] All 3D audio -> AudioMixerGroup "Underwater_Occlusion".
 
@@ -152,7 +153,7 @@ File: UnderwaterAudioProcessor.cs, AudioMixer.mixer
 4. HRTF panning: DISABLED.
    Underwater directionality is amplitude/frequency based, not phase.
 
-[REQ] Doppler disabled underwater.
+[REQ] Unity built-in `AudioSource.dopplerLevel` remains disabled underwater. Manual underwater Doppler/pitch paths exist (`SpatialAudioManager.UpdateManualDopplerPitch(...)`, `AudioVirtualizationContracts.ComputeDopplerRatio(...)`) and require profiler/audio proof before acceptance as runtime behavior.
 [REQ] Distance rolloff = CustomCurve (logarithmic, fast decay).
 [REQ] Reverb zones: AudioReverbPreset per biome
       via SetAudioListenerReverb(). No real-time convolution.

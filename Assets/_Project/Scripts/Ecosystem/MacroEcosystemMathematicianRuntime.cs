@@ -163,6 +163,7 @@ namespace Hecton8.Ecosystem
                 !remainders.IsCreated ||
                 !coords.IsCreated ||
                 !biomeSpecs.IsCreated ||
+                biomeSpecs.Length <= 0 ||
                 !tuningArray.IsCreated ||
                 tuningArray.Length <= 0 ||
                 !counters.IsCreated ||
@@ -173,10 +174,21 @@ namespace Hecton8.Ecosystem
                 UnlockJobBuffers();
                 return;
             }
+            int sectorCount = math.min(SectorCapacity, front.Length);
+            sectorCount = math.min(sectorCount, back.Length);
+            sectorCount = math.min(sectorCount, remainders.Length);
+            sectorCount = math.min(sectorCount, coords.Length);
+            sectorCount = math.min(sectorCount, faultFlags.Length);
+            if (sectorCount <= 0)
+            {
+                UnlockJobBuffers();
+                return;
+            }
 
             MacroEcosystemTuningDTO tuning = MacroEcosystemTuningDTO.Sanitize(tuningArray[0]);
             tuning.GlobalQualityWeight = ResolveGlobalQualityWeight();
             tuning.FrostDeltaSeconds = FrostDeltaSeconds;
+            tuning.Flags |= MacroEcosystemMath.TuningFlagSnapshotWriteInFlight;
             tuning.StateHash = MacroEcosystemMath.Mix32(tuning.StateHash, math.asuint(tuning.GlobalQualityWeight));
             tuningArray[0] = tuning;
 
@@ -201,7 +213,7 @@ namespace Hecton8.Ecosystem
                 BiomeSpecs = biomeSpecPtr,
                 FaultFlags = faultFlagPtr,
                 Tuning = tuning,
-                SectorCount = math.min(SectorCapacity, math.min(front.Length, back.Length)),
+                SectorCount = sectorCount,
                 BiomeSpecCapacity = biomeSpecs.Length
             };
 
@@ -365,17 +377,23 @@ namespace Hecton8.Ecosystem
             NativeArray<MacroEcosystemTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
             NativeArray<uint> faultFlags = _faultFlagHandle.Resolve(vault);
             if (!front.IsCreated ||
+                front.Length < SectorCapacity ||
                 !back.IsCreated ||
+                back.Length < SectorCapacity ||
                 !remainders.IsCreated ||
+                remainders.Length < SectorCapacity ||
                 !coords.IsCreated ||
+                coords.Length < SectorCapacity ||
                 !indexEntries.IsCreated ||
                 indexEntries.Length < IndexCapacity ||
                 !biomeSpecs.IsCreated ||
+                biomeSpecs.Length <= 0 ||
                 !tuning.IsCreated ||
                 tuning.Length <= 0 ||
                 !counters.IsCreated ||
                 !telemetry.IsCreated ||
-                !faultFlags.IsCreated)
+                !faultFlags.IsCreated ||
+                faultFlags.Length < SectorCapacity)
             {
                 return;
             }
@@ -428,6 +446,8 @@ namespace Hecton8.Ecosystem
             carryingCapacity01 = 0f;
             IDataVault vault = _vault;
             if (vault == null)
+                return false;
+            if (_jobScheduled)
                 return false;
 
             ulong hash = MacroEcosystemMath.ComputeSectorHash(sectorX, sectorY, sectorZ);
@@ -483,6 +503,8 @@ namespace Hecton8.Ecosystem
             rareResourceWeight01 = 0f;
             IDataVault vault = _vault;
             if (vault == null)
+                return false;
+            if (_jobScheduled)
                 return false;
 
             ulong hash = MacroEcosystemMath.ComputeSectorHash(sectorX, sectorY, sectorZ);
@@ -601,9 +623,23 @@ namespace Hecton8.Ecosystem
 
             IDataVault vault = _vault;
             if (vault != null)
+            {
+                ClearSnapshotWriteInFlight(vault);
                 PatchCompletedTelemetry(vault, micros);
+            }
 
             UnlockJobBuffers();
+        }
+
+        private void ClearSnapshotWriteInFlight(IDataVault vault)
+        {
+            NativeArray<MacroEcosystemTuningDTO> tuning = _tuningHandle.Resolve(vault);
+            if (!tuning.IsCreated || tuning.Length <= 0)
+                return;
+
+            MacroEcosystemTuningDTO value = tuning[0];
+            value.Flags &= ~MacroEcosystemMath.TuningFlagSnapshotWriteInFlight;
+            tuning[0] = value;
         }
 
         private void PatchCompletedTelemetry(IDataVault vault, float solverMicros)
@@ -945,11 +981,12 @@ namespace Hecton8.Ecosystem
     internal static class MacroEcosystemMath
     {
         public const uint SectorFaultInvalidMath = 1u << 0;
-        private const uint BiomeAbyssalPlain = 0x2B38B429u;
-        private const uint BiomeThermalVent = 0x6F90CB76u;
-        private const uint BiomeKelpTrench = 0x64E62B68u;
-        private const uint BiomeReactorRuin = 0x213B297Cu;
-        private const uint BiomeBrineLake = 0x2F4F2039u;
+        public const uint TuningFlagSnapshotWriteInFlight = MacroEcosystemVaultContract.TuningFlagSnapshotWriteInFlight;
+        public const uint BiomeAbyssalPlain = 0x2B38B429u;
+        public const uint BiomeThermalVent = 0x6F90CB76u;
+        public const uint BiomeKelpTrench = 0x64E62B68u;
+        public const uint BiomeReactorRuin = 0x213B297Cu;
+        public const uint BiomeBrineLake = 0x2F4F2039u;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ComputeSectorHash(long sectorX, long sectorY, long sectorZ)
@@ -1110,13 +1147,66 @@ namespace Hecton8.Ecosystem
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.ToxinLevel), 20);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO._pad0), 24);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO._pad7), 31);
+            AssertSize<MacroEcosystemSectorVaultRecord>(32);
+            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.SectorHash), 0);
+            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.PreyBiomass), 8);
+            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.PredatorBiomass), 12);
+            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.LocalTemperature), 16);
+            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.ToxinLevel), 20);
+            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord._pad0), 24);
+            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord._pad7), 31);
             AssertSize<EcosystemSectorCoordDTO>(32);
+            AssertOffset<EcosystemSectorCoordDTO>(nameof(EcosystemSectorCoordDTO.SectorX), 0);
+            AssertOffset<EcosystemSectorCoordDTO>(nameof(EcosystemSectorCoordDTO.SectorY), 8);
+            AssertOffset<EcosystemSectorCoordDTO>(nameof(EcosystemSectorCoordDTO.SectorZ), 16);
+            AssertOffset<EcosystemSectorCoordDTO>(nameof(EcosystemSectorCoordDTO.BiomeHash), 24);
+            AssertOffset<EcosystemSectorCoordDTO>(nameof(EcosystemSectorCoordDTO.Flags), 28);
             AssertSize<EcosystemSectorRemainderDTO>(16);
+            AssertOffset<EcosystemSectorRemainderDTO>(nameof(EcosystemSectorRemainderDTO.PreyFraction), 0);
+            AssertOffset<EcosystemSectorRemainderDTO>(nameof(EcosystemSectorRemainderDTO.PredatorFraction), 4);
+            AssertOffset<EcosystemSectorRemainderDTO>(nameof(EcosystemSectorRemainderDTO.DiffusionPreyFraction), 8);
+            AssertOffset<EcosystemSectorRemainderDTO>(nameof(EcosystemSectorRemainderDTO.DiffusionPredatorFraction), 12);
             AssertSize<EcosystemSectorIndexEntryDTO>(16);
+            AssertOffset<EcosystemSectorIndexEntryDTO>(nameof(EcosystemSectorIndexEntryDTO.SectorHash), 0);
+            AssertOffset<EcosystemSectorIndexEntryDTO>(nameof(EcosystemSectorIndexEntryDTO.Slot), 8);
+            AssertOffset<EcosystemSectorIndexEntryDTO>(nameof(EcosystemSectorIndexEntryDTO.Occupied), 12);
+            AssertSize<MacroEcosystemSectorIndexRecord>(16);
+            AssertOffset<MacroEcosystemSectorIndexRecord>(nameof(MacroEcosystemSectorIndexRecord.SectorHash), 0);
+            AssertOffset<MacroEcosystemSectorIndexRecord>(nameof(MacroEcosystemSectorIndexRecord.Slot), 8);
+            AssertOffset<MacroEcosystemSectorIndexRecord>(nameof(MacroEcosystemSectorIndexRecord.Occupied), 12);
             AssertSize<BiomeEcosystemSpecDTO>(24);
+            AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.BiomeHash), 0);
+            AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.CarryingCapacityPrey), 4);
+            AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.CarryingCapacityPredator), 8);
+            AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.MigrationResistance), 12);
+            AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.TemperatureOptimum), 16);
+            AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.ToxinPenalty), 20);
             AssertSize<MacroEcosystemTuningDTO>(64);
+            AssertOffset<MacroEcosystemTuningDTO>(nameof(MacroEcosystemTuningDTO.BaseBirthRate), 0);
+            AssertOffset<MacroEcosystemTuningDTO>(nameof(MacroEcosystemTuningDTO.MigrationRate), 24);
+            AssertOffset<MacroEcosystemTuningDTO>(nameof(MacroEcosystemTuningDTO.GlobalQualityWeight), 28);
+            AssertOffset<MacroEcosystemTuningDTO>(nameof(MacroEcosystemTuningDTO.Flags), 52);
+            AssertOffset<MacroEcosystemTuningDTO>(nameof(MacroEcosystemTuningDTO.StateHash), 56);
+            AssertOffset<MacroEcosystemTuningDTO>(nameof(MacroEcosystemTuningDTO.Reserved), 60);
+            AssertSize<MacroEcosystemTuningVaultRecord>(64);
+            AssertOffset<MacroEcosystemTuningVaultRecord>(nameof(MacroEcosystemTuningVaultRecord.BaseBirthRate), 0);
+            AssertOffset<MacroEcosystemTuningVaultRecord>(nameof(MacroEcosystemTuningVaultRecord.MigrationRate), 24);
+            AssertOffset<MacroEcosystemTuningVaultRecord>(nameof(MacroEcosystemTuningVaultRecord.GlobalQualityWeight), 28);
+            AssertOffset<MacroEcosystemTuningVaultRecord>(nameof(MacroEcosystemTuningVaultRecord.Flags), 52);
+            AssertOffset<MacroEcosystemTuningVaultRecord>(nameof(MacroEcosystemTuningVaultRecord.StateHash), 56);
+            AssertOffset<MacroEcosystemTuningVaultRecord>(nameof(MacroEcosystemTuningVaultRecord.Reserved), 60);
             AssertSize<MacroEcosystemTelemetryEntry>(64);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.FrameIndex), 0);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.TotalPreyBiomass), 8);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.TotalPredatorBiomass), 16);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.SolverMicroseconds), 32);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.Flags), 44);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.TotalMass), 48);
             AssertSize<MacroEcosystemCounterDTO>(64);
+            AssertOffset<MacroEcosystemCounterDTO>(nameof(MacroEcosystemCounterDTO.Value), 0);
+            AssertOffset<MacroEcosystemCounterDTO>(nameof(MacroEcosystemCounterDTO.Flags), 4);
+            AssertOffset<MacroEcosystemCounterDTO>(nameof(MacroEcosystemCounterDTO.Reserved0), 8);
+            AssertOffset<MacroEcosystemCounterDTO>(nameof(MacroEcosystemCounterDTO.Reserved6), 56);
             _verified = true;
         }
 
@@ -1150,6 +1240,7 @@ namespace Hecton8.Ecosystem
                 IndexEntries[i] = default;
             for (int i = 0; i < BiomeSpecs.Length; i++)
                 BiomeSpecs[i] = default;
+            SeedDefaultBiomeSpecs(BiomeSpecs);
             for (int i = 0; i < Counters.Length; i++)
                 Counters[i] = default;
             for (int i = 0; i < Telemetry.Length; i++)
@@ -1158,6 +1249,76 @@ namespace Hecton8.Ecosystem
                 FaultFlags[i] = 0u;
             if (Counters.Length > 0)
                 Counters[0] = MacroEcosystemCounterDTO.FromValue(1);
+        }
+
+        private static void SeedDefaultBiomeSpecs(NativeArray<BiomeEcosystemSpecDTO> specs)
+        {
+            InsertBiomeSpec(specs, new BiomeEcosystemSpecDTO
+            {
+                BiomeHash = MacroEcosystemMath.BiomeAbyssalPlain,
+                CarryingCapacityPrey = 56000f,
+                CarryingCapacityPredator = 9000f,
+                MigrationResistance = 0.22f,
+                TemperatureOptimum = 5f,
+                ToxinPenalty = 0.35f
+            });
+            InsertBiomeSpec(specs, new BiomeEcosystemSpecDTO
+            {
+                BiomeHash = MacroEcosystemMath.BiomeThermalVent,
+                CarryingCapacityPrey = 32000f,
+                CarryingCapacityPredator = 14000f,
+                MigrationResistance = 0.38f,
+                TemperatureOptimum = 18f,
+                ToxinPenalty = 0.62f
+            });
+            InsertBiomeSpec(specs, new BiomeEcosystemSpecDTO
+            {
+                BiomeHash = MacroEcosystemMath.BiomeKelpTrench,
+                CarryingCapacityPrey = 72000f,
+                CarryingCapacityPredator = 7000f,
+                MigrationResistance = 0.18f,
+                TemperatureOptimum = 9f,
+                ToxinPenalty = 0.18f
+            });
+            InsertBiomeSpec(specs, new BiomeEcosystemSpecDTO
+            {
+                BiomeHash = MacroEcosystemMath.BiomeReactorRuin,
+                CarryingCapacityPrey = 12000f,
+                CarryingCapacityPredator = 3000f,
+                MigrationResistance = 0.64f,
+                TemperatureOptimum = 7f,
+                ToxinPenalty = 0.95f
+            });
+            InsertBiomeSpec(specs, new BiomeEcosystemSpecDTO
+            {
+                BiomeHash = MacroEcosystemMath.BiomeBrineLake,
+                CarryingCapacityPrey = 26000f,
+                CarryingCapacityPredator = 5000f,
+                MigrationResistance = 0.52f,
+                TemperatureOptimum = 3f,
+                ToxinPenalty = 0.78f
+            });
+        }
+
+        private static void InsertBiomeSpec(NativeArray<BiomeEcosystemSpecDTO> specs, BiomeEcosystemSpecDTO spec)
+        {
+            if (specs.Length <= 0 || spec.BiomeHash == 0u)
+                return;
+
+            int slot = MacroEcosystemMath.ResolveOpenAddressSlot(spec.BiomeHash, specs.Length);
+            for (int probe = 0; probe < specs.Length; probe++)
+            {
+                BiomeEcosystemSpecDTO existing = specs[slot];
+                if (existing.BiomeHash == 0u || existing.BiomeHash == spec.BiomeHash)
+                {
+                    specs[slot] = spec;
+                    return;
+                }
+
+                slot++;
+                if (slot == specs.Length)
+                    slot = 0;
+            }
         }
     }
 

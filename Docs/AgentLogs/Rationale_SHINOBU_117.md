@@ -2,7 +2,7 @@
 
 Agent: SHINOBU_117
 Role: ABYSSAL_THERMODYNAMICS_SOLVER
-Status: POLISH IN PROGRESS; COMPILE BLOCKED BY CPU GATE
+Status: POLISH IN PROGRESS; COMPILE BLOCKED BY VISOR/SOMATIC DEPENDENCY
 
 ## Initial Domain Decision
 Problem: Prior heat gameplay was defined as PhysX trigger/distance checks in the prompt, but the live project must be verified before deletion.
@@ -66,3 +66,40 @@ Solution: `SubmarineFluidDynamics` and `SubmarineAtmosphereSystem` now cache `IT
 Rejected Alternatives: Query `GlobalRegistry.ThermodynamicsService` inside every boiling branch; keep `HectonHazardManager` as fallback; edit generic non-heat hazard systems.
 Scalability potential: Low/Middle/High/Ultra all use one route into the thermal field; richer devices spend the resulting scalar data in visual heat shimmer instead of duplicating heat authority.
 Hardware Impact: Removes boiling-frame heat zone registration debt and prevents extra hazard-manager scan pressure on i3/MX350. Exact microseconds remain pending profiler because CPU gate still blocks build/playmode.
+
+## Polish Pass: ThermalSourceSignal Authority Route
+Problem: The new 3D thermodynamics solver could not safely implement `IThermodynamicsService` because that interface exposes `AbyssalThermalManager.ThermalFlowSample`, tying the contract to the legacy World concrete type. Producers reached the legacy service facade, but the Vault-backed solver only saw direct/mock sources.
+Solution: Added a 64-byte `ThermalSourceSignal` payload in the existing core signal lane layer. `AbyssalThermalManager` remains the service facade and publishes source AUP/radius/intensity/source id; `AbyssalThermodynamicsSolver` reads the typed snapshot, removes mock DTOs, writes real `HeatSourceDTO` records, and expires transient records after 6 solver frames unless refreshed.
+Rejected Alternatives: Add a Thermodynamics reference to World; make World reference Thermodynamics and call `AbyssalThermodynamicsSolver.ActiveRuntimeInstance`; widen `TemperatureChangedSignal` with radius, which would corrupt an existing binary payload; keep the solver on mock sources.
+Scalability potential: Low uses sparse transient sources and one to two Jacobi passes. Middle/High/Ultra reuse the exact same source lane while spending more `GlobalQualityWeight` on resolution, relaxation passes, and shader heat-shimmer fidelity.
+Hardware Impact: i3/MX350 avoids duplicate heat authority and stale mock injection once real vents publish. Estimated 12-25us producer-heavy frame ambiguity/branch debt avoided; profiler proof remains blocked by CPU gate.
+
+## Polish Pass: H-PHI Vault Authority Tightening
+Problem: The abyssal solver and legacy thermodynamics hazard grid still contained cold `GlobalDataVault.Create` fallbacks. Even though they were not hot allocations, they created private memory authorities when boot order was wrong.
+Solution: Removed standalone Vault fallbacks from both thermodynamics runtimes. `EnsureVault`/`ResolveDataVault` now accepts `GlobalRegistry.DataVault` or the last boot-created GlobalDataVault, then fail-fasts if neither exists.
+Rejected Alternatives: Keep a private fallback for convenience; silently allocate owner-local NativeArrays; defer allocation until first Tick.
+Scalability potential: Low/Middle/High/Ultra all use one Vault ownership route and the same BufferIDs.
+Hardware Impact: 0us direct runtime gain; prevents hidden persistent memory fragmentation and invalid ownership reports.
+
+## Polish Pass: Direct Lane Determinism and Damage Ownership
+Problem: `ThermalSourceSignal` was registered as a typed signal and manually flushed, but it was not yet in the direct registry dispatch list. The legacy thermodynamics grid also still contained a scheduled entity damage job that converted sampled heat/radiation into `CombatDamageSignal`, contradicting the data-provider requirement for Task 09.
+Solution: Added `ThermalSourceSignal` to direct registry dispatch, retaining deterministic mutation order and source-id/AUP folded sort keys. Removed the legacy `EntityDamageSamplingJob` scheduling and its mock/combat damage publish loops. `ThermodynamicsHazardGridRuntime` now publishes only `ThermalUpdraftSignal`; damage owners must query samples or consume DTOs through their own authority route.
+Rejected Alternatives: Leave `ThermalSourceSignal` on generic fallback dispatch; keep thermodynamics-owned `CombatDamageSignal` emission as a compatibility layer; add a new sibling-domain damage dependency.
+Scalability potential: Low gets bounded source-signal capacity 32 and no legacy entity damage scan. Middle/High/Ultra raise source throughput to 128 and spend heat data on visual shimmer and owner-local damage policies, not duplicate scalar-field authority.
+Hardware Impact: Estimated 2-5us dispatch ambiguity avoided and 8-20us legacy entity damage sampling/emission avoided per thermodynamics tick on low-end silicon; profiler proof still blocked by CPU gate.
+
+## Polish Pass: Legacy Determinism, Continuum Scaling, and Compile Wall
+Problem: The legacy thermodynamics grid still had three correctness leaks: source emission used parallel CAS float accumulation, updraft signal ordering came from interlocked counters inside a parallel diffusion job, and resolution selection was a binary low/high tier decision. Thermodynamics source metadata also still depended on Unity frame count in one producer bridge.
+Solution: Converted legacy emission to a serial deterministic `IJob`, moved updraft extraction into the serial telemetry scan, added `[NoAlias]` to proven distinct legacy job pointer fields, changed legacy resolution selection to a polynomial `GlobalQualityWeight` curve with smooth health-pressure damping, replaced thermodynamics frame metadata with local `_simulationFrame`/`HectonArenaAllocator.CurrentFrameSequence`, and removed CAS from the serial abyssal injection job.
+Rejected Alternatives: Keep atomics and claim determinism; keep low/high resolution switch for convenience; fix unrelated Visor/Somatic compile failures from this domain.
+Scalability potential: Low resolves near 16^3 and updraft cap remains fixed; middle/high/ultra glide toward 32^3 without a pop. Saved CPU from serial finite add/no atomics is spent on stable shader-fed heat shimmer rather than extra physics.
+Hardware Impact: Estimated 1-4us dense injection CAS overhead removed, 3-10us legacy source/updraft atomic contention avoided when sources overlap, and resolution cost now scales continuously instead of stepping from 16^3 to 32^3.
+Compile Wall: `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` was launched only after CPU opened to 19 percent. It failed in `Visor/HectonVisorUberPostFeature.cs` and `Editor/SomaticTunerWindow.cs` because `UberNoirReconstructionConstantsDTO`, `MockReconstructionInputSignal`, `ReconstructionTelemetryEntry`, `UberNoirReconstructionVaultIds`, `VrComfortProfileDTO`, and `ComfortTelemetryEntry` are missing. No thermodynamics compile error was emitted before that external wall.
+
+## Polish Pass: Sample LOD, Resolution Hysteresis, and GPU Upload Discipline
+Problem: Three remaining abyssal routes were still weaker than the mandate. `SampleTemperatureJob` always used nearest-cell reads, so high-tier consumers would get blocky heat perception. Active resolution followed `GlobalQualityWeight` immediately, so noisy quality pressure could rebuild the whole field every frame. VISUAL_SYNC uploaded the thermal cell buffer through single-buffer `GraphicsBuffer.SetData`, violating the bandwidth discipline rule that GPU writes use `LockBufferForWrite` and double buffering. Legacy thermodynamics also still exposed a binary `forceLowResolution` debug switch.
+Solution: Added a quality-derived sample interpolation curve using `math.step`, `math.lerp`, and a smooth polynomial. Quality <= 0.15 exits after nearest-cell sampling; higher quality blends toward trilinear temperature/convection/conductivity. Added a 3 second active-resolution hysteresis band before accepting new quality-derived resolution targets. Replaced the single shader buffer with A/B `GraphicsBuffer` ownership and copied Vault front cells through `LockBufferForWrite` plus `UnsafeUtility.MemCpy`. Replaced the legacy debug bool with a continuous `qualityCeiling` scalar.
+Rejected Alternatives: Always trilinear sampling, because low-tier consumers would pay eight reads when nearest is enough; immediate resolution rebuilds, because they violate the state hysteresis mandate; `SetData`, because it hides driver synchronization and does not prove bandwidth ownership; forced 16^3 debug bool, because it violates continuous scalability law.
+Scalability potential: Low uses nearest samples, 16^3-ish resolution after stable pressure, and one to two diffusion passes. Middle gradually blends samples and resolution. High/Ultra get trilinear owner samples plus double-buffered shader payload without adding physical fluid simulation.
+Hardware Impact: Low-end silicon avoids up to 7 extra cell reads per sample at quality <= 0.15 and avoids full-grid rebuild churn during quality jitter. Double-buffered upload reduces GPU/CPU contention risk; exact microseconds require Unity profiler/Frame Debugger once the external compile wall is cleared.
+Compile Gate: post-pass-05 build was not launched. First gate check had `Get-CimInstance Win32_Processor` denied and `Get-Process dotnet,csc` showed seven active `dotnet` processes. Later `Get-Counter` sampled `CPU_COUNTER=100`. The no-build-while-dotnet/csc-running and no-build-over-50-percent-CPU rules both blocked verification.

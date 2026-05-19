@@ -62,6 +62,49 @@ The coverage surfaced issues we need to evaluate. We are not going to argue with
 | S2 | repeated confusion, bad translation, creator complaint | marketing + product |
 | S3 | normal criticism, feature requests | community |
 
+## 2026-05-19 First Public Incident Triage Gate V0
+
+This gate is for the first screenshot, Steam page, demo, or creator preview beat. It converts public noise into a decision within 24 hours. It is not a permission to post; it only defines what to do after attention arrives.
+
+| Signal | Threshold | Severity | First 30 minutes | 24-hour owner action | Stop condition |
+|---|---:|---|---|---|---|
+| Clone comparison | 5+ independent comments in one platform thread | S2 | Reply once with identity boundary; ask which visual cue caused it. | Move asset/copy to `REVISE`; update screenshot order or caption. | Do not post same asset again until revised. |
+| Co-op expectation | 3+ comments assume multiplayer or ask "how many players" | S2 | Reply once: single-player-first, no co-op promise. | Add no-coop line to FAQ/pinned reply if needed. | Pull any copy that implies shared world. |
+| Dark/unreadable image | 3+ comments cannot parse subject/action | S2 | Do not defend darkness as style. | Re-score asset in QA and adjust exposure/crop/caption. | Asset cannot be used as lead image. |
+| AI-looking/generic asset accusation | 2+ credible comments | S2/S1 if source uncertain | State only verified capture/source facts. | Audit asset metadata and source chain. | Replace asset if source/capture proof is incomplete. |
+| Performance doubt | Any claim challenged or clip visibly stutters | S1 | Remove/avoid performance language. | Collect build/hardware/capture method; update claim gate. | No FPS/zero-stutter claim until measured proof exists. |
+| Press/creator misread | Creator or journalist repeats wrong feature/scope | S1 | Correct privately if possible; public correction only if needed. | Fix presskit, pitch, FAQ, Steam copy route that caused it. | Hold next outreach batch. |
+| Regional wording failure | Native speaker flags bad translation or broken encoding | S2 | Thank, stop localized sends. | Send file through localization QA gate. | Region remains blocked until native-read pass. |
+| Key/access scam | Unknown account requests key/access using creator name | S1 | Do not send key; verify via owner route. | Log in key policy and deny. | Escalate if impersonation repeats. |
+
+## First-Hour Moderator Script
+
+```text
+Timestamp:
+Platform/thread:
+Asset/campaign ID:
+Main confusion:
+Repeated exact words:
+Severity:
+Reply posted? yes/no
+Reply text:
+Internal action:
+Owner:
+Next check time:
+```
+
+## Decision Rule
+
+At 24 hours, every public beat gets one label:
+
+| Label | Meaning | Next action |
+|---|---|---|
+| KEEP | People understand the hook and no trust issue appeared. | Continue planned sequence. |
+| REVISE | Interest exists but confusion is repeated. | Change asset/copy/order before more posting. |
+| KILL | The beat creates clone, AI, false-scope, or unreadability damage. | Stop the beat and document why. |
+
+Likes are not a pass signal if comments show wrong expectations.
+
 ## Postmortem Template
 
 ```md
@@ -87,4 +130,3 @@ The coverage surfaced issues we need to evaluate. We are not going to argue with
 - No arguing about Subnautica.
 - No blaming creators for showing bugs.
 - No deleting evidence unless it violates rules.
-

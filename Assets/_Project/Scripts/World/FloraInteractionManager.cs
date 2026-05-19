@@ -181,20 +181,20 @@ namespace Hecton8.World
             public float Padding1;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct PopulateCascadePhaseSeedsJob : IJobParallelFor
         {
             private const float BaseAnimationFrameSeconds = 1f / 60f;
 
-            [ReadOnly] public NativeArray<Matrix4x4> Matrices;
-            [ReadOnly] public NativeArray<HectonVegetationInstanceData> Metadata;
-            [ReadOnly] public NativeArray<byte> ReactiveTemplateMask;
-            [ReadOnly] public NativeArray<FloraCascadeEventPayload> Events;
+            [ReadOnly, NoAlias] public NativeArray<Matrix4x4> Matrices;
+            [ReadOnly, NoAlias] public NativeArray<HectonVegetationInstanceData> Metadata;
+            [ReadOnly, NoAlias] public NativeArray<byte> ReactiveTemplateMask;
+            [ReadOnly, NoAlias] public NativeArray<FloraCascadeEventPayload> Events;
             public int EventCount;
             public float PropagationSpeedMetersPerSecond;
             public float InactiveSeed;
 
-            [WriteOnly] public NativeArray<float> PhaseSeeds;
+            [WriteOnly, NoAlias] public NativeArray<float> PhaseSeeds;
 
             public void Execute(int index)
             {
@@ -263,18 +263,18 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ParasiteGrowthJob : IJobParallelFor
         {
-            public NativeArray<ParasiteNode> Nodes;
+            [NoAlias] public NativeArray<ParasiteNode> Nodes;
             public int NodeCount;
             public float DeltaTime;
             public double CurrentTimeSeconds;
             public float GrowthPerSecond;
             public float DefoliantKillThreshold;
             public float MatureGrowthThreshold;
-            [ReadOnly] public NativeArray<float4> ChemicalFrontGrid;
-            [ReadOnly] public NativeArray<float4> ChemicalOverlayGrid;
+            [ReadOnly, NoAlias] public NativeArray<float4> ChemicalFrontGrid;
+            [ReadOnly, NoAlias] public NativeArray<float4> ChemicalOverlayGrid;
             public int3 ChemicalDimensions;
             public float3 ChemicalOrigin;
             public float3 ChemicalCellSize;
@@ -355,6 +355,9 @@ namespace Hecton8.World
         {
             [NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDisplacementDTO> FieldValues;
             public int NodeCount;
+            public int Resolution;
+            public int3 RingOffset;
+            public int3 CenterShiftCells;
             public float DeltaTime;
             public float DecayRate;
             public byte ResetField;
@@ -364,13 +367,23 @@ namespace Hecton8.World
                 if ((uint)index >= (uint)NodeCount || index >= FieldValues.Length)
                     return;
 
-                if (ResetField != 0)
+                int safeResolution = math.max(1, Resolution);
+                int xy = safeResolution * safeResolution;
+                int z = index / xy;
+                int rem = index - (z * xy);
+                int y = rem / safeResolution;
+                int x = rem - (y * safeResolution);
+                int physicalIndex = ResolveFloraSwayFieldIndexJob(x, y, z, RingOffset, safeResolution);
+                if ((uint)physicalIndex >= (uint)NodeCount || physicalIndex >= FieldValues.Length)
+                    return;
+
+                if (ResetField != 0 || IsFloraSwayWrappedCellNewJob(x, y, z, CenterShiftCells, safeResolution))
                 {
-                    FieldValues[index] = default;
+                    FieldValues[physicalIndex] = default;
                     return;
                 }
 
-                FloraDisplacementDTO value = FieldValues[index];
+                FloraDisplacementDTO value = FieldValues[physicalIndex];
                 float safeDeltaTime = math.isfinite(DeltaTime) ? math.clamp(DeltaTime, 0f, 0.2f) : 0f;
                 float safeDecayRate = math.isfinite(DecayRate) ? math.max(0f, DecayRate) : 0f;
                 float decay = math.exp(-safeDeltaTime * safeDecayRate);
@@ -387,7 +400,7 @@ namespace Hecton8.World
                     value.DecayTimer = math.saturate(value.DecayTimer * decay);
                 }
 
-                FieldValues[index] = value;
+                FieldValues[physicalIndex] = value;
             }
         }
 
@@ -401,6 +414,7 @@ namespace Hecton8.World
             public int Resolution;
             public int NodeCount;
             public int SourceLimit;
+            public int3 RingOffset;
             public float CellSize;
             public float QualityWeight;
             public float EntityMassMultiplier;
@@ -419,6 +433,10 @@ namespace Hecton8.World
                 int rem = index - (z * xy);
                 int y = rem / safeResolution;
                 int x = rem - (y * safeResolution);
+                int physicalIndex = ResolveFloraSwayFieldIndexJob(x, y, z, RingOffset, safeResolution);
+                if ((uint)physicalIndex >= (uint)NodeCount || physicalIndex >= FieldValues.Length)
+                    return;
+
                 float halfIndex = (safeResolution - 1) * 0.5f;
                 float safeCellSize = math.max(0.05f, CellSize);
                 float3 sampleLocal = new float3(
@@ -426,7 +444,7 @@ namespace Hecton8.World
                     (y - halfIndex) * safeCellSize,
                     (z - halfIndex) * safeCellSize);
 
-                FloraDisplacementDTO value = FieldValues[index];
+                FloraDisplacementDTO value = FieldValues[physicalIndex];
                 float3 displacement = math.select(float3.zero, value.ForceVector, math.all(math.isfinite(value.ForceVector)));
                 float energy = math.select(0f, math.saturate(value.DecayTimer), math.isfinite(value.DecayTimer));
                 float qualityCurve = SmoothStepJob(QualityWeight);
@@ -490,7 +508,7 @@ namespace Hecton8.World
 
                 value.ForceVector = displacement;
                 value.DecayTimer = math.saturate(energy);
-                FieldValues[index] = value;
+                FieldValues[physicalIndex] = value;
             }
 
             private static float3 ResolveAmbientCurrent(float3 sampleLocal, float3 currentWS, float qualityCurve, float influence, float framePhase)
@@ -499,7 +517,7 @@ namespace Hecton8.World
                 float3 current = math.select(float3.zero, currentWS, math.all(math.isfinite(currentWS)));
                 float currentMagnitudeSq = math.lengthsq(current);
                 float3 currentDirection = currentMagnitudeSq > 0.000001f
-                    ? current * math.rsqrt(currentMagnitudeSq)
+                    ? current * math.rsqrt(math.max(currentMagnitudeSq, 0.000001f))
                     : new float3(0.35f, 0.04f, 0.72f);
                 float currentMagnitude = math.min(1.75f, currentMagnitudeSq * math.rsqrt(math.max(currentMagnitudeSq, 0.0001f)));
                 float noiseScale = math.lerp(0.032f, 0.074f, qualityCurve);
@@ -518,6 +536,7 @@ namespace Hecton8.World
             [NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDisplacementDTO> FieldValues;
             public int Resolution;
             public int NodeCount;
+            public int3 RingOffset;
             public float CellSize;
             public float QualityWeight;
             public float FramePhase;
@@ -533,6 +552,10 @@ namespace Hecton8.World
                 int rem = index - (z * xy);
                 int y = rem / safeResolution;
                 int x = rem - (y * safeResolution);
+                int physicalIndex = ResolveFloraSwayFieldIndexJob(x, y, z, RingOffset, safeResolution);
+                if ((uint)physicalIndex >= (uint)NodeCount || physicalIndex >= FieldValues.Length)
+                    return;
+
                 float halfIndex = (safeResolution - 1) * 0.5f;
                 float safeCellSize = math.max(0.05f, CellSize);
                 float3 sampleLocal = new float3(
@@ -555,10 +578,25 @@ namespace Hecton8.World
 
                 float falloff = 1f - SmoothStepJob(distanceSq / radiusSq);
                 float3 direction = ResolveSafeDirectionJob(new float3(0.42f, -0.08f, 0.82f), new float3(1f, 0f, 0f));
-                FloraDisplacementDTO value = FieldValues[index];
+                FloraDisplacementDTO value = FieldValues[physicalIndex];
+                value.ForceVector = math.select(float3.zero, value.ForceVector, math.all(math.isfinite(value.ForceVector)));
+                value.DecayTimer = math.select(0f, math.saturate(value.DecayTimer), math.isfinite(value.DecayTimer));
                 value.ForceVector += direction * (falloff * math.lerp(0.08f, 0.24f, q));
                 value.DecayTimer = math.max(value.DecayTimer, falloff * 0.72f);
-                FieldValues[index] = value;
+                float maxDisplacement = math.lerp(0.28f, FloraSwayFieldMaxDisplacementMeters, q);
+                float magnitudeSq = math.lengthsq(value.ForceVector);
+                float maxDisplacementSq = maxDisplacement * maxDisplacement;
+                if (!math.isfinite(magnitudeSq))
+                {
+                    value.ForceVector = float3.zero;
+                    value.DecayTimer = 0f;
+                }
+                else if (magnitudeSq > maxDisplacementSq)
+                {
+                    value.ForceVector *= maxDisplacement * math.rsqrt(math.max(magnitudeSq, 0.0001f));
+                }
+
+                FieldValues[physicalIndex] = value;
             }
         }
 
@@ -652,13 +690,40 @@ namespace Hecton8.World
         {
             float lengthSq = math.lengthsq(value);
             if (math.isfinite(lengthSq) && lengthSq > 0.000001f)
-                return value * math.rsqrt(lengthSq);
+                return value * math.rsqrt(math.max(lengthSq, 0.000001f));
 
             float fallbackLengthSq = math.lengthsq(fallback);
             if (math.isfinite(fallbackLengthSq) && fallbackLengthSq > 0.000001f)
-                return fallback * math.rsqrt(fallbackLengthSq);
+                return fallback * math.rsqrt(math.max(fallbackLengthSq, 0.000001f));
 
             return float3.zero;
+        }
+
+        private static int WrapFloraSwayGridCoordJob(int value, int resolution)
+        {
+            int safeResolution = math.max(1, resolution);
+            int wrapped = value % safeResolution;
+            return wrapped < 0 ? wrapped + safeResolution : wrapped;
+        }
+
+        private static int ResolveFloraSwayFieldIndexJob(int x, int y, int z, int3 ringOffset, int resolution)
+        {
+            int safeResolution = math.max(1, resolution);
+            int physicalX = WrapFloraSwayGridCoordJob(x + ringOffset.x, safeResolution);
+            int physicalY = WrapFloraSwayGridCoordJob(y + ringOffset.y, safeResolution);
+            int physicalZ = WrapFloraSwayGridCoordJob(z + ringOffset.z, safeResolution);
+            return physicalX + physicalY * safeResolution + physicalZ * safeResolution * safeResolution;
+        }
+
+        private static bool IsFloraSwayWrappedCellNewJob(int x, int y, int z, int3 centerShiftCells, int resolution)
+        {
+            int safeResolution = math.max(1, resolution);
+            int oldX = x + centerShiftCells.x;
+            int oldY = y + centerShiftCells.y;
+            int oldZ = z + centerShiftCells.z;
+            return oldX < 0 || oldX >= safeResolution ||
+                   oldY < 0 || oldY >= safeResolution ||
+                   oldZ < 0 || oldZ >= safeResolution;
         }
 
         private static float3 ResolveAupLocalDelta(in AbsoluteUniversePosition source, in AbsoluteUniversePosition origin)
@@ -675,7 +740,7 @@ namespace Hecton8.World
         private const int MaxPublishedInteractionPoints = 12;
         private const int MaxExternalInteractionPoints = 4;
         private const int MaxProceduralWakePoints = 16;
-        private const int LowTierWakeSlotLimit = 4;
+        private const int MinProceduralWakeSlotLimit = 4;
         private const int WakeBlackBoxCapacity = 300;
         private const int FloraSwayFieldBlackBoxCapacity = 300;
         private const int MaxWakeSignalsPerFrame = 64;
@@ -700,8 +765,8 @@ namespace Hecton8.World
         private const float FlowFieldRecenterThresholdCells = 0.5f;
         private const float FloraSwayFieldMinCellSize = 2.05f;
         private const float FloraSwayFieldMaxCellSize = 4.6f;
-        private const float FloraSwayFieldMinUpdateIntervalSeconds = 0.04f;
-        private const float FloraSwayFieldMaxUpdateIntervalSeconds = 0.14f;
+        private const float FloraSwayFieldMinUpdateIntervalSeconds = 1f / 60f;
+        private const float FloraSwayFieldMaxUpdateIntervalSeconds = 0.2f;
         private const float FloraSwayFieldMaxDisplacementMeters = 1.35f;
         private const int WakeTrailStampCommandCapacity = 4;
         private const int WakeTrailThreadGroupSize = 8;
@@ -714,8 +779,8 @@ namespace Hecton8.World
         private const float WakeFluidImpulseThreshold = 0.55f;
         private const uint WakeBlackBoxInvalidInputFlag = 1u << 0;
         private const uint WakeBlackBoxNaNFlag = 1u << 1;
-        private const uint WakeBlackBoxLowTierFlag = 1u << 2;
-        private const uint WakeBlackBoxStressCapFlag = 1u << 3;
+        private const uint WakeBlackBoxBudgetPressureFlag = 1u << 2;
+        private const uint WakeBlackBoxThermalPressureFlag = 1u << 3;
         private const uint FloraSwayFieldInvalidInputFlag = 1u << 0;
         private const uint FloraSwayFieldNaNFlag = 1u << 1;
         private const uint FloraSwayFieldVaultMissingFlag = 1u << 2;
@@ -821,6 +886,7 @@ namespace Hecton8.World
         private static readonly int _FloraSwayDisplacementFieldId = Shader.PropertyToID("_HectonFloraSwayDisplacementField");
         private static readonly int _FloraSwayFieldCenterCellSizeId = Shader.PropertyToID("_HectonFloraSwayFieldCenterCellSize");
         private static readonly int _FloraSwayFieldParamsId = Shader.PropertyToID("_HectonFloraSwayFieldParams");
+        private static readonly int _FloraSwayFieldRingOffsetId = Shader.PropertyToID("_HectonFloraSwayFieldRingOffset");
         private static readonly int _CulledFloraVisibleInstancesId = Shader.PropertyToID("_HectonCulledFloraVisibleInstances");
         private static readonly int _CulledFloraVisibleCountId = Shader.PropertyToID("_HectonCulledFloraVisibleCount");
         private static readonly int _ShearFoamAmountId = Shader.PropertyToID("_ShearFoamAmount");
@@ -1332,10 +1398,12 @@ namespace Hecton8.World
         private float _publishedShearFoamAmount;
         private int _wakeBlackBoxCursor;
         private int _floraSwayFieldBlackBoxCursor;
+        private uint _proceduralWakeSignalFrameCounter;
         private uint _floraSwayFieldPendingFlags;
         private int _floraSwayFieldPendingActiveWakeCount;
         private int _floraSwayFieldPendingNonZeroCells;
         private uint _floraSwayFieldLastCpuMicroseconds;
+        private uint _floraSwaySimulationFrameCounter;
         private double _floraSwayFieldScheduleTimestampSeconds;
         private bool _wakeBlackBoxDumped;
         private bool _floraSwayFieldBlackBoxDumped;
@@ -1349,13 +1417,17 @@ namespace Hecton8.World
         private float _scooterSedimentCooldownRemaining;
         private bool _wakeTrailDisabled;
         private int _queuedWakeTrailStampCount;
-        private int _lastWakeTrailDispatchFrame = -1;
+        private uint _wakeTrailDispatchSerial;
+        private uint _lastWakeTrailDispatchSerial;
         private int _wakeTrailRuntimeResolution;
         private int _wakeTrailQualityLevel = -1;
         private int _wakeTrailSimulationKernel = -1;
         private int _flowFieldResolution;
         private int _floraSwayFieldResolution;
         private int _floraSwayFieldNodeCount;
+        private int3 _floraSwayFieldRingOffset;
+        private int3 _floraSwayFieldPendingRingOffset;
+        private int3 _floraSwayFieldPendingCenterShiftCells;
         private float _flowFieldCellSize;
         private float _floraSwayFieldCellSize;
         private float _floraSwayFieldQualityWeight;
@@ -1370,6 +1442,9 @@ namespace Hecton8.World
         private Vector3 _floraSwayFieldCenterWS;
         private Vector3 _lastUploadedFlowFieldCenterWS;
         private Vector3 _lastUploadedFloraSwayFieldCenterWS;
+        private AbsoluteUniversePosition _lastUploadedFloraSwayFieldCenterAup;
+        private AbsoluteUniversePosition _floraSwayFieldPendingCenterAup;
+        private bool _floraSwayFieldCenterAupValid;
         private NativeArray<Vector3> _oceanFlowSamplePositions;
         private NativeArray<Vector3> _oceanFlowSampleResults;
         private ParticleSystem.EmitParams _sedimentEmitParams;
@@ -2728,6 +2803,7 @@ namespace Hecton8.World
                 radius <= 0.01f)
                 return;
 
+            uint signalFrame = AdvanceProceduralWakeSignalFrame();
             int slotLimit = ResolveWakeSlotLimit();
             int slot = FindProceduralWakeSlot(wakeSources, slotLimit, position, sourceKind, radius);
             WakeSource point = wakeSources[slot];
@@ -2744,13 +2820,15 @@ namespace Hecton8.World
             point.Radius = math.max(point.Radius, radius);
             point.Intensity = math.max(point.Intensity, intensity);
             point.SourceFlags = signal.SourceFlags;
-            point.FrameStamp = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            point.FrameStamp = signalFrame;
             point.SourceKind = sourceKind;
             point.Active = 1;
             wakeSources[slot] = point;
 
-            if (intensity >= WakeFluidImpulseThreshold && GlobalRegistry.ScalabilityTierProfileByte >= 2)
-                PublishWakeFluidImpulse(in signal, radius, intensity);
+            float impulseBudgetWeight = ResolveWakeBudgetWeight();
+            float budgetedIntensity = intensity * math.lerp(0.45f, 1f, SmoothStep01(impulseBudgetWeight));
+            if (budgetedIntensity >= WakeFluidImpulseThreshold)
+                PublishWakeFluidImpulse(in signal, radius, budgetedIntensity, signalFrame);
         }
 
         private int FindProceduralWakeSlot(NativeArray<WakeSource> wakeSources, int slotLimit, float3 position, byte sourceKind, float radius)
@@ -2951,7 +3029,7 @@ namespace Hecton8.World
             Shader.SetGlobalVector(_ProceduralWakeParamsId, new Vector4(publishedCount, MaxProceduralWakePoints, maxWakeIntensity, shearFoamAmount));
             Shader.SetGlobalVectorArray(_GlobalWakeBufferId, _globalWakeShaderBuffer);
             Shader.SetGlobalVectorArray(_GlobalWakeVectorBufferId, _globalWakeVectorShaderBuffer);
-            Shader.SetGlobalVector(_GlobalWakeParamsId, new Vector4(slotLimit, ResolveWakeLowTier01(), publishedCount, maxWakeIntensity));
+            Shader.SetGlobalVector(_GlobalWakeParamsId, new Vector4(slotLimit, ResolveWakeBudgetPressure01(), publishedCount, maxWakeIntensity));
             Shader.SetGlobalFloat(_ShearFoamAmountId, shearFoamAmount);
             _publishedProceduralWakeCount = publishedCount;
             _publishedShearFoamAmount = shearFoamAmount;
@@ -3023,6 +3101,7 @@ namespace Hecton8.World
             if (!resolutionChanged && !centerChanged && !dueForUpdate)
                 return;
 
+            uint simulationFrame = AdvanceFloraSwaySimulationFrame();
             ScheduleFloraSwayDisplacementField(
                 wakeSources,
                 slotLimit,
@@ -3034,6 +3113,7 @@ namespace Hecton8.World
                 fieldCenter,
                 activeWakeCount,
                 flags,
+                simulationFrame,
                 safeDeltaTime,
                 resolutionChanged || centerChanged);
         }
@@ -3133,6 +3213,7 @@ namespace Hecton8.World
             float3 fieldCenter,
             int activeWakeCount,
             uint flags,
+            uint simulationFrame,
             float deltaTime,
             bool resetField)
         {
@@ -3149,7 +3230,7 @@ namespace Hecton8.World
             float qualityCurve = SmoothStep01(qualityWeight);
             float maxDisplacement = math.lerp(0.28f, FloraSwayFieldMaxDisplacementMeters, qualityCurve);
             float3 ambientCurrent = ResolveFloraSwayAmbientCurrent();
-            float framePhase = Mathf.Max(0, Time.frameCount) * math.lerp(0.0075f, 0.0275f, qualityCurve);
+            float framePhase = simulationFrame * math.lerp(0.0075f, 0.0275f, qualityCurve);
 
             JobHandle decayHandle = new DecayFloraForcesJob
             {
@@ -3201,7 +3282,7 @@ namespace Hecton8.World
                 UpdateIntervalSeconds = updateInterval,
                 ActiveWakeCount = activeWakeCount,
                 FieldCenterWS = fieldCenter,
-                FrameIndex = Mathf.Max(0, Time.frameCount),
+                FrameIndex = (int)math.min(simulationFrame, (uint)int.MaxValue),
                 AupShiftSequence = HectonFloatingOrigin.CurrentShiftSequence,
                 BlackBoxCursor = _floraSwayFieldBlackBoxCursor,
                 Flags = flags
@@ -3284,11 +3365,28 @@ namespace Hecton8.World
             return new float3(current.x, current.y, current.z);
         }
 
+        private uint AdvanceFloraSwaySimulationFrame()
+        {
+            _floraSwaySimulationFrameCounter++;
+            if (_floraSwaySimulationFrameCounter == 0u)
+                _floraSwaySimulationFrameCounter = 1u;
+            return _floraSwaySimulationFrameCounter;
+        }
+
+        private uint AdvanceProceduralWakeSignalFrame()
+        {
+            _proceduralWakeSignalFrameCounter++;
+            if (_proceduralWakeSignalFrameCounter == 0u)
+                _proceduralWakeSignalFrameCounter = 1u;
+            return _proceduralWakeSignalFrameCounter;
+        }
+
+#if UNITY_EDITOR
         public static bool ValidateFloraDisplacementDtoLayout(out int size, out int forceOffset, out int decayOffset)
         {
             size = UnsafeUtility.SizeOf<FloraDisplacementDTO>();
-            forceOffset = UnsafeUtility.GetFieldOffset(typeof(FloraDisplacementDTO).GetField(nameof(FloraDisplacementDTO.ForceVector)));
-            decayOffset = UnsafeUtility.GetFieldOffset(typeof(FloraDisplacementDTO).GetField(nameof(FloraDisplacementDTO.DecayTimer)));
+            forceOffset = ResolveFieldOffset(typeof(FloraDisplacementDTO), nameof(FloraDisplacementDTO.ForceVector));
+            decayOffset = ResolveFieldOffset(typeof(FloraDisplacementDTO), nameof(FloraDisplacementDTO.DecayTimer));
             return size == 16 && forceOffset == 0 && decayOffset == 12;
         }
 
@@ -3297,6 +3395,46 @@ namespace Hecton8.World
             size = UnsafeUtility.SizeOf<FloraSwayFieldTelemetryEntry>();
             return size == 64;
         }
+
+        public static bool ValidateConsumedWakeSourceLayout(
+            out int size,
+            out int positionAupOffset,
+            out int velocityOffset,
+            out int radiusOffset,
+            out int sourceKindOffset,
+            out int padding4Offset)
+        {
+            size = UnsafeUtility.SizeOf<WakeSource>();
+            positionAupOffset = ResolveFieldOffset(typeof(WakeSource), nameof(WakeSource.PositionAup));
+            velocityOffset = ResolveFieldOffset(typeof(WakeSource), nameof(WakeSource.VelocityWS));
+            radiusOffset = ResolveFieldOffset(typeof(WakeSource), nameof(WakeSource.Radius));
+            sourceKindOffset = ResolveFieldOffset(typeof(WakeSource), nameof(WakeSource.SourceKind));
+            padding4Offset = ResolveFieldOffset(typeof(WakeSource), nameof(WakeSource.Padding4));
+            return size == 128 &&
+                   positionAupOffset == 0 &&
+                   velocityOffset == 72 &&
+                   radiusOffset == 84 &&
+                   sourceKindOffset == 104 &&
+                   padding4Offset == 124;
+        }
+
+        public static bool ValidateConsumedWakeTelemetryLayout(out int size, out int budgetPressureOffset)
+        {
+            size = UnsafeUtility.SizeOf<WakeTelemetryEntry>();
+            budgetPressureOffset = ResolveFieldOffset(typeof(WakeTelemetryEntry), nameof(WakeTelemetryEntry.BudgetPressure01));
+            return size == 64 && budgetPressureOffset == 60;
+        }
+
+        private static int ResolveFieldOffset(Type type, string fieldName)
+        {
+            System.Reflection.FieldInfo field = type.GetField(
+                fieldName,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.NonPublic);
+            return field != null ? UnsafeUtility.GetFieldOffset(field) : -1;
+        }
+#endif
 
         private void GenerateEmergencyMockStiffness()
         {
@@ -3390,7 +3528,7 @@ namespace Hecton8.World
         private bool TryResolveFloraStiffnessRules(out NativeArray<FloraStiffnessRuleDTO> rules)
         {
             rules = default;
-            IDataVault dataVault = _wakeDataVault ?? GlobalRegistry.DataVault;
+            IDataVault dataVault = _wakeDataVault;
             if (dataVault == null)
                 return false;
 
@@ -3408,7 +3546,7 @@ namespace Hecton8.World
         private bool TryResolveFloraCsvScratch(out NativeArray<byte> scratch)
         {
             scratch = default;
-            IDataVault dataVault = _wakeDataVault ?? GlobalRegistry.DataVault;
+            IDataVault dataVault = _wakeDataVault;
             if (dataVault == null)
                 return false;
 
@@ -3581,22 +3719,10 @@ namespace Hecton8.World
             _floraSwayFieldMaxMagnitude = 0f;
             _floraSwayFieldUpdateTimer = 0f;
 
-            if (TryResolveFloraSwayFieldBuffers(out NativeArray<FloraDisplacementDTO> fieldValues, out NativeArray<float4> fieldMeta))
+            if (TryResolveFloraSwayFieldBuffers(out _, out NativeArray<float4> fieldMeta))
             {
-                for (int i = 0; i < fieldValues.Length; i++)
-                    fieldValues[i] = default;
                 for (int i = 0; i < fieldMeta.Length; i++)
                     fieldMeta[i] = default;
-
-                if (forceUpload && EnsureFloraSwayFieldGraphicsBuffers())
-                {
-                    GraphicsBuffer writeBuffer = _floraSwayFieldBufferA != null ? _floraSwayFieldBufferA : _floraSwayFieldBufferB;
-                    if (writeBuffer != null)
-                    {
-                        GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, fieldValues, math.min(fieldValues.Length, FloraSwayFieldMaxNodeCount));
-                        _floraSwayFieldReadBuffer = writeBuffer;
-                    }
-                }
             }
 
             PublishFloraSwayFieldGlobals(forceUpload);
@@ -3740,24 +3866,32 @@ namespace Hecton8.World
             if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f)
                 return float3.zero;
 
-            return velocity * math.rsqrt(lengthSq);
+            return velocity * math.rsqrt(math.max(lengthSq, 0.000001f));
         }
 
         private int ResolveWakeSlotLimit()
         {
-            bool lowTier = GlobalRegistry.ScalabilityTierProfileByte == 0;
-            bool stressCap = HomeostasisBrain.SystemHealthIndex01 > 0.8f;
-            return lowTier || stressCap
-                ? LowTierWakeSlotLimit
-                : MaxProceduralWakePoints;
+            float budgetWeight = ResolveWakeBudgetWeight();
+            int slotLimit = Mathf.RoundToInt(math.lerp(
+                MinProceduralWakeSlotLimit,
+                MaxProceduralWakePoints,
+                SmoothStep01(budgetWeight)));
+            return math.clamp(slotLimit, MinProceduralWakeSlotLimit, MaxProceduralWakePoints);
         }
 
-        private static float ResolveWakeLowTier01()
+        private static float ResolveWakeBudgetWeight()
         {
-            return GlobalRegistry.ScalabilityTierProfileByte == 0 ||
-                   HomeostasisBrain.SystemHealthIndex01 > 0.8f
-                ? 1f
+            float qualityWeight = ResolveFloraSwayGlobalQualityWeight();
+            float stress01 = float.IsFinite(HomeostasisBrain.SystemHealthIndex01)
+                ? math.saturate(HomeostasisBrain.SystemHealthIndex01)
                 : 0f;
+            float stressShed = math.lerp(1f, 0.35f, SmoothStep01(stress01));
+            return math.saturate(qualityWeight * stressShed);
+        }
+
+        private static float ResolveWakeBudgetPressure01()
+        {
+            return math.saturate(1f - SmoothStep01(ResolveWakeBudgetWeight()));
         }
 
         private static float ResolveFloraSwayGlobalQualityWeight()
@@ -3765,8 +3899,8 @@ namespace Hecton8.World
             float weight = HomeostasisBrain.GlobalQualityWeight;
             if (!float.IsFinite(weight))
             {
-                byte tier = ScalabilityTierProfiles.Normalize(GlobalRegistry.ScalabilityTierProfileByte);
-                weight = tier == ScalabilityTierProfiles.LowMx350 ? 0.25f : 1f;
+                float tierWeight = math.saturate(GlobalRegistry.ScalabilityTierProfileByte);
+                weight = math.lerp(0.25f, 1f, SmoothStep01(tierWeight));
             }
 
             float stress01 = float.IsFinite(HomeostasisBrain.SystemHealthIndex01)
@@ -3818,14 +3952,18 @@ namespace Hecton8.World
         private static uint ResolveWakeTelemetryFlags()
         {
             uint flags = 0u;
-            if (GlobalRegistry.ScalabilityTierProfileByte == 0)
-                flags |= WakeBlackBoxLowTierFlag;
-            if (HomeostasisBrain.SystemHealthIndex01 > 0.8f)
-                flags |= WakeBlackBoxStressCapFlag;
+            float budgetPressure01 = ResolveWakeBudgetPressure01();
+            float stress01 = float.IsFinite(HomeostasisBrain.SystemHealthIndex01)
+                ? math.saturate(HomeostasisBrain.SystemHealthIndex01)
+                : 0f;
+            if (budgetPressure01 >= 0.5f)
+                flags |= WakeBlackBoxBudgetPressureFlag;
+            if (stress01 >= 0.8f)
+                flags |= WakeBlackBoxThermalPressureFlag;
             return flags;
         }
 
-        private static void PublishWakeFluidImpulse(in WakeGeneratedSignal signal, float radius, float intensity)
+        private static void PublishWakeFluidImpulse(in WakeGeneratedSignal signal, float radius, float intensity, uint signalFrame)
         {
             if (!math.all(math.isfinite(signal.Velocity)) ||
                 !math.isfinite(radius) ||
@@ -3838,7 +3976,7 @@ namespace Hecton8.World
                 Vector = signal.Velocity,
                 Radius = math.max(0.5f, radius),
                 Lifetime = math.lerp(0.35f, 1.4f, math.saturate(intensity)),
-                Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
+                Frame = signalFrame,
                 SourceHash = WakeFluidImpulseSourceHash,
                 Flags = signal.SourceFlags
             };
@@ -3868,7 +4006,7 @@ namespace Hecton8.World
             stateHash = MixWakeHash(stateHash, (uint)math.asint(maxRadius));
 
             WakeTelemetryEntry entry = default;
-            entry.Frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            entry.Frame = _proceduralWakeSignalFrameCounter;
             entry.ActiveWakeSourcesCount = (ushort)math.clamp(activeCount, 0, ushort.MaxValue);
             entry.SlotLimit = (ushort)math.clamp(slotLimit, 0, ushort.MaxValue);
             entry.StrongestWakePositionWS = strongestPosition;
@@ -3880,7 +4018,7 @@ namespace Hecton8.World
             entry.DataVaultGeneration = _proceduralWakePointsHandle.GenerationID;
             entry.AupShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             entry.SystemStress01 = HomeostasisBrain.SystemHealthIndex01;
-            entry.LowTier01 = ResolveWakeLowTier01();
+            entry.BudgetPressure01 = ResolveWakeBudgetPressure01();
             wakeBlackBox[cursor] = entry;
 
             cursor++;
@@ -3939,7 +4077,7 @@ namespace Hecton8.World
                     writer.Write(entry.DataVaultGeneration);
                     writer.Write(entry.AupShiftSequence);
                     writer.Write(entry.SystemStress01);
-                    writer.Write(entry.LowTier01);
+                    writer.Write(entry.BudgetPressure01);
                 }
             }
             catch (IOException)
@@ -3979,7 +4117,7 @@ namespace Hecton8.World
             stateHash = MixWakeHash(stateHash, (uint)math.asint(maxMagnitude));
 
             FloraSwayFieldTelemetryEntry entry = default;
-            entry.Frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            entry.Frame = _floraSwaySimulationFrameCounter;
             entry.Resolution = (ushort)math.clamp(resolution, 0, ushort.MaxValue);
             entry.ActiveWakeSourcesCount = (ushort)math.clamp(activeWakeCount, 0, ushort.MaxValue);
             entry.NonZeroCellsCount = (uint)math.max(0, nonZeroCells);
@@ -6572,13 +6710,18 @@ namespace Hecton8.World
 
             _pendingWakeTrailScrollUv = Vector2.zero;
             _queuedWakeTrailStampCount = 0;
-            _lastWakeTrailDispatchFrame = -1;
+            _wakeTrailDispatchSerial = 0u;
+            _lastWakeTrailDispatchSerial = 0u;
 
             Shader.SetGlobalFloat(_WakeTrailActiveId, 0f);
         }
 
         private void UpdateWakeTrail(Vector3 playerPosition, Vector3 playerVelocity, float deltaTime)
         {
+            _wakeTrailDispatchSerial++;
+            if (_wakeTrailDispatchSerial == 0u)
+                _wakeTrailDispatchSerial = 1u;
+
             if (_wakeTrailDisabled)
                 return;
 
@@ -6785,7 +6928,7 @@ namespace Hecton8.World
                 _wakeTrailRead == null ||
                 _wakeTrailWrite == null ||
                 _wakeTrailStampCommandBuffer == null ||
-                _lastWakeTrailDispatchFrame == Time.frameCount)
+                _lastWakeTrailDispatchSerial == _wakeTrailDispatchSerial)
             {
                 return;
             }
@@ -6819,7 +6962,7 @@ namespace Hecton8.World
             RenderTexture temp = _wakeTrailRead;
             _wakeTrailRead = _wakeTrailWrite;
             _wakeTrailWrite = temp;
-            _lastWakeTrailDispatchFrame = Time.frameCount;
+            _lastWakeTrailDispatchSerial = _wakeTrailDispatchSerial;
             _pendingWakeTrailScrollUv = Vector2.zero;
             _queuedWakeTrailStampCount = 0;
         }
@@ -7306,7 +7449,7 @@ namespace Hecton8.World
         {
             fieldValues = default;
             fieldMeta = default;
-            IDataVault dataVault = _wakeDataVault ?? GlobalRegistry.DataVault;
+            IDataVault dataVault = _wakeDataVault;
             if (dataVault == null ||
                 !_floraSwayFieldHandle.IsCreated ||
                 !_floraSwayFieldMetaHandle.IsCreated)
@@ -7322,7 +7465,7 @@ namespace Hecton8.World
         private bool TryResolveFloraSwayFieldBlackBox(out NativeArray<FloraSwayFieldTelemetryEntry> blackBox)
         {
             blackBox = default;
-            IDataVault dataVault = _wakeDataVault ?? GlobalRegistry.DataVault;
+            IDataVault dataVault = _wakeDataVault;
             if (dataVault == null || !_floraSwayFieldBlackBoxHandle.IsCreated)
                 return false;
 
@@ -7352,8 +7495,7 @@ namespace Hecton8.World
 
         private bool EnsureWakeTrailStampCommandBuffer(bool clearExisting)
         {
-            IDataVault dataVault = _wakeDataVault ?? GlobalRegistry.DataVault;
-            _wakeDataVault = dataVault;
+            IDataVault dataVault = _wakeDataVault;
             if (dataVault == null)
             {
                 _wakeTrailStampCommandsHandle = default;
@@ -7536,11 +7678,11 @@ namespace Hecton8.World
         {
             float lengthSq = math.lengthsq(value);
             if (math.isfinite(lengthSq) && lengthSq > 0.000001f)
-                return value * math.rsqrt(lengthSq);
+                return value * math.rsqrt(math.max(lengthSq, 0.000001f));
 
             float fallbackLengthSq = math.lengthsq(fallback);
             if (math.isfinite(fallbackLengthSq) && fallbackLengthSq > 0.000001f)
-                return fallback * math.rsqrt(fallbackLengthSq);
+                return fallback * math.rsqrt(math.max(fallbackLengthSq, 0.000001f));
 
             return float3.zero;
         }
@@ -7586,13 +7728,13 @@ namespace Hecton8.World
         private static Vector3 NormalizeVector3Fast(Vector3 vector, Vector3 fallback)
         {
             float magnitudeSq = vector.sqrMagnitude;
-            return magnitudeSq > 0.0001f ? vector * math.rsqrt(magnitudeSq) : fallback;
+            return magnitudeSq > 0.0001f ? vector * math.rsqrt(math.max(magnitudeSq, 0.0001f)) : fallback;
         }
 
         private static Vector2 NormalizeVector2Fast(Vector2 vector, Vector2 fallback)
         {
             float magnitudeSq = vector.sqrMagnitude;
-            return magnitudeSq > 0.0001f ? vector * math.rsqrt(magnitudeSq) : fallback;
+            return magnitudeSq > 0.0001f ? vector * math.rsqrt(math.max(magnitudeSq, 0.0001f)) : fallback;
         }
 
 #if UNITY_EDITOR

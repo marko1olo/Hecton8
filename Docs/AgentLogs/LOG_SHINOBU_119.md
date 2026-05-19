@@ -81,6 +81,66 @@ Verification:
   <BUILD status="BLOCKED_BY_CPU_GATE">CPU reported 100 percent; dotnet build intentionally not launched under batch rule.</BUILD>
 </SELF_AUDIT>
 
+## 2026-05-19 - ULTRA POLISH R3 STATIC REFRESH
+
+What was wrong:
+- The first strict extraction command looked for `<AGENT_PROMPT id="SHINOBU_119">` exactly and missed the live batch tag because it includes `role` and `chat_name` attributes.
+- A repeated mandate required fresh evidence from disk, not trust in chat memory or stale status text.
+- The build wall remains external: `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` is listed in `Hecton8.Core.csproj` but is absent from the filesystem and not tracked by `git ls-files` in this checkout.
+
+What was done:
+- Reran CLI extraction with an attribute-tolerant regex and reread the full 20-task SHINOBU prompt.
+- Reread `AGENTS.md`, Unity MCP skill instructions, `Docs/PROJECT_STATE_STATIC_XRAY.md`, `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`, HFI architecture, and the selected HFI mandates.
+- Reran static sweeps for Burst attributes, struct layout/property hazards, forbidden SHINOBU hot-path allocation tokens, direct audio facade calls, flood interface-array dispatch, and diff whitespace hygiene.
+- Did not launch another build because the last build already stops on an unrelated absent World-domain source included by the generated project; rerunning would only burn compiler time without new evidence.
+
+Cinematic cheats used:
+- No change from R2: scalar CSR head/volume math drives shader waterlines, acoustic muffle scalar, and mass/CoM publication.
+- No particles, moving water planes, room water meshes, acoustic ray fan, or Navier-Stokes path was added.
+
+Exact microseconds saved:
+- Prompt extraction repair: no runtime saving, process correctness only.
+- Build rerun avoidance: prevents another known-failing compiler pass on the same external missing file; no frame-time claim.
+- Static sweeps: no runtime saving, but preserve the compile wall by refusing new direct sibling coupling.
+
+Verification:
+- `rg --pcre2` found no non-exact `[BurstCompile(...)]` attributes in `HabitatFluidIncursionJobs.cs`.
+- `rg` found no `OptimizeFor`, `FloatMode.Fast`, `Pack=1`, `LayoutKind.Sequential`, hot struct property setters, `GC.Collect`, `string.Split`, `new Queue`, `UnityEngine.Random`, `Random.Range`, `foreach`, `using Hecton8.Audio`, or `AcousticZoneEvents.RaiseFloodMuffle` in SHINOBU flood files.
+- `rg` found no `IPhysicsFloodMassShiftEventListener`, `_floodMassListeners`, `DispatchFloodMassShift`, or `UnpackFloodMass` in `PhysicsApplySystem.cs`.
+- `.position` appears once in SHINOBU flood files: cold boot AUP seeding through `_cachedTransform.position`, not runtime water-plane manipulation.
+- `git diff --check` on touched SHINOBU files passed with only repository CRLF normalization warnings.
+
+<SELF_AUDIT phase="ULTRA_POLISH_R3_STATIC_REFRESH" agent="SHINOBU_119">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS_STATIC_ONLY">No Transform water-plane authority found in SHINOBU flood runtime; one `.position` use is cold AUP boot seeding.</TASK>
+    <TASK id="02" status="PASS_STATIC_ONLY">No ParticleSystem flood path in SHINOBU files.</TASK>
+    <TASK id="03" status="PASS_STATIC_ONLY">Hot DTOs remain raw fields; flood mass listener interface path remains removed.</TASK>
+    <TASK id="04" status="PASS_STATIC_ONLY">Primary DTO remains explicit 32 bytes; static layout grep clean.</TASK>
+    <TASK id="05" status="PASS_STATIC_ONLY">Mock breach facade remains present; no runtime object dependency added.</TASK>
+    <TASK id="06" status="PASS_STATIC_ONLY">Ingress remains Torricelli plus AUP-local depth.</TASK>
+    <TASK id="07" status="PASS_STATIC_ONLY">BFS remains CSR head-transfer math with conserved deltas.</TASK>
+    <TASK id="08" status="PASS_STATIC_ONLY">Visual water remains shader scalar buffer.</TASK>
+    <TASK id="09" status="PASS_STATIC_ONLY">Mass route remains `SubmarineFloodStateSignal` plus unmanaged `PhysicsEventPayload`.</TASK>
+    <TASK id="10" status="PASS_STATIC_ONLY">Acoustic route remains typed `SignalBus<HabitatFloodAcousticMuffleSignal>` without flood-to-audio facade call.</TASK>
+    <TASK id="11" status="PASS_STATIC_ONLY">Quality remains continuous cadence/iteration scalar, no binary tier switch.</TASK>
+    <TASK id="12" status="PASS_STATIC_ONLY">Sealed CSR flags still block conductance.</TASK>
+    <TASK id="13" status="PASS_STATIC_ONLY">AUP-local ingress and deck-head equalization remain in source.</TASK>
+    <TASK id="14" status="PASS_STATIC_ONLY">Burst deterministic attributes exact in SHINOBU jobs.</TASK>
+    <TASK id="15" status="PASS_STATIC_ONLY">Vault/uninitialized-memory status unchanged.</TASK>
+    <TASK id="16" status="PASS_STATIC_ONLY">300-frame telemetry/dump route unchanged.</TASK>
+    <TASK id="17" status="PASS_STATIC_ONLY">Editor tuner still exposes Water Density.</TASK>
+    <TASK id="18" status="PASS_STATIC_ONLY">CSV parser static grep remains clean for `string.Split`.</TASK>
+    <TASK id="19" status="PASS_STATIC_ONLY">Editor gizmo path unchanged and job-window guarded.</TASK>
+    <TASK id="20" status="PASS_STATIC_ONLY">Static self-audit refreshed; build still blocked by an external stale World-domain project include.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION primary="FluidCompartmentDTO" size="32">Offsets 0/4/8/12/16/20 plus bytes 24-31 padding; 32 is divisible by 16 and packs two DTOs per 64-byte cache line.</STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>Below q 0.3 the solver trends toward 5Hz and one BFS pass; high q trends to 50Hz, five passes, richer shader wobble input, and smoother publication.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS private_native_arrays="0">Vault IDs 70780-70798 remain the SHINOBU buffer family.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH no_alias="PASS_STATIC_ONLY">Ingress -> BFS -> WaterlineMassSummary -> TelemetryRecorder, with `[NoAlias]` on independent job fields.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD status="BLOCKED_EXTERNAL_STALE_WORLD_INCLUDE">Latest build failure was missing `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`; it is listed by `Hecton8.Core.csproj`, absent from disk, and not tracked by `git ls-files` here.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION complexity_after="O(N+E)">Scalar flood truth plus shader/audio/mass illusions remain the only SHINOBU water path.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
 ## 2026-05-19 - ULTRA POLISH R2 DEFECT PASS
 
 What was wrong:
@@ -113,7 +173,7 @@ Verification:
 - Static sweep found no `IPhysicsFloodMassShiftEventListener`, `_floodMassListeners`, `DispatchFloodMassShift`, or flood listener array.
 - Static sweep found no `ExternalWaterlineAbsoluteY`, absolute-Y compartment multiplication path, forbidden hot-path allocation markers, `Pack=1`, sequential SHINOBU DTO layout, or non-exact SHINOBU Burst attributes.
 - `git diff --check` passed with only repository CRLF warnings.
-- Build gate opened at CPU 24 and `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false` ran. It failed on missing unrelated World-domain file `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`, which is deleted in the worktree. SHINOBU did not edit or revert that file.
+- Build gate opened at CPU 24 and `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false` ran. It failed on missing unrelated World-domain file `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`, which is listed in `Hecton8.Core.csproj` but absent from the filesystem and not tracked by `git ls-files`. SHINOBU did not synthesize or edit that file.
 
 <SELF_AUDIT phase="ULTRA_POLISH_R2" agent="SHINOBU_119">
   <TASK_RECONCILIATION>
@@ -150,7 +210,7 @@ Verification:
   <SCALABILITY_CURVE>Below q 0.3, cadence collapses toward 5Hz and equalization to one pass; ingress cap and wobble remain lerped scalars. At q 1.0, fixed cadence saturates, five BFS passes run, and shader wobble gets richer scalar input.</SCALABILITY_CURVE>
   <H_PHI_VAULT_STATUS private_native_arrays="0">Uses VaultBufferHandle IDs 70780-70798.</H_PHI_VAULT_STATUS>
   <POINTER_ALIASING_AND_DEPENDENCY_GRAPH no_alias="PASS">Ingress -> BFS -> WaterlineMassSummary -> TelemetryRecorder. No flood-specific interface-array dispatch remains.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
-  <COMPILE_GUARD status="BLOCKED_EXTERNAL">Hecton8.Core build blocked by deleted World file, not SHINOBU flood files.</COMPILE_GUARD>
+  <COMPILE_GUARD status="BLOCKED_EXTERNAL">Hecton8.Core build blocked by absent World file listed by the generated project, not SHINOBU flood files.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION complexity_before="particles/planes/rays" complexity_after="CSR O(N+E)">Flood is scalar volume/head plus shader waterline, not fluid particles.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
 

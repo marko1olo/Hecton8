@@ -29,7 +29,9 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 - Do not claim performance without fresh proof: profiler, GC allocation capture, frame-time overlay, build target, hardware.
 - Do not spend paid ad money before proof assets exist.
 - Do not contact creators with generic spam. Every pitch must name why their channel fits.
+- Do not contact creators from asset existence alone. Creator-facing use requires asset QA, `creator_utility_score` 3/4+, `creator_send_gate`, named CRM row mapping, exact contact route, and send-log fields.
 - Do not buy fake wishlists, Discord members, views, comments, reviews, curator posts, or key-reseller access.
+- Run Promise Lint before any public sentence leaves the docs: public copy must be current-build proof, active-work proof, planned focus, investigating, not planned, or removed.
 
 ## Directory Map
 
@@ -51,9 +53,9 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 | `Creative/VISUAL_IDENTITY_AND_KEY_ART_DIRECTION.md` | Visual identity, palette, key-art concepts, capsule rules, screenshot standards, and logo direction. |
 | `SEO/STEAM_TAG_AND_SEARCH_STRATEGY.md` | Steam tag order, search keywords, forbidden tag claims, and tag drift monitoring. |
 | `Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md` | Hypothesis-driven creative tests, sample thresholds, stop rules, and experiment log template. |
-| `QA/MARKETING_ASSET_QA_CHECKLIST.md` | Mandatory screenshot, clip, capsule, trailer, post, pitch, presskit, and localization QA gates. |
+| `QA/MARKETING_ASSET_QA_CHECKLIST.md` | Mandatory screenshot, clip, capsule, trailer, post, pitch, presskit, localization, and creator utility QA gates. |
 | `Schedule/90_DAY_MARKETING_OPERATIONS_CALENDAR.md` | Week-by-week operating calendar from pre-screenshot setup to demo/Next Fest readiness. |
-| `Operations/DAILY_AGENT_TASK_LOOP.md` | Daily agent roles, quotas, verification loop, pitch loop, source audit loop, and report template. |
+| `Operations/DAILY_AGENT_TASK_LOOP.md` | Daily agent roles, quotas, verification loop, pitch loop, source audit loop, creator utility fields, and report template. |
 | `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md` | Weekly competitor/player-pain search queries, signal taxonomy, and digest template. |
 | `Campaigns/CAMPAIGN_00_PRE_SCREENSHOT_SETUP.md` | What to do now before screenshots exist. |
 | `Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md` | First screenshot drop plan, critique posts, creator micro-outreach, and metrics. |
@@ -69,12 +71,12 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 | `Steam/WISHLIST_CONVERSION_AND_PAGE_ITERATION_PLAN.md` | Steam page section order, screenshot order, conversion experiments, and weekly page review. |
 | `CreatorOutreach/CREATOR_OUTREACH_DATABASE.md` | Curated public creator lead database and outreach segmentation. |
 | `CreatorOutreach/ADJACENT_SURVIVAL_CREATOR_LEADS.md` | Raw public leads from adjacent survival/horror/engineering games. |
-| `CreatorOutreach/CREATOR_CRM_SCHEMA_AND_SCORING.md` | CRM schema, scoring, status values, and verification gates. |
+| `CreatorOutreach/CREATOR_CRM_SCHEMA_AND_SCORING.md` | CRM schema, scoring, status values, verification gates, and send-log fields. |
 | `CreatorOutreach/RAW_LEAD_EXPANSION_QUEUE.md` | Raw public lead seeds for scaling toward 300-1000 leads; not outreach-ready. |
 | `CreatorOutreach/SEGMENT_PITCH_MATRIX.md` | Segment-specific pitch angles, timing, risks, and personalization formula. |
 | `CreatorOutreach/PITCH_BANK.md` | Persona pitches, email/DM formats, subject lines, and Russian-language pitch. |
 | `CreatorOutreach/A_TIER_PERSONALIZED_PITCHES.md` | Personalized draft angles for top creators, outlets, and regional leads. |
-| `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` | How agents turn raw public leads into verified, personalized outreach candidates. |
+| `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` | How agents turn raw public leads into verified, personalized, asset/utility-gated outreach candidates. |
 | `CreatorOutreach/PRIORITY_250_PITCH_SHEET_FROM_RAW.md` | Top 250 raw public leads converted into pitch-planning rows. |
 | `CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md` | First 50 raw-signal message drafts; must be verified before sending. |
 | `Community/COMMUNITY_POST_TEMPLATES.md` | Reddit, Steam, X/Bluesky, TikTok/Shorts, Discord templates. |
@@ -89,7 +91,7 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 | `Content/TRAILER_SCRIPT_CAPTURE_AND_EDITING_BRIEF.md` | Trailer length variants, beat sheet, capture rules, text cards, audio direction, and trailer QA. |
 | `Feedback/PLAYER_FEEDBACK_TAXONOMY_AND_TRIAGE.md` | Feedback classes, severity, translation of raw comments into product/marketing actions. |
 | `Feedback/STEAM_REVIEWS_FORUMS_AND_SUPPORT_RESPONSE_PLAYBOOK.md` | Steam review response rules, forum templates, known-issues policy, and weekly review digest. |
-| `Launch/LAUNCH_DAY_AND_FIRST_WEEK_WAR_ROOM.md` | Launch/demo/EA role ownership, timeline, red alerts, holding statements, and first-week digest. |
+| `Launch/LAUNCH_DAY_AND_FIRST_WEEK_WAR_ROOM.md` | Launch/demo/EA role ownership, dry run, timeline, red alerts, holding statements, and first-week digest. |
 | `Legal/COMPLIANCE_AND_DISCLOSURE_PLAYBOOK.md` | Creator disclosure, key distribution, paid placement, and forbidden claim rules. |
 | `Localization/LOCALIZATION_AND_REGIONAL_ASSET_PIPELINE.md` | Regional language priority, asset localization, review gates, and one-pager template. |
 | `Partnerships/CREATOR_CONTRACT_TERMS_AND_RATE_CARD.md` | Paid creator deal types, rough test ranges, contract checklist, and talking-point boundaries. |
@@ -104,7 +106,7 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 | `Press/PRESS_TARGET_VERIFICATION_TRACKER.csv` | Press/outlet/showcase verification tracker template with initial high-fit rows. |
 | `Press/STEAM_CURATOR_CANDIDATE_TRACKER.csv` | Steam curator candidate and discovery-surface tracker. |
 | `Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md` | Social account priority, handle/bio/pinned templates, cadence, first posts, and reply rules. |
-| `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md` | One-page site structure, presskit folder layout, factsheet, and creator disclosure blocks. |
+| `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md` | One-page site structure, no-link holding state, presskit minimums, factsheet, and creator disclosure blocks. |
 | `KPI/MARKETING_DASHBOARD_SPEC.md` | Metrics schema, targets, and kill criteria for Steam, clips, outreach, and feedback. |
 | `Regional/REGIONAL_OUTREACH_PLAN.md` | Regional outreach priorities and first-pass localized pitch drafts. |
 | `Regional/REGIONAL_CREATOR_LEADS.md` | Regional raw lead list for RU/CIS, DE, PL, FR, ES, PT/BR, JP, KR. |
@@ -115,12 +117,12 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 | `Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` | Marketing asset folder structure, filename rules, status values, metadata schema, and rejection codes. |
 | `Data/SOURCE_LEDGER.md` | Sources, evidence classes, raw lead-mining notes, and verification rules. |
 | `Data/MARKETING_BACKLOG_INDEX.md` | Agent-executable marketing backlog with P0/P1/P2 tasks and spend gates. |
-| `Data/MARKETING_RISK_REGISTER.md` | Risk register for co-op confusion, clone perception, weak assets, key scams, review damage, and launch issues. |
-| `Data/CREATOR_VERIFICATION_TEMPLATE.csv` | CSV header/template for turning raw public creator leads into verified CRM rows. |
-| `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` | CSV template for public asset build/source/status/hook/QA metadata. |
+| `Data/MARKETING_RISK_REGISTER.md` | Risk register for co-op confusion, clone perception, weak assets, creator utility bypass, key scams, review damage, and launch issues. |
+| `Data/CREATOR_VERIFICATION_TEMPLATE.csv` | CSV header/template for turning raw public creator leads into verified CRM rows with structured send-log fields. |
+| `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` | CSV template for public asset build/source/status/hook/QA metadata plus creator utility/send-gate fields. |
 | `Data/RAW_PUBLIC_CREATOR_LEADS_README.md` | Data dictionary and verification rules for raw/unique/priority creator CSVs. |
 | `Data/RAW_LEAD_SCRAPE_SUMMARY_2026-05-18.md` | Summary of the 7155-row public-index extraction and 4970-profile queue. |
-| `Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md` | Public roadmap promise levels, forbidden language, safe template, and EA roadmap rules. |
+| `Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md` | Public roadmap promise levels, Promise Lint Gate, forbidden language, safe template, and EA roadmap rules. |
 
 ## Core Position
 
@@ -152,3 +154,5 @@ Do not run broad outreach until at least one of these exists:
 - a capture showing no fake performance claims are being made.
 
 If a screenshot needs a paragraph to explain why it is good, it is not a marketing asset.
+
+Creator-facing outreach requires more than this first asset gate: the matching asset row must carry creator utility 3/4+, `creator_send_gate` must allow the route, the CRM row must name the contact route, and `asset_ids_sent` plus `creator_utility_score` must be logged before send.

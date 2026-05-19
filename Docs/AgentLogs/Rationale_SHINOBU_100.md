@@ -100,7 +100,7 @@ Scalability potential: Low tier records stride inflation and capacity pressure; 
 
 Hardware Impact: Static estimate under 2 microseconds per record due one Vault array write. Fault dump is cold-path IO only.
 
-## Decision 08 - Culling Allocation Boundary
+## Decision 08 - Culling Allocation Boundary (Superseded By Decision 17)
 
 Problem: Static scan still finds `GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs` owning one `NativeParallelMultiHashMap` spatial hash and two `NativeQueue` lanes.
 
@@ -110,7 +110,7 @@ Rejected Alternatives: Rejected blind replacement with `SignalBus` for changed i
 
 Scalability potential: Low tier needs a cheaper spatial representation, likely Vault bucket arrays plus fixed head/next-index SoA. High/Ultra can keep denser wake candidates, but it still needs one owner and one compaction route.
 
-Hardware Impact: No runtime change. Remaining risk is documented: culling persistent containers are the next migration target, not resolved in this loop.
+Hardware Impact: Superseded. Loop 4 migrated the three culling containers into Vault-backed SoA/counter buffers; see Decision 17.
 
 ## Decision 09 - UI Toolkit Vault Facade
 
@@ -195,3 +195,75 @@ Rejected Alternatives: Rejected passing `GlobalRegistry.DataVault` through every
 Scalability potential: Low tier avoids repeated dependency lookup overhead; Middle/High/Ultra gain the same stable memory route and can layer denser telemetry without changing service ownership.
 
 Hardware Impact: Static estimate 1-2 microseconds avoided per dense hot ref-access burst. No profiler proof due CPU-gated build.
+
+## Decision 16 - Core.Memory Compile Wall And BufferID Collision Fix
+
+Problem: The Frost sweep initially wrote `MemoryAddressShiftSignal` directly through `SignalBus` from `Hecton8.Core.Memory`. `SignalBus` and `MemoryAddressShiftSignal` are compiled in `Hecton8.Core`, while `Hecton8.Core` already references `Hecton8.Core.Memory`; adding a reverse reference would create a compile-wall violation. The same pass also placed late SHINOBU BufferIDs on 560-565, colliding with existing WristHud IDs.
+
+Solution: Replaced the direct SignalBus writer with a 64-byte `VaultMemoryAddressShiftRecord` plus a Vault-owned count buffer. `VaultOrphanedPointerSweepJob` writes records only; `SystemDispatcher` maps those records into `MemoryAddressShiftSignal` and publishes from the Core boundary where the dependency is legal. Moved `VaultXRayWindow` to the Editor asmdef and `VaultMemoryGizmoVisualizer` to Core diagnostics so editor/debug code can legally use Core-only types. Relocated late SHINOBU BufferIDs to 636-641 and changed `VaultBufferContract.OwnsBufferId` from range math to an explicit owner switch.
+
+Rejected Alternatives: Rejected adding `Hecton8.Core` as an asmdef reference to `Hecton8.Core.Memory`; that would create a circular architectural dependency. Rejected leaving duplicate BufferID values because it corrupts one-fact ownership. Rejected moving WristHud IDs because that is another domain's authority.
+
+Scalability potential: Low tier still writes a bounded record buffer sized by the same continuous Frost sweep budget; Middle/High/Ultra publish denser relocation records without changing the data route. Editor visuals remain zero runtime cost.
+
+Hardware Impact: Removes a compile-wall risk rather than a direct frame-time cost. The per-move path is one 64-byte Vault record write and one main-thread signal publish; static cost remains below the previous queue enqueue class, with deterministic ownership and no reverse assembly edge.
+
+## Decision 17 - SHINOBU_37 Physics Culling Vault Closure
+
+Problem: Static audit still found three persistent owner-local native containers in `GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs`: `NativeParallelMultiHashMap<int,int>` for spatial culling, `NativeQueue<int>` for changed-state indices, and `NativeQueue<PhysicsCullingTargetWakeRequestSignal>` for targeted wake requests. Keeping them as session allocations violated the GlobalDataVault sovereignty target and left rollback-adjacent culling state outside Vault handle generation.
+
+Solution: Replaced the multi-hash map with Vault SoA buffers: `ShinobuPhysicsCullingSpatialBucketHeads` (4096 bucket heads), `ShinobuPhysicsCullingSpatialNext` (per-body chain next), and `ShinobuPhysicsCullingSpatialCellHashes` (exact full cell hash, so bucket collisions do not become false spatial hits). Replaced changed-index queue with `ShinobuPhysicsCullingChangedIndices` plus a 64-byte `PhysicsCullingCounter64` at `ShinobuPhysicsCullingChangedCount`; Burst writers use `Interlocked.Increment` through a `NativeArray<PhysicsCullingCounter64>` pointer. Replaced targeted wake queue with the existing `ShinobuPhysicsCullingWakeRequestMirror` plus `ShinobuPhysicsCullingWakeRequestCount`. The local `VaultBufferBinding<T>` now caches `IDataVault` and uses `GlobalDataVault.TryGetLatestCreated` as the cold fallback, removing hot `GlobalRegistry.DataVault` service lookup from physics culling buffer access.
+
+Rejected Alternatives: Rejected keeping the queues under `NativeMemorySentinel` because that preserves owner-local persistent native allocations. Rejected `SignalBus` for changed indices because the culling jobs need a parallel write target and dispatcher drains indexed body mutations, not fire-and-forget event semantics. Rejected a bucket-only hash because it would wake/sleep bodies from unrelated cells on collisions. Rejected reusing 70609-70614 after source scan showed those IDs are reserved by `ShinobuApexBrainVault` constants; the physics extension moved to 70630-70635.
+
+Scalability potential: Low devices keep the same fixed SoA memory and benefit from continuous quality radius shrinkage via `HomeostasisBrain.GlobalQualityWeight`; Middle uses moderate radii and the same O(N + C) candidate path; High/Ultra expand activation radius smoothly and spend the saved CPU on denser visual systems. The route has no binary tier branch for the culling radius.
+
+Hardware Impact: Removes three owner-local persistent native allocations from the physics culling partial. Rebuild remains O(N) over active bodies and query is O(C) over nine neighbor buckets plus exact hash checks. Static i3/MX350 gain is reduced allocator fragmentation and queue container overhead; frame-time gain is not claimed without profiler proof. Counter false sharing is addressed by 64-byte explicit layout.
+
+## Decision 18 - Boot Prewarm And Test Contract Repair
+
+Problem: SHINOBU_100 maintenance buffers were created lazily when Frost maintenance first ran, and `VaultSurgeryEditTests` still asserted the pre-expansion VaultBufferContract values. That created a boot/runtime ownership ambiguity and stale CI contract.
+
+Solution: Added `VaultSovereigntyMaintenance.PrewarmBuffers(IDataVault, int)` and called it from `GameBootstrapper.PreallocateDataVaultPrimaryBuffers` using `VaultMemoryLayoutConfig.HotEntityCapacity` with a 1024 fallback. The prewarm path requests active count, address shift count/records, CSV scratch, telemetry ring, and AUP local32 from the DataVault before gameplay maintenance. Editor tests now assert the expanded BufferID contract and the 8-byte alignment of `VaultAupSectorLocal32`, `VaultSovereigntyTelemetryEntry`, and `VaultMemoryAddressShiftRecord`.
+
+Rejected Alternatives: Rejected relying on first Frost tick allocation because it violates the boot-phase DataVault request rule. Rejected broad bootstrap refactor because the existing preallocation method is the narrow owner route. Rejected leaving tests stale because future agents would receive false-negative ABI failures unrelated to their changes.
+
+Scalability potential: Low devices receive bounded default capacities and avoid a first-frame allocation spike; Middle/High/Ultra can increase `HotEntityCapacity` through layout config without new C# code.
+
+Hardware Impact: Boot-only allocation route. Expected runtime gain is avoiding first-maintenance allocator stalls; exact microseconds are not claimed without Unity Profiler proof.
+
+## Decision 19 - Core Memory Explicit ABI Closure
+
+Problem: A post-polish ABI scan still found `LayoutKind.Sequential` on non-generic Core.Memory records and dispatcher black-box DTOs in files touched by the Vault route. Even when the current sequential order happened to produce aligned sizes, it left future field insertion able to silently alter rollback/black-box byte offsets.
+
+Solution: Converted non-generic Core.Memory records to explicit layouts with unchanged sizes: `BlockDescriptor` 40B, `H8AllocationRecord` 48B, `H8MemoryTelemetryEntry` 64B, `VaultRelocationRecord` 32B, `VaultBufferMeta` 48B, `VaultMemoryBlockSnapshot` 48B, `VaultArenaBlock` 32B, and `MemoryDefragTelemetryEntry` 128B. Also converted touched dispatcher DTOs `CriticalMemoryPressureEvent` 32B and `DispatcherBlackBoxEntry` 64B. Kept `VaultBufferHandle<T>` and `VaultBufferSlice<T>` sequential because generic explicit-layout value types are a CLR/IL2CPP compile-wall risk; both retain exact `UnsafeUtility.SizeOf` assertions and are handle/view metadata rather than hot authoritative DTO rows.
+
+Rejected Alternatives: Rejected forcing explicit layout onto generic handle/view structs because a compile-risk in the core memory API would be worse than a documented handle-layout exception. Rejected expanding field sizes or changing enum underlying types because the goal is ABI freezing, not a public contract change. Rejected touching AI pathfinding `Pack=1` DTOs inside this decision because those are separate AI ownership lanes with their own binary contracts.
+
+Scalability potential: Low tier gets deterministic, cache-aligned crash/relocation metadata without extra bytes; Middle/High/Ultra can add richer telemetry only by explicit versioned fields, not accidental sequential drift.
+
+Hardware Impact: Runtime microseconds are not claimed. The direct value is ARM64-safe documented offsets for memory authority records and prevention of future unaligned insertions. Existing size assertions remain the compile/import guard.
+
+## Decision 20 - Dispatcher Vault Dependency Cache Closure
+
+Problem: `SystemDispatcher` still had two `GlobalRegistry.DataVault` fallbacks in its memory heartbeat/cache path. They were cold fallbacks, but their presence made static hot-path audits unable to prove that SHINOBU-touched Vault route uses cached dependencies only.
+
+Solution: Replaced both direct fallbacks with cached `_dataVault` plus `GlobalDataVault.TryGetLatestCreated`. This keeps the route inside the Vault ownership boundary and matches the migrated VehicleMotor/Physics/Acoustic/Fauna cold fallback pattern.
+
+Rejected Alternatives: Rejected retaining registry fallback with comments because the audit target is objective source proof, not intent. Rejected a broad dispatcher dependency-injection refactor because that would alter unrelated service bootstrap contracts.
+
+Scalability potential: Low tier avoids service-locator branch noise during memory heartbeat; Middle/High/Ultra keep the same route while increasing telemetry density or Vault capacities.
+
+Hardware Impact: Static estimate is small, under 1-2 microseconds in cache-miss recovery paths. The larger value is compile-wall and audit determinism; no profiler measurement was taken.
+
+## Decision 21 - Physics Culling Scratch Vault Closure
+
+Problem: After the native container migration, `GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs` still held two managed byte scratch arrays for CSV and legacy binary hydration plus one managed `int3[]` neighbor-cell scratch. They were cold paths, but they weakened the DataVault sovereignty proof and kept configuration IO outside the same Vault scratch model used by SHINOBU memory ingestion.
+
+Solution: Added BufferIDs `ShinobuPhysicsCullingCsvScratch` (70636) and `ShinobuPhysicsCullingLegacyRadiiScratch` (70637). The CSV and legacy `.h8bin` readers now stream directly into Vault-backed `NativeArray<byte>` spans and parse via `ReadOnlySpan<byte>`. The 3x3 neighbor scratch array was deleted; spatial candidate gathering now computes the nine neighbor cell hashes directly in nested loops.
+
+Rejected Alternatives: Rejected leaving the managed byte arrays with comments because source proof matters more than intent. Rejected storing the neighbor cells in another Vault buffer because a fixed nine-element loop is cheaper and has no persistent authority. Rejected replacing `Plane[6]` frustum scratch because Unity's `GeometryUtility.CalculateFrustumPlanes(Camera, Plane[])` requires a managed array and this scratch is pre-existing API interop, not rollback state.
+
+Scalability potential: Low tier keeps the same fixed 4096B/64B scratch route with no managed array staging; Middle/High can reload tuning without heap churn; Ultra can raise culling richness through existing continuous quality radii without changing the scratch ABI.
+
+Hardware Impact: Measured frame savings are not claimed. Static gain is removal of two managed scratch arrays and one candidate-cell array from the culling partial, plus direct native-span file hydration. Expected i3/MX350 value is lower GC-audit risk and less cold-path copy pressure; hot-path gain from deleting the 9-cell array is negligible but removes a persistent managed field.

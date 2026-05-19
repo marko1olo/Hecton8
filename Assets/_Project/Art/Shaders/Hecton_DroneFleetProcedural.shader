@@ -33,11 +33,13 @@ Shader "Hecton8/Construction/DroneFleetProcedural"
 
             StructuredBuffer<float4x4> _DroneMatrices;
             StructuredBuffer<float4x4> _InstanceMatrices;
+            StructuredBuffer<float4> _PhantomColors;
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _HullTint;
                 float4 _BeaconTint;
                 float4 _DroneCameraOriginWS;
+                int _UsePhantomColors;
             CBUFFER_END
 
             struct Varyings
@@ -46,6 +48,7 @@ Shader "Hecton8/Construction/DroneFleetProcedural"
                 float3 normalWS : TEXCOORD0;
                 float active : TEXCOORD1;
                 float beacon : TEXCOORD2;
+                float4 instanceColor : TEXCOORD3;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -105,6 +108,7 @@ Shader "Hecton8/Construction/DroneFleetProcedural"
                 output.normalWS = normalWS;
                 output.active = active;
                 output.beacon = frac((float)instanceID * 0.61803398875);
+                output.instanceColor = _UsePhantomColors != 0 ? _PhantomColors[instanceID] : float4(1.0, 1.0, 1.0, 1.0);
                 return output;
             }
 
@@ -115,7 +119,8 @@ Shader "Hecton8/Construction/DroneFleetProcedural"
                 float ndotl = saturate(dot(SafeNormalize3(input.normalWS, float3(0.0, 1.0, 0.0)), lightDirection));
                 float beacon = smoothstep(0.78, 1.0, input.beacon);
                 float3 color = lerp(_HullTint.rgb, _BeaconTint.rgb, beacon) * lerp(0.36, 1.0, ndotl);
-                return half4(color, 1.0);
+                color *= input.instanceColor.rgb;
+                return half4(color, saturate(input.instanceColor.a));
             }
             ENDHLSL
         }

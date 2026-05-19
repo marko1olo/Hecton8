@@ -79,7 +79,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Shooting ────────────────────────────────────")]
-        [Tooltip("Prefab with FloraProjectile component to spawn.")]
+        [Tooltip("Legacy visual projectile prefab. Fast combat shots are queued into BallisticsRuntime instead of spawned.")]
         [SerializeField] private GameObject projectilePrefab;
 
         [Tooltip("Transform where projectiles spawn.")]
@@ -117,7 +117,6 @@ namespace Hecton8.Gameplay
         private uint _shotOrdinal;
         private bool _isRegistered;
         private bool _playerFound;
-        private bool _poolMissingLogged;
 
         // Pre-cached player tag
         private const string PlayerTag = "Player";
@@ -329,50 +328,24 @@ namespace Hecton8.Gameplay
 
         private void Shoot()
         {
-            if (projectilePrefab == null) return;
-
             _state = FloraState.Shooting;
             _cooldownTimer = shootCooldown;
 
-            Vector3 spawnPos = muzzlePoint.position;
-            Quaternion spawnRot = muzzlePoint.rotation;
+            Transform muzzle = muzzlePoint != null ? muzzlePoint : _transform;
+            Vector3 spawnPos = muzzle.position;
+            Quaternion spawnRot = muzzle.rotation;
 
             float randomAngle = ResolveShotSpreadAngle();
             spawnRot = Quaternion.AngleAxis(randomAngle, Vector3.up) * spawnRot;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
-            if (pool == null)
-            {
-                if (!_poolMissingLogged)
-                {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning("[HostileFlora] ObjectPoolManager unavailable. Projectile spawn skipped to avoid runtime Instantiate.", this);
-#endif
-                    _poolMissingLogged = true;
-                }
-
-                _state = FloraState.Cooldown;
-                return;
-            }
-
-            GameObject projectile = pool.Spawn(projectilePrefab, spawnPos, spawnRot);
-            if (projectile == null)
-            {
-                _state = FloraState.Cooldown;
-                return;
-            }
-
             Vector3 projectileVelocity = ResolveSafeProjectileVelocity(spawnRot, projectileSpeed);
-
-            // Initialize projectile
-            if (projectile.TryGetComponent(out FloraProjectile floraProjectile))
-            {
-                floraProjectile.Initialize(projectileVelocity);
-            }
-            else if (projectile.TryGetComponent(out Rigidbody rb))
-            {
-                rb.linearVelocity = projectileVelocity;
-            }
+            BallisticsRuntime.QueueTrajectoryFromVelocity(
+                spawnPos,
+                projectileVelocity,
+                BallisticsRuntime.FloraSpikeMassKg,
+                BallisticWeaponHashes.FloraSpike,
+                _shotSeed,
+                BallisticTrajectoryFlags.HostileFlora);
 
             // Play shoot sound
             if (shootSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)

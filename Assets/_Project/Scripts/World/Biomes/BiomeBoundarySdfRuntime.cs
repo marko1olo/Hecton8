@@ -398,8 +398,8 @@ namespace Hecton8.World.Biomes
                 BiomeBHash = result.BiomeBHash,
                 BlendFactor01 = result.BlendFactor01,
                 BoundaryDistanceMeters = result.BoundaryDistanceMeters,
-                MacroCellX = result.MacroCell.x,
-                MacroCellY = result.MacroCell.y,
+                MacroCellX = (short)math.clamp(result.MacroCell.x, short.MinValue, short.MaxValue),
+                MacroCellY = (short)math.clamp(result.MacroCell.y, short.MinValue, short.MaxValue),
                 Flags = flags,
                 SampleDiameter = result.SampleDiameter
             };
@@ -533,25 +533,26 @@ namespace Hecton8.World.Biomes
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct BiomeBoundaryTelemetryEntry
         {
-            public int FrameIndex;
-            public uint Sequence;
-            public uint OriginShiftSequence;
-            public uint StateHash;
-            public long GridX;
-            public long GridZ;
-            public float LocalX;
-            public float LocalZ;
-            public uint BiomeAHash;
-            public uint BiomeBHash;
-            public float BlendFactor01;
-            public float BoundaryDistanceMeters;
-            public int MacroCellX;
-            public int MacroCellY;
-            public byte Flags;
-            public byte SampleDiameter;
+            [FieldOffset(0)] public int FrameIndex;
+            [FieldOffset(4)] public uint Sequence;
+            [FieldOffset(8)] public uint OriginShiftSequence;
+            [FieldOffset(12)] public uint StateHash;
+            [FieldOffset(16)] public long GridX;
+            [FieldOffset(24)] public long GridZ;
+            [FieldOffset(32)] public float LocalX;
+            [FieldOffset(36)] public float LocalZ;
+            [FieldOffset(40)] public uint BiomeAHash;
+            [FieldOffset(44)] public uint BiomeBHash;
+            [FieldOffset(48)] public float BlendFactor01;
+            [FieldOffset(52)] public float BoundaryDistanceMeters;
+            [FieldOffset(56)] public short MacroCellX;
+            [FieldOffset(58)] public short MacroCellY;
+            [FieldOffset(60)] public byte Flags;
+            [FieldOffset(61)] public byte SampleDiameter;
+            [FieldOffset(62)] public ushort _pad0;
         }
     }
 }

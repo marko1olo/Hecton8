@@ -15,6 +15,8 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+
+R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Evidence Class: STATIC_SOURCE
@@ -264,13 +266,15 @@ renaming non-canonical payloads:
 
 This was source-observed and CLI-compile claimed by prior report text. Treat it as compile proof only when paired with a linked command-output artifact and timestamp. It is not runtime or Unity-import proof.
 
-Unity loop debt is also a hard zero-regression gate. The only current raw Unity
-loop declarations are the two `SystemDispatcher` shell methods that bridge
-Unity's player loop into the project dispatcher. The audit reports them as
-`UnityLoopShellMethods=2` and `UnityUpdateMethodsRaw=2`, but the debt counter is
-`UnityUpdateMethods=0`. New gameplay/system `Update`, `LateUpdate`, or
-`FixedUpdate` methods must fail `-MaxUnityUpdateMethods 0` unless the integrator
-updates this contract with a bounded dispatcher-shell justification.
+Unity loop debt is also a hard zero-regression gate. A 2026-05-19 SHINOBU_02
+read-only source spot check found no runtime `Update`, `LateUpdate`, or
+`FixedUpdate` declarations under `Assets/_Project/Scripts`; observed declarations
+were Editor-only tuner windows and the bounded `SystemDispatcher` player-loop
+shell. Treat archived `UnityUpdateMethodsRaw` / `UnityLoopShellMethods` counters
+as capture-time artifacts until H-Phi is rerun. New gameplay/system `Update`,
+`LateUpdate`, or `FixedUpdate` methods must fail `-MaxUnityUpdateMethods 0`
+unless the integrator updates this contract with a bounded dispatcher-shell
+justification.
 
 ## 2026-05-15 Archived Static Baseline
 
@@ -318,10 +322,13 @@ profiler proof, GC proof, player-build proof, or visual quality proof.
 
 ## 2026-05-19 HFI Static Artifact Orientation
 
-Latest static numeric orientation comes from `../Archive/Batch009/AgentLogs/HPhi_SHINOBU_02_current2.json`
+Prior scalar HFI orientation comes from `../Archive/Batch009/AgentLogs/HPhi_SHINOBU_02_current2.json`
 and is summarized by `../Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md`.
-This is static-source evidence only. It is not compile, Unity import, Play Mode,
-profiler, GCMonitor, player-build, scene-wiring, save/load, or visual proof.
+Later SHINOBU_02 audit/trend artifacts reached current21 for SignalCritical/Full
+audit counts, but Current22/23 source cleanup still lacks a fresh scalar H-Phi
+rerun. This is static-source/history evidence only. It is not compile, Unity
+import, Play Mode, profiler, GCMonitor, player-build, scene-wiring, save/load,
+or visual proof.
 
 Captured at `2026-05-18 18:15:42 +04:00`:
 
@@ -334,7 +341,7 @@ Captured at `2026-05-18 18:15:42 +04:00`:
 - `HPhiStaticNarrow=0.119585803`
 - `HPhiStaticRisk=0.009214659`
 
-Interpretation: the latest static HFI snapshot improves data-sovereignty and
+Interpretation: this scalar HFI snapshot improves data-sovereignty and
 memory-alignment orientation versus the archived 2026-05-15 baseline, but the
 global-authority surface is still a migration risk. Use
 `GLOBAL_AUTHORITY_BOUNDARIES.md` and `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`

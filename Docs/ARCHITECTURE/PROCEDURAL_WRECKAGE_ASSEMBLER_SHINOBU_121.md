@@ -2,6 +2,7 @@
 
 Date: 2026-05-19
 Status: STATIC SOURCE / UNITY IMPORT PENDING
+Source anchors: `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageVault.cs`, `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs`, `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs`.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -15,6 +16,8 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+
+R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Scope
@@ -24,6 +27,8 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 ## Vault Route
 
 Owner: `SystemID.WorldStreaming`
+
+Route-card proof: `Docs/ARCHITECTURE/PROCEDURAL_WRECKAGE_GLOBAL_AUTHORITY_ROUTE_CARD_SHINOBU_121.md`. Current disposition is `YELLOW` because static source exists but Unity import, Burst compile, GCMonitor, Frame Debugger, and player proof are absent.
 
 Buffers:
 
@@ -57,6 +62,10 @@ Primary DTO: `WreckageNodeDTO`, explicit size 128 bytes. Offsets: `LocalMatrix` 
 ## Dear Lie
 
 Debris is not simulated. The system scatters scrap matrices with deterministic 2D curl noise around the wreck root and lets shaders consume quality/rust/silt scalars. Collision truth is coarse box DTO staging only.
+
+## Binary Rule ABI
+
+Optional `wreckage_module_rules.h8bin` is cold-loaded only. Header is 16 bytes: `RuleBinaryMagic` (`H8WR` little-endian read value `0x52573848`), endian marker `0x01020304`, version, and declared rule count. Each row is a 64-byte `WreckageRuleDTO`-compatible record parsed field-by-field with endian swapping through `math.reversebytes`; records are copied into aligned runtime DTOs rather than `Pack=1` file structs. If the binary is absent or invalid, deterministic mock rules remain active.
 
 ## Verification Pending
 

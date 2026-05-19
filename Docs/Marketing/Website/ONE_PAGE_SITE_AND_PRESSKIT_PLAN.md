@@ -102,3 +102,50 @@ Do not publish the site until:
 - no placeholder claims remain;
 - no co-op hints remain.
 
+## 2026-05-19 No-Link Holding State V0
+
+If accounts or a domain are reserved before Steam is ready, do not publish a fake launch page. Use a minimal holding state only when there is a real official contact route.
+
+### Allowed Holding Page
+
+```text
+HECTON-8
+Single-player-first underwater survival about pressure, machinery, salvage, and black-water exploration.
+
+Public screenshots, Steam page, and demo details will be posted when they are ready.
+Contact: [official project email]
+```
+
+### Holding Page Must Not Include
+
+- wishlist CTA;
+- mailing list unless the owned-audience gate has a concrete promise;
+- fake screenshots, target renders, or AI-looking concept art;
+- roadmap dates;
+- co-op hints;
+- performance claims;
+- "Subnautica killer" or competitor comparison;
+- Discord invite before moderation and purpose are ready.
+
+## Presskit Minimum Viable Packet
+
+Do not send a presskit link until the folder contains at least:
+
+| File | Minimum requirement |
+|---|---|
+| Factsheet | Title, genre, developer, official contact, platform/status, no-coop statement. |
+| Screenshots | 6 approved real in-game captures with asset metadata and QA pass. |
+| Clips/trailer | At least one real gameplay clip or trailer beat; no target render. |
+| Logo/capsule | Current approved logo/capsule draft with status label if not final. |
+| Creator/disclosure | Key/access policy and disclosure language. |
+| Known limits | Demo/status/performance boundaries stated plainly. |
+| README | What can be used, what is placeholder, and who to contact. |
+
+### Presskit Send Kill Conditions
+
+- any file name says `final` while the asset is still draft;
+- screenshots cannot be traced to build ID or asset metadata;
+- factsheet says or implies co-op;
+- performance is described without a proof link;
+- contact email is personal or throwaway;
+- the kit cannot be downloaded without account friction.

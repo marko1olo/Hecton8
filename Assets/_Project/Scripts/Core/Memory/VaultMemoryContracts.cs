@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -141,6 +140,33 @@ namespace Hecton8.Core.Memory
         [FieldOffset(48)] public float GlobalQualityWeight;
         [FieldOffset(52)] public uint Flags;
         [FieldOffset(56)] private ulong _pad0;
+    }
+
+    /// <summary>
+    /// Memory-local relocation record consumed by the Core dispatcher. Size: 64 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct VaultMemoryAddressShiftRecord
+    {
+        public const byte FlagMemMove = 1 << 0;
+        public const byte FlagFenceProtected = 1 << 1;
+        public const byte FlagSwapPopIndexMove = 1 << 2;
+
+        [FieldOffset(0)] public long OldPointer;
+        [FieldOffset(8)] public long NewPointer;
+        [FieldOffset(16)] public int BufferId;
+        [FieldOffset(20)] public int ByteLength;
+        [FieldOffset(24)] public uint Version;
+        [FieldOffset(28)] public byte Flags;
+        [FieldOffset(29)] public byte SystemId;
+        [FieldOffset(30)] private ushort _pad0;
+        [FieldOffset(32)] public int OldIndex;
+        [FieldOffset(36)] public int NewIndex;
+        [FieldOffset(40)] public uint MovedEntityId;
+        [FieldOffset(44)] public uint SourceFrame;
+        [FieldOffset(48)] public uint SourceHash;
+        [FieldOffset(52)] public uint CompactedCount;
+        [FieldOffset(56)] private ulong _pad1;
     }
 
     public static class VaultSovereigntyTelemetry
@@ -309,6 +335,7 @@ namespace Hecton8.Core.Memory
         public const int HotEntitySizeBytes = 64;
         public const int ColdEntitySizeBytes = 64;
         public const int TransformAliasSizeBytes = 32;
+        public const int AddressShiftRecordSizeBytes = 64;
         public const int RequiredAlignmentBytes = 8;
         public const int CacheLineBytes = 64;
         public const double AupSectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble;
@@ -320,12 +347,15 @@ namespace Hecton8.Core.Memory
         public const int EntityBucketMapBufferId = (int)BufferID.VaultEntityBucketMap;
         public const int SharedTransformMatricesBufferId = (int)BufferID.VaultSharedTransformMatrices;
         public const int TelemetryRingBufferId = (int)BufferID.VaultSovereigntyTelemetryRing;
+        public const int AcousticEchoPendingTapsBufferId = (int)BufferID.AcousticEchoPendingTaps;
         public const int CsvScratchBufferId = (int)BufferID.VaultMemoryProfileCsvScratch;
         public const int ActiveEntityCountBufferId = (int)BufferID.VaultSovereigntyActiveEntityCount;
-        public const int OwnedBufferCount = 14;
+        public const int AddressShiftRecordsBufferId = (int)BufferID.VaultMemoryAddressShiftRecords;
+        public const int AddressShiftCountBufferId = (int)BufferID.VaultMemoryAddressShiftCount;
+        public const int OwnedBufferCount = 16;
         public const int MinBufferId = LayoutConfigBufferId;
-        // SHINOBU owns only the contiguous vault memory range 550-563. Peer enum high-water marks are not part of this ABI.
-        public const int MaxBufferId = MinBufferId + OwnedBufferCount - 1;
+        // SHINOBU owns 550-559 plus 636-641. WristHud/Flora own the intervening enum values.
+        public const int MaxBufferId = AddressShiftCountBufferId;
 
         public const int LayoutConfigArenaLimitOffset = 0;
         public const int LayoutConfigBufferCapacityOffset = 8;
@@ -413,8 +443,28 @@ namespace Hecton8.Core.Memory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool OwnsBufferId(BufferID bufferId)
         {
-            int id = (int)bufferId;
-            return (uint)(id - MinBufferId) < OwnedBufferCount;
+            switch (bufferId)
+            {
+                case BufferID.VaultMemoryLayoutConfig:
+                case BufferID.VaultHotEntityData:
+                case BufferID.VaultColdEntityData:
+                case BufferID.VaultAup64:
+                case BufferID.VaultEntityBucketMap:
+                case BufferID.VaultSharedTransformMatrices:
+                case BufferID.VehicleMotorSubmarineStates:
+                case BufferID.VehicleMotorSweepCommands:
+                case BufferID.VehicleMotorSweepResults:
+                case BufferID.VaultSovereigntyTelemetryRing:
+                case BufferID.AcousticEchoPendingTaps:
+                case BufferID.VaultAupSectorLocal32:
+                case BufferID.VaultSovereigntyActiveEntityCount:
+                case BufferID.VaultMemoryProfileCsvScratch:
+                case BufferID.VaultMemoryAddressShiftRecords:
+                case BufferID.VaultMemoryAddressShiftCount:
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 
@@ -547,10 +597,56 @@ namespace Hecton8.Core.Memory
     public static class VaultSovereigntyMaintenance
     {
         public const uint SourceHash = 0x53483130u; // SH10
+        public const int DefaultHotEntityCapacity = 1024;
         private const int MinimumSweepRows = 64;
         private const uint FlagAupWrapped = 1u << 0;
         private const uint FlagSweepScheduled = 1u << 1;
         private const uint FlagCompleted = 1u << 2;
+
+        public static bool PrewarmBuffers(IDataVault vault, int hotEntityCapacity)
+        {
+            if (vault == null || vault.IsAllocationLocked)
+                return false;
+
+            int capacity = ResolvePrewarmCapacity(hotEntityCapacity);
+            bool ok = VaultSovereigntyTelemetry.EnsureRing(vault);
+            NativeArray<int> activeCount = vault.GetBuffer<int>(
+                BufferID.VaultSovereigntyActiveEntityCount,
+                1,
+                SystemID.CoreDataVault,
+                NativeArrayOptions.ClearMemory);
+            NativeArray<int> shiftCount = vault.GetBuffer<int>(
+                BufferID.VaultMemoryAddressShiftCount,
+                1,
+                SystemID.CoreDataVault,
+                NativeArrayOptions.ClearMemory);
+            NativeArray<VaultMemoryAddressShiftRecord> shiftRecords = vault.GetBuffer<VaultMemoryAddressShiftRecord>(
+                BufferID.VaultMemoryAddressShiftRecords,
+                capacity,
+                SystemID.CoreDataVault,
+                NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> csvScratch = vault.GetBuffer<byte>(
+                BufferID.VaultMemoryProfileCsvScratch,
+                VaultLegacyBinaryArchaeology.CsvScratchBytes,
+                SystemID.CoreDataVault,
+                NativeArrayOptions.UninitializedMemory);
+
+            int aupCapacity = capacity;
+            if (vault.TryGetBuffer(BufferID.VaultAup64, out NativeArray<VaultAup64> aups) && aups.IsCreated)
+                aupCapacity = math.max(aupCapacity, aups.Length);
+            NativeArray<VaultAupSectorLocal32> sectorLocal = vault.GetBuffer<VaultAupSectorLocal32>(
+                BufferID.VaultAupSectorLocal32,
+                aupCapacity,
+                SystemID.CoreDataVault,
+                NativeArrayOptions.UninitializedMemory);
+
+            return ok &&
+                activeCount.IsCreated &&
+                shiftCount.IsCreated &&
+                shiftRecords.IsCreated &&
+                csvScratch.IsCreated &&
+                sectorLocal.IsCreated;
+        }
 
         public static VaultSovereigntyMaintenanceStats RunPreSimulationFrost(
             IDataVault vault,
@@ -611,13 +707,27 @@ namespace Hecton8.Core.Memory
 
                     int budget = ResolveSweepBudget(activeCount[0], hotEntities.Length, quality, strideAggressiveness);
                     stats.ScanBudget = budget;
+                    NativeArray<VaultMemoryAddressShiftRecord> shiftRecords = vault.GetBuffer<VaultMemoryAddressShiftRecord>(
+                        BufferID.VaultMemoryAddressShiftRecords,
+                        math.max(1, budget),
+                        SystemID.CoreDataVault,
+                        NativeArrayOptions.UninitializedMemory);
+                    NativeArray<int> shiftCount = vault.GetBuffer<int>(
+                        BufferID.VaultMemoryAddressShiftCount,
+                        1,
+                        SystemID.CoreDataVault,
+                        NativeArrayOptions.ClearMemory);
+                    if (shiftCount.IsCreated && shiftCount.Length > 0)
+                        shiftCount[0] = 0;
+
                     handle = new VaultOrphanedPointerSweepJob
                     {
                         HotEntities = hotEntities,
                         Aups = ResolveOptionalAup64(vault),
                         SectorLocal32 = ResolveOptionalSectorLocal32(vault),
                         ActiveCount = activeCount,
-                        ShiftWriter = SignalBus<MemoryAddressShiftSignal>.ParallelWriter,
+                        ShiftRecords = shiftRecords,
+                        ShiftCount = shiftCount,
                         MaxScanCount = budget,
                         BufferId = BufferID.VaultHotEntityData,
                         Frame = frame,
@@ -671,6 +781,12 @@ namespace Hecton8.Core.Memory
             }
 
             return 0.35f;
+        }
+
+        private static int ResolvePrewarmCapacity(int hotEntityCapacity)
+        {
+            int requested = hotEntityCapacity > 0 ? hotEntityCapacity : DefaultHotEntityCapacity;
+            return math.clamp(requested, MinimumSweepRows, 1048576);
         }
 
         private static int ResolveSweepBudget(int activeCount, int capacity, float quality, float strideAggressiveness)
@@ -786,7 +902,8 @@ namespace Hecton8.Core.Memory
         [NoAlias] public NativeArray<VaultAup64> Aups;
         [NoAlias] public NativeArray<VaultAupSectorLocal32> SectorLocal32;
         [NoAlias] public NativeArray<int> ActiveCount;
-        public NativeQueue<MemoryAddressShiftSignal>.ParallelWriter ShiftWriter;
+        [NoAlias] public NativeArray<VaultMemoryAddressShiftRecord> ShiftRecords;
+        [NoAlias] public NativeArray<int> ShiftCount;
         public int MaxScanCount;
         public BufferID BufferId;
         public uint Frame;
@@ -860,21 +977,29 @@ namespace Hecton8.Core.Memory
 
         private void PublishShift(int oldIndex, int newIndex, in VaultHotEntityData moved, int compactedCount)
         {
-            if (moved.EntityId == 0u)
+            if (moved.EntityId == 0u ||
+                !ShiftRecords.IsCreated ||
+                !ShiftCount.IsCreated ||
+                ShiftCount.Length == 0)
                 return;
 
-            MemoryAddressShiftSignal signal = default;
-            signal.BufferId = (int)BufferId;
-            signal.ByteLength = UnsafeUtility.SizeOf<VaultHotEntityData>();
-            signal.Flags = MemoryAddressShiftSignal.FlagSwapPopIndexMove;
-            signal.SystemId = SystemId;
-            signal.OldIndex = oldIndex;
-            signal.NewIndex = newIndex;
-            signal.MovedEntityId = moved.EntityId;
-            signal.SourceFrame = Frame;
-            signal.SourceHash = SourceHash;
-            signal.CompactedCount = (uint)math.max(0, compactedCount);
-            ShiftWriter.Enqueue(signal);
+            int writeIndex = ShiftCount[0];
+            if ((uint)writeIndex >= (uint)ShiftRecords.Length)
+                return;
+
+            VaultMemoryAddressShiftRecord record = default;
+            record.BufferId = (int)BufferId;
+            record.ByteLength = UnsafeUtility.SizeOf<VaultHotEntityData>();
+            record.Flags = VaultMemoryAddressShiftRecord.FlagSwapPopIndexMove;
+            record.SystemId = SystemId;
+            record.OldIndex = oldIndex;
+            record.NewIndex = newIndex;
+            record.MovedEntityId = moved.EntityId;
+            record.SourceFrame = Frame;
+            record.SourceHash = SourceHash;
+            record.CompactedCount = (uint)math.max(0, compactedCount);
+            ShiftRecords[writeIndex] = record;
+            ShiftCount[0] = writeIndex + 1;
         }
     }
 

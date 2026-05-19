@@ -109,30 +109,14 @@ namespace Hecton8.Construction
         public uint ReservedTail3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
-    internal struct HeadlessDroneTask
-    {
-        public int TaskIndex;
-        public int ModuleId;
-        public int HubGridId;
-        public byte Kind;
-        public byte RequiredFaction;
-        public byte Reserved0;
-        public byte Reserved1;
-        public float Criticality;
-        public float Radius;
-        public float3 Position;
-        public int ReservedTail;
-    }
-
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct DroneFleetOriginShiftJob : IJobParallelFor
     {
-        public NativeArray<HeadlessDroneState> DroneStates;
-        public NativeArray<HeadlessDroneState> DroneStateBackBuffer;
-        public NativeArray<float4x4> RenderMatrices;
-        public NativeArray<float4x4> RenderMatrixBackBuffer;
-        public NativeArray<float3> DronePositions;
+        [NoAlias] public NativeArray<HeadlessDroneState> DroneStates;
+        [NoAlias] public NativeArray<HeadlessDroneState> DroneStateBackBuffer;
+        [NoAlias] public NativeArray<float4x4> RenderMatrices;
+        [NoAlias] public NativeArray<float4x4> RenderMatrixBackBuffer;
+        [NoAlias] public NativeArray<float3> DronePositions;
         public float3 RuntimeOffset;
 
         public void Execute(int index)
@@ -194,25 +178,38 @@ namespace Hecton8.Construction
         DockingHatchOpen = 3
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct DroneServiceCommand
     {
-        public int Slot;
-        public int DroneId;
-        public byte Kind;
-        public byte State;
-        public ushort Reserved;
-        public float DeltaTime;
-        public float3 Position;
-        public float3 TargetPosition;
+        [FieldOffset(0)] public int Slot;
+        [FieldOffset(4)] public int DroneId;
+        [FieldOffset(8)] public byte Kind;
+        [FieldOffset(9)] public byte State;
+        [FieldOffset(10)] public ushort Reserved;
+        [FieldOffset(12)] public float DeltaTime;
+        [FieldOffset(16)] public float3 Position;
+        [FieldOffset(28)] public float3 TargetPosition;
+        [FieldOffset(40)] public ulong Pad0;
+        [FieldOffset(48)] public ulong Pad1;
+        [FieldOffset(56)] public ulong Pad2;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal struct DroneServiceCommandCursor
+    {
+        [FieldOffset(0)] public int Count;
+        [FieldOffset(8)] public ulong Pad0;
+        [FieldOffset(16)] public ulong Pad1;
+        [FieldOffset(24)] public ulong Pad2;
+        [FieldOffset(32)] public ulong Pad3;
+        [FieldOffset(40)] public ulong Pad4;
+        [FieldOffset(48)] public ulong Pad5;
+        [FieldOffset(56)] public ulong Pad6;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct DroneCognitionJob : IJobParallelFor
     {
-        private const int UnclaimedTask = 0;
-        private const int MaxContentionClaimFailures = 3;
-        private const float MinimumScoreDistanceSq = 0.5625f;
         private const float MinimumVectorLengthSq = 0.0001f;
         private static readonly float3 SafeNormalizeFallback = new float3(0f, 1f, 0f);
         private const float SeparationRadiusMeters = 2f;
@@ -250,23 +247,26 @@ namespace Hecton8.Construction
         private const float FormationGoldenAngle = 2.3999631f;
         private const int SearchGridSide = 23;
 
-        [ReadOnly] public NativeArray<HeadlessDroneState> ReadDrones;
-        public NativeArray<HeadlessDroneState> Drones;
-        [NativeDisableParallelForRestriction] public NativeArray<DroneStateDTO> DroneStatesDto;
-        [NativeDisableParallelForRestriction] public NativeArray<DroneTargetDTO> DroneTargets;
-        public NativeArray<float4x4> RenderMatrices;
-        [NativeDisableParallelForRestriction] public NativeArray<float3> DronePositions;
-        [NativeDisableParallelForRestriction] public NativeArray<byte> DroneStates;
+        [ReadOnly, NoAlias] public NativeArray<HeadlessDroneState> ReadDrones;
+        [NoAlias] public NativeArray<HeadlessDroneState> Drones;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneStateDTO> DroneStatesDto;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneTargetDTO> DroneTargets;
+        [NoAlias] public NativeArray<float4x4> RenderMatrices;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<float3> DronePositions;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<byte> DroneStates;
 
-        [ReadOnly] public NativeParallelMultiHashMap<int, HeadlessDroneTask> TasksByGrid;
-        [ReadOnly] public NativeParallelMultiHashMap<int, int> DroneSpatialHash;
-        [ReadOnly] public NativeArray<float3> AbyssalFlowVolume;
-        [ReadOnly] public NativeArray<PathWaypointDTO> MacroWaypoints;
-        [ReadOnly] public NativeArray<byte> MacroWaypointStates;
+        [ReadOnly, NoAlias] public NativeArray<int> DroneSpatialBucketHeads;
+        [ReadOnly, NoAlias] public NativeArray<int> DroneSpatialNextIndices;
+        [ReadOnly, NoAlias] public NativeArray<int> DroneSpatialKeys;
+        [ReadOnly, NoAlias] public NativeArray<float3> AbyssalFlowVolume;
+        [ReadOnly, NoAlias] public NativeArray<PathWaypointDTO> MacroWaypoints;
+        [ReadOnly, NoAlias] public NativeArray<byte> MacroWaypointStates;
 
-        [NativeDisableParallelForRestriction] public NativeArray<int> TaskClaimOwners;
-        [NativeDisableParallelForRestriction] public NativeArray<int> TelemetryAccumulator;
-        public NativeQueue<DroneServiceCommand>.ParallelWriter ServiceCommands;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> TaskClaimOwners;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> TelemetryAccumulator;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneServiceCommand> ServiceCommands;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneServiceCommandCursor> ServiceCommandCursor;
+        public int ServiceCommandCapacity;
 
         public float DeltaTime;
         public int ServiceQueueEnabled;
@@ -274,6 +274,7 @@ namespace Hecton8.Construction
         public int PlayerPositionValid;
         public int EmergencyOverclock;
         public int FormationMode;
+        public int DroneSpatialBucketMask;
         public float3 FormationAnchorPosition;
         public int FormationAnchorValid;
         public int AbyssalFlowVolumeValid;
@@ -295,7 +296,7 @@ namespace Hecton8.Construction
         public float PhantomFlowVerticalFactor;
         public int PhantomFlowEnabled;
         public float FlowDragCoefficient;
-        public int CrossCurrentVisualSlipEnabled;
+        public float CrossCurrentVisualSlipWeight;
         public MockSDFGrid SdfGrid;
         public int FrameIndex;
         public int SteeringTickModulo;
@@ -335,9 +336,8 @@ namespace Hecton8.Construction
             bool emergency = EmergencyOverclock != 0;
             bool formationOwnsDrone = TryApplyFormationMode(index, ref drone);
             if (!formationOwnsDrone &&
-                (drone.State == (byte)HeadlessDroneRuntimeState.Idle ||
-                 drone.TargetTaskIndex == EmptyTaskIndex) &&
-                TrySelectTask(ref drone, emergency))
+                drone.State == (byte)HeadlessDroneRuntimeState.Idle &&
+                drone.TargetTaskIndex != EmptyTaskIndex)
             {
                 drone.State = (byte)HeadlessDroneRuntimeState.Travel;
             }
@@ -445,7 +445,23 @@ namespace Hecton8.Construction
             if (ServiceQueueEnabled == 0)
                 return;
 
-            ServiceCommands.Enqueue(new DroneServiceCommand
+            if (!ServiceCommands.IsCreated ||
+                !ServiceCommandCursor.IsCreated ||
+                ServiceCommandCursor.Length <= 0 ||
+                ServiceCommandCapacity <= 0)
+            {
+                return;
+            }
+
+            DroneServiceCommandCursor* cursor = (DroneServiceCommandCursor*)ServiceCommandCursor.GetUnsafePtr();
+            int commandIndex = Interlocked.Increment(ref cursor[0].Count) - 1;
+            if ((uint)commandIndex >= (uint)ServiceCommandCapacity ||
+                (uint)commandIndex >= (uint)ServiceCommands.Length)
+            {
+                return;
+            }
+
+            ServiceCommands[commandIndex] = new DroneServiceCommand
             {
                 Slot = index,
                 DroneId = drone.DroneId,
@@ -457,7 +473,7 @@ namespace Hecton8.Construction
                 DeltaTime = math.max(0f, DeltaTime),
                 Position = drone.Position,
                 TargetPosition = drone.TargetPosition
-            });
+            };
         }
 
         private static byte ResolveSoaState(in HeadlessDroneState drone)
@@ -511,79 +527,6 @@ namespace Hecton8.Construction
             return true;
         }
 
-        private bool TrySelectTask(ref HeadlessDroneState drone, bool emergency)
-        {
-            if (drone.HubGridId == 0)
-                return false;
-
-            float firstScore = 0f;
-            float secondScore = 0f;
-            float thirdScore = 0f;
-            float fallbackScore = 0f;
-            HeadlessDroneTask firstTask = default;
-            HeadlessDroneTask secondTask = default;
-            HeadlessDroneTask thirdTask = default;
-            HeadlessDroneTask fallbackTask = default;
-            bool hasFirst = false;
-            bool hasSecond = false;
-            bool hasThird = false;
-            bool hasFallback = false;
-
-            if (!TasksByGrid.TryGetFirstValue(drone.HubGridId, out HeadlessDroneTask task, out NativeParallelMultiHashMapIterator<int> iterator))
-                return false;
-
-            do
-            {
-                if (task.TaskIndex < 0 || task.TaskIndex >= TaskClaimOwners.Length)
-                    continue;
-
-                if (emergency && task.Kind == (byte)DroneFleetTaskKind.CutParasite)
-                    continue;
-
-                float distanceSq = math.max(MinimumScoreDistanceSq, math.lengthsq(task.Position - drone.Position));
-                float score = (task.Criticality * math.rcp(distanceSq)) * math.saturate(drone.BatteryPercent * 0.01f);
-                InsertTaskCandidate(
-                    in task,
-                    score,
-                    ref firstTask,
-                    ref firstScore,
-                    ref hasFirst,
-                    ref secondTask,
-                    ref secondScore,
-                    ref hasSecond,
-                    ref thirdTask,
-                    ref thirdScore,
-                    ref hasThird,
-                    ref fallbackTask,
-                    ref fallbackScore,
-                    ref hasFallback);
-            }
-            while (TasksByGrid.TryGetNextValue(out task, ref iterator));
-
-            if (!hasFirst)
-                return false;
-
-            int failedClaims = 0;
-            if (TryClaimRankedTask(ref drone, in firstTask, hasFirst, ref failedClaims))
-                return true;
-
-            if (TryClaimRankedTask(ref drone, in secondTask, hasSecond, ref failedClaims))
-                return true;
-
-            if (TryClaimRankedTask(ref drone, in thirdTask, hasThird, ref failedClaims))
-                return true;
-
-            return failedClaims >= MaxContentionClaimFailures &&
-                   TryClaimRankedTask(ref drone, in fallbackTask, hasFallback, ref failedClaims);
-        }
-
-        private bool TryClaimTask(int taskIndex, int droneId)
-        {
-            int* claimPtr = (int*)TaskClaimOwners.GetUnsafePtr();
-            int priorOwner = Interlocked.CompareExchange(ref claimPtr[taskIndex], droneId, UnclaimedTask);
-            return priorOwner == UnclaimedTask || priorOwner == droneId;
-        }
-
         private float3 ResolveBoidSteering(int selfIndex, ref HeadlessDroneState drone, float3 routeDirection)
         {
             float3 separation = float3.zero;
@@ -591,43 +534,53 @@ namespace Hecton8.Construction
             float3 cohesion = float3.zero;
             int neighborCount = 0;
 
-            int3 centerCell = ResolveSpatialCell(drone.Position);
-            for (int x = -1; x <= 1; x++)
+            if (DroneSpatialBucketHeads.IsCreated &&
+                DroneSpatialNextIndices.IsCreated &&
+                DroneSpatialKeys.IsCreated &&
+                DroneSpatialBucketMask > 0)
             {
-                for (int y = -1; y <= 1; y++)
+                int3 centerCell = ResolveSpatialCell(drone.Position);
+                for (int x = -1; x <= 1; x++)
                 {
-                    for (int z = -1; z <= 1; z++)
+                    for (int y = -1; y <= 1; y++)
                     {
-                        int key = PackSpatialKey(centerCell + new int3(x, y, z));
-                        if (!DroneSpatialHash.TryGetFirstValue(key, out int otherIndex, out NativeParallelMultiHashMapIterator<int> iterator))
-                            continue;
-
-                        do
+                        for (int z = -1; z <= 1; z++)
                         {
-                            if (otherIndex == selfIndex || otherIndex < 0 || otherIndex >= ReadDrones.Length)
-                                continue;
+                            int key = PackSpatialKey(centerCell + new int3(x, y, z));
+                            int bucket = ResolveSpatialBucket(key);
+                            int otherIndex = DroneSpatialBucketHeads[bucket];
+                            int guard = 0;
 
-                            HeadlessDroneState other = ReadDrones[otherIndex];
-                            if (other.State == (byte)HeadlessDroneRuntimeState.Empty ||
-                                other.State == (byte)HeadlessDroneRuntimeState.Sacrificed ||
-                                other.State == (byte)HeadlessDroneRuntimeState.Completed ||
-                                other.State == (byte)HeadlessDroneRuntimeState.ResupplyCommitPending ||
-                                other.State == (byte)HeadlessDroneRuntimeState.Reboot)
+                            while ((uint)otherIndex < (uint)DroneSpatialNextIndices.Length && guard++ < ReadDrones.Length)
                             {
-                                continue;
+                                int nextIndex = DroneSpatialNextIndices[otherIndex];
+                                if (otherIndex != selfIndex &&
+                                    (uint)otherIndex < (uint)ReadDrones.Length &&
+                                    (uint)otherIndex < (uint)DroneSpatialKeys.Length &&
+                                    DroneSpatialKeys[otherIndex] == key)
+                                {
+                                    HeadlessDroneState other = ReadDrones[otherIndex];
+                                    if (other.State != (byte)HeadlessDroneRuntimeState.Empty &&
+                                        other.State != (byte)HeadlessDroneRuntimeState.Sacrificed &&
+                                        other.State != (byte)HeadlessDroneRuntimeState.Completed &&
+                                        other.State != (byte)HeadlessDroneRuntimeState.ResupplyCommitPending &&
+                                        other.State != (byte)HeadlessDroneRuntimeState.Reboot)
+                                    {
+                                        float3 offset = drone.Position - other.Position;
+                                        float distanceSq = math.lengthsq(offset);
+                                        if (distanceSq <= SeparationRadiusSq)
+                                        {
+                                            neighborCount++;
+                                            separation += SafeNormalize(offset) * math.rcp(math.max(0.04f, distanceSq));
+                                            alignment += other.Velocity;
+                                            cohesion += other.Position;
+                                        }
+                                    }
+                                }
+
+                                otherIndex = nextIndex;
                             }
-
-                            float3 offset = drone.Position - other.Position;
-                            float distanceSq = math.lengthsq(offset);
-                            if (distanceSq > SeparationRadiusSq)
-                                continue;
-
-                            neighborCount++;
-                            separation += SafeNormalize(offset) * math.rcp(math.max(0.04f, distanceSq));
-                            alignment += other.Velocity;
-                            cohesion += other.Position;
                         }
-                        while (DroneSpatialHash.TryGetNextValue(out otherIndex, ref iterator));
                     }
                 }
             }
@@ -862,7 +815,23 @@ namespace Hecton8.Construction
             if (ServiceQueueEnabled == 0)
                 return;
 
-            ServiceCommands.Enqueue(new DroneServiceCommand
+            if (!ServiceCommands.IsCreated ||
+                !ServiceCommandCursor.IsCreated ||
+                ServiceCommandCursor.Length <= 0 ||
+                ServiceCommandCapacity <= 0)
+            {
+                return;
+            }
+
+            DroneServiceCommandCursor* cursor = (DroneServiceCommandCursor*)ServiceCommandCursor.GetUnsafePtr();
+            int commandIndex = Interlocked.Increment(ref cursor[0].Count) - 1;
+            if ((uint)commandIndex >= (uint)ServiceCommandCapacity ||
+                (uint)commandIndex >= (uint)ServiceCommands.Length)
+            {
+                return;
+            }
+
+            ServiceCommands[commandIndex] = new DroneServiceCommand
             {
                 Slot = index,
                 DroneId = drone.DroneId,
@@ -872,13 +841,14 @@ namespace Hecton8.Construction
                 DeltaTime = t,
                 Position = drone.Position,
                 TargetPosition = drone.HomePosition
-            });
+            };
         }
 
         private quaternion ResolveDockingVisualRotation(in HeadlessDroneState drone, float3 tangent, float3 position)
         {
             float3 visualForward = tangent;
-            if (CrossCurrentVisualSlipEnabled != 0)
+            float slipQuality = math.saturate(CrossCurrentVisualSlipWeight);
+            if (slipQuality > 0f)
             {
                 float3 flowVelocity = ResolveFlowVelocity(position);
                 float3 crossCurrent = flowVelocity - (tangent * math.dot(flowVelocity, tangent));
@@ -886,7 +856,7 @@ namespace Hecton8.Construction
                 float crossLengthSq = math.lengthsq(crossCurrent);
                 if (math.isfinite(crossLengthSq) && crossLengthSq > MinimumVectorLengthSq)
                 {
-                    float slip = math.saturate(ApproximateDistanceNoSqrt(crossCurrent) * DockingVisualSlipWeight);
+                    float slip = math.saturate(ApproximateDistanceNoSqrt(crossCurrent) * DockingVisualSlipWeight * slipQuality);
                     visualForward = SafeNormalize(tangent + (SafeNormalize(crossCurrent, tangent) * slip), tangent);
                 }
             }
@@ -1091,92 +1061,6 @@ namespace Hecton8.Construction
                 : quaternion.identity;
         }
 
-        private static void InsertTaskCandidate(
-            in HeadlessDroneTask task,
-            float score,
-            ref HeadlessDroneTask firstTask,
-            ref float firstScore,
-            ref bool hasFirst,
-            ref HeadlessDroneTask secondTask,
-            ref float secondScore,
-            ref bool hasSecond,
-            ref HeadlessDroneTask thirdTask,
-            ref float thirdScore,
-            ref bool hasThird,
-            ref HeadlessDroneTask fallbackTask,
-            ref float fallbackScore,
-            ref bool hasFallback)
-        {
-            if (!hasFirst || score > firstScore)
-            {
-                fallbackTask = thirdTask;
-                fallbackScore = thirdScore;
-                hasFallback = hasThird;
-                thirdTask = secondTask;
-                thirdScore = secondScore;
-                hasThird = hasSecond;
-                secondTask = firstTask;
-                secondScore = firstScore;
-                hasSecond = hasFirst;
-                firstTask = task;
-                firstScore = score;
-                hasFirst = true;
-                return;
-            }
-
-            if (!hasSecond || score > secondScore)
-            {
-                fallbackTask = thirdTask;
-                fallbackScore = thirdScore;
-                hasFallback = hasThird;
-                thirdTask = secondTask;
-                thirdScore = secondScore;
-                hasThird = hasSecond;
-                secondTask = task;
-                secondScore = score;
-                hasSecond = true;
-                return;
-            }
-
-            if (!hasThird || score > thirdScore)
-            {
-                fallbackTask = thirdTask;
-                fallbackScore = thirdScore;
-                hasFallback = hasThird;
-                thirdTask = task;
-                thirdScore = score;
-                hasThird = true;
-                return;
-            }
-
-            if (!hasFallback || score > fallbackScore)
-            {
-                fallbackTask = task;
-                fallbackScore = score;
-                hasFallback = true;
-            }
-        }
-
-        private bool TryClaimRankedTask(ref HeadlessDroneState drone, in HeadlessDroneTask task, bool hasTask, ref int failedClaims)
-        {
-            if (!hasTask)
-                return false;
-
-            if (TryClaimTask(task.TaskIndex, drone.DroneId))
-            {
-                drone.TargetTaskIndex = task.TaskIndex;
-                drone.TargetModuleId = task.ModuleId;
-                drone.TargetPosition = task.Position;
-                drone.TargetAup = IsFinite(drone.PositionAup)
-                    ? drone.PositionAup + ToDouble3(task.Position - drone.Position)
-                    : ToDouble3(task.Position);
-                return true;
-            }
-
-            failedClaims++;
-            return false;
-        }
-
         private static void SanitizeKinematics(ref HeadlessDroneState drone)
         {
             if (!IsFinite(drone.Position))
@@ -1299,6 +1183,15 @@ namespace Hecton8.Construction
         private static int PackSpatialKey(int3 cell)
         {
             return cell.x + (cell.y * SpatialGridResolution) + (cell.z * SpatialGridResolution * SpatialGridResolution);
+        }
+
+        private int ResolveSpatialBucket(int key)
+        {
+            uint hash = (uint)key;
+            hash ^= hash >> 16;
+            hash *= 0x7feb352du;
+            hash ^= hash >> 15;
+            return (int)(hash & (uint)DroneSpatialBucketMask);
         }
     }
 }

@@ -10,9 +10,12 @@ Status: PENDING VERIFICATION
 - State/matrix native buffers are allocated with `NativeArrayOptions.UninitializedMemory` and cold-cleared through slot reset before runtime use.
 - Task-map rebuild cadence is continuous: `framesBetweenUpdates = (int)math.lerp(5, 60, 1 - GlobalQualityWeight)`.
 - Steering cadence, macro route solve budget, docking probe count, phantom draw count, and render distance now consume `HomeostasisBrain.GlobalQualityWeight` instead of hard quality-tier switches.
+- Docking cross-current visual slip and dominant-axis telemetry precision also consume `GlobalQualityWeight`; no low/MX350 enum equality remains in touched drone math.
 - Required black-box dump target is `Docs/AgentLogs/Dump_FLEET_COMMANDER.bin`; legacy `Dump_DRONE_FLEET.bin` and `.h8dump` are still emitted for older readers.
 - CSV tuner default is `drone_chassis_specs.csv`; `drone_specs.csv` remains a fallback path only.
-- Real drone rendering still submits through `Graphics.RenderMeshIndirect` because the current material/shader contract for procedural vertex generation is unproven. Treat exact `DrawProceduralIndirect` compliance as pending shader proof, not as completed runtime fact.
+- Real and phantom drone rendering now submit through `Graphics.DrawProceduralIndirect` with matrix buffers and `Hecton8/Construction/DroneFleetProcedural`; indirect args upload uses `LockBufferForWrite`/vault-native staging instead of managed `SetData` staging arrays. Unity import and Frame Debugger proof remain pending.
+- Fleet snapshot event deferral is now vault-array-backed: pending and next-frame payload lanes use local BufferIDs 70271 and 70272 instead of persistent `NativeQueue` fields.
+- Boid spatial lookup is now a flat vault-backed bucket/head/next/key lane: BufferIDs 70273, 70274, and 70275 replace the former `NativeParallelMultiHashMap<int,int>`.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -26,16 +29,18 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+
+R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 
 - Historical data boundary snapshot: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
 - Historical manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
-- Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
+- Historical actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json` (historical snapshot only; do not use for current counts or proof).
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 - Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current R31 static/tool boundary: R31 is the latest DOC_GLOBAL root/architecture current-boundary propagation layer; R30 remains the prior internal-currentness layer; AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
+- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current static/tool boundary is R32; R31 remains the prior current-boundary propagation layer; R30 remains the prior internal-currentness layer; R29 remains the prior stale-gate/global-authority layer; R28 remains the prior interior-boundary layer; R27 remains the latest source-counter/index snapshot until rerun; AtlasCheck fails `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`); Mod API static validation now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 ## Historical 2026-05-04 Boundary
@@ -70,8 +75,8 @@ Drone sorties are represented by native slots. No per-drone GameObject or `MonoB
 - `NativeArray<HeadlessDroneState>[512]` front buffer
 - `NativeArray<HeadlessDroneState>[512]` back buffer
 - `NativeArray<float4x4>[512]` render matrix buffer
-- `NativeParallelMultiHashMap<int, HeadlessDroneTask>[512]` hub-keyed task fanout
-- `NativeParallelMultiHashMap<int,int>[512]` spatial hash for 2 m boid separation
+- `NativeArray<DroneTaskDTO>[64]` dense task snapshot for hub-keyed assignment
+- `NativeArray<int>[2048]` spatial bucket heads plus `NativeArray<int>[512]` next/key lanes for 2 m boid separation
 - `NativeArray<int>[512]` task claim owners
 
 Scheduling model:
@@ -84,7 +89,7 @@ The job never reads and writes the same drone state buffer in one pass.
 
 ## Task Arbitration
 
-`DroneTaskAssignmentJob` evaluates the vault-backed dense `NativeArray<DroneTaskDTO>` generated from the hub task map. `DroneCognitionJob` keeps a compatibility fallback over `NativeParallelMultiHashMap<int, HeadlessDroneTask>` for launch-era targets, but macro A* waypoints are cleared and ignored.
+`DroneTaskAssignmentJob` evaluates the vault-backed dense `NativeArray<DroneTaskDTO>` generated from hub scans. `DroneCognitionJob` no longer owns a task multimap fallback; macro A* waypoints are cleared and ignored.
 
 Score:
 
@@ -175,8 +180,7 @@ Eligibility:
 - target is flooded and integrity is at or below 20% recoverable integrity
 
 Effect:
-- repair target to recoverable integrity
-- clear flooded state through `ForceDrainComplete`
+- publish `HullRepairedSignal` for the requested recovery amount; habitat/base owner remains the only authority that may mutate integrity or flooding state.
 - mark the drone `Sacrificed`
 - mark the native slot permanently destroyed
 - increment fleet destroyed count
@@ -187,11 +191,20 @@ Current source boundary:
 - `DroneStateDTO` is explicit 64 B with XML offsets 0/24/36/40/44/48/52/56.
 - `DroneTargetDTO` is explicit 64 B.
 - `DroneProceduralIndirectArgsDTO` is explicit 16 B.
-- New local vault IDs are 70265 `DroneStateDTO[512]`, 70266 `DroneTargetDTO[512]`, 70267 `DroneTaskDTO[64]`, and 70268 `DroneProceduralIndirectArgsDTO[1]`.
+- New local vault IDs are 70265 `DroneStateDTO[512]`, 70266 `DroneTargetDTO[512]`, 70267 `DroneTaskDTO[64]`, 70268 `DroneProceduralIndirectArgsDTO[1]`, 70269 `DroneServiceCommand[1536]`, 70270 `DroneServiceCommandCursor[1]`, 70271 `HectonDroneFleetSnapshotPayload[64]` pending event lane, 70272 `HectonDroneFleetSnapshotPayload[64]` next-frame event lane, 70273 `int[2048]` spatial bucket heads, 70274 `int[512]` spatial next indices, and 70275 `int[512]` spatial cell keys.
+- `DroneServiceCommand` and `DroneServiceCommandCursor` are explicit 64 B DTOs. The cursor is a single cache-line atomic counter; command slots are cache-line padded to prevent worker false sharing during parallel service writes.
+- `HectonDroneFleetEvents` drains pending snapshot payloads from vault-backed flat arrays with read/count cursors; reentrant listener updates are deferred into the next-frame flat lane.
+- `DroneCognitionJob` samples neighboring drones through the flat bucket/head/next/key spatial lane. It checks exact spatial cell keys after bucket hashing, so hash collisions only add bounded comparisons, not false neighbors.
 - `HeadlessDroneState` mirrors `PositionAup`, `HomeAup`, `TargetAup`, and `SupplyAup`.
 - `Hecton_DroneFleetProcedural.shader` expands 36 procedural vertices from `SV_VertexID`; inactive zero matrices are clipped.
+- Real and phantom drones share the same procedural shader. Real draws bind a 1-slot white color buffer with `_UsePhantomColors = 0`; phantom draws bind the compute-authored color buffer with `_UsePhantomColors = 1`. This prevents a hidden dependency on phantom resources being initialized before the real fleet path.
+- Scheduling/probe methods now take tuning data only and resolve `GlobalQualityWeight` internally; no drone steering/probe method accepts a misleading `HectonQualityTier` parameter.
+- `DroneFleetOriginShiftJob`, `DroneTaskAssignmentJob`, `DroneMetabolismJob`, `ExtractDroneMatricesJob`, `BuildDroneProceduralArgsJob`, dormant `DroneMacroAStarJob`, and the flat `NativeArray` lanes in `DroneCognitionJob` carry `[NoAlias]` where the arrays are independent.
+- `ApplyFriendlyRepairService` and sacrifice execution no longer call `BaseModule.Repair` or `ForceDrainComplete`; they emit typed signal lanes and wait for the habitat owner to apply authority.
+- `ResolveDroneVaultBuffer` first uses `GlobalRegistry.DataVault`, then `GlobalDataVault.TryGetLatestCreated`, then the existing `H8Memory` fallback for CI/mock survival.
+- No persistent private `NativeQueue` or `NativeParallelMultiHashMap` remains in touched drone runtime source. The only remaining `NativeQueue` use in touched drone source is the transient `GenerateMockDroneTasksQueueJob` writer required for CI/mock task injection, not a persistent private field.
 
-Compile/runtime proof is still blocked by the shared CPU gate recorded in `Docs/Tasks/Status_SHINOBU_128.md`.
+Compile/runtime proof is blocked by the external World/MapMagic compile wall recorded in `Docs/Tasks/Status_SHINOBU_128.md`: `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` is referenced by `Hecton8.Core.csproj` but deleted outside the SHINOBU_128 domain.
 
 ## Verification Boundaries
 

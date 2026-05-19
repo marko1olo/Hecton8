@@ -98,7 +98,7 @@ float _AbyssalFlowActive;
 float _AbyssalFlowWeight;
 float4 _GlobalWakeBuffer[HECTON_GLOBAL_WAKE_CAPACITY];
 float4 _GlobalWakeVectors[HECTON_GLOBAL_WAKE_CAPACITY];
-float4 _GlobalWakeParams; // x=slot limit, y=low tier, z=active count, w=stress
+float4 _GlobalWakeParams; // x=slot limit, y=budget pressure, z=active count, w=stress
 
 struct SargassumSimulationFrameData
 {
@@ -937,9 +937,11 @@ bool TryResolveGlobalWakeRepulsion(float3 positionWS, out float3 repulsionWS, ou
     }
 
     int rawSlotLimit = min((int)max(_GlobalWakeParams.x, 0.0), HECTON_GLOBAL_WAKE_CAPACITY);
-    int slotLimit = (_GlobalWakeParams.y > 0.5 || _SimulationLodTier != SIM_LOD_TIER_FULL)
-        ? min(rawSlotLimit, 2)
-        : rawSlotLimit;
+    float budgetPressure01 = saturate(_GlobalWakeParams.y);
+    int budgetSlotLimit = max(1, (int)round(lerp((float)rawSlotLimit, (float)min(rawSlotLimit, 2), budgetPressure01)));
+    int slotLimit = (_SimulationLodTier != SIM_LOD_TIER_FULL)
+        ? min(budgetSlotLimit, 2)
+        : budgetSlotLimit;
     if (slotLimit <= 0)
         return false;
 

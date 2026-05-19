@@ -96,6 +96,52 @@ Steam discussions should have pinned threads:
 - FAQ;
 - Patch Notes.
 
+## 2026-05-19 Steam Forum Launch Moderation Gate V0
+
+Create these pinned threads before any public demo, Playtest, or Early Access launch. Do not create them before a real Steam page exists.
+
+| Thread | Purpose | Required first post | Update cadence | Owner |
+|---|---|---|---|---|
+| Known Issues | Prevent duplicate anger and false silence. | Build number, top issues, workaround, status terms. | After every patch or S1 issue. | QA/support |
+| Bug Reports | Route repro into useful fields. | Bug report template and where logs live. | Daily during first week. | QA/support |
+| Performance Reports | Separate settings/hardware problems from general rage. | Performance template and no-performance-claim boundary. | Daily during first week. | QA/support |
+| Demo Feedback | Capture loop/readability/scope signal. | Six-question feedback prompt and no-coop boundary. | 48-hour digest. | product/marketing |
+| FAQ | Stop repeated feature expectation drift. | Co-op, base systems, Steam/demo timing, performance proof rule. | Same day if confusion repeats. | community |
+| Patch Notes | Keep fixes factual and dated. | Build ID, fixed/changed/known issues. | Every build. | lead/QA |
+
+Pinned thread rules:
+
+- one issue per user thread is preferred;
+- merge duplicates only when a clear canonical issue exists;
+- never hide a bug thread because it looks bad;
+- no roadmap promises in forum replies;
+- no "send us your Discord" as the only support route;
+- no defensive Subnautica comparison arguments.
+
+## Review And Forum Triage Buckets
+
+Every Steam review/forum signal gets one bucket before response:
+
+| Bucket | Meaning | Response |
+|---|---|---|
+| BUG_BLOCKER | Crash, save loss, progression block, launch failure. | Reply if helpful, collect repro, escalate S1. |
+| PERF_CONTEXT | FPS/stutter/loading/VRAM/hardware issue. | Ask for template data; do not claim fix without build proof. |
+| EXPECTATION_MISMATCH | Player expected co-op, brighter exploration, bigger content, or different genre. | Correct scope once; update store copy if repeated. |
+| CONTENT_DEPTH | Too thin, too grindy, weak loop. | Acknowledge and route to product digest. |
+| UX_FRICTION | Inventory, controls, UI readability, base building friction. | Route to UX backlog; ask repro/details if needed. |
+| ABUSE_SPAM | Harassment, scams, review manipulation bait. | Report/moderate by platform rules; do not argue. |
+| PRAISE_SIGNAL | Positive theme worth preserving. | Usually no reply; record in weekly digest. |
+
+## First-Week Response Limits
+
+| Window | Max official replies | Rule |
+|---|---:|---|
+| First 24 hours | 10 high-signal replies | Prioritize blockers, false-scope confusion, and performance templates. |
+| Days 2-7 | 5 replies/day | Update pinned threads before individual replies. |
+| After week 1 | only high-signal or fixed issues | Do not create a support treadmill in reviews. |
+
+Do not respond to rage when the real fix is a pinned Known Issues update.
+
 ## Performance Report Template
 
 ```text
@@ -162,6 +208,25 @@ Escalate to lead if:
 - co-op confusion repeats;
 - "too little content" repeats;
 - review score trends toward dangerous threshold.
+
+## Daily Steam Digest Template
+
+```text
+Date:
+Build:
+New reviews:
+Forum threads:
+BUG_BLOCKER:
+PERF_CONTEXT:
+EXPECTATION_MISMATCH:
+CONTENT_DEPTH:
+UX_FRICTION:
+PRAISE_SIGNAL:
+Pinned updates made:
+Store copy implication:
+Product action:
+Do not repeat:
+```
 
 ## Current HECTON-8 Decision
 

@@ -22,6 +22,7 @@ namespace Hecton8.EditorTools
         private Slider _dampingSlider;
         private Toggle _overrideToggle;
         private Label _layoutLabel;
+        private Label _runtimeLabel;
 
         [MenuItem("HECTON-8/Animation/Leviathan Procedural Animation Tuner")]
         public static void Open()
@@ -65,12 +66,16 @@ namespace Hecton8.EditorTools
 
             _layoutLabel = new Label();
             rootVisualElement.Add(_layoutLabel);
+            _runtimeLabel = new Label();
+            rootVisualElement.Add(_runtimeLabel);
             RefreshLayoutLabel();
+            RefreshRuntimeLabel();
         }
 
         private void OnInspectorUpdate()
         {
             RefreshLayoutLabel();
+            RefreshRuntimeLabel();
         }
 
         private void ApplyQualityOverride()
@@ -124,8 +129,36 @@ namespace Hecton8.EditorTools
             int constraintBytes = UnsafeUtility.SizeOf<LeviathanBoneConstraintsDTO>();
             int colliderBytes = UnsafeUtility.SizeOf<LeviathanCapsuleColliderDTO>();
             int telemetryBytes = UnsafeUtility.SizeOf<LeviathanTerrainIkTelemetryEntry>();
+            int snapshotBytes = UnsafeUtility.SizeOf<LeviathanProceduralTunerSnapshot>();
             _layoutLabel.text =
-                $"BoneDTO {boneBytes} B | MockTargetDTO {targetBytes} B | ConstraintDTO {constraintBytes} B | ColliderDTO {colliderBytes} B | Telemetry {telemetryBytes} B";
+                $"BoneDTO {boneBytes} B | MockTargetDTO {targetBytes} B | ConstraintDTO {constraintBytes} B | ColliderDTO {colliderBytes} B | Telemetry {telemetryBytes} B | Snapshot {snapshotBytes} B";
+        }
+
+        private void RefreshRuntimeLabel()
+        {
+            if (_runtimeLabel == null)
+                return;
+
+            if (!TryGetSelectedRuntime(out ILeviathanProceduralTunerSource runtime))
+            {
+                _runtimeLabel.text = "Runtime: no selected FaunaKinematicsRuntime";
+                return;
+            }
+
+            runtime.GetLeviathanProceduralTunerSnapshot(out LeviathanProceduralTunerSnapshot snapshot);
+            _runtimeLabel.text = $"Runtime bones {snapshot.ActiveSegmentCount} | Burst {snapshot.BurstSolveMicros:0.0} us | Iter {snapshot.ConstraintIterations} | Quality {snapshot.GlobalQualityWeight:0.00}";
+        }
+
+        private static bool TryGetSelectedRuntime(out ILeviathanProceduralTunerSource runtime)
+        {
+            runtime = null;
+            GameObject selected = Selection.activeGameObject;
+            if (selected == null)
+                return false;
+
+            Component component = selected.GetComponent("FaunaKinematicsRuntime");
+            runtime = component as ILeviathanProceduralTunerSource;
+            return runtime != null;
         }
     }
 }

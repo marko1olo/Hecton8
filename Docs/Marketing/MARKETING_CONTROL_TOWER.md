@@ -13,9 +13,9 @@ Current hard truth: HECTON-8 has marketing preparation, but no public screenshot
 
 ## 2026-05-19 External Reality Update
 
-Subnautica 2 is no longer a future trailer target. Steam now lists it as released on 2026-05-14, with single-player, online co-op, cross-platform multiplayer, DirectX 12 requirements, and a large Very Positive review base. Snapshot source: `https://store.steampowered.com/app/1962700/Subnautica_2/`.
+Subnautica 2 is no longer a future trailer target. Steam now lists it as released on 2026-05-14, with single-player, online co-op, cross-platform multiplayer, a large Very Positive review base, 11 supported languages, and a public Early Access plan that expects years of updates. Snapshot source: `https://store.steampowered.com/app/1962700/Subnautica_2/`.
 
-Implication: do not build the marketing plan around SN2 collapse. Their launch momentum is real. HECTON-8 must win through a sharper promise: single-player pressure, machinery, salvage, Seed Ship anomaly, grim industrial identity, and proof-backed performance once we can measure it.
+PC Gamer and other launch coverage report millions of copies sold in the first launch window and hundreds of thousands of concurrent players. Implication: do not build the marketing plan around SN2 collapse. Their launch momentum is real. HECTON-8 must win through a sharper promise: single-player pressure, machinery, salvage, Seed Ship anomaly, grim industrial identity, and proof-backed performance once we can measure it.
 
 Launch-week weak signals to monitor, not publicly attack:
 
@@ -55,12 +55,28 @@ If an agent has no context, read only these first:
 
 Everything else is opened only when doing that lane's work.
 
+## Current Operating State - 2026-05-19
+
+| Area | Current state | Next valid action |
+|---|---|---|
+| CRM | 100 staged creator rows, 0 raw. Distribution: 23 `VERIFY_BEFORE_CONTACT`, 22 `NEEDS_ASSET`, 52 `LOW_PRIORITY_VERIFY_LATER`, 3 `DO_NOT_CONTACT`. Send-log fields exist, including `asset_ids_sent` and `creator_utility_score`; no row is contacted. | Do not scrape more until Wave A can be matched to real assets, utility 3/4+, and verified contact routes. |
+| Assets | 13 planned asset slots exist: 8 screenshots, 4 clips, 1 capsule rough. All current slots have `creator_send_gate = BLOCKED_PLANNED_CAPTURE`. | Capture real assets and fill build/source/QA/creator utility fields. |
+| Steam | Pre-capture page assembly and launch gate exist. | Do not launch page before Campaign 01 `KEEP` and asset QA pass. |
+| Spend | Current recommendation is 0 USD. | Release only 0-50 USD cold-read help after real assets exist. |
+| Social | Handle checks are candidate-only; no accounts registered by agent. | Human owner reserves handles with project email, password manager, 2FA, backup codes. |
+| Press/curators | 30 press rows and 20 curator rows triaged. | Recheck exact routes only after presskit/Steam page/assets exist. |
+| Community | FAQ, crisis, Reddit, Steam forum/review gates exist. | Do not open noisy community surfaces before proof assets. |
+| Monitoring | SN2 is strong; pain signals are internal research only. | Recheck before first HECTON screenshot drop. |
+| Promise/copy | Promise Lint Gate exists. | Any public sentence must be tagged and proof-checked before use. |
+| Site/presskit | No-link holding state and presskit minimums exist. | Do not publish more than a minimal holding page before official contact and real assets. |
+| Launch/demo ops | War-room dry run and demo access scoring exist. | No launch/demo/key batch without named owners, clean links, and stop rules. |
+
 ## Current Gates
 
 | Gate | Required proof | Allowed marketing |
 |---|---|---|
 | G0 - Now | No public assets yet. | Lead verification, copy prep, asset criteria, monitoring, internal tests. |
-| G1 - Screenshot Pack | 6-10 real in-game screenshots score 10/12. | Critique posts, small creator warmup, Steam page drafting. |
+| G1 - Screenshot Pack | 6-10 real in-game screenshots score 10/12; creator-facing assets score utility 3/4+ and map to named CRM rows. | Critique posts, small creator warmup, Steam page drafting. |
 | G2 - Steam Page | Public Coming Soon page, capsule, tags, UTM. | Wishlist CTA, tracked creator batches, press fit-check. |
 | G3 - Demo/Playtest | Stable first route, known issues, feedback form. | Demo outreach, Steam Playtest, broader creator/press. |
 | G4 - Launch/EA | Price, build, support, reviews, war room. | Launch campaign, paid tests if baseline works. |
@@ -77,6 +93,8 @@ Current gate: `G0`.
 - No paid ads before Steam page conversion baseline.
 - No raw key drops to unverified contacts.
 - No fake discovery, astroturfing, bought lists, bought wishlists, or review manipulation.
+- No placeholder website that looks like a launch.
+- No public sentence that cannot be classified by the Promise Lint Gate.
 
 ## Work Lanes
 
@@ -91,22 +109,22 @@ Current gate: `G0`.
 | Demo/playtest | `Steam/DEMO_PLAYTEST_AND_TELEMETRY_PLAN.md`, `Audience/PLAYTESTER_RECRUITMENT_AND_SCREENING_PLAN.md` | Playtest waves, feedback forms, demo gate. |
 | Measurement | `Analytics/MEASUREMENT_AND_UTM_PLAN.md`, `KPI/MARKETING_DASHBOARD_SPEC.md` | UTM, dashboard, weekly report. |
 | Launch | `Launch/LAUNCH_DAY_AND_FIRST_WEEK_WAR_ROOM.md`, `Steam/PRICING_DISCOUNT_AND_EARLY_ACCESS_POLICY.md` | Price memo, launch roles, support loop. |
+| Promise/site | `Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md`, `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md` | Linted public copy, holding page, presskit minimums. |
 
 ## What To Do Now
 
 Only these actions make sense before screenshots:
 
-1. Verify top creator leads from existing batches; do not send.
-2. Fill and promote rows from `Data/CREATOR_VERIFICATION_TEMPLATE.csv`; first 50 raw rows are now staged for manual verification.
-3. Prepare 3 short Steam descriptions from existing matrices.
-4. Prepare 3 capsule/key-art directions from visual identity doc.
-5. Reserve social handles if possible.
-6. Prepare email waitlist copy, but do not push it hard.
-7. Monitor SN2 launch-week/community sentiment weekly and log only actionable signals.
-8. Prepare screenshot capture checklist for art/engineering.
-9. Prepare first 20-second trailer shot requirements.
-10. Maintain the risk register weekly.
-11. Update this control tower only when the current gate or public proof state changes.
+1. Capture or prepare capture for `PLAN-SHOT-*` and `PLAN-CLIP-*`; docs are now waiting on real frames.
+2. Fill asset metadata with build ID, source, owner, QA score, creator utility score, creator send gate, and reject code after capture.
+3. Run the first screenshot pack through QA before any Steam, creator, social, or press expansion.
+4. Use Wave A creator packet only after asset/contact/official-link gates pass and the CRM row records `asset_ids_sent` plus `creator_utility_score`.
+5. Reserve social handles if the human owner has project email/password manager/2FA ready.
+6. Recheck SN2 sentiment before first screenshot drop, but keep all competitor pain internal.
+7. Recheck Steam/Reddit/platform rules same day before any post or store upload.
+8. Maintain the risk register only when a new operational risk appears.
+9. Run Promise Lint on any copy that might leave the docs, including bios, holding page text, pitch snippets, and roadmap lines.
+10. Update this control tower only when current gate, proof state, or top priority changes.
 
 ## What Not To Do Now
 
@@ -133,17 +151,20 @@ Every marketing task must end with one of these outputs:
 
 Generic "research completed" is not enough.
 
+Daily work must now follow `Operations/DAILY_AGENT_TASK_LOOP.md` and end as `ADVANCE`, `HOLD`, or `KILL`.
+
 ## Current Top Priorities
 
 | Priority | Work | File to update |
 |---:|---|---|
-| 1 | Convert 250 raw priority leads into verified rows. | `Data/CREATOR_VERIFICATION_TEMPLATE.csv` or CRM sheet. |
-| 2 | Define first screenshot pass/fail criteria for capture. | `QA/MARKETING_ASSET_QA_CHECKLIST.md` |
-| 3 | Draft Steam page copy candidates. | `Steam/STORE_PAGE_COPY_MATRIX.md` |
-| 4 | Prepare first capsule/key-art direction. | `Creative/VISUAL_IDENTITY_AND_KEY_ART_DIRECTION.md` |
-| 5 | Prepare playtester screening form. | `Audience/PLAYTESTER_RECRUITMENT_AND_SCREENING_PLAN.md` |
-| 6 | Maintain weekly competitor sentiment digest. | `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md` |
-| 7 | Keep no-coop and no-performance-claim checks active. | `NO_COOP_PUBLIC_POSITIONING.md`, `Data/MARKETING_RISK_REGISTER.md` |
+| 1 | Produce the first real screenshot/clip packet into existing planned asset IDs and fill asset-side creator utility fields. | `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv`, `QA/MARKETING_ASSET_QA_CHECKLIST.md` |
+| 2 | Score first screenshot pack and decide `KEEP`, `REVISE`, or `KILL`. | `Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md` |
+| 3 | Assemble Steam page only if screenshot pack earns `KEEP`. | `Steam/STORE_PAGE_COPY_MATRIX.md`, `Campaigns/CAMPAIGN_02_STEAM_PAGE_LAUNCH.md` |
+| 4 | Test capsule roughs from approved source assets before spending. | `Creative/VISUAL_IDENTITY_AND_KEY_ART_DIRECTION.md`, `Creative/CAPSULE_TRAILER_THUMBNAIL_BRIEFS.md` |
+| 5 | Prepare first creator Wave A only after official contact, asset QA, creator utility, and CRM send-log gates pass. | `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, `Data/CREATOR_VERIFICATION_TEMPLATE.csv` |
+| 6 | Keep first-public incident and Steam forum gates ready. | `Community/CRISIS_AND_MODERATION_PLAYBOOK.md`, `Feedback/STEAM_REVIEWS_FORUMS_AND_SUPPORT_RESPONSE_PLAYBOOK.md` |
+| 7 | Maintain no-coop/no-performance/no-competitor-attack gates. | `NO_COOP_PUBLIC_POSITIONING.md`, `Data/MARKETING_RISK_REGISTER.md`, `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md` |
+| 8 | Lint any future public copy and keep site/presskit as holding-only until real assets exist. | `Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md`, `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md` |
 
 ## Stop Condition
 

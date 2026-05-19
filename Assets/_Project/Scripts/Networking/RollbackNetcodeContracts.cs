@@ -41,6 +41,8 @@ namespace Hecton8.Networking
         public const int CsvScratchBytes = 4096;
         public const int SnapshotHeaderBytes = 128;
         public const int DesyncHashCadenceFrames = 60;
+        public const uint BlackBoxDumpVersion = 1u;
+        public const ulong BlackBoxDumpMagic = 0x504D4454454E3848UL;
         public const float DefaultVisualInterpolationSeconds = 0.05f;
         public const float DefaultPredictionAggressiveness = 0.6f;
         public const float DefaultLookRollbackMinQuality = 0.55f;
@@ -51,7 +53,7 @@ namespace Hecton8.Networking
         public static int ResolveSnapshotPayloadBytes()
         {
             int bytes = 0;
-            bytes += UnsafeUtility.SizeOf<AbsoluteUniversePosition>() * MaxRigidbodyAups;
+            bytes += UnsafeUtility.SizeOf<double3>() * MaxRigidbodyAups;
             bytes += UnsafeUtility.SizeOf<LockstepPlayerKinematicState>() * MaxPlayerStates;
             bytes += UnsafeUtility.SizeOf<AbsoluteUniversePosition>() * MaxEntityAups;
             bytes += UnsafeUtility.SizeOf<float3>() * MaxEntityVelocities;
@@ -100,6 +102,7 @@ namespace Hecton8.Networking
         public const BufferID MockJitterPackets = (BufferID)70774;
         public const BufferID MockJitterState = (BufferID)70775;
         public const BufferID VisualHistory = (BufferID)70776;
+        public const BufferID RemoteMerkleNodes = (BufferID)70777;
     }
 
     public static class RollbackNetcodeFlags
@@ -131,6 +134,7 @@ namespace Hecton8.Networking
         public const uint Received = 1u << 0;
         public const uint Predicted = 1u << 1;
         public const uint ModQuarantined = 1u << 2;
+        public const uint MockGenerated = 1u << 3;
     }
 
     public static class InputMismatchFlags
@@ -260,7 +264,7 @@ namespace Hecton8.Networking
         [FieldOffset(72)] public uint FirstMismatchBufferId;
         [FieldOffset(76)] public uint FirstMismatchByteOffset;
         [FieldOffset(80)] public ulong LastBranchHash64;
-        [FieldOffset(88)] public ulong Reserved1;
+        [FieldOffset(88)] public ulong LastRemoteBranchHash64;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -305,6 +309,18 @@ namespace Hecton8.Networking
         [FieldOffset(52)] public uint InputMaskP2;
         [FieldOffset(56)] public uint MismatchBufferId;
         [FieldOffset(60)] public uint MismatchByteOffset;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct RollbackBlackBoxDumpHeader32
+    {
+        [FieldOffset(0)] public ulong Magic;
+        [FieldOffset(8)] public uint SourceHash;
+        [FieldOffset(12)] public uint CurrentFrame;
+        [FieldOffset(16)] public uint Flags;
+        [FieldOffset(20)] public uint EntryCount;
+        [FieldOffset(24)] public uint EntrySizeBytes;
+        [FieldOffset(28)] public uint Version;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -425,6 +441,7 @@ namespace Hecton8.Networking
         public const uint RuntimeState = 1u << 9;
         public const uint Tuning = 1u << 10;
         public const uint AudioSuppression = 1u << 11;
+        public const uint BlackBoxHeader = 1u << 12;
 
         public static uint Validate()
         {
@@ -441,6 +458,7 @@ namespace Hecton8.Networking
             mask |= SizeMask<RollbackRuntimeStateDTO>(96, RuntimeState);
             mask |= SizeMask<RollbackTuningDTO>(64, Tuning);
             mask |= SizeMask<RollbackAudioSuppressionDTO>(16, AudioSuppression);
+            mask |= SizeMask<RollbackBlackBoxDumpHeader32>(32, BlackBoxHeader);
             return mask;
         }
 
@@ -632,7 +650,7 @@ namespace Hecton8.Networking
     {
         [ReadOnly, NoAlias] public NativeArray<RollbackVaultBufferDescriptor32> LeafDescriptors;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<H8NetMerkleNodeRecord32> MerkleNodes;
-        [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePosition> RigidbodyAups;
+        [ReadOnly, NoAlias] public NativeArray<double3> RigidbodyAups;
         [ReadOnly, NoAlias] public NativeArray<LockstepPlayerKinematicState> PlayerStates;
         [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePosition> EntityAups;
         [ReadOnly, NoAlias] public NativeArray<float3> EntityVelocities;
@@ -695,7 +713,7 @@ namespace Hecton8.Networking
             switch (descriptor.BufferId)
             {
                 case (uint)BufferID.RigidbodyAUPs:
-                    return HashAupArray(RigidbodyAups, descriptor, out byteLength);
+                    return HashDouble3Array(RigidbodyAups, descriptor, out byteLength);
                 case (uint)BufferID.PlayerKinematicState:
                     return HashNativeArray(PlayerStates, descriptor, out byteLength);
                 case (uint)BufferID.EntityAUPs:
@@ -757,10 +775,31 @@ namespace Hecton8.Networking
 
             ulong hash = 0xCBF29CE484222325UL ^ descriptor.BufferId;
             for (int i = 0; i < count; i++)
-                hash = RollbackNetcodeMath.MixHash64(hash, RollbackNetcodeMath.HashExactAupDouble3(in source[i]));
+            {
+                AbsoluteUniversePosition aup = source[i];
+                hash = RollbackNetcodeMath.MixHash64(hash, RollbackNetcodeMath.HashExactAupDouble3(in aup));
+            }
 
             byteLength = (uint)(count * UnsafeUtility.SizeOf<double3>());
             return hash;
+        }
+
+        private static ulong HashDouble3Array(NativeArray<double3> source, in RollbackVaultBufferDescriptor32 descriptor, out uint byteLength)
+        {
+            byteLength = 0u;
+            if (!source.IsCreated || source.Length <= 0)
+                return 0UL;
+
+            int stride = UnsafeUtility.SizeOf<double3>();
+            int start = stride > 0 ? (int)(descriptor.ByteOffset / (uint)stride) : 0;
+            int desired = descriptor.ElementCount == 0u ? source.Length : (int)descriptor.ElementCount;
+            int count = math.clamp(desired, 0, source.Length - math.min(start, source.Length));
+            if (start < 0 || start >= source.Length || count <= 0)
+                return 0UL;
+
+            byteLength = (uint)(count * stride);
+            byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + (start * stride);
+            return RollbackNetcodeMath.HashExactBytes(ptr, (int)byteLength);
         }
     }
 
@@ -825,7 +864,7 @@ namespace Hecton8.Networking
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct StateSnapshotJob : IJob
     {
-        [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePosition> RigidbodyAups;
+        [ReadOnly, NoAlias] public NativeArray<double3> RigidbodyAups;
         [ReadOnly, NoAlias] public NativeArray<LockstepPlayerKinematicState> PlayerStates;
         [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePosition> EntityAups;
         [ReadOnly, NoAlias] public NativeArray<float3> EntityVelocities;
@@ -859,6 +898,7 @@ namespace Hecton8.Networking
         public uint InputMaskP2;
         public uint ModQuarantineMask;
         public uint MerkleRootIndex;
+        public uint ForceRawPageHash;
 
         public void Execute()
         {
@@ -914,8 +954,12 @@ namespace Hecton8.Networking
             header->PayloadBytes = (uint)writtenBytes;
             int hashBytes = RollbackNetcodeConstants.SnapshotHeaderBytes + writtenBytes;
             ulong merkleHash = 0UL;
-            if (MerkleNodes.IsCreated && MerkleNodes.Length > RollbackNetcodeConstants.MerkleRootNodeIndex)
+            if (ForceRawPageHash == 0u &&
+                MerkleNodes.IsCreated &&
+                MerkleNodes.Length > RollbackNetcodeConstants.MerkleRootNodeIndex)
+            {
                 merkleHash = MerkleNodes[RollbackNetcodeConstants.MerkleRootNodeIndex].HashLo;
+            }
             header->FrameHash64 = merkleHash == 0UL ? RollbackNetcodeMath.HashExactBytes(page, hashBytes) : merkleHash;
 
             int snapshotIndex = pageIndex;
@@ -935,8 +979,16 @@ namespace Hecton8.Networking
                 state.LastFrameHash64 = header->FrameHash64;
                 state.StateSnapshotBytes = (uint)hashBytes;
                 state.StateMemoryOffset = (uint)pageOffset;
-                if (MerkleNodes.IsCreated && MerkleNodes.Length > RollbackNetcodeConstants.MerkleRootNodeIndex)
+                if (ForceRawPageHash == 0u &&
+                    MerkleNodes.IsCreated &&
+                    MerkleNodes.Length > RollbackNetcodeConstants.MerkleRootNodeIndex)
+                {
                     state.LastBranchHash64 = MerkleNodes[RollbackNetcodeConstants.MerkleRootNodeIndex].HashHi;
+                }
+                else
+                {
+                    state.LastBranchHash64 = 0UL;
+                }
                 RuntimeState[0] = state;
             }
         }
@@ -971,7 +1023,7 @@ namespace Hecton8.Networking
     public unsafe struct RestoreSnapshotJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<byte> StateRingBuffer;
-        [NoAlias] public NativeArray<AbsoluteUniversePosition> RigidbodyAups;
+        [NoAlias] public NativeArray<double3> RigidbodyAups;
         [NoAlias] public NativeArray<LockstepPlayerKinematicState> PlayerStates;
         [NoAlias] public NativeArray<AbsoluteUniversePosition> EntityAups;
         [NoAlias] public NativeArray<float3> EntityVelocities;
@@ -1008,32 +1060,34 @@ namespace Hecton8.Networking
                 return;
             }
 
+            int payloadBytes = (int)header->PayloadBytes;
+            int availablePayloadBytes = SnapshotStrideBytes - RollbackNetcodeConstants.SnapshotHeaderBytes;
+            if (payloadBytes <= 0 || payloadBytes > availablePayloadBytes)
+            {
+                MarkSnapshotMissing();
+                return;
+            }
+
             byte* cursor = page + RollbackNetcodeConstants.SnapshotHeaderBytes;
-            CopyDestination(cursor, header->RigidbodyAupCount, RigidbodyAups, out int rigidBytes);
-            cursor += rigidBytes;
-            CopyDestination(cursor, header->PlayerStateCount, PlayerStates, out int playerBytes);
-            cursor += playerBytes;
-            CopyDestination(cursor, header->EntityAupCount, EntityAups, out int entityBytes);
-            cursor += entityBytes;
-            CopyDestination(cursor, header->EntityVelocityCount, EntityVelocities, out int velocityBytes);
-            cursor += velocityBytes;
-            CopyDestination(cursor, header->RoomWaterCount, RoomWaterLevels, out int roomBytes);
-            cursor += roomBytes;
-            CopyDestination(cursor, header->EntityFlagCount, EntityFlags, out int entityFlagBytes);
-            cursor += entityFlagBytes;
-            CopyDestination(cursor, header->EntityItemHashCount, EntityItemHashes, out int entityItemHashBytes);
-            cursor += entityItemHashBytes;
-            CopyDestination(cursor, header->EntityQuantityCount, EntityQuantities, out int entityQuantityBytes);
-            cursor += entityQuantityBytes;
-            CopyDestination(cursor, header->InventoryHashCount, InventoryHashes, out int inventoryHashBytes);
-            cursor += inventoryHashBytes;
-            CopyDestination(cursor, header->InventoryQuantityCount, InventoryQuantities, out int inventoryQuantityBytes);
-            cursor += inventoryQuantityBytes;
-            CopyDestination(cursor, header->InventoryDurabilityCount, InventoryDurabilities, out int inventoryDurabilityBytes);
-            cursor += inventoryDurabilityBytes;
-            CopyDestination(cursor, header->QuestMaskCount, QuestMasks, out int questMaskBytes);
-            cursor += questMaskBytes;
-            CopyDestination(cursor, header->PredatorChosenStateCount, PredatorChosenStates, out _);
+            int remainingPayloadBytes = payloadBytes;
+            if (!TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->RigidbodyAupCount, RigidbodyAups) ||
+                !TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->PlayerStateCount, PlayerStates) ||
+                !TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->EntityAupCount, EntityAups) ||
+                !TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->EntityVelocityCount, EntityVelocities) ||
+                !TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->RoomWaterCount, RoomWaterLevels) ||
+                !TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->EntityFlagCount, EntityFlags) ||
+                !TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->EntityItemHashCount, EntityItemHashes) ||
+                !TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->EntityQuantityCount, EntityQuantities) ||
+                !TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->InventoryHashCount, InventoryHashes) ||
+                !TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->InventoryQuantityCount, InventoryQuantities) ||
+                !TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->InventoryDurabilityCount, InventoryDurabilities) ||
+                !TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->QuestMaskCount, QuestMasks) ||
+                !TryCopyDestination(ref cursor, ref remainingPayloadBytes, header->PredatorChosenStateCount, PredatorChosenStates) ||
+                remainingPayloadBytes != 0)
+            {
+                MarkSnapshotMissing();
+                return;
+            }
 
             if (RuntimeState.IsCreated && RuntimeState.Length > 0)
             {
@@ -1056,19 +1110,34 @@ namespace Hecton8.Networking
             RuntimeState[0] = state;
         }
 
-        private static void CopyDestination<T>(byte* source, uint serializedCount, NativeArray<T> destination, out int byteCount)
+        private static bool TryCopyDestination<T>(ref byte* source, ref int remainingPayloadBytes, uint serializedCount, NativeArray<T> destination)
             where T : struct
         {
+            int stride = UnsafeUtility.SizeOf<T>();
+            if (stride <= 0)
+                return false;
+
+            uint maxSerializableCount = (uint)(int.MaxValue / stride);
+            if (serializedCount > maxSerializableCount)
+                return false;
+
+            int byteCount = (int)serializedCount * stride;
+            if (byteCount < 0 || byteCount > remainingPayloadBytes)
+                return false;
+
             int count = destination.IsCreated
                 ? math.min((int)serializedCount, destination.Length)
                 : 0;
-            byteCount = (int)serializedCount * UnsafeUtility.SizeOf<T>();
-            if (count <= 0)
-                return;
+            if (count > 0)
+            {
+                int copyBytes = count * stride;
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafePtr(destination);
+                UnsafeUtility.MemCpy(destinationPtr, source, copyBytes);
+            }
 
-            int copyBytes = count * UnsafeUtility.SizeOf<T>();
-            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafePtr(destination);
-            UnsafeUtility.MemCpy(destinationPtr, source, copyBytes);
+            source += byteCount;
+            remainingPayloadBytes -= byteCount;
+            return true;
         }
     }
 
@@ -1085,6 +1154,7 @@ namespace Hecton8.Networking
         public float MinQualityForLookRollback;
         public float MoveEpsilon;
         public float LookEpsilon;
+        public uint InputDelayFrames;
 
         public void Execute()
         {
@@ -1123,6 +1193,9 @@ namespace Hecton8.Networking
                     continue;
 
                 uint frame = CurrentFrame - (uint)age;
+                if (CurrentFrame - frame < InputDelayFrames)
+                    continue;
+
                 int ringIndex = (int)(frame % (uint)RemoteInputRing.Length);
                 RemoteInputFrameDTO remote = RemoteInputRing[ringIndex];
                 InputStateDTO predicted = PredictedJournal[(int)(frame % (uint)PredictedJournal.Length)];
@@ -1220,11 +1293,11 @@ namespace Hecton8.Networking
             }
             else
             {
-                Enqueue(ref state, input, CurrentFrame, CurrentFrame + DelayFrames, 0u);
+                Enqueue(ref state, input, CurrentFrame, CurrentFrame + DelayFrames, RemoteInputFlags.MockGenerated);
                 uint duplicateRoll = rng.NextUInt(1000u);
                 if (duplicateRoll < state.DuplicatePermille)
                 {
-                    Enqueue(ref state, input, CurrentFrame, CurrentFrame + DelayFrames + 1u, RemoteInputFlags.Predicted);
+                    Enqueue(ref state, input, CurrentFrame, CurrentFrame + DelayFrames + 1u, RemoteInputFlags.MockGenerated | RemoteInputFlags.Predicted);
                     state.DuplicatedPackets++;
                 }
             }
@@ -1263,6 +1336,15 @@ namespace Hecton8.Networking
                     break;
 
                 int remoteIndex = (int)(packet.SourceFrame % (uint)RemoteInputRing.Length);
+                RemoteInputFrameDTO existing = RemoteInputRing[remoteIndex];
+                if (existing.Frame == packet.SourceFrame &&
+                    (existing.Flags & RemoteInputFlags.Received) != 0u &&
+                    (existing.Flags & RemoteInputFlags.MockGenerated) == 0u)
+                {
+                    state.Tail = (state.Tail + 1u) % (uint)Packets.Length;
+                    continue;
+                }
+
                 RemoteInputRing[remoteIndex] = new RemoteInputFrameDTO
                 {
                     Input = packet.Input,
@@ -1365,9 +1447,11 @@ namespace Hecton8.Networking
         [NoAlias] public NativeArray<VisualStateDTO> VisualStates;
         [NoAlias] public NativeArray<VisualStateHistoryDTO> VisualHistory;
         [NoAlias] public NativeArray<H8NetMerkleNodeRecord32> MerkleNodes;
+        [ReadOnly, NoAlias] public NativeArray<H8NetMerkleNodeRecord32> RemoteMerkleNodes;
+        [NoAlias] public NativeArray<H8NetLeafDeltaRecord64> LeafDeltaRecords;
         [ReadOnly, NoAlias] public NativeArray<MockNetworkJitterState64> MockJitterState;
         [NoAlias] public NativeArray<NetTelemetryEntry64> Telemetry;
-        [NoAlias] public NativeArray<AbsoluteUniversePosition> RigidbodyAups;
+        [NoAlias] public NativeArray<double3> RigidbodyAups;
         [NoAlias] public NativeArray<LockstepPlayerKinematicState> PlayerStates;
         [NoAlias] public NativeArray<AbsoluteUniversePosition> EntityAups;
         [NoAlias] public NativeArray<float3> EntityVelocities;
@@ -1430,15 +1514,17 @@ namespace Hecton8.Networking
                 GlobalQualityWeight = GlobalQualityWeight,
                 MinQualityForLookRollback = tuning.MinQualityForLookRollback,
                 MoveEpsilon = MoveEpsilon,
-                LookEpsilon = LookEpsilon
+                LookEpsilon = LookEpsilon,
+                InputDelayFrames = tuning.InputDelayFrames == 0u ? tuning.PingSimulatedFrames : tuning.InputDelayFrames
             };
             detect.Execute();
 
             state = RuntimeState[0];
+            uint forceRawSnapshotHash = 0u;
             if ((state.Flags & RollbackNetcodeFlags.RollbackRequired) != 0u)
-                ExecuteRollback(in tuning, ref state);
+                forceRawSnapshotHash = ExecuteRollback(in tuning, ref state) ? 1u : 0u;
 
-            SnapshotCurrentState();
+            SnapshotCurrentState(forceRawSnapshotHash);
             CheckRemoteHashFence();
             VisualStateInterpolatorJob visual = new VisualStateInterpolatorJob
             {
@@ -1482,7 +1568,7 @@ namespace Hecton8.Networking
             return tuning;
         }
 
-        private void ExecuteRollback(in RollbackTuningDTO tuning, ref RollbackRuntimeStateDTO state)
+        private bool ExecuteRollback(in RollbackTuningDTO tuning, ref RollbackRuntimeStateDTO state)
         {
             uint rollbackFrame = state.LastMismatchFrame;
             double3 preRollbackVisual = ResolvePrimaryAbsolutePosition();
@@ -1509,6 +1595,14 @@ namespace Hecton8.Networking
                 SnapshotStrideBytes = SnapshotStrideBytes
             };
             restore.Execute();
+
+            state = RuntimeState[0];
+            if ((state.Flags & RollbackNetcodeFlags.SnapshotMissing) != 0u)
+            {
+                state.Flags &= ~RollbackNetcodeFlags.RollbackRequired;
+                RuntimeState[0] = state;
+                return false;
+            }
 
             ApplyRemoteInputCorrectionJob correction = new ApplyRemoteInputCorrectionJob
             {
@@ -1539,9 +1633,10 @@ namespace Hecton8.Networking
             RuntimeState[0] = state;
 
             WriteVisualCorrection(preRollbackVisual, ResolvePrimaryAbsolutePosition(), in tuning);
+            return true;
         }
 
-        private void SnapshotCurrentState()
+        private void SnapshotCurrentState(uint forceRawPageHash)
         {
             StateSnapshotJob snapshot = new StateSnapshotJob
             {
@@ -1578,7 +1673,8 @@ namespace Hecton8.Networking
                 InputMaskP1 = ResolveInputMask(),
                 InputMaskP2 = 0u,
                 ModQuarantineMask = ModQuarantineMask,
-                MerkleRootIndex = RollbackNetcodeConstants.MerkleRootNodeIndex
+                MerkleRootIndex = RollbackNetcodeConstants.MerkleRootNodeIndex,
+                ForceRawPageHash = forceRawPageHash
             };
             snapshot.Execute();
         }
@@ -1623,6 +1719,9 @@ namespace Hecton8.Networking
 
             state.FirstMismatchBufferId = 0u;
             state.FirstMismatchByteOffset = 0u;
+            if (TryResolveRemoteMerkleMismatch(ref state))
+                return;
+
             for (int i = 0; i < RollbackNetcodeConstants.MerkleLeafCapacity && i < MerkleNodes.Length; i++)
             {
                 H8NetMerkleNodeRecord32 node = MerkleNodes[i];
@@ -1633,8 +1732,96 @@ namespace Hecton8.Networking
 
                 state.FirstMismatchBufferId = node.BufferId;
                 state.FirstMismatchByteOffset = node.ByteOffset;
+                H8NetMerkleNodeRecord32 remoteNode = default;
+                WriteLeafDelta(node, remoteNode, state.LastRemoteHash64, state.LastRemoteBranchHash64);
                 return;
             }
+        }
+
+        private bool TryResolveRemoteMerkleMismatch(ref RollbackRuntimeStateDTO state)
+        {
+            if (!RemoteMerkleNodes.IsCreated ||
+                RemoteMerkleNodes.Length <= RollbackNetcodeConstants.MerkleRootNodeIndex ||
+                MerkleNodes.Length <= RollbackNetcodeConstants.MerkleRootNodeIndex)
+            {
+                return false;
+            }
+
+            H8NetMerkleNodeRecord32 remoteRoot = RemoteMerkleNodes[RollbackNetcodeConstants.MerkleRootNodeIndex];
+            bool hasRemoteRootNode = remoteRoot.HashLo != 0UL || remoteRoot.HashHi != 0UL;
+            if (!hasRemoteRootNode && state.LastRemoteHash64 == 0UL)
+                return false;
+
+            int branchStart = 0;
+            int branchEnd = RollbackNetcodeConstants.MerkleLeafCapacity;
+            bool foundRemoteBranch = false;
+            for (int branch = 0; branch < RollbackNetcodeConstants.MerkleBranchCapacity; branch++)
+            {
+                int branchIndex = RollbackNetcodeConstants.MerkleBranchNodeStart + branch;
+                if (branchIndex >= MerkleNodes.Length || branchIndex >= RemoteMerkleNodes.Length)
+                    break;
+
+                H8NetMerkleNodeRecord32 localBranch = MerkleNodes[branchIndex];
+                H8NetMerkleNodeRecord32 remoteBranch = RemoteMerkleNodes[branchIndex];
+                if ((remoteBranch.HashLo == 0UL && remoteBranch.HashHi == 0UL) ||
+                    (remoteBranch.Flags & RollbackMerkleFlags.BranchNode) == 0u)
+                {
+                    continue;
+                }
+
+                foundRemoteBranch = true;
+                if (localBranch.HashLo != remoteBranch.HashLo || localBranch.HashHi != remoteBranch.HashHi)
+                {
+                    branchStart = branch * 2;
+                    branchEnd = math.min(branchStart + 2, RollbackNetcodeConstants.MerkleLeafCapacity);
+                    break;
+                }
+            }
+
+            if (!foundRemoteBranch && !hasRemoteRootNode)
+                return false;
+
+            for (int leaf = branchStart; leaf < branchEnd && leaf < MerkleNodes.Length && leaf < RemoteMerkleNodes.Length; leaf++)
+            {
+                H8NetMerkleNodeRecord32 localLeaf = MerkleNodes[leaf];
+                H8NetMerkleNodeRecord32 remoteLeaf = RemoteMerkleNodes[leaf];
+                if ((localLeaf.Flags & (RollbackMerkleFlags.Missing | RollbackMerkleFlags.SkippedByQuality)) != 0u)
+                    continue;
+                if (remoteLeaf.HashLo == 0UL && remoteLeaf.HashHi == 0UL)
+                    continue;
+                if (localLeaf.HashLo == remoteLeaf.HashLo && localLeaf.HashHi == remoteLeaf.HashHi)
+                    continue;
+
+                state.FirstMismatchBufferId = localLeaf.BufferId;
+                state.FirstMismatchByteOffset = localLeaf.ByteOffset;
+                WriteLeafDelta(localLeaf, remoteLeaf, remoteLeaf.HashLo, remoteLeaf.HashHi);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void WriteLeafDelta(
+            in H8NetMerkleNodeRecord32 localNode,
+            in H8NetMerkleNodeRecord32 remoteNode,
+            ulong remoteHashLo,
+            ulong remoteHashHi)
+        {
+            if (!LeafDeltaRecords.IsCreated || LeafDeltaRecords.Length <= 0)
+                return;
+
+            H8NetLeafDeltaRecord64 delta = default;
+            delta.LocalHashLo = localNode.HashLo;
+            delta.RemoteHashLo = remoteHashLo;
+            delta.LocalHashHi = localNode.HashHi;
+            delta.RemoteHashHi = remoteHashHi;
+            delta.BufferId = localNode.BufferId;
+            delta.ByteOffset = localNode.ByteOffset;
+            delta.ByteLength = localNode.ByteLength != 0u ? localNode.ByteLength : remoteNode.ByteLength;
+            delta.FirstDifferentByte = localNode.ByteOffset;
+            delta.Frame = CurrentFrame;
+            delta.Flags = RollbackNetcodeFlags.BranchProbeRequested;
+            LeafDeltaRecords[0] = delta;
         }
 
         private void WriteTelemetry()
@@ -1721,7 +1908,7 @@ namespace Hecton8.Networking
                 return RollbackNetcodeMath.AbsoluteFromPlayerState(PlayerStates[0]);
 
             if (RigidbodyAups.IsCreated && RigidbodyAups.Length > 0)
-                return AbsoluteFromAup(RigidbodyAups[0]);
+                return RigidbodyAups[0];
 
             if (EntityAups.IsCreated && EntityAups.Length > 0)
                 return AbsoluteFromAup(EntityAups[0]);
@@ -1747,25 +1934,58 @@ namespace Hecton8.Networking
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct VisualStateBlendJob : IJob
+    public struct VisualStateInterpolatorJob : IJob
     {
         [NoAlias] public NativeArray<VisualStateDTO> VisualStates;
+        [NoAlias] public NativeArray<VisualStateHistoryDTO> VisualHistory;
+        public uint CurrentFrame;
+        public float GlobalQualityWeight;
 
         public void Execute()
         {
             if (!VisualStates.IsCreated)
                 return;
 
+            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
+            float smoothing = math.lerp(0.92f, 0.62f, RollbackNetcodeMath.Smooth01(quality));
             for (int i = 0; i < VisualStates.Length; i++)
             {
                 VisualStateDTO state = VisualStates[i];
                 if ((state.Flags & 1u) == 0u)
                     continue;
 
-                state.Blend01 = math.saturate(state.Blend01 + state.BlendStep01);
-                state.InterpolatedLocalMeters = math.lerp(state.InterpolatedLocalMeters, state.TrueLocalMeters, state.Blend01);
+                VisualStateHistoryDTO history = default;
+                if (VisualHistory.IsCreated && i < VisualHistory.Length)
+                    history = VisualHistory[i];
+
+                float3 offset = state.TrueLocalMeters - state.InterpolatedLocalMeters;
+                if (!math.all(math.isfinite(offset)))
+                    offset = float3.zero;
+
+                uint cursor = history.Cursor % 3u;
+                if (cursor == 0u)
+                    history.Offset0 = offset;
+                else if (cursor == 1u)
+                    history.Offset1 = offset;
+                else
+                    history.Offset2 = offset;
+
+                history.Cursor = (cursor + 1u) % 3u;
+                history.EntityId = state.EntityId;
+                history.CorrectionFrame = CurrentFrame;
+                history.Flags = state.Flags;
+
+                float3 smoothedOffset = ((history.Offset0 + history.Offset1 + history.Offset2) * 0.33333334f) * smoothing;
+                state.Blend01 = math.saturate(state.Blend01 + math.max(state.BlendStep01, 0.0001f));
+                float t = RollbackNetcodeMath.Smooth01(state.Blend01);
+                float3 target = state.TrueLocalMeters - smoothedOffset;
+                state.InterpolatedLocalMeters = math.lerp(target, state.TrueLocalMeters, t);
+                history.LastOutput = state.InterpolatedLocalMeters;
                 if (state.Blend01 >= 0.999f)
                     state.Flags &= ~1u;
+
+                if (VisualHistory.IsCreated && i < VisualHistory.Length)
+                    VisualHistory[i] = history;
                 VisualStates[i] = state;
             }
         }

@@ -15,7 +15,7 @@ namespace Hecton8.Core.Memory
         private const ulong LegacyMagic = 0x4D454D4C41594F48UL; // HOYALMEM
         private const int MinimumLegacyHeaderBytes = 48;
         private const int FileStreamBufferBytes = 1024;
-        private const int CsvScratchBytes = 4096;
+        public const int CsvScratchBytes = 4096;
         private const int CsvMaxLineBytes = 256;
         private const uint SourceHashLegacy = 0x4F53484Fu; // OSHO
         private const uint SourceHashCsv = 0x4353564Fu; // CSVO

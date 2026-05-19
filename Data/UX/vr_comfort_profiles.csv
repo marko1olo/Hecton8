@@ -1,0 +1,5 @@
+name,userComfortWeight01,fovAggressiveness,horizonLockSpeed,foveatedBaseline,angularVelocitySoftRadS,angularAccelerationSoftRadS2,linearAccelerationSoftMps2,ewmaSharpness,impactShockWeight,flatScreenBaselineFovTunnel,vrBaselineFovTunnel,releaseSharpness,mockAmplitude
+Novice,1.0,1.10,18.0,0.12,1.00,28.0,6.0,22.0,1.00,0.05,0.82,9.0,1.0
+Veteran,0.82,0.72,12.0,0.08,1.40,42.0,9.0,16.0,0.72,0.04,0.62,12.0,0.8
+Disabled,0.0,0.0,0.0,0.0,8.00,240.0,80.0,1.0,0.0,0.0,0.0,1.0,0.0
+Quest3,0.92,0.84,15.0,0.10,1.20,36.0,8.0,18.0,0.84,0.04,0.70,11.0,0.9

@@ -105,3 +105,133 @@ Solution: Do not launch dotnet/csc; run only static gates and keep Task 20 open 
 Rejected Alternatives: Build under load, or claim compile success from static review.
 Scalability potential: No runtime effect; protects shared workstation throughput.
 Hardware Impact: Prevents build contention; runtime frame cost remains pending Unity/profiler proof.
+
+## 2026-05-19 Ultra Polish Pass 2
+
+Problem: Flora sway scheduling and wake-source stamps still depended on `Time.frameCount`, which is non-deterministic presentation timing and weak rollback hygiene.
+Solution: Add owner-local monotonic counters: `_floraSwaySimulationFrameCounter` for the displacement-field phase/upload metadata, `_proceduralWakeSignalFrameCounter` for wake-source and fluid-impulse stamps, and `_wakeTrailDispatchSerial` for same-tick compute dispatch guarding.
+Rejected Alternatives: Continue reading `Time.frameCount`, or import a cross-domain simulation-clock dependency not present in this lane.
+Scalability potential: Low/Middle/High/Ultra all retain the same deterministic counter route while quality only changes resolution, source count, cadence, and shader sampling cost.
+Hardware Impact: 0 us target runtime cost beyond integer increments; removes non-deterministic frame-counter reads from the sway/wake source path.
+
+Problem: Hot flora sway resolve methods could fall back through `GlobalRegistry.DataVault` after boot if `_wakeDataVault` was null, hiding a service-lifetime fault and adding a global lookup surface.
+Solution: Restrict hot resolve methods to cached `_wakeDataVault`; only cold handle acquisition routes use `GlobalRegistry.DataVault` to request Vault buffers.
+Rejected Alternatives: GlobalRegistry lookup inside every field update, or direct sibling-domain references to fetch memory.
+Scalability potential: Field update cost scales only through `GlobalQualityWeight`, not service lookup behavior.
+Hardware Impact: Saves only tiny control-path overhead, but hardens ownership proof and keeps the Compile Wall clean.
+
+Problem: Several touched Burst jobs lacked the exact `CompileSynchronously = true` directive required by the mandate.
+Solution: Update all `[BurstCompile]` attributes in the touched runtime files to `CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard`.
+Rejected Alternatives: Leave preexisting jobs with partial flags because they were not introduced by this agent.
+Scalability potential: Predictable Burst compilation behavior across Quest-class ARM64 and desktop x86; quality scaling remains mathematical.
+Hardware Impact: Prevents fallback/safe-eval risk; exact frame gain requires profiler proof.
+
+Problem: The editor tuner readout generated a formatted string every `EditorApplication.update`.
+Solution: Throttle readout sampling to 10Hz, cache integer millimeter/resolution/cell values, and update UI Toolkit label text only when a value changes.
+Rejected Alternatives: Keep per-update `.ToString("0.000")`, or claim true UI Toolkit zero-GC while the Label API still consumes managed strings.
+Scalability potential: Editor-only; weak machines avoid needless editor churn while technical artists retain live tuning.
+Hardware Impact: Player hot path remains 0 B GC; editor allocations are reduced to value-change events.
+
+Problem: Compile verification remains mandatory but the CPU gate still forbids build launch.
+Solution: Sampled CPU returned `83`, `65.8`, `99.8` with no `dotnet`/`csc`; build remains blocked and Task 20 stays open.
+Rejected Alternatives: Launch dotnet under >50% CPU, or mark compile proof as complete from static scans.
+Scalability potential: No runtime effect.
+Hardware Impact: Prevents shared workstation contention.
+
+Problem: A later CPU sample dipped below 50% on two readings but spiked to `77.9%` between them.
+Solution: Treat the gate as unstable under parallel-agent load; do not launch build until the sample window is clean.
+Rejected Alternatives: Start `dotnet build` after one low sample while another sample in the same window is over 50%.
+Scalability potential: No runtime effect.
+Hardware Impact: Avoids compile contention during load spikes.
+
+## 2026-05-19 Ultra Polish Pass 3
+
+Problem: The UI Toolkit facade still could allocate a new max-magnitude formatted string when the sampled value changed.
+Solution: Split the readout into a max-magnitude label backed by a cold precomputed millimeter string cache (`0.000`..`9.999`) and a secondary details label that updates only on editor value changes.
+Rejected Alternatives: Claim `Label.text` is true per-update zero-GC, or replace the required UI Toolkit facade with a custom TMP runtime HUD outside the editor scope.
+Scalability potential: Editor-only; weak developer machines avoid repeated numeric formatting while retaining live max-force visibility.
+Hardware Impact: Player hot path remains 0 B GC; editor max readout changes now reuse existing string instances.
+
+Problem: `ClearFloraSwayDisplacementField()` was still capable of walking the full 64^3 node buffer and uploading it to the GPU just to disable a visual field.
+Solution: Clear only the four metadata vectors, set `_floraSwayFieldActive = false`, publish inactive shader globals, and rely on the next scheduled Burst reset to clean active node range before accumulation.
+Rejected Alternatives: Main-thread `for` loop over 262,144 `FloraDisplacementDTO` entries, or forced 4 MB `GraphicsBuffer` upload of a disabled field.
+Scalability potential: Low/Middle/High/Ultra all avoid pointless clear/upload when the field is disabled; visual safety comes from the shader active flag.
+Hardware Impact: Avoids a worst-case 4 MB CPU memory write plus 4 MB CPU->GPU upload on clear events; exact microseconds pending profiler proof.
+
+Problem: Build verification became more blocked, not less.
+Solution: CPU samples returned `100`, `97.7`, `90.4`, and an external `dotnet` process was active as PID `16624`; build remains forbidden.
+Rejected Alternatives: Compete with another dotnet process, or claim compile proof from static scans.
+Scalability potential: No runtime effect.
+Hardware Impact: Prevents compile contention under saturated workstation load.
+
+## 2026-05-19 Ultra Polish Pass 4
+
+Problem: The wake source budget feeding procedural flora still used low-tier and stress boolean gates, and `_GlobalWakeParams.y` was consumed as a low-tier flag by a compute shader.
+Solution: Replace the wake slot limit with a continuous `ResolveWakeBudgetWeight()` / `ResolveWakeBudgetPressure01()` curve derived from `GlobalQualityWeight` and thermal stress. `_GlobalWakeParams.y` now carries budget pressure, and the Sargassum consumer lerps slot count toward the cheap path instead of thresholding that metadata.
+Rejected Alternatives: Keep a `lowTier || stressCap` branch, or only rename the flag while preserving the same binary behavior.
+Scalability potential: Low uses about four wake slots and cheap shader consumers; Middle/High progressively reopen slots; Ultra reaches the full 16-slot wake feed and spends the visual budget on denser flora/microfauna wake response.
+Hardware Impact: Avoids hard pop between 4 and 16 wake slots; exact microseconds pending profiler proof.
+
+Problem: `WakeSource` and `WakeTelemetryEntry`, which are consumed by the flora sway pipeline, still used `[StructLayout(Pack = 1)]`.
+Solution: Remove `Pack=1`, keep explicit field offsets and sizes (`WakeSource` 128B, `WakeTelemetryEntry` 64B), add manual `uint` padding to `WakeSource` offsets 108..124, rename telemetry byte 60 from `LowTier01` to `BudgetPressure01`, and update `WakeDecayJob` with exact Burst flags plus `[NoAlias]`.
+Rejected Alternatives: Ignore the DTO because it lives under VFX/Wakes, or change field order and risk binary route drift.
+Scalability potential: Same DTO ABI supports every quality level; only source budget and shader sampling change.
+Hardware Impact: Removes ARM64 unaligned-access risk on the wake feed read by the flora field; exact gain pending profiler proof.
+
+Problem: Compile verification is still blocked after the patch.
+Solution: Latest CPU gate sample was `100`, `100`, `100`, with active `csc` PID `44272` and `dotnet` PID `31508`; no build was launched.
+Rejected Alternatives: Build under a saturated CPU and active compiler process.
+Scalability potential: No runtime effect.
+Hardware Impact: Prevents compile contention while parallel agents are already compiling.
+
+Problem: Build gate was rechecked after the DTO padding correction.
+Solution: Latest CPU gate sample stayed at `100`, `100`, `100`; no `dotnet`/`csc` process was active, but CPU alone still blocks compilation.
+Rejected Alternatives: Launch build on a saturated machine because compiler processes were no longer visible.
+Scalability potential: No runtime effect.
+Hardware Impact: Prevents local compile from competing with the current 100% CPU workload.
+
+## 2026-05-19 Ultra Polish Pass 5
+
+Problem: The optional `MockDisplacementInjectorJob` ran after production accumulation clamping, so the editor/CI stress path could add synthetic force above the quality-scaled max displacement even though the production wake path was clamped.
+Solution: Sanitize the existing cell value inside the mock job, clamp `DecayTimer`, add the deterministic ghost force, then clamp `ForceVector` back to `math.lerp(0.28f, FloraSwayFieldMaxDisplacementMeters, SmoothStepJob(QualityWeight))` with guarded `math.rsqrt(math.max(...))`.
+Rejected Alternatives: Trusting the mock path because it is editor-facing, or moving the mock before accumulation and changing stress-test behavior.
+Scalability potential: Low/Middle/High/Ultra all share the same displacement ceiling; quality changes the ceiling smoothly instead of letting synthetic stress bypass it.
+Hardware Impact: Adds a tiny constant ALU cost only when mock injection is enabled; prevents shader vertex explosions during deterministic throughput tests.
+
+Problem: The self-audit validator checked only the owned flora DTO and not the wake ABI consumed by the field.
+Solution: Add editor-time validation for consumed `WakeSource` and `WakeTelemetryEntry` sizes and key offsets, and wire those checks into the UI Toolkit tuner `OnEnable` error path.
+Rejected Alternatives: Rely on log-only layout math, or validate by comments without executable offset checks.
+Scalability potential: No direct visual cost; protects the same ABI from Quest-class ARM64 through desktop x86.
+Hardware Impact: 0 us player hot path; editor-only validation.
+
+Problem: Some adjacent Burst jobs in the same manager still left NativeArray aliasing implicit, and several safe-normalize helpers used `math.rsqrt(lengthSq)` after a threshold check rather than an explicit max guard.
+Solution: Add `[NoAlias]` to cascade/parasite job arrays and wrap the remaining inspected `rsqrt` operands with `math.max`.
+Rejected Alternatives: Treat the jobs as unrelated legacy code while they share the same source and Burst lane.
+Scalability potential: No behavior change; gives Burst stronger aliasing facts across quality levels.
+Hardware Impact: Expected to help vectorization safety; exact gain pending profiler proof.
+
+## 2026-05-19 Ultra Polish Pass 6
+
+Problem: The documented quality cadence said 5Hz to 60Hz, but the code still used an approximate middle value from the earlier rough pass.
+Solution: Set `FloraSwayFieldMinUpdateIntervalSeconds` to `1f / 60f` and `FloraSwayFieldMaxUpdateIntervalSeconds` to `0.2f`, preserving the existing smooth `math.lerp`/`SmoothStep01` curve.
+Rejected Alternatives: Keep the 25Hz to 7Hz compromise, add a hardware-profile branch, or let shader interpolation hide an incorrect scheduler contract.
+Scalability potential: Low/Middle/High/Ultra now use the same continuous curve from exact 5Hz thermal survival to exact 60Hz visual-overkill response.
+Hardware Impact: Low quality sheds scheduled field updates to 5Hz; ultra spends the reclaimed budget on a full 64^3, trilinear shader response. Exact microseconds pending profiler proof.
+
+Problem: The runtime source contained `System.Reflection` for layout validation, even though it was intended as an editor-only facade check.
+Solution: Wrap `ValidateFloraDisplacementDtoLayout`, `ValidateFloraSwayTelemetryLayout`, consumed wake ABI validators, and `ResolveFieldOffset` in `#if UNITY_EDITOR`. The editor tuner still calls them; player builds strip the reflection path.
+Rejected Alternatives: Leave reflection visible in player source, remove executable layout checks, or replace the editor facade with comments.
+Scalability potential: No gameplay visual difference; keeps hot/player paths free of reflection while preserving designer-visible ABI failure.
+Hardware Impact: 0 us player hot path; editor validation remains cold and deliberate.
+
+Problem: The Ultra mandate requested proof that flora draw work is not sent blind when occluded.
+Solution: Statically verify the existing vegetation owner route instead of adding a second culling owner: `HectonIndirectVegetationRenderer.TryRenderGpuIndirect()` calls `BuildDepthPyramid()`, binds `_HectonDepthPyramid`, dispatches `FloraCulling.compute`, moves append counts with `GraphicsBuffer.CopyCount`, and submits with `Graphics.RenderMeshIndirect`.
+Rejected Alternatives: Duplicate HZB culling inside SHINOBU_124, download the GPU pyramid to CPU for a Burst pass, or invent direct dependencies on the renderer. The existing GPU route is owner-local and avoids CPU readback latency.
+Scalability potential: Low keeps GPU culling cheap through indirect append and existing density decimation; Middle/High/Ultra can spend saved vertex work on denser visible flora and richer shader response.
+Hardware Impact: Prevents already-occluded vegetation from reaching the vertex shader on the indirect route. Exact savings need Frame Debugger/profiler proof.
+
+Problem: Compile proof is still required after the pass 6 audit patch.
+Solution: Recheck the build gate after static scans. CPU samples stayed at `100`, `100`, `100`; `dotnet/csc=0`. No build was launched because CPU alone violates the guard.
+Rejected Alternatives: Launch compilation on a saturated workstation, or mark Task 20 closed from static scans.
+Scalability potential: No runtime effect.
+Hardware Impact: Prevents local compile contention under current parallel-agent load.

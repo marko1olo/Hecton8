@@ -633,8 +633,12 @@ namespace Hecton8.Core
 
         private static InputStateDTO BuildInputStateDtoFromResolvedState(in InputState source)
         {
-            float2 look = source.Look;
-            float2 move = source.Move;
+            float2 look = new float2(
+                source.LookX * InputState.LookInvQuantizeScale,
+                source.LookY * InputState.LookInvQuantizeScale);
+            float2 move = new float2(
+                source.MoveX * InputState.AxisInvQuantizeScale,
+                source.MoveY * InputState.AxisInvQuantizeScale);
             return new InputStateDTO
             {
                 LookDelta = look,
@@ -762,11 +766,15 @@ namespace Hecton8.Core
 
         private void ApplyResolvedInputStateToPlayerSnapshot(in InputState state)
         {
-            float2 move = state.Move;
-            float2 look = state.Look;
+            float2 move = new float2(
+                state.MoveX * InputState.AxisInvQuantizeScale,
+                state.MoveY * InputState.AxisInvQuantizeScale);
+            float2 look = new float2(
+                state.LookX * InputState.LookInvQuantizeScale,
+                state.LookY * InputState.LookInvQuantizeScale);
             _currentState.MoveDelta = new Vector2(move.x, move.y);
             _currentState.LookDelta = new Vector2(look.x, look.y);
-            _currentState.VerticalDelta = math.clamp(state.VerticalAxis, -1f, 1f);
+            _currentState.VerticalDelta = math.clamp(state.Vertical * InputState.AxisInvQuantizeScale, -1f, 1f);
             _currentState.ActionsBitmask = state.ButtonsBitmask;
             _visualLookDelta = _currentState.LookDelta;
         }
@@ -774,8 +782,12 @@ namespace Hecton8.Core
         private void UpdateVisualLookInterpolation()
         {
             float alpha = (float)math.saturate(_standardInputAccumulator * StandardInputTickRateHz);
-            float2 previous = _previousInputState.Look;
-            float2 current = _currentInputState.Look;
+            float2 previous = new float2(
+                _previousInputState.LookX * InputState.LookInvQuantizeScale,
+                _previousInputState.LookY * InputState.LookInvQuantizeScale);
+            float2 current = new float2(
+                _currentInputState.LookX * InputState.LookInvQuantizeScale,
+                _currentInputState.LookY * InputState.LookInvQuantizeScale);
             float2 interpolated = math.lerp(previous, current, alpha);
             _visualLookDelta = new Vector2(interpolated.x, interpolated.y);
         }

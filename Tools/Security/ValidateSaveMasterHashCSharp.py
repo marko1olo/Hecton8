@@ -19,7 +19,7 @@ EXPECTED_CONSTANTS = {
     "HeaderSizeBytes": "72",
     "MasterStateHashLoOffset": "56",
     "MasterStateHashHiOffset": "64",
-    "MasterPreimageBytes": "80",
+    "MasterPreimageBytes": "96",
     "MasterLoHashBytes": "MasterPreimageBytes + 3",
     "MasterHiHashBytes": "MasterPreimageBytes + 11",
     "ShuffleMaskLoBytes": "36",
@@ -106,6 +106,8 @@ EXPECTED_PREIMAGE_WRITE_SEQUENCE = (
     "u64:hashPayload64",
     "u64:unchecked((ulong)worldSeed)",
     "u64:unchecked((ulong)sectorHash)",
+    "u64:HectonContractVersion.HashLo",
+    "u64:HectonContractVersion.HashHi",
 )
 
 EXPECTED_PREIMAGE_CURSOR_OPERATIONS = (
@@ -135,6 +137,10 @@ EXPECTED_PREIMAGE_CURSOR_OPERATIONS = (
     "write:u64:unchecked((ulong)worldSeed)",
     "advance:8",
     "write:u64:unchecked((ulong)sectorHash)",
+    "advance:8",
+    "write:u64:HectonContractVersion.HashLo",
+    "advance:8",
+    "write:u64:HectonContractVersion.HashHi",
 )
 
 EXPECTED_SHUFFLE_MASK_OPERATIONS = (
@@ -186,17 +192,18 @@ EXPECTED_INTERNAL_DECLARATIONS = (
     "internal static unsafe class SaveMasterHashV10",
 )
 EXPECTED_ACTIVE_STORAGE_SENTINELS = (
-    "internal const ushort CurrentVersion = 0x0009;",
+    "internal const ushort CurrentVersion = 0x000B;",
     "internal const int CurrentHeaderSize = 56;",
+    "private const ushort AlignedSectionHeaderVersion = 0x000B;",
 )
 EXPECTED_BLITTABLE_ATTRIBUTES = (
     (
         "SaveMasterHashV10Result",
-        r"\[BinaryBlittableSafe\]\s*\[StructLayout\(LayoutKind\.Sequential,\s*Pack\s*=\s*1,\s*Size\s*=\s*32\)\]\s*internal\s+readonly\s+struct\s+SaveMasterHashV10Result",
+        r"\[BinaryBlittableSafe\]\s*\[StructLayout\(LayoutKind\.Sequential,\s*Size\s*=\s*32\)\]\s*internal\s+readonly\s+struct\s+SaveMasterHashV10Result",
     ),
     (
         "SaveFileHeaderV10",
-        r"\[BinaryBlittableSafe\]\s*\[StructLayout\(LayoutKind\.Sequential,\s*Pack\s*=\s*1,\s*Size\s*=\s*SaveMasterHashV10\.HeaderSizeBytes\)\]\s*internal\s+struct\s+SaveFileHeaderV10",
+        r"\[BinaryBlittableSafe\]\s*\[StructLayout\(LayoutKind\.Sequential,\s*Size\s*=\s*SaveMasterHashV10\.HeaderSizeBytes\)\]\s*internal\s+struct\s+SaveFileHeaderV10",
     ),
 )
 
@@ -600,7 +607,7 @@ def validate() -> list[str]:
         "BuildMasterPreimage cursor operation drift",
         errors,
     )
-    require(preimage_end_offset(preimage_operations) == 80, "BuildMasterPreimage final byte offset drift", errors)
+    require(preimage_end_offset(preimage_operations) == 96, "BuildMasterPreimage final byte offset drift", errors)
 
     shuffle_body = extract_method_body(csharp, "DeriveShuffleMask")
     shuffle_operations = extract_shuffle_mask_operations(shuffle_body)
@@ -675,10 +682,10 @@ def validate() -> list[str]:
         "stackalloc byte buffer contract drift",
         errors,
     )
-    require("StructLayout(LayoutKind.Sequential, Pack = 1, Size = SaveMasterHashV10.HeaderSizeBytes)" in csharp,
-            "SaveFileHeaderV10 packed layout missing", errors)
-    require("StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)" in csharp,
-            "SaveMasterHashV10Result packed layout missing", errors)
+    require("StructLayout(LayoutKind.Sequential, Size = SaveMasterHashV10.HeaderSizeBytes)" in csharp,
+            "SaveFileHeaderV10 sequential layout missing", errors)
+    require("StructLayout(LayoutKind.Sequential, Size = 32)" in csharp,
+            "SaveMasterHashV10Result sequential layout missing", errors)
     for type_name, pattern in EXPECTED_BLITTABLE_ATTRIBUTES:
         require(
             re.search(pattern, csharp, re.MULTILINE) is not None,
@@ -710,7 +717,7 @@ def validate() -> list[str]:
         123456789,
         -987654321,
     )
-    require(len(sample_preimage) == 80, "ReplayHasher master preimage length drift", errors)
+    require(len(sample_preimage) == 96, "ReplayHasher master preimage length drift", errors)
 
     master = replay.compute_master_state_hash(
         0x48454354,
@@ -730,10 +737,10 @@ def validate() -> list[str]:
     )
     require(
         master == (
-            0x82C250ACAADCFCEE,
-            0x750FEB3BE2F001A7,
-            0x32C38E7EA8C9246D,
-            0x8CB2B6D20A988126,
+            0x8FE1E070164A96D5,
+            0x9BB3607B11A8BCF9,
+            0x064D4D0C5A908C82,
+            0x36409BD1C7FA745E,
         ),
         "ReplayHasher master vector drift",
         errors,
@@ -756,7 +763,7 @@ def main() -> int:
         f"headerForwarding={len(EXPECTED_HEADER_FORWARDING_FIELDS)} "
         f"preimageWrites={len(EXPECTED_PREIMAGE_WRITE_SEQUENCE)} "
         f"preimageOps={len(EXPECTED_PREIMAGE_CURSOR_OPERATIONS)} "
-        f"preimageEnd=80 "
+        f"preimageEnd=96 "
         f"shuffleOps={len(EXPECTED_SHUFFLE_MASK_OPERATIONS)} "
         f"shuffleEnds=36/44 "
         f"rotGuards=2 "

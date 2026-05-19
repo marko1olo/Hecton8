@@ -146,3 +146,112 @@ Exact static microseconds saved:
     <BUILD>Not run. CPU gate measured 80.3-96.9%; no `dotnet`/`csc` process was active, but AGENTS forbids launching build above 50% CPU.</BUILD>
   </VERIFICATION>
 </SELF_AUDIT>
+
+<POLISH_AUDIT agent_id="SHINOBU_100" pass="compile_wall_and_buffer_abi" date="2026-05-19">
+  <WHAT_WAS_WRONG>
+    The Frost sweep had an illegal reverse dependency: `Hecton8.Core.Memory` attempted to write `SignalBus<MemoryAddressShiftSignal>`, but `SignalBus` is compiled in `Hecton8.Core` and `Hecton8.Core` already references `Hecton8.Core.Memory`. That route creates a compile-wall/circular-reference failure. The late SHINOBU BufferIDs also collided with existing WristHud values 560-565.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Added 64-byte `VaultMemoryAddressShiftRecord` and `VaultMemoryAddressShiftCount` as Vault-owned buffers. `VaultOrphanedPointerSweepJob` now writes records only; `SystemDispatcher` publishes the Core `MemoryAddressShiftSignal` after Frost maintenance from the legal Core boundary. `VaultXRayWindow` moved to the Editor asmdef and `VaultMemoryGizmoVisualizer` moved to Core diagnostics so editor/debug code can reference Core-only symbols without contaminating Core.Memory.
+  </WHAT_WAS_DONE>
+  <BUFFER_ABI>
+    SHINOBU active Vault IDs are now: 550 VaultMemoryLayoutConfig; 551 VaultHotEntityData; 552 VaultColdEntityData; 553 VaultAup64; 554 VaultEntityBucketMap; 555 VaultSharedTransformMatrices; 556 VehicleMotorSubmarineStates; 557 VehicleMotorSweepCommands; 558 VehicleMotorSweepResults; 559 VaultSovereigntyTelemetryRing; 636 AcousticEchoPendingTaps; 637 VaultAupSectorLocal32; 638 VaultSovereigntyActiveEntityCount; 639 VaultMemoryProfileCsvScratch; 640 VaultMemoryAddressShiftRecords; 641 VaultMemoryAddressShiftCount.
+  </BUFFER_ABI>
+  <STRUCT_LAYOUT_VERIFICATION>
+    `VaultMemoryAddressShiftRecord` is 64 bytes: offsets 0/8 two long pointers, 16/20 int BufferId/ByteLength, 24 uint Version, 28 byte Flags, 29 byte SystemId, 30 ushort pad, 32/36 int OldIndex/NewIndex, 40 uint MovedEntityId, 44 uint SourceFrame, 48 uint SourceHash, 52 uint CompactedCount, 56 ulong pad. Total = 64 bytes, one cache line.
+  </STRUCT_LAYOUT_VERIFICATION>
+  <CINEMATIC_CHEAT>
+    No new physical simulation was introduced. The existing Dear Lie remains deterministic dead-reckoning/Hermite presentation on skipped quality-stride frames while authoritative compaction is O(min(N, quality_budget)) on Frost cadence plus O(1) swap-pop.
+  </CINEMATIC_CHEAT>
+  <EXACT_MICROSECONDS_SAVED>
+    Direct measured savings are not claimed without Unity Profiler/Burst proof. Static estimate unchanged: avoiding heavy submarine solve on stride-4 low quality saves 10-40us per 16-vehicle batch; Frost sweep remains 8-35us per bounded window. The compile-wall fix saves developer iteration failure time, not frame time.
+  </EXACT_MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Core.Memory static scan now finds no `SignalBus<MemoryAddressShiftSignal>`, no Core `MemoryAddressShiftSignal`, no `HectonFloatingOrigin`, and no `HomeostasisBrain`. The remaining `MockSignalBus<T>` is editor/test gated and does not reference Core. Touched-file `git diff --check` reports only LF/CRLF warnings. Full `git diff --check` is blocked by unrelated trailing whitespace in `Docs/AgentLogs/Rationale_SHINOBU_113.md`.
+    BufferID duplicate scan no longer reports SHINOBU_100/WristHud collisions. Remaining duplicate values are external: 70150-70157 VRSomatic/QuestDag and 70200 SaveWorldPager/ConstructionBuilder.
+  </VERIFICATION>
+  <BUILD>
+    Not run. CPU gate measured 100% and no `dotnet`/`csc` process; AGENTS forbids launching build above 50% CPU.
+  </BUILD>
+</POLISH_AUDIT>
+
+<POLISH_AUDIT agent_id="SHINOBU_100" pass="core_memory_explicit_abi_closure" date="2026-05-19">
+  <WHAT_WAS_WRONG>
+    A targeted ABI scan still found non-generic Core.Memory and dispatcher DTOs using `LayoutKind.Sequential`. Sequential layout was size-asserted, but it still permits future offset drift when fields are inserted. The dispatcher also retained two `GlobalRegistry.DataVault` fallbacks in the memory cache path, making the SHINOBU route harder to prove as cached-only.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Converted non-generic Core.Memory records to explicit layout without changing byte sizes: `BlockDescriptor` 40B, `H8AllocationRecord` 48B, `H8MemoryTelemetryEntry` 64B, `VaultRelocationRecord` 32B, `VaultBufferMeta` 48B, `VaultMemoryBlockSnapshot` 48B, `VaultArenaBlock` 32B, and `MemoryDefragTelemetryEntry` 128B. Converted touched dispatcher DTOs `CriticalMemoryPressureEvent` 32B and `DispatcherBlackBoxEntry` 64B. Replaced `SystemDispatcher` `GlobalRegistry.DataVault` fallback with cached `_dataVault` plus `GlobalDataVault.TryGetLatestCreated`. Added the missing `.meta` for the moved diagnostics `VaultMemoryGizmoVisualizer.cs`.
+  </WHAT_WAS_DONE>
+  <STRUCT_LAYOUT_VERIFICATION>
+    `BlockDescriptor`: IntPtr 0, long Offset 8, long Bytes 16, int OwnerKey 24, int Generation 28, ushort SystemID 32, ushort Flags 34, byte State 36, byte Reserved 37, ushort Reserved2 38 = 40B. `H8AllocationRecord`: pointer/long at 0/8, ints at 16/20/24/28/32/36, ushort fields at 40/42/44/46 = 48B. `H8MemoryTelemetryEntry`: longs 0/8/16, uint 24, ints 28/32/36/40/44/48/52, ushorts 56/58, uint 60 = 64B.
+  </STRUCT_LAYOUT_VERIFICATION>
+  <GENERIC_HANDLE_EXCEPTION>
+    `VaultBufferHandle<T>` and `VaultBufferSlice<T>` remain sequential by design. Explicit layout on generic value types is a CLR/IL2CPP compile-wall risk; both types are handle/view metadata, not authoritative hot DTO rows, and `VaultSurgeryEditTests` plus runtime guards assert exact 24B/32B sizes.
+  </GENERIC_HANDLE_EXCEPTION>
+  <EXTERNAL_DEBT_NOT_HIJACKED>
+    Broad scan still finds `Pack=1` / non-synchronous Burst debt in separate AI ownership lanes: `AI/Pathfinding/PathFunnelContracts.cs` and `AI/Ambient/AmbientBiotaDirector.cs`. SHINOBU_100 did not rewrite those binary contracts in this pass.
+  </EXTERNAL_DEBT_NOT_HIJACKED>
+  <CINEMATIC_CHEAT>
+    No physical simulation was added. The Dear Lie remains dead-reckoning/Hermite presentation under quality striding plus Vault Frost O(1) swap-pop compaction.
+  </CINEMATIC_CHEAT>
+  <EXACT_MICROSECONDS_SAVED>
+    Measured frame savings are not claimed. Static value: removes service-locator fallback from the dispatcher memory route and freezes ARM64 offsets; expected runtime difference is below profiler significance until Unity/Burst proof exists.
+  </EXACT_MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Static scans after this pass: no direct `GlobalRegistry.DataVault/Get/TryGet` in SHINOBU-touched memory/physics route; no `Allocator.Persistent` matches in `Assets/_Project/Scripts/AI` or `Assets/_Project/Scripts/Physics`; touched Burst scan clean; touched-file `git diff --check` reports only LF/CRLF warnings. SHINOBU IDs 636-641 and 70630-70635 have no source collisions outside their enum declarations. Broad enum duplicate scan reports external collisions at 70200, 70550, and 70800-70807.
+  </VERIFICATION>
+  <BUILD>
+    Not run. CPU gate measured 97.9%; AGENTS/user rules forbid `dotnet build` above 50% CPU.
+  </BUILD>
+</POLISH_AUDIT>
+
+<POLISH_AUDIT agent_id="SHINOBU_100" pass="physics_culling_vault_closure" date="2026-05-19">
+  <WHAT_WAS_WRONG>
+    A fresh static scan still showed three persistent owner-local physics culling containers: `_physicsSpatialHash` as `NativeParallelMultiHashMap<int,int>`, `_physicsStateChangedIndices` as `NativeQueue<int>`, and `_physicsTargetWakeRequests` as `NativeQueue<PhysicsCullingTargetWakeRequestSignal>`. The prior report marked this as SHINOBU_37 debt; after reading the actual partial, the migration was feasible without inventing a cross-assembly dependency.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Replaced the spatial hash with Vault SoA buffers: `ShinobuPhysicsCullingSpatialBucketHeads` (70630), `ShinobuPhysicsCullingSpatialNext` (70631), and `ShinobuPhysicsCullingSpatialCellHashes` (70632). Replaced changed-index queue with `ShinobuPhysicsCullingChangedIndices` (70633) plus 64B `PhysicsCullingCounter64` at `ShinobuPhysicsCullingChangedCount` (70634). Replaced targeted wake queue with Vault wake mirror plus 64B `ShinobuPhysicsCullingWakeRequestCount` (70635). The Burst culling jobs now write changed indices through atomic counter increments and `[NoAlias]` arrays.
+  </WHAT_WAS_DONE>
+  <BUFFER_ABI>
+    New physics culling IDs intentionally use 70630-70635. The first candidate range 70609-70614 was rejected after source/doc scan found `ShinobuApexBrainVault` owns 70609-70619 and 70626-70629 through casted BufferID constants.
+  </BUFFER_ABI>
+  <STRUCT_LAYOUT_VERIFICATION>
+    `PhysicsCullingCounter64` is exactly 64 bytes: offset 0 int Value, offset 4 uint Flags, offsets 8/16/24/32/40/48/56 seven ulong pads. Total = 4 + 4 + 56 = 64 bytes, one L1 cache line for atomic producer counters. `PhysicsCullingDTO` remains 40 bytes: double3 at 0, int at 24, float at 28, byte at 32, three byte pads 33-35, uint flags at 36.
+  </STRUCT_LAYOUT_VERIFICATION>
+  <CINEMATIC_CHEAT>
+    No rigidbody micro-simulation was added. The culling path remains an optical/physics budget cheat: far bodies are slept, made kinematic, or stripped of heavy mesh colliders by distance/frustum math instead of simulating every body at full fidelity. Quality now expands/shrinks radii continuously through `HomeostasisBrain.GlobalQualityWeight`, `math.lerp`, polynomial smoothing, and `math.step`.
+  </CINEMATIC_CHEAT>
+  <EXACT_MICROSECONDS_SAVED>
+    Measured savings are not claimed without Unity Profiler/Burst proof. Static impact: removes three persistent native container allocations from the physics culling partial; spatial rebuild remains O(N), nine-cell query remains O(C) with exact cell-hash checks; changed-index production is O(1) atomic write. Expected low-end gain is lower allocator fragmentation and no native queue/multihash container maintenance overhead.
+  </EXACT_MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Static target scan: no `NativeQueue`, `NativeParallelMultiHashMap`, or `Allocator.Persistent` remains in `GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs`. Target Burst scan: all BurstCompile attributes in the touched culling files include `CompileSynchronously = true`; culling jobs use deterministic float mode. BufferID duplicate enum scan reports only existing external `70200 SaveWorldPagerWriteArena/ConstructionBuilderOccupancy`.
+  </VERIFICATION>
+  <BUILD>
+    Not run. Build remains gated by user/AGENTS CPU and active-dotnet rules until the machine is below 50% CPU and no `dotnet`/`csc` process is active.
+  </BUILD>
+</POLISH_AUDIT>
+
+<POLISH_AUDIT agent_id="SHINOBU_100" pass="physics_culling_scratch_vault_closure" date="2026-05-19">
+  <WHAT_WAS_WRONG>
+    After the native queue and multihash migration, the physics culling partial still retained local managed scratch fields: two byte arrays for CSV/binary hydration and one nine-cell `int3[]` neighbor scratch. These were not persistent native allocations, but they weakened the source-level DataVault proof for the physics culling configuration path.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Added `ShinobuPhysicsCullingCsvScratch` (70636) and `ShinobuPhysicsCullingLegacyRadiiScratch` (70637) BufferIDs. Replaced managed file-read scratch with Vault-backed `NativeArray<byte>` spans and `ReadOnlySpan<byte>` parsing. Removed the 9-cell managed neighbor array by computing the 3x3 candidate cell hashes directly during spatial query. Kept the existing `Plane[6]` frustum scratch because Unity's frustum API requires that managed array and it is not authoritative memory.
+  </WHAT_WAS_DONE>
+  <BUFFER_ABI>
+    `ShinobuPhysicsCullingCsvScratch` 70636: byte, capacity 4096. `ShinobuPhysicsCullingLegacyRadiiScratch` 70637: byte, capacity 64. Both are byte-addressable scratch buffers and do not define DTO padding beyond the one-byte element stride.
+  </BUFFER_ABI>
+  <CINEMATIC_CHEAT>
+    No simulation was added. The physics culling Dear Lie remains distance/frustum sleeping and collider stripping, with direct 3x3 cell hash queries replacing a staged neighbor-cell array.
+  </CINEMATIC_CHEAT>
+  <EXACT_MICROSECONDS_SAVED>
+    Measured microseconds are not claimed. Static impact: removes two managed scratch arrays and one nine-element managed neighbor array from the culling partial; file hydration now writes directly into Vault scratch. Expected hot-path gain is below profiler resolution, but the architecture proof is stronger.
+  </EXACT_MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Static scans: no `NativeQueue`, `NativeParallelMultiHashMap`, `Allocator.Persistent`, private byte-array scratch, or private int3-array scratch remains in `GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs`; no `GlobalRegistry.DataVault/Get/TryGet` remains in the SHINOBU-touched route; touched Burst scan is clean; 70636 and 70637 have no source collisions outside their enum declarations. `git diff --check` reports only LF/CRLF warnings on touched files.
+  </VERIFICATION>
+  <BUILD>
+    Not run. CPU measured 18.0%, but seven `dotnet` processes were active; AGENTS/user rules forbid launching `dotnet build` while `dotnet` or `csc` is already running.
+  </BUILD>
+</POLISH_AUDIT>

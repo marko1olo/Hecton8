@@ -137,6 +137,56 @@ SHINOBU_81 presskit-access addendum on 2026-05-19: `Press/PRESS_KIT_AND_MEDIA_PL
 
 SHINOBU_81 owned-audience addendum on 2026-05-19: `Audience/OWNED_AUDIENCE_EMAIL_AND_NEWSLETTER_PLAN.md` now includes `2026-05-19 Owned Audience Signup Gate V0`, defining allowed signup modes, copy blocks, stop conditions, and list hygiene. No signup push is authorized before real demo/playtest/devlog/presskit value exists.
 
+SHINOBU_81 crisis/Steam-ops addendum on 2026-05-19: `Community/CRISIS_AND_MODERATION_PLAYBOOK.md` now includes `2026-05-19 First Public Incident Triage Gate V0`; `Feedback/STEAM_REVIEWS_FORUMS_AND_SUPPORT_RESPONSE_PLAYBOOK.md` now includes `2026-05-19 Steam Forum Launch Moderation Gate V0`; `Operations/DAILY_AGENT_TASK_LOOP.md` now includes `2026-05-19 Active Control Tower Loop V0`; `Data/MARKETING_RISK_REGISTER.md` now includes RISK-031 through RISK-038. These updates are internal operating gates only. They do not imply a Steam page, public forum, review surface, demo, account, or asset exists.
+
+SHINOBU_81 capsule-rough addendum on 2026-05-19: `Creative/VISUAL_IDENTITY_AND_KEY_ART_DIRECTION.md` now includes `2026-05-19 Capsule Rough Decision Packet V0`, and `Creative/CAPSULE_TRAILER_THUMBNAIL_BRIEFS.md` now includes `2026-05-19 Capsule Rough Test Packet V0`. These sections map capsule/key-art roughs to planned asset IDs, cold-read questions, pass thresholds, clone-risk guards, and paid-art gates. They do not imply real screenshots, capsule art, Steam assets, or paid spend exist.
+
+SHINOBU_81 competitor-monitoring addendum on 2026-05-19: `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md` now includes `2026-05-19 Verification Sprint Addendum`. Sources rechecked include Steam store app 1962700, PC Gamer launch/sales and performance-settings articles, Notebookcheck EULA/privacy coverage, and Reddit anecdotes about co-op desync/growbed lag/FPS drops. The update classifies SN2 launch strength as official/press evidence, and performance/co-op/EULA issues as mixed or anecdotal signals unless recurring clusters are later proven.
+
+SHINOBU_81 control-tower refresh addendum on 2026-05-19: `MARKETING_CONTROL_TOWER.md` now reflects the active CRM-100 state, 13 planned asset slots, 0 USD spend recommendation, candidate-only social handle state, press/curator triage state, and the current top priority: real screenshot/clip capture and QA before more strategy or outreach. This refresh does not imply real assets, public accounts, Steam page, or outreach readiness.
+
+SHINOBU_81 social-browser/content addendum on 2026-05-19: `Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md` now includes `2026-05-19 Agent-Assisted Browser Work Boundary V0` and `Account Page Field Kit V0`; `Content/POST_BANK_AND_HOOK_LIBRARY.md` now includes `2026-05-19 Pre-Asset Quiet Account Content Pack V0`. These are preparation artifacts only. No private browser profile was inspected, no account was created, no login occurred, no post was published, and no credential was stored.
+
+SHINOBU_81 capture-packet addendum on 2026-05-19: `Content/SCREENSHOT_AND_CLIP_SHOTLIST.md` now includes `2026-05-19 Capture Packet V0`, mapping `PLAN-SHOT-*` and `PLAN-CLIP-*` IDs to capture intent, must-include elements, reject codes, and review forms. `Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` now includes `2026-05-19 Planned Capture To Metadata Workflow V0`. These sections are still pre-capture; no real asset file is implied.
+
+SHINOBU_81 proof-measurement addendum on 2026-05-19: `KPI/MARKETING_DASHBOARD_SPEC.md` now includes `2026-05-19 Proof-Gate Dashboard V0`; `Analytics/MEASUREMENT_AND_UTM_PLAN.md` now includes `2026-05-19 Minimum Measurement Packet Before Public Links`. These sections define asset-gate, first-public-beat, campaign, link, feedback, and spend IDs before public traffic exists. They do not imply a Steam URL, UTM link, public post, or measured data exists.
+
+SHINOBU_81 promise/launch/demo/site gate addendum on 2026-05-19: `Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md` now includes `2026-05-19 Promise Lint Gate V0`; `Launch/LAUNCH_DAY_AND_FIRST_WEEK_WAR_ROOM.md` now includes `2026-05-19 War Room Dry Run Gate V0`; `Campaigns/CAMPAIGN_03_FIRST_DEMO_OUTREACH.md` now includes `2026-05-19 Demo Access Batch Scoring V0`; `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md` now includes `2026-05-19 No-Link Holding State V0` and a presskit minimum packet. These are copy/access/launch control gates only. They do not imply a roadmap, launch, demo, public site, presskit, account, key, or public link exists.
+
+SHINOBU_81 control/risk propagation addendum on 2026-05-19: `MARKETING_CONTROL_TOWER.md` now exposes the promise/site/launch-demo gates in the current operating state, work lanes, immediate actions, and top priorities. `Data/MARKETING_RISK_REGISTER.md` now includes RISK-039 through RISK-041 for promise-lint bypass, ownerless launch/demo ops, and misleading holding page/presskit readiness. These are prevention gates only; no public surface exists.
+
+SHINOBU_81 entry-index cleanup addendum on 2026-05-19: `README.md` now points at Promise Lint, dry-run launch ops, no-link site state, and presskit minimums. `PREP_DIRECTIONS_NOW.md` no longer tells future agents to create `FEATURE_BOUNDARIES_FOR_PUBLIC_COPY.md`, `VISUAL_IDENTITY_DO_AND_DONT.md`, `STEAM_CAPSULE_BRIEF.md`, or `STEAM_UTM_NAMING.md`; it routes those responsibilities into existing docs.
+
+SHINOBU_81 active-loop correction addendum on 2026-05-19: `Operations/DAILY_AGENT_TASK_LOOP.md` and `Campaigns/CAMPAIGN_00_PRE_SCREENSHOT_SETUP.md` now state that CRM-100 has 0 raw staged rows and that the current bottleneck is asset proof, not more lead volume. Future lead expansion requires explicit human request or a source-backed need after first assets identify segment fit.
+
+SHINOBU_81 master-plan/calendar override addendum on 2026-05-19: `MARKETING_PREP_MASTER_PLAN.md` and `Schedule/90_DAY_MARKETING_OPERATIONS_CALENDAR.md` now include current execution overrides. The broad plan remains useful as sequence scaffolding, but the active bottleneck is planned capture/asset QA, not more creator/press lead volume.
+
+SHINOBU_81 weekly-routine correction addendum on 2026-05-19: `Data/MARKETING_BACKLOG_INDEX.md` weekly routine now reflects CRM-100/0 raw state. Before screenshots, weekly work starts with planned asset packet, asset-to-lead matching, asset-linked hooks, and Promise Lint. Raw-lead verification reopens only through an explicit source-backed sprint.
+
+SHINOBU_81 CRM-asset unlock addendum on 2026-05-19: `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` now includes `2026-05-19 CRM-100 Asset Unlock Map V0`, mapping current `VERIFY_BEFORE_CONTACT` and `NEEDS_ASSET` rows to `PLAN-SHOT-*` and `PLAN-CLIP-*` assets. This is a capture-priority and future-route map only; no creator is send-ready from this table alone.
+
+SHINOBU_81 asset-metadata unlock addendum on 2026-05-19: `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` planned rows now include creator-unlock notes in the existing `notes` field. The notes are planning hints only; they do not promote any asset or creator row to public/send-ready state.
+
+SHINOBU_81 asset-QA utility gate addendum on 2026-05-19: `QA/MARKETING_ASSET_QA_CHECKLIST.md` now includes a creator utility gate. Asset utility can prioritize capture order but cannot override screenshot/clip QA thresholds or promise boundaries.
+
+SHINOBU_81 screenshot-campaign utility addendum on 2026-05-19: `Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md` now requires any Wave A creator micro-feedback asset to pass creator utility 3/4+, map to named CRM rows through `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, and still pass visual QA thresholds from `QA/MARKETING_ASSET_QA_CHECKLIST.md`. This is a campaign guard only; no screenshot, creator contact, official route, public post, Steam link, or outreach send is implied.
+
+SHINOBU_81 post-bank utility addendum on 2026-05-19: `Content/POST_BANK_AND_HOOK_LIBRARY.md` now binds asset-to-post rows, first creator warmup lines, and the 72-hour sequence to the creator utility gate. Creator-facing use requires utility 3/4+, named CRM rows, exact contact route verification, and visual QA pass. Public social posts remain asset/QA-gated but do not become creator outreach by default.
+
+SHINOBU_81 creator-send utility addendum on 2026-05-19: `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` now requires every creator-facing asset in the first human-send packet to have creator utility 3/4+ and map to the recipient's CRM row. Wave A includes per-recipient utility gates and the send log now records `creator_utility_score`. This is still blocked by real assets, QA, official routes, Steam/presskit links if mentioned, and human send logging.
+
+SHINOBU_81 CRM send-log schema addendum on 2026-05-19: `CreatorOutreach/CREATOR_CRM_SCHEMA_AND_SCORING.md` and `Data/CREATOR_VERIFICATION_TEMPLATE.csv` now include explicit send-log fields: outreach batch, sent date, contact-route verification for send, asset IDs sent, `creator_utility_score`, UTM content, reply deadline, follow-up allowance, post-send reply state, and coverage URL. These fields are blank planning infrastructure only; no row is promoted to contacted or send-ready by the schema change.
+
+SHINOBU_81 asset-metadata utility field addendum on 2026-05-19: `Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` and `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` now include structured asset-side creator fields: `creator_rows_unlocked`, `creator_utility_score`, and `creator_send_gate`. Planned rows are set to utility score 0 and `BLOCKED_PLANNED_CAPTURE` until real capture and QA exist.
+
+SHINOBU_81 control-tower utility propagation addendum on 2026-05-19: `MARKETING_CONTROL_TOWER.md` now exposes the structured CRM/asset utility state: creator send-log fields exist, planned assets are blocked by `BLOCKED_PLANNED_CAPTURE`, G1 creator warmup requires utility 3/4+ and named CRM mapping, and Wave A requires `asset_ids_sent` plus `creator_utility_score` logging.
+
+SHINOBU_81 utility-risk addendum on 2026-05-19: `Data/MARKETING_RISK_REGISTER.md` now includes RISK-042 for bypassing creator utility gates because an asset looks good or a creator is high-value. Prevention requires `creator_utility_score`, `creator_send_gate`, named CRM mapping, and `asset_ids_sent` before creator-facing sends.
+
+SHINOBU_81 daily-loop utility addendum on 2026-05-19: `Operations/DAILY_AGENT_TASK_LOOP.md` now binds ASSET_GATE, CRM_CLEANUP, Noon Kill Check, Asset Critic, and screenshot-era quotas to `creator_rows_unlocked`, `creator_utility_score`, `creator_send_gate`, named CRM rows, and send-log fields before outreach escalation.
+
+SHINOBU_81 README utility propagation addendum on 2026-05-19: `README.md` now names the creator utility/send-log gate in hard rules, directory map entries, and the first asset gate. It states that creator outreach cannot proceed from asset existence alone.
+
 ## Creator Lead Sources
 
 - LetsPlayIndex Subnautica channel views: https://www.letsplayindex.com/games/subnautica-2018/most-lets-play-channel-views

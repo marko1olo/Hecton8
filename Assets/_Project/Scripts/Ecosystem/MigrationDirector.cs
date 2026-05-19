@@ -9,6 +9,7 @@ using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -125,7 +126,7 @@ namespace Hecton8.Ecosystem
         /// <summary>
         /// Coarse global migration cell. X/Z indices wrap in AUP-space; Y is clamped to the shelf water column.
         /// </summary>
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public struct MigrationGridCell
         {
             [FieldOffset(0)]
@@ -140,7 +141,7 @@ namespace Hecton8.Ecosystem
             public ushort Flags;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct MigrationBloodCloudPoi
         {
             [FieldOffset(0)]
@@ -159,7 +160,7 @@ namespace Hecton8.Ecosystem
             public int Flags;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 40)]
+        [StructLayout(LayoutKind.Explicit, Size = 40)]
         private struct MigrationSwarmState
         {
             [FieldOffset(0)]

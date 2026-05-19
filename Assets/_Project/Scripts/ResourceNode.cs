@@ -8,8 +8,6 @@ using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.Tools;
 using Hecton8.World;
-using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -141,7 +139,7 @@ namespace Hecton8.Scavenging
         private float _pressureMetamorphismProgressSeconds;
         private long _fractionalYieldRemainderGrams;
         private int _yieldDropCount;
-        private NativeArray<int> _depletionLock;
+        private int _depletionLockState;
 
         /// <summary>Legacy scene-facing ID retained for compatibility systems.</summary>
         public string UniqueId => uniqueId;
@@ -204,13 +202,8 @@ namespace Hecton8.Scavenging
                 : (_meshRenderer != null ? _meshRenderer : ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(_cachedTransform));
 
             _propertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-node melt shader overrides — owner: ResourceNode
-            _depletionLock = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] — interlocked depletion gate for pooled resource tombstones — owner: ResourceNode
-            NativeMemorySentinel.RegisterNativeArray(
-                _depletionLock,
-                nameof(ResourceNode),
-                nameof(_depletionLock),
-                NativeAllocationLifetime.Scene);
             ResetState();
+            TryWarmLootOraclePayloadCache();
         }
 
         private void OnEnable()
@@ -248,15 +241,6 @@ namespace Hecton8.Scavenging
                 uniqueId = null;
         }
 
-        private void OnDestroy()
-        {
-            if (_depletionLock.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_depletionLock);
-                _depletionLock.Dispose();
-            }
-        }
-
         /// <summary>
         /// Assigns a legacy compatibility ID explicitly.
         /// </summary>
@@ -281,6 +265,7 @@ namespace Hecton8.Scavenging
             _cachedLootOracleItemHash = 0u;
             _cachedLootOracleUnitQuantity = 0u;
             lootCount = template.DefaultLootCount;
+            TryWarmLootOraclePayloadCache();
             ApplyPresentation(template, fallbackMesh, fallbackMaterial);
             _currentHealth = Mathf.Clamp(_currentHealth, 0f, maxHealth);
 
@@ -466,7 +451,7 @@ namespace Hecton8.Scavenging
             if (lootPrefab == null || lootCount <= 0)
                 return true;
 
-            if (!TryResolveLootOraclePayload(out uint itemHash, out uint quantity))
+            if (!TryResolveLootOraclePayload(out uint itemHash, out uint quantity, allowHierarchyScan: false))
             {
                 if (!_lootSpawnBlockedLogged)
                 {
@@ -492,7 +477,7 @@ namespace Hecton8.Scavenging
             bool accepted = ScavengingLootOracleRuntime.TryQueueResourceNodeLoot(
                 in aup,
                 itemHash,
-                itemHash,
+                0u,
                 quantity,
                 _lastLootOracleToolMask,
                 capacityAvailable);
@@ -507,7 +492,18 @@ namespace Hecton8.Scavenging
             return accepted;
         }
 
-        private bool TryResolveLootOraclePayload(out uint itemHash, out uint quantity)
+        private void TryWarmLootOraclePayloadCache()
+        {
+            if (lootPrefab == null || lootCount <= 0)
+                return;
+
+            if (_cachedLootOraclePrefab == lootPrefab && _cachedLootOracleItemHash != 0u && _cachedLootOracleUnitQuantity != 0u)
+                return;
+
+            TryResolveLootOraclePayload(out _, out _, allowHierarchyScan: true);
+        }
+
+        private bool TryResolveLootOraclePayload(out uint itemHash, out uint quantity, bool allowHierarchyScan)
         {
             itemHash = 0u;
             quantity = 0u;
@@ -526,10 +522,13 @@ namespace Hecton8.Scavenging
                 return CacheLootOraclePayload(lootPrefab, unchecked((uint)pickupItem.ItemData.PersistentHashId), pickupItem.Quantity, out itemHash, out quantity);
             }
 
-            PickupItem childPickup = lootPrefab.GetComponentInChildren<PickupItem>(true);
-            if (childPickup != null && childPickup.ItemData != null)
+            if (allowHierarchyScan)
             {
-                return CacheLootOraclePayload(lootPrefab, unchecked((uint)childPickup.ItemData.PersistentHashId), childPickup.Quantity, out itemHash, out quantity);
+                PickupItem childPickup = lootPrefab.GetComponentInChildren<PickupItem>(true);
+                if (childPickup != null && childPickup.ItemData != null)
+                {
+                    return CacheLootOraclePayload(lootPrefab, unchecked((uint)childPickup.ItemData.PersistentHashId), childPickup.Quantity, out itemHash, out quantity);
+                }
             }
 
             if (lootPrefab.TryGetComponent(out HectonItem hectonItem) && hectonItem.Data != null)
@@ -537,10 +536,13 @@ namespace Hecton8.Scavenging
                 return CacheLootOraclePayload(lootPrefab, unchecked((uint)hectonItem.Data.PersistentHashId), hectonItem.Quantity, out itemHash, out quantity);
             }
 
-            HectonItem childHectonItem = lootPrefab.GetComponentInChildren<HectonItem>(true);
-            if (childHectonItem != null && childHectonItem.Data != null)
+            if (allowHierarchyScan)
             {
-                return CacheLootOraclePayload(lootPrefab, unchecked((uint)childHectonItem.Data.PersistentHashId), childHectonItem.Quantity, out itemHash, out quantity);
+                HectonItem childHectonItem = lootPrefab.GetComponentInChildren<HectonItem>(true);
+                if (childHectonItem != null && childHectonItem.Data != null)
+                {
+                    return CacheLootOraclePayload(lootPrefab, unchecked((uint)childHectonItem.Data.PersistentHashId), childHectonItem.Quantity, out itemHash, out quantity);
+                }
             }
 
             return false;
@@ -731,28 +733,19 @@ namespace Hecton8.Scavenging
             ResetMeltProperties();
         }
 
-        private unsafe bool TryAcquireDepletionLock()
+        private bool TryAcquireDepletionLock()
         {
-            if (!_depletionLock.IsCreated || _depletionLock.Length <= 0)
-                return !_isDepleted && !_despawnRequested;
-
-            int* lockPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(_depletionLock);
-            return Interlocked.CompareExchange(ref lockPtr[0], DepletionLockOwned, DepletionLockFree) == DepletionLockFree;
+            return Interlocked.CompareExchange(ref _depletionLockState, DepletionLockOwned, DepletionLockFree) == DepletionLockFree;
         }
 
-        private unsafe void ReleaseDepletionLock()
+        private void ReleaseDepletionLock()
         {
-            if (!_depletionLock.IsCreated || _depletionLock.Length <= 0)
-                return;
-
-            int* lockPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(_depletionLock);
-            Interlocked.Exchange(ref lockPtr[0], DepletionLockFree);
+            Interlocked.Exchange(ref _depletionLockState, DepletionLockFree);
         }
 
         private void ResetDepletionLock()
         {
-            if (_depletionLock.IsCreated && _depletionLock.Length > 0)
-                _depletionLock[0] = DepletionLockFree;
+            _depletionLockState = DepletionLockFree;
         }
 
         private void TakeDamage(

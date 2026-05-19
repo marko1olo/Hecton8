@@ -102,17 +102,17 @@ namespace Hecton8.Visor
         [FieldOffset(60)] public float Anomaly01;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct VisorBreachSignal : ISignal
     {
-        public uint SourceId;
-        public uint Frame;
-        public float CrackSeverity01;
-        public float ExternalPressure01;
-        public float Condensation01;
-        public uint Flags;
-        public ushort Sequence;
-        public ushort Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public uint SourceId;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public float CrackSeverity01;
+        [FieldOffset(12)] public float ExternalPressure01;
+        [FieldOffset(16)] public float Condensation01;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public ushort Sequence;
+        [FieldOffset(26)] public ushort Reserved0;
+        [FieldOffset(28)] public uint Reserved1;
     }
 }

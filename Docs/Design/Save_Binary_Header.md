@@ -63,7 +63,7 @@ The next ABI-compatible extension must keep the first `56` bytes intact and appe
 | 56 | 8 | `MasterStateHashLo` | little-endian `ulong` |
 | 64 | 8 | `MasterStateHashHi` | little-endian `ulong` |
 
-`CurrentHeaderSizeV10 = 72`. The first writer that emits this field must bump the save header version from `0x0009` to `0x000A`; version `0x0009` readers must continue treating byte `56+` as absent.
+`CurrentHeaderSizeV10 = 72`. This v10 master-hash header is staged/helper context only: the active `SaveBinaryStorage` writer is already `CurrentVersion = 0x000B` with a 56-byte current header and `AlignedSectionHeaderVersion = 0x000B`. Any future active writer integration of this 72-byte hash header must reconcile with current `0x000B` rather than bumping from `0x0009` to `0x000A`.
 
 `MasterStateHash` storage order is exactly `lo64` then `hi64`; the canonical byte dump is `BitConverter.GetBytes(lo64)` followed by `BitConverter.GetBytes(hi64)` on a little-endian writer. A Burst C# writer must not use platform-native struct dumps for this field unless the struct has explicit layout and the byte order is separately tested.
 
@@ -87,13 +87,15 @@ preimage =
   le_u32(EntityOffset) ||
   le_u64(HashPayload64) ||
   le_u64(WorldSeed) ||
-  le_i64(AUP.SectorHash)
+  le_i64(AUP.SectorHash) ||
+  le_u64(HectonContractVersion.HashLo) ||
+  le_u64(HectonContractVersion.HashHi)
 
 plain_lo = XXH3_64(preimage || ASCII("_LO"))
 plain_hi = XXH3_64(preimage || ASCII("_HI") || le_u64(plain_lo))
 ```
 
-`HashHeader64` is intentionally excluded to avoid a circular dependency with the existing header hash. `MasterStateHashLo/Hi` are also excluded because they are the result fields.
+The current preimage is 96 bytes. `HashHeader64` is intentionally excluded to avoid a circular dependency with the existing header hash. `MasterStateHashLo/Hi` are also excluded because they are the result fields.
 
 For the global `.sav` metadata master, `AUP.SectorHash = 0`. For a paged sector or `.h8db` record, use the owning `SectorEntry.SectorHash`.
 
@@ -128,7 +130,7 @@ Rejected alternative: per-byte random permutation. It is slower, more error-pron
 
 `Tools/Security/ReplayHasher.py` is the OSHINO oracle.
 
-`Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs` is the SHINOBU C# implementation surface. It is isolated from the active v9 writer until the save header version is intentionally bumped. `Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs` verifies `SaveFileHeaderV10` as a 72-byte blit-safe header and `SaveMasterHashV10Result` as a 32-byte blit-safe result struct.
+`Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs` is the SHINOBU C# implementation surface. It is isolated from the active `0x000B` writer unless the current 56-byte active header intentionally adopts the staged 72-byte v10 master-hash header. `Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs` verifies `SaveFileHeaderV10` as a 72-byte blit-safe header and `SaveMasterHashV10Result` as a 32-byte blit-safe result struct.
 
 The SHINOBU Burst port must match it exactly:
 
@@ -215,7 +217,7 @@ Commands used:
 - `SaveFileHeaderV10` added as a concrete 72-byte implementation header; independent packed-struct check -> PASS (`V10_HEADER_LAYOUT_OK`).
 - `BinaryLayoutManifest.cs` extended with `SaveFileHeaderV10` and `SaveMasterHashV10Result` size/offset assertions.
 - C# static guard for the helper -> PASS (`CS_STATIC_GUARD_OK`).
-- Executable C# parity guard -> PASS (`SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`).
+- Executable C# parity guard -> PASS (`SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=17 preimageOps=30 preimageEnd=96 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=3 resultCtor=4 blitAttrs=2`).
 - Direct Roslyn parser-level probe reached only standalone missing-reference diagnostics; no syntax diagnostics were emitted before `Hecton8.Core.Memory.Layout`/`Unity.Mathematics` reference failures.
 - `<POLISH_MANDATE>` extraction from `Docs/Tasks/CURRENT_BATCH.md` -> TAG ABSENT; local anti-bloat pass executed on owned artifacts.
 

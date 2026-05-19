@@ -22,7 +22,6 @@ namespace Hecton8.Inventory
     using Hecton8.Modding;
     using Hecton8.Physics;
     using Hecton8.SaveSystem;
-    using Hecton8.Scavenging;
     using Hecton8.World;
     using Unity.Burst;
     using Unity.Collections;
@@ -4173,7 +4172,7 @@ namespace Hecton8.Inventory
             for (int i = 0; i < signals.Length; i++)
             {
                 ItemAcquiredSignal signal = signals[i];
-                if (signal.SourceKind != ScavengingLootOracleConstants.ItemSourceKind ||
+                if (signal.SourceKind != ItemAcquiredSignalSourceKinds.ScavengingLootOracle ||
                     signal.ItemHash == 0u ||
                     signal.Quantity == 0)
                 {

@@ -6,7 +6,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Generated;
 using Hecton8.Core.Memory;
-using Hecton8.Inventory;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -16,6 +16,11 @@ using UnityEngine;
 
 namespace Hecton8.Core.Contracts.Signals
 {
+    public static class ItemAcquiredSignalSourceKinds
+    {
+        public const byte ScavengingLootOracle = 13;
+    }
+
     /// <summary>Visual-only scavenging pickup fake. Size: 80 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct VisualScavengeSignal : ISignal
@@ -53,8 +58,8 @@ namespace Hecton8.Scavenging
         public const int DefaultAuditCapacity = 32;
         public const int DefaultCsvScratchBytes = 64 * 1024;
         public const int SelfAuditRollCount = 10000;
-        public const byte ItemSourceKind = 9;
-        public const byte VisualSourceKind = 9;
+        public const byte ItemSourceKind = ItemAcquiredSignalSourceKinds.ScavengingLootOracle;
+        public const byte VisualSourceKind = ItemAcquiredSignalSourceKinds.ScavengingLootOracle;
         public const byte HudSeverityWarning = 2;
         public const uint ToolMaskAny = 0u;
         public const uint ToolMaskKnife = 1u << 0;
@@ -71,6 +76,7 @@ namespace Hecton8.Scavenging
         public const uint VisualScavengeLaneHash = 0x56534356u; // VSCV
         public const uint LootOracleSourceHash = 0x4C4F5243u; // LORC
         public const uint EmergencyTableHash = 0x454D4C54u; // EMLT
+        public const uint EditorPreviewBiomeHash = 0x45504249u; // EPBI
         public const uint DefaultSessionSalt = 0x1251255Du;
         public const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LOOT_ORACLE.bin";
 
@@ -306,6 +312,7 @@ namespace Hecton8.Scavenging
         [NoAlias] public NativeArray<ScavengingResolvedYieldDTO> ResolvedYields;
         [NoAlias] public NativeArray<ScavengingTelemetryEntry> TelemetryRing;
         public int RequestCount;
+        public int BiomeModifierCount;
         public uint Frame;
         public int TelemetryCursor;
 
@@ -540,10 +547,11 @@ namespace Hecton8.Scavenging
 
         private bool HasBiomeModifier(uint biomeHash)
         {
-            if (biomeHash == 0u || !BiomeModifiers.IsCreated)
+            int count = math.min(math.max(0, BiomeModifierCount), BiomeModifiers.IsCreated ? BiomeModifiers.Length : 0);
+            if (biomeHash == 0u || count <= 0)
                 return false;
 
-            for (int i = 0; i < BiomeModifiers.Length; i++)
+            for (int i = 0; i < count; i++)
             {
                 ScavengingBiomeModifierDTO modifier = BiomeModifiers[i];
                 if (modifier.BiomeHash == biomeHash && modifier.WeightMultiplierMilli != 0u)
@@ -555,10 +563,11 @@ namespace Hecton8.Scavenging
 
         private uint ResolveBiomeMultiplierMilli(uint biomeHash, uint itemHash)
         {
-            if (biomeHash == 0u || itemHash == 0u || !BiomeModifiers.IsCreated)
+            int count = math.min(math.max(0, BiomeModifierCount), BiomeModifiers.IsCreated ? BiomeModifiers.Length : 0);
+            if (biomeHash == 0u || itemHash == 0u || count <= 0)
                 return 1000u;
 
-            for (int i = 0; i < BiomeModifiers.Length; i++)
+            for (int i = 0; i < count; i++)
             {
                 ScavengingBiomeModifierDTO modifier = BiomeModifiers[i];
                 if (modifier.BiomeHash == biomeHash && modifier.ItemHashID == itemHash && modifier.WeightMultiplierMilli != 0u)
@@ -717,8 +726,13 @@ namespace Hecton8.Scavenging
     public struct ScavengingLootOracleSelfAuditJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<LootTableEntryDTO> LootEntries;
+        [ReadOnly, NoAlias] public NativeArray<ScavengingBiomeModifierDTO> BiomeModifiers;
         [NoAlias] public NativeArray<uint> DistributionAudit;
         public uint RollCount;
+        public uint EntryCount;
+        public int BiomeModifierCount;
+        public uint ToolHashID;
+        public uint BiomeHash;
         public ulong SessionID;
 
         public void Execute()
@@ -729,11 +743,12 @@ namespace Hecton8.Scavenging
             for (int i = 0; i < DistributionAudit.Length; i++)
                 DistributionAudit[i] = 0u;
 
-            uint entryCount = (uint)math.min(LootEntries.Length, DistributionAudit.Length);
+            uint requestedCount = EntryCount != 0u ? EntryCount : 4u;
+            uint entryCount = math.min(requestedCount, (uint)math.min(LootEntries.Length, DistributionAudit.Length));
             if (entryCount == 0u)
                 return;
 
-            uint total = LootEntries[(int)(entryCount - 1u)].DropWeight;
+            uint total = ResolveAuditTotalWeight(entryCount);
             if (total == 0u)
                 return;
 
@@ -751,18 +766,71 @@ namespace Hecton8.Scavenging
                 uint seed = (uint)(resourceHash ^ (resourceHash >> 32) ^ SessionID ^ i);
                 Unity.Mathematics.Random random = Unity.Mathematics.Random.CreateFromIndex(seed | 1u);
                 uint threshold = (uint)(((ulong)random.NextUInt() * total) >> 32);
-                uint selected = 0u;
-                for (uint entry = 0u; entry < entryCount; entry++)
-                {
-                    if (threshold < LootEntries[(int)entry].DropWeight)
-                    {
-                        selected = entry;
-                        break;
-                    }
-                }
+                uint selected = SelectAuditEntry(entryCount, threshold);
 
                 DistributionAudit[(int)selected] = DistributionAudit[(int)selected] + 1u;
             }
+        }
+
+        private uint ResolveAuditTotalWeight(uint entryCount)
+        {
+            uint previousCdf = 0u;
+            ulong total = 0UL;
+            for (uint i = 0u; i < entryCount; i++)
+            {
+                LootTableEntryDTO entry = LootEntries[(int)i];
+                uint weight = entry.DropWeight > previousCdf ? entry.DropWeight - previousCdf : 0u;
+                previousCdf = math.max(previousCdf, entry.DropWeight);
+                if (!PassesToolMask(entry.ConditionMask))
+                    continue;
+
+                uint multiplier = ResolveBiomeMultiplierMilli(BiomeHash, entry.ItemHashID);
+                total += ((ulong)weight * multiplier + 999UL) / 1000UL;
+            }
+
+            return (uint)math.min(total, (ulong)uint.MaxValue);
+        }
+
+        private uint SelectAuditEntry(uint entryCount, uint threshold)
+        {
+            uint previousCdf = 0u;
+            ulong cumulative = 0UL;
+            for (uint i = 0u; i < entryCount; i++)
+            {
+                LootTableEntryDTO entry = LootEntries[(int)i];
+                uint weight = entry.DropWeight > previousCdf ? entry.DropWeight - previousCdf : 0u;
+                previousCdf = math.max(previousCdf, entry.DropWeight);
+                if (!PassesToolMask(entry.ConditionMask))
+                    continue;
+
+                uint multiplier = ResolveBiomeMultiplierMilli(BiomeHash, entry.ItemHashID);
+                cumulative += ((ulong)weight * multiplier + 999UL) / 1000UL;
+                if (threshold < cumulative)
+                    return i;
+            }
+
+            return 0u;
+        }
+
+        private bool PassesToolMask(uint entryMask)
+        {
+            return entryMask == ScavengingLootOracleConstants.ToolMaskAny || (entryMask & ToolHashID) != 0u;
+        }
+
+        private uint ResolveBiomeMultiplierMilli(uint biomeHash, uint itemHash)
+        {
+            int count = math.min(math.max(0, BiomeModifierCount), BiomeModifiers.IsCreated ? BiomeModifiers.Length : 0);
+            if (biomeHash == 0u || itemHash == 0u || count <= 0)
+                return 1000u;
+
+            for (int i = 0; i < count; i++)
+            {
+                ScavengingBiomeModifierDTO modifier = BiomeModifiers[i];
+                if (modifier.BiomeHash == biomeHash && modifier.ItemHashID == itemHash && modifier.WeightMultiplierMilli != 0u)
+                    return modifier.WeightMultiplierMilli;
+            }
+
+            return 1000u;
         }
     }
 
@@ -811,7 +879,7 @@ namespace Hecton8.Scavenging
                 if (!maskWasNumeric)
                     conditionMask = ScavengingLootOracleConstants.ToolMaskAny;
 
-                cumulative += weight;
+                cumulative = AddSaturating(cumulative, weight);
                 destination[count] = new LootTableEntryDTO
                 {
                     ItemHashID = itemHash,
@@ -863,10 +931,23 @@ namespace Hecton8.Scavenging
                     return 0u;
 
                 parsed = true;
-                value = value * 10u + (uint)(b - '0');
+                uint digit = (uint)(b - '0');
+                if (value > (uint.MaxValue - digit) / 10u)
+                {
+                    parsed = false;
+                    return 0u;
+                }
+
+                value = value * 10u + digit;
             }
 
             return value;
+        }
+
+        private static uint AddSaturating(uint current, uint delta)
+        {
+            ulong next = (ulong)current + delta;
+            return next > uint.MaxValue ? uint.MaxValue : (uint)next;
         }
 
         private static uint HashTokenFnv1a(NativeArray<byte> bytes, int start, int end)
@@ -902,7 +983,8 @@ namespace Hecton8.Scavenging
         private VaultBufferHandle<byte> _csvScratchHandle;
         private int _queuedCount;
         private int _telemetryCursor;
-        private uint _requestSequence;
+        private int _activeLootEntryCount;
+        private int _activeBiomeModifierCount;
         private uint _activeBiomeHash;
         private bool _vaultReady;
         private bool _emergencyTableGenerated;
@@ -914,6 +996,13 @@ namespace Hecton8.Scavenging
             _host = null;
             _signalLanesConfigured = false;
             _staticReset = true;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void BootstrapHostAfterSceneLoad()
+        {
+            if (Application.isPlaying)
+                EnsureHost();
         }
 
         public static bool TryQueueResourceNodeLoot(
@@ -937,7 +1026,9 @@ namespace Hecton8.Scavenging
             float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
             uint frame = unchecked((uint)Time.frameCount);
             uint clampedQuantity = math.max(1u, quantity);
-            uint requestId = ++host._requestSequence;
+            uint lootEntryCount = host._activeLootEntryCount > 0
+                ? (uint)math.min(host._activeLootEntryCount, views.LootEntries.Length)
+                : 4u;
             views.Requests[slot] = new ScavengingHarvestRequestDTO
             {
                 NodeAup = nodeAup,
@@ -948,9 +1039,9 @@ namespace Hecton8.Scavenging
                 BiomeHash = host._activeBiomeHash,
                 TableHash = ScavengingLootOracleConstants.EmergencyTableHash,
                 TableVersion = 1u,
-                RollIndex = requestId,
+                RollIndex = 0u,
                 LootStartIndex = 0u,
-                LootEntryCount = 4u,
+                LootEntryCount = lootEntryCount,
                 QuantityMin = clampedQuantity,
                 QuantityMax = clampedQuantity,
                 ForcedItemHashID = forcedItemHash,
@@ -996,6 +1087,7 @@ namespace Hecton8.Scavenging
                 return false;
 
             JobHandle handle = host.EnsureEmergencyLootTableJob(default);
+            // COLD SYNC JOB: manual/editor fallback generation must finish before the caller inspects the table.
             handle.Complete();
             return true;
         }
@@ -1012,9 +1104,113 @@ namespace Hecton8.Scavenging
                 return false;
 
             entryCount = ScavengingLootOracleCsvParser.ParseLootDistributionCsvBytes(csvBytes, entries);
+            host._activeLootEntryCount = entryCount;
             host._emergencyTableGenerated = entryCount > 0;
             return entryCount > 0;
         }
+
+#if UNITY_EDITOR
+        public static bool TryApplyEditorTuning(float biomeScalar, float toolYieldBonus, float rareDropRate, out int entryCount, out int modifierCount)
+        {
+            entryCount = 0;
+            modifierCount = 0;
+            ScavengingLootOracleRuntime host = EnsureHost();
+            if (host == null || !host.EnsureVault())
+                return false;
+
+            ScavengingLootOracleVaultViews views = host.ResolveViews();
+            if (!views.HasAllBuffers() || views.LootEntries.Length < 4 || views.BiomeModifiers.Length < 2)
+                return false;
+
+            float safeBiomeScalar = math.clamp(math.select(1f, biomeScalar, math.isfinite(biomeScalar)), 0.1f, 3.0f);
+            float safeToolBonus = math.clamp(math.select(1f, toolYieldBonus, math.isfinite(toolYieldBonus)), 0.1f, 3.0f);
+            float safeRareRate = math.saturate(math.select(0.06f, rareDropRate, math.isfinite(rareDropRate)));
+            float rareCurve = safeRareRate * safeRareRate * (3f - (2f * safeRareRate));
+            float rareMultiplier = math.lerp(0.05f, 8.0f, rareCurve);
+
+            uint titaniumWeight = ToEditorWeight(55f);
+            uint copperWeight = ToEditorWeight(27f);
+            uint sulfurWeight = ToEditorWeight(12f * safeToolBonus);
+            uint abyssalWeight = ToEditorWeight(6f * safeToolBonus * rareMultiplier);
+            uint cdf = titaniumWeight;
+            views.LootEntries[0] = new LootTableEntryDTO
+            {
+                ItemHashID = H8Hashes.Items.TitaniumScrapHash,
+                DropWeight = cdf,
+                ConditionMask = ScavengingLootOracleConstants.ToolMaskAny,
+                _pad0 = 0u
+            };
+            cdf = AddClampedCdf(cdf, copperWeight);
+            views.LootEntries[1] = new LootTableEntryDTO
+            {
+                ItemHashID = H8Hashes.Items.CopperOreHash,
+                DropWeight = cdf,
+                ConditionMask = ScavengingLootOracleConstants.ToolMaskAny,
+                _pad0 = 0u
+            };
+            cdf = AddClampedCdf(cdf, sulfurWeight);
+            views.LootEntries[2] = new LootTableEntryDTO
+            {
+                ItemHashID = H8Hashes.Items.SulfurClumpsHash,
+                DropWeight = cdf,
+                ConditionMask = ScavengingLootOracleConstants.ToolMaskCutter | ScavengingLootOracleConstants.ToolMaskDrill | ScavengingLootOracleConstants.ToolMaskExtractor,
+                _pad0 = 0u
+            };
+            cdf = AddClampedCdf(cdf, abyssalWeight);
+            views.LootEntries[3] = new LootTableEntryDTO
+            {
+                ItemHashID = H8Hashes.Items.AbyssalCrystalHash,
+                DropWeight = cdf,
+                ConditionMask = ScavengingLootOracleConstants.ToolMaskDrill | ScavengingLootOracleConstants.ToolMaskExtractor,
+                _pad0 = 0u
+            };
+
+            uint targetBiomeHash = host._activeBiomeHash != 0u
+                ? host._activeBiomeHash
+                : ScavengingLootOracleConstants.EditorPreviewBiomeHash;
+            if (host._activeBiomeHash == 0u)
+                host._activeBiomeHash = targetBiomeHash;
+
+            uint biomeMultiplierMilli = ToEditorMilli(safeBiomeScalar);
+            views.BiomeModifiers[0] = new ScavengingBiomeModifierDTO
+            {
+                BiomeHash = targetBiomeHash,
+                ItemHashID = H8Hashes.Items.SulfurClumpsHash,
+                WeightMultiplierMilli = biomeMultiplierMilli,
+                _pad0 = 0u
+            };
+            views.BiomeModifiers[1] = new ScavengingBiomeModifierDTO
+            {
+                BiomeHash = targetBiomeHash,
+                ItemHashID = H8Hashes.Items.AbyssalCrystalHash,
+                WeightMultiplierMilli = biomeMultiplierMilli,
+                _pad0 = 0u
+            };
+
+            host._activeLootEntryCount = 4;
+            host._activeBiomeModifierCount = 2;
+            host._emergencyTableGenerated = true;
+            entryCount = host._activeLootEntryCount;
+            modifierCount = host._activeBiomeModifierCount;
+            return true;
+        }
+
+        private static uint ToEditorMilli(float value)
+        {
+            return (uint)math.clamp((int)math.round(value * 1000f), 1, 10000);
+        }
+
+        private static uint ToEditorWeight(float value)
+        {
+            return (uint)math.clamp((int)math.round(value * 100f), 1, 1000000);
+        }
+
+        private static uint AddClampedCdf(uint current, uint delta)
+        {
+            ulong next = (ulong)current + delta;
+            return next > uint.MaxValue ? uint.MaxValue : (uint)next;
+        }
+#endif
 
         public static bool TryDumpTelemetryRing()
         {
@@ -1076,11 +1272,20 @@ namespace Hecton8.Scavenging
             ScavengingLootOracleSelfAuditJob auditJob = new ScavengingLootOracleSelfAuditJob
             {
                 LootEntries = views.LootEntries,
+                BiomeModifiers = views.BiomeModifiers,
                 DistributionAudit = views.DistributionAudit,
                 RollCount = ScavengingLootOracleConstants.SelfAuditRollCount,
+                EntryCount = host._activeLootEntryCount > 0 ? (uint)host._activeLootEntryCount : 4u,
+                BiomeModifierCount = host._activeBiomeModifierCount,
+                ToolHashID = ScavengingLootOracleConstants.ToolMaskKnife |
+                             ScavengingLootOracleConstants.ToolMaskCutter |
+                             ScavengingLootOracleConstants.ToolMaskDrill |
+                             ScavengingLootOracleConstants.ToolMaskExtractor,
+                BiomeHash = host._activeBiomeHash,
                 SessionID = ResolveSessionId()
             };
             JobHandle handle = auditJob.Schedule(dependency);
+            // COLD SYNC JOB: editor self-audit returns the Vault audit buffer to the inspector button.
             handle.Complete();
             auditCounts = views.DistributionAudit;
             return true;
@@ -1096,12 +1301,16 @@ namespace Hecton8.Scavenging
             ScavengingLootOracleRuntime host = Application.isPlaying ? EnsureHost() : null;
             if (host != null && host.EnsureVault())
             {
+                JobHandle dependency = host.EnsureEmergencyLootTableJob(default);
+                // COLD SYNC JOB: editor gizmo needs the preview table before reading Vault rows.
+                dependency.Complete();
                 NativeArray<LootTableEntryDTO> entries = host._lootEntriesHandle.Resolve(host._vault);
-                if (entries.IsCreated && entries.Length > 0)
+                int count = host._activeLootEntryCount > 0 ? math.min(host._activeLootEntryCount, entries.Length) : 0;
+                if (entries.IsCreated && count > 0)
                 {
                     uint previous = 0u;
                     uint bestWeight = 0u;
-                    for (int i = 0; i < math.min(entries.Length, 4); i++)
+                    for (int i = 0; i < math.min(count, 4); i++)
                     {
                         LootTableEntryDTO entry = entries[i];
                         uint weight = entry.DropWeight > previous ? entry.DropWeight - previous : 0u;
@@ -1157,6 +1366,7 @@ namespace Hecton8.Scavenging
                 ResolvedYields = views.ResolvedYields,
                 TelemetryRing = views.TelemetryRing,
                 RequestCount = count,
+                BiomeModifierCount = _activeBiomeModifierCount,
                 Frame = unchecked((uint)Time.frameCount),
                 TelemetryCursor = _telemetryCursor
             };
@@ -1173,6 +1383,7 @@ namespace Hecton8.Scavenging
             };
 
             JobHandle publishHandle = publishJob.Schedule(resolveHandle);
+            // [BLOCKING_SYNC_POINT] Core late-frame signal flush fence; SignalBus<T>.ParallelWriter has no producer-handle registration route.
             publishHandle.Complete();
             _telemetryCursor = (_telemetryCursor + count) % ScavengingLootOracleConstants.TelemetryRingCapacity;
         }
@@ -1181,12 +1392,14 @@ namespace Hecton8.Scavenging
         {
             ConfigureSignalLanes();
             if (_host != null)
+            {
+                _host.TryRegisterLateFrame();
                 return _host;
+            }
 
-            GameObject hostObject = new GameObject("ScavengingLootOracleRuntime"); // COLD ALLOC: GameObject[1] - dispatcher bridge for Burst loot signal completion - owner: SHINOBU_125
+            GameObject hostObject = new GameObject("ScavengingLootOracleRuntime"); // COLD ALLOC: GameObject[1] - scene-local dispatcher bridge for Burst loot signal completion - owner: SHINOBU_125
             hostObject.hideFlags = HideFlags.HideAndDontSave;
             _host = hostObject.AddComponent<ScavengingLootOracleRuntime>(); // COLD ALLOC: MonoBehaviour[1] - late-frame job owner - owner: SHINOBU_125
-            DontDestroyOnLoad(hostObject);
             return _host;
         }
 
@@ -1281,6 +1494,7 @@ namespace Hecton8.Scavenging
                 LootEntries = entries
             };
             _emergencyTableGenerated = true;
+            _activeLootEntryCount = math.min(4, entries.Length);
             return job.Schedule(dependency);
         }
 
@@ -1299,7 +1513,9 @@ namespace Hecton8.Scavenging
             if (_registeredLateFrame)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
+            if (!GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core))
+                return;
+
             _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Core).Contains(this);
         }
 
@@ -1360,6 +1576,7 @@ namespace Hecton8.Scavenging.Editor
             root.Add(_biomeScalarSlider);
             root.Add(_toolBonusSlider);
             root.Add(_rareDropSlider);
+            root.Add(new Button(ApplyTuning) { text = "Apply Vault Tuning" });
             root.Add(new Button(RunAudit) { text = "Run 10k Audit" });
             root.Add(new Button(LoadCsv) { text = "Load loot_distribution_tables.csv" });
             RefreshLayoutLabel();
@@ -1379,6 +1596,22 @@ namespace Hecton8.Scavenging.Editor
             _layoutLabel.text = valid
                 ? "LootTableEntryDTO: size 16, offsets 0/4/8/12"
                 : failure;
+        }
+
+        private void ApplyTuning()
+        {
+            if (_auditLabel == null)
+                return;
+
+            bool applied = ScavengingLootOracleRuntime.TryApplyEditorTuning(
+                _biomeScalarSlider.value,
+                _toolBonusSlider.value,
+                _rareDropSlider.value,
+                out int entryCount,
+                out int modifierCount);
+            _auditLabel.text = applied
+                ? $"Tuned Vault: entries {entryCount}, biome modifiers {modifierCount}"
+                : "Tuning failed: Vault unavailable.";
         }
 
         private void RunAudit()

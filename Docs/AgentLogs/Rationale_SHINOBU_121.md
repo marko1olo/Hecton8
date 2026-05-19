@@ -86,3 +86,39 @@ Rejected Alternatives: Running a build anyway was rejected because it violates t
 Scalability potential: No runtime behavior changed by this decision. It preserves developer hardware and avoids adding load during a parallel-agent batch.
 
 Hardware Impact: Prevented a high-load C# compile on an already saturated system. Runtime impact is 0 us; verification remains pending.
+
+## Decision 08 - Add Endian-Aware H8BIN Rule Ingestion
+
+Problem: The pipeline had deterministic mock rules and CSV ingestion, but no safe parser for the optional `wreckage_module_rules.h8bin` payload. That left Phase 6 endianness compliance as documentation-only and would force future integrators either to raw-copy file bytes into runtime DTOs or to skip the binary payload.
+
+Solution: Add a cold `TryLoadBinaryRules` path that reads the file into Vault-owned scratch, validates a 16-byte header (`H8WR` magic, endian marker, version, count), parses each 64-byte rule field-by-field, uses `math.reversebytes` for swapped 32-bit payloads, sanitizes non-finite extents/weights, and copies only aligned `WreckageRuleDTO` records into the runtime rules array. The fallback mock rule set remains active when the binary is absent or invalid.
+
+Rejected Alternatives: Raw `UnsafeUtility.MemCpy` from the binary file into `NativeArray<WreckageRuleDTO>` was rejected because it would silently corrupt big-endian or schema-drifted payloads. Defining a `[StructLayout(Pack=1)]` file record was rejected because runtime packed DTOs are banned and unnecessary for a 16-rule cold parser. Blocking boot until Agent 103 provides the real payload was rejected by Task 01.
+
+Scalability potential: Low devices keep the same bounded rule count and mock fallback. Middle/high/ultra can author richer rule payloads without changing C# or increasing hot-path allocations; the parser only changes cold data hydration, while `GlobalQualityWeight` continues to control WFC breadth, debris density, visibility, and shader scalar richness.
+
+Hardware Impact: 0 us hot path on i3/MX350 because parsing is cold/editor-only. Expected cold cost is one bounded file read into a 32 KB Vault scratch buffer and at most 16 fixed-size row parses. It avoids future ARM64 endian/alignment traps and prevents a startup crash when the binary is missing.
+
+## Decision 09 - Route Card Over Self-Green
+
+Problem: The new procedural wreckage DataVault surface is a global authority route. The architecture mandate requires owner, phase, cadence, capacity, failure mode, telemetry, shutdown, stale-handle behavior, and proof fields. The previous documentation described the route but did not include the full route-card/review shape.
+
+Solution: Add `Docs/ARCHITECTURE/PROCEDURAL_WRECKAGE_GLOBAL_AUTHORITY_ROUTE_CARD_SHINOBU_121.md` and link it from the domain architecture doc. The route card is intentionally marked `YELLOW / PENDING VERIFICATION`, not `GREEN`, because static source is not Unity import, Burst compile, profiler, GCMonitor, Frame Debugger, or player proof.
+
+Rejected Alternatives: Claiming `GREEN` from static source was rejected as false proof. Adding a `GlobalRegistry` slot was rejected because the current data route is native bulk state and should remain DataVault-only. Adding a SignalBus lane for bulk matrices was rejected because the payload is not an event and would create managed/global traffic pressure.
+
+Scalability potential: The route card preserves the low/middle/high/ultra continuum by keeping quality math inside the generation jobs and keeping bulk payloads in contiguous Vault buffers. High/ultra visual overkill uses `GpuScalars` and larger indirect matrix counts without turning gameplay truth into a monolith.
+
+Hardware Impact: 0 us runtime. The architectural value is compile-wall protection and reduced H-Phi ambiguity: no new sibling runtime dependency, no new global service slot, no hidden ownerless native heap.
+
+## Decision 10 - Explicit NaN Fallbacks in Debris and Audit Paths
+
+Problem: The debris scatter math is deterministic and bounded, but two writes still depended on that assumption rather than proving finite output at the final Vault write boundary. `GenerateDebrisFieldJob` wrote debris matrices/AUP directly, and `WreckageSelfAuditJob` computed overlap distance from pair deltas without first rejecting non-finite AUP data.
+
+Solution: Add final finite checks before debris node writes and pair-overlap math. Debris nodes with non-finite matrix/AUP now fall back to root AUP, identity rotation, 0.5m bounds, `NonFiniteFallback`, and `FaultNonFinite`. Self-audit pair comparisons now skip non-finite deltas and OR `FaultNonFinite` into the audit result.
+
+Rejected Alternatives: Trusting deterministic hash/curl-noise math was rejected because the project rule says every render/physics-feeding NativeArray write must be guarded. Adding managed logs was rejected because faults belong in the telemetry ring and dump path. Throwing exceptions was rejected because gameplay code must fail closed, not crash.
+
+Scalability potential: Low and middle tiers pay only one finite check per debris write and audited pair. High/ultra tiers retain richer debris counts and audit coverage while keeping corrupt state out of GPU matrices and collision staging.
+
+Hardware Impact: Static cost is bounded and data-local. Worst-case audit guard is capped to the existing 256-node pair probe. The gain is survivability: one NaN no longer propagates into render matrices, collision proxies, or self-audit results.

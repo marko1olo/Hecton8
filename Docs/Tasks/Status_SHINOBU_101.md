@@ -41,7 +41,7 @@ Status: PENDING VERIFICATION
 ## Loop 4: Tasks 16-17
 
 - [x] Task 16 ZERO_INIT_OVERHEAD_BYPASS | Justification: Vault buffers allocate with `UninitializedMemory`; cold `HeapSanitizerMemClearJob` clears essential fields | Alternatives Rejected: OS memset for every native buffer | Estimate: boot-time only, no measured ms
-- [x] Task 17 TELEMETRY_HEAP_RECORDER | Justification: 300-entry 64B `AssetHeapTelemetryEntry` ring in Vault; dump path writes `Dump_MEMORY_SURGEON.bin` raw span | Alternatives Rejected: string log leak reports | Estimate: postmortem proof path, runtime dump proof pending
+- [x] Task 17 TELEMETRY_HEAP_RECORDER | Justification: 300-entry 64B `AssetHeapTelemetryEntry` ring in Vault; dump path writes `Dump_MEMORY_SURGEON.bin` and `Dump_SHINOBU_101_Addressables.bin` raw spans | Alternatives Rejected: string log leak reports and stale prior-agent identity | Estimate: postmortem proof path, runtime dump proof pending
 
 ## Loop 5: Tasks 18-20
 
@@ -52,7 +52,7 @@ Status: PENDING VERIFICATION
 ## Verification
 
 - [x] Static source scan for managed dictionaries in Addressables hot path | `rg` target files found no `Dictionary/List/Queue/new List/new Dictionary/new Queue`
-- [ ] Compile verification gated by CPU/dotnet/csc check | BLOCKED THIS PASS: CPU samples 100%, 98.7%, 100%, CIM LoadPercentage 100%, and perf counter 100%; no dotnet/csc process; build launch forbidden by AGENTS.md
+- [ ] Compile verification | BLOCKED BY DEPENDENCY: attempt 1 exposed and fixed SHINOBU `Unity.Mathematics` import; attempts 2-5 show no SHINOBU/Optimization errors, but `Hecton8.Core.csproj` still fails in unrelated `Visor/HectonVisorUberPostFeature.cs` reconstruction DTOs/IDs, `Editor/SomaticTunerWindow.cs` comfort DTOs, and `Construction/*` `HeadlessDroneTask`; duplicate `SaveStateMerkleTree.cs` warning remains external project hygiene
 - [x] Self-review pass 1 | Managed collection scan
 - [x] Self-review pass 2 | Release-gate scan
 - [x] Self-review pass 3 | DTO property/layout scan
@@ -61,3 +61,19 @@ Status: PENDING VERIFICATION
 - [x] Self-review pass 6 | Removed unused parallel mock spam job with unsafe pointer alias/race risk
 - [x] Self-review pass 7 | Raw Addressables handles now route through fixed detached-release bridge and drain only inside blind/panic gate; direct `Addressables.Release` static scan now reports only the gated helper body
 - [x] Self-review pass 8 | Removed direct `using Hecton8.World` from `AssetLifecycleGovernor`; player AUP fallback now uses Core contract fields and chunk AUP stamping remains world-owner local
+- [x] Self-review pass 9 | Removed parallel `NativeArray<byte>` flag writes from TTL and sanitizer jobs; Burst TTL mutates 64B `AssetTrackerDTO.Flags`, then mirrors to byte flags once after job completion
+- [x] Self-review pass 10 | Editor tuner text churn reduced with fixed numeric caches; labels update only when values change, graphs remain fixed VisualElement arrays
+- [x] Self-review pass 11 | Compile-wall/import scan removed unused `Hecton8.SaveSystem` from governor and added required `Unity.Mathematics` import to `AssetRecord.cs`
+- [x] Self-review pass 12 | Byte-to-DTO flag mirror preserves future high `AssetTrackerDTO.Flags` bits while updating low 8 runtime handle bits
+- [x] Self-review pass 13 | TTL Burst job now iterates 64B open-address map entries directly instead of tracker slots with per-slot map probing; slot mutation is guarded by asset-hash match
+- [x] Self-review pass 14 | Pending release ring and detached raw handle bridge now dedupe entries before enqueue to prevent overflow churn and duplicate Addressables release
+- [x] Self-review pass 15 | `PendingRelease` ownership is now tied to successful fixed-ring enqueue; blocked native-slot release re-enqueues instead of leaving orphan pending records
+- [x] Self-review pass 16 | Tombstone-heavy `AddressableHeapHandleMap` now compacts in place from active tracker slots before forcing more eviction; no resize or temp collection added
+- [x] Self-review pass 17 | Bundle-sharing flag propagation now updates map entry flags, byte mirror, and 64B `AssetTrackerDTO.Flags` during registration, recompute, and tombstone compaction
+- [x] Self-review pass 18 | Blackbox dump identity corrected from a stale prior-agent Addressables dump name to `Dump_SHINOBU_101_Addressables.bin`
+- [x] Self-review pass 19 | Compile attempt 4 after compaction/mirror/dump fixes reports only external Visor reconstruction DTOs/IDs and Somatic comfort DTOs; no SHINOBU file appears in errors
+- [x] Self-review pass 20 | `ExecuteReleaseFlow` now proves an Addressables handle can execute or fit in the detached blind-frame bridge before clearing native ownership/removing the record
+- [x] Self-review pass 21 | Hard-reaper `CleanBundleCache` handle release now uses the same bounded preflight and retries while the async cleanup window remains active
+- [x] Self-review pass 22 | Failed Addressables registration now uses a no-owner fault release escalation instead of dropping a valid local handle when the detached bridge is full
+- [x] Self-review pass 23 | Compile attempt 5 after release-ownership fixes reports only external Visor/Somatic/Construction missing DTO/task types; no SHINOBU file appears in errors
+- [x] Self-review pass 24 | Post-polish forensic audit R6 appended to `Docs/AgentLogs/LOG_SHINOBU_101.md`; includes release ownership proof, hard-reaper retry, no-owner fault release, Vault IDs, struct layouts, and external compile-wall boundary

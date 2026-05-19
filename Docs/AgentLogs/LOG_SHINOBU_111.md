@@ -101,6 +101,47 @@ Verification performed:
   </DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
 
+## SHINOBU_111 Sub-Agent Defect Reconciliation Patch 2026-05-19
+
+What was still wrong:
+- Telemetry dumps were raw ring bytes with no decode header or deterministic oldest-to-newest ordering.
+- The custom LZ4 encoder did not enforce the standard final-literal and match-start tail constraints.
+- Legacy `VoxelDeltaProcessor.Tick()` still reached GlobalRegistry through save registration and carve scheduling helpers.
+- CSV profile parsing was too brittle for normal designer edits.
+- `Voxel Save Tuner` mixed direct buffer reads with handle-resolved tuning writes.
+
+What was done:
+- Added explicit 64B `VoxelDeltaTelemetryDumpHeaderDTO` and cursor-aware telemetry dump ordering.
+- Added spike-flag dump detection and cursor-aware latency dump helper overload.
+- Added LZ4 tail constraints: final 5 bytes remain literals; matches cannot start inside the final 12 bytes.
+- Cached save service, simulation bucketer, data vault, and scalability tier during `VoxelDeltaProcessor.OnEnable`; hot Tick helpers consume cached references.
+- Hardened the CSV parser for BOM, plus signs, exponent notation, and inline comments without managed strings.
+- Changed editor telemetry/stats reads to use `TryGetBufferHandle(...).Resolve(vault)`.
+- Added layout assertions for the new telemetry dump header.
+
+Cinematic Cheats used:
+- No physical terrain reconstruction was introduced. The save lane still uses byte-delta compression and the Dear Lie visual fade instead of CPU mesh truth during I/O latency.
+
+Exact Microseconds saved:
+- Hot registry polling removal: small per-frame cache/branch savings in legacy voxel Tick, estimate 1-5 us depending on registry state and platform.
+- LZ4 tail rule: no CPU saving claim; it prevents corrupt decode/retry cost.
+- Telemetry dump/header/CSV/editor changes: 0 hot-path us claimed.
+
+Verification:
+- Focused SHINOBU save-path static scan has no `BinaryWriter`, `File.WriteAllBytes`, `System.Text.Json`, `MemoryStream`, `Pack=1`, `Time.deltaTime`, `UnityEngine.Random`, concrete `H8BinaryWorldPager`, `new byte[]`, private native collection allocation, or `foreach`.
+- `git diff --check` reports only CRLF warnings.
+- Guard before compile: CPU sample allowed probe, no active `dotnet`/`csc`.
+- Filtered Core compile reports 22 foreign errors and no SHINOBU_111 errors.
+- Temporary MSBuild filter was deleted after the probe.
+
+Remaining blockers outside this patch:
+- `HectonVisorUberPostFeature.cs`: missing `UberNoirReconstructionConstantsDTO`, `ReconstructionTelemetryEntry`, `MockReconstructionInputSignal`, and `UberNoirReconstructionVaultIds`.
+- `Editor/SomaticTunerWindow.cs`: missing `VrComfortProfileDTO` and `ComfortTelemetryEntry`.
+- Unfiltered build still has the deleted tracked `World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` project reference.
+
+Residual SHINOBU-domain debt:
+- Old `VoxelDeltaProcessor.ChunkDeltaState` still owns per-chunk persistent arrays. This is legacy carve/save state, not the new SHINOBU_111 WAL compressor. It requires a dedicated Vault migration with save/load replay proof, so it remains marked as blocked-by-risk rather than patched blindly.
+
 ## SHINOBU_111 Post-Audit Hardening Pass 2026-05-19
 
 What was still wrong:
@@ -234,3 +275,86 @@ Verification:
 - Follow-up safety correction: removed stale `[ReadOnly]` from the mock baseline writer.
 - Guard: CPU 10.7%, no active compiler.
 - Filtered Core compile again reports the same 17 foreign errors and no SHINOBU_111 errors; temporary MSBuild filter removed.
+
+## SHINOBU_111 Latency/CSV/Editor Truth Patch 2026-05-19
+
+What was still wrong:
+- Disk latency telemetry was recorded as a schedule-time placeholder, not as an async completion fact.
+- CSV profiles exposed scalar knobs but not the requested biome/depth routing data.
+- The editor histogram showed compression ratio only, so I/O spikes were invisible to designers.
+
+What was done:
+- Added `ScheduleDiskLatencyTelemetryPatch` and `VoxelDeltaDiskLatencyTelemetryPatchJob` to patch `DiskWriteLatencyMs` in the fixed 300-entry ring after async write completion.
+- Extended `VoxelDeltaCompressionTuningDTO` to keep explicit 64B layout while adding `DepthMinMeters` and `DepthMaxMeters`.
+- Extended the zero-GC CSV parser to accept `biome`, `depth_min_m`, and `depth_max_m`.
+- Updated `voxel_save_profiles.csv` with default biome/depth values.
+- Updated `Voxel Save Tuner` histogram to draw both compression saved ratio and disk latency normalized against 50 ms.
+- Added binary layout assertions for the new tuning DTO offsets.
+
+Cinematic Cheats used:
+- No CPU mesh/terrain resimulation. The Dear Lie remains baseline-first terrain presentation plus scalar fade into modified density after WAL payload availability.
+- I/O truth is exposed as telemetry and editor heatmap lines, not runtime GameObject markers.
+
+Exact Microseconds saved:
+- No new hot-path saving claim for the latency patch. The new latency patch job is only scheduled after I/O completion and scans at most 300 telemetry entries; static cost estimate below 5 us on low-end CPUs, pending profiler proof.
+- CSV biome/depth parsing remains cold and allocation-free; 0 runtime hot-path us.
+- Editor histogram is `UNITY_EDITOR` only; 0 player runtime us.
+
+Verification:
+- Guard before compile: CPU 40%, no active `dotnet`/`csc`.
+- Filtered Core compile using a temporary prune target for the already-deleted foreign World source reports 21 foreign errors and no SHINOBU_111 errors.
+- Temporary MSBuild target was deleted after the probe.
+- Remaining foreign errors: `HectonVisorUberPostFeature.cs` missing reconstruction DTO/VaultIds/signal types; `Optimization/AssetRecord.cs` missing `double3`.
+- Unfiltered compile remains blocked by the deleted tracked World source reference and the foreign domain errors above.
+
+<SELF_AUDIT agent="SHINOBU_111" status="PENDING_VERIFICATION">
+  <task_reconciliation>
+    <task id="01" verdict="PASS_STATIC">Absent schema handled by deterministic unmanaged emergency schema generator; compile proof blocked only by foreign errors.</task>
+    <task id="02" verdict="PASS_STATIC">SHINOBU path avoids managed serializers; voxel black-box dump uses raw unmanaged bytes.</task>
+    <task id="03" verdict="PASS_STATIC">Hot DTOs use public fields and explicit layouts; no hot-path struct properties added.</task>
+    <task id="04" verdict="PASS_STATIC">`VoxelDeltaHeaderDTO` is explicit 32B with asserted offsets.</task>
+    <task id="05" verdict="PASS_STATIC">Deterministic opt-in mock deformation job exists and no longer mutates production input by default.</task>
+    <task id="06" verdict="PASS_STATIC">Block-local RLE job uses `[NoAlias]` and 64B counters.</task>
+    <task id="07" verdict="PASS_STATIC">Unmanaged LZ4-compatible Burst stage writes native compressed bytes.</task>
+    <task id="08" verdict="PASS_STATIC">Dear Lie fade state avoids blocking visual display on decompression.</task>
+    <task id="09" verdict="PASS_STATIC">WAL payload routes through `IAsyncPersistenceService.TryEnqueueChunkPageWrite`.</task>
+    <task id="10" verdict="PASS_STATIC">Compression effort uses continuous `GlobalQualityWeight` and I/O pressure math.</task>
+    <task id="11" verdict="PASS_STATIC">Checksum stage writes XXHash3-derived seal into the header.</task>
+    <task id="12" verdict="PASS_STATIC">Sector identity uses integer Morton/AUP sector hash, not float world coordinates.</task>
+    <task id="13" verdict="PASS_STATIC">Microscopic deltas prune below tuning threshold.</task>
+    <task id="14" verdict="PASS_STATIC">Burst jobs use deterministic float mode and explicit byte-order packing.</task>
+    <task id="15" verdict="PASS_STATIC">Vault staging requests uninitialized memory only where jobs fully overwrite it.</task>
+    <task id="16" verdict="PASS_STATIC">300-frame telemetry ring, raw dump, and async latency patch job exist.</task>
+    <task id="17" verdict="PASS_STATIC">Editor-only `Voxel Save Tuner` exposes tuning, heatmap, ratio, and latency graph.</task>
+    <task id="18" verdict="PASS_STATIC">Zero-GC CSV parser ingests compression, biome, and depth profile fields.</task>
+    <task id="19" verdict="PASS_STATIC">SceneView heatmap is editor-only and consumes sector stats.</task>
+    <task id="20" verdict="PASS_STATIC">Self-audit routine and manifest offset assertions are staged; global compile remains foreign-blocked.</task>
+  </task_reconciliation>
+  <struct_layout>
+    <primary_dto name="VoxelDeltaHeaderDTO" size="32" alignment="8/16-safe">
+      <field name="SectorHash" offset="0" size="8" />
+      <field name="CompressedSize" offset="8" size="4" />
+      <field name="UncompressedSize" offset="12" size="4" />
+      <field name="XXHash3Checksum" offset="16" size="8" />
+      <field name="_pad0" offset="24" size="4" />
+      <field name="_pad1" offset="28" size="4" />
+    </primary_dto>
+    <atomic_counter name="VoxelDeltaBlockCounter64" size="64">Fields occupy first 24 bytes; padding reserves one full cache line to prevent false sharing.</atomic_counter>
+    <tuning_dto name="VoxelDeltaCompressionTuningDTO" size="64">`DepthMinMeters` offset 52, `DepthMaxMeters` offset 56, `_pad0` offset 60; manifest asserts these offsets.</tuning_dto>
+  </struct_layout>
+  <scalability_curve>
+    Below quality 0.3 the LZ4 stage lerps toward fewer active hash slots, larger probe stride, and lower minimum match effort while prune threshold and byte budgets come from the CSV/Vault tuning DTO. RLE remains deterministic and cheap; the mock deformation stress path is opt-in only. No binary low-end switch was introduced.
+  </scalability_curve>
+  <vault_status>
+    No private persistent `NativeArray`, `NativeList`, or `NativeHashMap` fields were introduced in the SHINOBU runtime path. Boot resolves `SaveVoxelDeltaSchemaBytes`, `SaveVoxelDeltaRuntimeDensity`, `SaveVoxelDeltaBaselineDensity`, `SaveVoxelDeltaMaterialIds`, `SaveVoxelDeltaCellFlags`, `SaveVoxelDeltaRleRuns`, `SaveVoxelDeltaBlockCounters`, `SaveVoxelDeltaRleBytes`, `SaveVoxelDeltaCompressedBytes`, `SaveVoxelDeltaLz4HashTable`, `SaveVoxelDeltaHeaders`, `SaveVoxelDeltaCounters`, `SaveVoxelDeltaTelemetryRing`, `SaveVoxelDeltaTelemetryCursor`, `SaveVoxelDeltaTuning`, and `SaveVoxelDeltaSectorStats`.
+  </vault_status>
+  <dependency_graph>
+    Input handles: upstream voxel dirty buffer dependency, optional mock dependency, async completion latency supplied by persistence owner. Output handles: RLE, finalize, pack, LZ4, checksum, WAL pack, telemetry record, optional latency patch. Jobs use `[NoAlias]` on separate native buffers. No arbitrary main-thread `Complete()` is added.
+  </dependency_graph>
+  <compile_guard>
+    Runtime code routes through `Hecton8.Core` / `Hecton8.Core.Contracts`; no concrete pager implementation dependency is present. Filtered compile reports no SHINOBU_111 errors; global proof is blocked by foreign Visor/Optimization and deleted World-file issues.
+  </compile_guard>
+  <dear_lie>
+    The fake is baseline-first voxel presentation plus scalar fade into modified density state, avoiding CPU mesh/physics recomputation during WAL/decompression latency. Naive heavy route: O(cells * mesh rebuild/neighborhood work). Current save route: O(cells) byte diff/RLE plus bounded telemetry and editor-only visualization.
+  </dear_lie>
+</SELF_AUDIT>

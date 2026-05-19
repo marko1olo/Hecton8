@@ -37,6 +37,27 @@ namespace Hecton8.Visor
                    cameraType == CameraType.SceneView;
         }
 
+        private static float ResolveFiniteSaturated(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float ResolveFiniteClamped(float value, float minimum, float maximum, float fallback)
+        {
+            return math.isfinite(value) ? math.clamp(value, minimum, maximum) : fallback;
+        }
+
+        private static float ResolveFiniteNonNegative(float value, float fallback)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : fallback;
+        }
+
+        private static float ResolveQualityCurve(float quality)
+        {
+            float q = ResolveFiniteSaturated(quality);
+            return q * q * (3f - 2f * q);
+        }
+
         [Serializable]
         private sealed class FeatureSettings
         {
@@ -90,36 +111,37 @@ namespace Hecton8.Visor
 
             internal int ResolveRaySteps(float quality)
             {
-                float curved = Mathf.Clamp01(quality);
-                curved = curved * curved * (3f - 2f * curved);
-                return Mathf.Clamp(
-                    Mathf.RoundToInt(Mathf.Lerp(VolumetricFogConstants.MinRaySteps, VolumetricFogConstants.MaxRaySteps, curved)),
+                float curved = ResolveQualityCurve(quality);
+                return math.clamp(
+                    (int)math.round(math.lerp((float)VolumetricFogConstants.MinRaySteps, VolumetricFogConstants.MaxRaySteps, curved)),
                     VolumetricFogConstants.MinRaySteps,
                     VolumetricFogConstants.MaxRaySteps);
             }
 
             internal float ResolveInternalScale(float quality)
             {
-                float clampedQuality = Mathf.Clamp01(quality);
-                float scale = Mathf.Lerp(
-                    Mathf.Clamp(minimumInternalScale, 0.2f, 0.5f),
-                    Mathf.Clamp(maximumInternalScale, 0.5f, 0.85f),
-                    clampedQuality);
-                return Mathf.Clamp(scale, 0.2f, 0.85f);
+                float minScale = ResolveFiniteClamped(minimumInternalScale, 0.2f, 0.5f, 0.25f);
+                float maxScale = ResolveFiniteClamped(maximumInternalScale, 0.5f, 0.85f, 0.67f);
+                float scale = math.lerp(
+                    minScale,
+                    maxScale,
+                    ResolveFiniteSaturated(quality));
+                return math.clamp(scale, 0.2f, 0.85f);
             }
 
             internal float ResolveProxyBlend(float quality)
             {
-                float q = Mathf.Clamp01(quality);
-                float t = Mathf.Clamp01((q - 0.12f) * (1f / 0.3f));
+                float q = ResolveFiniteSaturated(quality);
+                float t = math.saturate((q - 0.12f) * (1f / 0.3f));
                 float fade = t * t * (3f - 2f * t);
-                return 1f - fade;
+                float survivalFloor = 1f - math.step(0.12f, q);
+                return math.max(survivalFloor, math.lerp(1f, 0f, fade));
             }
 
             internal int ResolvePointLightCount(float quality)
             {
-                return Mathf.Clamp(
-                    1 + Mathf.FloorToInt(Mathf.Clamp01(quality) * (VolumetricFogConstants.MaxPointLights - 1) + 0.0001f),
+                return math.clamp(
+                    1 + (int)math.floor(ResolveFiniteSaturated(quality) * (VolumetricFogConstants.MaxPointLights - 1) + 0.0001f),
                     1,
                     VolumetricFogConstants.MaxPointLights);
             }
@@ -191,6 +213,9 @@ namespace Hecton8.Visor
             private GraphicsBuffer _paramsBuffer;
             private GraphicsBuffer _pointLightBufferA;
             private GraphicsBuffer _pointLightBufferB;
+            private VolumetricFogParamsDTO _lastUploadedParams;
+            private uint _lastUploadedParamsHash;
+            private uint _lastUploadedPointLightsHash;
             private Texture _marineFogDensityTextureHandleSource;
             private Texture _abyssalFlowTextureHandleSource;
             private IDataVault _vault;
@@ -215,6 +240,8 @@ namespace Hecton8.Visor
             private bool _mockLightsJobPending;
             private bool _dumpedThisSession;
             private bool _extinctionProfilesSeeded;
+            private bool _hasUploadedParams;
+            private bool _hasUploadedPointLights;
 
             public VolumetricFogPass()
             {
@@ -226,7 +253,7 @@ namespace Hecton8.Visor
             {
                 _settings = settings;
                 _computeShader = computeShader;
-                _qualityWeight = Mathf.Clamp01(qualityWeight);
+                _qualityWeight = ResolveFiniteSaturated(qualityWeight);
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
@@ -269,6 +296,11 @@ namespace Hecton8.Visor
                 _lastUploadedPointLightCount = 0;
                 _pendingPointLightCount = 0;
                 _extinctionProfilesSeeded = false;
+                _hasUploadedParams = false;
+                _lastUploadedParams = default;
+                _lastUploadedParamsHash = 0u;
+                _hasUploadedPointLights = false;
+                _lastUploadedPointLightsHash = 0u;
                 ReleaseFallbackTextures();
                 _raymarchKernel = -1;
                 _compositeKernel = -1;
@@ -316,6 +348,14 @@ namespace Hecton8.Visor
                 int requestedPointLightCount = _settings.ResolvePointLightCount(_qualityWeight);
                 float visualPhaseSeconds = ResolveVisualPhaseSeconds(_qualityWeight);
                 float estimatedGpuMicroseconds = EstimateGpuMicroseconds(halfWidth, halfHeight, raySteps, requestedPointLightCount, renderScale);
+                Vector4 marineFogTexelSize = Shader.GetGlobalVector(ShaderConstants.MarineSnowDensityTexelSizeId);
+                Vector4 marineFogParams = Shader.GetGlobalVector(ShaderConstants.MarineSnowDensityParamsId);
+                Texture marineFogTexture = Shader.GetGlobalTexture(ShaderConstants.MarineSnowDensityTextureId);
+                Texture abyssalFlowTexture = Shader.GetGlobalTexture(ShaderConstants.AbyssalFlowTextureId);
+                Vector4 abyssalFlowCenter = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowCenterId);
+                Vector4 abyssalFlowSpacing = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowSpacingId);
+                Vector4 abyssalFlowTextureParams = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowTextureParamsId);
+                float abyssalFlowTextureActive = Shader.GetGlobalFloat(ShaderConstants.AbyssalFlowTextureActiveId);
 
                 if (!UpdateVaultAndGpuState(
                         camera,
@@ -324,6 +364,8 @@ namespace Hecton8.Visor
                         renderScale,
                         visualPhaseSeconds,
                         estimatedGpuMicroseconds,
+                        marineFogTexture != null,
+                        abyssalFlowTexture != null && abyssalFlowTextureActive > 0.5f,
                         out int activePointLightCount,
                         out GraphicsBuffer activePointLightBuffer))
                 {
@@ -337,18 +379,15 @@ namespace Hecton8.Visor
                 Vector4 fullSize = new Vector4(sourceDesc.width, sourceDesc.height, 1f / Mathf.Max(1, sourceDesc.width), 1f / Mathf.Max(1, sourceDesc.height));
                 Vector4 halfSize = new Vector4(halfWidth, halfHeight, 1f / Mathf.Max(1, halfWidth), 1f / Mathf.Max(1, halfHeight));
                 Vector4 compositeParams = new Vector4(
-                    Mathf.Max(0.01f, _settings.bilateralDepthScale),
-                    Mathf.Max(0f, _settings.siltDensityStrength),
+                    ResolveFiniteClamped(_settings.bilateralDepthScale, 0.01f, 96f, 24f),
+                    ResolveFiniteClamped(_settings.siltDensityStrength, 0f, 4f, 1.2f),
                     activePointLightCount,
                     visualPhaseSeconds);
                 Vector4 debugParams = new Vector4(
-                    Mathf.Clamp01(_settings.debugHeatmapWeight),
-                    Mathf.Clamp01(_settings.ditherStrength),
+                    ResolveFiniteSaturated(_settings.debugHeatmapWeight),
+                    ResolveFiniteSaturated(_settings.ditherStrength),
                     renderScale,
                     estimatedGpuMicroseconds);
-                Vector4 marineFogTexelSize = Shader.GetGlobalVector(ShaderConstants.MarineSnowDensityTexelSizeId);
-                Vector4 marineFogParams = Shader.GetGlobalVector(ShaderConstants.MarineSnowDensityParamsId);
-                Texture marineFogTexture = Shader.GetGlobalTexture(ShaderConstants.MarineSnowDensityTextureId);
                 if (marineFogTexture == null || marineFogParams.w <= 0.5f)
                 {
                     EnsureFallbackTextures();
@@ -357,7 +396,6 @@ namespace Hecton8.Visor
                     marineFogTexelSize = new Vector4(1f, 1f, 1f, 1f);
                 }
 
-                Texture abyssalFlowTexture = Shader.GetGlobalTexture(ShaderConstants.AbyssalFlowTextureId);
                 if (abyssalFlowTexture == null)
                 {
                     EnsureFallbackTextures();
@@ -371,11 +409,6 @@ namespace Hecton8.Visor
 
                 TextureHandle marineFogGraphTexture = renderGraph.ImportTexture(marineFogTextureHandle);
                 TextureHandle abyssalFlowGraphTexture = renderGraph.ImportTexture(abyssalFlowTextureHandle);
-
-                Vector4 abyssalFlowCenter = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowCenterId);
-                Vector4 abyssalFlowSpacing = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowSpacingId);
-                Vector4 abyssalFlowTextureParams = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowTextureParamsId);
-                float abyssalFlowTextureActive = Shader.GetGlobalFloat(ShaderConstants.AbyssalFlowTextureActiveId);
 
                 using (var builder = renderGraph.AddComputePass("Hecton Particulate Fog Raymarch", out RaymarchPassData passData, _profilingSampler))
                 {
@@ -556,6 +589,8 @@ namespace Hecton8.Visor
                 float renderScale,
                 float visualPhaseSeconds,
                 float estimatedGpuMicroseconds,
+                bool hasMarineFogTexture,
+                bool hasAbyssalFlowTexture,
                 out int activePointLightCount,
                 out GraphicsBuffer activePointLightBuffer)
             {
@@ -576,11 +611,16 @@ namespace Hecton8.Visor
 
                 RefreshCompletedLightJobAndUpload(pointLights);
 
-                Color color = _settings.fogColor.linear;
-                float baseDensity = Mathf.Max(0f, _settings.baseDensity);
-                float extinctionCoefficient = Mathf.Max(0.0001f, _settings.extinctionCoefficient);
-                float3 cameraPosition = camera != null ? (float3)camera.transform.position : float3.zero;
-                float3 cameraForward = camera != null ? (float3)camera.transform.forward : new float3(0f, 0f, 1f);
+                Color linearColor = _settings.fogColor.linear;
+                float3 settingsColor = new float3(
+                    ResolveFiniteClamped(linearColor.r, 0.0015f, 8f, 0.015f),
+                    ResolveFiniteClamped(linearColor.g, 0.0023f, 8f, 0.045f),
+                    ResolveFiniteClamped(linearColor.b, 0.0031f, 8f, 0.065f));
+                Color color = new Color(settingsColor.x, settingsColor.y, settingsColor.z, 1f);
+                float baseDensity = ResolveFiniteClamped(_settings.baseDensity, 0f, 0.3f, 0.045f);
+                float extinctionCoefficient = ResolveFiniteClamped(_settings.extinctionCoefficient, 0.0001f, 2f, 0.12f);
+                float3 cameraPosition = ResolveCameraAupLocalPosition(camera);
+                float3 cameraForward = ResolveCameraForward(camera);
                 ApplyExtinctionProfileFromVault(ref color, ref baseDensity, ref extinctionCoefficient, cameraPosition);
                 float3 wrappedNoiseOffset = ResolveWrappedNoiseOffset(cameraPosition);
                 ref VolumetricFogParamsDTO fogState = ref VolumetricFogParamsAccess.ElementAt(fogParams, 0);
@@ -588,25 +628,25 @@ namespace Hecton8.Visor
                 bool useVaultOverride = IsUsableVaultOverride(in existing);
                 float4 fogColorAndDensity = useVaultOverride
                     ? new float4(
-                        math.max(existing.FogColorAndDensity.x, 0f),
-                        math.max(existing.FogColorAndDensity.y, 0f),
-                        math.max(existing.FogColorAndDensity.z, 0f),
-                        math.clamp(existing.FogColorAndDensity.w, 0f, 0.3f))
+                        ResolveFiniteClamped(existing.FogColorAndDensity.x, 0.0015f, 8f, settingsColor.x),
+                        ResolveFiniteClamped(existing.FogColorAndDensity.y, 0.0023f, 8f, settingsColor.y),
+                        ResolveFiniteClamped(existing.FogColorAndDensity.z, 0.0031f, 8f, settingsColor.z),
+                        ResolveFiniteClamped(existing.FogColorAndDensity.w, 0f, 0.3f, baseDensity))
                     : new float4(color.r, color.g, color.b, baseDensity);
                 float4 scatteringParams = useVaultOverride
                     ? new float4(
-                        math.clamp(existing.ScatteringParams.x, 0f, 4f),
-                        math.clamp(existing.ScatteringParams.y, 0.0001f, 2f),
-                        math.clamp(existing.ScatteringParams.z, -0.95f, 0.95f),
-                        math.clamp(existing.ScatteringParams.w, 0.25f, 0.995f))
+                        ResolveFiniteClamped(existing.ScatteringParams.x, 0f, 4f, 0.85f),
+                        ResolveFiniteClamped(existing.ScatteringParams.y, 0.0001f, 2f, extinctionCoefficient),
+                        ResolveFiniteClamped(existing.ScatteringParams.z, -0.95f, 0.95f, 0.42f),
+                        ResolveFiniteClamped(existing.ScatteringParams.w, 0.25f, 0.995f, 0.97f))
                     : new float4(
-                        Mathf.Max(0f, _settings.scatteringCoefficient),
+                        ResolveFiniteClamped(_settings.scatteringCoefficient, 0f, 4f, 0.85f),
                         extinctionCoefficient,
-                        Mathf.Clamp(_settings.anisotropy, -0.95f, 0.95f),
-                        Mathf.Clamp(_settings.opacityEarlyBreak, 0.25f, 0.995f));
+                        ResolveFiniteClamped(_settings.anisotropy, -0.95f, 0.95f, 0.42f),
+                        ResolveFiniteClamped(_settings.opacityEarlyBreak, 0.25f, 0.995f, 0.97f));
                 float flowStrength = useVaultOverride
-                    ? math.clamp(existing.FlowAdvection.w, 0f, 8f)
-                    : Mathf.Max(0f, _settings.flowAdvectionStrength);
+                    ? ResolveFiniteClamped(existing.FlowAdvection.w, 0f, 8f, 2.25f)
+                    : ResolveFiniteClamped(_settings.flowAdvectionStrength, 0f, 8f, 2.25f);
                 VolumetricFogParamsDTO dto = new VolumetricFogParamsDTO
                 {
                     FogColorAndDensity = fogColorAndDensity,
@@ -615,23 +655,24 @@ namespace Hecton8.Visor
                     QualityAndLimits = new float4(
                         _qualityWeight,
                         raySteps,
-                        Mathf.Max(0.25f, _settings.maxRayDistanceMeters),
+                        ResolveFiniteClamped(_settings.maxRayDistanceMeters, 0.25f, 140f, 70f),
                         _settings.ResolveProxyBlend(_qualityWeight))
                 };
                 fogState = dto;
 
-                UploadConstantBuffer(in dto);
+                UploadConstantBufferIfDirty(in dto);
                 ScheduleMockLightsIfIdle(pointLights, cameraPosition, cameraForward, pointLightCount, visualPhaseSeconds);
                 activePointLightBuffer = GetActivePointLightBuffer();
                 activePointLightCount = _lastUploadedPointLightCount;
                 if (telemetry.IsCreated && telemetry.Length >= VolumetricFogConstants.TelemetryCapacity)
-                    RecordTelemetry(telemetry, in dto, cameraPosition, raySteps, renderScale, estimatedGpuMicroseconds, activePointLightCount);
+                    RecordTelemetry(telemetry, in dto, cameraPosition, raySteps, renderScale, estimatedGpuMicroseconds, activePointLightCount, hasMarineFogTexture, hasAbyssalFlowTexture);
                 return true;
             }
 
             private static bool IsUsableVaultOverride(in VolumetricFogParamsDTO dto)
             {
-                return IsFinite(dto.FogColorAndDensity.w) &&
+                return math.all(math.isfinite(dto.FogColorAndDensity.xyz)) &&
+                       IsFinite(dto.FogColorAndDensity.w) &&
                        IsFinite(dto.ScatteringParams.x) &&
                        IsFinite(dto.ScatteringParams.y) &&
                        IsFinite(dto.ScatteringParams.z) &&
@@ -642,39 +683,84 @@ namespace Hecton8.Visor
                        dto.ScatteringParams.y > 0f;
             }
 
+            private static float3 ResolveCameraAupLocalPosition(Camera camera)
+            {
+                if (camera == null)
+                    return float3.zero;
+
+                Vector3 runtimePosition = camera.transform.position;
+                float3 runtime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                if (!math.all(math.isfinite(runtime)))
+                    return float3.zero;
+
+                double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+                double3 cameraAup = new double3(runtime.x, runtime.y, runtime.z) + committedOffset;
+                double3 local = cameraAup - committedOffset;
+                float3 result = new float3((float)local.x, (float)local.y, (float)local.z);
+                return math.all(math.isfinite(result)) ? result : float3.zero;
+            }
+
+            private static float3 ResolveCameraForward(Camera camera)
+            {
+                if (camera == null)
+                    return new float3(0f, 0f, 1f);
+
+                Vector3 forwardVector = camera.transform.forward;
+                float3 forward = new float3(forwardVector.x, forwardVector.y, forwardVector.z);
+                float lengthSq = math.lengthsq(forward);
+                if (!math.isfinite(lengthSq) || lengthSq <= 1e-6f)
+                    return new float3(0f, 0f, 1f);
+
+                return forward * math.rsqrt(lengthSq);
+            }
+
             private void ApplyExtinctionProfileFromVault(ref Color fogColor, ref float baseDensity, ref float extinctionCoefficient, float3 cameraPosition)
             {
                 NativeArray<WaterExtinctionProfileDTO> profiles = _extinctionProfilesHandle.Resolve(_vault);
                 if (!profiles.IsCreated || profiles.Length <= 0)
                     return;
 
-                float cameraDepthMeters = Mathf.Max(0f, -cameraPosition.y);
+                float cameraDepthMeters = ResolveFiniteNonNegative(-cameraPosition.y, 0f);
                 for (int i = 0; i < profiles.Length; i++)
                 {
                     WaterExtinctionProfileDTO profile = profiles[i];
+                    float minDepth = ResolveFiniteClamped(profile.MinDepthMeters, 0f, 19999.999f, 0f);
+                    float rawMaxDepth = ResolveFiniteClamped(profile.MaxDepthMeters, 0f, 20000f, 20000f);
+                    float maxDepth = math.max(minDepth + 0.001f, rawMaxDepth);
                     if (profile.ProfileHash == 0u ||
-                        cameraDepthMeters < profile.MinDepthMeters ||
-                        cameraDepthMeters > profile.MaxDepthMeters)
+                        cameraDepthMeters < minDepth ||
+                        cameraDepthMeters > maxDepth)
                     {
                         continue;
                     }
 
-                    float densityMultiplier = Mathf.Clamp(profile.DensityMultiplier, 0f, 8f);
-                    float3 absorption = math.max(profile.AbsorptionAndScatter.xyz, float3.zero);
-                    float scatter = math.max(0f, profile.AbsorptionAndScatter.w);
+                    float densityMultiplier = ResolveFiniteClamped(profile.DensityMultiplier, 0f, 8f, 1f);
+                    float3 absorption = new float3(
+                        ResolveFiniteClamped(profile.AbsorptionAndScatter.x, 0.0015f, 8f, 0.035f),
+                        ResolveFiniteClamped(profile.AbsorptionAndScatter.y, 0.0023f, 8f, 0.075f),
+                        ResolveFiniteClamped(profile.AbsorptionAndScatter.z, 0.0031f, 8f, 0.11f));
+                    float scatter = ResolveFiniteClamped(profile.AbsorptionAndScatter.w, 0.0001f, 2f, 0.65f);
                     fogColor = new Color(
-                        Mathf.Lerp(fogColor.r, absorption.x, 0.35f),
-                        Mathf.Lerp(fogColor.g, absorption.y, 0.35f),
-                        Mathf.Lerp(fogColor.b, absorption.z, 0.35f),
+                        math.lerp(fogColor.r, absorption.x, 0.35f),
+                        math.lerp(fogColor.g, absorption.y, 0.35f),
+                        math.lerp(fogColor.b, absorption.z, 0.35f),
                         fogColor.a);
-                    baseDensity = Mathf.Max(0f, baseDensity * Mathf.Max(0.001f, densityMultiplier));
-                    extinctionCoefficient = Mathf.Lerp(extinctionCoefficient, Mathf.Max(0.0001f, scatter), 0.5f);
+                    baseDensity = ResolveFiniteClamped(baseDensity * math.max(0.001f, densityMultiplier), 0f, 0.3f, baseDensity);
+                    extinctionCoefficient = math.lerp(extinctionCoefficient, scatter, 0.5f);
                     return;
                 }
             }
 
-            private void UploadConstantBuffer(in VolumetricFogParamsDTO dto)
+            private void UploadConstantBufferIfDirty(in VolumetricFogParamsDTO dto)
             {
+                uint dtoHash = HashParams(in dto);
+                if (_hasUploadedParams &&
+                    dtoHash == _lastUploadedParamsHash &&
+                    AreParamsEqual(in dto, in _lastUploadedParams))
+                {
+                    return;
+                }
+
                 NativeArray<VolumetricFogParamsDTO> mapped = _paramsBuffer.LockBufferForWrite<VolumetricFogParamsDTO>(0, ConstantBufferCount);
                 try
                 {
@@ -684,6 +770,28 @@ namespace Hecton8.Visor
                 {
                     _paramsBuffer.UnlockBufferAfterWrite<VolumetricFogParamsDTO>(ConstantBufferCount);
                 }
+
+                _lastUploadedParams = dto;
+                _lastUploadedParamsHash = dtoHash;
+                _hasUploadedParams = true;
+            }
+
+            private static uint HashParams(in VolumetricFogParamsDTO dto)
+            {
+                uint4 hashLane = new uint4(
+                    math.hash(math.asuint(dto.FogColorAndDensity)),
+                    math.hash(math.asuint(dto.ScatteringParams)),
+                    math.hash(math.asuint(dto.FlowAdvection)),
+                    math.hash(math.asuint(dto.QualityAndLimits)));
+                return math.hash(hashLane);
+            }
+
+            private static bool AreParamsEqual(in VolumetricFogParamsDTO left, in VolumetricFogParamsDTO right)
+            {
+                return math.all(left.FogColorAndDensity == right.FogColorAndDensity) &&
+                       math.all(left.ScatteringParams == right.ScatteringParams) &&
+                       math.all(left.FlowAdvection == right.FlowAdvection) &&
+                       math.all(left.QualityAndLimits == right.QualityAndLimits);
             }
 
             private void ScheduleMockLightsIfIdle(
@@ -721,10 +829,43 @@ namespace Hecton8.Visor
                 if (target == null || !target.IsValid())
                     return;
 
+                int completedPointLightCount = Mathf.Clamp(_pendingPointLightCount, 0, VolumetricFogConstants.MaxPointLights);
+                uint pointLightsHash = HashPointLights(pointLights, completedPointLightCount);
+                if (_hasUploadedPointLights &&
+                    completedPointLightCount == _lastUploadedPointLightCount &&
+                    pointLightsHash == _lastUploadedPointLightsHash)
+                {
+                    _pendingPointLightCount = 0;
+                    return;
+                }
+
                 UploadPointLights(target, pointLights);
                 _activePointLightBufferIndex = 1 - _activePointLightBufferIndex;
-                _lastUploadedPointLightCount = Mathf.Clamp(_pendingPointLightCount, 0, VolumetricFogConstants.MaxPointLights);
+                _lastUploadedPointLightCount = completedPointLightCount;
+                _lastUploadedPointLightsHash = pointLightsHash;
+                _hasUploadedPointLights = true;
                 _pendingPointLightCount = 0;
+            }
+
+            private static uint HashPointLights(NativeArray<PointLightDTO> pointLights, int count)
+            {
+                if (!pointLights.IsCreated)
+                    return 0u;
+
+                int safeCount = math.clamp(count, 0, math.min(pointLights.Length, VolumetricFogConstants.MaxPointLights));
+                uint hash = math.hash(new uint4((uint)safeCount, 0x120120u, 0xC0DEF06u, 0x5EED5u));
+                for (int i = 0; i < safeCount; i++)
+                {
+                    PointLightDTO light = pointLights[i];
+                    uint4 laneHash = new uint4(
+                        math.hash(math.asuint(light.PositionRadius)),
+                        math.hash(math.asuint(light.ColorIntensity)),
+                        hash,
+                        (uint)i);
+                    hash = math.hash(laneHash);
+                }
+
+                return hash;
             }
 
             private unsafe void UploadPointLights(GraphicsBuffer target, NativeArray<PointLightDTO> pointLights)
@@ -772,7 +913,9 @@ namespace Hecton8.Visor
                 int raySteps,
                 float renderScale,
                 float estimatedGpuMicroseconds,
-                int pointLightCount)
+                int pointLightCount,
+                bool hasMarineFogTexture,
+                bool hasAbyssalFlowTexture)
             {
                 int index = _telemetryWriteIndex % VolumetricFogConstants.TelemetryCapacity;
                 uint flags = 0u;
@@ -780,28 +923,36 @@ namespace Hecton8.Visor
                     flags |= 1u;
                 if (_settings.debugHeatmapWeight > 0.001f)
                     flags |= 2u;
-                if (Shader.GetGlobalTexture(ShaderConstants.MarineSnowDensityTextureId) == null)
+                if (!hasMarineFogTexture)
                     flags |= 4u;
-                if (Shader.GetGlobalFloat(ShaderConstants.AbyssalFlowTextureActiveId) > 0.5f)
+                if (hasAbyssalFlowTexture)
                     flags |= 8u;
+                bool invalidEstimatedGpuTime = !IsFinite(estimatedGpuMicroseconds);
+                if (invalidEstimatedGpuTime)
+                    flags |= 16u;
+
+                float safeEstimatedGpuMicroseconds = invalidEstimatedGpuTime
+                    ? 0f
+                    : math.max(0f, estimatedGpuMicroseconds);
+                float safeDebugHeatmapWeight = ResolveFiniteSaturated(_settings.debugHeatmapWeight);
 
                 telemetry[index] = new VolumetricFogTelemetryEntry
                 {
                     FrameIndex = unchecked((uint)Time.frameCount),
                     RaySteps = raySteps,
                     RenderScale = renderScale,
-                    EstimatedGpuMicroseconds = estimatedGpuMicroseconds,
+                    EstimatedGpuMicroseconds = safeEstimatedGpuMicroseconds,
                     CameraPositionLocalAndQuality = new float4(cameraPosition, _qualityWeight),
                     StateHash = math.hash(new float4(_qualityWeight, raySteps, renderScale, pointLightCount)),
                     Flags = flags,
                     AccumulatedDensity = dto.FogColorAndDensity.w,
                     MaxRayDistance = dto.QualityAndLimits.z,
-                    DebugValues = new float4(dto.QualityAndLimits.w, _settings.debugHeatmapWeight, pointLightCount, estimatedGpuMicroseconds)
+                    DebugValues = new float4(dto.QualityAndLimits.w, safeDebugHeatmapWeight, pointLightCount, safeEstimatedGpuMicroseconds)
                 };
                 _telemetryWriteIndex = (_telemetryWriteIndex + 1) % VolumetricFogConstants.TelemetryCapacity;
 
                 if (!_dumpedThisSession &&
-                    (!IsFinite(estimatedGpuMicroseconds) || estimatedGpuMicroseconds > DumpThresholdMicroseconds))
+                    (invalidEstimatedGpuTime || safeEstimatedGpuMicroseconds > DumpThresholdMicroseconds))
                 {
                     DumpTelemetryRing(telemetry);
                     _dumpedThisSession = true;
@@ -848,10 +999,9 @@ namespace Hecton8.Visor
 
             private static float ResolveVisualPhaseSeconds(float qualityWeight)
             {
-                float quality = Mathf.Clamp01(qualityWeight);
-                float curved = quality * quality * (3f - 2f * quality);
-                float updateHz = Mathf.Lerp(5f, 60f, curved);
-                int cadenceFrames = Mathf.Clamp(Mathf.RoundToInt(60f / Mathf.Max(5f, updateHz)), 1, 12);
+                float curved = ResolveQualityCurve(qualityWeight);
+                float updateHz = math.lerp(5f, 60f, curved);
+                int cadenceFrames = math.clamp((int)math.round(60f / math.max(5f, updateHz)), 1, 12);
                 uint frame = unchecked((uint)Time.frameCount);
                 uint cadence = (uint)cadenceFrames;
                 uint quantizedFrame = frame - frame % cadence;
@@ -860,10 +1010,10 @@ namespace Hecton8.Visor
 
             private static float EstimateGpuMicroseconds(int width, int height, int raySteps, int pointLightCount, float renderScale)
             {
-                float pixels = Mathf.Max(1, width) * Mathf.Max(1, height);
-                float lightMultiplier = 1f + Mathf.Max(0, pointLightCount) * 0.075f;
-                float scalePenalty = Mathf.Lerp(0.85f, 1.25f, Mathf.Clamp01(renderScale));
-                return pixels * Mathf.Max(1, raySteps) * lightMultiplier * scalePenalty * 0.000018f;
+                float pixels = math.max(1, width) * math.max(1, height);
+                float lightMultiplier = 1f + math.max(0, pointLightCount) * 0.075f;
+                float scalePenalty = math.lerp(0.85f, 1.25f, ResolveFiniteSaturated(renderScale));
+                return pixels * math.max(1, raySteps) * lightMultiplier * scalePenalty * 0.000018f;
             }
 
             private bool EnsureGpuBuffers()
@@ -879,6 +1029,9 @@ namespace Hecton8.Visor
                         GraphicsBuffer.UsageFlags.LockBufferForWrite,
                         ConstantBufferCount,
                         VolumetricFogConstants.ParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[64B] - SHINOBU_120 volumetric fog params.
+                    _hasUploadedParams = false;
+                    _lastUploadedParams = default;
+                    _lastUploadedParamsHash = 0u;
                 }
 
                 bool createdPointLightBuffer = false;
@@ -910,6 +1063,8 @@ namespace Hecton8.Visor
                     ClearPointLightBuffer(_pointLightBufferB);
                     _activePointLightBufferIndex = 0;
                     _lastUploadedPointLightCount = 0;
+                    _lastUploadedPointLightsHash = 0u;
+                    _hasUploadedPointLights = false;
                 }
 
                 return _paramsBuffer != null && _paramsBuffer.IsValid() &&
@@ -1118,7 +1273,7 @@ namespace Hecton8.Visor
                 return;
 
             long setupStartTimestamp = Stopwatch.GetTimestamp();
-            float qualityWeight = Mathf.Clamp01(HomeostasisBrain.GlobalQualityWeight);
+            float qualityWeight = ResolveFiniteSaturated(HomeostasisBrain.GlobalQualityWeight);
             _pass.Setup(settings, settings.computeShader, qualityWeight);
             renderer.EnqueuePass(_pass);
             PublishSetupWarningIfNeeded(setupStartTimestamp);

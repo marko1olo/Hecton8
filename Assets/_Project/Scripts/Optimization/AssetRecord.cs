@@ -4,6 +4,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -198,7 +199,6 @@ namespace Hecton8.Optimization
     {
         [NoAlias] public NativeArray<AssetTrackerDTO> Trackers;
         [NoAlias] public NativeArray<float> TimeToLiveSeconds;
-        [NoAlias] public NativeArray<byte> Flags;
         [NoAlias] public NativeArray<AssetHandleMapEntryDTO> HandleMap;
         public double3 PlayerAup;
         public float MaxResidencyRadiusSq;
@@ -208,17 +208,30 @@ namespace Hecton8.Optimization
         public void Execute(int index)
         {
             float delta = DeltaSeconds > 0f ? DeltaSeconds : 1f;
-            if (!Trackers.IsCreated ||
+            if (!HandleMap.IsCreated ||
+                !Trackers.IsCreated ||
                 !TimeToLiveSeconds.IsCreated ||
-                !Flags.IsCreated ||
-                (uint)index >= (uint)Trackers.Length ||
-                (uint)index >= (uint)TimeToLiveSeconds.Length ||
-                (uint)index >= (uint)Flags.Length)
+                (uint)index >= (uint)HandleMap.Length)
             {
                 return;
             }
 
-            byte flags = Flags[index];
+            AssetHandleMapEntryDTO entry = HandleMap[index];
+            if ((entry.Flags & AssetHandleMapFlags.Occupied) == 0u)
+                return;
+
+            int slot = entry.PoolSlotIndex;
+            if ((uint)slot >= (uint)Trackers.Length ||
+                (uint)slot >= (uint)TimeToLiveSeconds.Length)
+            {
+                return;
+            }
+
+            AssetTrackerDTO tracker = Trackers[slot];
+            if (tracker.AssetHash != unchecked((uint)entry.AssetHash))
+                return;
+
+            uint flags = tracker.Flags;
             if ((flags & AssetHandleFlags.Active) == 0 ||
                 (flags & AssetHandleFlags.PendingTtl) == 0 ||
                 (flags & AssetHandleFlags.Pinned) != 0)
@@ -226,12 +239,14 @@ namespace Hecton8.Optimization
                 return;
             }
 
-            AssetTrackerDTO tracker = Trackers[index];
             if (tracker.ReferenceCount > 0)
             {
-                Flags[index] = (byte)(flags & ~(AssetHandleFlags.PendingTtl | AssetHandleFlags.Releasable));
-                TimeToLiveSeconds[index] = 0f;
-                MirrorHandleMapEntry(tracker.AssetHash, tracker.ReferenceCount, 0f);
+                tracker.Flags = flags & ~(uint)(AssetHandleFlags.PendingTtl | AssetHandleFlags.Releasable);
+                Trackers[slot] = tracker;
+                TimeToLiveSeconds[slot] = 0f;
+                entry.RefCount = tracker.ReferenceCount;
+                entry.TimeToLive = 0f;
+                HandleMap[index] = entry;
                 return;
             }
 
@@ -248,46 +263,19 @@ namespace Hecton8.Optimization
                 : tracker.MaxResidencyRadiusSq;
             float distancePenalty = distanceSq > safeRadiusSq ? 5f : 1f;
             float pressurePenalty = ForceVramPanic != 0 ? 3f : 1f;
-            float ttl = TimeToLiveSeconds[index] - (delta * distancePenalty * pressurePenalty);
+            float ttl = TimeToLiveSeconds[slot] - (delta * distancePenalty * pressurePenalty);
             ttl = math.isfinite(ttl) ? ttl : 0f;
-            TimeToLiveSeconds[index] = ttl;
-            MirrorHandleMapEntry(tracker.AssetHash, tracker.ReferenceCount, ttl);
+            TimeToLiveSeconds[slot] = ttl;
+            entry.RefCount = tracker.ReferenceCount;
+            entry.TimeToLive = ttl;
 
             if (ttl <= 0f)
-                Flags[index] = (byte)(flags | AssetHandleFlags.Releasable);
-        }
-
-        private void MirrorHandleMapEntry(uint assetHash, int refCount, float ttl)
-        {
-            if (assetHash == 0u || !HandleMap.IsCreated || HandleMap.Length == 0)
-                return;
-
-            int length = HandleMap.Length;
-            int start = (int)(assetHash % unchecked((uint)length));
-            for (int probe = 0; probe < length; probe++)
             {
-                int candidateIndex = start + probe;
-                if (candidateIndex >= length)
-                    candidateIndex -= length;
-
-                AssetHandleMapEntryDTO entry = HandleMap[candidateIndex];
-                uint flags = entry.Flags;
-                if ((flags & AssetHandleMapFlags.Occupied) != 0u)
-                {
-                    if (unchecked((uint)entry.AssetHash) == assetHash)
-                    {
-                        entry.RefCount = refCount;
-                        entry.TimeToLive = ttl;
-                        HandleMap[candidateIndex] = entry;
-                        return;
-                    }
-
-                    continue;
-                }
-
-                if ((flags & AssetHandleMapFlags.Tombstone) == 0u)
-                    return;
+                tracker.Flags = flags | AssetHandleFlags.Releasable;
+                Trackers[slot] = tracker;
             }
+
+            HandleMap[index] = entry;
         }
     }
 
@@ -296,7 +284,6 @@ namespace Hecton8.Optimization
     {
         [NoAlias] public NativeArray<AssetTrackerDTO> Trackers;
         [NoAlias] public NativeArray<float> TimeToLiveSeconds;
-        [NoAlias] public NativeArray<byte> Flags;
         [NoAlias] public NativeArray<AssetHandleMapEntryDTO> HandleMap;
 
         public void Execute(int index)
@@ -305,8 +292,6 @@ namespace Hecton8.Optimization
                 Trackers[index] = default;
             if (TimeToLiveSeconds.IsCreated && (uint)index < (uint)TimeToLiveSeconds.Length)
                 TimeToLiveSeconds[index] = 0f;
-            if (Flags.IsCreated && (uint)index < (uint)Flags.Length)
-                Flags[index] = 0;
             if (HandleMap.IsCreated && (uint)index < (uint)HandleMap.Length)
                 HandleMap[index] = default;
         }

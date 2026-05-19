@@ -206,3 +206,66 @@ Solution: Replaced the hard step with `H8UberNoirSmoothRange01(0.72, 0.88, stres
 Rejected Alternatives: Keeping a binary stress cutoff because it was not a keyword, or adding another shader variant for stress shedding.
 Scalability potential: Low/stressed devices fade high-cost features out smoothly; Middle partially restores them; High/Ultra retain full overkill when quality and stress allow.
 Hardware Impact: 0 us CPU. Shader ALU delta is one smoothstep-style polynomial; visual pop removal is the purpose.
+
+### Loop 9 - Mock Scale Authority Repair
+Problem: The editor facade's Vault-only mock route made the reconstruction shader constants see 0.3x scale, but it did not necessarily force the actual dynamic-resolution scaler state. That weakens Task 05 because the proof can become shader-only.
+Solution: Moved the 71030-71034 reconstruction Vault IDs into `UberNoirReconstructionVaultIds` under Core.Contracts and pinned them with an EditMode test. `ThermalDynamicResolutionAdapter` now reads the same `MockReconstructionInputSignal` from Vault buffer 71034 under lock each tick. When `Flags != 0`, it clamps current/target/next scale to the requested value, updates `s_systemScalePercentage`, and keeps quality forcing in a separate reconstruction mock lane. A default zeroed buffer is ignored until a mock was active, so clear-memory allocation does not reset quality every frame.
+Rejected Alternatives: Restoring the editor concrete cast to `ThermalDynamicResolutionAdapter`, extending `IResolutionScalerService` with an editor-only method, or keeping duplicated magic buffer IDs in two files.
+Scalability potential: Low/mock forces 0.3x with high jitter for proof. Middle/High/Ultra use the same DTO with higher `GlobalQualityWeight01`. `Flags=0` clears only this reconstruction mock and does not poison the separate DRS tuner mock.
+Hardware Impact: One locked read of a 32B Vault DTO per scaler tick when the buffer exists. No production speedup claimed; this is correctness and isolated CI/editor proof.
+
+### Loop 10 - Bilateral Diagonal Tap Continuum
+Problem: The bilateral shader still had a hard diagonal-tap threshold tied to `_H8OverkillParams.w > 0.35`, which could pop the 9-tap overkill contribution on even though all CPU constants were continuous.
+Solution: Replaced the hard comparison with `SmoothRange01(0.25, 0.85, _H8OverkillParams.w)` and multiplied diagonal tap weights by that scalar. The branch now exists only as a near-zero ALU skip at `0.001`; visual contribution ramps continuously.
+Rejected Alternatives: Adding shader variants, keeping the hard `> 0.35` threshold because it was only a uniform branch, or always running diagonal taps on weak devices.
+Scalability potential: Low keeps the 5-tap cross path and avoids diagonal ALU until overkill is effectively zero. Middle fades diagonal samples in. High/Ultra receive the extra 4 taps and salt-glint synergy without SRP keyword churn.
+Hardware Impact: 0 us CPU. GPU cost remains scalar-gated; weak devices skip diagonal work, high-end spends the saved budget on sharper silhouettes.
+
+### Loop 11 - Vault Lock Discipline Polish
+Problem: The visor feature wrote constants/telemetry with Vault locks, but runtime mock reads and aesthetic profile reads still resolved Vault `NativeArray` views without a matching lock. That leaves a race against the editor mock writer or delayed CSV profile ingest.
+Solution: Added owner-tagged locks around `TryReadMockReconstructionSignal`, cold CSV scratch/profile ingest, and runtime profile lookup. The mock buffer 71034 is locked for the 32B copy, scratch 71033 and profiles 71032 are locked during parse, and profile reads lock 71032 while scanning DTO rows. Moved the CSV one-shot marker after Vault/path resolution, with retry preserved for missing Vault or transient lock failure.
+Rejected Alternatives: Relying on editor-only timing, assuming cold CSV ingest cannot overlap render constants, burning the CSV attempt before Vault exists, or cloning profiles into a private array.
+Scalability potential: Low/Middle/High/Ultra remain unchanged visually. The same Vault-owned profile table continues to modulate reconstruction and overkill continuously.
+Hardware Impact: No speedup claimed. Adds short owner-tagged locks on 32B/2KB proof and profile payloads; removes stale-handle/race risk without adding private persistent memory.
+
+### Loop 12 - DRS GlobalQualityWeight Vault Lock
+Problem: `ThermalDynamicResolutionAdapter.TryReadScalabilityStateQualityWeight` resolved the `ShinobuScalabilityState` pointer and read the published quality float without taking a Vault lock. That made the continuous DRS/reconstruction scalar a read-side race against the publishing system.
+Solution: Wrapped the pointer resolve and value copy in `TryLockBuffer(BufferID.ShinobuScalabilityState, SystemID.GraphicsScalability)` with `TryUnlockBuffer` in `finally`, preserving all existing fallback behavior and early-return validation.
+Rejected Alternatives: Treating a single float read as harmless, cloning the value into private adapter storage, or routing through shader globals first.
+Scalability potential: Low/Middle/High/Ultra all keep the same continuous scalar law; the fix protects the authority path that decides how much reconstruction, grain, history, and overkill are allowed.
+Hardware Impact: No speedup claimed. One short Vault lock around a 4B read on the DRS tick path; prevents torn/stale quality input from causing visual or scale discontinuity.
+
+### Loop 13 - Continuous Shader Feature Telemetry
+Problem: `UberNoirShaderTelemetryEntry` carried continuous `HighCostAllowed01` and `VisualOverkill01`, but the per-feature forensic lanes still collapsed POM, secondary caustics, and refraction to 0/1 bitmask values. That contradicted the shader-constant continuum and made dumps less useful.
+Solution: Store `highCostAllowed01` directly in `PomEnabled01`, `SecondaryCaustics01`, and `Refraction01`. The state hash now mixes stress, high-cost, overkill, feature mask, and tier buckets so small scalar drifts are visible in the 300-frame ring. Feature mask bits now use `FeatureMaskEpsilon` presence checks instead of hard 0.5 gates; actual shader cost remains scalar-driven.
+Rejected Alternatives: Keeping the bitmask-derived 0/1 telemetry, keeping hard 0.5 feature-mask thresholds, adding a second telemetry DTO, or changing shader feature gating to chase the log format.
+Scalability potential: Low/Middle/High/Ultra dumps now show the actual cost allowance curve; weak devices prove gradual shedding, high-end devices prove gradual overkill.
+Hardware Impact: No measurable runtime change. Three scalar assignments and two extra hash buckets on the late-frame telemetry path; forensic value only.
+
+### Loop 14 - Global Shader CSV Hot-Path Eviction
+Problem: `GlobalShaderDispatcher.LateFrameTick` called `RefreshCsvOverrides`, which could perform `Path.Combine`, `File.Exists`, `File.GetLastWriteTimeUtc`, `FileStream`, and allocate a 4KB managed scratch buffer from VISUAL_SYNC. Even throttled polling is still frame-loop IO jitter.
+Solution: Removed the call from `LateFrameTick`, renamed the path to `TryLoadCsvOverridesCold`, and invoke it from `Awake` only. Runtime frame sync now consumes the already-loaded scalar override without filesystem polling. Also split legacy binary archaeology from the hot fallback: `RunBinaryGraveyardProbeCold` may check files during cold boot, while delayed-Vault frames use `GenerateEmergencyMockShaderGlobalsNoIo`.
+Rejected Alternatives: Keeping the 0.05/0.25 second poll, adding a managed file watcher, making the poll rarer while leaving IO reachable from the render dispatcher, or assuming `_binaryProbeCompleted` is always set before first frame.
+Scalability potential: Low/Middle/High/Ultra all keep the same shader scalar path. Designers still have the editor/global tuner and cold CSV boot value, but weak devices no longer risk mid-frame storage stalls.
+Hardware Impact: Avoids periodic filesystem stat and optional 4KB read from VISUAL_SYNC, plus the delayed-Vault legacy-file probe edge case. On i3/MX350/mobile storage this removes unpredictable IO spikes; no steady-state ALU change.
+
+### Loop 15 - DRS Visual Flag Presence Semantics
+Problem: `ThermalDynamicResolutionAdapter.ResolveVisualFeatureFlags` derived feature bits with `math.step(0.5f, weight)`. The shader already receives continuous `_H8VisualFeatureWeights0/1`, so half-scale bit flips made telemetry/future consumers less faithful to the scalar overkill curve.
+Solution: Added `VisualFeatureFlagEpsilon` and changed feature bits to presence semantics. A bit now means the continuous lane is materially nonzero; magnitude still lives only in the weight vectors.
+Rejected Alternatives: Keeping the 0.5 step, deleting the feature flags entirely, or moving shader cost back to bitmask control.
+Scalability potential: Low has no flags until weights rise above epsilon, Middle gradually gains presence while still using fractional weights, High/Ultra keep full continuous overkill strength.
+Hardware Impact: No speedup claimed. Branchless `math.step` becomes simple comparisons on six scalar lanes; frame impact is negligible and the benefit is eliminating a forensic/control discontinuity.
+
+### Loop 16 - Global Keyword Churn Removal
+Problem: `GlobalShaderDispatcher.LateFrameTick` still converted low/high tier state into global shader keyword flips. That violates the scalar quality continuum and can disturb shader variant state even when HECTON visuals already receive scalar globals.
+Solution: Removed the keyword constants and `Shader.EnableKeyword`/`Shader.DisableKeyword` calls. The dispatcher now only refreshes tier telemetry and publishes scalar globals (`_H8HardwareTierParams`, caustic runtime, low-tier weight, overkill/runtime params).
+Rejected Alternatives: Keeping the keyword flips because they were legacy, flipping only on tier changes, or moving the same binary gate into shader code.
+Scalability potential: Low/Middle/High/Ultra use the same loaded variants and shed/add visual cost through scalar lanes instead of global keyword state.
+Hardware Impact: Avoids global keyword churn and variant-state discontinuity on tier transitions. No deterministic per-frame ALU saving claimed.
+
+### Loop 17 - UberNoir HLSL Scalar Gate Polish
+Problem: C# visual-overkill state had moved to continuous shader constants, but `Hecton8_UberNoir.hlsl` still used hard `step(0.5, _UberNoirFeatureFlags.*)` gates for dither, hull deformation, POM, and caustics, plus hard active checks for textured caustics/refraction.
+Solution: Added `H8UberNoirFeatureScalar` and replaced those hard feature gates with saturating scalar lanes. POM now ramps from rust threshold through `H8UberNoirSmoothRange01`; decay allowance fades over 0.45-0.55; caustic/refraction activity fades from intensity parameters instead of snapping. The same helper now handles legacy instance-buffer and hull-dent DTO enable lanes, leaving only resource/count branches and POM layer-depth traversal as binary control flow.
+Rejected Alternatives: Leaving binary shader gates because legacy material flags are currently 0/1, preserving half-threshold availability gates because they were not quality switches, adding shader variants, or pushing the problem back into C# feature masks.
+Scalability potential: Low keeps lanes near zero and bypass branches by epsilon. Middle can partially engage deformation/caustics/POM without a pop. High/Ultra receive full feature strength through the same scalar path.
+Hardware Impact: No CPU change. GPU branch predicates now follow scalar inputs; weak devices still skip near-zero work, high-end work fades in instead of flipping.

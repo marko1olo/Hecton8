@@ -149,6 +149,8 @@ namespace Hecton8.Caves
         private HectonVoxelEngine _engine;
         private IDataVault _dataVault;
         private ISimulationBucketer _simulationBucketer;
+        private ISaveService _saveService;
+        private HectonQualityTier _cachedScalabilityTier;
         private bool _saveRegistered;
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
@@ -212,6 +214,8 @@ namespace Hecton8.Caves
             TryGetComponent(out _engine);
             _dataVault = GlobalRegistry.DataVault;
             _simulationBucketer = GlobalRegistry.SimulationBucketer;
+            _saveService = GlobalRegistry.Save;
+            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
             EnsureCarveEventQueue();
             EnsureBlackBox();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -258,12 +262,13 @@ namespace Hecton8.Caves
                 _lateFrameRegistered = false;
             }
 
-            if (_saveRegistered && GlobalRegistry.Save != null)
+            if (_saveRegistered && _saveService != null)
             {
-                GlobalRegistry.Save.Unregister(this);
+                _saveService.Unregister(this);
                 _saveRegistered = false;
             }
 
+            _saveService = null;
             _pendingCarveCount = 0;
             _pendingCarveHead = 0;
             _queuedCarveEventCount = 0;
@@ -662,15 +667,7 @@ namespace Hecton8.Caves
 
         private IDataVault ResolveDataVault()
         {
-            IDataVault current = _dataVault;
-            IDataVault registryVault = GlobalRegistry.DataVault;
-            if (current == null || !ReferenceEquals(current, registryVault))
-            {
-                _dataVault = registryVault;
-                current = registryVault;
-            }
-
-            return current;
+            return _dataVault;
         }
 
         private bool TryResolveBlackBox(out NativeArray<VoxelCarveTelemetryEntry> blackBox)
@@ -736,20 +733,14 @@ namespace Hecton8.Caves
             }
         }
 
-        private static int ResolveQueuedCarveDrainBudget()
+        private int ResolveQueuedCarveDrainBudget()
         {
-            return DebugResolveQueuedCarveDrainBudget(GlobalRegistry.ScalabilityTier);
+            return DebugResolveQueuedCarveDrainBudget(_cachedScalabilityTier);
         }
 
         private bool ShouldDeferQueuedCarveForFastBucket(in VoxelCarveEvent carveEvent)
         {
             ISimulationBucketer bucketer = _simulationBucketer;
-            if (bucketer == null || !bucketer.IsInitialized)
-            {
-                bucketer = GlobalRegistry.SimulationBucketer;
-                _simulationBucketer = bucketer;
-            }
-
             if (bucketer == null || !bucketer.IsInitialized)
                 return false;
 
@@ -2524,10 +2515,11 @@ namespace Hecton8.Caves
 
         private void TryRegisterSaveService()
         {
-            if (_saveRegistered || GlobalRegistry.Save == null)
+            ISaveService saveService = _saveService;
+            if (_saveRegistered || saveService == null)
                 return;
 
-            GlobalRegistry.Save.Register(this);
+            saveService.Register(this);
             _saveRegistered = true;
         }
 

@@ -74,8 +74,39 @@ H8_Trailer_Steam_b0150_2026-06-20_v07.mp4
 Track every public asset:
 
 ```csv
-asset_id,type,path,build,date,status,hook,shown_features,forbidden_claim_check,performance_claim_check,co_op_check,owner,notes
+asset_id,type,path,build_id,date,status,hook,shown_features,source_capture,qa_score,co_op_check,performance_claim_check,feature_truth_check,localization_check,owner,rejection_code,creator_rows_unlocked,creator_utility_score,creator_send_gate,notes
 ```
+
+## 2026-05-19 Planned Capture To Metadata Workflow V0
+
+The current metadata file already contains planned slots. When real captures arrive, do not create new IDs unless the existing slot cannot describe the asset.
+
+| Step | Action | Metadata field changed | Rule |
+|---:|---|---|---|
+| 1 | Copy raw capture into the matching planned path family. | `path` | Replace `[build]` and `[date]` with real values. |
+| 2 | Record build and capture date. | `build_id`, `date` | No `TBD` remains for a captured asset. |
+| 3 | Change status from `PLANNED_CAPTURE` to `RAW`. | `status` | Do not jump directly to public approval. |
+| 4 | Fill capture source. | `source_capture` | Use scene/area/tool, not "screenshot". |
+| 5 | Score asset through QA. | `qa_score` | Social minimum 9/12, Steam screenshot minimum 10/12. |
+| 6 | Score creator utility if creator-facing. | `creator_rows_unlocked`, `creator_utility_score`, `creator_send_gate` | Creator-facing use requires 3/4+ and exact CRM row mapping; public social use does not imply creator send readiness. |
+| 7 | Check claims. | `co_op_check`, `performance_claim_check`, `feature_truth_check` | Any failed claim check blocks public use. |
+| 8 | Assign final state. | `status`, `rejection_code`, `notes` | Use fixed rejection codes only. |
+| 9 | Move approved export into target folder. | `path`, `status` | Approved public/press assets must not point to Raw. |
+
+### Status Promotion Rules
+
+| From | To | Allowed only if |
+|---|---|---|
+| `PLANNED_CAPTURE` | `RAW` | real file exists and build/date/source are filled. |
+| `RAW` | `REVISION` | asset has useful hook but fails a fixable issue. |
+| `RAW` | `QA_FAIL` | asset fails identity, honesty, claim, or readability gate. |
+| `RAW` | `APPROVED_INTERNAL` | useful for internal review but not public. |
+| `APPROVED_INTERNAL` | `APPROVED_PUBLIC` | QA pass, claim checks pass, current build truth matches. |
+| `APPROVED_PUBLIC` | `APPROVED_PRESS` | presskit use case and source/caption are finalized. |
+| any | `DEPRECATED` | build truth changed or stronger asset replaced it. |
+| any | `LEGAL_HOLD` | license/source/claim risk appears. |
+
+Do not keep multiple `APPROVED_PUBLIC` versions for the same hook unless the use case differs.
 
 ## Public Asset Rules
 

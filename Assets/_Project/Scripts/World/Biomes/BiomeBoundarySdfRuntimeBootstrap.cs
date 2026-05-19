@@ -4,27 +4,45 @@ using UnityEngine;
 namespace Hecton8.World.Biomes
 {
     /// <summary>
-    /// Runtime fail-safe for the biome-boundary SDF producer. Authored scene placement is preferred.
+    /// Runtime fail-safe for the biome transition producers. Authored scene placement is preferred.
     /// </summary>
     internal static class BiomeBoundarySdfRuntimeBootstrap
     {
-        private const string FallbackRootName = "BiomeBoundarySdfRuntime_Root";
+        private const string FallbackRootName = "BiomeTransitionRuntime_Root";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstance()
         {
-            if (!Application.isPlaying || BiomeBoundarySdfRuntime.ActiveRuntimeInstance != null)
+            if (!Application.isPlaying ||
+                (BiomeTransitionManagerRuntime.ActiveRuntimeInstance != null &&
+                 BiomeBoundarySdfRuntime.ActiveRuntimeInstance != null))
+            {
                 return;
+            }
 
             GameObject runtimeOwner = ResolveRuntimeOwner();
-            if (!runtimeOwner.TryGetComponent(out BiomeBoundarySdfRuntime runtime))
-                runtime = runtimeOwner.AddComponent<BiomeBoundarySdfRuntime>();
+            BiomeTransitionManagerRuntime transitionRuntime = null;
+            BiomeBoundarySdfRuntime sdfRuntime = null;
+            if (BiomeTransitionManagerRuntime.ActiveRuntimeInstance == null &&
+                !runtimeOwner.TryGetComponent(out transitionRuntime))
+            {
+                transitionRuntime = runtimeOwner.AddComponent<BiomeTransitionManagerRuntime>();
+            }
 
-            runtime.enabled = true;
+            if (BiomeBoundarySdfRuntime.ActiveRuntimeInstance == null &&
+                !runtimeOwner.TryGetComponent(out sdfRuntime))
+            {
+                sdfRuntime = runtimeOwner.AddComponent<BiomeBoundarySdfRuntime>();
+            }
+
+            if (transitionRuntime != null)
+                transitionRuntime.enabled = true;
+            if (sdfRuntime != null)
+                sdfRuntime.enabled = true;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning(
-                "[BiomeBoundarySdfRuntimeBootstrap] Spawned BiomeBoundarySdfRuntime at runtime because the active scene had none. " +
+                "[BiomeBoundarySdfRuntimeBootstrap] Spawned biome transition runtime host because the active scene had none. " +
                 "Owner='" + runtimeOwner.name + "'. This is a fail-safe, not a substitute for authored setup.");
 #endif
         }

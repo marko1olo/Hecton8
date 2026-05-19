@@ -21,7 +21,7 @@ namespace Hecton8.AI.Ecosystem
     /// <summary>
     /// Data-only SHINOBU swarm and biomass balancer. Fish are vault rows, not scene objects.
     /// </summary>
-    public sealed class ShinobuEcosystemBalancer : ITickable, IColdTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
+    public sealed class ShinobuEcosystemBalancer : ITickable, IColdTickable, ILateFrameTickable, IRenderable, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const int DefaultEntityCapacity = 100000;
         private const int MinimumVisualBoidBudget = 1000;
@@ -35,7 +35,7 @@ namespace Hecton8.AI.Ecosystem
         private const int MaxNeighborSamples = 48;
         private const int MaxSpatialHashChainSteps = 64;
         private const int SwarmSpeciesProfileCapacity = 64;
-        private const uint DefaultBoidIndexCountPerInstance = 3u;
+        private const uint DefaultBoidVertexCountPerInstance = 3u;
         private const int CsvMaxBytes = 8192;
         private const int LegacyProfileReadBytes = 64;
         private const float DefaultCellSizeMeters = 10f;
@@ -48,6 +48,9 @@ namespace Hecton8.AI.Ecosystem
         private const float DefaultSimulationTickDeltaSeconds = 1f / 60f;
         private const float TelemetryFaultThresholdMs = 1.5f;
         private const double AupCellSizeMetersDouble = HectonPhysicsContract.AupSectorSizeMetersDouble;
+        private const byte ScheduledPipelineNone = 0;
+        private const byte ScheduledPipelineFrame = 1;
+        private const byte ScheduledPipelineMacro = 2;
         private const string LegacyFaunaCapsFile = "fauna_population_caps.h8bin";
         private const string LegacyBoidProfileFile = "boid_behavior_profiles.bin";
         private const string SwarmSpeciesCsvRelativePath = "swarm_species_profiles.csv";
@@ -76,6 +79,7 @@ namespace Hecton8.AI.Ecosystem
         public const uint TuningFlagCsvOverride = 1u << 2;
         public const uint TuningFlagEditorDebugGrid = 1u << 3;
         public const uint TuningFlagEditorDebugVectors = 1u << 4;
+        public const uint TelemetryFlagMacroPass = 1u << 29;
         public const uint TelemetryFlagSolveOverBudget = 1u << 30;
 
         private const int CounterInitialized = 0;
@@ -124,6 +128,7 @@ namespace Hecton8.AI.Ecosystem
         private VaultBufferHandle<SwarmSpeciesProfileDTO> _swarmSpeciesProfileHandle;
 
         private IDataVault _dataVault;
+        private readonly ShinobuBoidGpuUploadDispatcher _gpuUploadDispatcher;
         private JobHandle _activeJobHandle;
         private AbsoluteUniversePosition _cameraAup;
         private float3 _cameraLocalPosition;
@@ -142,14 +147,22 @@ namespace Hecton8.AI.Ecosystem
         private bool _registeredTick;
         private bool _registeredColdTick;
         private bool _registeredLateFrame;
+        private bool _registeredRender;
         private bool _registeredHotSwap;
         private bool _jobScheduled;
         private bool _jobLocksHeld;
+        private bool _vaultBuffersReady;
         private bool _dumpedFault;
+        private bool _proceduralRenderEnabled;
+        private byte _scheduledPipelineKind;
         private uint _runtimeFlags;
+        private int _proceduralRenderLayer;
+        private Material _proceduralRenderMaterial;
+        private Bounds _proceduralRenderBounds;
 
         private ShinobuEcosystemBalancer()
         {
+            _gpuUploadDispatcher = new ShinobuBoidGpuUploadDispatcher();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -186,17 +199,22 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             SignalBus<MockPredatorSignal>.EnsureInitialized();
+            ResolveDataVaultCold();
             TryRegisterHotSwapListener();
             if (EnsureVaultState())
                 TryRegisterTicks();
+            if (_proceduralRenderMaterial != null)
+                TryRegisterRender();
         }
 
         public void Dispose()
         {
             CompleteFrameJob(forceComplete: true);
+            TryUnregisterRender();
             TryUnregisterTicks();
             TryUnregisterHotSwapListener();
             UnlockJobBuffers();
+            _gpuUploadDispatcher.Dispose();
             ClearCachedState();
         }
 
@@ -205,6 +223,15 @@ namespace Hecton8.AI.Ecosystem
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.RenderDispatcher)
+            {
+                if (currentService != null)
+                    TryRegisterRender();
+                else
+                    TryUnregisterRender();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -281,6 +308,8 @@ namespace Hecton8.AI.Ecosystem
             if (!TryLockJobBuffers(vault))
                 return;
 
+            JobHandle scheduledHandle = default;
+            bool scheduledWork = false;
             try
             {
                 for (int i = 0; i < CounterCapacity && i < counters.Length; i++)
@@ -322,7 +351,10 @@ namespace Hecton8.AI.Ecosystem
                     Count = count
                 };
 
+                _scheduleTicks = Stopwatch.GetTimestamp();
                 JobHandle handle = buildJob.Schedule(count, FrameJobBatchSize);
+                scheduledHandle = handle;
+                scheduledWork = true;
                 var hashJob = new BuildBoidSpatialHashJob
                 {
                     AupSnapshot = aupSnapshot,
@@ -333,6 +365,7 @@ namespace Hecton8.AI.Ecosystem
                     Count = count
                 };
                 handle = hashJob.Schedule(handle);
+                scheduledHandle = handle;
                 if (debugGridEnabled)
                 {
                     var debugJob = new BuildHashDebugCellsJob
@@ -349,6 +382,7 @@ namespace Hecton8.AI.Ecosystem
                         MaxChainSteps = maxChainSteps
                     };
                     handle = debugJob.Schedule(handle);
+                    scheduledHandle = handle;
                 }
 
                 var solveJob = new BoidFlockingJob
@@ -378,6 +412,7 @@ namespace Hecton8.AI.Ecosystem
                     Count = count
                 };
                 handle = solveJob.Schedule(count, FrameJobBatchSize, handle);
+                scheduledHandle = handle;
 
                 var renderJob = new BuildShinobuRenderPayloadJob
                 {
@@ -391,6 +426,7 @@ namespace Hecton8.AI.Ecosystem
                     Count = count
                 };
                 handle = renderJob.Schedule(count, FrameJobBatchSize, handle);
+                scheduledHandle = handle;
 
                 var countJob = new CountTelemetryCountersJob
                 {
@@ -401,28 +437,44 @@ namespace Hecton8.AI.Ecosystem
                     SectorCount = math.min(sectorCapacity, sectors.Length)
                 };
                 handle = countJob.Schedule(handle);
+                scheduledHandle = handle;
                 handle = WriteIndirectArgs(
                     indirectArgs,
-                    DefaultBoidIndexCountPerInstance,
+                    DefaultBoidVertexCountPerInstance,
                     0u,
                     0u,
                     (uint)math.max(0, count),
                     handle);
+                scheduledHandle = handle;
 
                 _activeJobHandle = handle;
-                _scheduleTicks = Stopwatch.GetTimestamp();
                 _lastActiveBudget = count;
                 _lastGlobalQualityWeight = globalQualityWeight;
                 _lastSpatialHashMs = 0f;
                 _lastMatrixUploadMs = 0f;
-                H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
+                _runtimeFlags &= ~TelemetryFlagMacroPass;
+                _scheduledPipelineKind = ScheduledPipelineFrame;
                 _jobScheduled = true;
                 _jobLocksHeld = true;
+                H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
             }
             catch (Exception)
             {
-                UnlockJobBuffers();
-                throw;
+                if (scheduledWork)
+                {
+                    _activeJobHandle = scheduledHandle;
+                    _lastActiveBudget = count;
+                    _lastGlobalQualityWeight = globalQualityWeight;
+                    _scheduledPipelineKind = ScheduledPipelineFrame;
+                    _jobScheduled = true;
+                    _jobLocksHeld = true;
+                }
+                else
+                {
+                    UnlockJobBuffers();
+                }
+
+                GlobalTelemetryBus.PublishPerformanceWarning(0x534A4F42u, SourceHash, 0f);
             }
         }
 
@@ -449,6 +501,103 @@ namespace Hecton8.AI.Ecosystem
             CompleteFrameJob(forceComplete: false);
         }
 
+        /// <summary>
+        /// Binds a cold-authored material asset for render-dispatch submission of the uploaded swarm buffers.
+        /// </summary>
+        /// <param name="material">Material using `Hecton8/AbyssalSwarmProcedural`; null disables draw submission.</param>
+        /// <param name="bounds">Camera-relative conservative draw bounds.</param>
+        /// <param name="layer">Unity render layer index for the procedural draw.</param>
+        public void BindProceduralRenderMaterial(Material material, Bounds bounds, int layer = 0)
+        {
+            _proceduralRenderMaterial = material;
+            _proceduralRenderBounds = SanitizeRenderBounds(bounds);
+            _proceduralRenderLayer = math.clamp(layer, 0, 31);
+            _proceduralRenderEnabled = material != null;
+
+            if (_proceduralRenderEnabled)
+                TryRegisterRender();
+            else
+                TryUnregisterRender();
+        }
+
+        /// <summary>
+        /// Resolves the active double-buffered GPU resources after the latest completed upload.
+        /// </summary>
+        public bool TryGetUploadedSwarmBuffers(
+            out GraphicsBuffer matrixBuffer,
+            out GraphicsBuffer customDataBuffer,
+            out GraphicsBuffer indirectArgsBuffer,
+            out int activeCount)
+        {
+            return _gpuUploadDispatcher.TryGetActiveBuffers(
+                out matrixBuffer,
+                out customDataBuffer,
+                out indirectArgsBuffer,
+                out activeCount);
+        }
+
+        /// <summary>
+        /// Issues the procedural indirect draw with a caller-owned material asset.
+        /// </summary>
+        public bool TryDrawUploadedSwarm(
+            Material material,
+            Bounds bounds,
+            int layer = 0,
+            ShadowCastingMode shadowCastingMode = ShadowCastingMode.Off)
+        {
+            if (Application.isBatchMode || material == null)
+                return false;
+
+            return _gpuUploadDispatcher.TryDraw(
+                material,
+                SanitizeRenderBounds(bounds),
+                MeshTopology.Triangles,
+                math.clamp(layer, 0, 31),
+                shadowCastingMode);
+        }
+
+        /// <summary>
+        /// Submits the bound procedural swarm material through the render dispatcher.
+        /// </summary>
+        /// <param name="deltaTime">Scaled render delta supplied by the dispatcher; swarm simulation uses deterministic tick state instead.</param>
+        public void Render(float deltaTime)
+        {
+            if (Application.isBatchMode || !_proceduralRenderEnabled || _proceduralRenderMaterial == null)
+                return;
+
+            _gpuUploadDispatcher.TryDraw(
+                _proceduralRenderMaterial,
+                _proceduralRenderBounds,
+                MeshTopology.Triangles,
+                _proceduralRenderLayer,
+                ShadowCastingMode.Off);
+        }
+
+        private static Bounds SanitizeRenderBounds(Bounds bounds)
+        {
+            Vector3 center = bounds.center;
+            Vector3 size = bounds.size;
+            if (!IsFinite(center))
+                center = Vector3.zero;
+            if (!IsFinite(size))
+                size = Vector3.one * (DefaultDehydrateDistanceMeters * 2f);
+
+            size.x = Mathf.Max(1f, size.x);
+            size.y = Mathf.Max(1f, size.y);
+            size.z = Mathf.Max(1f, size.z);
+            return new Bounds(center, size);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x) &&
+                   !float.IsNaN(value.y) &&
+                   !float.IsNaN(value.z) &&
+                   !float.IsInfinity(value.x) &&
+                   !float.IsInfinity(value.y) &&
+                   !float.IsInfinity(value.z);
+        }
+
         internal static ref AmbientEntityDTO GetAmbientEntityRef(
             IDataVault vault,
             ref VaultBufferHandle<AmbientEntityDTO> handle,
@@ -461,7 +610,7 @@ namespace Hecton8.AI.Ecosystem
         {
             ShinobuEcosystemLayoutManifest.VerifyColdBoot();
 
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -473,6 +622,9 @@ namespace Hecton8.AI.Ecosystem
             dehydrationDistanceMeters = math.max(16f, dehydrationDistanceMeters);
             rehydrationDistanceMeters = math.min(dehydrationDistanceMeters - 1f, math.max(8f, rehydrationDistanceMeters));
             obstacleProbeMeters = math.max(0.1f, obstacleProbeMeters);
+
+            if (_vaultBuffersReady && AreVaultHandlesCreated())
+                return true;
 
             _entityHandle = vault.GetBufferHandle<AmbientEntityDTO>(
                 BufferID.ShinobuAmbientEntities,
@@ -589,15 +741,55 @@ namespace Hecton8.AI.Ecosystem
                          _csvScratchHandle.IsCreated &&
                          _legacyScratchHandle.IsCreated &&
                          _swarmSpeciesProfileHandle.IsCreated;
+            _vaultBuffersReady = ready;
             if (!ready)
                 return false;
 
+            EnsureGpuUploadCapacity();
             EnsureProfilesLoaded(vault);
             EnsureInitialPopulation(vault);
             return true;
         }
 
-        private IDataVault ResolveDataVault()
+        private bool AreVaultHandlesCreated()
+        {
+            return _entityHandle.IsCreated && _entityHandle.Length >= entityCapacity &&
+                   _aupHandle.IsCreated && _aupHandle.Length >= entityCapacity &&
+                   _boidStateHandle.IsCreated && _boidStateHandle.Length >= entityCapacity &&
+                   _entitySnapshotHandle.IsCreated && _entitySnapshotHandle.Length >= entityCapacity &&
+                   _aupSnapshotHandle.IsCreated && _aupSnapshotHandle.Length >= entityCapacity &&
+                   _boidStateSnapshotHandle.IsCreated && _boidStateSnapshotHandle.Length >= entityCapacity &&
+                   _sectorHandle.IsCreated && _sectorHandle.Length >= sectorCapacity &&
+                   _tuningHandle.IsCreated && _tuningHandle.Length >= 1 &&
+                   _counterHandle.IsCreated && _counterHandle.Length >= CounterCapacity &&
+                   _telemetryHandle.IsCreated && _telemetryHandle.Length >= TelemetryCapacity &&
+                   _debugCellHandle.IsCreated && _debugCellHandle.Length >= DebugCellCapacity &&
+                   _renderMatrixHandle.IsCreated && _renderMatrixHandle.Length >= entityCapacity &&
+                   _renderCustomDataHandle.IsCreated && _renderCustomDataHandle.Length >= entityCapacity &&
+                   _indirectArgsHandle.IsCreated && _indirectArgsHandle.Length >= 1 &&
+                   _spatialHashBucketHeadHandle.IsCreated && _spatialHashBucketHeadHandle.Length >= SpatialHashBucketCapacity &&
+                   _spatialHashNextHandle.IsCreated && _spatialHashNextHandle.Length >= entityCapacity + sectorCapacity &&
+                   _csvScratchHandle.IsCreated && _csvScratchHandle.Length >= CsvMaxBytes &&
+                   _legacyScratchHandle.IsCreated && _legacyScratchHandle.Length >= LegacyProfileReadBytes &&
+                   _swarmSpeciesProfileHandle.IsCreated && _swarmSpeciesProfileHandle.Length >= SwarmSpeciesProfileCapacity;
+        }
+
+        private void EnsureGpuUploadCapacity()
+        {
+            if (Application.isBatchMode)
+                return;
+
+            try
+            {
+                _gpuUploadDispatcher.EnsureGraphicsResources(entityCapacity);
+            }
+            catch (Exception)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x47505543u, SourceHash, 0f);
+            }
+        }
+
+        private IDataVault ResolveDataVaultCold()
         {
             if (_dataVault != null)
                 return _dataVault;
@@ -945,6 +1137,8 @@ namespace Hecton8.AI.Ecosystem
             if (!TryLockJobBuffers(vault))
                 return;
 
+            JobHandle scheduledHandle = default;
+            bool scheduledWork = false;
             try
             {
                 ShinobuEcosystemTuning tuning = ShinobuEcosystemTuning.Sanitize(tuningArray[0]);
@@ -968,11 +1162,36 @@ namespace Hecton8.AI.Ecosystem
                     ApplyLotka = (_coldTickIndex % 60) == 0 ? 1 : 0,
                     Frame = ResolveCurrentSimulationFrame()
                 };
-                job.Run();
+
+                _scheduleTicks = Stopwatch.GetTimestamp();
+                _activeJobHandle = job.Schedule();
+                scheduledHandle = _activeJobHandle;
+                scheduledWork = true;
+                _lastActiveBudget = job.EntityCount;
+                _lastGlobalQualityWeight = globalQualityWeight;
+                _lastSpatialHashMs = 0f;
+                _lastMatrixUploadMs = 0f;
+                _runtimeFlags |= TelemetryFlagMacroPass;
+                _scheduledPipelineKind = ScheduledPipelineMacro;
+                _jobScheduled = true;
+                _jobLocksHeld = true;
+                H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
             }
-            finally
+            catch (Exception)
             {
-                UnlockJobBuffers();
+                if (scheduledWork)
+                {
+                    _activeJobHandle = scheduledHandle;
+                    _scheduledPipelineKind = ScheduledPipelineMacro;
+                    _jobScheduled = true;
+                    _jobLocksHeld = true;
+                }
+                else
+                {
+                    UnlockJobBuffers();
+                }
+
+                GlobalTelemetryBus.PublishPerformanceWarning(0x534D4143u, SourceHash, 0f);
             }
         }
 
@@ -984,18 +1203,58 @@ namespace Hecton8.AI.Ecosystem
             if (!DispatcherJobSwap.TryComplete(ref _activeJobHandle, forceComplete))
                 return;
 
+            byte pipelineKind = _scheduledPipelineKind;
             _jobScheduled = false;
+            _scheduledPipelineKind = ScheduledPipelineNone;
             long completeTicks = Stopwatch.GetTimestamp();
             long elapsedTicks = completeTicks >= _scheduleTicks ? completeTicks - _scheduleTicks : 0L;
-            _lastFlockingMs = Stopwatch.Frequency > 0
+            float elapsedMs = Stopwatch.Frequency > 0
                 ? (float)(elapsedTicks * 1000.0 / Stopwatch.Frequency)
                 : 0f;
+            _lastFlockingMs = pipelineKind == ScheduledPipelineFrame ? elapsedMs : 0f;
 
             IDataVault vault = _dataVault;
             if (vault != null)
+            {
+                if (pipelineKind == ScheduledPipelineFrame)
+                    UploadCompletedFrameToGpu(vault);
+
                 WriteTelemetryAndFaultDump(vault);
+            }
 
             UnlockJobBuffers();
+        }
+
+        private void UploadCompletedFrameToGpu(IDataVault vault)
+        {
+            _lastMatrixUploadMs = 0f;
+            if (Application.isBatchMode)
+                return;
+
+            NativeArray<BoidMatrixDTO> matrices = _renderMatrixHandle.Resolve(vault);
+            NativeArray<float4> customData = _renderCustomDataHandle.Resolve(vault);
+            NativeArray<BoidIndirectArgsDTO> indirectArgs = _indirectArgsHandle.Resolve(vault);
+            if (!matrices.IsCreated || !customData.IsCreated || !indirectArgs.IsCreated || indirectArgs.Length <= 0)
+                return;
+
+            long startTicks = Stopwatch.GetTimestamp();
+            bool uploaded = false;
+            try
+            {
+                uploaded = _gpuUploadDispatcher.UploadFromVault(matrices, customData, indirectArgs);
+            }
+            catch (Exception)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x47505555u, SourceHash, 0f);
+            }
+
+            if (!uploaded || Stopwatch.Frequency <= 0)
+                return;
+
+            long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
+            _lastMatrixUploadMs = elapsedTicks > 0L
+                ? (float)(elapsedTicks * 1000.0 / Stopwatch.Frequency)
+                : 0f;
         }
 
         private void WriteTelemetryAndFaultDump(IDataVault vault)
@@ -1165,6 +1424,29 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
+        private void TryRegisterRender()
+        {
+            if (_registeredRender ||
+                !_proceduralRenderEnabled ||
+                _proceduralRenderMaterial == null ||
+                Application.isBatchMode ||
+                GlobalRegistry.RenderDispatcher == null)
+            {
+                return;
+            }
+
+            _registeredRender = GlobalRegistry.Renderables.TryRegister(this);
+        }
+
+        private void TryUnregisterRender()
+        {
+            if (!_registeredRender)
+                return;
+
+            GlobalRegistry.Renderables.TryUnregister(this);
+            _registeredRender = false;
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (_registeredHotSwap)
@@ -1184,6 +1466,7 @@ namespace Hecton8.AI.Ecosystem
 
         private void ResetVaultHandles()
         {
+            _vaultBuffersReady = false;
             _entityHandle = default;
             _aupHandle = default;
             _boidStateHandle = default;
@@ -1208,6 +1491,7 @@ namespace Hecton8.AI.Ecosystem
         private void ClearCachedState()
         {
             _dataVault = null;
+            _vaultBuffersReady = false;
             ResetVaultHandles();
             _telemetryCursor = 0;
             _coldTickIndex = 0;
@@ -1222,6 +1506,10 @@ namespace Hecton8.AI.Ecosystem
             _swarmSpeciesCsvTimestampTicks = 0L;
             _runtimeFlags = 0u;
             _dumpedFault = false;
+            _proceduralRenderEnabled = false;
+            _proceduralRenderMaterial = null;
+            _proceduralRenderBounds = default;
+            _proceduralRenderLayer = 0;
         }
 
         private void RefreshCameraSignals()
@@ -1387,7 +1675,14 @@ namespace Hecton8.AI.Ecosystem
             float x = TriangleSigned((p.y * 2.17f) + (p.z * 0.61f) + seedPhase);
             float y = TriangleSigned((p.z * 1.53f) - (p.x * 0.37f) + seedPhase * 0.5f) * math.lerp(0.08f, 0.34f, q);
             float z = TriangleSigned((p.x * 1.89f) + (p.y * 0.43f) - seedPhase);
-            float3 flow = new float3(x, y, z);
+            float3 coarse = new float3(x, y, z);
+            float3 noiseP = (p * math.lerp(0.47f, 1.31f, q)) + new float3(seedPhase, seedPhase * 0.37f, seedPhase * 0.19f);
+            float nx = ValueNoise3(noiseP + new float3(11.17f, 3.31f, 7.93f), stableSeed ^ 0x9E3779B9u);
+            float ny = ValueNoise3(noiseP + new float3(5.41f, 13.73f, 2.19f), stableSeed ^ 0x85EBCA6Bu);
+            float nz = ValueNoise3(noiseP + new float3(17.89f, 1.97f, 19.37f), stableSeed ^ 0xC2B2AE35u);
+            float3 perlinStyle = new float3(nx, ny * math.lerp(0.1f, 0.48f, q), nz);
+            float richBlend = Smooth01(math.saturate((q - 0.18f) * 1.2195122f));
+            float3 flow = math.lerp(coarse, coarse + perlinStyle, richBlend);
             return SafeNormalize(flow, new float3(0f, 0f, 1f)) * math.lerp(0.25f, 2.35f, q);
         }
 
@@ -1396,6 +1691,35 @@ namespace Hecton8.AI.Ecosystem
         {
             float triangle01 = 1f - math.abs((math.frac(phase * 0.15915494f + 0.25f) * 2f) - 1f);
             return (triangle01 * 2f) - 1f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ValueNoise3(float3 position, uint seed)
+        {
+            int3 cell = (int3)math.floor(position);
+            float3 f = math.frac(position);
+            float3 u = f * f * (3f - (2f * f));
+            float x00 = math.lerp(SignedHash(cell + new int3(0, 0, 0), seed), SignedHash(cell + new int3(1, 0, 0), seed), u.x);
+            float x10 = math.lerp(SignedHash(cell + new int3(0, 1, 0), seed), SignedHash(cell + new int3(1, 1, 0), seed), u.x);
+            float x01 = math.lerp(SignedHash(cell + new int3(0, 0, 1), seed), SignedHash(cell + new int3(1, 0, 1), seed), u.x);
+            float x11 = math.lerp(SignedHash(cell + new int3(0, 1, 1), seed), SignedHash(cell + new int3(1, 1, 1), seed), u.x);
+            float y0 = math.lerp(x00, x10, u.y);
+            float y1 = math.lerp(x01, x11, u.y);
+            return math.lerp(y0, y1, u.z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SignedHash(int3 cell, uint seed)
+        {
+            unchecked
+            {
+                uint h = seed ^ 0xA511E9B3u;
+                h ^= (uint)cell.x * 0x9E3779B9u;
+                h ^= (uint)cell.y * 0x85EBCA6Bu;
+                h ^= (uint)cell.z * 0xC2B2AE35u;
+                h = Hash32(h);
+                return ((h & 0x00FFFFFFu) * (1f / 8388607.5f)) - 1f;
+            }
         }
 
         public static unsafe bool TryUploadRenderMatricesToGpu(
@@ -1410,11 +1734,21 @@ namespace Hecton8.AI.Ecosystem
             if (safeCount <= 0 || destination.stride != UnsafeUtility.SizeOf<BoidMatrixDTO>())
                 return false;
 
-            NativeArray<BoidMatrixDTO> mapped = destination.LockBufferForWrite<BoidMatrixDTO>(0, safeCount);
-            void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-            void* src = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(source);
-            UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<BoidMatrixDTO>());
-            destination.UnlockBufferAfterWrite<BoidMatrixDTO>(safeCount);
+            bool locked = false;
+            try
+            {
+                NativeArray<BoidMatrixDTO> mapped = destination.LockBufferForWrite<BoidMatrixDTO>(0, safeCount);
+                locked = true;
+                void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                void* src = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(source);
+                UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<BoidMatrixDTO>());
+            }
+            finally
+            {
+                if (locked)
+                    destination.UnlockBufferAfterWrite<BoidMatrixDTO>(safeCount);
+            }
+
             return true;
         }
 
@@ -1424,24 +1758,26 @@ namespace Hecton8.AI.Ecosystem
         {
             if (destination == null || !source.IsCreated || source.Length <= 0)
                 return false;
-            if (destination.count < 1 || destination.stride != GraphicsBuffer.IndirectDrawIndexedArgs.size)
+            if (destination.count < 1 || destination.stride != UnsafeUtility.SizeOf<BoidIndirectArgsDTO>())
                 return false;
 
             BoidIndirectArgsDTO dto = source[0];
-            if (dto.InstanceCount == 0u || dto.IndexCountPerInstance == 0u)
+            if (dto.InstanceCount == 0u || dto.VertexCountPerInstance == 0u)
                 return false;
 
-            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> mapped =
-                destination.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            mapped[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            bool locked = false;
+            try
             {
-                indexCountPerInstance = dto.IndexCountPerInstance,
-                instanceCount = dto.InstanceCount,
-                startIndex = dto.StartIndex,
-                baseVertexIndex = dto.BaseVertexIndex,
-                startInstance = dto.StartInstance
-            };
-            destination.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                NativeArray<BoidIndirectArgsDTO> mapped = destination.LockBufferForWrite<BoidIndirectArgsDTO>(0, 1);
+                locked = true;
+                mapped[0] = dto;
+            }
+            finally
+            {
+                if (locked)
+                    destination.UnlockBufferAfterWrite<BoidIndirectArgsDTO>(1);
+            }
+
             return true;
         }
 
@@ -1452,20 +1788,32 @@ namespace Hecton8.AI.Ecosystem
         {
             if (destination == null || mesh == null || activeBoidCount <= 0)
                 return false;
-            if (destination.count < 1 || destination.stride != GraphicsBuffer.IndirectDrawIndexedArgs.size)
+            if (destination.count < 1 || destination.stride != UnsafeUtility.SizeOf<BoidIndirectArgsDTO>())
                 return false;
 
-            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> mapped =
-                destination.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            mapped[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            uint vertexCount = mesh.subMeshCount > 0 ? mesh.GetIndexCount(0) : 0u;
+            if (vertexCount == 0u)
+                return false;
+
+            bool locked = false;
+            try
             {
-                indexCountPerInstance = mesh.GetIndexCount(0),
-                instanceCount = (uint)activeBoidCount,
-                startIndex = mesh.GetIndexStart(0),
-                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
-                startInstance = 0u
-            };
-            destination.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                NativeArray<BoidIndirectArgsDTO> mapped = destination.LockBufferForWrite<BoidIndirectArgsDTO>(0, 1);
+                locked = true;
+                mapped[0] = new BoidIndirectArgsDTO
+                {
+                    VertexCountPerInstance = vertexCount,
+                    InstanceCount = (uint)activeBoidCount,
+                    StartVertex = mesh.GetIndexStart(0),
+                    StartInstance = 0u
+                };
+            }
+            finally
+            {
+                if (locked)
+                    destination.UnlockBufferAfterWrite<BoidIndirectArgsDTO>(1);
+            }
+
             return true;
         }
 
@@ -1473,7 +1821,6 @@ namespace Hecton8.AI.Ecosystem
             Material material,
             Bounds bounds,
             GraphicsBuffer indirectArgsBuffer,
-            MaterialPropertyBlock properties,
             int layer)
         {
             if (material == null || indirectArgsBuffer == null)
@@ -1486,7 +1833,7 @@ namespace Hecton8.AI.Ecosystem
                 indirectArgsBuffer,
                 0,
                 null,
-                properties,
+                null,
                 ShadowCastingMode.Off,
                 false,
                 layer);
@@ -1517,9 +1864,9 @@ namespace Hecton8.AI.Ecosystem
 
         internal static JobHandle WriteIndirectArgs(
             NativeArray<BoidIndirectArgsDTO> indirectArgs,
-            uint indexCountPerInstance,
-            uint startIndex,
-            uint baseVertexIndex,
+            uint vertexCountPerInstance,
+            uint startVertex,
+            uint startInstance,
             uint activeBoidCount,
             JobHandle dependsOn)
         {
@@ -1529,9 +1876,9 @@ namespace Hecton8.AI.Ecosystem
             var job = new WriteBoidIndirectArgsJob
             {
                 IndirectArgs = indirectArgs,
-                IndexCountPerInstance = indexCountPerInstance,
-                StartIndex = startIndex,
-                BaseVertexIndex = baseVertexIndex,
+                VertexCountPerInstance = vertexCountPerInstance,
+                StartVertex = startVertex,
+                StartInstance = startInstance,
                 ActiveBoidCount = activeBoidCount
             };
             return job.Schedule(dependsOn);
@@ -2054,6 +2401,274 @@ namespace Hecton8.AI.Ecosystem
         }
     }
 
+    /// <summary>
+    /// Cold-owned GPU bridge for SHINOBU boid matrices and procedural indirect arguments.
+    /// </summary>
+    public sealed class ShinobuBoidGpuUploadDispatcher : IDisposable
+    {
+        private static readonly int _ShinobuBoidMatricesId = Shader.PropertyToID("_H8ShinobuBoidMatrices");
+        private static readonly int _ShinobuBoidCustomDataId = Shader.PropertyToID("_H8ShinobuBoidCustomData");
+        private static readonly int _ShinobuBoidActiveCountId = Shader.PropertyToID("_H8ShinobuBoidActiveCount");
+
+        private GraphicsBuffer _matrixBufferA;
+        private GraphicsBuffer _matrixBufferB;
+        private GraphicsBuffer _customDataBufferA;
+        private GraphicsBuffer _customDataBufferB;
+        private GraphicsBuffer _argsBufferA;
+        private GraphicsBuffer _argsBufferB;
+        private int _capacity;
+        private int _activeCount;
+        private int _writeIndex;
+        private int _activeIndex = -1;
+
+        /// <summary>
+        /// Allocates or validates double-buffered GPU resources for the requested boid capacity.
+        /// </summary>
+        public bool EnsureGraphicsResources(int requiredCapacity)
+        {
+            int capacity = math.max(1, requiredCapacity);
+            if (_capacity >= capacity &&
+                IsValid(_matrixBufferA, _capacity, UnsafeUtility.SizeOf<BoidMatrixDTO>()) &&
+                IsValid(_matrixBufferB, _capacity, UnsafeUtility.SizeOf<BoidMatrixDTO>()) &&
+                IsValid(_customDataBufferA, _capacity, UnsafeUtility.SizeOf<float4>()) &&
+                IsValid(_customDataBufferB, _capacity, UnsafeUtility.SizeOf<float4>()) &&
+                IsValid(_argsBufferA, 1, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>()) &&
+                IsValid(_argsBufferB, 1, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>()))
+            {
+                return true;
+            }
+
+            ReleaseGraphicsResources();
+            _capacity = NextPowerOfTwo(capacity);
+            _matrixBufferA = CreateStructuredLockBuffer<BoidMatrixDTO>(_capacity); // COLD ALLOC: GraphicsBuffer[BoidMatrixDTO A] - double-buffered SHINOBU matrix upload - owner: SHINOBU_105
+            _matrixBufferB = CreateStructuredLockBuffer<BoidMatrixDTO>(_capacity); // COLD ALLOC: GraphicsBuffer[BoidMatrixDTO B] - double-buffered SHINOBU matrix upload - owner: SHINOBU_105
+            _customDataBufferA = CreateStructuredLockBuffer<float4>(_capacity); // COLD ALLOC: GraphicsBuffer[float4 custom A] - double-buffered SHINOBU shader scalar upload - owner: SHINOBU_105
+            _customDataBufferB = CreateStructuredLockBuffer<float4>(_capacity); // COLD ALLOC: GraphicsBuffer[float4 custom B] - double-buffered SHINOBU shader scalar upload - owner: SHINOBU_105
+            _argsBufferA = CreateIndirectArgsBuffer(); // COLD ALLOC: GraphicsBuffer[BoidIndirectArgsDTO A] - DrawProceduralIndirect args - owner: SHINOBU_105
+            _argsBufferB = CreateIndirectArgsBuffer(); // COLD ALLOC: GraphicsBuffer[BoidIndirectArgsDTO B] - DrawProceduralIndirect args - owner: SHINOBU_105
+            _writeIndex = 0;
+            _activeIndex = -1;
+            return IsValid(_matrixBufferA, _capacity, UnsafeUtility.SizeOf<BoidMatrixDTO>()) &&
+                   IsValid(_matrixBufferB, _capacity, UnsafeUtility.SizeOf<BoidMatrixDTO>()) &&
+                   IsValid(_customDataBufferA, _capacity, UnsafeUtility.SizeOf<float4>()) &&
+                   IsValid(_customDataBufferB, _capacity, UnsafeUtility.SizeOf<float4>()) &&
+                   IsValid(_argsBufferA, 1, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>()) &&
+                   IsValid(_argsBufferB, 1, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>());
+        }
+
+        /// <summary>
+        /// Copies Vault-produced matrices, scalar lanes, and indirect arguments into the inactive GPU buffer pair.
+        /// </summary>
+        public unsafe bool UploadFromVault(
+            NativeArray<BoidMatrixDTO> matrices,
+            NativeArray<float4> customData,
+            NativeArray<BoidIndirectArgsDTO> indirectArgs)
+        {
+            if (!matrices.IsCreated ||
+                !customData.IsCreated ||
+                !indirectArgs.IsCreated ||
+                indirectArgs.Length <= 0)
+            {
+                return false;
+            }
+
+            BoidIndirectArgsDTO args = indirectArgs[0];
+            int requested = math.min((int)args.InstanceCount, math.min(matrices.Length, customData.Length));
+            if (requested <= 0 || args.VertexCountPerInstance == 0u || !EnsureGraphicsResources(requested))
+                return false;
+
+            GraphicsBuffer matrixTarget = _writeIndex == 0 ? _matrixBufferA : _matrixBufferB;
+            GraphicsBuffer customTarget = _writeIndex == 0 ? _customDataBufferA : _customDataBufferB;
+            GraphicsBuffer argsTarget = _writeIndex == 0 ? _argsBufferA : _argsBufferB;
+            int writeCount = math.clamp(requested, 0, math.min(_capacity, math.min(matrixTarget.count, customTarget.count)));
+            if (writeCount <= 0)
+                return false;
+
+            bool matrixLocked = false;
+            try
+            {
+                NativeArray<BoidMatrixDTO> mappedMatrices = matrixTarget.LockBufferForWrite<BoidMatrixDTO>(0, writeCount);
+                matrixLocked = true;
+                void* matrixDst = NativeArrayUnsafeUtility.GetUnsafePtr(mappedMatrices);
+                void* matrixSrc = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(matrices);
+                UnsafeUtility.MemCpy(matrixDst, matrixSrc, (long)writeCount * UnsafeUtility.SizeOf<BoidMatrixDTO>());
+            }
+            finally
+            {
+                if (matrixLocked)
+                    matrixTarget.UnlockBufferAfterWrite<BoidMatrixDTO>(writeCount);
+            }
+
+            bool customLocked = false;
+            try
+            {
+                NativeArray<float4> mappedCustom = customTarget.LockBufferForWrite<float4>(0, writeCount);
+                customLocked = true;
+                void* customDst = NativeArrayUnsafeUtility.GetUnsafePtr(mappedCustom);
+                void* customSrc = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(customData);
+                UnsafeUtility.MemCpy(customDst, customSrc, (long)writeCount * UnsafeUtility.SizeOf<float4>());
+            }
+            finally
+            {
+                if (customLocked)
+                    customTarget.UnlockBufferAfterWrite<float4>(writeCount);
+            }
+
+            args.InstanceCount = (uint)writeCount;
+            bool argsLocked = false;
+            try
+            {
+                NativeArray<BoidIndirectArgsDTO> mappedArgs = argsTarget.LockBufferForWrite<BoidIndirectArgsDTO>(0, 1);
+                argsLocked = true;
+                mappedArgs[0] = args;
+            }
+            finally
+            {
+                if (argsLocked)
+                    argsTarget.UnlockBufferAfterWrite<BoidIndirectArgsDTO>(1);
+            }
+
+            _activeIndex = _writeIndex;
+            _activeCount = writeCount;
+            _writeIndex ^= 1;
+            PublishBuffers(matrixTarget, customTarget, writeCount);
+            return true;
+        }
+
+        /// <summary>
+        /// Issues a single procedural indirect draw using the active buffer pair.
+        /// </summary>
+        public bool TryDraw(
+            Material material,
+            Bounds bounds,
+            MeshTopology topology = MeshTopology.Triangles,
+            int layer = 0,
+            ShadowCastingMode shadowCastingMode = ShadowCastingMode.Off)
+        {
+            if (material == null ||
+                !TryGetActiveBuffers(out GraphicsBuffer matrixBuffer, out GraphicsBuffer customDataBuffer, out GraphicsBuffer argsBuffer, out int activeCount))
+            {
+                return false;
+            }
+
+            PublishBuffers(matrixBuffer, customDataBuffer, activeCount);
+            Graphics.DrawProceduralIndirect(
+                material,
+                bounds,
+                topology,
+                argsBuffer,
+                0,
+                null,
+                null,
+                shadowCastingMode,
+                false,
+                layer);
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves the active GPU buffers for external render-graph or material binding code.
+        /// </summary>
+        public bool TryGetActiveBuffers(
+            out GraphicsBuffer matrixBuffer,
+            out GraphicsBuffer customDataBuffer,
+            out GraphicsBuffer argsBuffer,
+            out int activeCount)
+        {
+            matrixBuffer = null;
+            customDataBuffer = null;
+            argsBuffer = null;
+            activeCount = 0;
+            if (_activeIndex < 0)
+                return false;
+
+            matrixBuffer = _activeIndex == 0 ? _matrixBufferA : _matrixBufferB;
+            customDataBuffer = _activeIndex == 0 ? _customDataBufferA : _customDataBufferB;
+            argsBuffer = _activeIndex == 0 ? _argsBufferA : _argsBufferB;
+            activeCount = math.max(0, math.min(_activeCount, matrixBuffer != null ? matrixBuffer.count : 0));
+            return IsValid(matrixBuffer, 1, UnsafeUtility.SizeOf<BoidMatrixDTO>()) &&
+                   IsValid(customDataBuffer, 1, UnsafeUtility.SizeOf<float4>()) &&
+                   IsValid(argsBuffer, 1, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>());
+        }
+
+        /// <summary>
+        /// Releases all cold-owned GPU resources.
+        /// </summary>
+        public void Dispose()
+        {
+            ReleaseGraphicsResources();
+        }
+
+        private static void PublishBuffers(GraphicsBuffer matrixBuffer, GraphicsBuffer customDataBuffer, int activeCount)
+        {
+            Shader.SetGlobalBuffer(_ShinobuBoidMatricesId, matrixBuffer);
+            Shader.SetGlobalBuffer(_ShinobuBoidCustomDataId, customDataBuffer);
+            Shader.SetGlobalInt(_ShinobuBoidActiveCountId, math.max(0, activeCount));
+        }
+
+        private void ReleaseGraphicsResources()
+        {
+            ReleaseBuffer(ref _matrixBufferA);
+            ReleaseBuffer(ref _matrixBufferB);
+            ReleaseBuffer(ref _customDataBufferA);
+            ReleaseBuffer(ref _customDataBufferB);
+            ReleaseBuffer(ref _argsBufferA);
+            ReleaseBuffer(ref _argsBufferB);
+            _capacity = 0;
+            _activeCount = 0;
+            _writeIndex = 0;
+            _activeIndex = -1;
+        }
+
+        private static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : struct
+        {
+            return new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                math.max(1, count),
+                UnsafeUtility.SizeOf<T>());
+        }
+
+        private static GraphicsBuffer CreateIndirectArgsBuffer()
+        {
+            return new GraphicsBuffer(
+                GraphicsBuffer.Target.IndirectArguments,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                1,
+                UnsafeUtility.SizeOf<BoidIndirectArgsDTO>());
+        }
+
+        private static bool IsValid(GraphicsBuffer buffer, int count, int stride)
+        {
+            return buffer != null &&
+                   buffer.IsValid() &&
+                   buffer.count >= count &&
+                   buffer.stride == stride;
+        }
+
+        private static void ReleaseBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Dispose();
+            buffer = null;
+        }
+
+        private static int NextPowerOfTwo(int value)
+        {
+            int v = math.max(1, value);
+            v--;
+            v |= v >> 1;
+            v |= v >> 2;
+            v |= v >> 4;
+            v |= v >> 8;
+            v |= v >> 16;
+            v++;
+            return v;
+        }
+    }
+
     internal static class ShinobuEcosystemLayoutManifest
     {
         private static bool _verified;
@@ -2073,7 +2688,7 @@ namespace Hecton8.AI.Ecosystem
             AssertSize<BoidStateDTO>(32);
             AssertSize<BoidTargetDTO>(32);
             AssertSize<BoidMatrixDTO>(64);
-            AssertSize<BoidIndirectArgsDTO>(32);
+            AssertSize<BoidIndirectArgsDTO>(16);
             AssertSize<SwarmSpeciesProfileDTO>(32);
             AssertSize<AbyssalFlowTensorDTO>(64);
             AssertSize<AmbientEntityAupDTO>(64);
@@ -2098,7 +2713,10 @@ namespace Hecton8.AI.Ecosystem
             AssertOffset<BoidMatrixDTO>(nameof(BoidMatrixDTO.C1), 16);
             AssertOffset<BoidMatrixDTO>(nameof(BoidMatrixDTO.C2), 32);
             AssertOffset<BoidMatrixDTO>(nameof(BoidMatrixDTO.C3), 48);
+            AssertOffset<BoidIndirectArgsDTO>(nameof(BoidIndirectArgsDTO.VertexCountPerInstance), 0);
             AssertOffset<BoidIndirectArgsDTO>(nameof(BoidIndirectArgsDTO.InstanceCount), 4);
+            AssertOffset<BoidIndirectArgsDTO>(nameof(BoidIndirectArgsDTO.StartVertex), 8);
+            AssertOffset<BoidIndirectArgsDTO>(nameof(BoidIndirectArgsDTO.StartInstance), 12);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.SectorHash), 0);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.HerbivoreMass), 4);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.CarnivoreMass), 8);
@@ -2180,17 +2798,13 @@ namespace Hecton8.AI.Ecosystem
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct BoidIndirectArgsDTO
     {
-        [FieldOffset(0)] public uint IndexCountPerInstance;
+        [FieldOffset(0)] public uint VertexCountPerInstance;
         [FieldOffset(4)] public uint InstanceCount;
-        [FieldOffset(8)] public uint StartIndex;
-        [FieldOffset(12)] public uint BaseVertexIndex;
-        [FieldOffset(16)] public uint StartInstance;
-        [FieldOffset(20)] public uint Pad0;
-        [FieldOffset(24)] public uint Pad1;
-        [FieldOffset(28)] public uint Pad2;
+        [FieldOffset(8)] public uint StartVertex;
+        [FieldOffset(12)] public uint StartInstance;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -2479,9 +3093,9 @@ namespace Hecton8.AI.Ecosystem
     internal struct WriteBoidIndirectArgsJob : IJob
     {
         [NoAlias] public NativeArray<BoidIndirectArgsDTO> IndirectArgs;
-        public uint IndexCountPerInstance;
-        public uint StartIndex;
-        public uint BaseVertexIndex;
+        public uint VertexCountPerInstance;
+        public uint StartVertex;
+        public uint StartInstance;
         public uint ActiveBoidCount;
 
         public void Execute()
@@ -2491,14 +3105,10 @@ namespace Hecton8.AI.Ecosystem
 
             IndirectArgs[0] = new BoidIndirectArgsDTO
             {
-                IndexCountPerInstance = IndexCountPerInstance,
+                VertexCountPerInstance = VertexCountPerInstance,
                 InstanceCount = ActiveBoidCount,
-                StartIndex = StartIndex,
-                BaseVertexIndex = BaseVertexIndex,
-                StartInstance = 0u,
-                Pad0 = 0u,
-                Pad1 = 0u,
-                Pad2 = 0u
+                StartVertex = StartVertex,
+                StartInstance = StartInstance
             };
         }
     }
@@ -2586,7 +3196,7 @@ namespace Hecton8.AI.Ecosystem
         [ReadOnly, NoAlias] public NativeArray<AmbientEntityAupDTO> AupSnapshot;
         [NoAlias] public NativeArray<int> BucketHeads;
         [NoAlias] public NativeArray<int> BucketNext;
-        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Counters;
+        [NoAlias] public NativeArray<int> Counters;
         public int MaxChainSteps;
         public int Count;
 
@@ -2923,7 +3533,7 @@ namespace Hecton8.AI.Ecosystem
         [ReadOnly, NoAlias] public NativeArray<int> BucketHeads;
         [ReadOnly, NoAlias] public NativeArray<int> BucketNext;
         [NoAlias] public NativeArray<ShinobuSpatialHashDebugCell> DebugCells;
-        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Counters;
+        [NoAlias] public NativeArray<int> Counters;
         public float CellSizeMeters;
         public int Count;
         public int Capacity;
@@ -2993,7 +3603,7 @@ namespace Hecton8.AI.Ecosystem
     {
         [ReadOnly, NoAlias] public NativeArray<AmbientEntityAupDTO> Aups;
         [ReadOnly, NoAlias] public NativeArray<EcosystemSectorDTO> Sectors;
-        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Counters;
+        [NoAlias] public NativeArray<int> Counters;
         public int Count;
         public int SectorCount;
 
@@ -3035,7 +3645,7 @@ namespace Hecton8.AI.Ecosystem
         [NoAlias] public NativeArray<EcosystemSectorDTO> Sectors;
         [NoAlias] public NativeArray<int> SectorBucketHeads;
         [NoAlias] public NativeArray<int> SectorEntityLinks;
-        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Counters;
+        [NoAlias] public NativeArray<int> Counters;
         public AbsoluteUniversePosition CenterAup;
         public ShinobuEcosystemTuning Tuning;
         public float GlobalQualityWeight;

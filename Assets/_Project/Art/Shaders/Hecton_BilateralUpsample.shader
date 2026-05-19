@@ -83,6 +83,13 @@ Shader "Hidden/Hecton8/BilateralUpsample"
                 return isfinite(value) ? saturate(value) : 0.0;
             }
 
+            float SmoothRange01(float edge0, float edge1, float value)
+            {
+                float range = max(edge1 - edge0, 0.0001);
+                float t = saturate((value - edge0) * rcp(range));
+                return t * t * (3.0 - 2.0 * t);
+            }
+
             float3 SampleColor(float2 uv)
             {
                 return Finite3(SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(uv)).rgb, float3(0.0, 0.0, 0.0));
@@ -226,8 +233,9 @@ Shader "Hidden/Hecton8/BilateralUpsample"
                     maxColor = max(maxColor, tapColor);
                 }
 
+                float diagonalWeight01 = SmoothRange01(0.25, 0.85, Finite01(_H8OverkillParams.w));
                 [branch]
-                if (_H8OverkillParams.w > 0.35)
+                if (diagonalWeight01 > 0.001)
                 {
                     float2 diagOffsets[4] = {
                         float2( 1.0,  1.0),
@@ -242,7 +250,7 @@ Shader "Hidden/Hecton8/BilateralUpsample"
                         float2 tapUv = uv + texel * diagOffsets[d];
                         float3 tapColor = SampleColor(tapUv);
                         float tapDepth = LinearDepthSafe(tapUv);
-                        float weight = ReconstructionWeight(tapColor, tapDepth, centerColor, centerDepth, diagOffsets[d]) * 0.72;
+                        float weight = ReconstructionWeight(tapColor, tapDepth, centerColor, centerDepth, diagOffsets[d]) * (0.72 * diagonalWeight01);
                         sum += tapColor * weight;
                         weightSum += weight;
                         minColor = min(minColor, tapColor);

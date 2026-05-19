@@ -173,7 +173,7 @@ Static/filesystem evidence:
 | Payload surface | Current state |
 |---|---:|
 | `Assets/_SourceData` | exists, 0 files |
-| `Assets/StreamingAssets` | missing |
+| `Assets/StreamingAssets` | exists; current filesystem scan finds only `signal_tuning_profiles.csv`; authoritative `Hecton8/DataMonolith/static_data.h8bin` is absent |
 | `AddressableAssetsData` | missing at repo root scan path |
 | `Assets/_ThirdParty` | exists, 0 files |
 

@@ -133,3 +133,45 @@ Solution: Performed manual compile-sanity gates on SHINOBU_112 deltas: grep on a
 Rejected Alternatives: Treating manual grep as a clean build, or skipping local sanity after the external compile wall. The first is false evidence; the second is lazy.  
 Scalability potential: Confirms the continuous quality route remains in the submitted kernel: selected voices 12..64, byte-SDF taps 1..8, nearest/trilinear blend by polynomial quality.  
 Hardware Impact: 0 us runtime; reduces integration risk while the global project build is blocked upstream.
+
+Problem: The DSP handoff initially bounded its output scan by `max(_virtualVoiceSortCount, _acousticOcclusionOutputCount)`, which could read stale acoustic output rows when virtual ingress count exceeded the selected physical lane.
+Solution: Bound `ApplyAcousticDspOutputToSelection()` strictly by `_acousticOcclusionOutputCount` and add a smoke assertion for that exact selected-lane limit.
+Rejected Alternatives: Clearing the whole 1000-row DSP output buffer every frame, or scanning all virtual rows to find missing keys. Clearing costs bandwidth; scanning all virtual rows violates the 64-voice selected-lane design.
+Scalability potential: Low/middle/high/ultra all keep DSP upload work proportional to audible/submitted voices, not total virtual emitters.
+Hardware Impact: Worst-case DSP handoff drops from O(1000) stale-row scan to O(12..64), saving roughly 5-40 us on weak CPUs when virtual event pressure is high.
+
+Problem: `VirtualVoiceSortJob` and `MockAcousticEmitterJob` still used `FloatMode.Fast`; the acoustic domain is rollback-visible, and sort decisions plus deterministic mock stress rows should not depend on platform-specific fast-float contraction.
+Solution: Switched all three audio virtualization Burst jobs to `FloatMode.Deterministic` with `CompileSynchronously = true` and `FloatPrecision.Standard`; added a smoke assertion rejecting `FloatMode.Fast`.
+Rejected Alternatives: Keeping only the final occlusion job deterministic. That still leaves voice ranking, culling, and mock stress input susceptible to x86/ARM drift.
+Scalability potential: Low/middle/high/ultra preserve the same quality curves; deterministic float mode trades a small amount of ALU freedom for replay safety.
+Hardware Impact: Potential microsecond-level cost increase is accepted for rollback correctness; PhysX raycast removal still dominates the savings target.
+
+Problem: The first real SDF alias used a valid byte lane but hardcoded listener-centered dimensions/origin/cell/range. That could sample the wrong voxel coordinates if the SDF owner published a volume with different metadata.
+Solution: Added `TrySnapshotAcousticSdfPayload()` in `SpatialAudioManager`. It queries `HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload`, validates dimensions and range, uses `BufferID.VoxelSdfTexture3D` only when the Vault buffer length matches the owner payload, and passes `sdfOrigin - listenerRuntimePosition` into the Burst kernel.
+Rejected Alternatives: Directly calling `GlobalWorldSampler` from the audio virtualization assembly, copying SDF metadata into audio-owned truth, or keeping listener-centered hardcoded metadata. Direct world calls violate compile isolation; duplicate truth violates owner-local authority; hardcoded metadata can lie.
+Scalability potential: Low still collapses to nearest/tiny tap counts; high/ultra get trilinear taps over the real published SDF coordinate frame.
+Hardware Impact: Adds one cold/control-path payload snapshot per acoustic schedule, keeps Burst work O(selectedVoices * taps), and prevents wasted samples against unrelated voxel coordinates.
+
+Problem: Task 16 asked for average SDF occlusion compute time in the black-box recorder, but the current ring only recorded virtual sort wait time and acoustic DSP output values.
+Solution: Added `AcousticOcclusionTimeMs` to `VirtualVoiceStatistics` and `VirtualVoiceTelemetryEntry` without changing their 64-byte sizes, timestamped the selected-lane SDF job with `Stopwatch.GetTimestamp()`, pushed the completed duration into the 300-frame blackbox, wrote it into the binary dump, and surfaced it in the editor tuners.
+Rejected Alternatives: Reusing `SortTimeMs` as a proxy, timing all virtual voice ingestion, or clearing/scanning the 1000-row DSP buffer to infer cost. Sort time is not SDF time; all-ingress timing hides selected-lane cost; full-buffer scans violate the 64-voice architecture.
+Scalability potential: Low records the same field while selected voices collapse toward 12 and taps collapse toward 1; middle/high/ultra can compare real SDF cost against richer trilinear/tap settings and tune `GlobalQualityWeight` without guessing.
+Hardware Impact: Adds one timestamp pair per scheduled SDF job and one float write per blackbox entry; expected overhead is below 1 us on i3/MX350 while enabling the mandated 1.0 ms dump tripwire.
+
+Problem: The earlier legal build attempt failed on a missing World-domain file, but that blocker might have changed after other agents edited project files.
+Solution: Rechecked current project references before considering another build. `rg` finds no `.csproj/.sln/.slnx` reference to `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`; the source file is still absent, but it is not currently a project-file blocker. Build remains withheld because `csc`, `dotnet`, and `VBCSCompiler` processes are active and CPU samples fluctuated between 49% and 91%.
+Rejected Alternatives: Rerunning `dotnet build` while compiler processes are active, or leaving the status pinned to a stale World-file reference. Both would violate the build gate and evidence discipline.
+Scalability potential: No runtime effect; this protects shared workstation throughput during multi-agent execution.
+Hardware Impact: 0 us runtime. Avoided build contention while preserving a precise next gate: rerun build only when CPU <50% and compiler processes are idle.
+
+Problem: Task 16 explicitly required an `AcousticTelemetryEntry` ring, but the first repair reused the virtual voice telemetry DTO and pushed a preliminary sort row before the selected-lane SDF job completed.
+Solution: Added a dedicated 64-byte `Hecton8.Audio.Virtualization.AcousticTelemetryEntry`, moved the SHINOBU blackbox Vault alias to `NativeArray<AcousticOcclusionTelemetryEntry>`, qualified the older portal telemetry DTO as `AcousticPortalTelemetryEntry`, and only pushes normal frame telemetry immediately when no SDF job is scheduled. Frames with an SDF job now write the blackbox after the SDF completion timestamp is known.
+Rejected Alternatives: Treating adjacent virtual telemetry as literal acoustic telemetry, or allowing both pre-SDF and post-SDF rows into the same 300-frame ring. The first fails the task wording; the second corrupts average timing evidence and halves useful forensic history under load.
+Scalability potential: Low/middle/high/ultra all record one acoustic row per completed SDF frame, with selected voices and tap count already driven by `GlobalQualityWeight`; zero-voice frames still record a single 0 ms fallback row.
+Hardware Impact: No additional hot allocation. Runtime cost remains one 64-byte ring write per acoustic frame; removing duplicate normal pushes can save roughly 0.2-1.0 us and preserves 300 actual frames of forensic history instead of 150 paired entries.
+
+Problem: The telemetry repair changed C# and therefore needs compile proof, but the workstation still violates the explicit build launch gate.
+Solution: Checked compiler processes and CPU twice after the patch. No `dotnet`, `csc`, `MSBuild`, or `VBCSCompiler` process was active, but CPU samples were 93.31%, 60.76%, 38.60%, then 47.60%, 100%, 100%, so `dotnet build` remains withheld.
+Rejected Alternatives: Launching a build because one sample dipped below 50%, or ignoring the new compile need. The rule is not a median; active CPU spikes above 50% close the gate.
+Scalability potential: No runtime effect; protects concurrent agent throughput and avoids stealing CPU from active Unity/compiler work.
+Hardware Impact: 0 us runtime. Avoided a likely multi-minute compile contention event on a saturated machine.

@@ -185,8 +185,8 @@ namespace Hecton8.Data
         [FieldOffset(40)] public float BaseQuality;
         [FieldOffset(44)] public float HeatCapacity;
         [FieldOffset(48)] public uint YieldHash;
-        [FieldOffset(52)] public int NameUtf8Offset;
-        [FieldOffset(56)] public int DescriptionUtf8Offset;
+        [FieldOffset(52)] public uint NameUtf8Offset;
+        [FieldOffset(56)] public uint DescriptionUtf8Offset;
         [FieldOffset(60)] public uint NameUtf8ByteLength;
         [FieldOffset(64)] public uint DescriptionUtf8ByteLength;
         [FieldOffset(68)] public ushort MaxStack;
@@ -222,10 +222,10 @@ namespace Hecton8.Data
         [FieldOffset(8)] public uint MateMask;
         [FieldOffset(12)] public uint BiomeMask;
         [FieldOffset(16)] public H8CreatureGenomeTraitBlock Genome;
-        [FieldOffset(48)] public int DisplayNameUtf8Offset;
+        [FieldOffset(48)] public uint DisplayNameUtf8Offset;
         [FieldOffset(52)] public uint LootTableHash;
         [FieldOffset(56)] public uint Flags;
-        [FieldOffset(60)] public uint Reserved0;
+        [FieldOffset(60)] public uint DisplayNameUtf8ByteLength;
     }
 
     /// <summary>
@@ -246,10 +246,10 @@ namespace Hecton8.Data
         [FieldOffset(36)] public float LightScatterR;
         [FieldOffset(40)] public float LightScatterG;
         [FieldOffset(44)] public float LightScatterB;
-        [FieldOffset(48)] public int DisplayNameUtf8Offset;
+        [FieldOffset(48)] public uint DisplayNameUtf8Offset;
         [FieldOffset(52)] public uint HeatmapId;
         [FieldOffset(56)] public uint RadiationFieldHash;
-        [FieldOffset(60)] public uint Reserved0;
+        [FieldOffset(60)] public uint DisplayNameUtf8ByteLength;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -330,9 +330,9 @@ namespace Hecton8.Data
     public struct H8AudioClipRegistryRecord
     {
         [FieldOffset(0)] public uint EventHash;
-        [FieldOffset(4)] public int AddressableKeyUtf8Offset;
+        [FieldOffset(4)] public uint AddressableKeyUtf8Offset;
         [FieldOffset(8)] public uint BankHash;
-        [FieldOffset(12)] public uint Reserved0;
+        [FieldOffset(12)] public uint AddressableKeyUtf8ByteLength;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -409,14 +409,14 @@ namespace Hecton8.Data
         [FieldOffset(20)] public float PowerRequirement;
         [FieldOffset(24)] public float BuildCostScalar;
         [FieldOffset(28)] public uint RecipeHash;
-        [FieldOffset(32)] public int DisplayNameUtf8Offset;
+        [FieldOffset(32)] public uint DisplayNameUtf8Offset;
         [FieldOffset(36)] public uint PortMask0;
         [FieldOffset(40)] public uint PortMask1;
         [FieldOffset(44)] public uint PortMask2;
         [FieldOffset(48)] public uint PortMask3;
-        [FieldOffset(52)] public uint Reserved0;
-        [FieldOffset(56)] public uint Reserved1;
-        [FieldOffset(60)] public uint Reserved2;
+        [FieldOffset(52)] public uint DisplayNameUtf8ByteLength;
+        [FieldOffset(56)] public uint Reserved0;
+        [FieldOffset(60)] public uint Reserved1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -454,9 +454,9 @@ namespace Hecton8.Data
     public struct H8SopErrorRecord
     {
         [FieldOffset(0)] public uint ErrorHash;
-        [FieldOffset(4)] public int MessageUtf8Offset;
+        [FieldOffset(4)] public uint MessageUtf8Offset;
         [FieldOffset(8)] public uint Severity;
-        [FieldOffset(12)] public uint Reserved0;
+        [FieldOffset(12)] public uint MessageUtf8ByteLength;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -495,8 +495,8 @@ namespace Hecton8.Data
     public struct H8EconomyRecord
     {
         [FieldOffset(0)] public uint HashId;
-        [FieldOffset(4)] public int NameUtf8Offset;
-        [FieldOffset(8)] public int DescriptionUtf8Offset;
+        [FieldOffset(4)] public uint NameUtf8Offset;
+        [FieldOffset(8)] public uint DescriptionUtf8Offset;
         [FieldOffset(12)] public float BasePrice;
         [FieldOffset(16)] public float Scarcity01;
         [FieldOffset(20)] public float Demand01;
@@ -516,8 +516,8 @@ namespace Hecton8.Data
     public struct H8PhysicsConstantsRecord
     {
         [FieldOffset(0)] public uint HashId;
-        [FieldOffset(4)] public int NameUtf8Offset;
-        [FieldOffset(8)] public int DescriptionUtf8Offset;
+        [FieldOffset(4)] public uint NameUtf8Offset;
+        [FieldOffset(8)] public uint DescriptionUtf8Offset;
         [FieldOffset(12)] public uint NameUtf8ByteLength;
         [FieldOffset(16)] public uint DescriptionUtf8ByteLength;
         [FieldOffset(20)] public float MassKg;
@@ -554,12 +554,13 @@ namespace Hecton8.Data
     /// <summary>
     /// Cold lookup alias from a static-data authored hash to a LocData UTF-8 slice.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 12)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct H8StaticLocalizationReference
     {
         [FieldOffset(0)] public uint KeyHash;
-        [FieldOffset(4)] public int Utf8Offset;
+        [FieldOffset(4)] public uint Utf8Offset;
         [FieldOffset(8)] public int ByteLength;
+        [FieldOffset(12)] public uint Reserved0;
     }
 
     /// <summary>
@@ -611,7 +612,9 @@ namespace Hecton8.Data
                    IsAligned16(UnsafeUtility.SizeOf<H8SectorPageRecord>()) &&
                    UnsafeUtility.SizeOf<H8EconomyRecord>() == H8DataLayoutConstants.EconomyRecordSize &&
                    UnsafeUtility.SizeOf<H8PhysicsConstantsRecord>() == H8DataLayoutConstants.PhysicsConstantsRecordSize &&
-                   UnsafeUtility.SizeOf<H8DataMonolithTelemetryEntry>() == H8DataLayoutConstants.TelemetryEntrySize;
+                   UnsafeUtility.SizeOf<H8DataMonolithTelemetryEntry>() == H8DataLayoutConstants.TelemetryEntrySize &&
+                   IsAligned16(UnsafeUtility.SizeOf<H8StaticLocalizationReference>()) &&
+                   UnsafeUtility.SizeOf<H8StaticLocalizationCursor>() == 8;
         }
 
         private static bool IsAligned16(int byteCount)

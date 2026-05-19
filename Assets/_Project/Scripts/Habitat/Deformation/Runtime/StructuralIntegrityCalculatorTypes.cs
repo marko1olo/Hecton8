@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Burst;
@@ -146,24 +147,32 @@ namespace Hecton8.Habitat.Deformation
     {
         public static bool Validate()
         {
-            return UnsafeUtility.SizeOf<IntegrityStateDTO>() == 32 &&
+            bool sizeValid =
+                   UnsafeUtility.SizeOf<IntegrityStateDTO>() == 32 &&
                    UnsafeUtility.SizeOf<StructuralTuningDTO>() == 96 &&
                    UnsafeUtility.SizeOf<StructuralTelemetryEntry>() == 64 &&
                    UnsafeUtility.SizeOf<StructuralMaterialStrengthEntry>() == 16 &&
-                   UnsafeUtility.SizeOf<BaseIntegrityEventPayload>() == 64 &&
+                   UnsafeUtility.SizeOf<BaseIntegrityEventPayload>() == 64;
+#if UNITY_EDITOR
+            return sizeValid &&
                    Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.NodeHash)) == 0 &&
                    Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.BaseStrength)) == 4 &&
                    Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.CurrentStress)) == 8 &&
                    Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.AppliedPressure)) == 12 &&
                    Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.Flags)) == 16 &&
                    Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.BucklingScalar)) == 20;
+#else
+            return sizeValid;
+#endif
         }
 
+#if UNITY_EDITOR
         private static int Offset<T>(string fieldName)
         {
             System.Reflection.FieldInfo field = typeof(T).GetField(fieldName);
             return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
+#endif
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -283,11 +292,14 @@ namespace Hecton8.Habitat.Deformation
         {
             if (Materials.IsCreated && Materials.Length > 0)
             {
-                for (int i = 0; i < Materials.Length; i++)
+                int start = (int)(hash % (uint)Materials.Length);
+                for (int probe = 0; probe < Materials.Length; probe++)
                 {
-                    StructuralMaterialStrengthEntry entry = Materials[i];
+                    StructuralMaterialStrengthEntry entry = Materials[WrapIndex(start + probe, Materials.Length)];
                     if (entry.MaterialHash == hash && math.isfinite(entry.BaseStrength) && entry.BaseStrength > 0f)
                         return entry;
+                    if (entry.MaterialHash == 0u)
+                        break;
                 }
             }
 
@@ -296,6 +308,11 @@ namespace Hecton8.Habitat.Deformation
             if (fallbackSlot == 1)
                 return new StructuralMaterialStrengthEntry { MaterialHash = hash, BaseStrength = 1220f, BucklingStart01 = 0.72f, PressureScale = 1f };
             return new StructuralMaterialStrengthEntry { MaterialHash = hash, BaseStrength = 2100f, BucklingStart01 = 0.82f, PressureScale = 0.85f };
+        }
+
+        private static int WrapIndex(int value, int length)
+        {
+            return (length & (length - 1)) == 0 ? (value & (length - 1)) : (value % length);
         }
     }
 
@@ -348,17 +365,25 @@ namespace Hecton8.Habitat.Deformation
 
         private StructuralMaterialStrengthEntry ResolveMaterial(uint hash)
         {
-            if (!Materials.IsCreated)
+            if (!Materials.IsCreated || Materials.Length == 0)
                 return default;
 
-            for (int i = 0; i < Materials.Length; i++)
+            int start = (int)(hash % (uint)Materials.Length);
+            for (int probe = 0; probe < Materials.Length; probe++)
             {
-                StructuralMaterialStrengthEntry entry = Materials[i];
+                StructuralMaterialStrengthEntry entry = Materials[WrapIndex(start + probe, Materials.Length)];
                 if (entry.MaterialHash == hash)
                     return entry;
+                if (entry.MaterialHash == 0u)
+                    break;
             }
 
             return default;
+        }
+
+        private static int WrapIndex(int value, int length)
+        {
+            return (length & (length - 1)) == 0 ? (value & (length - 1)) : (value % length);
         }
     }
 
@@ -608,13 +633,20 @@ namespace Hecton8.Habitat.Deformation
                     SourceId = (ushort)(StructuralIntegrityConstants.AgentHash & 0xFFFFu),
                     Flags = BaseModuleCompromisedSignal.MaxDeformationFlag,
                     StressIndex = (byte)math.min(255, index),
-                    QualityTier = (byte)math.clamp((int)math.round(tuning.GlobalQualityWeight * 4f), 0, 4)
+                    QualityTier = ResolveSignalProfileByte(tuning.GlobalQualityWeight)
                 };
                 FluidEvents.Enqueue(flood);
                 CompromisedEvents.Enqueue(compromised);
             }
 
             state.Flags = flags;
+        }
+
+        private static byte ResolveSignalProfileByte(float quality)
+        {
+            float q = math.saturate(math.isfinite(quality) ? quality : 1f);
+            int profile = (int)math.step(0.5f, q);
+            return (byte)math.clamp(profile, (int)ScalabilityTierProfiles.LowMx350, (int)ScalabilityTierProfiles.HighRtx);
         }
 
         private static AbsoluteUniversePosition BuildAup(double3 absolute)
@@ -645,6 +677,7 @@ namespace Hecton8.Habitat.Deformation
     {
         [ReadOnly] [NoAlias] public NativeArray<IntegrityStateDTO> States;
         [ReadOnly] [NoAlias] public NativeArray<int> CsrOffsets;
+        [ReadOnly] [NoAlias] public NativeArray<int> CsrDestinations;
         [NoAlias] public NativeArray<byte> EdgeFlags;
         public int ActiveNodeCount;
 
@@ -653,13 +686,22 @@ namespace Hecton8.Habitat.Deformation
             if ((uint)index >= (uint)ActiveNodeCount)
                 return;
 
-            if ((States[index].Flags & StructuralIntegrityConstants.StateFlagCollapsed) == 0)
-                return;
-
             int start = math.clamp(CsrOffsets[index], 0, EdgeFlags.Length);
             int end = math.clamp(CsrOffsets[index + 1], start, EdgeFlags.Length);
+            bool sourceCollapsed = (States[index].Flags & StructuralIntegrityConstants.StateFlagCollapsed) != 0;
             for (int edge = start; edge < end; edge++)
-                EdgeFlags[edge] = (byte)(EdgeFlags[edge] | StructuralIntegrityConstants.EdgeFlagSevered);
+            {
+                bool destinationCollapsed = false;
+                if (!sourceCollapsed && edge < CsrDestinations.Length)
+                {
+                    int destination = CsrDestinations[edge];
+                    destinationCollapsed = (uint)destination < (uint)ActiveNodeCount &&
+                                           (States[destination].Flags & StructuralIntegrityConstants.StateFlagCollapsed) != 0;
+                }
+
+                if (sourceCollapsed || destinationCollapsed)
+                    EdgeFlags[edge] = (byte)(EdgeFlags[edge] | StructuralIntegrityConstants.EdgeFlagSevered);
+            }
         }
     }
 

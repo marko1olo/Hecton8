@@ -90,8 +90,9 @@ namespace Hecton8.SaveSystem
         [FieldOffset(40)] public float IoPressureBias01;
         [FieldOffset(44)] public float MaxWalWriteMillis;
         [FieldOffset(48)] public uint MaxBytesPerFrame;
-        [FieldOffset(52)] public uint Reserved0;
-        [FieldOffset(56)] public ulong Reserved1;
+        [FieldOffset(52)] public float DepthMinMeters;
+        [FieldOffset(56)] public float DepthMaxMeters;
+        [FieldOffset(60)] public uint _pad0;
     }
 
     [BinaryBlittableSafe]
@@ -144,6 +145,25 @@ namespace Hecton8.SaveSystem
         [FieldOffset(56)] public ulong _pad1;
     }
 
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal struct VoxelDeltaTelemetryDumpHeaderDTO
+    {
+        [FieldOffset(0)] public uint Magic;
+        [FieldOffset(4)] public uint Version;
+        [FieldOffset(8)] public uint EntryCount;
+        [FieldOffset(12)] public uint EntryStride;
+        [FieldOffset(16)] public uint Cursor;
+        [FieldOffset(20)] public uint ReasonFlags;
+        [FieldOffset(24)] public uint RingCapacity;
+        [FieldOffset(28)] public uint HeaderBytes;
+        [FieldOffset(32)] public ulong FirstSectorHash;
+        [FieldOffset(40)] public ulong LastSectorHash;
+        [FieldOffset(48)] public uint FirstFrame;
+        [FieldOffset(52)] public uint LastFrame;
+        [FieldOffset(56)] public ulong _pad0;
+    }
+
     internal struct VoxelDeltaCompressionVaultBufferSet
     {
         public NativeArray<byte> SchemaBytes;
@@ -193,6 +213,12 @@ namespace Hecton8.SaveSystem
         internal const uint HeaderFlagPruned = 1u << 2;
         internal const uint HeaderFlagChecksumValid = 1u << 3;
         internal const uint HeaderFlagFatal = 1u << 31;
+        internal const uint TelemetryFlagDiskLatencyPatched = 1u << 8;
+        internal const uint TelemetryFlagDiskLatencySpike = 1u << 9;
+        internal const uint TelemetryDumpMagic = 0x56445741u; // AWDV little-endian marker.
+        internal const uint TelemetryDumpVersion = 1u;
+        internal const int Lz4LastLiterals = 5;
+        internal const int Lz4MfLimit = 12;
 
         private const uint KeyPruneThreshold01 = 0xE8F5FE20u;
         private const uint KeyLz4MinEffort01 = 0x60F29CAEu;
@@ -203,6 +229,9 @@ namespace Hecton8.SaveSystem
         private const uint KeyIoPressureBias01 = 0xE50F8A28u;
         private const uint KeyMaxWalWriteMs = 0xEC81F34Fu;
         private const uint KeyMaxBytesPerFrame = 0xA1229643u;
+        private const uint KeyBiome = 0x8BAB7EC3u;
+        private const uint KeyDepthMinM = 0xE526065Du;
+        private const uint KeyDepthMaxM = 0x87AF477Fu;
 
         internal static bool TryResolveVaultBuffers(
             IDataVault vault,
@@ -337,8 +366,9 @@ namespace Hecton8.SaveSystem
                 IoPressureBias01 = 0.35f,
                 MaxWalWriteMillis = 0.35f,
                 MaxBytesPerFrame = 64u * 1024u,
-                Reserved0 = 0u,
-                Reserved1 = 0UL
+                DepthMinMeters = 0f,
+                DepthMaxMeters = 1200f,
+                _pad0 = 0u
             };
         }
 
@@ -356,6 +386,8 @@ namespace Hecton8.SaveSystem
             tuning.ChunkUnloadDistanceMeters = math.max(64f, SanitizeFinite(tuning.ChunkUnloadDistanceMeters, 1800f));
             tuning.IoPressureBias01 = math.saturate(SanitizeFinite(tuning.IoPressureBias01, 0.35f));
             tuning.MaxWalWriteMillis = math.max(0.05f, SanitizeFinite(tuning.MaxWalWriteMillis, 0.35f));
+            tuning.DepthMinMeters = math.max(0f, SanitizeFinite(tuning.DepthMinMeters, 0f));
+            tuning.DepthMaxMeters = math.max(tuning.DepthMinMeters + 1f, SanitizeFinite(tuning.DepthMaxMeters, 1200f));
             if (tuning.MaxBytesPerFrame < 1024u)
                 tuning.MaxBytesPerFrame = 64u * 1024u;
 
@@ -371,7 +403,8 @@ namespace Hecton8.SaveSystem
             float globalQualityWeight,
             float ioPressure01,
             JobHandle dependency,
-            bool injectMockDeformation = false)
+            bool injectMockDeformation = false,
+            float lastDiskWriteLatencyMs = 0f)
         {
             if (!buffers.RuntimeDensity.IsCreated ||
                 !buffers.BaselineDensity.IsCreated ||
@@ -398,7 +431,7 @@ namespace Hecton8.SaveSystem
             int blockCount = ResolveBlockCount(safeCellCount, safeBlockCells);
             int safeMaxRunsPerBlock = math.max(1, maxRunsPerBlock <= 0 ? safeBlockCells : maxRunsPerBlock);
             ulong sectorHash = ResolveSectorHash(sectorCoord);
-            float effort01 = ResolveCompressionEffort01(globalQualityWeight, ioPressure01, 0f, in tuning);
+            float effort01 = ResolveCompressionEffort01(globalQualityWeight, ioPressure01, lastDiskWriteLatencyMs, in tuning);
 
             JobHandle sourceReady = dependency;
             if (injectMockDeformation)
@@ -707,6 +740,8 @@ namespace Hecton8.SaveSystem
             results[9] = HeaderFieldOffset(nameof(VoxelDeltaHeaderDTO.CompressedSize));
             results[10] = HeaderFieldOffset(nameof(VoxelDeltaHeaderDTO.UncompressedSize));
             results[11] = HeaderFieldOffset(nameof(VoxelDeltaHeaderDTO.XXHash3Checksum));
+            if (results.Length > 12)
+                results[12] = UnsafeUtility.SizeOf<VoxelDeltaTelemetryDumpHeaderDTO>();
             return results[0] == 32 &&
                    results[1] == 8 &&
                    results[2] == 64 &&
@@ -718,7 +753,8 @@ namespace Hecton8.SaveSystem
                    results[8] == 0 &&
                    results[9] == 8 &&
                    results[10] == 12 &&
-                   results[11] == 16;
+                   results[11] == 16 &&
+                   (results.Length <= 12 || results[12] == 64);
         }
 
         public static bool RunCompressionRatioSelfAudit(
@@ -753,6 +789,15 @@ namespace Hecton8.SaveSystem
             NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetryRing,
             string path = "Docs/AgentLogs/Dump_VOXEL_IO_SURGEON.bin")
         {
+            return TryDumpTelemetryRing(telemetryRing, default, 0u, path);
+        }
+
+        public static bool TryDumpTelemetryRing(
+            NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryCursor,
+            uint reasonFlags = 0u,
+            string path = "Docs/AgentLogs/Dump_VOXEL_IO_SURGEON.bin")
+        {
             if (!telemetryRing.IsCreated || telemetryRing.Length <= 0 || string.IsNullOrEmpty(path))
                 return false;
 
@@ -763,11 +808,38 @@ namespace Hecton8.SaveSystem
                     Directory.CreateDirectory(directory);
 
                 int stride = UnsafeUtility.SizeOf<VoxelDeltaCompressionTelemetryEntry>();
-                int totalBytes = telemetryRing.Length * stride;
-                byte* source = (byte*)telemetryRing.GetUnsafeReadOnlyPtr();
+                int capacity = math.min(TelemetryRingFrames, telemetryRing.Length);
+                int cursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? math.max(0, telemetryCursor[0]) % capacity : 0;
+                int entryCount = CountTelemetryEntries(telemetryRing, capacity);
+                int start = entryCount >= capacity ? cursor : 0;
+                int headerBytes = UnsafeUtility.SizeOf<VoxelDeltaTelemetryDumpHeaderDTO>();
+                VoxelDeltaCompressionTelemetryEntry first = entryCount > 0 ? telemetryRing[start] : default;
+                VoxelDeltaCompressionTelemetryEntry last = entryCount > 0 ? telemetryRing[(start + entryCount - 1) % capacity] : default;
+                VoxelDeltaTelemetryDumpHeaderDTO header = new VoxelDeltaTelemetryDumpHeaderDTO
+                {
+                    Magic = TelemetryDumpMagic,
+                    Version = TelemetryDumpVersion,
+                    EntryCount = (uint)entryCount,
+                    EntryStride = (uint)stride,
+                    Cursor = (uint)cursor,
+                    ReasonFlags = reasonFlags,
+                    RingCapacity = (uint)capacity,
+                    HeaderBytes = (uint)headerBytes,
+                    FirstSectorHash = first.SectorHash,
+                    LastSectorHash = last.SectorHash,
+                    FirstFrame = first.Frame,
+                    LastFrame = last.Frame,
+                    _pad0 = 0UL
+                };
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    stream.Write(new ReadOnlySpan<byte>(source, totalBytes));
+                    stream.Write(new ReadOnlySpan<byte>((byte*)&header, headerBytes));
+                    byte* source = (byte*)telemetryRing.GetUnsafeReadOnlyPtr();
+                    for (int i = 0; i < entryCount; i++)
+                    {
+                        int index = (start + i) % capacity;
+                        stream.Write(new ReadOnlySpan<byte>(source + (index * stride), stride));
+                    }
                 }
 
                 return true;
@@ -782,6 +854,27 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        private static int CountTelemetryEntries(NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetryRing, int capacity)
+        {
+            int count = 0;
+            int limit = math.min(capacity, telemetryRing.Length);
+            for (int i = 0; i < limit; i++)
+            {
+                VoxelDeltaCompressionTelemetryEntry entry = telemetryRing[i];
+                if (entry.SectorHash != 0UL ||
+                    entry.PayloadHash != 0UL ||
+                    entry.RawBytes != 0u ||
+                    entry.CompressedBytes != 0u ||
+                    entry.Flags != 0u ||
+                    entry.Frame != 0u)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
         public static bool TryDumpTelemetryRingOnLatencySpike(
             NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetryRing,
             float diskWriteLatencyMs,
@@ -791,6 +884,65 @@ namespace Hecton8.SaveSystem
             float latency = math.isfinite(diskWriteLatencyMs) ? diskWriteLatencyMs : 0f;
             float threshold = math.max(0f, math.isfinite(thresholdMs) ? thresholdMs : 50f);
             return latency >= threshold && TryDumpTelemetryRing(telemetryRing, path);
+        }
+
+        public static bool TryDumpTelemetryRingOnLatencySpike(
+            NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryCursor,
+            float diskWriteLatencyMs,
+            float thresholdMs = 50f,
+            string path = "Docs/AgentLogs/Dump_VOXEL_IO_SURGEON.bin")
+        {
+            float latency = math.isfinite(diskWriteLatencyMs) ? diskWriteLatencyMs : 0f;
+            float threshold = math.max(0f, math.isfinite(thresholdMs) ? thresholdMs : 50f);
+            return latency >= threshold && TryDumpTelemetryRing(telemetryRing, telemetryCursor, TelemetryFlagDiskLatencySpike, path);
+        }
+
+        public static bool TryDumpTelemetryRingOnSpikeFlag(
+            NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryCursor,
+            string path = "Docs/AgentLogs/Dump_VOXEL_IO_SURGEON.bin")
+        {
+            if (!telemetryRing.IsCreated || telemetryRing.Length <= 0)
+                return false;
+
+            int capacity = math.min(TelemetryRingFrames, telemetryRing.Length);
+            int cursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? math.max(0, telemetryCursor[0]) % capacity : 0;
+            int count = CountTelemetryEntries(telemetryRing, capacity);
+            int start = count >= capacity ? cursor : 0;
+            for (int i = 0; i < count; i++)
+            {
+                VoxelDeltaCompressionTelemetryEntry entry = telemetryRing[(start + i) % capacity];
+                if ((entry.Flags & TelemetryFlagDiskLatencySpike) != 0u)
+                    return TryDumpTelemetryRing(telemetryRing, telemetryCursor, TelemetryFlagDiskLatencySpike, path);
+            }
+
+            return false;
+        }
+
+        public static JobHandle ScheduleDiskLatencyTelemetryPatch(
+            NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryCursor,
+            ulong sectorHash,
+            uint frame,
+            float diskWriteLatencyMs,
+            JobHandle dependency,
+            float spikeThresholdMs = 50f,
+            bool matchFrame = true)
+        {
+            if (!telemetryRing.IsCreated || !telemetryCursor.IsCreated)
+                return dependency;
+
+            return new VoxelDeltaDiskLatencyTelemetryPatchJob
+            {
+                TelemetryRing = telemetryRing,
+                TelemetryCursor = telemetryCursor,
+                SectorHash = sectorHash,
+                Frame = frame,
+                DiskWriteLatencyMs = diskWriteLatencyMs,
+                SpikeThresholdMs = spikeThresholdMs,
+                MatchFrame = matchFrame ? (byte)1 : (byte)0
+            }.Schedule(dependency);
         }
 
         private static int HeaderFieldOffset(string fieldName)
@@ -1263,7 +1415,8 @@ namespace Hecton8.SaveSystem
                 int anchor = 0;
                 int read = 0;
                 int write = 0;
-                int lastMatchStart = math.max(0, sourceLength - minMatchLength);
+                int literalTailLimit = math.max(0, sourceLength - Lz4LastLiterals);
+                int lastMatchStart = math.min(math.max(0, sourceLength - minMatchLength), math.max(0, sourceLength - Lz4MfLimit));
                 while (read <= lastMatchStart)
                 {
                     uint sequence = ReadUInt32(read);
@@ -1274,10 +1427,11 @@ namespace Hecton8.SaveSystem
                     if (previous >= 0 &&
                         read - previous <= ushort.MaxValue &&
                         previous + minMatchLength <= sourceLength &&
+                        read + minMatchLength <= literalTailLimit &&
                         EqualsBytes(previous, read, minMatchLength))
                     {
                         int matchLength = minMatchLength;
-                        while (read + matchLength < sourceLength &&
+                        while (read + matchLength < literalTailLimit &&
                                Source[previous + matchLength] == Source[read + matchLength])
                         {
                             matchLength++;
@@ -1545,6 +1699,48 @@ namespace Hecton8.SaveSystem
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        internal struct VoxelDeltaDiskLatencyTelemetryPatchJob : IJob
+        {
+            [NoAlias] public NativeArray<VoxelDeltaCompressionTelemetryEntry> TelemetryRing;
+            [ReadOnly, NoAlias] public NativeArray<int> TelemetryCursor;
+            public ulong SectorHash;
+            public uint Frame;
+            public float DiskWriteLatencyMs;
+            public float SpikeThresholdMs;
+            public byte MatchFrame;
+
+            public void Execute()
+            {
+                if (!TelemetryRing.IsCreated || !TelemetryCursor.IsCreated || TelemetryRing.Length <= 0 || TelemetryCursor.Length <= 0)
+                    return;
+
+                int length = math.min(TelemetryRingFrames, TelemetryRing.Length);
+                int cursor = math.max(0, TelemetryCursor[0]);
+                float latency = SanitizeMs(DiskWriteLatencyMs);
+                float threshold = math.max(0f, math.isfinite(SpikeThresholdMs) ? SpikeThresholdMs : 50f);
+                uint patchFlags = TelemetryFlagDiskLatencyPatched | (latency >= threshold ? TelemetryFlagDiskLatencySpike : 0u);
+                for (int step = 0; step < length; step++)
+                {
+                    int index = (cursor - 1 - step + length) % length;
+                    VoxelDeltaCompressionTelemetryEntry entry = TelemetryRing[index];
+                    if (entry.SectorHash != SectorHash || (MatchFrame != 0 && entry.Frame != Frame))
+                        continue;
+
+                    entry.DiskWriteLatencyMs = latency;
+                    entry.Flags |= patchFlags;
+                    TelemetryRing[index] = entry;
+                    return;
+                }
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float SanitizeMs(float value)
+            {
+                return math.max(0f, math.isfinite(value) ? value : 0f);
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct VoxelDearLieDeformationFadeJob : IJobParallelFor
         {
             [NoAlias] public NativeArray<VoxelDeltaDearLieStateDTO> States;
@@ -1639,14 +1835,24 @@ namespace Hecton8.SaveSystem
                     IoPressureBias01 = 0.35f,
                     MaxWalWriteMillis = 0.35f,
                     MaxBytesPerFrame = 64u * 1024u,
-                    Reserved0 = 0u,
-                    Reserved1 = 0UL
+                    DepthMinMeters = 0f,
+                    DepthMaxMeters = 1200f,
+                    _pad0 = 0u
                 };
             }
 
             private static bool TryParseKeyValueLine(byte* data, int start, int end, ref VoxelDeltaCompressionTuningDTO profile)
             {
                 int keyStart = SkipWhitespace(data, start, end);
+                if (keyStart == 0 &&
+                    end - keyStart >= 3 &&
+                    data[keyStart] == 0xEF &&
+                    data[keyStart + 1] == 0xBB &&
+                    data[keyStart + 2] == 0xBF)
+                {
+                    keyStart += 3;
+                }
+
                 if (keyStart >= end || data[keyStart] == (byte)'#')
                     return true;
 
@@ -1659,8 +1865,15 @@ namespace Hecton8.SaveSystem
 
                 int keyEnd = TrimEndWhitespace(data, keyStart, separator);
                 int valueStart = SkipWhitespace(data, separator + 1, end);
-                int valueEnd = TrimEndWhitespace(data, valueStart, end);
+                int valueEnd = TrimValueEnd(data, valueStart, end);
                 uint keyHash = HashAsciiLower(data + keyStart, keyEnd - keyStart);
+                if (keyHash == KeyBiome)
+                {
+                    profile.ProfileHash = HashAsciiLower64(data + valueStart, valueEnd - valueStart);
+                    profile.Flags |= 1u << 1;
+                    return true;
+                }
+
                 if (!TryParseFloat(data, valueStart, valueEnd, out float value))
                     return false;
 
@@ -1693,6 +1906,12 @@ namespace Hecton8.SaveSystem
                     case KeyMaxBytesPerFrame:
                         profile.MaxBytesPerFrame = (uint)math.max(1024, (int)math.round(value));
                         return true;
+                    case KeyDepthMinM:
+                        profile.DepthMinMeters = math.max(0f, value);
+                        return true;
+                    case KeyDepthMaxM:
+                        profile.DepthMaxMeters = math.max(profile.DepthMinMeters + 1f, value);
+                        return true;
                     default:
                         return false;
                 }
@@ -1724,9 +1943,9 @@ namespace Hecton8.SaveSystem
 
                 int sign = 1;
                 int i = start;
-                if (data[i] == (byte)'-')
+                if (data[i] == (byte)'-' || data[i] == (byte)'+')
                 {
-                    sign = -1;
+                    sign = data[i] == (byte)'-' ? -1 : 1;
                     i++;
                 }
 
@@ -1756,8 +1975,63 @@ namespace Hecton8.SaveSystem
                 if (!digit)
                     return false;
 
-                value = sign * (whole + fraction);
+                float exponentScale = 1f;
+                if (i < end && (data[i] == (byte)'e' || data[i] == (byte)'E'))
+                {
+                    i++;
+                    int exponentSign = 1;
+                    if (i < end && (data[i] == (byte)'-' || data[i] == (byte)'+'))
+                    {
+                        exponentSign = data[i] == (byte)'-' ? -1 : 1;
+                        i++;
+                    }
+
+                    int exponent = 0;
+                    bool exponentDigit = false;
+                    while (i < end && data[i] >= (byte)'0' && data[i] <= (byte)'9')
+                    {
+                        exponentDigit = true;
+                        exponent = math.min(38, (exponent * 10) + (data[i] - (byte)'0'));
+                        i++;
+                    }
+
+                    if (!exponentDigit)
+                        return false;
+
+                    exponentScale = ResolvePow10(exponentSign * exponent);
+                }
+
+                if (i != end)
+                    return false;
+
+                value = sign * (whole + fraction) * exponentScale;
                 return math.isfinite(value);
+            }
+
+            private static float ResolvePow10(int signedExponent)
+            {
+                int steps = math.min(38, math.abs(signedExponent));
+                float scale = 1f;
+                float factor = signedExponent >= 0 ? 10f : 0.1f;
+                for (int i = 0; i < steps; i++)
+                    scale *= factor;
+
+                return scale;
+            }
+
+            private static int TrimValueEnd(byte* data, int start, int end)
+            {
+                int valueEnd = end;
+                for (int i = start; i < end; i++)
+                {
+                    if (data[i] == (byte)'#')
+                    {
+                        valueEnd = i;
+                        break;
+                    }
+                }
+
+                return TrimEndWhitespace(data, start, valueEnd);
             }
 
             private static uint HashAsciiLower(byte* data, int length)
@@ -1774,6 +2048,22 @@ namespace Hecton8.SaveSystem
                 }
 
                 return hash;
+            }
+
+            private static ulong HashAsciiLower64(byte* data, int length)
+            {
+                ulong hash = 14695981039346656037UL;
+                for (int i = 0; i < length; i++)
+                {
+                    byte c = data[i];
+                    if (c >= (byte)'A' && c <= (byte)'Z')
+                        c = (byte)(c + 32);
+
+                    hash ^= c;
+                    hash *= 1099511628211UL;
+                }
+
+                return hash == 0UL ? 1UL : hash;
             }
         }
     }

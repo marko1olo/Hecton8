@@ -15,11 +15,13 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+
+R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
-## 2026-05-19 DOC_GLOBAL R31 Current Boundary Note
+## 2026-05-19 DOC_GLOBAL Current Boundary Note
 
-R31 reread confirmed this file remains clean-room public-reference pressure mapped to local source/docs, not product feature proof, Steam Deck proof, co-op runtime proof, or copied implementation authority. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`; R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `57` RealtimeCSG vendor references; `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
+This file remains clean-room public-reference pressure mapped to local source/docs, not product feature proof, Steam Deck proof, co-op runtime proof, or copied implementation authority. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`; R31 remains the prior current-boundary propagation correction. R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`); `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
 
 Owner: SUBNAUTICA_RESEARCHER
 Scope: clean-room public reference research plus current HECTON-8 source audit.
@@ -78,10 +80,10 @@ Tactical meaning for HECTON-8: do not chase screenshots first. The competitive f
 
 ### Static Content
 
-Current disk proof:
+Static disk snapshot during a prior pass; artifact tuple absent; runtime proof pending:
 
 - `Assets/_SourceData`: 0 files.
-- `Assets/StreamingAssets`: missing in the current checkout during this pass.
+- `Assets/StreamingAssets`: exists and currently contains only `signal_tuning_profiles.csv`; authoritative `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` remains absent.
 - `Assets/AddressableAssetsData`: 0 files.
 - `ContentAssetHashMap` assets: 0.
 - `ContentVfxPrewarmManifest` assets: 0.
@@ -107,15 +109,16 @@ Contract gap: HECTON-8 has a monolith reader/compiler shape, but no proved manda
 
 ### Save And Schema
 
-Current source truth:
+Static source snapshot; rerun/source artifact tuple required before treating as current truth:
 
-- `SaveBinaryStorage.CurrentVersion = 0x0009`.
+- `SaveBinaryStorage.CurrentVersion = 0x000B`.
 - `SaveBinaryStorage.CurrentHeaderSize = 56`.
+- `SaveBinaryStorage.AlignedSectionHeaderVersion = 0x000B`.
 - `SaveBinaryStorage` writes indexed sector blocks with `FlagIndexedSectorBlocks` and `FlagProtectedLz4Blocks`.
 - `SaveBinaryStorage` uses fixed indexed directory capacity `4096`.
 - `SaveMasterHashV10.HeaderVersion = 0x000A`.
 - `SaveMasterHashV10.HeaderSizeBytes = 72`.
-- `SaveDeltaCompression` core records are fixed-size sequential records without `Pack = 1`; current live save version/header truth is v9/v10 per `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- `SaveDeltaCompression` core records are fixed-size sequential records without `Pack = 1`; current live save writer truth is v11 (`0x000B`) per `SaveBinaryStorage.cs`, while v10 remains staged master-hash helper context.
 - `SaveManager` has 300-frame save/WFC telemetry rings.
 
 Current doc drift:
@@ -158,7 +161,7 @@ Required contract:
 
 ### Mod Manifest And Overlay API
 
-Current source truth:
+Static source snapshot; rerun/source artifact tuple required before treating as current truth:
 
 - `ModLoader.CurrentAPIVersion = 2`.
 - `ModLoader` disables manifests with `RequiredAPIVersion <= 0`.
@@ -190,7 +193,7 @@ All handlers must resolve to hashes, ContentAuthority manifests, and binary payl
 
 ### Persistent Mod World
 
-Current source truth:
+Static source snapshot; rerun/source artifact tuple required before treating as current truth:
 
 - `ModWorldPersistenceManager` has an internal `SpawnPersistentPrefab`.
 - It records scene hash, AUP grid/local position, asset name, mod id, and record list.
@@ -211,7 +214,7 @@ Required contract:
 
 ### Quest, Scan, And First-Hour Route
 
-Current source truth:
+Static source snapshot; rerun/source artifact tuple required before treating as current truth:
 
 - `QuestStateManager` uses a 320-word packed state layout.
 - Quest words are explicitly segmented: quest, item, scan, lore, beacon, entity destroy, deadlock.
@@ -234,7 +237,7 @@ Required contract:
 
 ### Co-op Readiness
 
-Current source truth:
+Static source snapshot; rerun/source artifact tuple required before treating as current truth:
 
 - `COOP_MERKLE_STATE_DELTA_PROTOCOL.md` is a serious static design.
 - `HectonNetworkManager.cs` is a placeholder with TODOs.

@@ -49,11 +49,11 @@ namespace Hecton8.Visor
         private const uint ReconstructionFlagDearLie = 1u << 2;
         private const uint ReconstructionFlagFallback = 1u << 3;
         private const uint ReconstructionFlagAbSplit = 1u << 4;
-        private const BufferID ReconstructionConstantsVaultId = (BufferID)71030;
-        private const BufferID ReconstructionTelemetryVaultId = (BufferID)71031;
-        private const BufferID ReconstructionProfileVaultId = (BufferID)71032;
-        private const BufferID ReconstructionCsvScratchVaultId = (BufferID)71033;
-        private const BufferID ReconstructionMockSignalVaultId = (BufferID)71034;
+        private const BufferID ReconstructionConstantsVaultId = (BufferID)UberNoirReconstructionVaultIds.Constants;
+        private const BufferID ReconstructionTelemetryVaultId = (BufferID)UberNoirReconstructionVaultIds.Telemetry;
+        private const BufferID ReconstructionProfileVaultId = (BufferID)UberNoirReconstructionVaultIds.AestheticProfiles;
+        private const BufferID ReconstructionCsvScratchVaultId = (BufferID)UberNoirReconstructionVaultIds.CsvScratch;
+        private const BufferID ReconstructionMockSignalVaultId = (BufferID)UberNoirReconstructionVaultIds.MockSignal;
         private const string ReconstructionDumpFileName = "Dump_UBER_NOIR.bin";
         private const string AestheticCsvFileName = "noir_aesthetic_profiles.csv";
         private static readonly ICameraHistoryReadAccess.HistoryRequestDelegate s_requestRawColorHistory =
@@ -1390,33 +1390,56 @@ namespace Hecton8.Visor
             if (_aestheticCsvLoaded || _aestheticCsvLoadAttempted)
                 return _aestheticCsvLoaded;
 
-            _aestheticCsvLoadAttempted = true;
             if (!EnsureReconstructionVaultHandles() || _dataVault == null)
                 return false;
 
             string path = ResolveAestheticCsvPath();
+            _aestheticCsvLoadAttempted = true;
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(_dataVault);
-            NativeArray<NoirAestheticProfileDTO> profiles = _aestheticProfileHandle.Resolve(_dataVault);
-            if (!scratch.IsCreated || !profiles.IsCreated || scratch.Length <= 0 || profiles.Length <= 0)
-                return false;
-
-            int read;
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan))
+            if (!_dataVault.TryLockBuffer(ReconstructionCsvScratchVaultId, SystemID.GraphicsScalability))
             {
-                int max = math.min(scratch.Length, CsvScratchBytes);
-                void* scratchPtr = scratch.GetUnsafePtr();
-                read = stream.Read(new Span<byte>(scratchPtr, max));
+                _aestheticCsvLoadAttempted = false;
+                return false;
             }
 
-            if (read <= 0)
-                return false;
+            bool profileLocked = false;
+            try
+            {
+                if (!_dataVault.TryLockBuffer(ReconstructionProfileVaultId, SystemID.GraphicsScalability))
+                {
+                    _aestheticCsvLoadAttempted = false;
+                    return false;
+                }
+                profileLocked = true;
 
-            int parsed = ParseAestheticCsv(scratch, read, profiles);
-            _aestheticCsvLoaded = parsed > 0;
-            return _aestheticCsvLoaded;
+                NativeArray<byte> scratch = _csvScratchHandle.Resolve(_dataVault);
+                NativeArray<NoirAestheticProfileDTO> profiles = _aestheticProfileHandle.Resolve(_dataVault);
+                if (!scratch.IsCreated || !profiles.IsCreated || scratch.Length <= 0 || profiles.Length <= 0)
+                    return false;
+
+                int read;
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan))
+                {
+                    int max = math.min(scratch.Length, CsvScratchBytes);
+                    void* scratchPtr = scratch.GetUnsafePtr();
+                    read = stream.Read(new Span<byte>(scratchPtr, max));
+                }
+
+                if (read <= 0)
+                    return false;
+
+                int parsed = ParseAestheticCsv(scratch, read, profiles);
+                _aestheticCsvLoaded = parsed > 0;
+                return _aestheticCsvLoaded;
+            }
+            finally
+            {
+                if (profileLocked)
+                    _dataVault.TryUnlockBuffer(ReconstructionProfileVaultId, SystemID.GraphicsScalability);
+                _dataVault.TryUnlockBuffer(ReconstructionCsvScratchVaultId, SystemID.GraphicsScalability);
+            }
         }
 
         private static int ParseAestheticCsv(
@@ -1496,29 +1519,39 @@ namespace Hecton8.Visor
             if (!_aestheticCsvLoaded || _dataVault == null || !_aestheticProfileHandle.IsCreated || renderCamera == null)
                 return false;
 
-            NativeArray<NoirAestheticProfileDTO> profiles = _aestheticProfileHandle.Resolve(_dataVault);
-            if (!profiles.IsCreated || profiles.Length <= 0)
+            if (!_dataVault.TryLockBuffer(ReconstructionProfileVaultId, SystemID.GraphicsScalability))
                 return false;
 
-            float depthMeters = math.max(0f, -renderCamera.transform.position.y);
-            float sanity01 = math.saturate(1f - runtimeState.PlayerStress01);
-            for (int i = 0; i < profiles.Length; i++)
+            try
             {
-                NoirAestheticProfileDTO candidate = profiles[i];
-                if (candidate.ProfileHash == 0u || candidate.Flags == 0u)
-                    continue;
+                NativeArray<NoirAestheticProfileDTO> profiles = _aestheticProfileHandle.Resolve(_dataVault);
+                if (!profiles.IsCreated || profiles.Length <= 0)
+                    return false;
 
-                if (depthMeters >= candidate.DepthMinMeters &&
-                    depthMeters <= candidate.DepthMaxMeters &&
-                    sanity01 >= candidate.SanityMin01 &&
-                    sanity01 <= candidate.SanityMax01)
+                float depthMeters = math.max(0f, -renderCamera.transform.position.y);
+                float sanity01 = math.saturate(1f - runtimeState.PlayerStress01);
+                for (int i = 0; i < profiles.Length; i++)
                 {
-                    profile = candidate;
-                    return true;
-                }
-            }
+                    NoirAestheticProfileDTO candidate = profiles[i];
+                    if (candidate.ProfileHash == 0u || candidate.Flags == 0u)
+                        continue;
 
-            return false;
+                    if (depthMeters >= candidate.DepthMinMeters &&
+                        depthMeters <= candidate.DepthMaxMeters &&
+                        sanity01 >= candidate.SanityMin01 &&
+                        sanity01 <= candidate.SanityMax01)
+                    {
+                        profile = candidate;
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            finally
+            {
+                _dataVault.TryUnlockBuffer(ReconstructionProfileVaultId, SystemID.GraphicsScalability);
+            }
         }
 
         private static string ResolveAestheticCsvPath()
@@ -1542,15 +1575,25 @@ namespace Hecton8.Visor
             if (_dataVault == null || !_mockSignalHandle.IsCreated)
                 return false;
 
-            NativeArray<MockReconstructionInputSignal> mock = _mockSignalHandle.Resolve(_dataVault);
-            if (!mock.IsCreated || mock.Length <= 0)
+            if (!_dataVault.TryLockBuffer(ReconstructionMockSignalVaultId, SystemID.GraphicsScalability))
                 return false;
 
-            signal = mock[0];
-            return signal.Flags != 0u &&
-                   math.isfinite(signal.RenderScale01) &&
-                   math.isfinite(signal.GlobalQualityWeight01) &&
-                   signal.RenderScale01 > 0f;
+            try
+            {
+                NativeArray<MockReconstructionInputSignal> mock = _mockSignalHandle.Resolve(_dataVault);
+                if (!mock.IsCreated || mock.Length <= 0)
+                    return false;
+
+                signal = mock[0];
+                return signal.Flags != 0u &&
+                       math.isfinite(signal.RenderScale01) &&
+                       math.isfinite(signal.GlobalQualityWeight01) &&
+                       signal.RenderScale01 > 0f;
+            }
+            finally
+            {
+                _dataVault.TryUnlockBuffer(ReconstructionMockSignalVaultId, SystemID.GraphicsScalability);
+            }
         }
 
         private static bool TryReadResolutionState(out ResolutionScaleState state)

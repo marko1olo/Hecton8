@@ -12,10 +12,15 @@ namespace Hecton8.Atmosphere
 {
     public static class OceanSurfaceAtmosphereConstants
     {
-        public const int WaveCapacity = 16;
-        public const int MinQualityWaveCount = 4;
+        public const int WaveCapacity = 2;
+        public const int WavesPerParameters = 3;
+        public const int MaxWaveOctaves = WaveCapacity * WavesPerParameters;
+        public const int MinQualityWaveCount = 1;
         public const int TelemetryFrameCount = 300;
         public const int MockBuoyancyQueryCount = 10000;
+        public const int WaveReadbackSampleCapacity = 64;
+        public const int WaveReadbackRingSize = 3;
+        public const int BeaufortProfileCapacity = 16;
         public const long MockBuoyancyBudgetNs = 100000L;
         public const long TelemetryDumpBudgetNs = 500000L;
         public const uint SourceHash = 0x53485236u; // SHR6
@@ -26,14 +31,13 @@ namespace Hecton8.Atmosphere
         public const ulong SeedShipActivatedNarrativeMask = 1UL << 61;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct WaveParametersDTO
     {
-        [FieldOffset(0)] public float4 DirectionAndSteepness;
-        [FieldOffset(16)] public float PhaseSpeed;
-        [FieldOffset(20)] public float Amplitude;
-        [FieldOffset(24)] public float Wavelength;
-        [FieldOffset(28)] public uint _pad0;
+        [FieldOffset(0)] public float4 Wave1;
+        [FieldOffset(16)] public float4 Wave2;
+        [FieldOffset(32)] public float4 Wave3;
+        [FieldOffset(48)] public float4 GlobalWindAndTime;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -83,8 +87,21 @@ namespace Hecton8.Atmosphere
         [FieldOffset(36)] public float FoamScalar;
         [FieldOffset(40)] public float3 LastNormal;
         [FieldOffset(52)] public uint StateHash;
-        [FieldOffset(56)] public uint _pad0;
-        [FieldOffset(60)] public uint _pad1;
+        [FieldOffset(56)] public int ReadbackLatencyFrames;
+        [FieldOffset(60)] public int ReadbackSampleCount;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct BeaufortProfileDTO
+    {
+        [FieldOffset(0)] public uint StateHash;
+        [FieldOffset(4)] public float BaseSteepness;
+        [FieldOffset(8)] public float BaseWavelength;
+        [FieldOffset(12)] public float WindSpeed;
+        [FieldOffset(16)] public float StormIntensity;
+        [FieldOffset(20)] public float FoamThreshold;
+        [FieldOffset(24)] public float FrequencyScale;
+        [FieldOffset(28)] public uint Flags;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -116,11 +133,9 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveDesiredWaveCount(float qualityWeight, int maxWaveCount)
         {
-            int maxCount = math.clamp(maxWaveCount, 1, OceanSurfaceAtmosphereConstants.WaveCapacity);
+            int maxCount = math.clamp(maxWaveCount, 1, OceanSurfaceAtmosphereConstants.MaxWaveOctaves);
             float q = math.saturate(qualityWeight);
-            float normalized = math.saturate((q - 0.1f) * (1f / 0.9f));
-            float qualityCurve = normalized * normalized * (3f - (2f * normalized));
-            qualityCurve *= math.step(0.1f, q);
+            float qualityCurve = q * q * (3f - (2f * q));
             float minimum = math.min(OceanSurfaceAtmosphereConstants.MinQualityWaveCount, maxCount);
             return math.min(maxCount, math.lerp(minimum, maxCount, qualityCurve));
         }
@@ -190,7 +205,7 @@ namespace Hecton8.Atmosphere
             if (!waves.IsCreated || waves.Length <= 0 || !math.all(math.isfinite(AUP)) || !math.isfinite(time))
                 return;
 
-            int waveLimit = math.min(waves.Length, OceanSurfaceAtmosphereConstants.WaveCapacity);
+            int waveLimit = math.min(waves.Length * OceanSurfaceAtmosphereConstants.WavesPerParameters, OceanSurfaceAtmosphereConstants.MaxWaveOctaves);
             float dHeightDx = 0f;
             float dHeightDz = 0f;
             float minJacobian = 1f;
@@ -201,17 +216,19 @@ namespace Hecton8.Atmosphere
                 if (contribution <= 0.0001f)
                     continue;
 
-                WaveParametersDTO wave = waves[i];
-                float amplitude = FiniteNonNegative(wave.Amplitude);
-                float wavelength = math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, FinitePositive(wave.Wavelength, 24f));
+                WaveParametersDTO wave = waves[i / OceanSurfaceAtmosphereConstants.WavesPerParameters];
+                float4 lane = GetWaveLane(wave, i % OceanSurfaceAtmosphereConstants.WavesPerParameters);
+                float amplitude = WaveLaneAmplitude(lane);
+                float wavelength = WaveLaneWavelength(lane);
                 if (amplitude <= 0.000001f)
                     continue;
 
-                float2 direction = Normalize2OrDefault(wave.DirectionAndSteepness.xy, new float2(1f, 0f));
+                float2 direction = WaveLaneDirection(lane);
                 float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi / wavelength;
                 double projected = (AUP.x * direction.x) + (AUP.z * direction.y);
                 double wrappedMeters = WrapMeters(projected, wavelength);
-                float phase = WrapPhaseRadians((float)(wrappedMeters * waveNumber) + wave.DirectionAndSteepness.z + (wave.PhaseSpeed * time));
+                float phaseOffset = (i + 1) * 0.754877666f;
+                float phase = WrapPhaseRadians((float)(wrappedMeters * waveNumber) + phaseOffset + (WaveLaneSpeed(lane) * time));
 
                 math.sincos(phase, out float sine, out float cosine);
 
@@ -223,7 +240,7 @@ namespace Hecton8.Atmosphere
                 dHeightDx += slope * direction.x;
                 dHeightDz += slope * direction.y;
 
-                float steepness = math.saturate(wave.DirectionAndSteepness.w);
+                float steepness = WaveLaneSteepness(lane);
                 float horizontal = steepness * weightedAmplitude * cosine;
                 displacement.x += direction.x * horizontal;
                 displacement.y += weightedAmplitude * sine;
@@ -257,9 +274,16 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static OceanSurfaceLodDTO ResolveRadialGridLod(double3 cameraAup, float globalQualityWeight)
         {
+            return ResolveRadialGridLod(cameraAup, globalQualityWeight, 4096f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static OceanSurfaceLodDTO ResolveRadialGridLod(double3 cameraAup, float globalQualityWeight, float maxWavelength)
+        {
             float q = math.saturate(globalQualityWeight);
+            float safeWavelength = math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, FinitePositive(maxWavelength, 4096f));
             OceanSurfaceLodDTO dto = default;
-            dto.CameraAupLocalXZ = new float4((float)WrapMeters(cameraAup.x, 4096f), (float)WrapMeters(cameraAup.z, 4096f), 0f, 0f);
+            dto.CameraAupLocalXZ = new float4((float)WrapMeters(cameraAup.x, safeWavelength), (float)WrapMeters(cameraAup.z, safeWavelength), safeWavelength, 0f);
             dto.GridParams = new float4(math.lerp(12f, 48f, q), math.lerp(36f, 144f, q), math.lerp(18f, 7f, q), math.lerp(64f, 224f, q));
             dto.RingParams = new float4(math.lerp(4f, 9f, q), math.lerp(1.85f, 1.38f, q), math.lerp(512f, 4096f, q), 0f);
             dto.GlobalQualityWeight = q;
@@ -276,13 +300,10 @@ namespace Hecton8.Atmosphere
             for (int i = 0; i < limit; i++)
             {
                 WaveParametersDTO wave = waves[i];
-                hash = Hash(hash, math.asuint(wave.DirectionAndSteepness.x));
-                hash = Hash(hash, math.asuint(wave.DirectionAndSteepness.y));
-                hash = Hash(hash, math.asuint(wave.DirectionAndSteepness.z));
-                hash = Hash(hash, math.asuint(wave.DirectionAndSteepness.w));
-                hash = Hash(hash, math.asuint(wave.PhaseSpeed));
-                hash = Hash(hash, math.asuint(wave.Amplitude));
-                hash = Hash(hash, math.asuint(wave.Wavelength));
+                hash = HashFloat4(hash, wave.Wave1);
+                hash = HashFloat4(hash, wave.Wave2);
+                hash = HashFloat4(hash, wave.Wave3);
+                hash = HashFloat4(hash, wave.GlobalWindAndTime);
             }
 
             hash = Hash(hash, math.asuint(time));
@@ -319,14 +340,135 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static WaveParametersDTO SanitizeWave(WaveParametersDTO wave)
         {
-            wave.DirectionAndSteepness.xy = Normalize2OrDefault(wave.DirectionAndSteepness.xy, new float2(1f, 0f));
-            wave.DirectionAndSteepness.z = WrapPhaseRadians(wave.DirectionAndSteepness.z);
-            wave.DirectionAndSteepness.w = math.saturate(wave.DirectionAndSteepness.w);
-            wave.PhaseSpeed = math.isfinite(wave.PhaseSpeed) ? wave.PhaseSpeed : 0f;
-            wave.Amplitude = FiniteNonNegative(wave.Amplitude);
-            wave.Wavelength = math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, FinitePositive(wave.Wavelength, 24f));
-            wave._pad0 = 0u;
+            wave.Wave1 = SanitizeWaveLane(wave.Wave1);
+            wave.Wave2 = SanitizeWaveLane(wave.Wave2);
+            wave.Wave3 = SanitizeWaveLane(wave.Wave3);
+            wave.GlobalWindAndTime = math.select(float4.zero, wave.GlobalWindAndTime, math.isfinite(wave.GlobalWindAndTime));
             return wave;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float4 CreateWaveLane(float directionRadians, float steepness, float wavelength, float phaseSpeed)
+        {
+            return SanitizeWaveLane(new float4(directionRadians, steepness, wavelength, phaseSpeed));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float4 CreateWaveLaneFromDirection(float2 direction, float steepness, float wavelength, float phaseSpeed)
+        {
+            float2 safeDirection = Normalize2OrDefault(direction, new float2(1f, 0f));
+            return CreateWaveLane(math.atan2(safeDirection.y, safeDirection.x), steepness, wavelength, phaseSpeed);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float4 GetWaveLane(WaveParametersDTO wave, int laneIndex)
+        {
+            switch (laneIndex)
+            {
+                case 0:
+                    return wave.Wave1;
+                case 1:
+                    return wave.Wave2;
+                default:
+                    return wave.Wave3;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void SetWaveLane(ref WaveParametersDTO wave, int laneIndex, float4 lane)
+        {
+            switch (laneIndex)
+            {
+                case 0:
+                    wave.Wave1 = SanitizeWaveLane(lane);
+                    break;
+                case 1:
+                    wave.Wave2 = SanitizeWaveLane(lane);
+                    break;
+                default:
+                    wave.Wave3 = SanitizeWaveLane(lane);
+                    break;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float2 WaveLaneDirection(float4 lane)
+        {
+            math.sincos(math.isfinite(lane.x) ? lane.x : 0f, out float sine, out float cosine);
+            return new float2(cosine, sine);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float WaveLaneSteepness(float4 lane)
+        {
+            return math.saturate(math.isfinite(lane.y) ? lane.y : 0f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float WaveLaneWavelength(float4 lane)
+        {
+            return math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, FinitePositive(lane.z, 24f));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float WaveLaneSpeed(float4 lane)
+        {
+            return math.isfinite(lane.w) ? lane.w : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float WaveLaneAmplitude(float4 lane)
+        {
+            float steepness = WaveLaneSteepness(lane);
+            if (steepness <= 0.000001f)
+                return 0f;
+
+            float wavelength = WaveLaneWavelength(lane);
+            float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi / wavelength;
+            return math.min(wavelength * 0.125f, steepness / math.max(0.000001f, waveNumber));
+        }
+
+        public static float ResolveMaxWavelength(NativeArray<WaveParametersDTO> waves)
+        {
+            if (!waves.IsCreated || waves.Length <= 0)
+                return 4096f;
+
+            float maxWavelength = OceanSurfaceAtmosphereConstants.MinimumWavelength;
+            int laneLimit = math.min(waves.Length * OceanSurfaceAtmosphereConstants.WavesPerParameters, OceanSurfaceAtmosphereConstants.MaxWaveOctaves);
+            for (int i = 0; i < laneLimit; i++)
+            {
+                float4 lane = GetWaveLane(waves[i / OceanSurfaceAtmosphereConstants.WavesPerParameters], i % OceanSurfaceAtmosphereConstants.WavesPerParameters);
+                if (WaveLaneSteepness(lane) > 0.000001f)
+                    maxWavelength = math.max(maxWavelength, WaveLaneWavelength(lane));
+            }
+
+            return maxWavelength;
+        }
+
+        public static float ResolveMaxAmplitude(NativeArray<WaveParametersDTO> waves)
+        {
+            if (!waves.IsCreated || waves.Length <= 0)
+                return 0f;
+
+            float maxAmplitude = 0f;
+            int laneLimit = math.min(waves.Length * OceanSurfaceAtmosphereConstants.WavesPerParameters, OceanSurfaceAtmosphereConstants.MaxWaveOctaves);
+            for (int i = 0; i < laneLimit; i++)
+            {
+                float4 lane = GetWaveLane(waves[i / OceanSurfaceAtmosphereConstants.WavesPerParameters], i % OceanSurfaceAtmosphereConstants.WavesPerParameters);
+                maxAmplitude = math.max(maxAmplitude, WaveLaneAmplitude(lane));
+            }
+
+            return maxAmplitude;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float4 SanitizeWaveLane(float4 lane)
+        {
+            lane.x = WrapPhaseRadians(math.isfinite(lane.x) ? lane.x : 0f);
+            lane.y = math.saturate(math.isfinite(lane.y) ? lane.y : 0f);
+            lane.z = math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, FinitePositive(lane.z, 24f));
+            lane.w = math.isfinite(lane.w) ? lane.w : 0f;
+            return lane;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -346,6 +488,15 @@ namespace Hecton8.Atmosphere
         {
             current ^= value;
             return current * 16777619u;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint HashFloat4(uint hash, float4 value)
+        {
+            hash = Hash(hash, math.asuint(value.x));
+            hash = Hash(hash, math.asuint(value.y));
+            hash = Hash(hash, math.asuint(value.z));
+            return Hash(hash, math.asuint(value.w));
         }
     }
 
@@ -455,6 +606,137 @@ namespace Hecton8.Atmosphere
             query.Seed = random.state;
             query.Flags = 1u;
             Queries[index] = query;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct GenerateMockStormJob : IJob
+    {
+        [NoAlias] public NativeArray<WaveParametersDTO> Waves;
+        [NoAlias] public NativeArray<WeatherStateDTO> Weather;
+        [NoAlias] public NativeArray<AtmosphereDTO> Atmosphere;
+        [NoAlias] public NativeArray<float4> SurfaceSwell;
+        public float SeaLevel;
+        public float TimeSeconds;
+        public float GlobalQualityWeight;
+        public uint SimulationFrame;
+
+        public void Execute()
+        {
+            if (!Weather.IsCreated || Weather.Length <= 0)
+                return;
+
+            float t = math.saturate((SimulationFrame & 1023u) * (1f / 1023f));
+            float pulse = 0.5f + (0.5f * math.sin(TimeSeconds * 0.071f));
+            WeatherStateDTO state = default;
+            state.WindDirectionSpeedStorm = new float4(0.78f, 0.62f, math.lerp(9f, 28f, t), math.saturate(math.lerp(0.35f, 1f, pulse)));
+            state.SurfaceScalars = new float4(SeaLevel, 1f, math.lerp(0.78f, 0.46f, state.WindDirectionSpeedStorm.w), math.saturate(state.WindDirectionSpeedStorm.w * 0.65f));
+            state.SkyTintAndSurge = new float4(0.33f, 0.21f, 0.48f, math.lerp(0.08f, 1.35f, state.WindDirectionSpeedStorm.w));
+            state.StateMask = 1u;
+            state.GlobalQualityWeight = math.saturate(GlobalQualityWeight);
+            Weather[0] = state;
+
+            CalculateWaveParametersJob.FillWaveParameters(Waves, ref state, SurfaceSwell, TimeSeconds, GlobalQualityWeight);
+            Weather[0] = state;
+
+            if (Atmosphere.IsCreated && Atmosphere.Length > 0)
+            {
+                AtmosphereDTO atmo = default;
+                atmo.RayleighBeta = new float4(0.0048f, 0.0118f, 0.0285f, 0f);
+                atmo.MieBeta = new float4(0.021f, 0.018f, 0.014f, 0.72f);
+                atmo.ScatteringParams = new float4(2.4f, 1.15f + state.WindDirectionSpeedStorm.w, 0.82f, 0.34f);
+                atmo.PlanetParams = new float4(0.62f, 0.17f, 0.88f + (state.WindDirectionSpeedStorm.w * 0.35f), 0f);
+                Atmosphere[0] = atmo;
+            }
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct CalculateWaveParametersJob : IJob
+    {
+        [NoAlias] public NativeArray<WaveParametersDTO> Waves;
+        [NoAlias] public NativeArray<WeatherStateDTO> Weather;
+        [NoAlias] public NativeArray<float4> SurfaceSwell;
+        public float TimeSeconds;
+        public float GlobalQualityWeight;
+
+        public void Execute()
+        {
+            if (!Weather.IsCreated || Weather.Length <= 0)
+                return;
+
+            WeatherStateDTO state = Weather[0];
+            FillWaveParameters(Waves, ref state, SurfaceSwell, TimeSeconds, GlobalQualityWeight);
+            Weather[0] = state;
+        }
+
+        public static void FillWaveParameters(
+            NativeArray<WaveParametersDTO> waves,
+            ref WeatherStateDTO state,
+            NativeArray<float4> surfaceSwell,
+            float timeSeconds,
+            float globalQualityWeight)
+        {
+            float2 windDirection = HectonOceanSurfaceMath.Normalize2OrDefault(state.WindDirectionSpeedStorm.xy, new float2(1f, 0f));
+            float windSpeed = math.max(0.01f, math.isfinite(state.WindDirectionSpeedStorm.z) ? state.WindDirectionSpeedStorm.z : 11f);
+            float storm = math.saturate(math.isfinite(state.WindDirectionSpeedStorm.w) ? state.WindDirectionSpeedStorm.w : 0.42f);
+            float quality = math.saturate(globalQualityWeight);
+            state.WindDirectionSpeedStorm = new float4(windDirection.x, windDirection.y, windSpeed, storm);
+            state.GlobalQualityWeight = quality;
+
+            if (!waves.IsCreated || waves.Length <= 0)
+            {
+                state.MaxWaveAmplitude = 0f;
+                return;
+            }
+
+            float baseWavelength = math.lerp(18f, 48f, math.saturate(windSpeed * (1f / 32f)));
+            float stormScale = math.lerp(0.65f, 1.85f, storm);
+            float directionAngle = math.atan2(windDirection.y, windDirection.x);
+            float maxAmplitude = 0f;
+            int laneLimit = math.min(waves.Length * OceanSurfaceAtmosphereConstants.WavesPerParameters, OceanSurfaceAtmosphereConstants.MaxWaveOctaves);
+            for (int i = 0; i < laneLimit; i++)
+            {
+                float octave01 = laneLimit <= 1 ? 0f : i * math.rcp(laneLimit - 1f);
+                float wavelength = baseWavelength * math.pow(1.58f, i) * stormScale;
+                float spread = ((i & 1) == 0 ? -1f : 1f) * math.lerp(0.08f, 0.72f, octave01);
+                float steepness = math.saturate(math.lerp(0.12f, 0.82f, storm) * math.lerp(1.05f, 0.42f, octave01));
+                float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi / math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, wavelength);
+                float phaseSpeed = math.sqrt(9.81f * waveNumber) * math.lerp(0.82f, 1.22f, octave01);
+                float4 lane = HectonOceanSurfaceMath.CreateWaveLane(directionAngle + spread, steepness, wavelength, phaseSpeed);
+                int waveIndex = i / OceanSurfaceAtmosphereConstants.WavesPerParameters;
+                int laneIndex = i - (waveIndex * OceanSurfaceAtmosphereConstants.WavesPerParameters);
+                WaveParametersDTO wave = waves[waveIndex];
+                HectonOceanSurfaceMath.SetWaveLane(ref wave, laneIndex, lane);
+                wave.GlobalWindAndTime = new float4(windDirection.x, windDirection.y, windSpeed, storm);
+                waves[waveIndex] = HectonOceanSurfaceMath.SanitizeWave(wave);
+                maxAmplitude = math.max(maxAmplitude, HectonOceanSurfaceMath.WaveLaneAmplitude(lane));
+            }
+
+            state.MaxWaveAmplitude = maxAmplitude;
+            if (surfaceSwell.IsCreated && surfaceSwell.Length > 0)
+            {
+                float swellSpeed = windSpeed * math.lerp(0.06f, 0.28f, storm) * math.lerp(0.5f, 1f, quality);
+                surfaceSwell[0] = new float4(windDirection.x * swellSpeed, 0f, windDirection.y * swellSpeed, storm);
+            }
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct ApplyDelayedWaveReadbackJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<float4> CompletedResults;
+        [NoAlias] public NativeArray<float> Heights;
+        public float SeaLevel;
+
+        public void Execute(int index)
+        {
+            float height = 0f;
+            if (CompletedResults.IsCreated && index < CompletedResults.Length)
+                height = math.isfinite(CompletedResults[index].x) ? CompletedResults[index].x : 0f;
+
+            if (Heights.IsCreated && index < Heights.Length)
+                Heights[index] = SeaLevel + height;
         }
     }
 
@@ -592,34 +874,50 @@ namespace Hecton8.Atmosphere
             if (!waves.IsCreated || waves.Length <= 0 || !math.isfinite(value))
                 return false;
 
-            int start = index >= 0 ? math.min(index, waves.Length - 1) : 0;
-            int end = index >= 0 ? start + 1 : waves.Length;
+            int laneCapacity = math.min(waves.Length * OceanSurfaceAtmosphereConstants.WavesPerParameters, OceanSurfaceAtmosphereConstants.MaxWaveOctaves);
+            int start = index >= 0 ? math.clamp(index, 0, laneCapacity - 1) : 0;
+            int end = index >= 0 ? start + 1 : laneCapacity;
             for (int i = start; i < end; i++)
             {
-                WaveParametersDTO wave = waves[i];
+                int waveIndex = i / OceanSurfaceAtmosphereConstants.WavesPerParameters;
+                int laneIndex = i - (waveIndex * OceanSurfaceAtmosphereConstants.WavesPerParameters);
+                WaveParametersDTO wave = waves[waveIndex];
+                float4 lane = HectonOceanSurfaceMath.GetWaveLane(wave, laneIndex);
                 switch (keyHash)
                 {
                     case KeyWaveAmplitude:
-                        wave.Amplitude = math.max(0f, value);
+                    {
+                        float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi / HectonOceanSurfaceMath.WaveLaneWavelength(lane);
+                        lane.y = math.saturate(math.max(0f, value) * waveNumber);
                         break;
+                    }
                     case KeyWaveWavelength:
-                        wave.Wavelength = math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, value);
+                        lane.z = math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, value);
                         break;
                     case KeyWaveSteepness:
-                        wave.DirectionAndSteepness.w = math.saturate(value);
+                        lane.y = math.saturate(value);
                         break;
                     case KeyWavePhaseSpeed:
-                        wave.PhaseSpeed = value;
+                        lane.w = value;
                         break;
                     case KeyWaveDirectionX:
-                        wave.DirectionAndSteepness.x = value;
+                    {
+                        float2 direction = HectonOceanSurfaceMath.WaveLaneDirection(lane);
+                        direction.x = value;
+                        lane = HectonOceanSurfaceMath.CreateWaveLaneFromDirection(direction, lane.y, lane.z, lane.w);
                         break;
+                    }
                     case KeyWaveDirectionZ:
-                        wave.DirectionAndSteepness.y = value;
+                    {
+                        float2 direction = HectonOceanSurfaceMath.WaveLaneDirection(lane);
+                        direction.y = value;
+                        lane = HectonOceanSurfaceMath.CreateWaveLaneFromDirection(direction, lane.y, lane.z, lane.w);
                         break;
+                    }
                 }
 
-                waves[i] = HectonOceanSurfaceMath.SanitizeWave(wave);
+                HectonOceanSurfaceMath.SetWaveLane(ref wave, laneIndex, lane);
+                waves[waveIndex] = HectonOceanSurfaceMath.SanitizeWave(wave);
             }
 
             return true;

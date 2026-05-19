@@ -5,7 +5,7 @@ Agent: SHINOBU_115
 Domain: ECHELON 6 HABITAT & VEHICLES
 Role: STRUCTURAL_INTEGRITY_CALCULATOR
 Task Count: 20
-Status: SOURCE_HARDENED_NOALIAS / COMPILE_BLOCKED_BY_CPU_LOAD / RUNTIME_PENDING
+Status: SOURCE_HARDENED_VISUAL_LOCKS_EDGE_CASCADE_AUDITED / COMPILE_BLOCKED_BY_CPU_LOAD / RUNTIME_PENDING
 
 ## Mandates Loaded
 
@@ -17,6 +17,7 @@ Status: SOURCE_HARDENED_NOALIAS / COMPILE_BLOCKED_BY_CPU_LOAD / RUNTIME_PENDING
 - `OPT_Native_Memory_Collections_JobSystem_Protocol.txt` - NativeArray/Vault/job handle discipline.
 - `ARCH_Execution_Phases.txt` - SIMULATION/POST_SIMULATION/VISUAL_SYNC separation.
 - `ARCH_Signal_Lane_Segregation.txt` - typed unmanaged signals, no string events.
+- `TOOL_Designer_Facades_CSV_Binary_Bridge.txt` - editor facade and cold CSV bridge discipline.
 
 ## 2026-05-19 Polish Preflight
 
@@ -25,6 +26,7 @@ Status: SOURCE_HARDENED_NOALIAS / COMPILE_BLOCKED_BY_CPU_LOAD / RUNTIME_PENDING
 - Re-read `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`; no SHINOBU_115 binary payload exists or should be hand-authored. CSV remains cold designer input; runtime truth is Vault DTO.
 - Re-read `Docs/Actual Domains of Project.txt`; assigned domain is Echelon 6 Habitat & Vehicles.
 - Re-read `AGENTS.md`; global status remains pending without Unity/import/profiler proof.
+- Re-read relevant `.agents-skills` mandates for zero-GC, ARM64 layout, AUP determinism, cinematic cheat, physics determinism, native job memory, signal lanes, and designer facades.
 
 ## State Machine
 
@@ -67,15 +69,75 @@ Status: SOURCE_HARDENED_NOALIAS / COMPILE_BLOCKED_BY_CPU_LOAD / RUNTIME_PENDING
 - [x] ASSEMBLY_ROUTE_PASS | Source DOD met: runtime asmdef references Core/Contracts/Memory/local Deformation contracts and Unity packages only; no sibling Runtime assembly reference added. DOD: compile wall preservation. Alternative rejected: direct concrete references to Agent 64/108/114 owners. Estimate: iteration-time protection, not frame-time.
 - [x] BINARY_LEDGER_PASS | Source DOD met: binary payload ledger was read; no new `.bin`/`.h8bin` produced or hand-patched. DOD: no fake binary authority. Alternative rejected: inventing structural binary payload before owner bake path exists.
 
+### Loop 6: Second Ultra-Think Polish Mandate
+
+- [x] VAULT_RELOCATION_LOCK_PASS | Source DOD met: scheduled solver now calls `TryLockBuffer` on every Vault buffer whose pointer is captured by jobs, including optional SDF, and unlocks only after the `LateFrameTick()` fence completes. DOD: Vault generation/relocation safety while raw NativeArray aliases are live. Alternative rejected: resolving arrays and trusting no owner relocation. Estimate: correctness fence; model cost is a few cold control-path calls per scheduled solve.
+- [x] EDITOR_ACCESS_FENCE_PASS | Source DOD met: `TryGetState`, `TryGetTuning`, `TryGetTelemetrySample`, `SetTuning`, and `OnDrawGizmos` now return while `_jobScheduled != 0`. DOD: no editor read/write races against active Burst jobs. Alternative rejected: completing jobs from editor read paths. Estimate: avoids editor-induced stall/race; no gameplay hot-path cost.
+- [x] LITERAL_ONDRAWGIZMOS_PASS | Source DOD met: runtime component now contains a literal `OnDrawGizmos` hook that reads Vault state after the solver fence and draws green/yellow/flashing-red wire cubes from AUP deltas. DOD: Task 19 literal implementation. Alternative rejected: relying only on SceneView delegate. Estimate: editor-only.
+- [x] TELEMETRY_GRAPH_PASS | Source DOD met: `Hull Integrity Tuner` graph now reads `StructuralTelemetryEntry` samples through `TryGetTelemetrySample` instead of sampling live node state. DOD: Task 17 direct telemetry buffer graph. Alternative rejected: per-node graph as a false Black Box proof. Estimate: editor-only.
+- [x] GRAPHICSBUFFER_LOCK_USAGE_PASS | Source DOD met: structural GPU buffers are constructed with `GraphicsBuffer.UsageFlags.LockBufferForWrite` before `LockBufferForWrite` uploads. DOD: render upload path matches Unity lock contract. Alternative rejected: generic structured buffer constructor with lock calls. Estimate: avoids GPU upload failure/stall; measured proof absent.
+- [x] CONTINUOUS_SDF_QUALITY_PASS | Source DOD met: SDF anchoring now uses `math.step(0.3f, quality)`, polynomial quality curve, nearest sample on weak devices, and six-neighbor cross-tap blend above the continuous threshold. DOD: no binary low/high switch and no raycast. Alternative rejected: always-high SDF taps on MX350/Quest. Estimate: low tier saves five SDF byte taps per node.
+
+### Loop 7: Third Ultra-Think Polish Mandate
+
+- [x] EDITOR_NO_FORCED_FENCE_PASS | Source DOD met: `RegenerateMockGraph()` no longer calls `CompleteScheduled()`; it returns while `_jobScheduled != 0` and only runs the cold mock generator after the solver fence is down. DOD: editor controls cannot steal the simulation fence. Alternative rejected: completing worker jobs from an editor button. Estimate: prevents worst-case editor stall; runtime hot-path cost 0 us.
+- [x] COLD_JOB_VAULT_LOCK_PASS | Source DOD met: boot clear and emergency mock generation now acquire Vault locks before scheduling immediate cold jobs that hold buffer aliases. DOD: no scheduled job owns an unfenced Vault pointer. Alternative rejected: trusting boot/editor cold paths to be immune to Vault relocation. Estimate: correctness fence; model control-path cost below measurement noise.
+- [x] TUNING_WRITE_LOCK_PASS | Source DOD met: `SetTuning()` and default tuning writes acquire `BufferID.StructuralIntegrityTuning` before mutating the DTO. DOD: designer facade writes now use the same owner route as solver reads. Alternative rejected: relying only on `_jobScheduled == 0`. Estimate: editor/cold only.
+- [x] CSV_SCRATCH_LOCK_PASS | Source DOD met: cold CSV reload locks `StructuralIntegrityCsvScratch` while `FileStream.Read(Span<byte>)` writes into the Vault scratch pointer, locks material strengths while parsing/upserting, and locks states/materials while the cold material-apply job owns their pointers. DOD: direct file IO into Vault memory is fenced. Alternative rejected: managed `byte[]` staging or unlocked scratch pointer writes. Estimate: cold-only; avoids relocation corruption.
+
+### Loop 8: Fourth Ultra-Think Polish Mandate
+
+- [x] COLD_BOOT_FAIL_FAST_PASS | Source DOD met: boot clear, default material write, default tuning write, and optional mock graph generation now return success/failure; `TryInitialize()` aborts instead of continuing after a lock or alias failure on `UninitializedMemory` buffers. DOD: no silent deterministic-state poison. Alternative rejected: permissive boot with partially initialized Vault memory. Estimate: cold-only; prevents invalid initial solver state.
+- [x] STRUCTURAL_MUTATION_GUARD_PASS | Source DOD met: cold/editor writers acquire `StructuralMutationGuardMask = 1UL << 45` before mutating tuning, material, scratch, state, or mock graph buffers. DOD: relocation locks are not used as writer exclusion. Alternative rejected: assuming single-threaded editor/cold access is enough. Estimate: cold/editor only.
+- [x] MOCK_REGEN_RESULT_PASS | Source DOD met: `RegenerateMockGraph()` returns `bool`, and the UI Toolkit tuner reports `Mock graph regenerated` or `Mock graph busy or locked`. DOD: fallback mock path failure is visible to CI/manual profiling. Alternative rejected: fire-and-forget editor button. Estimate: editor-only.
+- [x] MATERIAL_HASH_TABLE_PASS | Source DOD met: `StructuralIntegrityMaterialStrengths` now behaves as a fixed open-addressed Vault hash table with hash-addressed upsert and job lookup. DOD: Task 18's NativeHashMap intent is preserved without a persistent `NativeHashMap` allocator that the Vault API does not own. Alternative rejected: linear scan DTO list and unmanaged `NativeHashMap` field ownership. Estimate: cold upsert O(1) average; mock/material apply lookup O(1) average with 32-slot cap.
+
+### Loop 9: Compile-Wall Route Audit
+
+- [x] AUP_ROUTE_AUDIT_PASS | Source DOD met: `AbsoluteUniversePosition` is declared in `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`, which is governed by the parent `Hecton8.Core.asmdef`, not by a sibling `Hecton8.World.*` runtime asmdef. `StructuralIntegrityCalculatorTypes.cs` uses this Core-owned AUP because `FluidIncursionSignal.LeakAup` already requires it. DOD: no direct sibling runtime reference was added. Alternative rejected: creating a local AUP clone that would diverge from the Core signal contract. Estimate: runtime cost 0 us; compile-wall proof only.
+- [x] ASMDEF_ROUTE_SCAN_PASS | Source DOD met: `Hecton8.Habitat.Deformation.asmdef` references `Hecton8.Bootstrap.Contracts`, `Hecton8.Core`, `Hecton8.Core.Contracts`, `Hecton8.Core.Memory`, local deformation contracts, and Unity packages; it does not reference World runtime, flood runtime, construction runtime, netcode runtime, audio runtime, or VFX runtime assemblies. Alternative rejected: removing `Hecton8.Core` while using Core-owned signal and AUP contracts would break existing route authority. Estimate: runtime cost 0 us; iteration-risk reduction only.
+
+### Loop 10: Signal Contract And Runtime Reflection Audit
+
+- [x] SIGNAL_PROFILE_BYTE_CONTRACT_PASS | Source DOD met: `BaseModuleCompromisedSignal.QualityTier` is a Core byte contract with valid profile values `ScalabilityTierProfiles.LowMx350 = 0` and `HighRtx = 1`; `StructuralCollapseSignalJob` now resolves the outgoing signal byte through `ResolveSignalProfileByte()` instead of writing a bogus `0..4` range. Continuous quality remains in `StructuralTuningDTO.GlobalQualityWeight`, telemetry, solver cadence, and SDF math. Alternative rejected: changing the Core signal layout or widening the byte contract from this domain. Estimate: runtime cost 0 us beyond one finite clamp/step on breach emission.
+- [x] RUNTIME_REFLECTION_EVICTION_PASS | Source DOD met: `StructuralIntegrityLayout.Validate()` uses `UnsafeUtility.SizeOf` in player/runtime builds; `System.Reflection.FieldInfo` and `UnsafeUtility.GetFieldOffset` are now inside `#if UNITY_EDITOR` only. Alternative rejected: runtime reflection during boot. Estimate: cold boot GC/reflection risk removed; no steady-state frame cost.
+
+### Loop 11: Visual Lock, Connected Edge Cascade, And CSV Reload Polish
+
+- [x] VISUAL_SYNC_LOCK_RETENTION_PASS | Source DOD met: `LateFrameTick()` now calls `CompleteScheduled(false)`, runs `AfterSolverComplete()` while solver Vault locks are still held, and releases locks in `finally`. Alternative rejected: unlocking before GPU upload/telemetry fault dump and relying on no Vault relocation. Estimate: runtime hot-path math unchanged; prevents relocation corruption during visual sync.
+- [x] CONNECTED_EDGE_SEVER_PASS | Source DOD met: `StructuralEdgeSeverJob` now receives `CsrDestinations` and severs an owned edge when its source is collapsed or its destination points at a collapsed node. Alternative rejected: outgoing-only severing that leaves inbound/support edges attached for one-sided CSR graphs. Estimate: one bounded destination-state read per edge until source collapse; deterministic O(E).
+- [x] CSV_HOT_RELOAD_SHARE_PASS | Source DOD met: cold material CSV reads now use `FileStream(FileMode.Open, FileAccess.Read, FileShare.ReadWrite, CsvScratchBytes, FileOptions.SequentialScan)` after the structural mutation guard and scratch/material locks are acquired. Alternative rejected: `File.OpenRead`, which can block designer tooling that writes the CSV during hot reload. Estimate: cold-only; runtime solver cost 0 us.
+- [x] ARCH_DOC_DEDUP_PASS | Source DOD met: `SHINOBU_115_STRUCTURAL_INTEGRITY_CALCULATOR.md` now has one source-anchor set and documents visual-sync lock retention plus source/destination edge severing. Alternative rejected: duplicated stale anchors in architecture docs. Estimate: documentation proof only.
+
 ## Verification
 
 - Compile: not run. Blocked at 2026-05-19 because CPU samples remain above 50%, and batch rule forbids `dotnet` when CPU >50%.
 - CPU gate samples: `100,100,99.6`, then `100,100,100`, then `100,100,98.3`. No `dotnet`/`csc` process was active, but CPU gate still fails.
 - Polish CPU gate sample after NoAlias/cold-fence patch: `100,100,99.3`. No `dotnet`/`csc` process was active, but CPU gate still fails.
 - Final CPU gate sample after documentation append: `100,100,100`. No `dotnet`/`csc` process was active, but CPU gate still fails.
+- Latest CPU gate sample after Vault locks, telemetry graph, and literal `OnDrawGizmos`: `100,100,100`. No `dotnet`/`csc` process was active, but CPU gate still fails.
+- Follow-up CPU gate sample after documentation update: `67.5,100,99.6`. No `dotnet`/`csc` process was active, but CPU gate still fails.
+- Latest CPU gate sample after cold-path lock patch: `100,100,100`. No `dotnet`/`csc` process was active, but CPU gate still fails.
+- Follow-up CPU gate samples after final static pass: `54.2,32.1,44.7`, then `61.7,52.1,46.3,58.3,94.8`. No `dotnet`/`csc` process was active, but both windows fail because at least one sample exceeds 50%.
+- CPU gate after fail-fast patch: active `dotnet`/`csc` processes were present with samples `80.9,100,100,100,84.4`, so build was blocked.
+- CPU gate after material hash-table patch: no `dotnet`/`csc` process was active, but samples `85.1,92.1,100,100,100` exceed 50%, so build remains blocked.
+- Final CPU gate after log append: active `dotnet`/`csc` processes were present with samples `99.8,96.7,100,98,99.8`, so build remains blocked.
+- Route-audit CPU gate: active `dotnet` process was present and samples were `100,100,100,100,96`, so build remains blocked.
+- Signal-contract CPU gate: no `dotnet`/`csc` process was active, but samples `78.2,48.2,92.7,99.8,100` exceed 50%, so build remains blocked.
 - XML extraction: corrected regex `<AGENT_PROMPT id="SHINOBU_115"[^>]*>`; task count confirmed as 20 after parser fix.
 - Static grep: new structural files contain no `Update`, `LateUpdate`, `FixedUpdate`, `FixedJoint`, `SpringJoint`, `Rigidbody.mass`, `Destroy(gameObject)`, `MaterialPropertyBlock`, `new NativeArray`, `Allocator.Persistent`, `foreach`, LINQ, `IEnumerable`, or `string.Split`.
 - Static grep: `StructuralIntegrityCalculatorTypes.cs` now shows `[NoAlias]` on every job-owned `NativeArray` and job-safe signal writer field.
-- Whitespace check: `git diff --check` passed on SHINOBU_115 files.
+- Static grep: source confirms `TryLockSolverBuffers`, `TryUnlockBuffer`, `TryGetTelemetrySample`, literal `OnDrawGizmos`, `UsageFlags.LockBufferForWrite`, `UnsafeUtility.GetFieldOffset`, `math.step`, and `qualityCurve`.
+- Static grep: source confirms `RegenerateMockGraph()` no longer calls `CompleteScheduled()`; remaining completions are `OnDisable()` teardown and `LateFrameTick()` visual-sync fence.
+- Static grep: source confirms cold locks for `StructuralIntegrityTuning`, `StructuralIntegrityMaterialStrengths`, and `StructuralIntegrityCsvScratch` around editor/cold writers.
+- Static grep: source confirms `StructuralMutationGuardMask`, fail-fast bool helpers, `RegenerateMockGraph()` result reporting, and open-addressed material lookup through `WrapIndex`/`WrapMaterialIndex`.
+- Compile-wall route grep: `AbsoluteUniversePosition` definition resolved to Core parent assembly; `Hecton8.Habitat.Deformation.asmdef` contains no direct sibling runtime reference for World/Flood/Construction/Netcode/Audio/VFX.
+- Compile-wall asmdef scan: no hits for `Hecton8.World`, `Hecton8.Environment.Fluids`, `Construction`, `Netcode`, `Hecton8.Audio`, or `Hecton8.VFX` inside `Hecton8.Habitat.Deformation.asmdef`.
+- Static grep: `BaseModuleCompromisedSignal.QualityTier` resolves to Core profile byte values `0/1`; SHINOBU_115 now writes `ResolveSignalProfileByte(tuning.GlobalQualityWeight)` and no longer writes `math.round(GlobalQualityWeight * 4f)`.
+- Static grep: runtime reflection is absent from player builds because `System.Reflection.FieldInfo` and `UnsafeUtility.GetFieldOffset` are gated by `#if UNITY_EDITOR`; runtime validation keeps size checks.
+- Static grep: source confirms `CompleteScheduled(false)` keeps solver locks through `AfterSolverComplete()` until `UnlockSolverBuffers()` in `finally`.
+- Static grep: `StructuralEdgeSeverJob` now carries `[ReadOnly] [NoAlias] CsrDestinations` and severs source-collapsed or destination-collapsed owned edges.
+- Static grep: material CSV reload now uses `FileShare.ReadWrite` and `FileOptions.SequentialScan`; `File.OpenRead` is absent from SHINOBU_115 runtime/editor/type files.
+- Whitespace check: latest `git diff --check` passed on SHINOBU_115 files; Git reported CRLF normalization warnings only.
 - Unity Console / Play Mode / Profiler / GCMonitor: not run; proof absent.
 - Current evidence class: static source implementation + grep audit; compile/runtime/profiler proof absent.

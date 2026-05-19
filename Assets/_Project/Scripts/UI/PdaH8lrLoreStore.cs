@@ -47,6 +47,7 @@ namespace Hecton8.UI
 #if HECTON8_PDA_H8LR_MMF_AVAILABLE
         private MemoryMappedFile _mappedFile;
         private MemoryMappedViewAccessor _accessor;
+        private bool _viewPointerAcquired;
 #endif
         private FileStream _fileStream;
         private byte* _basePointer;
@@ -142,7 +143,10 @@ namespace Hecton8.UI
 #if HECTON8_PDA_H8LR_MMF_AVAILABLE
             if (_accessor != null)
             {
-                _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                if (_viewPointerAcquired)
+                    _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+
+                _viewPointerAcquired = false;
                 _accessor.Dispose();
                 _accessor = null;
             }
@@ -180,6 +184,7 @@ namespace Hecton8.UI
                     true);
                 _accessor = _mappedFile.CreateViewAccessor(0L, fileBytes, MemoryMappedFileAccess.Read);
                 _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref _basePointer);
+                _viewPointerAcquired = true;
                 _mappedBytes = fileBytes;
                 _vaultMirrorBacked = false;
 

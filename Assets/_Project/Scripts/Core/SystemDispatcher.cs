@@ -37,14 +37,14 @@ using Hecton8.World;
 
 namespace Hecton8.Core
 {
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct CriticalMemoryPressureEvent
     {
-        public readonly double UsageRatio;
-        public readonly long ReservedMemoryBytes;
-        public readonly long PhysicalMemoryBytes;
-        public readonly int Frame;
-        private readonly int _pad0;
+        [FieldOffset(0)] public readonly double UsageRatio;
+        [FieldOffset(8)] public readonly long ReservedMemoryBytes;
+        [FieldOffset(16)] public readonly long PhysicalMemoryBytes;
+        [FieldOffset(24)] public readonly int Frame;
+        [FieldOffset(28)] private readonly int _pad0;
 
         public CriticalMemoryPressureEvent(
             int frame,
@@ -543,25 +543,25 @@ namespace Hecton8.Core
         private static int _pendingDispatcherRaycastCount;
         private static int _scheduledDispatcherRaycastCount;
 
-        [StructLayout(LayoutKind.Sequential, Size = DispatcherBlackBoxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = DispatcherBlackBoxEntrySizeBytes)]
         private struct DispatcherBlackBoxEntry
         {
-            public uint Frame;
-            public uint Sequence;
-            public double DilatedTime;
-            public double UnscaledTime;
-            public float DeltaTime;
-            public float UnscaledDeltaTime;
-            public float TimeDilationScalar;
-            public float TickOverheadMilliseconds;
-            public ushort Flags;
-            public ushort PendingRaycasts;
-            public ushort ScheduledRaycasts;
-            public byte HomeostasisPressureLevel;
-            public byte HomeostasisFoveatedTier;
-            public uint AupPreShiftSequence;
-            public uint StateHash;
-            public ulong KillSwitchMask;
+            [FieldOffset(0)] public uint Frame;
+            [FieldOffset(4)] public uint Sequence;
+            [FieldOffset(8)] public double DilatedTime;
+            [FieldOffset(16)] public double UnscaledTime;
+            [FieldOffset(24)] public float DeltaTime;
+            [FieldOffset(28)] public float UnscaledDeltaTime;
+            [FieldOffset(32)] public float TimeDilationScalar;
+            [FieldOffset(36)] public float TickOverheadMilliseconds;
+            [FieldOffset(40)] public ushort Flags;
+            [FieldOffset(42)] public ushort PendingRaycasts;
+            [FieldOffset(44)] public ushort ScheduledRaycasts;
+            [FieldOffset(46)] public byte HomeostasisPressureLevel;
+            [FieldOffset(47)] public byte HomeostasisFoveatedTier;
+            [FieldOffset(48)] public uint AupPreShiftSequence;
+            [FieldOffset(52)] public uint StateHash;
+            [FieldOffset(56)] public ulong KillSwitchMask;
         }
 
         static SystemDispatcher()
@@ -2953,8 +2953,7 @@ namespace Hecton8.Core
 
         private void RefreshDataVaultDependency()
         {
-            IDataVault dataVault = GlobalRegistry.DataVault;
-            if (dataVault != null)
+            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault dataVault))
             {
                 _dataVault = dataVault;
                 _cachedDispatcherDataVault = dataVault;
@@ -2985,11 +2984,11 @@ namespace Hecton8.Core
                 }
             }
 
-            dataVault = GlobalRegistry.DataVault;
-            if (dataVault == null)
+            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
                 return false;
 
-            _cachedDispatcherDataVault = dataVault;
+            dataVault = latestVault;
+            _cachedDispatcherDataVault = latestVault;
             return true;
         }
 
@@ -3399,6 +3398,9 @@ namespace Hecton8.Core
 
         private static void PublishMemoryAddressShiftSignals(IDataVault dataVault)
         {
+            if (dataVault == null)
+                return;
+
             int recordCount = dataVault.LastRelocationRecordCount;
             for (int i = 0; i < recordCount; i++)
             {
@@ -3415,6 +3417,46 @@ namespace Hecton8.Core
                 signal.SystemId = record.SystemId;
                 GlobalSignals.Publish(in signal);
             }
+
+            PublishVaultSovereigntyAddressShiftRecords(dataVault);
+        }
+
+        private static void PublishVaultSovereigntyAddressShiftRecords(IDataVault dataVault)
+        {
+            if (!dataVault.TryGetBuffer(BufferID.VaultMemoryAddressShiftCount, out NativeArray<int> shiftCount) ||
+                !shiftCount.IsCreated ||
+                shiftCount.Length == 0 ||
+                !dataVault.TryGetBuffer(BufferID.VaultMemoryAddressShiftRecords, out NativeArray<VaultMemoryAddressShiftRecord> records) ||
+                !records.IsCreated)
+            {
+                return;
+            }
+
+            int count = math.clamp(shiftCount[0], 0, records.Length);
+            for (int i = 0; i < count; i++)
+            {
+                VaultMemoryAddressShiftRecord record = records[i];
+                if (record.BufferId == 0 || record.ByteLength <= 0)
+                    continue;
+
+                MemoryAddressShiftSignal signal = default;
+                signal.OldPointer = record.OldPointer;
+                signal.NewPointer = record.NewPointer;
+                signal.BufferId = record.BufferId;
+                signal.ByteLength = record.ByteLength;
+                signal.Version = record.Version;
+                signal.Flags = record.Flags;
+                signal.SystemId = record.SystemId;
+                signal.OldIndex = record.OldIndex;
+                signal.NewIndex = record.NewIndex;
+                signal.MovedEntityId = record.MovedEntityId;
+                signal.SourceFrame = record.SourceFrame;
+                signal.SourceHash = record.SourceHash;
+                signal.CompactedCount = record.CompactedCount;
+                GlobalSignals.Publish(in signal);
+            }
+
+            shiftCount[0] = 0;
         }
 
         private void PublishDataVaultDefragTelemetry(IDataVault dataVault, double elapsedMilliseconds)

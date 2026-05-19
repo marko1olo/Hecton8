@@ -51,6 +51,23 @@ Score 0-2 each.
 Minimum publish score: 9/12.
 Minimum Steam screenshot score: 10/12.
 
+### Creator Utility Gate
+
+Creator unlock value can prioritize capture order, but it cannot override visual proof.
+
+Score 0-1 each:
+
+| Utility check | Pass condition |
+|---|---|
+| Unlocks a named CRM segment | The metadata row names a real `VERIFY_BEFORE_CONTACT` or `NEEDS_ASSET` group that would use the asset. |
+| Matches the creator format | Screenshot for screenshot-tolerant rows; clip/demo for gameplay-first or `NEEDS_ASSET` rows. |
+| Supports one pitch angle | The asset proves exactly one angle: pressure, salvage, base-as-machine, abyss dread, heavy machinery, or Seed Ship signal. |
+| Does not create a new promise | The asset does not imply co-op, performance, world size, feature completeness, or roadmap scope. |
+
+Minimum creator-utility score for outreach use: 3/4.
+
+Hard rule: a screenshot below 9/12 or a Steam screenshot below 10/12 is not publishable even if it unlocks many creator rows. A clip that fails the clip kill tests is not outreach-usable even if it matches a high-value creator.
+
 ### First Screenshot Pack Capture Gate
 
 Before capture, assign every planned shot one job. If a shot has no job, do not capture it.

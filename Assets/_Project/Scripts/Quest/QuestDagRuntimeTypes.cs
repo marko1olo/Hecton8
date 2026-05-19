@@ -82,59 +82,62 @@ namespace Hecton8.Quest
     /// <summary>
     /// Typed unmanaged state-change signal emitted after old/new mask XOR.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct StateChangedSignal : ISignal
     {
-        public ulong FlippedMask;
-        public ulong NewMask;
-        public uint Frame;
-        public int ChunkIndex;
-        public ushort Flags;
-        public ushort Sequence;
-        public uint SourceHash;
+        [FieldOffset(0)] public ulong FlippedMask;
+        [FieldOffset(8)] public ulong NewMask;
+        [FieldOffset(16)] public uint Frame;
+        [FieldOffset(20)] public int ChunkIndex;
+        [FieldOffset(24)] public ushort Flags;
+        [FieldOffset(26)] public ushort Sequence;
+        [FieldOffset(28)] public uint SourceHash;
     }
 
     /// <summary>
     /// Local mock story event for resolver tests when upstream narrative buses are absent.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockStoryEventSignal : ISignal
     {
-        public ulong Timestamp;
-        public uint EventHash;
-        public uint NodeHash;
-        public uint Frame;
-        public uint Flags;
-        public uint _pad0;
-        public uint _pad1;
+        [FieldOffset(0)] public ulong Timestamp;
+        [FieldOffset(8)] public uint EventHash;
+        [FieldOffset(12)] public uint NodeHash;
+        [FieldOffset(16)] public uint Frame;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public uint _pad0;
+        [FieldOffset(28)] public uint _pad1;
     }
 
     /// <summary>
-    /// Local mock player position signal used by blind DAG tests.
+    /// Local mock player position signal used by blind DAG tests. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct MockPlayerPositionSignal : ISignal
     {
-        public double3 AUP;
-        public uint Frame;
-        public uint Seed;
-        public uint Flags;
-        public uint _pad0;
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public uint Frame;
+        [FieldOffset(28)] public uint Seed;
+        [FieldOffset(32)] public uint Flags;
+        [FieldOffset(36)] public uint _pad0;
+        [FieldOffset(40)] public ulong _pad1;
+        [FieldOffset(48)] public ulong _pad2;
+        [FieldOffset(56)] public ulong _pad3;
     }
 
     /// <summary>
     /// Local mock inventory signal used by blind DAG tests.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct QuestDagMockItemAcquiredSignal : ISignal
     {
-        public ulong Timestamp;
-        public uint ItemHash;
-        public int Quantity;
-        public uint Frame;
-        public uint Flags;
-        public uint _pad0;
-        public uint _pad1;
+        [FieldOffset(0)] public ulong Timestamp;
+        [FieldOffset(8)] public uint ItemHash;
+        [FieldOffset(12)] public int Quantity;
+        [FieldOffset(16)] public uint Frame;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public uint _pad0;
+        [FieldOffset(28)] public uint _pad1;
     }
 
     /// <summary>

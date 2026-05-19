@@ -33,7 +33,9 @@ With a few thousand dollars, the project cannot buy attention twice. The first p
 
 ## Immediate Tasks
 
-1. Verify the first 250 priority creator leads in batches of 25.
+Current cut on 2026-05-19: the first CRM-100 staged queue has 0 raw rows. Do not keep expanding creator verification by default. Resume larger lead sprints only after first assets show which creator segments the game can honestly serve.
+
+1. Capture or prepare the first planned screenshot/clip packet.
 2. Draft one screenshot requirement per top segment:
    - direct underwater survival;
    - survival route risk;
@@ -41,7 +43,7 @@ With a few thousand dollars, the project cannot buy attention twice. The first p
    - abyss horror pressure.
 3. Prepare 3 Steam capsule rough briefs.
 4. Prepare 8 screenshot slots and reject any shot that is only scenery.
-5. Build a `NEEDS_ASSET` list from verified creators.
+5. Match existing `NEEDS_ASSET` creator rows to the planned asset IDs they require.
 6. Prepare RU/EN short one-pagers.
 7. Prepare a no-coop FAQ answer.
 8. Prepare performance-claim refusal language.
@@ -99,7 +101,8 @@ Without reading any explanation, what do you think the player does in this image
 No public conversion KPIs yet. Track readiness:
 
 - 250 priority leads assigned to verification batches;
-- 50 verified creator candidates;
+- CRM-100 staged queue has no raw rows, or a new human-requested lead sprint has a source-backed reason;
+- 50 verified creator candidates, only after official contact/asset gates are checked;
 - 20 `NEEDS_ASSET` rows;
 - 8 screenshot slots defined;
 - 3 capsule roughs;
@@ -116,4 +119,3 @@ Stop and revise positioning if internal readers say:
 - "too dark to parse";
 - "the machinery looks decorative";
 - "why is this not just a horror walking sim?"
-

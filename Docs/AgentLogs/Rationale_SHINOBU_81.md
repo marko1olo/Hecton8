@@ -1,7 +1,7 @@
 # Rationale_SHINOBU_81
 
 Date: 2026-05-18
-Status: COMPLETE / RESEARCH ONLY / CORE BUILD VERIFIED
+Status: ACTIVE / MARKETING PREP / DOCS ONLY / RUNTIME PENDING
 
 ## Decision 01 - Scope Control
 
@@ -746,3 +746,339 @@ Rejected Alternatives: Generic "join our newsletter" CTA, adding creators/press 
 Scalability potential: Low budget builds only high-intent owned audience. Middle/High/Ultra email operations can scale by segment without damaging trust.
 
 Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched.
+
+## Decision 63 - First Public Attention Needs Stop Rules
+
+Problem: First screenshots or Steam beats can look successful by likes while actually creating clone, co-op, darkness, AI-looking, or performance-confusion damage. Without a triage gate, the team may amplify a bad beat because it appears active.
+
+Solution: Added `First Public Incident Triage Gate V0` to `CRISIS_AND_MODERATION_PLAYBOOK.md`. It defines repeated-signal thresholds, first 30-minute response, 24-hour owner action, and a mandatory keep/revise/kill label.
+
+Rejected Alternatives: Waiting for backlash before defining replies, treating likes as pass signals, or letting agents argue in comments.
+
+Scalability potential: Low budget uses one moderator and one decision table. Middle/High/Ultra community scale can reuse the same thresholds across Steam, Reddit, X, Bluesky, YouTube, creator comments, and regional posts.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched.
+
+## Decision 64 - Steam Reviews And Forums Need Pinned Routing
+
+Problem: Steam discussion/review surfaces can become a support treadmill or a reputation amplifier if every issue receives ad hoc replies. The project needs pinned categories and response limits before demo/page traffic exists.
+
+Solution: Added `Steam Forum Launch Moderation Gate V0` to `STEAM_REVIEWS_FORUMS_AND_SUPPORT_RESPONSE_PLAYBOOK.md`: pinned thread requirements, review/forum triage buckets, first-week reply caps, and daily digest template.
+
+Rejected Alternatives: Replying to every review, asking users to change reviews, using review replies as a roadmap, or opening forums without Known Issues and performance templates.
+
+Scalability potential: Low budget keeps support focused on blockers and expectation mismatch. Middle/High/Ultra traffic can scale through pinned routing and daily digest categories instead of individual argument chains.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched.
+
+## Decision 65 - Agent Labor Needs A Control Tower
+
+Problem: The user explicitly rejected archive churn and over-documentation. The remaining risk is that agents continue to "work" by generating more strategy text without changing rows, assets, source gates, risks, or public decisions.
+
+Solution: Added `Active Control Tower Loop V0` to `DAILY_AGENT_TASK_LOOP.md`: one lane per day, evidence gate, noon kill check, and end-cut `ADVANCE/HOLD/KILL`. Updated risk/backlog/source spine.
+
+Rejected Alternatives: More broad research files, unbounded scraping, or generic daily summaries that do not modify operational state.
+
+Scalability potential: Low budget agent labor becomes a production line. Middle/High/Ultra marketing operations can scale only if every task ends in a row, asset score, source correction, risk closure, or campaign decision.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched.
+
+## Decision 66 - Capsule Art Must Follow Proof, Not Taste
+
+Problem: Capsule/key art is one of the few places where a small budget can help, but spending before the game has readable screenshots can produce a polished lie or a generic dark-water poster.
+
+Solution: Added capsule rough decision/test packets to `VISUAL_IDENTITY_AND_KEY_ART_DIRECTION.md` and `CAPSULE_TRAILER_THUMBNAIL_BRIEFS.md`. Each candidate is mapped to planned asset IDs, a cold-read question, pass threshold, clone-risk guard, and paid-art gate.
+
+Rejected Alternatives: Commissioning final capsule art before in-game proof, judging by internal taste, or using abstract Seed Ship art before the build can show it honestly.
+
+Scalability potential: Low budget can test roughs internally before cash spend. Middle/High/Ultra spend can scale only from a rough that survives small-capsule readability and clone-risk checks.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched.
+
+## Decision 67 - Competitor Monitoring Must Not Cherry-Pick Pain
+
+Problem: Current SN2 public data shows huge launch strength and strong review sentiment. Cherry-picking stutter, co-op, or EULA complaints would create a false strategy and invite public pettiness.
+
+Solution: Added a verification sprint addendum to `COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md`. It separates official Steam/press strength signals from mixed/anecdotal performance, co-op, and trust signals, then translates the result into HECTON-8 asset implications.
+
+Rejected Alternatives: Publicly exploiting SN2 complaints, treating SEO fix guides as technical proof, or assuming UE5 shader stutter without recurring evidence.
+
+Scalability potential: Low budget avoids wasting cash on competitor-attack messaging. Middle/High/Ultra marketing can scale around a distinct identity only after HECTON-8 assets prove that identity.
+
+Hardware Impact: 0us measured runtime impact. Docs/web-research only; no Unity/runtime files touched.
+
+## Decision 68 - Control Tower Must Override Stale Priorities
+
+Problem: `MARKETING_CONTROL_TOWER.md` still contained stale execution language around first raw lead staging and old priorities. Since the marketing folder is intentionally anti-sprawl, the control tower must be accurate or it will route future agents into obsolete work.
+
+Solution: Refreshed the control tower with current CRM-100 status, planned asset IDs, spend state, handle custody boundary, press/curator triage state, and proof-first priorities. Updated source ledger and backlog.
+
+Rejected Alternatives: Leaving the stale text because the deeper docs were already updated, or creating a new executive summary file.
+
+Scalability potential: Low budget work now points to the only real blocker: asset proof. Middle/High/Ultra operations can expand only after the gate state changes in this control file.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched.
+
+## Decision 69 - Browser/Account Work Requires Credential Custody
+
+Problem: The user allowed browser/account work, but creating accounts without project email, password manager, 2FA, and backup-code custody would produce orphaned official surfaces and future recovery risk.
+
+Solution: Added an agent-assisted browser/account boundary and account page field kit to `SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md`. The future mode is executable but blocked until owner-controlled credentials and recovery storage exist.
+
+Rejected Alternatives: Inspecting private browser sessions, registering with temporary credentials, storing secrets in docs, or publishing placeholder posts from accounts without asset gates.
+
+Scalability potential: Low budget gets safe handle reservation without credential loss. Middle/High/Ultra platform operations can expand only from owner-controlled official accounts.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no private browser or account action.
+
+## Decision 70 - Reserved Accounts Need Quiet Copy, Not Hype
+
+Problem: If handles are reserved before screenshots, a blank account can look abandoned, but hype posts without assets create empty expectations.
+
+Solution: Added `Pre-Asset Quiet Account Content Pack V0` to `POST_BANK_AND_HOOK_LIBRARY.md`: ten optional low-frequency text posts that state scope, standards, and asset gates without wishlist asks or competitor attacks.
+
+Rejected Alternatives: Daily empty posting, wishlist begging before Steam, lore-only posts, or pretending screenshots are ready.
+
+Scalability potential: Low budget can keep reserved handles intentional with 1-2 posts per week. Middle/High/Ultra social scale still waits for real assets and UTM/Steam gates.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no public post made.
+
+## Decision 71 - First Capture Must Be A Packet, Not A Taste Pass
+
+Problem: The current bottleneck is real screenshots/clips. Without a capture packet, the first art pass can produce pretty dark frames that fail player-verb, clone-risk, and Steam-readability gates.
+
+Solution: Added `Capture Packet V0` to `SCREENSHOT_AND_CLIP_SHOTLIST.md` and a planned-capture metadata workflow to `ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md`. Every planned shot/clip now has intent, must-include content, reject code, review form, and status promotion path.
+
+Rejected Alternatives: Capturing broad beauty shots, adding new asset IDs ad hoc, or approving raw captures before QA/source/build fields are filled.
+
+Scalability potential: Low budget can turn the first capture session into a pass/fail asset gate. Middle/High/Ultra content scale can reuse the same metadata and reject-code system for larger campaigns.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no asset capture or Unity runtime work.
+
+## Decision 72 - First Public Data Must Be Structured Before It Exists
+
+Problem: Once the first links/posts exist, the team can default to likes, impressions, and gut feeling. That loses the only useful early signal: whether strangers describe HECTON-8 correctly.
+
+Solution: Added `Proof-Gate Dashboard V0` to `MARKETING_DASHBOARD_SPEC.md` and `Minimum Measurement Packet Before Public Links` to `MEASUREMENT_AND_UTM_PLAN.md`. First assets/posts now require asset IDs, beat IDs, useful comment counts, intended nouns, confusion, clone, co-op, and explicit decision states.
+
+Rejected Alternatives: Setting up analytics after launch, changing IDs per platform, or treating small public tests as vibes instead of controlled signal.
+
+Scalability potential: Low budget can learn from tiny samples. Middle/High/Ultra spend can scale only after the same structured packet proves what converted or confused players.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Steam URL, UTM link, or public post exists.
+
+## Decision 73 - Public Execution Needs Lint, Owners, And Stop Rules
+
+Problem: The marketing stack had asset, measurement, and campaign gates, but a future launch could still fail through ordinary operational mistakes: public copy promising fantasy scope, launch roles being implicit, demo keys going to famous-but-wrong creators, or a holding page/presskit implying readiness before proof exists.
+
+Solution: Added four control gates inside existing docs: Promise Lint Gate V0, War Room Dry Run Gate V0, Demo Access Batch Scoring V0, and No-Link Holding State V0 with presskit minimums. These gates convert future public work into sentence tags, named owners, scored sends, and minimum packet checks.
+
+Rejected Alternatives: Creating more strategy files, relying on memory under launch pressure, using raw creator rank as send priority, publishing a placeholder website, or sending a presskit that has no traceable in-game asset proof.
+
+Scalability potential: Low budget runs the gates manually before any public beat. Middle/High/Ultra operations can scale only after the same gates survive more links, regions, creators, press, and paid traffic.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 74 - Control Tower Must Carry New Gates
+
+Problem: The project relies on `MARKETING_CONTROL_TOWER.md` as the anti-sprawl entry point. If new promise/site/launch gates live only in deeper docs, the next agent can miss them and reintroduce public-copy or launch-readiness risk.
+
+Solution: Propagated promise/copy, site/presskit, and launch/demo ops states into the control tower and added RISK-039 through RISK-041 to the risk register. The top-level map now points future work at linted copy, holding-only site behavior, named owners, and no public-surface assumptions.
+
+Rejected Alternatives: Creating a new executive summary file, leaving the control tower stale, or relying on status logs as the operational map.
+
+Scalability potential: Low budget gets one control map. Middle/High/Ultra operations can scale only if the same map prevents stale instructions as the docs grow.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 75 - Entry Docs Must Not Spawn Duplicate Work
+
+Problem: `README.md` and `PREP_DIRECTIONS_NOW.md` are likely entry points for future agents. They still contained or omitted language that could steer work into duplicate docs instead of the existing control tower, Promise Lint, capsule, and UTM files.
+
+Solution: Updated the README hard rules and directory descriptions. Replaced stale "Needed next" bullets in prep directions with explicit routes to existing files and explicit "do not create" notes for duplicate document names.
+
+Rejected Alternatives: Leaving stale entry text because deeper docs are correct, or creating redirect documents for the missing names.
+
+Scalability potential: Low budget agent work stays concentrated in existing gates. Middle/High/Ultra operations avoid multiplying documentation surfaces as the marketing system grows.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 76 - Lead Volume Is No Longer The Default Bottleneck
+
+Problem: `DAILY_AGENT_TASK_LOOP.md` and Campaign 00 still implied that no-screenshot work should default to 25 lead verifications or first-250 verification. That conflicts with the current CRM-100 state and the control tower: the next bottleneck is real asset proof.
+
+Solution: Added a current cut to the daily loop and Campaign 00. Work now routes toward planned capture, asset gates, asset-linked copy tests, and risk/source corrections unless the human explicitly requests another lead sprint or first assets reveal a source-backed segment gap.
+
+Rejected Alternatives: Continuing to mine leads because it is easy measurable work, or deleting lead workflows entirely. The lead machinery stays available, but no longer owns the default lane.
+
+Scalability potential: Low budget stops wasting agent hours on low-signal extra names. Middle/High/Ultra outreach can expand after asset proof shows which creator segments actually fit.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 77 - Broad Plans Must Be Subordinate To Current Gate State
+
+Problem: `MARKETING_PREP_MASTER_PLAN.md` and the 90-day calendar are useful scaffolding, but their older lead-building language can override the current control tower in practice. That would waste the next work cycle on lead volume while the project still lacks first screenshot/clip proof.
+
+Solution: Added current execution/scheduling overrides to both broad docs. The plan now states CRM-100/0 raw and 13 planned asset slots, then routes work to capture readiness, asset QA, Promise Lint, and concrete source/risk corrections.
+
+Rejected Alternatives: Rewriting the entire plan, deleting the calendar, or leaving the broad plan as a conflicting authority.
+
+Scalability potential: Low budget keeps sequence planning without losing current focus. Middle/High/Ultra operations can re-enable lead and outreach phases when asset gates prove fit.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 78 - Weekly Routine Must Match CRM-100 Closure
+
+Problem: The master backlog still had a hidden weekly instruction to verify 25 raw leads before screenshots. That conflicts with the current CRM-100/0 raw state and can restart low-value lead work without a real asset gap.
+
+Solution: Replaced the default weekly routine with asset packet, asset-to-lead matching, asset-linked hooks, Promise Lint, and source/risk changes. Raw lead verification now requires an explicit source-backed sprint.
+
+Rejected Alternatives: Leaving the old routine because it is under a generic weekly section, or deleting all lead verification workflow. The flow remains available but is no longer automatic.
+
+Scalability potential: Low budget keeps attention on the missing public proof. Middle/High/Ultra outreach can reopen lead work only when assets show a segment need.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 79 - Creator Utility Must Drive Capture Priority
+
+Problem: Planned asset IDs existed and CRM-100 was triaged, but the two were not tightly connected. That leaves capture priority vulnerable to taste: pretty screenshots could be captured while the assets needed for high-fit creators remain missing.
+
+Solution: Added `CRM-100 Asset Unlock Map V0` to the mass lead workflow. It maps current `VERIFY_BEFORE_CONTACT` and `NEEDS_ASSET` rows to the planned screenshot/clip IDs they require, then ranks capture priority by creator utility.
+
+Rejected Alternatives: Expanding raw leads again, promoting creator rows without asset proof, or asking capture to interpret broad marketing goals.
+
+Scalability potential: Low budget gets maximum value from the first small asset pack. Middle/High/Ultra outreach can scale by adding assets that unlock specific creator segments rather than blasting generic audiences.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 80 - Asset Metadata Must Carry Utility Context
+
+Problem: The asset unlock map is useful, but capture and QA operators often start from `MARKETING_ASSET_METADATA_TEMPLATE.csv`. If utility context lives only in outreach docs, first captures can still be judged by aesthetics instead of which creator and campaign gates they unlock.
+
+Solution: Added creator-unlock notes to the existing `notes` field for all planned asset rows. Internal-only/performance-risk rows explicitly state they unlock no public creator outreach until proof exists.
+
+Rejected Alternatives: Adding new CSV columns that may break simple CSV consumers, creating a separate asset-to-creator tracker, or leaving metadata without outreach utility.
+
+Scalability potential: Low budget capture can prioritize maximum unlock value. Middle/High/Ultra content scaling can add more assets while preserving one fact -> one route -> one proof through metadata.
+
+Hardware Impact: 0us measured runtime impact. Docs/data-only; no Unity/runtime files touched and no build was run.
+
+## Decision 81 - Creator Utility Cannot Override Visual Proof
+
+Problem: Mapping assets to creator unlocks introduces a new failure mode: the team might publish or send a weak asset because it unlocks a high-value creator row.
+
+Solution: Added a creator utility gate to the marketing asset QA checklist. Utility can affect capture priority only. Public/outreach use still requires screenshot/clip QA thresholds and promise boundaries.
+
+Rejected Alternatives: Adding creator utility as a replacement for visual QA, or leaving utility entirely outside the QA decision.
+
+Scalability potential: Low budget protects first impressions while still prioritizing useful assets. Middle/High/Ultra campaigns can scale only when assets pass both clarity and utility gates.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 82 - Campaign 01 Must Enforce Creator Utility
+
+Problem: The first screenshot campaign had visual QA and a creator wave, but the campaign itself did not require creator utility scoring. That leaves a gap where a visually acceptable screenshot pack could be sent to creators even if it does not map to their audience or a named CRM row.
+
+Solution: Updated `CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md` so required inputs include creator utility, the Wave A creator micro-feedback pack needs utility 3/4+, and the T+48h stop rule requires exact CRM row and exact contact route evidence.
+
+Rejected Alternatives: Leaving creator utility only in the QA checklist, trusting outreach operators to cross-reference it manually, or sending the best-looking asset to every creator segment.
+
+Scalability potential: Low budget avoids wasting scarce creator replies on mismatched assets. Middle/High/Ultra outreach can scale batches only after each asset proves both visual clarity and audience utility.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 83 - Post Copy Must Not Bypass Outreach Gates
+
+Problem: The post bank contained usable public copy and creator warmup lines, but the warmup path did not explicitly inherit the new creator utility gate. That can split execution: social posts follow asset QA while creator notes drift back to generic segment fit.
+
+Solution: Updated `POST_BANK_AND_HOOK_LIBRARY.md` so creator-facing use requires creator utility 3/4+, named CRM row mapping, exact contact route verification, and visual QA. The 72-hour sequence now routes Hour 48 through Campaign 01 Wave A only if those gates pass.
+
+Rejected Alternatives: Adding another content tracker, relying on operators to remember utility gates from Campaign 01, or allowing creator warmup from public-comment momentum alone.
+
+Scalability potential: Low budget protects scarce creator attention. Middle/High/Ultra content operations can reuse the same post bank without accidentally escalating public hooks into mismatched outreach.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 84 - Human Send Packets Need Utility Proof
+
+Problem: The creator workflow had a Wave A human-send packet with required assets, but it did not carry per-recipient creator utility proof or log the score. That lets asset existence become a proxy for recipient fit.
+
+Solution: Updated `MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` so every creator-facing asset must score utility 3/4+, Wave A rows state the utility gate per recipient, and the send log includes `creator_utility_score`.
+
+Rejected Alternatives: Leaving the utility requirement in Campaign 01 only, relying on one broad "required asset" column, or making the CRM status imply asset fit.
+
+Scalability potential: Low budget preserves each creator contact. Middle/High/Ultra outreach can expand batches only by repeating the same per-recipient proof rather than increasing send volume.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 85 - CRM Must Store Send Facts Structurally
+
+Problem: The workflow required `creator_utility_score`, asset IDs, route verification, UTM, reply deadline, and follow-up state, but the CRM schema/live CSV had no columns for those facts. Without fields, send proof would drift into `next_action` prose.
+
+Solution: Updated `CREATOR_CRM_SCHEMA_AND_SCORING.md` and added blank send-log columns to `CREATOR_VERIFICATION_TEMPLATE.csv`: `outreach_batch`, `sent_date`, `contact_route_verified_for_send`, `asset_ids_sent`, `creator_utility_score`, `utm_content`, `reply_deadline`, `followup_allowed`, `reply_status_after_send`, and `coverage_url`.
+
+Rejected Alternatives: Keeping send proof in free-text notes, creating a second send-log CSV before any send exists, or promoting rows without structured proof fields.
+
+Scalability potential: Low budget gets one CRM row per truth. Middle/High/Ultra outreach can add more waves without losing asset/utility/source accountability.
+
+Hardware Impact: 0us measured runtime impact. Docs/data-only; no Unity/runtime files touched and no build was run.
+
+## Decision 86 - Asset Metadata Must Own Asset-Side Utility
+
+Problem: CRM rows need `creator_utility_score`, but the asset metadata did not have a structured source for that score. Creator unlock notes existed only as prose, which is not enough for later filtering or audit.
+
+Solution: Updated `ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` and `MARKETING_ASSET_METADATA_TEMPLATE.csv` with `creator_rows_unlocked`, `creator_utility_score`, and `creator_send_gate`. Planned assets start as score 0 and `BLOCKED_PLANNED_CAPTURE`.
+
+Rejected Alternatives: Keeping asset utility only in notes, duplicating it only in CRM after send, or creating another asset-to-creator spreadsheet.
+
+Scalability potential: Low budget keeps asset proof and creator send gates on one asset row. Middle/High/Ultra content scale can filter assets by send readiness without reopening every outreach doc.
+
+Hardware Impact: 0us measured runtime impact. Docs/data-only; no Unity/runtime files touched and no build was run.
+
+## Decision 87 - Control Tower Must Expose Utility Gates
+
+Problem: Deeper docs and CSVs now enforce creator utility, but the control tower still described the old high-level state. Future agents start there, so stale top-level language could route work around the new structured gates.
+
+Solution: Updated `MARKETING_CONTROL_TOWER.md` so the current state, G1 gate, immediate actions, and top priorities explicitly mention CRM send-log fields, `creator_send_gate`, utility 3/4+, and Wave A `asset_ids_sent`/`creator_utility_score` logging.
+
+Rejected Alternatives: Trusting source ledger/status logs to communicate current execution state, or waiting for screenshots before updating the top-level map.
+
+Scalability potential: Low budget keeps all future work pointed at the real blocker. Middle/High/Ultra operations can scale from one control map without bypassing utility proof.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 88 - Utility Bypass Must Be A Named Risk
+
+Problem: The risk register had a broad creator mismatch risk, but not the newer operational failure: bypassing structured utility gates because a frame looks good or a creator is valuable.
+
+Solution: Added RISK-042 to `MARKETING_RISK_REGISTER.md` with prevention tied to `creator_utility_score`, `creator_send_gate`, named CRM row mapping, and `asset_ids_sent`.
+
+Rejected Alternatives: Relying on the workflow docs alone, merging the issue into generic creator spam, or waiting until a bad send happens.
+
+Scalability potential: Low budget prevents a single bad high-value contact. Middle/High/Ultra outreach can scale only if every send respects the same named risk control.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 89 - Daily Loop Must Require Utility Fields
+
+Problem: The daily agent loop still allowed ASSET_GATE and CRM_CLEANUP outputs to pass with generic QA/status updates. That would let future daily work omit `creator_send_gate` and send-log fields even though the deeper docs require them.
+
+Solution: Updated `DAILY_AGENT_TASK_LOOP.md` so lane outputs, Noon Kill, Asset Critic, and screenshot-era quotas require creator utility, send gate, CRM mapping, and send-log fields before outreach escalation.
+
+Rejected Alternatives: Trusting agents to remember the new fields from the control tower, or leaving utility scoring as a specialist-only workflow.
+
+Scalability potential: Low budget keeps daily work operational. Middle/High/Ultra agent throughput can scale because the loop forces the same fields on every asset/CRM day.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.
+
+## Decision 90 - README Must State Creator Utility Gate
+
+Problem: The marketing README is an entry point. It did not state the newer creator utility/send-log gate, so future agents could start from the README and still treat asset existence as enough for outreach.
+
+Solution: Updated `README.md` hard rules, directory descriptions, and First Asset Gate with explicit creator outreach requirements: asset QA, utility 3/4+, `creator_send_gate`, named CRM row, exact route, and send-log fields.
+
+Rejected Alternatives: Assuming everyone starts from the control tower, or leaving utility gate details only in deep workflow docs.
+
+Scalability potential: Low budget avoids new-agent routing error. Middle/High/Ultra documentation scale remains usable because both entry points state the same blocking rule.
+
+Hardware Impact: 0us measured runtime impact. Docs-only; no Unity/runtime files touched and no build was run.

@@ -60,6 +60,168 @@ Exact Microseconds saved:
   <Verification>Status=PENDING_COMPILE_RUNTIME; Reason=CPU guard blocked dotnet build.</Verification>
 </SELF_AUDIT>
 
+## 2026-05-19 SHINOBU_114 Ultra-Polish Parallel Jacobi Kernel Pass
+
+What was wrong:
+- Task 07 explicitly named `LogisticsFlowSolverJob` as an `IJobParallelFor`, but the previous implementation bundled component BFS, Jacobi relaxation, conservation, oxygen/pressure, and telemetry into one serial `IJob`.
+- The serial design was deterministic, but it left node-pressure relaxation unproven as a parallel kernel and made the report look stronger than the actual job shape.
+
+What was done:
+- Split the solve path into `LogisticsFlowPrepareJob`, `LogisticsFlowSolverJob : IJobParallelFor`, `LogisticsPressureCopyJob`, and `LogisticsFlowFinalizeJob`.
+- Kept island BFS serial because it consumes queue scratch and writes component IDs; this is the correct ownership boundary for graph discovery.
+- Moved Jacobi sweeps into the parallel job. Each scheduled sweep reads one pressure buffer and writes the other, using dependency-chained ping-pong buffers and no mid-frame `Complete()`.
+- Kept final milli-unit conservation serial so transfer quantization, edge remainders, breach side-effect publication, and black-box telemetry remain deterministic and race-free.
+- Added NaN vaccination in the parallel pressure job by sanitizing conductance, pressure inputs, reactor output, demand, denominator, and final write. Finalization still sweeps pressure for non-finite values before conservation.
+- Updated `Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md`, `Status_SHINOBU_114.md`, and this log.
+
+Cinematic Cheats used:
+- No physical resource particles, payload objects, or pipe GameObjects were introduced.
+- Flow is still a scalar field feeding shader-side pipe motion; CPU work stays mathematical CSR pressure only.
+
+Exact Microseconds saved:
+- Measured saved: `0 us`; runtime profiler proof is still blocked.
+- Expected direction: large graph pressure relax now distributes per-node work across worker threads instead of serial node loops.
+- Build status: not re-run. CPU guard sampled `100,100,95.645`, and seven `dotnet` processes were already active, so launching another build would violate AGENTS.md.
+
+<SELF_AUDIT>
+  <Agent>SHINOBU_114</Agent>
+  <TaskReconciliation>
+    <Task id="01" status="PASS">Runtime graph authority remains CSR/Vault-backed; no managed `List<Node>` traversal restored.</Task>
+    <Task id="02" status="PASS">Recursive traversal remains absent; component discovery uses iterative queue lanes in `ShinobuLogisticsCounters`.</Task>
+    <Task id="03" status="PASS">Hot DTOs remain public-field structs; mutation uses raw pointer refs in Burst jobs.</Task>
+    <Task id="04" status="PASS">`LogisticsNodeDTO` remains explicit 32B with offsets 0/4/8/12/16/20/24/28.</Task>
+    <Task id="05" status="PASS">Mock topology remains deterministic and independent of base-builder completion.</Task>
+    <Task id="06" status="PASS">CSR builder still writes contiguous offset/destination/conductance lanes.</Task>
+    <Task id="07" status="PASS">`LogisticsFlowSolverJob` is now the actual `IJobParallelFor` Jacobi relaxation kernel; BFS/finalize are separate serial boundaries.</Task>
+    <Task id="08" status="PASS">Dear Lie visual route remains shader scalar flow, not physical resources.</Task>
+    <Task id="09" status="PASS">Island isolation remains component-ID based and source-less islands force load zero.</Task>
+    <Task id="10" status="PASS">Topology rebuild remains async and consumed only after `IsCompleted`.</Task>
+    <Task id="11" status="PASS">Iterations still scale from 1..10 via smoothstep-shaped `GlobalQualityWeight`.</Task>
+    <Task id="12" status="PASS">Final milli-unit quantization and CSR remainder lanes still enforce resource conservation.</Task>
+    <Task id="13" status="PASS">AUP edge length path remains double3 subtraction before float cast.</Task>
+    <Task id="14" status="PASS">New solve jobs use deterministic Burst mode and compile synchronously.</Task>
+    <Task id="15" status="PASS">No new private persistent native containers; pressure buffers and scratch remain Vault aliases.</Task>
+    <Task id="16" status="PASS">300-frame telemetry ring remains explicit 64B and receives final solve stats.</Task>
+    <Task id="17" status="PASS">Editor tuner route unchanged.</Task>
+    <Task id="18" status="PASS">Vault-backed cold CSV parser unchanged by this pass.</Task>
+    <Task id="19" status="PASS">Gizmo remains data-read only; no debug GameObjects.</Task>
+    <Task id="20" status="PASS">Static self-audit and forbidden-pattern scans were rerun; compile proof is still blocked by CPU/dotnet guard.</Task>
+  </TaskReconciliation>
+  <StructLayout>
+    <LogisticsNodeDTO size="32" offsets="0:uint NodeHash;4:float Capacity;8:float CurrentLoad;12:uint Flags;16:int EdgeStartIndex;20:int EdgeCount;24:uint _pad0;28:uint _pad1" />
+    <LogisticsEdgeDTO size="32" offsets="0:int2 Nodes(8);8:float Capacity;12:float Resistance;16:float Flow01;20:int LastMilliTransfer;24:uint Flags;28:uint _pad0" />
+    <LogisticsGraphTelemetryEntry size="64" offsets="0:ulong StateHash;8/12/16/20:float lanes;24/28/32/36/40/44/48/52/56/60:int lanes" />
+  </StructLayout>
+  <Scalability>Below quality 0.3, the scheduler emits one or two pressure sweeps and slower oxygen cadence; above that it emits progressively more parallel Jacobi sweeps up to ten, improving shader flow smoothness without a binary tier switch.</Scalability>
+  <H_PHI>Zero private SHINOBU_114 native array/list/queue ownership. Active Vault handles include nodes, edges, state flags, oxygen front/back, pressure/yield/reinforcement, AUP/local positions, priority/visited/cell map, counters, tuning, black box, component IDs, pressure front/back, edge remainders, CSR conductance/flow, component specs, and CSV scratch.</H_PHI>
+  <PointerAliasing>Prepare, parallel solver, copy, and finalize jobs use `[NoAlias]` on native arrays and raw pointers where applicable. Dependency graph: `Prepare -> N x Parallel Jacobi -> optional PressureCopy -> Finalize -> LateFrame publish`.</PointerAliasing>
+  <CompileGuard>No asmdef change and no sibling runtime dependency was added. SHINOBU_114 still routes through contracts, DataVault, and SignalBus surfaces.</CompileGuard>
+  <DearLie>Before: physical resource simulation would trend toward O(resourceObjects * pipeSegments). After: graph truth is O(V+E) prepare/finalize plus O(V+E)*iterations pressure math; visual presentation is O(E) scalar publication to shaders.</DearLie>
+  <Verification>Status=PENDING_COMPILE_RUNTIME; forbidden scan and `git diff --check` passed; build blocked by CPU/dotnet guard.</Verification>
+</SELF_AUDIT>
+
+## 2026-05-19 SHINOBU_114 Compile-Wall Verification Attempt
+
+What was wrong:
+- Static proof cannot certify Unity/C# compile.
+- CPU guard previously blocked `dotnet build`.
+
+What was done:
+- Sampled CPU at `44.393,22.728,13.718`; no `dotnet`/`csc` process output was present.
+- Ran `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`.
+- Build failed on unrelated files before any SHINOBU_114 compile error was emitted:
+  - `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs`: missing `UberNoirReconstructionConstantsDTO`, `MockReconstructionInputSignal`, `ReconstructionTelemetryEntry`, and `UberNoirReconstructionVaultIds`.
+  - `Assets/_Project/Scripts/Optimization/AssetRecord.cs`: missing `double3`.
+- Logged the compile wall in `Status_SHINOBU_114.md` and `Rationale_SHINOBU_114.md`.
+
+Cinematic Cheats used:
+- None in the verification pass. Existing Dear Lie remains scalar flow to shader-side pipe motion.
+
+Exact Microseconds saved:
+- Measured saved: `0 us`.
+- Compile proof: `FAILED_BY_UNRELATED_COMPILE_WALL`.
+- Action rejected: modifying Visor or Optimization domain code from SHINOBU_114. That would violate domain boundary and create cross-agent conflict.
+
+## 2026-05-19 SHINOBU_114 Ultra-Polish ARM64/Vault Scratch Pass
+
+What was wrong:
+- `LogisticsGraphTelemetryEntry` relied on sequential layout plus total size. That proves 64 bytes but does not prove individual offsets after future field edits.
+- The CSV importer still retained a private managed `byte[16KB]` scratch buffer and a stale SHINOBU_13 owner comment.
+- Fault dumps satisfied the task-specific `Dump_LOGISTICS_SURGEON.bin` route but not the global `Dump_SHINOBU_114.bin` route.
+- Editor offset validation checked node/edge partially and did not cover tuning, component spec, or telemetry offsets.
+
+What was done:
+- Converted `LogisticsGraphTelemetryEntry` to `[StructLayout(LayoutKind.Explicit, Size = 64)]`.
+- Added exact editor offset checks for `LogisticsNodeDTO`, `LogisticsEdgeDTO`, `LogisticsTuningDTO`, `LogisticsComponentSpecDTO`, and `LogisticsGraphTelemetryEntry`.
+- Added `BufferID.ShinobuLogisticsCsvScratch = 70550`.
+- Removed `_csvBuffer`; CSV reload now reads `logistics_components.csv` into Vault-owned `NativeArray<byte>` scratch through `Span<byte>` over the native pointer, with a loop to handle partial `FileStream.Read` results.
+- Fault dump now writes `Docs/AgentLogs/Dump_SHINOBU_114.bin`, `Docs/AgentLogs/Dump_LOGISTICS_SURGEON.bin`, and `Docs/AgentLogs/Dump_SHINOBU_114.h8dump`.
+- Updated `Status_SHINOBU_114.md`, `Rationale_SHINOBU_114.md`, and `Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md`.
+
+Cinematic Cheats used:
+- No physical pipe payloads, resource particles, debug GameObjects, or visual truth objects were added.
+- Solver output remains scalar `Flow01`; pipe motion remains shader-side visual fake through the existing renderer route.
+- The saved CPU path is preserved for high-tier shader richness, not spent on per-item resource simulation.
+
+Exact Microseconds saved:
+- Measured saved: `0 us`; Unity compile/runtime/profiler proof is still absent.
+- Static removal: one persistent managed `byte[16KB]` staging array removed from SHINOBU_114 ownership.
+- Build guard evidence: CPU sampled `100,100,100`; no `dotnet`/`csc` process output was present. `dotnet build` was not launched by rule.
+- Static gates: `git diff --check` passed for touched files; forbidden-pattern scan found no `_csvBuffer`, `NativeQueue`, `NativeList`, `NativeParallelMultiHashMap`, `Pack=1`, `FloatMode.Fast`, `Schedule().Complete`, LINQ, or `foreach` in `ShinobuLogisticsRouter.cs`.
+
+<SELF_AUDIT>
+  <Agent>SHINOBU_114</Agent>
+  <TaskReconciliation>
+    <Task id="01" status="PASS">Runtime graph authority is flat CSR/Vault state; managed authoring adapters are not traversal authority.</Task>
+    <Task id="02" status="PASS">Recursive traversal absent; component walk uses Vault int queue scratch.</Task>
+    <Task id="03" status="PASS">Hot DTOs use public fields and raw pointer mutation.</Task>
+    <Task id="04" status="PASS">Node/edge/tuning/spec/telemetry layouts are explicit or editor-offset-verified.</Task>
+    <Task id="05" status="PASS">Mock topology remains deterministic 1000-node/2500-edge load.</Task>
+    <Task id="06" status="PASS">CSR builder writes offsets/destinations/conductance/flow lanes.</Task>
+    <Task id="07" status="PASS">Jacobi relaxation runs over CSR; final quantization is serial to preserve exact residue.</Task>
+    <Task id="08" status="PASS">Dear Lie remains shader scalar flow; no resource GameObjects.</Task>
+    <Task id="09" status="PASS">Source-less islands are isolated by component ID and forced to zero load.</Task>
+    <Task id="10" status="PASS">Topology rebuild remains asynchronous and consumed after `IsCompleted`.</Task>
+    <Task id="11" status="PASS">`GlobalQualityWeight` drives smoothstep iteration/cadence/smoothing curves.</Task>
+    <Task id="12" status="PASS">Milli-unit quantization and edge remainders bound drift.</Task>
+    <Task id="13" status="PASS">AUP edge length subtracts double3 first, then casts local delta.</Task>
+    <Task id="14" status="PASS">Burst jobs use deterministic mode due rollback compatibility.</Task>
+    <Task id="15" status="PASS">Persistent simulation and CSV scratch bytes are Vault-owned.</Task>
+    <Task id="16" status="PASS">Telemetry ring is explicit 64B and dumps both agent and task forensic paths.</Task>
+    <Task id="17" status="PASS">Editor tuner remains UI Toolkit and Vault-backed.</Task>
+    <Task id="18" status="PASS">CSV parser is byte-level and uses Vault scratch instead of private managed staging.</Task>
+    <Task id="19" status="PASS">Topology gizmo reads CSR/component/flow without debug objects.</Task>
+    <Task id="20" status="PASS">Self-audit hash covers DTO sizes, BufferIDs, scratch bases, and CSV scratch size.</Task>
+  </TaskReconciliation>
+  <StructLayout>
+    <LogisticsNodeDTO size="32" proof="0:uint NodeHash,4:float Capacity,8:float CurrentLoad,12:uint Flags,16:int EdgeStartIndex,20:int EdgeCount,24:uint _pad0,28:uint _pad1" />
+    <LogisticsEdgeDTO size="32" proof="0:int2 Nodes(8),8:float Capacity,12:float Resistance,16:float Flow01,20:int LastMilliTransfer,24:uint Flags,28:uint _pad0" />
+    <LogisticsTuningDTO size="32" proof="0..28 eight 4B fields, total 32B" />
+    <LogisticsComponentSpecDTO size="32" proof="0:uint ModuleHash,4:float Capacity,8:float Resistance,12:float OxygenDemand,16:uint Flags,20/24/28 uint pads" />
+    <LogisticsGraphTelemetryEntry size="64" proof="0:ulong StateHash,8/12/16/20 four floats,24/28/32/36/40/44/48/52/56/60 ten ints" />
+  </StructLayout>
+  <VaultBuffers>
+    <Buffer id="70180" name="ShinobuLogisticsNodes" />
+    <Buffer id="70181" name="ShinobuLogisticsEdges" />
+    <Buffer id="70194" name="ShinobuLogisticsCounters" scratch="Counters 0..15; EdgeOffsets 16..1016; EdgeWriteCursor 1017..2016; EdgeDestinations 2017..8016; BfsQueue 8017..9016; ReachableOrder 9017..10016; BreachNode 10017..11016; IntLaneCount 11017" />
+    <Buffer id="70196" name="ShinobuLogisticsBlackBox" />
+    <Buffer id="70534" name="ShinobuLogisticsComponentIds" />
+    <Buffer id="70535" name="ShinobuLogisticsPressureFront" />
+    <Buffer id="70536" name="ShinobuLogisticsPressureBack" />
+    <Buffer id="70537" name="ShinobuLogisticsEdgeRemainderMilli" />
+    <Buffer id="70538" name="ShinobuLogisticsCsrEdgeCapacities" />
+    <Buffer id="70539" name="ShinobuLogisticsCsrEdgeFlow01" />
+    <Buffer id="70540" name="ShinobuLogisticsComponentSpecs" />
+    <Buffer id="70550" name="ShinobuLogisticsCsvScratch" capacityBytes="16384" />
+  </VaultBuffers>
+  <Scalability>Below 0.3 quality: solver collapses toward one Jacobi pass, oxygen cadence stretches toward 5 logistics ticks, and smoothing biases to 0.72. Ultra quality keeps ten passes and dense shader flow scalars without changing gameplay ABI.</Scalability>
+  <H_PHI>Status: zero private SHINOBU_114 NativeQueue/NativeList/NativeHashMap ownership. Persistent simulation and cold CSV scratch bytes are DataVault aliases.</H_PHI>
+  <PointerAliasing>NoAlias remains applied to SHINOBU init/build/solve/local-shift job arrays and pointers.</PointerAliasing>
+  <CompileGuard>No SHINOBU Power runtime asmdef exists in `Assets/_Project/Scripts/Power`; root `Hecton8.Core.asmdef` already owns this file. No new sibling-domain asmdef reference was added.</CompileGuard>
+  <DearLie>Before: physical resource transfer visuals would trend O(resource items) plus GameObject/physics overhead. After: CSR solve is O((V+E)*iterations), fault isolation is O(V+E), and visual transfer is O(E) scalar publication to shader-facing pipe renderer.</DearLie>
+  <Verification>Status=PENDING_COMPILE_RUNTIME; CPU guard blocked dotnet build; Unity import/profiler/GCMonitor proof absent.</Verification>
+</SELF_AUDIT>
+
 ## 2026-05-19 SHINOBU_114 Ultra-Polish H-Phi Pass
 
 What was wrong:
@@ -124,4 +286,65 @@ Exact Microseconds saved:
   <CompileGuard>No asmdef edits. WFC/docking/system health enter through contracts/signals; fluid leak exits through existing `FluidIncursionSignal`.</CompileGuard>
   <DearLie>Before: per-resource or per-breach objects would be O(items/events). After: CSR solve is O(V+E)*iterations and visuals are O(E) scalar publication with shader-side motion.</DearLie>
   <Verification>Status=PENDING_COMPILE_RUNTIME; `git diff --check` passed; forbidden-pattern scan passed; CPU guard blocked dotnet build.</Verification>
+</SELF_AUDIT>
+
+## 2026-05-19 SHINOBU_114 Ultra-Polish CSV Retry + Audit Hash Pass
+
+What was wrong:
+- `TryReloadCsvOverrides` committed `_csvLastWriteUtc` before successful read/parse. A transient FileShare race or partial designer save could mark bad input as consumed and suppress retry until the file changed again.
+- `SelfAuditArchitecture` hashed the principal CSR lanes but did not cover every SHINOBU_114 Vault BufferID requested at boot.
+
+What was done:
+- Moved `_csvLastWriteUtc = writeUtc` after `ReadFileIntoNativeScratch(path, _csvScratch)` and `ParseCsv(read)`.
+- Added `read <= 0` guard: sets `CsvParseFault`, publishes compact telemetry warning, and leaves timestamp unchanged for retry.
+- Replaced mixed `math.min(stream.Length, scratch.Length)` with explicit `long streamLength` clamp to `scratch.Length`.
+- Replaced mixed telemetry `math.min(int.MaxValue, longMicros)` with explicit `long micros64` clamp before `int` cast.
+- Expanded `SelfAuditArchitecture` to hash all SHINOBU_114 Vault IDs: `70180..70196`, `70534..70540`, and `70550`.
+- Re-extracted the full SHINOBU_114 prompt with an attribute-aware CLI regex and reread binary/habitat/domain/polish docs plus logistics, ARM64, zero-GC, native-memory, and designer-bridge mandates before this patch.
+
+Cinematic Cheats used:
+- No new simulation, GameObjects, particles, or material instances.
+- Flow remains a scalar Dear Lie feeding shader-side pipe motion.
+
+Exact Microseconds saved:
+- Measured saved: `0 us`; this pass is cold-path correctness and forensic coverage, not a runtime profiler claim.
+- Hot-path cost added: `0` branches in solver/build jobs.
+- Compile status: build was not re-run in this sub-pass because the previous targeted build already hit unrelated Visor/Optimization compile walls and the latest CPU guard sampled above the 50 percent build threshold.
+
+<SELF_AUDIT>
+  <Agent>SHINOBU_114</Agent>
+  <TaskReconciliation>
+    <Task id="01" status="PASS">CSR/Vault remains runtime graph authority; no managed graph traversal restored.</Task>
+    <Task id="02" status="PASS">Iterative BFS scratch remains inside `ShinobuLogisticsCounters`.</Task>
+    <Task id="03" status="PASS">DTOs remain public-field unmanaged structs; hot mutation uses raw pointer refs.</Task>
+    <Task id="04" status="PASS">Node/edge/tuning/spec/telemetry layout checks remain exact.</Task>
+    <Task id="05" status="PASS">Deterministic emergency mock topology remains available.</Task>
+    <Task id="06" status="PASS">CSR builder still writes contiguous offset/destination/conductance lanes.</Task>
+    <Task id="07" status="PASS">Jacobi relaxation unchanged; retry patch does not touch solver math.</Task>
+    <Task id="08" status="PASS">Dear Lie visual scalar path unchanged.</Task>
+    <Task id="09" status="PASS">Island isolation unchanged.</Task>
+    <Task id="10" status="PASS">Async rebuild consumption unchanged.</Task>
+    <Task id="11" status="PASS">Continuous `GlobalQualityWeight` curves unchanged.</Task>
+    <Task id="12" status="PASS">Milli-unit quantization unchanged.</Task>
+    <Task id="13" status="PASS">AUP local-delta path unchanged.</Task>
+    <Task id="14" status="PASS">Deterministic Burst mode unchanged.</Task>
+    <Task id="15" status="PASS">All persistent native lanes remain Vault-owned; CSV scratch retry uses existing Vault buffer.</Task>
+    <Task id="16" status="PASS">Telemetry ring and dump paths unchanged.</Task>
+    <Task id="17" status="PASS">Editor tuner remains Vault-backed.</Task>
+    <Task id="18" status="PASS">CSV importer now retries after failed or zero-byte read/parse instead of swallowing timestamp.</Task>
+    <Task id="19" status="PASS">Gizmo route unchanged.</Task>
+    <Task id="20" status="PASS">Self-audit hash now covers every SHINOBU_114 Vault BufferID.</Task>
+  </TaskReconciliation>
+  <StructLayout>
+    <LogisticsNodeDTO size="32" proof="0:uint NodeHash,4:float Capacity,8:float CurrentLoad,12:uint Flags,16:int EdgeStartIndex,20:int EdgeCount,24:uint _pad0,28:uint _pad1" />
+    <LogisticsEdgeDTO size="32" proof="0:int2 Nodes(8),8:float Capacity,12:float Resistance,16:float Flow01,20:int LastMilliTransfer,24:uint Flags,28:uint _pad0" />
+    <LogisticsGraphTelemetryEntry size="64" proof="0:ulong StateHash,8/12/16/20 floats,24/28/32/36/40/44/48/52/56/60 ints" />
+  </StructLayout>
+  <VaultBuffers>70180 Nodes; 70181 Edges; 70182 StateFlags; 70183 OxygenFront; 70184 OxygenBack; 70185 InternalPressure; 70186 ExternalPressure; 70187 YieldThreshold; 70188 Reinforcement; 70189 NodeAup; 70190 LocalPositions; 70191 PriorityTier; 70192 Visited; 70193 CellToNode; 70194 Counters; 70195 Tuning; 70196 BlackBox; 70534 ComponentIds; 70535 PressureFront; 70536 PressureBack; 70537 EdgeRemainderMilli; 70538 CsrEdgeCapacities; 70539 CsrEdgeFlow01; 70540 ComponentSpecs; 70550 CsvScratch.</VaultBuffers>
+  <Scalability>Below 0.3 quality still collapses toward one Jacobi sweep, 5-tick oxygen cadence, and 0.72-biased smoothing. Higher quality increases convergence and visual scalar smoothness without changing ABI.</Scalability>
+  <H_PHI>Zero private SHINOBU_114 native container ownership. `NativeArray` fields are aliases from `VaultBufferHandle`; cold CSV retry uses Vault scratch.</H_PHI>
+  <PointerAliasing>[NoAlias] remains on SHINOBU job arrays/pointers. This pass added no new jobs.</PointerAliasing>
+  <CompileGuard>No asmdef or sibling-domain reference change. Touched code remains in `Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs` only.</CompileGuard>
+  <DearLie>Before: physical resource visuals would scale with resource objects. After: CSR solve is O((V+E)*iterations), island isolation O(V+E), visual path O(E) scalar publication.</DearLie>
+  <Verification>Status=PENDING_COMPILE_RUNTIME; previous build wall is unrelated Visor/Optimization missing symbols, not fixed by this owner-local patch.</Verification>
 </SELF_AUDIT>

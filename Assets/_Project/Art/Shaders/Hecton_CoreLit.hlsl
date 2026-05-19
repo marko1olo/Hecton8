@@ -136,6 +136,7 @@ float4 _HectonHabitatStressCenterRadius; // xyz=center, w=radius
 float4 _HectonHabitatStressParams;       // x=stress, y=max displacement, z=grid scale, w=seed
 float4 _HectonXRFoveatedParams;        // x=active, y=periphery resolve weight, z=reserved, w=refresh Hz
 float4 _HectonXRFoveatedCenterRadius;  // xy=stereo view-space tangent center, z=inner 30-degree proxy, w=outer periphery
+float4 _HectonVRSomaticComfortState;   // x=FOV tunnel, y=horizon blend, z=foveated multiplier, w=max pressure
 float4 _HectonXRNearClipDitherParams;  // x=active, y=fade start meters, z=fade kill meters, w=dither intensity
 float4 _HectonXROriginShiftState;      // x=XR active, y=origin shift sequence, z=pose refresh marker, w=fixed alpha
 float4 _TotalUniverseOffset;           // xyz=runtime-to-absolute offset used for AUP-stable visual phase
@@ -414,7 +415,10 @@ float HectonCoreLitEvaluateXRFoveatedMask(float2 stereoFoveationVector)
     float outerRadius = max(_HectonXRFoveatedCenterRadius.w, innerRadius + 0.001);
     float2 radialDelta = stereoFoveationVector - _HectonXRFoveatedCenterRadius.xy;
     float radialDistanceSq = dot(radialDelta, radialDelta);
-    return HectonCoreLitLinearRamp(innerRadius * innerRadius, outerRadius * outerRadius, radialDistanceSq) * saturate(_HectonXRFoveatedParams.y);
+    float somaticScale = isfinite(_HectonVRSomaticComfortState.z) ? clamp(_HectonVRSomaticComfortState.z, 1.0, 2.75) : 1.0;
+    float somaticPressure = isfinite(_HectonVRSomaticComfortState.w) ? saturate(_HectonVRSomaticComfortState.w) : 0.0;
+    float resolveWeight = saturate(_HectonXRFoveatedParams.y * lerp(1.0, somaticScale, somaticPressure));
+    return HectonCoreLitLinearRamp(innerRadius * innerRadius, outerRadius * outerRadius, radialDistanceSq) * resolveWeight;
 }
 
 bool HectonCoreLitShouldRunXRFullQuality(float2 stereoFoveationVector)

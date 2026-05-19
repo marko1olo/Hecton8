@@ -31,6 +31,82 @@ One agent can hold multiple roles, but one output must exist per role before cla
 5. Pick one measurable output.
 6. Write output path before starting.
 
+## 2026-05-19 Current Cut
+
+The staged CRM-100 queue has 0 raw rows. Until the first real screenshot/clip packet exists, do not default to more lead verification. The bottleneck is asset proof, not lead volume.
+
+Current default lane order:
+
+1. `ASSET_GATE` if any capture exists or can be prepared; this includes `creator_rows_unlocked`, `creator_utility_score`, and `creator_send_gate` when the asset could touch creators.
+2. `COPY_TEST` only if tied to one planned asset ID.
+3. `SOURCE_RECHECK` only for platform/source facts that block a concrete gate.
+4. `RISK_CLOSE` only if the risk register has no prevention/response.
+5. `CRM_CLEANUP` only if Wave A needs exact official contact recheck after matching assets exist and send-log fields can be filled from proof.
+
+Do not expand raw leads unless a human explicitly asks for another source-backed lead sprint.
+
+## 2026-05-19 Active Control Tower Loop V0
+
+This loop prevents agent labor from becoming more documents. Use it until the first real screenshot pack exists.
+
+### Morning Cut
+
+Pick exactly one lane for the day:
+
+| Lane | When to pick | Required output |
+|---|---|---|
+| CRM_CLEANUP | Creator/press rows are stale or raw, or Wave A has proof to log. | Updated CSV rows with status, route, risk, next action, and send-log fields if any send is being prepared. |
+| ASSET_GATE | Screenshots/clips exist or are about to exist. | QA scores, reject codes, asset metadata updates, and creator utility/send gate fields when relevant. |
+| COPY_TEST | Asset/copy mismatch blocks public use. | 3-5 variants tied to one asset ID and one metric. |
+| SOURCE_RECHECK | Platform rules, routes, or deadlines can change. | Source ledger addendum and affected doc correction. |
+| RISK_CLOSE | A risk has no prevention/response owner. | Risk register update plus one backlog action. |
+| CAMPAIGN_DECISION | Campaign 01/02/03 is being prepared. | `KEEP`, `REVISE`, or `KILL` decision fields filled. |
+
+If a proposed task cannot produce one of these outputs, reject it.
+
+### Evidence Gate
+
+Each output must label evidence:
+
+| Evidence | Allowed claim |
+|---|---|
+| INTERNAL_DOC | Project intent only. |
+| THIRD_PARTY_INDEX | Prospecting seed only. |
+| PUBLIC_CREATOR_PAGE | Fit/activity hint only. |
+| OFFICIAL_PLATFORM_DOC | Platform rule as of check date. |
+| ASSET_METADATA | Capture status and recorded asset-side gates only; quality still requires QA evidence. |
+| HUMAN_COLD_READ | Clarity signal only. |
+| STEAM_ANALYTICS | Funnel signal only after page exists. |
+
+Do not write "verified" unless the route, date, source, and allowed claim are explicit.
+
+### Noon Kill Check
+
+At the halfway point, stop and answer:
+
+```text
+Does this change update a row, asset, risk, campaign decision, or source gate?
+If no, stop.
+Is this creating a new file?
+If yes, stop unless the backlog explicitly names a missing file.
+Does it imply co-op/performance/large-world proof?
+If yes, rewrite.
+Does creator-facing work lack `creator_utility_score`, `creator_send_gate`, named CRM row, or `asset_ids_sent`?
+If yes, hold the send path.
+```
+
+### End Cut
+
+Every day ends with one of:
+
+| Decision | Meaning |
+|---|---|
+| ADVANCE | The next public/asset/CRM gate can move one step. |
+| HOLD | More proof is required; name the proof. |
+| KILL | A route, asset, copy angle, or spend path is no longer worth work. |
+
+No decision means the day produced process noise.
+
 ## Lead Verification Loop
 
 Input:
@@ -139,8 +215,9 @@ For each asset:
 1. Score 0-12.
 2. Write one-sentence diagnosis.
 3. Identify the missing hook.
-4. Decide publish/revise/kill.
-5. Store result in asset QA table.
+4. If the asset could touch creators, score creator utility 0-4 and name the CRM rows it unlocks.
+5. Decide publish/revise/kill.
+6. Store result in asset QA table and asset metadata, including `creator_send_gate`.
 
 Agents do not "like" assets. Agents classify whether a cold viewer understands and cares.
 
@@ -193,7 +270,7 @@ An agent day is rejected if it produces:
 
 ## Minimum Daily Quota
 
-If no screenshots exist:
+If no screenshots exist and the CRM has raw rows:
 
 - 25 lead verifications;
 - 10 opener drafts;
@@ -201,11 +278,21 @@ If no screenshots exist:
 - 20 sentiment classifications;
 - 1 source ledger update if a platform source was used.
 
+If no screenshots exist and the CRM-100 staged queue has 0 raw rows:
+
+- 1 planned asset packet or QA gate improvement;
+- 1 copy lint or asset-linked copy test;
+- 1 source/risk/backlog correction only if it changes execution;
+- 0 new generic docs;
+- 0 broad creator sends;
+- 0 paid actions.
+
 If screenshots exist:
 
 - 10 asset scores;
 - 5 copy variants;
 - 10 lead verifications;
+- creator utility and `creator_send_gate` fields for any asset considered for outreach;
 - 1 A/B test brief;
 - 1 public-post candidate.
 

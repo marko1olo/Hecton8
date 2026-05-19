@@ -96,7 +96,7 @@ namespace Hecton8.Gameplay
     }
 
     [DisallowMultipleComponent]
-    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ICuttable, IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener, Hecton8.Interaction.IKinematicRepairTarget
+    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IContinuousPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ICuttable, IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener, Hecton8.Interaction.IKinematicRepairTarget
     {
         // COLD ALLOC: List<BaseModule>[64] - active runtime habitat module registry for cold-path environment scans - owner: BaseModule
         private static readonly List<BaseModule> s_activeModules = new List<BaseModule>(64);
@@ -951,6 +951,15 @@ namespace Hecton8.Gameplay
         public int PowerPriority => powerPriority;
 
         public bool HasPower => HasOperationalPower;
+
+        public float Voltage01 => Clamp01Finite(_ambientVoltageSupplyRatio, 1f);
+
+        public void OnVoltageChanged(float voltage01)
+        {
+            float sanitizedVoltage = Clamp01Finite(voltage01, 1f);
+            bool brownedOut = sanitizedVoltage < Clamp01Finite(brownoutActivationVoltageRatio, 0.80f);
+            SetAmbientPowerVisualState(brownedOut, sanitizedVoltage);
+        }
 
         /// <summary>
         /// Reacts to power status changes from PowerGrid:

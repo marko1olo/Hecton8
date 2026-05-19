@@ -1,7 +1,7 @@
 # DOC_GLOBAL_DOCS_REFRESH Status
 
 Date: 2026-05-19
-Status: ACTIVE R31 / PRIOR HISTORY ARCHIVED
+Status: ACTIVE R32 / PRIOR HISTORY ARCHIVED
 
 Prior full status history is archived at `Docs/Archive/Batch009/Tasks/Status_DOC_GLOBAL_DOCS_REFRESH.md`. The active file was absent during R27 closeout, so this file records the current live DOC_GLOBAL state without rewriting the archived history.
 
@@ -156,3 +156,30 @@ Prior full status history is archived at `Docs/Archive/Batch009/Tasks/Status_DOC
 - `Tools/AtlasCheck.py` remains red on `57` missing RealtimeCSG vendor icon/readme image references.
 - Mod API static validation passes in R31, but this is static validator proof only, not mod runtime proof.
 - Source counters remain the R27 capture-time static orientation until a newer counter pass is intentionally run.
+
+## R32 Checklist
+
+- [x] Re-read active status/rationale and attempted prompt extraction from `Docs/Tasks/CURRENT_BATCH.md`. DOD: prompt extraction returned `PROMPT_NOT_FOUND`; active R31 disk memory and archived prior history were used. Rejected: relying on compacted chat only. Estimate: 0 us runtime.
+- [x] Integrated read-only architecture subagent findings. DOD: the PDA streamer R4 gap, procedural-wreckage route-card R4 gap, route-card `STATIC GREEN` overclaim, source-anchor gaps, historical-manifest wording, Subnautica2 current-proof wording, and temporary Roslyn wording were locally verified and patched. Rejected: treating subagent output as proof without file checks. Estimate: 0 us runtime.
+- [x] Created the R32 artifact and promoted R32 through active root/architecture entrypoints. DOD: `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md` exists and active root/architecture docs no longer say the R32 report is absent. Rejected: leaving R32 references as stale after creating the report. Estimate: 0 us runtime.
+- [x] Corrected current Mod API static validator wording. DOD: `Docs\Modding\Validate_Mod_API_Static.ps1` now reports `Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`; active root/architecture docs use that current static-tool tuple. Rejected: preserving stale `14/160`, `15/161`, or using the PASS as runtime proof. Estimate: 0 us runtime.
+- [x] Closed R4 and local-link gates for the active root/architecture/report scope. DOD: R4 scan `ScopeFiles=81`, missing `0`, duplicate `0`; local markdown links `ScopeFiles=81`, missing `0`. Rejected: excluding the procedural-wreckage global-authority route card after it was found active. Estimate: 0 us runtime.
+- [x] Wrote R32 report and ran static validation. DOD: stale scan, R4 scan, link scan, atlas unit tests, JSON parse, Mod API validator, AtlasCheck, and scoped diff-check results are recorded below. Rejected: claiming Unity/runtime/profiler/player-build proof. Estimate: 0 us runtime.
+
+## R32 Validation
+
+- Targeted stale-current/proof scan over active root/architecture/report surfaces: no hits.
+- Markdown R4 marker scan: `ScopeFiles=81`, `Missing=0`, `Duplicate=0`.
+- Local markdown link scan: `ScopeFiles=81`, `MissingLinks=0`.
+- `python Tools\test_architecture_atlas.py`: exit `0`, `10` tests OK.
+- Active non-archive docs JSON parse: `JsonFiles=131`, ok `131`, bad `0`.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: exit `0`, `Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`.
+- `python Tools\AtlasCheck.py`: exit `1`, `ATLAS_CHECK_FAIL references=6549 missing=59`.
+- Scoped root/architecture `git diff --check -- Docs Tools ':!Docs/Tasks/*' ':!Docs/AgentLogs/*' ':!Docs/Archive/**' ':!Docs/Modding/**'`: exit `0`, line-ending warnings only.
+
+## R32 Current Blockers
+
+- No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, mod runtime smoke, platform run, campaign telemetry, or visual-route proof exists for R32.
+- `Tools/AtlasCheck.py` remains red on `59` missing references: RealtimeCSG vendor icon/readme images plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`.
+- Mod API static validation passes in R32, but this is static validator proof only, not mod runtime proof.
+- Source counters remain mixed: R27 is the latest deliberate physical-line counter snapshot; a concurrent SHINOBU_02 static spot check updated active file/interface/asmdef orientation in `Docs/DOC_GOVERNANCE.md`, but not physical lines.

@@ -268,6 +268,8 @@ namespace Hecton8.Gameplay
             if (!TryResolveFlashlight())
                 return;
 
+            SyncCentralFlashlightState();
+
             if (!_flashlight.IsOn && !HasToolEnergyOrWirelessPath())
             {
                 PublishAssessment(new LampAssessment(
@@ -355,6 +357,8 @@ namespace Hecton8.Gameplay
             if (!TryResolveFlashlight())
                 return;
 
+            SyncCentralFlashlightState();
+
             if (_flashlight.IsOn && !HasToolEnergyOrWirelessPath())
             {
                 _flashlight.TurnOff();
@@ -365,7 +369,7 @@ namespace Hecton8.Gameplay
 
             if (_flashlight.IsOn)
             {
-                bool hadEnergy = TryConsumeRuntimeEnergy(deltaTime);
+                bool hadEnergy = MarkFlashlightActiveForCentralSolver();
                 UpdatePowerIndicator();
                 InvalidateSnapshotCache();
 
@@ -379,6 +383,51 @@ namespace Hecton8.Gameplay
                         "WARN"));
                 }
             }
+            else
+            {
+                MarkFlashlightInactiveForCentralSolver();
+            }
+        }
+
+        private void SyncCentralFlashlightState()
+        {
+            IModularEquipmentService service = GlobalRegistry.ModularEquipment;
+            if (service == null || !service.IsInitialized || RuntimeToolId == 0u)
+                return;
+
+            if (!service.TryGetToolState(RuntimeToolId, out ToolState state))
+                return;
+
+            _flashlight.ApplyCentralThermalState(
+                math.saturate(state.InternalHeat),
+                (state.StatusMask & ToolRuntimeStatusMasks.Overheated) != 0u);
+        }
+
+        private bool MarkFlashlightActiveForCentralSolver()
+        {
+            IModularEquipmentService service = GlobalRegistry.ModularEquipment;
+            if (service == null || !service.IsInitialized || RuntimeToolId == 0u)
+                return HasToolEnergyOrWirelessPath();
+
+            service.SetToolActive(RuntimeToolId, true);
+            if (!service.TryGetToolState(RuntimeToolId, out ToolState state))
+                return HasToolEnergyOrWirelessPath();
+
+            _flashlight.ApplyCentralThermalState(
+                math.saturate(state.InternalHeat),
+                (state.StatusMask & ToolRuntimeStatusMasks.Overheated) != 0u);
+            uint hardBlock = ToolRuntimeStatusMasks.Overheated | ToolRuntimeStatusMasks.Broken | ToolRuntimeStatusMasks.DepthFailed;
+            if ((state.StatusMask & hardBlock) != 0u)
+                return false;
+
+            return (state.StatusMask & ToolRuntimeStatusMasks.Disabled) == 0u || HasToolEnergyOrWirelessPath();
+        }
+
+        private void MarkFlashlightInactiveForCentralSolver()
+        {
+            IModularEquipmentService service = GlobalRegistry.ModularEquipment;
+            if (service != null && service.IsInitialized && RuntimeToolId != 0u)
+                service.SetToolActive(RuntimeToolId, false);
         }
 
         private void ResolveRuntimeReferences()

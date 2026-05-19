@@ -39,7 +39,7 @@ namespace Hecton8.Physics
         private const int VerletLowIterationCount = 3;
         private const int VerletMidIterationCount = 5;
         private const int VerletHighIterationCount = 8;
-        private const int VerletUltraIterationCount = 10;
+        private const int VerletUltraIterationCount = 15;
         private const int VerletLowSegmentCount = 3;
         private const int VerletDefaultSegmentCount = 10;
         private const float VerletReelSpeedMetersPerSecond = 18f;
@@ -2226,11 +2226,9 @@ namespace Hecton8.Physics
 
         private bool ShouldUseLowTierTautLineVisualFake(HectonQualityTier qualityTier)
         {
-            HectonQualityTier tier = TetherManager.SanitizeQualityTier(qualityTier);
-            bool lowTier = tier == HectonQualityTier.Unknown ||
-                           tier == HectonQualityTier.Low ||
-                           tier == HectonQualityTier.Mx350;
-            return lowTier && math.max(_tension01, _stress01) >= LowTierTautLineVisualThreshold01;
+            float qualityWeight = ResolveTetherQualityWeight(qualityTier);
+            float collapseWeight = math.saturate((0.35f - qualityWeight) * math.rcp(0.35f));
+            return collapseWeight > 0f && math.max(_tension01, _stress01) >= LowTierTautLineVisualThreshold01;
         }
 
         private static int ResolveVerletIterationCount(HectonQualityTier qualityTier, int tuningOverride)
@@ -2238,21 +2236,9 @@ namespace Hecton8.Physics
             if (tuningOverride > 0)
                 return math.clamp(tuningOverride, VerletLowIterationCount, VerletUltraIterationCount);
 
-            switch (TetherManager.SanitizeQualityTier(qualityTier))
-            {
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                case HectonQualityTier.Unknown:
-                    return VerletLowIterationCount;
-                case HectonQualityTier.Mid:
-                    return VerletMidIterationCount;
-                case HectonQualityTier.High:
-                    return VerletHighIterationCount;
-                case HectonQualityTier.Ultra:
-                    return VerletUltraIterationCount;
-                default:
-                    return VerletLowIterationCount;
-            }
+            float qualityWeight = ResolveTetherQualityWeight(qualityTier);
+            int iterations = (int)math.lerp(2f, 15f, qualityWeight);
+            return math.clamp(iterations, 2, VerletUltraIterationCount);
         }
 
         private static int ResolveVerletPointCount(HectonQualityTier qualityTier)
@@ -2262,37 +2248,43 @@ namespace Hecton8.Physics
 
         private static int ResolveVerletSegmentCount(HectonQualityTier qualityTier)
         {
-            switch (TetherManager.SanitizeQualityTier(qualityTier))
-            {
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                case HectonQualityTier.Unknown:
-                    return VerletLowSegmentCount;
-                case HectonQualityTier.Mid:
-                case HectonQualityTier.High:
-                case HectonQualityTier.Ultra:
-                    return VerletDefaultSegmentCount;
-                default:
-                    return VerletLowSegmentCount;
-            }
+            float qualityWeight = ResolveTetherQualityWeight(qualityTier);
+            int segmentCount = (int)math.round(math.lerp(VerletLowSegmentCount, VerletDefaultSegmentCount, Smooth01(qualityWeight)));
+            return math.clamp(segmentCount, VerletLowSegmentCount, VerletDefaultSegmentCount);
         }
 
         private static float ResolveVerletVelocityDamping(HectonQualityTier qualityTier)
         {
+            float qualityWeight = ResolveTetherQualityWeight(qualityTier);
+            return math.lerp(VerletLowVelocityDamping, VerletHighVelocityDamping, Smooth01(qualityWeight));
+        }
+
+        private static float ResolveTetherQualityWeight(HectonQualityTier qualityTier)
+        {
+            float globalWeight = HomeostasisBrain.GlobalQualityWeight;
+            if (math.isfinite(globalWeight))
+                return math.saturate(globalWeight);
+
             switch (TetherManager.SanitizeQualityTier(qualityTier))
             {
+                case HectonQualityTier.Mid:
+                    return 0.55f;
+                case HectonQualityTier.High:
+                    return 0.78f;
+                case HectonQualityTier.Ultra:
+                    return 1f;
                 case HectonQualityTier.Low:
                 case HectonQualityTier.Mx350:
                 case HectonQualityTier.Unknown:
-                    return VerletLowVelocityDamping;
-                case HectonQualityTier.Mid:
-                    return VerletMidVelocityDamping;
-                case HectonQualityTier.High:
-                case HectonQualityTier.Ultra:
-                    return VerletHighVelocityDamping;
                 default:
-                    return VerletLowVelocityDamping;
+                    return 0.2f;
             }
+        }
+
+        private static float Smooth01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - 2f * x);
         }
 
         private void RecalculateDampingCoefficient()
@@ -3612,6 +3604,29 @@ namespace Hecton8.Physics
             if (_playerRigidbody != null && _payloadBody != null)
                 RecalculateDampingCoefficient();
         }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            if (!_isActive || !_verletPositions.IsCreated || _verletPositions.Length < 2)
+                return;
+
+            Gizmos.color = Color.green;
+            for (int i = 0; i < _verletPositions.Length - 1; i++)
+            {
+                float3 a = SanitizeFinite(_verletPositions[i] + _verletSolverOrigin);
+                float3 b = SanitizeFinite(_verletPositions[i + 1] + _verletSolverOrigin);
+                Gizmos.DrawLine(new Vector3(a.x, a.y, a.z), new Vector3(b.x, b.y, b.z));
+            }
+
+            Gizmos.color = Color.red;
+            for (int i = 0; i < _verletPositions.Length; i++)
+            {
+                float3 p = SanitizeFinite(_verletPositions[i] + _verletSolverOrigin);
+                Gizmos.DrawSphere(new Vector3(p.x, p.y, p.z), 0.035f);
+            }
+        }
+#endif
 
         private static float ResolveBlendFactor(float sharpness, float deltaTime)
         {

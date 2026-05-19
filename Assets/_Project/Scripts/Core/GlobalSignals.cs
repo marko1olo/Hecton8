@@ -125,11 +125,22 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(24)] public readonly ulong Reserved2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 144)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct AudioEvent : ISignal
     {
+        [FieldOffset(0)]
         public Hecton8.Audio.AudioEventKind Kind;
+        [FieldOffset(1)]
+        public byte Reserved0;
+        [FieldOffset(2)]
+        public ushort Reserved1;
+        [FieldOffset(4)]
+        public uint Reserved2;
+        [FieldOffset(8)]
+        public ulong Reserved3;
+        [FieldOffset(16)]
         public Hecton8.Audio.AudioPingTriggerInfo AudioPing;
+        [FieldOffset(16)]
         public Hecton8.Audio.StructuralStressAudioInfo StructuralStress;
 
         public static AudioEvent FromAudioPing(in Hecton8.Audio.AudioPingTriggerInfo info)
@@ -137,7 +148,11 @@ namespace Hecton8.Core.Contracts.Signals
             return new AudioEvent
             {
                 Kind = Hecton8.Audio.AudioEventKind.AudioPing,
-                AudioPing = info
+                AudioPing = info,
+                Reserved0 = 0,
+                Reserved1 = 0,
+                Reserved2 = 0u,
+                Reserved3 = 0ul
             };
         }
 
@@ -146,51 +161,92 @@ namespace Hecton8.Core.Contracts.Signals
             return new AudioEvent
             {
                 Kind = Hecton8.Audio.AudioEventKind.StructuralStress,
-                StructuralStress = info
+                StructuralStress = info,
+                Reserved0 = 0,
+                Reserved1 = 0,
+                Reserved2 = 0u,
+                Reserved3 = 0ul
             };
+        }
+
+        public static AudioEvent FromStructuralStress(Vector3 worldPosition, float stress01, float pitchScale)
+        {
+            Hecton8.Audio.StructuralStressAudioInfo info =
+                new Hecton8.Audio.StructuralStressAudioInfo(worldPosition, stress01, pitchScale);
+            return FromStructuralStress(in info);
         }
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DataVaultUpdateSignal : ISignal
     {
+        [FieldOffset(0)]
         public uint SourceHash;
+        [FieldOffset(4)]
         public uint FieldHash;
+        [FieldOffset(8)]
         public int OffsetBytes;
+        [FieldOffset(12)]
         public float OldValue;
+        [FieldOffset(16)]
         public float NewValue;
+        [FieldOffset(20)]
         public uint Frame;
+        [FieldOffset(24)]
         public ushort BufferId;
+        [FieldOffset(26)]
         public ushort Flags;
+        [FieldOffset(28)]
+        public uint Reserved0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct PrefabAcousticSignatureSignal : ISignal
     {
+        [FieldOffset(0)]
         public uint PrefabHash;
+        [FieldOffset(4)]
         public uint AcousticSignatureHash;
+        [FieldOffset(8)]
         public uint LoreHash;
+        [FieldOffset(12)]
         public uint Frame;
+        [FieldOffset(16)]
         public float Resonance01;
+        [FieldOffset(20)]
         public uint OneDimensionalLutHash;
+        [FieldOffset(24)]
         public ushort Flags;
+        [FieldOffset(26)]
         public ushort Reserved;
+        [FieldOffset(28)]
+        public uint Reserved1;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct PrefabLoreLinkSignal : ISignal
     {
+        [FieldOffset(0)]
         public uint PrefabHash;
+        [FieldOffset(4)]
         public uint LoreHash;
+        [FieldOffset(8)]
         public uint Frame;
+        [FieldOffset(12)]
         public uint OneDimensionalLutHash;
+        [FieldOffset(16)]
         public uint HighTierVisualHash;
+        [FieldOffset(20)]
         public ushort Flags;
+        [FieldOffset(22)]
         public ushort Reserved;
+        [FieldOffset(24)]
         public uint Reserved1;
+        [FieldOffset(28)]
+        public uint Reserved2;
     }
 
     [Preserve]
@@ -215,40 +271,67 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     [Preserve]
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct DebugSignal : ISignal
     {
+        [FieldOffset(0)]
         public uint Kind;
+        [FieldOffset(4)]
         public uint EntityId;
+        [FieldOffset(8)]
         public uint ProducerId;
+        [FieldOffset(12)]
         public uint ConsumerId;
+        [FieldOffset(16)]
         public float3 Position;
+        [FieldOffset(28)]
         public float3 Vector;
+        [FieldOffset(40)]
         public float Value0;
+        [FieldOffset(44)]
         public float Value1;
+        [FieldOffset(48)]
         public uint Flags;
+        [FieldOffset(52)]
         public uint Frame;
+        [FieldOffset(56)]
         public uint Aux0;
+        [FieldOffset(60)]
         public uint Aux1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct SystemHealthSignal : ISignal
     {
+        [FieldOffset(0)]
         public uint Frame;
+        [FieldOffset(4)]
         public float SystemHealthIndex01;
+        [FieldOffset(8)]
         public float FpsEwma;
+        [FieldOffset(12)]
         public float JitterSigmaMs;
+        [FieldOffset(16)]
         public float CpuTempC;
+        [FieldOffset(20)]
         public float GpuUtil01;
+        [FieldOffset(24)]
         public float BatteryLife01;
+        [FieldOffset(28)]
+        public uint Reserved0;
+        [FieldOffset(32)]
         public ulong KillSwitchMask;
+        [FieldOffset(40)]
         public byte PressureLevel;
+        [FieldOffset(41)]
         public byte FoveatedPressureTier;
+        [FieldOffset(42)]
         public ushort Flags;
+        [FieldOffset(44)]
+        public uint Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ReentryVfxStateSignal : ISignal
     {
         public const byte FlagLowTier = 1 << 0;
@@ -257,145 +340,276 @@ namespace Hecton8.Core.Contracts.Signals
         public const byte FlagNaNGuard = 1 << 3;
         public const byte FlagSpatialAnchor = 1 << 4;
 
+        [FieldOffset(0)]
         public AbsoluteUniversePosition CapsuleAup;
+        [FieldOffset(48)]
         public float Heat01;
+        [FieldOffset(52)]
         public float Opacity01;
+        [FieldOffset(56)]
         public ushort Sequence;
+        [FieldOffset(58)]
         public ushort HydrationSequence;
+        [FieldOffset(60)]
         public byte Phase;
+        [FieldOffset(61)]
         public byte Flags;
+        [FieldOffset(62)]
         public byte QualityTier;
+        [FieldOffset(63)]
         public byte Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VisorDropletSignal : ISignal
     {
         public const byte DropletKindMassiveSplash = 1;
         public const byte FlagExternalSplash = 1 << 0;
 
+        [FieldOffset(0)]
         public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)]
         public float Intensity01;
+        [FieldOffset(52)]
         public float DurationSeconds;
+        [FieldOffset(56)]
         public uint SourceHash;
+        [FieldOffset(60)]
         public byte DropletKind;
+        [FieldOffset(61)]
         public byte Flags;
+        [FieldOffset(62)]
         public ushort Sequence;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct InputSignal : ISignal
     {
+        [FieldOffset(0)]
         public float2 MoveDelta;
+        [FieldOffset(8)]
         public float2 LookDelta;
+        [FieldOffset(16)]
         public float VerticalDelta;
+        [FieldOffset(20)]
         public uint ActionsBitmask;
+        [FieldOffset(24)]
         public uint CurrentInputSchemeHash;
+        [FieldOffset(28)]
         public uint Frame;
+        [FieldOffset(32)]
         public uint Sequence;
+        [FieldOffset(36)]
         public byte Flags;
+        [FieldOffset(37)]
+        public byte Reserved0;
+        [FieldOffset(38)]
+        public ushort Reserved1;
+        [FieldOffset(40)]
+        public ulong Reserved2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct StateCorrectionSignal : ISignal
     {
+        [FieldOffset(0)]
         public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)]
         public float3 RuntimePosition;
+        [FieldOffset(60)]
         public float3 Velocity;
+        [FieldOffset(72)]
         public quaternion Rotation;
+        [FieldOffset(88)]
         public uint AuthoritativeHash;
+        [FieldOffset(92)]
         public uint ExpectedLocalHash;
+        [FieldOffset(96)]
         public uint Frame;
+        [FieldOffset(100)]
         public uint SourceId;
+        [FieldOffset(104)]
         public uint Sequence;
+        [FieldOffset(108)]
         public byte Flags;
+        [FieldOffset(109)]
+        public byte Reserved0;
+        [FieldOffset(110)]
+        public ushort Reserved1;
+        [FieldOffset(112)]
+        public uint Reserved2;
+        [FieldOffset(116)]
+        public uint Reserved3;
+        [FieldOffset(120)]
+        public ulong Reserved4;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DesyncDetectedSignal : ISignal
     {
+        [FieldOffset(0)]
         public uint LocalHash;
+        [FieldOffset(4)]
         public uint AuthoritativeHash;
+        [FieldOffset(8)]
         public uint Frame;
+        [FieldOffset(12)]
         public uint SourceId;
+        [FieldOffset(16)]
         public uint LastFenceFrame;
+        [FieldOffset(20)]
         public byte Flags;
+        [FieldOffset(21)]
+        public byte Reserved0;
+        [FieldOffset(22)]
+        public ushort Reserved1;
+        [FieldOffset(24)]
+        public uint Reserved2;
+        [FieldOffset(28)]
+        public uint Reserved3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct SyncFenceSignal : ISignal
     {
+        [FieldOffset(0)]
         public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)]
         public float3 RuntimePosition;
+        [FieldOffset(60)]
         public float3 Velocity;
+        [FieldOffset(72)]
         public quaternion Rotation;
+        [FieldOffset(88)]
         public uint StateHash;
+        [FieldOffset(92)]
         public uint Frame;
+        [FieldOffset(96)]
         public uint SourceId;
+        [FieldOffset(100)]
         public uint Sequence;
+        [FieldOffset(104)]
         public byte Flags;
+        [FieldOffset(105)]
+        public byte Reserved0;
+        [FieldOffset(106)]
+        public ushort Reserved1;
+        [FieldOffset(108)]
+        public uint Reserved2;
+        [FieldOffset(112)]
+        public ulong Reserved3;
+        [FieldOffset(120)]
+        public ulong Reserved4;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct KccVelocitySignal : ISignal
     {
         public const byte FlagLowTier = 1 << 0;
         public const byte FlagMovementAuthorityExternal = 1 << 1;
 
+        [FieldOffset(0)]
         public AbsoluteUniversePosition BodyAup;
+        [FieldOffset(48)]
         public float3 Velocity;
+        [FieldOffset(60)]
         public float PlanarSpeedSq;
+        [FieldOffset(64)]
         public uint Frame;
+        [FieldOffset(68)]
         public uint SourceId;
+        [FieldOffset(72)]
         public uint Sequence;
+        [FieldOffset(76)]
         public byte Flags;
+        [FieldOffset(77)]
+        public byte Reserved0;
+        [FieldOffset(78)]
+        public ushort Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 144)]
+    [StructLayout(LayoutKind.Explicit, Size = 144)]
     public struct TetherTensionSignal : ISignal
     {
+        [FieldOffset(0)]
         public AbsoluteUniversePosition AnchorAup;
+        [FieldOffset(48)]
         public AbsoluteUniversePosition PayloadAup;
+        [FieldOffset(96)]
         public float3 DirectionToPayload;
+        [FieldOffset(108)]
         public uint TetherId;
+        [FieldOffset(112)]
         public uint FrameIndex;
+        [FieldOffset(116)]
         public float TensionForce;
+        [FieldOffset(120)]
         public float SnapThreshold;
+        [FieldOffset(124)]
         public float Tension01;
+        [FieldOffset(128)]
         public float ReactiveVfx01;
+        [FieldOffset(132)]
         public ushort NodeCount;
+        [FieldOffset(134)]
         public byte Flags;
+        [FieldOffset(135)]
         public byte Reserved;
+        [FieldOffset(136)]
+        public uint ReservedTail0;
+        [FieldOffset(140)]
+        public uint ReservedTail1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct TetherSnappedSignal : ISignal
     {
+        [FieldOffset(0)]
         public AbsoluteUniversePosition SnapAup;
+        [FieldOffset(48)]
         public uint TetherId;
+        [FieldOffset(52)]
         public uint FrameIndex;
+        [FieldOffset(56)]
         public float PeakTension;
+        [FieldOffset(60)]
         public float SnapThreshold;
+        [FieldOffset(64)]
         public float Severity01;
+        [FieldOffset(68)]
         public ushort NodeCount;
+        [FieldOffset(70)]
         public byte Reason;
+        [FieldOffset(71)]
         public byte Flags;
+        [FieldOffset(72)]
         public ulong ReservedPadding;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct TetherFiredSignal : ISignal
     {
+        [FieldOffset(0)]
         public int ManagerInstanceId;
+        [FieldOffset(4)]
         public int OwnerInstanceId;
+        [FieldOffset(8)]
         public int PayloadBodyInstanceId;
+        [FieldOffset(12)]
         public int PayloadColliderInstanceId;
+        [FieldOffset(16)]
         public int RequestSlot;
+        [FieldOffset(20)]
         public uint RequestVersion;
+        [FieldOffset(24)]
         public uint FrameIndex;
+        [FieldOffset(28)]
         public float InitialDistance;
+        [FieldOffset(32)]
         public uint Flags;
+        [FieldOffset(36)]
         public uint Reserved;
+        [FieldOffset(40)]
         public ulong ReservedPadding;
     }
 
@@ -444,40 +658,70 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(76)] public uint ReservedTail;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct VoxelCarveEvent : ISignal
     {
+        [FieldOffset(0)]
         public ulong VolumeInstanceId;
+        [FieldOffset(8)]
         public float3 AbsoluteHitPoint;
+        [FieldOffset(20)]
         public float3 AbsoluteSegmentEnd;
+        [FieldOffset(32)]
         public float3 AbsoluteHalfExtents;
+        [FieldOffset(44)]
         public float3 AbsoluteImpulseDirection;
+        [FieldOffset(56)]
         public double3 AbsoluteHitPointDouble;
+        [FieldOffset(80)]
         public double3 AbsoluteSegmentEndDouble;
+        [FieldOffset(104)]
         public float RadiusMeters;
+        [FieldOffset(108)]
         public float BlendStrengthMeters;
+        [FieldOffset(112)]
         public byte Operation;
+        [FieldOffset(113)]
         public byte Shape;
+        [FieldOffset(114)]
         public byte MaterialId;
+        [FieldOffset(115)]
         public byte SourceFlags;
+        [FieldOffset(116)]
+        public uint Reserved0;
+        [FieldOffset(120)]
+        public uint Reserved1;
+        [FieldOffset(124)]
+        public uint Reserved2;
     }
 
     /// <summary>
     /// Broadcast signal emitted when a shaft source resolves as a burst-grade bioluminescent flare.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct VisualFlareSignal : ISignal
     {
         /// <summary>Stable source ID or component instance fallback.</summary>
+        [FieldOffset(0)]
         public uint SourceId;
         /// <summary>Resolved burst intensity after LOD and distance gates.</summary>
+        [FieldOffset(4)]
         public float Intensity01;
         /// <summary>Viewport-space source position.</summary>
+        [FieldOffset(8)]
         public float2 ScreenUv;
         /// <summary>Unity frame index at emission.</summary>
+        [FieldOffset(16)]
         public uint Frame;
         /// <summary>Bitfield reserved for source kind and debug state.</summary>
+        [FieldOffset(20)]
         public byte Flags;
+        [FieldOffset(21)]
+        public byte Reserved0;
+        [FieldOffset(22)]
+        public ushort Reserved1;
+        [FieldOffset(24)]
+        public ulong Reserved2;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 80)]
@@ -530,46 +774,68 @@ namespace Hecton8.Core.Contracts.Signals
     /// <summary>
     /// Pre-simulation deterministic input snapshot. Gameplay physics consumes this signal, not hardware APIs.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct InputStateSignal : ISignal
     {
+        [FieldOffset(0)]
         public Hecton8.Core.InputState State;
+        [FieldOffset(24)]
         public uint CurrentInputSchemeHash;
+        [FieldOffset(28)]
         public byte InputDelayFrames;
+        [FieldOffset(29)]
         public byte AppliedDelayFrames;
+        [FieldOffset(30)]
         public ushort Flags;
     }
 
     /// <summary>
     /// Master state hash fence published by the lockstep validator after a completed deterministic sample.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct LockstepSnapshotSignal : ISignal
     {
+        [FieldOffset(0)]
         public ulong MasterHash;
+        [FieldOffset(8)]
         public uint Frame;
+        [FieldOffset(12)]
         public uint HashCadenceFrames;
+        [FieldOffset(16)]
         public uint Flags;
+        [FieldOffset(20)]
         public uint MissingMask;
+        [FieldOffset(24)]
         public uint NonFiniteMask;
+        [FieldOffset(28)]
         public uint ReplayBlock;
     }
 
     /// <summary>
     /// Developer-facing glitch pulse emitted when deterministic replay validation fails.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct SystemGlitchSignal : ISignal
     {
+        [FieldOffset(0)]
         public uint Frame;
+        [FieldOffset(4)]
         public uint SourceId;
+        [FieldOffset(8)]
         public uint LocalHash;
+        [FieldOffset(12)]
         public uint ExpectedHash;
+        [FieldOffset(16)]
         public float Intensity01;
+        [FieldOffset(20)]
         public float DurationSeconds;
+        [FieldOffset(24)]
         public byte Reason;
+        [FieldOffset(25)]
         public byte Flags;
+        [FieldOffset(26)]
         public ushort Reserved0;
+        [FieldOffset(28)]
         public uint Reserved1;
     }
 
@@ -673,41 +939,66 @@ namespace Hecton8.Core.Contracts.Signals
     /// <summary>
     /// Unmanaged event payload carried by the deferred physics event lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct PhysicsEventPayload : ISignal
     {
+        [FieldOffset(0)]
         public Vector3 RuntimePosition;
+        [FieldOffset(12)]
         public Vector3 Direction;
+        [FieldOffset(24)]
         public Vector3 ForceVector;
+        [FieldOffset(36)]
         public Vector3 ImpulseVector;
+        [FieldOffset(48)]
         public float RadiusMeters;
+        [FieldOffset(52)]
         public float Scalar0;
+        [FieldOffset(56)]
         public float Scalar1;
+        [FieldOffset(60)]
         public float Scalar2;
+        [FieldOffset(64)]
         public int PrimaryId;
+        [FieldOffset(68)]
         public uint DataHash;
+        [FieldOffset(72)]
         public uint StatusBits;
+        [FieldOffset(76)]
         public ushort EventType;
+        [FieldOffset(78)]
         public ushort Reserved;
     }
 
     /// <summary>
     /// Deferred submarine hull impact payload consumed by the trauma dispatcher.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct DeferredSubmarineImpactSignal : ISignal
     {
+        [FieldOffset(0)]
         public float3 LocalPoint;
+        [FieldOffset(12)]
         public float Magnitude;
+        [FieldOffset(16)]
         public float Depth;
+        [FieldOffset(20)]
         public uint DamageType;
+        [FieldOffset(24)]
         public float PreviousIntegrityNormalized;
+        [FieldOffset(28)]
         public float NextIntegrityNormalized;
+        [FieldOffset(32)]
         public ushort SourceId;
+        [FieldOffset(34)]
         public byte IntegrityDelta;
+        [FieldOffset(35)]
         public byte TraumaLevel;
+        [FieldOffset(36)]
         public uint Reserved0;
+        [FieldOffset(40)]
         public uint Reserved1;
+        [FieldOffset(44)]
         public uint Reserved2;
     }
 
@@ -1089,6 +1380,7 @@ namespace Hecton8.Core.Contracts.Signals
             FlushDirectSignalLane<SystemHealthSignal>(lowTier, systemStressMilli, simulationPaused);
             FlushDirectSignalLane<SystemPauseSignal>(lowTier, systemStressMilli, simulationPaused);
             FlushDirectSignalLane<TemperatureChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ThermalSourceSignal>(lowTier, systemStressMilli, simulationPaused);
             FlushDirectSignalLane<TetherFiredSignal>(lowTier, systemStressMilli, simulationPaused);
             FlushDirectSignalLane<TetherSnappedSignal>(lowTier, systemStressMilli, simulationPaused);
             FlushDirectSignalLane<TetherTensionSignal>(lowTier, systemStressMilli, simulationPaused);
@@ -1235,6 +1527,7 @@ namespace Hecton8.Core.Contracts.Signals
             SignalBus<SystemHealthSignal>.ClearPostSimulation();
             SignalBus<SystemPauseSignal>.ClearPostSimulation();
             SignalBus<TemperatureChangedSignal>.ClearPostSimulation();
+            SignalBus<ThermalSourceSignal>.ClearPostSimulation();
             SignalBus<TetherFiredSignal>.ClearPostSimulation();
             SignalBus<TetherSnappedSignal>.ClearPostSimulation();
             SignalBus<TetherTensionSignal>.ClearPostSimulation();
@@ -1765,7 +2058,39 @@ namespace Hecton8.Core.Contracts.Signals
                 return ((ulong)player.SourceHash << 32) | player.Frame;
             }
 
+            if (typeof(T) == typeof(ThermalSourceSignal))
+            {
+                ref ThermalSourceSignal thermal = ref UnsafeUtility.As<T, ThermalSourceSignal>(ref copy);
+                uint sourceId = thermal.SourceId != 0u ? thermal.SourceId : FoldThermalSourceSortId(in thermal);
+                return ((ulong)sourceId << 32) | thermal.Frame;
+            }
+
             return ResolveGenericSortKey(in signal);
+        }
+
+        private static uint FoldThermalSourceSortId(in ThermalSourceSignal signal)
+        {
+            const uint fnvOffset = 2166136261u;
+            const uint fnvPrime = 16777619u;
+            uint hash = fnvOffset;
+            hash = FoldSortHash(hash, (uint)signal.PositionAup.GridX, fnvPrime);
+            hash = FoldSortHash(hash, (uint)(signal.PositionAup.GridX >> 32), fnvPrime);
+            hash = FoldSortHash(hash, (uint)signal.PositionAup.GridY, fnvPrime);
+            hash = FoldSortHash(hash, (uint)(signal.PositionAup.GridY >> 32), fnvPrime);
+            hash = FoldSortHash(hash, (uint)signal.PositionAup.GridZ, fnvPrime);
+            hash = FoldSortHash(hash, (uint)(signal.PositionAup.GridZ >> 32), fnvPrime);
+            hash = FoldSortHash(hash, math.asuint(signal.PositionAup.LocalX), fnvPrime);
+            hash = FoldSortHash(hash, math.asuint(signal.PositionAup.LocalY), fnvPrime);
+            hash = FoldSortHash(hash, math.asuint(signal.PositionAup.LocalZ), fnvPrime);
+            hash = FoldSortHash(hash, math.asuint(signal.RadiusMeters), fnvPrime);
+            return hash == 0u ? 1u : hash;
+        }
+
+        private static uint FoldSortHash(uint hash, uint value, uint prime)
+        {
+            hash ^= value;
+            hash *= prime;
+            return hash;
         }
 
         private static unsafe ulong ResolveGenericSortKey(in T signal)
@@ -2084,6 +2409,7 @@ namespace Hecton8.Core.Contracts.Signals
             Type type = typeof(T);
             return type == typeof(CombatDamageSignal) ||
                    type == typeof(PlayerStateSignal) ||
+                   type == typeof(ThermalSourceSignal) ||
                    type == typeof(StateCorrectionSignal) ||
                    type == typeof(SyncFenceSignal);
         }
@@ -2206,6 +2532,7 @@ namespace Hecton8.Core.Contracts.Signals
                    type == typeof(SystemHealthSignal) ||
                    type == typeof(SystemPauseSignal) ||
                    type == typeof(TemperatureChangedSignal) ||
+                   type == typeof(ThermalSourceSignal) ||
                    type == typeof(TetherFiredSignal) ||
                    type == typeof(TetherSnappedSignal) ||
                    type == typeof(TetherTensionSignal) ||
@@ -2253,6 +2580,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const int RadiationDoseSignalGuardCode = unchecked((int)0x51A10018u);
         private const int TemperatureChangedSignalGuardCode = unchecked((int)0x51A10019u);
         private const int RadiationSourceSignalGuardCode = unchecked((int)0x51A1001Au);
+        private const int ThermalSourceSignalGuardCode = unchecked((int)0x51A1005Fu);
         private const int CullingOverloadSignalGuardCode = unchecked((int)0x51A1001Bu);
         private const int WakeGeneratedSignalGuardCode = unchecked((int)0x51A1001Cu);
         private const int BiomeGradientSignalGuardCode = unchecked((int)0x51A1001Du);
@@ -2416,6 +2744,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const byte GuardMockRockCollision = 92;
         private const byte GuardMacroCollision = 93;
         private const byte GuardWakeRequest = 94;
+        private const byte GuardThermalSource = 95;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Sanitize<T>(ref T signal)
@@ -2552,6 +2881,11 @@ namespace Hecton8.Core.Contracts.Signals
                 {
                     ref RadiationSourceSignal typed = ref UnsafeUtility.As<T, RadiationSourceSignal>(ref signal);
                     return SanitizeRadiationSourceSignal(ref typed);
+                }
+                case GuardThermalSource:
+                {
+                    ref ThermalSourceSignal typed = ref UnsafeUtility.As<T, ThermalSourceSignal>(ref signal);
+                    return SanitizeThermalSourceSignal(ref typed);
                 }
                 case GuardCullingOverload:
                 {
@@ -2948,6 +3282,8 @@ namespace Hecton8.Core.Contracts.Signals
                 return GuardTemperatureChanged;
             if (typeof(T) == typeof(RadiationSourceSignal))
                 return GuardRadiationSource;
+            if (typeof(T) == typeof(ThermalSourceSignal))
+                return GuardThermalSource;
             if (typeof(T) == typeof(CullingOverloadSignal))
                 return GuardCullingOverload;
             if (typeof(T) == typeof(WakeGeneratedSignal))
@@ -3461,6 +3797,18 @@ namespace Hecton8.Core.Contracts.Signals
                 guardCode = RadiationSourceSignalGuardCode;
             if (SanitizeNonNegative(ref signal.RadiusMeters))
                 guardCode = RadiationSourceSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeThermalSourceSignal(ref ThermalSourceSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? ThermalSourceSignalGuardCode : 0;
+            if (SanitizeNonNegative(ref signal.RadiusMeters))
+                guardCode = ThermalSourceSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.IntensityCelsiusPerSecond))
+                guardCode = ThermalSourceSignalGuardCode;
 
             return guardCode;
         }
@@ -4669,6 +5017,7 @@ namespace Hecton8.Core
         private const int RadiationDoseSignalCapacity = 64;
         private const int RadiationSourceSignalCapacity = 64;
         private const int TemperatureChangedSignalCapacity = 64;
+        private const int ThermalSourceSignalCapacity = 128;
         private const int ResourceDepletionDeltaSignalCapacity = 64;
         private const int LightLevelSignalCapacity = 64;
         private const int SubmarineLightsChangedSignalCapacity = 64;
@@ -5307,7 +5656,7 @@ namespace Hecton8.Core
             ValidateSignalPayload<MovementAcousticSignal>(64);
             ValidateSignalSize<AcousticZoneChangedEvent>(16);
             ValidateSignalSize<DirectorAIMusicSignal>(32);
-            ValidateSignalSize<global::Hecton8.Core.Contracts.Signals.AudioEvent>(144);
+            ValidateSignalSize<global::Hecton8.Core.Contracts.Signals.AudioEvent>(128);
             ValidateSignalPayload<SwarmDispersedSignal>(64);
             ValidateSignalSize<MacroDatabaseSectorHydrationSignal>(32);
             ValidateSignalSize<WfcOutpostGeneratedSignal>(128);
@@ -5343,6 +5692,7 @@ namespace Hecton8.Core
             ValidateSignalSize<SaveLifecycleSignal>(32);
             ValidateSignalSize<ComplianceViolationSignal>(32);
             ValidateSignalSize<GlobalTimeSyncSignal>(32);
+            ValidateSignalSize<InputStateSignal>(32);
             ValidateSignalSize<InputSignal>(48);
             ValidateSignalSize<StateCorrectionSignal>(128);
             ValidateSignalSize<DesyncDetectedSignal>(32);
@@ -5365,6 +5715,7 @@ namespace Hecton8.Core
             ValidateSignalSize<ItemAcquiredSignal>(64);
             ValidateSignalSize<RadiationDoseSignal>(64);
             ValidateSignalSize<TemperatureChangedSignal>(64);
+            ValidateSignalSize<ThermalSourceSignal>(64);
             ValidateSignalSize<ResourceDepletionDeltaSignal>(32);
             ValidateSignalSize<LightLevelSignal>(32);
             ValidateSignalSize<SubmarineLightsChangedSignal>(80);
@@ -7020,6 +7371,8 @@ namespace Hecton8.Core
             SignalBus<ResourceDepletionDeltaSignal>.EnsureInitialized();
             SignalBus<TemperatureChangedSignal>.Configure(TemperatureChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(TemperatureChangedSignal)));
             SignalBus<TemperatureChangedSignal>.EnsureInitialized();
+            SignalBus<ThermalSourceSignal>.Configure(ThermalSourceSignalCapacity, maxFrameSignals: ThermalSourceSignalCapacity, lowTierFrameSignals: 32, laneHash: ComputeStableSignalLaneHash(nameof(ThermalSourceSignal)));
+            SignalBus<ThermalSourceSignal>.EnsureInitialized();
             SignalBus<CullingOverloadSignal>.Configure(CullingOverloadSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CullingOverloadSignal)));
             SignalBus<CullingOverloadSignal>.EnsureInitialized();
             SignalBus<CraftingCompletedSignal>.Configure(CraftingCompletedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CraftingCompletedSignal)));
@@ -7602,6 +7955,17 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(62)] public byte Flags;
     }
 
+    /// <summary>Producer-agnostic heat source registration/update for the abyssal thermodynamics field. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct ThermalSourceSignal : ISignal
+    {
+        [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)] public float RadiusMeters;
+        [FieldOffset(52)] public float IntensityCelsiusPerSecond;
+        [FieldOffset(56)] public uint SourceId;
+        [FieldOffset(60)] public uint Frame;
+    }
+
     /// <summary>Radiation source registration/update signal. Size: 64 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct RadiationSourceSignal : ISignal
@@ -7883,16 +8247,24 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>Combat-to-feedback armor deflection signal. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DeflectSignal : ISignal
     {
+        [FieldOffset(0)]
         public float3 LocalPoint;
+        [FieldOffset(12)]
         public float FrontDot;
+        [FieldOffset(16)]
         public uint TargetHash;
+        [FieldOffset(20)]
         public uint SourceHash;
+        [FieldOffset(24)]
         public float DamageScalar;
+        [FieldOffset(28)]
         public byte Flags;
+        [FieldOffset(29)]
         public byte ArmorClass;
+        [FieldOffset(30)]
         public ushort Reserved;
     }
 
@@ -7975,25 +8347,53 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>Compass anomaly proximity signal. Size: 80 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct AnomalyProximitySignal : ISignal
     {
+        [FieldOffset(0)]
         public AbsoluteUniversePosition SourceAup;
+        [FieldOffset(48)]
         public float Proximity01;
+        [FieldOffset(52)]
         public float Interference01;
+        [FieldOffset(56)]
         public uint Frame;
+        [FieldOffset(60)]
         public uint SourceHash;
+        [FieldOffset(64)]
         public byte Flags;
+        [FieldOffset(65)]
+        public byte Reserved0;
+        [FieldOffset(66)]
+        public ushort Reserved1;
+        [FieldOffset(68)]
+        public uint Reserved2;
+        [FieldOffset(72)]
+        public ulong Reserved3;
     }
 
     /// <summary>Compass recalibration signal. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct CompassCalibratedSignal : ISignal
     {
+        [FieldOffset(0)]
         public uint SourceHash;
+        [FieldOffset(4)]
         public uint Frame;
+        [FieldOffset(8)]
         public float CalibrationQuality01;
+        [FieldOffset(12)]
         public byte Flags;
+        [FieldOffset(13)]
+        public byte Reserved0;
+        [FieldOffset(14)]
+        public ushort Reserved1;
+        [FieldOffset(16)]
+        public uint Reserved2;
+        [FieldOffset(20)]
+        public uint Reserved3;
+        [FieldOffset(24)]
+        public ulong Reserved4;
     }
 
     /// <summary>Telemetry anomaly signal. Size: 32 bytes.</summary>

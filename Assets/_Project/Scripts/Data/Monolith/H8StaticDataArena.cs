@@ -15,6 +15,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Hecton8.Data
 {
@@ -24,7 +25,7 @@ namespace Hecton8.Data
     public static unsafe class H8StaticDataArena
     {
         private const long MaxBlobBytes = 256L * 1024L * 1024L;
-        private const int MissingUtf8Offset = -1;
+        private const uint MissingUtf8Offset = uint.MaxValue;
         private const int StaticLocalizationItemsSection = 0;
         private const int StaticLocalizationCreaturesSection = 1;
         private const int StaticLocalizationBiomesSection = 2;
@@ -37,7 +38,7 @@ namespace Hecton8.Data
         private const uint PathFlagFileStream = 1u;
         private const uint PathFlagMemoryMappedFile = 2u;
         private const uint PathFlagVaultBacked = 4u;
-        private const uint PathFlagFallbackNativeArray = 8u;
+        private const uint PathFlagStreamingUriStaged = 8u;
 
         private static NativeArray<byte> _arena;
         private static IDataVault _vault;
@@ -49,10 +50,10 @@ namespace Hecton8.Data
         private static int _residentBlobBytes;
         private static int _loaded;
         private static int _writeLocked;
-        private static int _arenaOwnedByNativeArray;
         private static int _telemetryFrame;
         private static long _lastReadTicks;
         private static uint _lastReadPathFlags;
+        private static uint _pendingReadPathFlags;
 
         /// <summary>True when a valid blob is resident.</summary>
         public static bool IsLoaded => Volatile.Read(ref _loaded) != 0;
@@ -89,9 +90,15 @@ namespace Hecton8.Data
             bool failIfMissing,
             out H8DataBlobLoadStatus status)
         {
-            string absolutePath = Path.Combine(
+            string absolutePath = BuildStreamingAssetsLocation(
                 Application.streamingAssetsPath,
                 H8DataLayoutConstants.DefaultStreamingAssetsRelativePath);
+
+            if (TryStageStreamingAssetsUriToCache(absolutePath, out string stagedPath))
+            {
+                absolutePath = stagedPath;
+                _pendingReadPathFlags |= PathFlagStreamingUriStaged;
+            }
 
             bool loaded = TryInitializeFromFile(
                 absolutePath,
@@ -103,6 +110,93 @@ namespace Hecton8.Data
                 throw new FatalArchitectureException("Data Monolith boot failure: " + status);
 
             return loaded;
+        }
+
+        private static string BuildStreamingAssetsLocation(string root, string relativePath)
+        {
+            if (string.IsNullOrEmpty(root))
+                return relativePath;
+
+            if (IsFilesystemPath(root))
+                return Path.Combine(root, relativePath);
+
+            string normalizedRoot = root.EndsWith("/", StringComparison.Ordinal) ? root : root + "/";
+            return normalizedRoot + relativePath.Replace('\\', '/');
+        }
+
+        private static bool IsFilesystemPath(string path)
+        {
+            return !string.IsNullOrEmpty(path) &&
+                   !path.StartsWith("jar:", StringComparison.OrdinalIgnoreCase) &&
+                   path.IndexOf("://", StringComparison.Ordinal) < 0;
+        }
+
+        private static bool TryStageStreamingAssetsUriToCache(string streamingUri, out string cachedPath)
+        {
+            cachedPath = null;
+            if (string.IsNullOrEmpty(streamingUri) || IsFilesystemPath(streamingUri))
+                return false;
+
+#if UNITY_WEBGL
+            return false;
+#else
+            string cachePath = null;
+            string tempPath = null;
+            try
+            {
+                string cacheDirectory = Path.Combine(Application.temporaryCachePath, "Hecton8", "DataMonolith");
+                Directory.CreateDirectory(cacheDirectory);
+                cachePath = Path.Combine(cacheDirectory, "static_data.h8bin");
+                tempPath = cachePath + ".tmp";
+
+                TryDeleteFile(tempPath);
+                using UnityWebRequest request = new UnityWebRequest(streamingUri, UnityWebRequest.kHttpVerbGET);
+                request.downloadHandler = new DownloadHandlerFile(tempPath)
+                {
+                    removeFileOnAbort = true
+                };
+                request.disposeDownloadHandlerOnDispose = true;
+                request.timeout = 30;
+
+                UnityWebRequestAsyncOperation operation = request.SendWebRequest();
+                while (!operation.isDone)
+                    Thread.Sleep(1);
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    TryDeleteFile(tempPath);
+                    return false;
+                }
+
+                if (!File.Exists(tempPath))
+                    return false;
+
+                TryDeleteFile(cachePath);
+                File.Move(tempPath, cachePath);
+                cachedPath = cachePath;
+                return true;
+            }
+            catch (Exception)
+            {
+                TryDeleteFile(tempPath);
+                return false;
+            }
+#endif
+        }
+
+        private static void TryDeleteFile(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (Exception)
+            {
+            }
         }
 
         /// <summary>
@@ -644,7 +738,7 @@ namespace Hecton8.Data
         {
             key = default;
             return TryFindAudioClipRecord(eventHash, out H8AudioClipRegistryRecord record) &&
-                   TryReadLocalizedText(record.AddressableKeyUtf8Offset, destination, out key);
+                   TryReadLocalizedText(record.AddressableKeyUtf8Offset, record.AddressableKeyUtf8ByteLength, destination, out key);
         }
 
         /// <summary>
@@ -758,24 +852,58 @@ namespace Hecton8.Data
         /// <returns>True when text was decoded without allocation.</returns>
         public static bool TryReadLocalizedText(int utf8Offset, Span<char> destination, out ReadOnlySpan<char> text)
         {
+            if (utf8Offset < 0)
+            {
+                text = default;
+                return false;
+            }
+
+            return TryReadLocalizedText((uint)utf8Offset, destination, out text);
+        }
+
+        public static bool TryReadLocalizedText(uint utf8Offset, Span<char> destination, out ReadOnlySpan<char> text)
+        {
             text = default;
             if (!IsLoaded || !TryRefreshArenaView() || utf8Offset == MissingUtf8Offset || destination.Length == 0 || _directory.LocalizationBytes == 0)
                 return false;
 
-            if ((uint)utf8Offset >= _directory.LocalizationBytes)
+            if (utf8Offset >= _directory.LocalizationBytes)
                 return false;
 
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_arena);
             byte* locPtr = basePtr + _directory.LocalizationOffset;
-            int maxBytes = (int)_directory.LocalizationBytes - utf8Offset;
+            int offset = (int)utf8Offset;
+            int maxBytes = (int)_directory.LocalizationBytes - offset;
             int byteLength = 0;
-            while (byteLength < maxBytes && locPtr[utf8Offset + byteLength] != 0)
+            while (byteLength < maxBytes && locPtr[offset + byteLength] != 0)
                 byteLength++;
 
             if (byteLength <= 0)
                 return false;
 
-            ReadOnlySpan<byte> utf8 = new ReadOnlySpan<byte>(locPtr + utf8Offset, byteLength);
+            ReadOnlySpan<byte> utf8 = new ReadOnlySpan<byte>(locPtr + offset, byteLength);
+            int requiredChars = Encoding.UTF8.GetCharCount(utf8);
+            if (requiredChars > destination.Length)
+                return false;
+
+            int charsWritten = Encoding.UTF8.GetChars(utf8, destination);
+            text = destination.Slice(0, charsWritten);
+            return true;
+        }
+
+        public static bool TryReadLocalizedText(uint utf8Offset, uint byteLength, Span<char> destination, out ReadOnlySpan<char> text)
+        {
+            text = default;
+            if (byteLength == 0u || byteLength > int.MaxValue || destination.Length == 0)
+                return false;
+
+            if (!TryGetLocalizedUtf8Span(utf8Offset, (int)byteLength, out ReadOnlySpan<byte> utf8))
+                return false;
+
+            int requiredChars = Encoding.UTF8.GetCharCount(utf8);
+            if (requiredChars > destination.Length)
+                return false;
+
             int charsWritten = Encoding.UTF8.GetChars(utf8, destination);
             text = destination.Slice(0, charsWritten);
             return true;
@@ -800,6 +928,17 @@ namespace Hecton8.Data
         /// </summary>
         public static bool TryGetLocalizedUtf8Span(int utf8Offset, int byteLength, out ReadOnlySpan<byte> utf8Bytes)
         {
+            if (utf8Offset < 0)
+            {
+                utf8Bytes = default;
+                return false;
+            }
+
+            return TryGetLocalizedUtf8Span((uint)utf8Offset, byteLength, out utf8Bytes);
+        }
+
+        public static bool TryGetLocalizedUtf8Span(uint utf8Offset, int byteLength, out ReadOnlySpan<byte> utf8Bytes)
+        {
             utf8Bytes = default;
             if (!IsLoaded ||
                 !TryRefreshArenaView() ||
@@ -810,15 +949,15 @@ namespace Hecton8.Data
                 return false;
             }
 
-            if ((uint)utf8Offset >= _directory.LocalizationBytes ||
-                (uint)byteLength > _directory.LocalizationBytes - (uint)utf8Offset)
+            if (utf8Offset >= _directory.LocalizationBytes ||
+                (uint)byteLength > _directory.LocalizationBytes - utf8Offset)
             {
                 return false;
             }
 
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_arena);
             byte* locPtr = basePtr + _directory.LocalizationOffset;
-            utf8Bytes = new ReadOnlySpan<byte>(locPtr + utf8Offset, byteLength);
+            utf8Bytes = new ReadOnlySpan<byte>(locPtr + (int)utf8Offset, byteLength);
             return true;
         }
 
@@ -827,24 +966,36 @@ namespace Hecton8.Data
         /// </summary>
         public static bool TryGetLocalizedUtf8Span(int utf8Offset, out ReadOnlySpan<byte> utf8Bytes)
         {
+            if (utf8Offset < 0)
+            {
+                utf8Bytes = default;
+                return false;
+            }
+
+            return TryGetLocalizedUtf8Span((uint)utf8Offset, out utf8Bytes);
+        }
+
+        public static bool TryGetLocalizedUtf8Span(uint utf8Offset, out ReadOnlySpan<byte> utf8Bytes)
+        {
             utf8Bytes = default;
             if (!IsLoaded || !TryRefreshArenaView() || utf8Offset == MissingUtf8Offset || _directory.LocalizationBytes == 0)
                 return false;
 
-            if ((uint)utf8Offset >= _directory.LocalizationBytes)
+            if (utf8Offset >= _directory.LocalizationBytes)
                 return false;
 
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_arena);
             byte* locPtr = basePtr + _directory.LocalizationOffset;
-            int maxBytes = (int)_directory.LocalizationBytes - utf8Offset;
+            int offset = (int)utf8Offset;
+            int maxBytes = (int)_directory.LocalizationBytes - offset;
             int byteLength = 0;
-            while (byteLength < maxBytes && locPtr[utf8Offset + byteLength] != 0)
+            while (byteLength < maxBytes && locPtr[offset + byteLength] != 0)
                 byteLength++;
 
             if (byteLength <= 0)
                 return false;
 
-            utf8Bytes = new ReadOnlySpan<byte>(locPtr + utf8Offset, byteLength);
+            utf8Bytes = new ReadOnlySpan<byte>(locPtr + offset, byteLength);
             return true;
         }
 
@@ -944,7 +1095,7 @@ namespace Hecton8.Data
             while (recordIndex < recordCount)
             {
                 int index = recordIndex++;
-                if (TryBuildStaticLocalizationReference(records[index].HashId, records[index].NameUtf8Offset, out reference))
+                if (TryBuildStaticLocalizationReference(records[index].HashId, records[index].NameUtf8Offset, records[index].NameUtf8ByteLength, out reference))
                     return true;
             }
 
@@ -970,7 +1121,7 @@ namespace Hecton8.Data
             while (recordIndex < recordCount)
             {
                 int index = recordIndex++;
-                if (TryBuildStaticLocalizationReference(records[index].SpeciesHash, records[index].DisplayNameUtf8Offset, out reference))
+                if (TryBuildStaticLocalizationReference(records[index].SpeciesHash, records[index].DisplayNameUtf8Offset, records[index].DisplayNameUtf8ByteLength, out reference))
                     return true;
             }
 
@@ -996,7 +1147,7 @@ namespace Hecton8.Data
             while (recordIndex < recordCount)
             {
                 int index = recordIndex++;
-                if (TryBuildStaticLocalizationReference(records[index].BiomeHash, records[index].DisplayNameUtf8Offset, out reference))
+                if (TryBuildStaticLocalizationReference(records[index].BiomeHash, records[index].DisplayNameUtf8Offset, records[index].DisplayNameUtf8ByteLength, out reference))
                     return true;
             }
 
@@ -1022,7 +1173,7 @@ namespace Hecton8.Data
             while (recordIndex < recordCount)
             {
                 int index = recordIndex++;
-                if (TryBuildStaticLocalizationReference(records[index].ModuleHash, records[index].DisplayNameUtf8Offset, out reference))
+                if (TryBuildStaticLocalizationReference(records[index].ModuleHash, records[index].DisplayNameUtf8Offset, records[index].DisplayNameUtf8ByteLength, out reference))
                     return true;
             }
 
@@ -1048,7 +1199,7 @@ namespace Hecton8.Data
             while (recordIndex < recordCount)
             {
                 int index = recordIndex++;
-                if (TryBuildStaticLocalizationReference(records[index].ErrorHash, records[index].MessageUtf8Offset, out reference))
+                if (TryBuildStaticLocalizationReference(records[index].ErrorHash, records[index].MessageUtf8Offset, records[index].MessageUtf8ByteLength, out reference))
                     return true;
             }
 
@@ -1058,13 +1209,15 @@ namespace Hecton8.Data
 
         private static bool TryBuildStaticLocalizationReference(
             uint keyHash,
-            int utf8Offset,
+            uint utf8Offset,
+            uint byteLength,
             out H8StaticLocalizationReference reference)
         {
             reference = default;
             if (keyHash == 0u ||
-                !TryGetLocalizedUtf8Span(utf8Offset, out ReadOnlySpan<byte> utf8Bytes) ||
-                utf8Bytes.Length <= 0)
+                byteLength == 0u ||
+                byteLength > int.MaxValue ||
+                !TryGetLocalizedUtf8Span(utf8Offset, (int)byteLength, out _))
             {
                 return false;
             }
@@ -1073,7 +1226,7 @@ namespace Hecton8.Data
             {
                 KeyHash = keyHash,
                 Utf8Offset = utf8Offset,
-                ByteLength = utf8Bytes.Length
+                ByteLength = (int)byteLength
             };
             return true;
         }
@@ -1108,7 +1261,8 @@ namespace Hecton8.Data
         {
             status = H8DataBlobLoadStatus.None;
             long readStart = Stopwatch.GetTimestamp();
-            uint pathFlags = Volatile.Read(ref _arenaOwnedByNativeArray) == 0 ? PathFlagVaultBacked : PathFlagFallbackNativeArray;
+            uint pathFlags = PathFlagVaultBacked | _pendingReadPathFlags;
+            _pendingReadPathFlags = 0u;
             _lastReadTicks = 0L;
             _lastReadPathFlags = pathFlags;
             try
@@ -1319,7 +1473,6 @@ namespace Hecton8.Data
             int capacity = ComputeArenaCapacity(blobBytes);
             _vault = GlobalRegistry.DataVault;
             _arenaHandle = default;
-            Volatile.Write(ref _arenaOwnedByNativeArray, 0);
 
             if (_vault != null)
             {
@@ -1334,24 +1487,12 @@ namespace Hecton8.Data
                     return true;
             }
 
-            _arena = new NativeArray<byte>(
-                capacity,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD FALLBACK ALLOC: NativeArray<byte>[>=10MB static reserve] - used only when GlobalDataVault is unavailable - owner: H8StaticDataArena
-            NativeMemorySentinel.RegisterNativeArray(
-                _arena,
-                nameof(H8StaticDataArena),
-                nameof(_arena),
-                NativeAllocationLifetime.Session);
-            Volatile.Write(ref _arenaOwnedByNativeArray, 1);
-            return _arena.IsCreated;
+            _arena = default;
+            return false;
         }
 
         private static bool TryRefreshArenaView()
         {
-            if (Volatile.Read(ref _arenaOwnedByNativeArray) != 0)
-                return _arena.IsCreated;
-
             IDataVault vault = _vault ?? GlobalRegistry.DataVault;
             if (vault == null || !_arenaHandle.IsCreated)
                 return _arena.IsCreated;
@@ -1548,18 +1689,12 @@ namespace Hecton8.Data
             _header = default;
             _directory = default;
             _residentBlobBytes = 0;
-            if (_arena.IsCreated && Volatile.Read(ref _arenaOwnedByNativeArray) != 0)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_arena);
-                _arena.Dispose();
-            }
 
             _arena = default;
             _arenaHandle = default;
             _telemetryHandle = default;
             _telemetryCursorHandle = default;
             _vault = null;
-            Volatile.Write(ref _arenaOwnedByNativeArray, 0);
         }
     }
 }

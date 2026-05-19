@@ -97,11 +97,6 @@ namespace Hecton8.Core
         private const int TelemetrySlotStart = 64;
         private const int TelemetryCapacity = 300;
         private const int CsvScratchBytes = 4096;
-#if UNITY_EDITOR
-        private const double CsvPollIntervalSeconds = 0.05d;
-#else
-        private const double CsvPollIntervalSeconds = 0.25d;
-#endif
         private const double ShaderTimeModuloSeconds = 3600.0;
         private static readonly double s_stopwatchTicksToMicroseconds = 1000000.0 / Stopwatch.Frequency;
         private const float DispatchBudgetMicroseconds = 100f;
@@ -109,11 +104,6 @@ namespace Hecton8.Core
         private const string DumpFileName = "Dump_CBUFFER_DISPATCH.bin";
         private const string DumpH8DumpFileName = "Dump_CBUFFER_DISPATCH.h8dump";
         private const string CsvOverrideFileName = "shader_globals_override.csv";
-
-        private const string KeywordCausticsOn = "_CAUSTICS_ON";
-        private const string KeywordVolumetricFogOn = "_VOLUMETRIC_FOG_ON";
-        private const string KeywordDearLieFlow = "_H8_DEAR_LIE_FLOW";
-        private const string KeywordThermalAnomalies = "_H8_THERMAL_ANOMALIES";
 
         private static readonly int _FogColorId = Shader.PropertyToID("_H8FogColor");
         private static readonly int _FogDensityId = Shader.PropertyToID("_H8FogDensity");
@@ -158,7 +148,6 @@ namespace Hecton8.Core
         private static string s_csvPath;
         private static byte[] s_csvScratch;
         private static long s_csvLastWriteTicks;
-        private static double s_nextCsvPollRealtime;
         private static bool s_manualOverrideActive;
         private static bool s_csvOverrideActive;
         private static float4 s_manualFogColorDensity;
@@ -199,7 +188,6 @@ namespace Hecton8.Core
             s_csvPath = null;
             s_csvScratch = null;
             s_csvLastWriteTicks = 0L;
-            s_nextCsvPollRealtime = 0d;
             s_manualOverrideActive = false;
             s_csvOverrideActive = false;
             s_manualFogColorDensity = default;
@@ -231,8 +219,9 @@ namespace Hecton8.Core
             _vault = GlobalRegistry.DataVault;
             EnsureCommandBuffer();
             if (EnsureShaderGlobalSlots(out IDataVault vault))
-                RunBinaryGraveyardProbe(vault);
+                RunBinaryGraveyardProbeCold(vault);
             EnsureGpuBuffers();
+            TryLoadCsvOverridesCold();
         }
 
         private void OnEnable()
@@ -291,8 +280,7 @@ namespace Hecton8.Core
             if (!EnsureShaderGlobalSlots(out IDataVault vault))
                 return;
 
-            RunBinaryGraveyardProbe(vault);
-            RefreshCsvOverrides();
+            GenerateEmergencyMockShaderGlobalsNoIo(vault);
 
             float deltaTime = math.max(0f, Time.unscaledDeltaTime);
             _shaderTime += deltaTime;
@@ -305,8 +293,7 @@ namespace Hecton8.Core
                            GlobalRegistry.ScalabilityTier == HectonQualityTier.Mx350;
             float globalQualityWeight01 = ResolveGlobalQualityWeight01();
             float lowTierWeight01 = ResolveLowTierWeight01(globalQualityWeight01, lowTier);
-            bool highTier = !lowTier;
-            ApplyTierKeywords(tierProfile, lowTier, highTier);
+            RefreshTierProfileTelemetry(tierProfile);
 
             if (!vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
                 return;
@@ -622,7 +609,7 @@ namespace Hecton8.Core
                    _thermalAnomalyBuffer != null && _thermalAnomalyBuffer.IsValid();
         }
 
-        private void RunBinaryGraveyardProbe(IDataVault vault)
+        private void RunBinaryGraveyardProbeCold(IDataVault vault)
         {
             if (_binaryProbeCompleted)
                 return;
@@ -633,8 +620,17 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (vault == null || !vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
+            GenerateEmergencyMockShaderGlobalsNoIo(vault);
+        }
+
+        private void GenerateEmergencyMockShaderGlobalsNoIo(IDataVault vault)
+        {
+            if (_binaryProbeCompleted ||
+                vault == null ||
+                !vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
+            {
                 return;
+            }
 
             try
             {
@@ -1078,7 +1074,7 @@ namespace Hecton8.Core
             return (hash & 1023u) * (6.2831853f / 1024f);
         }
 
-        private void ApplyTierKeywords(byte tierProfile, bool lowTier, bool highTier)
+        private void RefreshTierProfileTelemetry(byte tierProfile)
         {
             HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
             int qualityTierValue = (int)qualityTier;
@@ -1088,23 +1084,6 @@ namespace Hecton8.Core
             _lastTierProfileByte = tierProfile;
             _lastQualityTier = qualityTierValue;
             _activeKeywordCount = 0;
-            SetKeyword(KeywordDearLieFlow, lowTier);
-            SetKeyword(KeywordCausticsOn, highTier);
-            SetKeyword(KeywordVolumetricFogOn, highTier);
-            SetKeyword(KeywordThermalAnomalies, highTier);
-        }
-
-        private void SetKeyword(string keyword, bool enabled)
-        {
-            if (enabled)
-            {
-                Shader.EnableKeyword(keyword);
-                _activeKeywordCount++;
-            }
-            else
-            {
-                Shader.DisableKeyword(keyword);
-            }
         }
 
         private void RecordTelemetry(IDataVault vault, float dispatchMicroseconds, uint keywordCount, uint flags)
@@ -1204,13 +1183,8 @@ namespace Hecton8.Core
             }
         }
 
-        private void RefreshCsvOverrides()
+        private void TryLoadCsvOverridesCold()
         {
-            double realtime = Time.realtimeSinceStartupAsDouble;
-            if (realtime < s_nextCsvPollRealtime)
-                return;
-
-            s_nextCsvPollRealtime = realtime + CsvPollIntervalSeconds;
             if (string.IsNullOrEmpty(s_csvPath))
             {
                 string root = ResolveProjectRoot();

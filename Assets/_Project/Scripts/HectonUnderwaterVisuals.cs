@@ -3625,32 +3625,32 @@ namespace Hecton8.Environment
                 BufferID.UnderwaterBiomeFogSamples,
                 1,
                 SystemID.GraphicsScalability,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.UninitializedMemory);
             _biomeFogSourcesHandle = vault.GetBufferHandle<BiomeTransitionFogSource>(
                 BufferID.UnderwaterBiomeFogSources,
                 BiomeFogSourceCapacity,
                 SystemID.GraphicsScalability,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.UninitializedMemory);
             _biomeFogFromAupHandle = vault.GetBufferHandle<AbsoluteUniversePositionBlit128>(
                 BufferID.UnderwaterBiomeFogFromAup,
                 1,
                 SystemID.GraphicsScalability,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.UninitializedMemory);
             _biomeFogToAupHandle = vault.GetBufferHandle<AbsoluteUniversePositionBlit128>(
                 BufferID.UnderwaterBiomeFogToAup,
                 1,
                 SystemID.GraphicsScalability,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.UninitializedMemory);
             _biomeFogPlayerAupHandle = vault.GetBufferHandle<AbsoluteUniversePositionBlit128>(
                 BufferID.UnderwaterBiomeFogPlayerAup,
                 1,
                 SystemID.GraphicsScalability,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.UninitializedMemory);
             _biomeFogResultsHandle = vault.GetBufferHandle<BiomeTransitionFogResult>(
                 BufferID.UnderwaterBiomeFogResults,
                 1,
                 SystemID.GraphicsScalability,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.UninitializedMemory);
             return AreBiomeFogBlendBuffersCreated();
         }
 

@@ -129,7 +129,7 @@ Secondary DTO: `MockPlayerFootstepSignal`, explicit size 128.
 - Offset 113-127: `byte _pad0.._pad14`, 15 bytes.
 - Total: 128 bytes, multiple of 8.
 
-Telemetry DTO: `SignalTelemetryFrame`, explicit size 32.
+Telemetry DTO: `SignalTelemetryFrame`, explicit size 64.
 
 - Offset 0: `uint Frame`, 4 bytes.
 - Offset 4: `int Peak`, 4 bytes.
@@ -1536,3 +1536,43 @@ Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE_CLASSIFIED / CLI_COM
   <pending>Current22 Core compile, SignalCritical re-audit, Full re-audit, H-Phi trend refresh, Unity import, Unity Console, Play Mode, profiler, GCMonitor, IL2CPP/ARM64 player build, and runtime frame-time proof remain pending.</pending>
   <microseconds_saved>0 measured us. Documentation/source-boundary correction only.</microseconds_saved>
 </SELF_AUDIT_UPDATE>
+
+<SELF_AUDIT_UPDATE current="25" date="2026-05-19" status="PENDING_VERIFICATION">
+  <what_was_wrong>Active docs and cold save-hash tools drifted from current source truth. The absent R32 root/architecture report was still cited as current in many active docs. The Python SaveMasterHash oracle still expected the old 80-byte preimage and omitted HectonContractVersion hashes. Some docs still implied old save v0x0009/header-size-48, empty or missing StreamingAssets, or obsolete UnderwaterAudioProcessor/AudioMixer concrete ownership.</what_was_wrong>
+  <what_was_done>Patched active docs to name R31 as the latest artifact-backed local static DOC_GLOBAL boundary and R32 as an absent path. Updated active save docs to current v0x000B/header 56 sentinels. Updated ReplayHasher and the C# validator to the current 96-byte SaveMasterHash preimage with HectonContractVersion.HashLo/HashHi. Corrected StreamingAssets and audio authority documentation.</what_was_done>
+  <tool_evidence>ReplayHasher self-test returned SELFTEST_OK. ValidateSaveMasterHashCSharp returned SAVE_MASTER_HASH_CSHARP_GUARD=PASS with preimageEnd=96 and activeWriterSentinels=3.</tool_evidence>
+  <doc_scan_evidence>Active user-facing doc scans, excluding append-only AgentLogs/Tasks, are clean for R32-as-current, missing/empty StreamingAssets, active CurrentVersion 0x0009, and HeaderSize 48. The only remaining CurrentVersion 0x0009 hit is the historical 2026-05-17 report under Docs/Reports and is not current guidance.</doc_scan_evidence>
+  <compile_guard>No dotnet build, Unity import, profiler, H-Phi trend rerun, or runtime/player build was launched in Current25.</compile_guard>
+  <microseconds_saved>0 measured us. This pass fixes documentation/tool truth only; no runtime path changed.</microseconds_saved>
+</SELF_AUDIT_UPDATE>
+## Current26 R32 And Save-Hash Documentation Reconciliation
+
+What was wrong:
+- Concurrent documentation work created `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md` after Current25 had observed it absent. Active docs therefore contained conflicting R32/R31 boundary text.
+- Save-hash docs still had old 80-byte/pre-contract-version preimage wording while current C# and Python use a 96-byte preimage with `HectonContractVersion.HashLo/HashHi`.
+
+What was done:
+- Promoted R32 as the current static root/architecture DOC_GLOBAL boundary in active docs; R31 remains prior current-boundary propagation.
+- Updated selected architecture interiors from stale R31/R32-absent notes to R32 static-boundary notes with runtime proof explicitly absent.
+- Updated `Docs/Design/Save_Binary_Header.md`, `Docs/ARCHITECTURE/SAVE_V8_BINARY_SPEC.md`, and `Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md` to match active source/tool truth: active writer `0x000B`, 56-byte current header, staged v10 helper, and 96-byte SaveMasterHash preimage.
+
+Cinematic Cheats used:
+- None. This was documentation/tooling truth repair, not a simulation path.
+
+Exact Microseconds saved:
+- `0us` measured. No runtime or profiler evidence was produced.
+
+Verification:
+- Subagent Dewey read-only result: R32 is substantive current filesystem artifact; promote R32, keep R31 as prior layer; runtime proof absent.
+- Subagent Godel read-only result: C# source and Python oracle match 96-byte preimage plus contract-version hash tail; active writer sentinels are `0x000B` / `56` / `0x000B`.
+- `ReplayHasher.py self-test` -> `SELFTEST_OK`.
+- `ValidateSaveMasterHashCSharp.py` -> `SAVE_MASTER_HASH_CSHARP_GUARD=PASS ... preimageEnd=96 ... activeWriterSentinels=3`.
+- `Docs/Modding/Validate_Mod_API_Static.ps1` -> `Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`.
+- `python Tools/test_architecture_atlas.py` -> 10 tests OK.
+- `python Tools/AtlasCheck.py` -> still red, `references=6549`, `missing=59`; this is current static gate debt.
+- R32 stale scan -> `R32_STALE_SCAN_OK=1`.
+- Scoped `git diff --check` on touched docs/tools -> exit 0, CRLF warnings only.
+
+Residual risk:
+- R32 report is untracked in git status; this pass treats filesystem truth as current, not committed-state truth.
+- No dotnet build, Unity import, Unity Console, Play Mode, profiler, GCMonitor, H-Phi trend rerun, IL2CPP/ARM64 player build, or runtime frame-time proof was run.

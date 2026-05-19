@@ -22,6 +22,30 @@ Verification -> Source mutation not performed. `dotnet build` not run because no
   <GPUBufferChanges>None introduced.</GPUBufferChanges>
 </SELF_AUDIT>
 
+## 2026-05-19 - Polish Pass: H8BIN Endianness and Route Card
+
+What was wrong -> The procedural wreckage path had mock rules and CSV ingestion, but no cold parser for `wreckage_module_rules.h8bin`. That left endian safety as a future assumption. The DataVault route also lacked a full global-authority route card, which made the Vault surface review-incomplete.
+
+What was done -> Added `TryLoadBinaryRules`, `TryLoadAuthoredRules`, and `TryApplyBinaryRules`. The parser reads a 16-byte `H8WR` header, validates endian marker `0x01020304`, uses `math.reversebytes` for swapped 32-bit fields, parses each 64-byte rule row into aligned `WreckageRuleDTO`, rejects non-finite extents/weights, and keeps deterministic mock rules if the payload is absent or invalid. Added `BinaryRuleCount` into the existing 64-byte `WreckagePaddedCounterDTO` at offset 44 without changing struct size. Added an editor button to load H8BIN rules. Added `Docs/ARCHITECTURE/PROCEDURAL_WRECKAGE_GLOBAL_AUTHORITY_ROUTE_CARD_SHINOBU_121.md` and linked it from the domain architecture doc.
+
+Cinematic Cheats used -> No new physical truth. The binary loader only changes authored adjacency data. Debris remains curl-noise matrix scatter, collision remains box DTO staging, and render output remains indirect matrix draw data.
+
+Exact Microseconds saved -> 0 us hot path. Cold benefit is failure avoidance: no runtime crash or raw endian-corrupt `MemCpy` if the binary appears later. Static expected cost is one bounded file read into 32 KB Vault scratch plus at most 16 fixed row parses.
+
+Verification -> `git diff --check` passed for touched SHINOBU files/docs. Static forbidden-pattern scan over `Assets/_Project/Scripts/World/ProceduralWreckage` returned no matches for `Pack=1`, `Instantiate`, managed collections, `UnityEngine.Random`, `Time.deltaTime`, `.Complete()`, local native allocations, `Allocator.Persistent`, or `Allocator.TempJob`. CPU sampled 28% then 78%; no `dotnet`/`csc` process was observed, but no narrow procedural-wreckage csproj exists and the CPU guard returned above 50% before a compile was launched. Status remains PENDING VERIFICATION.
+
+## 2026-05-19 - Polish Pass: NaN Vaccination Tightening
+
+What was wrong -> The deterministic debris scatter path and self-audit pair-overlap loop relied on bounded math but did not explicitly quarantine final non-finite values before they could enter Vault-visible render/collision/audit data.
+
+What was done -> `GenerateDebrisFieldJob` now validates each debris node matrix and AUP before writing. Bad values fall back to root AUP, identity rotation, 0.5m bounds, `NonFiniteFallback`, and `FaultNonFinite`. `WreckageSelfAuditJob` now rejects non-finite pair deltas and writes `FaultNonFinite` into the audit result.
+
+Cinematic Cheats used -> No new simulation. The fix preserves the existing visual fake: debris remains a deterministic curl-noise matrix field, not rigidbody debris.
+
+Exact Microseconds saved -> None claimed. This is a survivability patch. Cost is one finite check per debris node plus one finite check per audited pair, with the audit already capped at 256 nodes.
+
+Verification -> Static scan still found no forbidden SHINOBU hot-path patterns. `git diff --check` remained clean apart from line-ending warnings. Compile was not launched because CPU sampled 100% with active `dotnet`/`csc`, then 99% with no compiler process; both violate the explicit CPU gate.
+
 ## 2026-05-19 - ULTRA_THINK Recheck
 
 What was wrong -> User supplied a stronger polish mandate, but the required current-batch XML source still does not contain `SHINOBU_121`. The file has 20 agent prompts and 400 task rows assigned to other agents. Strict parsing forbids borrowing them.

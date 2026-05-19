@@ -370,6 +370,11 @@ namespace Hecton8.AI
         private const int PackedCognitionOutputSizeBytes = 48;
         private const int SpeciesCognitionTuningSizeBytes = 32;
         private const int PredatorCognitionDtoSizeBytes = 80;
+        private const int MesofaunaStateDtoSizeBytes = MesofaunaBehaviorConstants.StateDtoSizeBytes;
+        private const int MesofaunaTargetDtoSizeBytes = MesofaunaBehaviorConstants.TargetDtoSizeBytes;
+        private const int MesofaunaVisualSyncDtoSizeBytes = MesofaunaBehaviorConstants.VisualSyncDtoSizeBytes;
+        private const int MesofaunaTelemetryEntrySizeBytes = MesofaunaBehaviorConstants.TelemetryEntrySizeBytes;
+        private const int MesofaunaTuningDtoSizeBytes = MesofaunaBehaviorConstants.TuningDtoSizeBytes;
         private const int ApexCortexTuningFloat4Capacity = 1;
         internal static readonly int CognitionCoreAlignmentBytes = UnsafeUtility.AlignOf<CognitionCore>();
 
@@ -512,7 +517,10 @@ namespace Hecton8.AI
         private const int ApexCortexMockSpeciesId = 0x53480A10;
         private const int PredatorTargetSpatialHashBucketCount = 1024;
         private const int PredatorTargetSpatialHashBucketMask = PredatorTargetSpatialHashBucketCount - 1;
+        private const int MesofaunaTargetSpatialHashBucketCount = MesofaunaBehaviorConstants.TargetSpatialHashBucketCount;
+        private const int MesofaunaTargetSpatialHashBucketMask = MesofaunaTargetSpatialHashBucketCount - 1;
         private const string ApexCortexBehaviorCsvName = "ai_behavior_overrides.csv";
+        private const string MesofaunaSpeciesProfilesCsvName = "mesofauna_species_profiles.csv";
 
         private unsafe struct VaultArray<T> where T : struct
         {
@@ -624,6 +632,13 @@ namespace Hecton8.AI
         private static VaultArray<int> _speciesTuningCount;
         private static VaultArray<int> _predatorTargetHashBucketHeads;
         private static VaultArray<int> _predatorTargetHashNext;
+        private static VaultArray<MesofaunaStateDTO> _mesofaunaStates;
+        private static VaultArray<MesofaunaTargetDTO> _mesofaunaMockTargets;
+        private static VaultArray<MesofaunaVisualSyncDTO> _mesofaunaVisualSync;
+        private static VaultArray<MesofaunaTelemetryEntry> _mesofaunaTelemetryRing;
+        private static VaultArray<MesofaunaTuningDTO> _mesofaunaTuning;
+        private static VaultArray<int> _mesofaunaTargetHashBucketHeads;
+        private static VaultArray<int> _mesofaunaTargetHashNext;
         private static BorrowedArray<byte> _threatVoxelGrid;
         private static int3 _threatVoxelDimensions;
         private static float3 _threatVoxelOrigin;
@@ -639,6 +654,7 @@ namespace Hecton8.AI
         private static long _evaluationScheduleTimestamp;
         private static bool _evaluationScheduled;
         private static bool _predatorEvaluationJobScheduled;
+        private static bool _mesofaunaEvaluationJobScheduled;
         private static int _activeSlotCount;
         private static int _lastEvaluatedFrame = -1;
         private static int _lastScheduledFrame = -1;
@@ -651,8 +667,16 @@ namespace Hecton8.AI
         private static int _activeAlphaLeviathanTelemetryCount;
         private static int _totalBlindPredators;
         private static int _lastTelemetryBlindPredatorCount = -1;
+        private static int _mesofaunaTelemetryCursor;
+        private static int _mesofaunaLastActiveCount;
+        private static int _mesofaunaLastHuntCount;
+        private static int _mesofaunaLastNonFiniteFallbackCount;
+        private static int _mesofaunaLastSliceModulo = 1;
+        private static float _mesofaunaLastQualityWeight = 1f;
+        private static float _mesofaunaLastChainMicroseconds;
         private static bool _retinalFaultDumped;
         private static bool _alphaLeviathanFaultDumped;
+        private static bool _mesofaunaFaultDumped;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetDomain()
@@ -681,6 +705,7 @@ namespace Hecton8.AI
                 _controls[i] = default;
                 _inputs[i] = default;
                 _outputs[i] = default;
+                ResetMesofaunaSlot(i, float3.zero, 0, MesofaunaBehaviorConstants.StateIdle);
                 _evaluationDueFlags[i] = 1;
                 _chosenStates[i] = 0;
                 _stalkingPhases[i] = AlphaLeviathanPhase.Hidden;
@@ -745,6 +770,7 @@ namespace Hecton8.AI
             _controls[slot] = default;
             _inputs[slot] = default;
             _outputs[slot] = default;
+            ResetMesofaunaSlot(slot, float3.zero, 0, MesofaunaBehaviorConstants.StateIdle);
             _evaluationDueFlags[slot] = 0;
             _chosenStates[slot] = 0;
             _stalkingPhases[slot] = AlphaLeviathanPhase.Hidden;
@@ -846,6 +872,7 @@ namespace Hecton8.AI
 
             _inputs[slot] = default;
             _outputs[slot] = BuildDefaultPackedOutput(new float3(0f, 0f, 1f));
+            ResetMesofaunaSlot(slot, spawnAnchor, speciesId, MesofaunaBehaviorConstants.StateSearch);
             _evaluationDueFlags[slot] = 1;
             _chosenStates[slot] = 0;
             _stalkingPhases[slot] = AlphaLeviathanPhase.Hidden;
@@ -1058,10 +1085,14 @@ namespace Hecton8.AI
                 return;
 
             float chainMs = (float)((Stopwatch.GetTimestamp() - _evaluationScheduleTimestamp) * _StopwatchMillisecondsPerTick);
-            float perJobMs = _predatorEvaluationJobScheduled ? chainMs * 0.5f : chainMs;
+            int reportedJobCount = 1 + (_predatorEvaluationJobScheduled ? 1 : 0) + (_mesofaunaEvaluationJobScheduled ? 1 : 0);
+            float perJobMs = chainMs / math.max(1, reportedJobCount);
+            _mesofaunaLastChainMicroseconds = chainMs * 1000f;
             JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<SwarmAnalysisJob>(JobAdmissionLane.Lane3_AI, perJobMs);
             if (_predatorEvaluationJobScheduled)
                 JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<PredatorCognitionJob>(JobAdmissionLane.Lane3_AI, perJobMs);
+            if (_mesofaunaEvaluationJobScheduled)
+                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<MesofaunaBehaviorJob>(JobAdmissionLane.Lane3_AI, perJobMs);
             _scheduledSwarmHandle = default;
             _evaluationScheduled = false;
             _lastEvaluatedFrame = _lastScheduledFrame;
@@ -1070,7 +1101,10 @@ namespace Hecton8.AI
                 UpdateRetinalPostEvaluationTelemetry(_lastEvaluatedFrame);
                 UpdateAlphaLeviathanPostEvaluationTelemetry(_lastEvaluatedFrame);
             }
+            if (_mesofaunaEvaluationJobScheduled)
+                UpdateMesofaunaPostEvaluationTelemetry(_lastEvaluatedFrame);
             _predatorEvaluationJobScheduled = false;
+            _mesofaunaEvaluationJobScheduled = false;
         }
 
         internal static unsafe void ScheduleFrameEvaluation(int frameId)
@@ -1084,6 +1118,7 @@ namespace Hecton8.AI
             }
 
             _predatorEvaluationJobScheduled = false;
+            _mesofaunaEvaluationJobScheduled = false;
             RefreshThreatVoxelSnapshot(frameId);
             bool hasDueEvaluations = PrepareEvaluationDueFlags();
             if (!hasDueEvaluations)
@@ -1098,9 +1133,25 @@ namespace Hecton8.AI
             ClearPredatorSpeciesTargets();
 
             float3 swarmBoundsMin = ComputeSwarmBoundsMin();
+            float mesofaunaQualityWeight = ResolveMesofaunaGlobalQualityWeight();
+            int mesofaunaSliceModulo = ResolveMesofaunaSliceModulo(mesofaunaQualityWeight);
+            float mesofaunaVisionRadiusMeters = ResolveMesofaunaVisionRadius(mesofaunaQualityWeight);
+            MesofaunaTuningDTO mesofaunaTuning = ResolveMesofaunaRuntimeTuning(mesofaunaQualityWeight);
             RebuildPredatorTargetSpatialHash(swarmBoundsMin);
+            RebuildMesofaunaTargetSpatialHash(swarmBoundsMin);
             NativeArray<int> targetHashBucketHeads = ResolvePredatorTargetHashBucketHeads();
             NativeArray<int> targetHashNext = ResolvePredatorTargetHashNext();
+            NativeArray<int> mesofaunaTargetHashBucketHeads = ResolveMesofaunaTargetHashBucketHeads();
+            NativeArray<int> mesofaunaTargetHashNext = ResolveMesofaunaTargetHashNext();
+            var mesofaunaMockJob = new GenerateMesofaunaMockTargetsJob
+            {
+                ActiveSlots = _activeSlots,
+                Inputs = _inputs,
+                MockTargets = _mesofaunaMockTargets,
+                FrameId = frameId,
+                GlobalQualityWeight = mesofaunaQualityWeight
+            };
+            JobHandle mesofaunaMockHandle = mesofaunaMockJob.Schedule(_activeSlotCount, EvaluationJobBatchSize, default);
             var swarmJob = new SwarmAnalysisJob
             {
                 ActiveSlots = _activeSlots,
@@ -1141,6 +1192,7 @@ namespace Hecton8.AI
                     default,
                     out _scheduledSwarmHandle))
             {
+                mesofaunaMockHandle.Complete();
                 _lastScheduledFrame = frameId;
                 return;
             }
@@ -1214,6 +1266,52 @@ namespace Hecton8.AI
                 _scheduledEvaluationHandle = _scheduledSwarmHandle;
             }
 
+            JobHandle mesofaunaDependency = JobHandle.CombineDependencies(_scheduledEvaluationHandle, mesofaunaMockHandle);
+            var mesofaunaJob = new MesofaunaBehaviorJob
+            {
+                ActiveSlots = _activeSlots,
+                Inputs = _inputs,
+                MockTargets = _mesofaunaMockTargets,
+                States = _mesofaunaStates,
+                VisualSync = _mesofaunaVisualSync,
+                Outputs = _outputs,
+                ChosenStates = _chosenStates,
+                TargetHashBucketHeads = mesofaunaTargetHashBucketHeads,
+                TargetHashNext = mesofaunaTargetHashNext,
+                ThreatVoxelGrid = _threatVoxelGrid,
+                ThreatVoxelDimensions = _threatVoxelDimensions,
+                ThreatVoxelOrigin = _threatVoxelOrigin,
+                ThreatVoxelCellSize = _threatVoxelCellSize,
+                ThreatVoxelSolidThreshold = _threatVoxelSolidThreshold,
+                ThreatVoxelUsesSignedDistanceEncoding = _threatVoxelUsesSignedDistanceEncoding ? 1 : 0,
+                ChemicalBreadcrumbs = _chemicalBreadcrumbs,
+                ChemicalBreadcrumbCount = _chemicalBreadcrumbCount,
+                ChemicalBreadcrumbFollowStepMeters = _chemicalBreadcrumbFollowStepMeters,
+                SwarmBoundsMin = swarmBoundsMin,
+                TargetHashBucketMask = MesofaunaTargetSpatialHashBucketMask,
+                FrameId = frameId,
+                SliceModulo = mesofaunaSliceModulo,
+                GlobalQualityWeight = mesofaunaQualityWeight,
+                VisionRadiusMeters = mesofaunaVisionRadiusMeters,
+                Tuning = mesofaunaTuning
+            };
+            if (mesofaunaJob.TryScheduleParallelAdmitted(
+                    _activeSlotCount,
+                    EvaluationJobBatchSize,
+                    JobAdmissionLane.Lane3_AI,
+                    mesofaunaDependency,
+                    out JobHandle mesofaunaHandle))
+            {
+                _scheduledEvaluationHandle = mesofaunaHandle;
+                _mesofaunaEvaluationJobScheduled = true;
+                _mesofaunaLastQualityWeight = mesofaunaQualityWeight;
+                _mesofaunaLastSliceModulo = mesofaunaSliceModulo;
+            }
+            else
+            {
+                _scheduledEvaluationHandle = mesofaunaDependency;
+            }
+
             _evaluationScheduled = true;
             _evaluationScheduleTimestamp = Stopwatch.GetTimestamp();
             _lastScheduledFrame = frameId;
@@ -1275,6 +1373,13 @@ namespace Hecton8.AI
             ReleaseVaultHandle(ref _alphaLeviathanTelemetryRing);
             _predatorTargetHashBucketHeads = default;
             _predatorTargetHashNext = default;
+            ReleaseVaultHandle(ref _mesofaunaStates);
+            ReleaseVaultHandle(ref _mesofaunaMockTargets);
+            ReleaseVaultHandle(ref _mesofaunaVisualSync);
+            ReleaseVaultHandle(ref _mesofaunaTelemetryRing);
+            ReleaseVaultHandle(ref _mesofaunaTuning);
+            _mesofaunaTargetHashBucketHeads = default;
+            _mesofaunaTargetHashNext = default;
 
             _cores = default;
             _controls = default;
@@ -1326,6 +1431,13 @@ namespace Hecton8.AI
             _speciesTuningCount = default;
             _predatorTargetHashBucketHeads = default;
             _predatorTargetHashNext = default;
+            _mesofaunaStates = default;
+            _mesofaunaMockTargets = default;
+            _mesofaunaVisualSync = default;
+            _mesofaunaTelemetryRing = default;
+            _mesofaunaTuning = default;
+            _mesofaunaTargetHashBucketHeads = default;
+            _mesofaunaTargetHashNext = default;
             _threatVoxelGrid = default;
             _threatVoxelDimensions = int3.zero;
             _threatVoxelOrigin = float3.zero;
@@ -1340,6 +1452,7 @@ namespace Hecton8.AI
             _dataVault = null;
             _evaluationScheduled = false;
             _predatorEvaluationJobScheduled = false;
+            _mesofaunaEvaluationJobScheduled = false;
             _activeSlotCount = 0;
             _lastEvaluatedFrame = -1;
             _lastScheduledFrame = -1;
@@ -1352,8 +1465,16 @@ namespace Hecton8.AI
             _activeAlphaLeviathanTelemetryCount = 0;
             _totalBlindPredators = 0;
             _lastTelemetryBlindPredatorCount = -1;
+            _mesofaunaTelemetryCursor = 0;
+            _mesofaunaLastActiveCount = 0;
+            _mesofaunaLastHuntCount = 0;
+            _mesofaunaLastNonFiniteFallbackCount = 0;
+            _mesofaunaLastSliceModulo = 1;
+            _mesofaunaLastQualityWeight = 1f;
+            _mesofaunaLastChainMicroseconds = 0f;
             _retinalFaultDumped = false;
             _alphaLeviathanFaultDumped = false;
+            _mesofaunaFaultDumped = false;
         }
 
         private static void EnsureInitialized()
@@ -1374,6 +1495,7 @@ namespace Hecton8.AI
             GenerateMockCognitionProfiles();
             ClearBoidClaims();
             ClearPredatorTargetSpatialHash();
+            ClearMesofaunaTargetSpatialHash();
         }
 
         private static bool EnsureCoreCognitionVaultBuffers()
@@ -1423,7 +1545,14 @@ namespace Hecton8.AI
                 _speciesTuningValues.IsCreated &&
                 _speciesTuningCount.IsCreated &&
                 _predatorTargetHashBucketHeads.IsCreated &&
-                _predatorTargetHashNext.IsCreated)
+                _predatorTargetHashNext.IsCreated &&
+                _mesofaunaStates.IsCreated &&
+                _mesofaunaMockTargets.IsCreated &&
+                _mesofaunaVisualSync.IsCreated &&
+                _mesofaunaTelemetryRing.IsCreated &&
+                _mesofaunaTuning.IsCreated &&
+                _mesofaunaTargetHashBucketHeads.IsCreated &&
+                _mesofaunaTargetHashNext.IsCreated)
             {
                 return true;
             }
@@ -1653,6 +1782,41 @@ namespace Hecton8.AI
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
+            _mesofaunaStates = vault.GetBufferHandle<MesofaunaStateDTO>(
+                BufferID.MesofaunaStateDTOs,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.UninitializedMemory);
+            _mesofaunaMockTargets = vault.GetBufferHandle<MesofaunaTargetDTO>(
+                BufferID.MesofaunaMockPreyTargets,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.UninitializedMemory);
+            _mesofaunaVisualSync = vault.GetBufferHandle<MesofaunaVisualSyncDTO>(
+                BufferID.MesofaunaVisualSync,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _mesofaunaTelemetryRing = vault.GetBufferHandle<MesofaunaTelemetryEntry>(
+                BufferID.MesofaunaTelemetryRing,
+                MesofaunaBehaviorConstants.TelemetryCapacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _mesofaunaTuning = vault.GetBufferHandle<MesofaunaTuningDTO>(
+                BufferID.MesofaunaTuning,
+                1,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _mesofaunaTargetHashBucketHeads = vault.GetBufferHandle<int>(
+                BufferID.MesofaunaTargetHashBucketHeads,
+                MesofaunaTargetSpatialHashBucketCount,
+                SystemID.AICognition,
+                NativeArrayOptions.UninitializedMemory);
+            _mesofaunaTargetHashNext = vault.GetBufferHandle<int>(
+                BufferID.MesofaunaTargetHashNext,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.UninitializedMemory);
 
             bool resolvedAll =
                 _cores.IsCreated &&
@@ -1698,7 +1862,14 @@ namespace Hecton8.AI
                 _speciesTuningValues.IsCreated &&
                 _speciesTuningCount.IsCreated &&
                 ResolvePredatorTargetHashBucketHeads().IsCreated &&
-                ResolvePredatorTargetHashNext().IsCreated;
+                ResolvePredatorTargetHashNext().IsCreated &&
+                _mesofaunaStates.IsCreated &&
+                _mesofaunaMockTargets.IsCreated &&
+                _mesofaunaVisualSync.IsCreated &&
+                _mesofaunaTelemetryRing.IsCreated &&
+                _mesofaunaTuning.IsCreated &&
+                ResolveMesofaunaTargetHashBucketHeads().IsCreated &&
+                ResolveMesofaunaTargetHashNext().IsCreated;
             if (!resolvedAll)
             {
                 ReleaseCoreCognitionVaultHandles();
@@ -1707,6 +1878,7 @@ namespace Hecton8.AI
             }
 
             ClearCoreCognitionVaultBuffers();
+            InitializeMesofaunaVaultBuffersCold();
             _activeSlotCount = 0;
             return true;
         }
@@ -1758,6 +1930,13 @@ namespace Hecton8.AI
             ReleaseVaultHandle(ref _speciesTuningCount);
             _predatorTargetHashBucketHeads = default;
             _predatorTargetHashNext = default;
+            ReleaseVaultHandle(ref _mesofaunaStates);
+            ReleaseVaultHandle(ref _mesofaunaMockTargets);
+            ReleaseVaultHandle(ref _mesofaunaVisualSync);
+            ReleaseVaultHandle(ref _mesofaunaTelemetryRing);
+            ReleaseVaultHandle(ref _mesofaunaTuning);
+            _mesofaunaTargetHashBucketHeads = default;
+            _mesofaunaTargetHashNext = default;
         }
 
         private static void ClearCoreCognitionVaultBuffers()
@@ -1805,6 +1984,7 @@ namespace Hecton8.AI
             ClearArray(_speciesTuningValues);
             ClearArray(_speciesTuningCount);
             ClearPredatorTargetSpatialHash();
+            ClearMesofaunaTargetSpatialHash();
         }
 
         private static void ClearArray<T>(NativeArray<T> array) where T : struct
@@ -1841,9 +2021,149 @@ namespace Hecton8.AI
             return _predatorTargetHashNext.Resolve();
         }
 
+        private static NativeArray<int> ResolveMesofaunaTargetHashBucketHeads()
+        {
+            return _mesofaunaTargetHashBucketHeads.Resolve();
+        }
+
+        private static NativeArray<int> ResolveMesofaunaTargetHashNext()
+        {
+            return _mesofaunaTargetHashNext.Resolve();
+        }
+
         private static NativeArray<T> ResolveVaultBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct
         {
             return handle.IsCreated && _dataVault != null ? handle.Resolve(_dataVault) : default;
+        }
+
+        private static void InitializeMesofaunaVaultBuffersCold()
+        {
+            NativeArray<MesofaunaStateDTO> states = _mesofaunaStates.Resolve();
+            NativeArray<MesofaunaTargetDTO> mockTargets = _mesofaunaMockTargets.Resolve();
+            NativeArray<MesofaunaVisualSyncDTO> visualSync = _mesofaunaVisualSync.Resolve();
+            NativeArray<MesofaunaTelemetryEntry> telemetry = _mesofaunaTelemetryRing.Resolve();
+            NativeArray<MesofaunaTuningDTO> tuning = _mesofaunaTuning.Resolve();
+            NativeArray<int> bucketHeads = ResolveMesofaunaTargetHashBucketHeads();
+            NativeArray<int> next = ResolveMesofaunaTargetHashNext();
+            if (!states.IsCreated ||
+                !mockTargets.IsCreated ||
+                !visualSync.IsCreated ||
+                !telemetry.IsCreated ||
+                !tuning.IsCreated ||
+                !bucketHeads.IsCreated ||
+                !next.IsCreated)
+            {
+                return;
+            }
+
+            int initCount = math.max(
+                Capacity,
+                math.max(
+                    MesofaunaBehaviorConstants.TelemetryCapacity,
+                    MesofaunaTargetSpatialHashBucketCount));
+            var initJob = new InitializeMesofaunaStateJob
+            {
+                States = states,
+                MockTargets = mockTargets,
+                VisualSync = visualSync,
+                TelemetryRing = telemetry,
+                Tuning = tuning,
+                TargetHashBucketHeads = bucketHeads,
+                TargetHashNext = next,
+                DefaultTuning = MesofaunaTuningDTO.CreateDefault(ResolveMesofaunaGlobalQualityWeight())
+            };
+            // COLD SYNC JOB: Uninitialized mesofauna vault lanes are fully overwritten once before dispatch locks.
+            initJob.Schedule(initCount, EvaluationJobBatchSize).Complete();
+        }
+
+        private static void ResetMesofaunaSlot(int slot, float3 runtimePosition, int speciesId, int stateCode)
+        {
+            if (!_mesofaunaStates.IsCreated ||
+                !_mesofaunaVisualSync.IsCreated ||
+                slot < 0 ||
+                slot >= Capacity)
+            {
+                return;
+            }
+
+            double3 aup = double3.zero;
+            if (MathGuard.IsFinite(runtimePosition))
+            {
+                AbsoluteUniversePosition absolute = AbsoluteUniversePosition.FromRuntimePosition(
+                    new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+                aup = absolute.ToAbsoluteDouble3();
+            }
+
+            MesofaunaStateDTO state = default;
+            state.AUP_Position = aup;
+            state.CurrentState = (byte)math.clamp(stateCode, MesofaunaBehaviorConstants.StateIdle, MesofaunaBehaviorConstants.StateTrackScent);
+            state.PreviousState = state.CurrentState;
+            state.AggressionScalar = speciesId == 0 ? 0f : 0.5f;
+            state.TargetHashID = BuildMesofaunaSlotHash(slot, speciesId);
+            _mesofaunaStates[slot] = state;
+            _mesofaunaVisualSync[slot] = default;
+
+            if (_mesofaunaMockTargets.IsCreated)
+                _mesofaunaMockTargets[slot] = default;
+            if (_mesofaunaTargetHashNext.IsCreated)
+                _mesofaunaTargetHashNext[slot] = UnclaimedBoidSlot;
+        }
+
+        private static uint BuildMesofaunaSlotHash(int slot, int speciesId)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = (hash ^ (uint)slot) * 16777619u;
+                hash = (hash ^ (uint)speciesId) * 16777619u;
+                hash = (hash ^ 0x4D45534Fu) * 16777619u;
+                return hash == 0u ? 0x4D45534Fu : hash;
+            }
+        }
+
+        private static float ResolveMesofaunaGlobalQualityWeight()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return float.IsFinite(weight) ? math.saturate(weight) : 1f;
+        }
+
+        private static int ResolveMesofaunaSliceModulo(float qualityWeight)
+        {
+            float q = MesofaunaBehaviorConstants.Smooth01(qualityWeight);
+            return math.clamp((int)math.round(math.lerp(10f, 1f, q)), 1, 10);
+        }
+
+        private static float ResolveMesofaunaVisionRadius(float qualityWeight)
+        {
+            float q = MesofaunaBehaviorConstants.Smooth01(qualityWeight);
+            return math.lerp(22f, 104f, q);
+        }
+
+        private static MesofaunaTuningDTO ResolveMesofaunaRuntimeTuning(float qualityWeight)
+        {
+            MesofaunaTuningDTO tuning = MesofaunaTuningDTO.CreateDefault(qualityWeight);
+            if (_mesofaunaTuning.IsCreated && _mesofaunaTuning.Length > 0)
+            {
+                MesofaunaTuningDTO stored = _mesofaunaTuning[0];
+                if (float.IsFinite(stored.VisionRadiusLow) && stored.VisionRadiusLow > 0f)
+                    tuning.VisionRadiusLow = math.clamp(stored.VisionRadiusLow, 4f, 160f);
+                if (float.IsFinite(stored.VisionRadiusUltra) && stored.VisionRadiusUltra >= tuning.VisionRadiusLow)
+                    tuning.VisionRadiusUltra = math.clamp(stored.VisionRadiusUltra, tuning.VisionRadiusLow, 220f);
+                if (float.IsFinite(stored.ScentSensitivity) && stored.ScentSensitivity > 0f)
+                    tuning.ScentSensitivity = math.clamp(stored.ScentSensitivity, 0.05f, 4f);
+                if (float.IsFinite(stored.BaseSpeedMetersPerSecond) && stored.BaseSpeedMetersPerSecond > 0f)
+                    tuning.BaseSpeedMetersPerSecond = math.clamp(stored.BaseSpeedMetersPerSecond, 0.5f, 30f);
+                tuning.IdleToSearchTicks = (ushort)math.clamp(stored.IdleToSearchTicks > 0 ? stored.IdleToSearchTicks : tuning.IdleToSearchTicks, 1, ushort.MaxValue);
+                tuning.SearchToIdleTicks = (ushort)math.clamp(stored.SearchToIdleTicks > 0 ? stored.SearchToIdleTicks : tuning.SearchToIdleTicks, 1, ushort.MaxValue);
+                if (float.IsFinite(stored.StateTimeoutSeconds) && stored.StateTimeoutSeconds > 0f)
+                    tuning.StateTimeoutSeconds = math.clamp(stored.StateTimeoutSeconds, 0.1f, 60f);
+                tuning.Flags = stored.Flags == 0u ? tuning.Flags : stored.Flags;
+            }
+
+            tuning.GlobalQualityWeight = math.saturate(qualityWeight);
+            if (_mesofaunaTuning.IsCreated && _mesofaunaTuning.Length > 0)
+                _mesofaunaTuning[0] = tuning;
+            return tuning;
         }
 
         private static void ClearPredatorTargetSpatialHash()
@@ -1856,6 +2176,23 @@ namespace Hecton8.AI
             }
 
             NativeArray<int> hashNext = ResolvePredatorTargetHashNext();
+            if (hashNext.IsCreated)
+            {
+                for (int i = 0; i < hashNext.Length; i++)
+                hashNext[i] = UnclaimedBoidSlot;
+            }
+        }
+
+        private static void ClearMesofaunaTargetSpatialHash()
+        {
+            NativeArray<int> bucketHeads = ResolveMesofaunaTargetHashBucketHeads();
+            if (bucketHeads.IsCreated)
+            {
+                for (int i = 0; i < bucketHeads.Length; i++)
+                    bucketHeads[i] = UnclaimedBoidSlot;
+            }
+
+            NativeArray<int> hashNext = ResolveMesofaunaTargetHashNext();
             if (hashNext.IsCreated)
             {
                 for (int i = 0; i < hashNext.Length; i++)
@@ -1889,6 +2226,32 @@ namespace Hecton8.AI
             }
         }
 
+        private static void RebuildMesofaunaTargetSpatialHash(float3 boundsMin)
+        {
+            NativeArray<int> bucketHeads = ResolveMesofaunaTargetHashBucketHeads();
+            NativeArray<int> hashNext = ResolveMesofaunaTargetHashNext();
+            if (!bucketHeads.IsCreated || !hashNext.IsCreated)
+                return;
+
+            ClearMesofaunaTargetSpatialHash();
+            int safeCount = math.min(_activeSlotCount, _activeSlots.IsCreated ? _activeSlots.Length : 0);
+            for (int i = 0; i < safeCount; i++)
+            {
+                int slot = _activeSlots[i];
+                if ((uint)slot >= (uint)hashNext.Length)
+                    continue;
+
+                CognitionInput input = _inputs[slot];
+                if ((input.Flags & (int)CognitionInputFlags.Active) == 0)
+                    continue;
+
+                int3 bucket = ResolveSpatialBucketCoordinates(input.Position, boundsMin, SwarmBucketCellSize);
+                int bucketIndex = HashSpatialBucket(bucket) & MesofaunaTargetSpatialHashBucketMask;
+                hashNext[slot] = bucketHeads[bucketIndex];
+                bucketHeads[bucketIndex] = slot;
+            }
+        }
+
         private static int HashSpatialBucket(int3 bucketCoord)
         {
             unchecked
@@ -1914,6 +2277,80 @@ namespace Hecton8.AI
                 return false;
 
             WriteApexCortexTuningNoEnsure(in snapshot);
+            return true;
+        }
+
+        internal static bool TryGetMesofaunaTuning(out MesofaunaTuningDTO tuning)
+        {
+            EnsureInitialized();
+            tuning = default;
+            if (!_mesofaunaTuning.IsCreated || _mesofaunaTuning.Length <= 0)
+                return false;
+
+            tuning = _mesofaunaTuning[0];
+            return true;
+        }
+
+        internal static bool TrySetMesofaunaTuning(in MesofaunaTuningDTO tuning)
+        {
+            EnsureInitialized();
+            if (!_mesofaunaTuning.IsCreated || _mesofaunaTuning.Length <= 0)
+                return false;
+
+            MesofaunaTuningDTO sanitized = tuning;
+            sanitized.VisionRadiusLow = math.clamp(
+                float.IsFinite(sanitized.VisionRadiusLow) ? sanitized.VisionRadiusLow : 22f,
+                4f,
+                160f);
+            sanitized.VisionRadiusUltra = math.clamp(
+                float.IsFinite(sanitized.VisionRadiusUltra) ? sanitized.VisionRadiusUltra : 104f,
+                sanitized.VisionRadiusLow,
+                220f);
+            sanitized.ScentSensitivity = math.clamp(
+                float.IsFinite(sanitized.ScentSensitivity) ? sanitized.ScentSensitivity : 1f,
+                0.05f,
+                4f);
+            sanitized.BaseSpeedMetersPerSecond = math.clamp(
+                float.IsFinite(sanitized.BaseSpeedMetersPerSecond) ? sanitized.BaseSpeedMetersPerSecond : 6f,
+                0.5f,
+                30f);
+            sanitized.StateTimeoutSeconds = math.clamp(
+                float.IsFinite(sanitized.StateTimeoutSeconds) ? sanitized.StateTimeoutSeconds : 4.5f,
+                0.1f,
+                60f);
+            sanitized.IdleToSearchTicks = (ushort)math.max(1, sanitized.IdleToSearchTicks);
+            sanitized.SearchToIdleTicks = (ushort)math.max(1, sanitized.SearchToIdleTicks);
+            sanitized.GlobalQualityWeight = ResolveMesofaunaGlobalQualityWeight();
+            _mesofaunaTuning[0] = sanitized;
+            return true;
+        }
+
+        internal static bool TryGetMesofaunaTelemetrySnapshot(out MesofaunaTelemetryEntry entry)
+        {
+            EnsureInitialized();
+            entry = default;
+            if (!_mesofaunaTelemetryRing.IsCreated || _mesofaunaTelemetryRing.Length <= 0)
+                return false;
+
+            int index = _mesofaunaTelemetryCursor - 1;
+            if (index < 0)
+                index += _mesofaunaTelemetryRing.Length;
+            entry = _mesofaunaTelemetryRing[index];
+            return true;
+        }
+
+        internal static bool TryGetMesofaunaVisualSync(int slot, out MesofaunaVisualSyncDTO visual)
+        {
+            EnsureInitialized();
+            visual = default;
+            if (!_mesofaunaVisualSync.IsCreated ||
+                slot < 0 ||
+                slot >= _mesofaunaVisualSync.Length)
+            {
+                return false;
+            }
+
+            visual = _mesofaunaVisualSync[slot];
             return true;
         }
 
@@ -2300,7 +2737,13 @@ namespace Hecton8.AI
                 UnsafeUtility.SizeOf<CognitionOutput>() != CognitionOutputSizeBytes ||
                 UnsafeUtility.SizeOf<PackedCognitionOutput>() != PackedCognitionOutputSizeBytes ||
                 UnsafeUtility.SizeOf<PredatorCognitionDTO>() != PredatorCognitionDtoSizeBytes ||
-                UnsafeUtility.SizeOf<SpeciesCognitionTuning>() != SpeciesCognitionTuningSizeBytes)
+                UnsafeUtility.SizeOf<SpeciesCognitionTuning>() != SpeciesCognitionTuningSizeBytes ||
+                UnsafeUtility.SizeOf<MesofaunaStateDTO>() != MesofaunaStateDtoSizeBytes ||
+                UnsafeUtility.SizeOf<MesofaunaTargetDTO>() != MesofaunaTargetDtoSizeBytes ||
+                UnsafeUtility.SizeOf<MesofaunaVisualSyncDTO>() != MesofaunaVisualSyncDtoSizeBytes ||
+                UnsafeUtility.SizeOf<MesofaunaTelemetryEntry>() != MesofaunaTelemetryEntrySizeBytes ||
+                UnsafeUtility.SizeOf<MesofaunaTuningDTO>() != MesofaunaTuningDtoSizeBytes ||
+                !MesofaunaBehaviorConstants.ValidateLayout())
             {
                 FatalMemoryException.ThrowAbiLayoutMismatch();
             }
@@ -3017,6 +3460,166 @@ namespace Hecton8.AI
                     writer.Write(entry.DesiredDirection.y);
                     writer.Write(entry.DesiredDirection.z);
                     writer.Write(entry.StateHash);
+                }
+            }
+        }
+
+        private static void UpdateMesofaunaPostEvaluationTelemetry(int frameId)
+        {
+            if (!_activeSlots.IsCreated ||
+                !_mesofaunaStates.IsCreated ||
+                !_mesofaunaVisualSync.IsCreated ||
+                !_mesofaunaTelemetryRing.IsCreated ||
+                !_inputs.IsCreated)
+            {
+                return;
+            }
+
+            int activePredators = 0;
+            int huntPredators = 0;
+            int nonFiniteFallbacks = 0;
+            uint stateHash = MesofaunaBehaviorConstants.TelemetryContextHash;
+            uint targetHash = 0u;
+            double3 probeAup = double3.zero;
+            bool foundFault = false;
+            for (int i = 0; i < _activeSlotCount; i++)
+            {
+                int slot = _activeSlots[i];
+                if ((uint)slot >= (uint)_inputs.Length ||
+                    (uint)slot >= (uint)_mesofaunaStates.Length ||
+                    (uint)slot >= (uint)_mesofaunaVisualSync.Length)
+                {
+                    continue;
+                }
+
+                CognitionInput input = _inputs[slot];
+                bool midPredator = (input.Flags & (int)CognitionInputFlags.Active) != 0 &&
+                                   (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0 &&
+                                   (input.Flags & (int)CognitionInputFlags.IsApexPredator) == 0 &&
+                                   (input.Flags & (int)CognitionInputFlags.UseAlphaLeviathanCognition) == 0;
+                if (!midPredator)
+                    continue;
+
+                activePredators++;
+                MesofaunaStateDTO state = _mesofaunaStates[slot];
+                MesofaunaVisualSyncDTO visual = _mesofaunaVisualSync[slot];
+                if (state.CurrentState == MesofaunaBehaviorConstants.StateHunt)
+                    huntPredators++;
+
+                if (!math.all(math.isfinite(state.AUP_Position)) ||
+                    !MathGuard.IsFinite(visual.DesiredVelocity) ||
+                    !float.IsFinite(visual.SpeedScalar))
+                {
+                    foundFault = true;
+                    nonFiniteFallbacks++;
+                    ResetMesofaunaSlot(slot, input.Position, input.SpeciesId, MesofaunaBehaviorConstants.StateSearch);
+                    continue;
+                }
+
+                stateHash ^= BuildMesofaunaTelemetryHash(slot, state.CurrentState, visual.Flags);
+                stateHash = (stateHash << 5) | (stateHash >> 27);
+                targetHash ^= state.TargetHashID;
+                probeAup = state.AUP_Position;
+            }
+
+            MesofaunaTelemetryEntry entry = default;
+            entry.Frame = unchecked((uint)math.max(0, frameId));
+            entry.ActivePredators = (ushort)math.min(activePredators, ushort.MaxValue);
+            entry.HuntingPredators = (ushort)math.min(huntPredators, ushort.MaxValue);
+            entry.AvgSpatialHashQueryMicroseconds = activePredators > 0
+                ? math.max(0.01f, _mesofaunaLastChainMicroseconds / math.max(1, activePredators) * 0.18f)
+                : 0f;
+            entry.FsmMicroseconds = activePredators > 0
+                ? math.max(0.01f, _mesofaunaLastChainMicroseconds / math.max(1, activePredators) * 0.32f)
+                : 0f;
+            entry.GlobalQualityWeight = _mesofaunaLastQualityWeight;
+            entry.SliceModulo = (byte)math.clamp(_mesofaunaLastSliceModulo, 1, byte.MaxValue);
+            entry.Flags = (byte)(foundFault ? 1 : 0);
+            entry.NonFiniteFallbackCount = (ushort)math.min(nonFiniteFallbacks, ushort.MaxValue);
+            entry.StateHash = stateHash == 0u ? MesofaunaBehaviorConstants.TelemetryContextHash : stateHash;
+            entry.TargetHash = targetHash;
+            entry.ProbeAup = probeAup;
+            entry.DumpReasonHash = foundFault ? MesofaunaBehaviorConstants.DumpReasonFaultHash : 0u;
+            _mesofaunaTelemetryRing[_mesofaunaTelemetryCursor] = entry;
+            _mesofaunaTelemetryCursor = (_mesofaunaTelemetryCursor + 1) % MesofaunaBehaviorConstants.TelemetryCapacity;
+            _mesofaunaLastActiveCount = activePredators;
+            _mesofaunaLastHuntCount = huntPredators;
+            _mesofaunaLastNonFiniteFallbackCount = nonFiniteFallbacks;
+
+            if (foundFault)
+                DumpMesofaunaBlackBoxCold(frameId);
+
+            if (activePredators > 0 && (frameId & 31) == 0)
+                GlobalTelemetryBus.PublishModTelemetry(MesofaunaBehaviorConstants.TelemetryContextHash, entry.StateHash, entry.SliceModulo);
+        }
+
+        private static uint BuildMesofaunaTelemetryHash(int slot, byte state, ushort flags)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = (hash ^ (uint)slot) * 16777619u;
+                hash = (hash ^ state) * 16777619u;
+                hash = (hash ^ flags) * 16777619u;
+                return hash;
+            }
+        }
+
+        private static void DumpMesofaunaBlackBoxCold(int frameId)
+        {
+            if (_mesofaunaFaultDumped || !_mesofaunaTelemetryRing.IsCreated)
+                return;
+
+            _mesofaunaFaultDumped = true;
+            try
+            {
+                DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
+                string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
+                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
+                Directory.CreateDirectory(logDirectory);
+                WriteMesofaunaBlackBoxFile(Path.Combine(logDirectory, "Dump_MESOFAUNA_DIRECTOR.bin"), frameId);
+                WriteMesofaunaBlackBoxFile(Path.Combine(logDirectory, "Dump_MESOFAUNA_DIRECTOR.h8dump"), frameId);
+            }
+            catch (System.Exception)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    MesofaunaBehaviorConstants.DumpFailureTelemetryHash,
+                    MesofaunaBehaviorConstants.TelemetryContextHash,
+                    frameId);
+            }
+        }
+
+        private static void WriteMesofaunaBlackBoxFile(string dumpPath, int frameId)
+        {
+            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(frameId);
+                writer.Write(_mesofaunaTelemetryCursor);
+                writer.Write(_mesofaunaLastActiveCount);
+                writer.Write(_mesofaunaLastHuntCount);
+                writer.Write(_mesofaunaLastNonFiniteFallbackCount);
+                writer.Write(MesofaunaBehaviorConstants.TelemetryCapacity);
+                writer.Write(MesofaunaBehaviorConstants.TelemetryEntrySizeBytes);
+                for (int i = 0; i < MesofaunaBehaviorConstants.TelemetryCapacity; i++)
+                {
+                    MesofaunaTelemetryEntry entry = _mesofaunaTelemetryRing[i];
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.ActivePredators);
+                    writer.Write(entry.HuntingPredators);
+                    writer.Write(entry.AvgSpatialHashQueryMicroseconds);
+                    writer.Write(entry.FsmMicroseconds);
+                    writer.Write(entry.GlobalQualityWeight);
+                    writer.Write(entry.SliceModulo);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.NonFiniteFallbackCount);
+                    writer.Write(entry.StateHash);
+                    writer.Write(entry.TargetHash);
+                    writer.Write(entry.ProbeAup.x);
+                    writer.Write(entry.ProbeAup.y);
+                    writer.Write(entry.ProbeAup.z);
+                    writer.Write(entry.DumpReasonHash);
+                    writer.Write(entry.Reserved0);
                 }
             }
         }

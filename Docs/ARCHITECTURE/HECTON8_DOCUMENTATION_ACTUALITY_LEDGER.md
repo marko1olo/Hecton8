@@ -2,7 +2,7 @@
 
 Date: 2026-05-19
 Owner lane: SUBNAUTICA_RESEARCHER
-Status: ACTIVE SOURCE-OF-TRUTH OVERLAY / R31 DOC_GLOBAL ROOT-ARCH BOUNDARY / STATIC_DOC + STATIC_SOURCE + WEB_REFERENCE
+Status: ACTIVE SOURCE-OF-TRUTH OVERLAY / R32 ARTIFACT-BACKED DOC_GLOBAL ROOT-ARCH BOUNDARY / STATIC_DOC + STATIC_SOURCE + WEB_REFERENCE
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -16,6 +16,8 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+
+R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Purpose
@@ -35,8 +37,9 @@ or global storage. Current truth: those systems are valid bounded authority
 surfaces, not generic convenience layers. New subsystem setup starts owner-local;
 new or changed global routes require the route-card template.
 
-Current DOC_GLOBAL boundary:
+Current artifact-backed DOC_GLOBAL boundary:
 
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`
 - `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`
 - `Docs/Reports/2026-05-19_DOCUMENTATION_R30_ROOT_ARCHITECTURE_INTERNAL_CURRENTNESS_LOCAL.md`
 - `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`
@@ -49,7 +52,7 @@ Current DOC_GLOBAL boundary:
 - `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`
 - `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`
 
-Current R31 static gates: the R31 report records targeted stale R28/R29/R30/latest/proof-current scans as clean after validation; the R30 report records targeted stale R28/latest/proof-current scans as clean after validation; the R29 report records scoped stale Mod API blocker and proof-plan-overclaim scans as clean (`STATIC_DOC` / `STATIC_TOOL`; see the report for commands and output); `Tools\AtlasCheck.py` is still red on `57` RealtimeCSG missing refs unless rerun cleanly; `Docs\Modding\Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. These are static/tool facts, not Unity runtime proof.
+Current static gates: R32 is the latest artifact-backed root/architecture boundary. The R32 report records targeted stale-current/proof scans, R4 scan, local-link scan, atlas tests, JSON parse, Mod API static validator, AtlasCheck, and scoped diff-check results; R31/R30/R29 remain prior correction layers; `Tools\AtlasCheck.py` is still red on `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`) unless rerun cleanly; `Docs\Modding\Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. These are static/tool facts, not Unity runtime proof.
 
 2026-05-19 SHINOBU_02 Core/SignalBus actuality overlay:
 
@@ -66,7 +69,7 @@ Historical machine-readable R4 companion:
 
 ## Inventory Boundary
 
-Historical 2026-05-17 PowerShell inventory of `Docs` with `*.md`, `*.txt`, and `*.json`; do not use these numbers as current R31 counts unless recaptured:
+Historical 2026-05-17 PowerShell inventory of `Docs` with `*.md`, `*.txt`, and `*.json`; do not use these numbers as current R32 counts unless recaptured:
 
 - Total scanned docs: 3032.
 - Live docs under active/reference locations: 414.
@@ -115,20 +118,21 @@ Source files:
 
 Current facts:
 
-- `SaveBinaryStorage.CurrentVersion = 0x0009`.
+- `SaveBinaryStorage.CurrentVersion = 0x000B`.
 - `SaveBinaryStorage.CurrentHeaderSize = 56`.
-- `SaveBinaryStorage.TryValidateHeader(...)` accepts versions from the supported minimum through current, not future versions beyond `0x0009`.
+- `SaveBinaryStorage.AlignedSectionHeaderVersion = 0x000B`.
+- `SaveBinaryStorage.TryValidateHeader(...)` accepts versions from the supported minimum through current, not future versions beyond `0x000B`.
 - `SaveMasterHashV10.HeaderVersion = 0x000A`.
-- `SaveMasterHashV10` uses a staged 72-byte v10 header/hash contract.
+- `SaveMasterHashV10` uses a staged 72-byte v10 header/hash-helper contract; it is not the active writer version.
 
 Legacy/drift documents:
 
 - `Docs/ARCHITECTURE/SAVE_V8_BINARY_SPEC.md`
 - `Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md`
 
-These two files remain useful for indexed-sector design history, but their `0x0008` and `52-byte`
+These two files remain useful for indexed-sector design history, but their `0x0008`, `0x0009`, and `52-byte`
 claims are no longer the current runtime truth. They are superseded for version authority by this
-ledger plus `SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md`.
+ledger plus current source in `SaveBinaryStorage.cs`.
 
 Required next action:
 
@@ -153,14 +157,14 @@ Current facts:
 - `H8DataMonolithCompiler` reads `Assets/_SourceData` and `Data/Balance`.
 - It targets `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
 - `H8StaticDataArena` can initialize from `Application.streamingAssetsPath/Hecton8/DataMonolith/static_data.h8bin`.
-- Current filesystem scan found `Assets/_SourceData` empty and `Assets/StreamingAssets` empty.
+- Current filesystem scan found `Assets/_SourceData` empty and `Assets/StreamingAssets` containing only `signal_tuning_profiles.csv`; authoritative `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` is absent.
 - `Assets/AddressableAssetsData` is empty.
 - Authored `ContentAssetHashMap`, `ContentVfxPrewarmManifest`, `ObjectBatchBase`, and `VisibilityProxyBase` payload scans in the latest research pass found zero concrete production assets.
 - `Data/Balance/*.csv` uses `Id` columns; the monolith compiler's Balance CSV path requires hash-pair compatibility such as `hash32`.
 - `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` is the current generated-binary payload authority. Its 2026-05-18 recheck found 47 product/generated target binary files, while the broad hygiene verifier sees 65 `.bin` / `.h8bin` files because it also scans Bakery editor/plugin fixtures.
 - `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md` records the DOC_GLOBAL R14 documentation pass that demoted pre-Batch008 binary-hygiene PASS rows in active docs.
-- Statically proven main-runtime payloads are `Data/Audio/Acoustic_LUT.bin`, `Data/Visuals/Water_Extinction_Matrix.bin`, and `Data/Visuals/Biolum_Profiles.bin`; runtime load, shader import, profiler, Frame Debugger, and player-build proof remain absent.
-- `Data/Balance/Baked/Babel_Dictionary.h8bin` is the only misaligned product payload in the current recheck: 1295 bytes, 16-byte remainder 15.
+- Static source/path evidence currently identifies three main-runtime product payload candidates: `Data/Audio/Acoustic_LUT.bin`, `Data/Visuals/Water_Extinction_Matrix.bin`, and `Data/Visuals/Biolum_Profiles.bin`; runtime load, shader import, profiler, Frame Debugger, and player-build proof remain absent.
+- Historical Batch008 RECHECK2 found `Data/Balance/Baked/Babel_Dictionary.h8bin` as a misaligned product payload at 1295 bytes, 16-byte remainder 15. SHINOBU_50 later repaired that product file to 1296 bytes, 16-byte aligned; remaining hygiene failures are third-party Bakery fixture binaries and archived dump artifacts unless a fresh verifier says otherwise.
 - `Data/Balance/Baked/H8StaticData.bin` and `Data/Balance/Baked/Babel_Dictionary.h8bin` are small balance-store artifacts. They are not the absent StreamingAssets DataMonolith `static_data.h8bin`.
 - `Data/Lore/Encyclopedia.h8bin` is an `H8LR` raw UTF-8 lore blob and is not read by current `LoreMmfEncyclopedia`, which expects an `H8LE` index plus separate payload stream.
 
@@ -174,7 +178,7 @@ Current architecture split:
 Required next action:
 
 - Make `static_data.h8bin` mandatory for production builds.
-- Rebake `Data/Balance/Baked/Babel_Dictionary.h8bin` through its owning baker before any runtime wiring.
+- Keep `Data/Balance/Baked/Babel_Dictionary.h8bin` aligned through its owning baker before any future runtime wiring or content refresh.
 - Generate or author minimal `Core`, `High_Res`, and `Overkill` Unity object asset groups only where needed.
 - Generate hash maps, VFX prewarm manifests, object batches, visibility/physics proxies, and freshness reports.
 - Keep stock Unity Addressables out of the immutable world/static-data truth path.

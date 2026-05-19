@@ -114,6 +114,36 @@ Use the same IDs across experiment docs, ad docs, asset metadata, and reports. D
 | Source | Asset | Positive signal | Negative signal | Product issue | Marketing issue | Action |
 |---|---|---|---|---|---|---|
 
+## 2026-05-19 Minimum Measurement Packet Before Public Links
+
+Create these IDs before posting any public URL. If there is no official Steam or landing URL, leave the link blank and record only qualitative feedback.
+
+| Packet | Required ID | Required fields | Blocker |
+|---|---|---|---|
+| Asset packet | `asset_id` | build, status, hook, QA score, owner, rejection code if any. | Do not post if asset is still `PLANNED_CAPTURE` or `RAW`. |
+| Campaign packet | `campaign_id` | campaign, platform, asset_id, CTA type, owner. | Do not run if no keep/revise/kill rule exists. |
+| Link packet | UTM URL | `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`. | Do not invent UTM for platforms that disallow or strip it. |
+| Feedback packet | `beat_id` | post URL, useful comments, confusion, clone, co-op, decision. | Do not summarize comments without counts. |
+| Spend packet | `pmt_id` | max spend, AB winner, target, stop rule, result. | Do not spend before Steam baseline and UTM work. |
+
+### Canonical First-Beat IDs
+
+| Beat | ID | Notes |
+|---|---|---|
+| First identity post | `screenshot_drop_01_identity_post` | Usually `PLAN-SHOT-001`. |
+| First base/machinery critique | `screenshot_drop_01_base_critique` | Usually `PLAN-SHOT-002` or `PLAN-SHOT-005`. |
+| First salvage/action post | `screenshot_drop_01_salvage_post` | Usually `PLAN-SHOT-003` or `PLAN-CLIP-003`. |
+| First capsule critique | `screenshot_drop_01_capsule_critique` | `PLAN-CAPSULE-001`, no Steam CTA unless page exists. |
+| Steam page live | `steam_page_launch_announcement` | Requires official Steam URL and Campaign 01 `KEEP`. |
+
+### First Link Rules
+
+- Use no tracking link in Reddit critique posts unless community rules allow it.
+- Prefer raw Steam URL in public replies; use UTM only in planned posts/bios where accepted.
+- Do not use shorteners until first raw UTM behavior is known.
+- Do not put competitor terms in campaign, content, or term fields.
+- If a platform strips UTM, still record the post URL and asset ID in the dashboard.
+
 ## Metrics To Trust
 
 Trust more:

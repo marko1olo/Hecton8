@@ -87,35 +87,35 @@ namespace Hecton8.Atmosphere
         public uint _pad0;              // 28..31
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ToxicityExposureSignal : ISignal
     {
-        public double3 AUP;        // 00..23
-        public float Exposure01;   // 24..27
-        public float ToxemiaDelta; // 28..31
-        public uint EntityId;      // 32..35
-        public uint ChemicalHash;  // 36..39
-        public uint Frame;         // 40..43
-        public byte Flags;         // 44
-        public byte _pad0;         // 45
-        public ushort _pad1;       // 46..47
-        public ulong _pad2;        // 48..55
-        public ulong _pad3;        // 56..63
+        [FieldOffset(0)] public double3 AUP;        // 00..23
+        [FieldOffset(24)] public float Exposure01;   // 24..27
+        [FieldOffset(28)] public float ToxemiaDelta; // 28..31
+        [FieldOffset(32)] public uint EntityId;      // 32..35
+        [FieldOffset(36)] public uint ChemicalHash;  // 36..39
+        [FieldOffset(40)] public uint Frame;         // 40..43
+        [FieldOffset(44)] public byte Flags;         // 44
+        [FieldOffset(45)] public byte _pad0;         // 45
+        [FieldOffset(46)] public ushort _pad1;       // 46..47
+        [FieldOffset(48)] public ulong _pad2;        // 48..55
+        [FieldOffset(56)] public ulong _pad3;        // 56..63
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ToxicBioluminescenceSignal : ISignal
     {
-        public double3 AUP;         // 00..23
-        public float Intensity01;   // 24..27
-        public float ToxicDensity;  // 28..31
-        public float3 LocalNormal;  // 32..43
-        public uint ChemicalHash;   // 44..47
-        public uint Frame;          // 48..51
-        public ushort CellIndex;    // 52..53
-        public byte Flags;          // 54
-        public byte _pad0;          // 55
-        public ulong _pad1;         // 56..63
+        [FieldOffset(0)] public double3 AUP;         // 00..23
+        [FieldOffset(24)] public float Intensity01;   // 24..27
+        [FieldOffset(28)] public float ToxicDensity;  // 28..31
+        [FieldOffset(32)] public float3 LocalNormal;  // 32..43
+        [FieldOffset(44)] public uint ChemicalHash;   // 44..47
+        [FieldOffset(48)] public uint Frame;          // 48..51
+        [FieldOffset(52)] public ushort CellIndex;    // 52..53
+        [FieldOffset(54)] public byte Flags;          // 54
+        [FieldOffset(55)] public byte _pad0;          // 55
+        [FieldOffset(56)] public ulong _pad1;         // 56..63
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 64)]

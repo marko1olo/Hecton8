@@ -48,6 +48,46 @@ One person can hold multiple roles if workload is small, but each role must have
 - verify moderation escalation;
 - prepare "launch delayed" fallback post.
 
+## 2026-05-19 War Room Dry Run Gate V0
+
+Run this before any public Steam page launch, demo drop, Early Access launch, Next Fest participation, or large creator batch.
+
+### Minimum Owner Map
+
+| Lane | Minimum named owner | Cannot be blank when |
+|---|---|---|
+| Go/no-go | Launch Lead | Any public date, demo, page, or access batch exists. |
+| Build truth | Build Liaison | Any playable build or performance statement exists. |
+| Store truth | Steam Ops | Any Steam page, demo button, announcement, or event exists. |
+| Public replies | Community Lead | Any X/Bluesky/Reddit/Discord/Steam/forum surface is active. |
+| Support intake | Support Lead | Any demo/playtest/EA route exists. |
+| Creator/press | Creator Lead | Any key, presskit, preview, or creator email is sent. |
+| Measurement | Metrics Lead | Any public link or UTM is used. |
+
+One human can own several lanes, but no lane can be ownerless. If an owner is not available for the first 24 hours, the campaign is `HOLD`.
+
+### 45-Minute Dry Run Agenda
+
+| Minute | Check |
+|---:|---|
+| 0-5 | Confirm campaign ID, build ID, asset IDs, official links, and rollback owner. |
+| 5-10 | Read the exact public copy through the Promise Lint Gate. |
+| 10-15 | Open Steam/site/social/presskit links from a clean browser session. |
+| 15-20 | Verify support, bug report, crash/performance, and key-scam routes. |
+| 20-25 | Confirm UTM or measurement packet names match the dashboard. |
+| 25-30 | Read the top 10 expected negative comments and approved replies. |
+| 30-35 | Confirm launch delayed fallback post and no-post abort switch. |
+| 35-45 | Record one state only: `GO`, `HOLD`, or `KILL`. |
+
+### Dry Run Kill Conditions
+
+- public copy includes co-op, "zero stutter", exact date, or competitor-attack language;
+- Steam/site/demo link cannot be verified from a clean session;
+- build ID, asset IDs, and measurement IDs do not match;
+- no named owner can answer the first support/performance reports;
+- key/access route is not logged;
+- first public asset has no QA score or reject-code history.
+
 ## Launch Day Timeline
 
 | Time | Action |
@@ -78,6 +118,27 @@ Track:
 - Discord joins;
 - support issues;
 - crash/performance clusters.
+
+## First Week Signal Gates
+
+| Gate | Check | Action |
+|---|---|---|
+| T+4h | Store/demo links work, no wrong build, no false copy. | If failed, pause amplification and fix links/copy first. |
+| T+24h | Top five comments/issues are categorized. | Update Known Issues, FAQ, or page copy; do not argue. |
+| T+48h | Wishlist/demo/download trend has a source breakdown. | Expand only sources with useful actions, not raw impressions. |
+| T+72h | Repeated confusion tags are below threshold. | If clone/co-op/darkness/objective confusion repeats, revise assets before new outreach. |
+| Day 7 | Support burden, reviews, and conversion are readable. | Choose one: `EXPAND`, `REVISE`, `PAUSE`, or `KILL CAMPAIGN`. |
+
+### First Week Expansion Rule
+
+Do not move from warm traffic to paid traffic, press expansion, large creator batch, or regional push until:
+
+- top negative expectation mismatch is known;
+- current public copy has been linted after real comments;
+- known issues are updated;
+- measurement packet has source data;
+- no critical route crash/save/load issue is active;
+- creator/press replies can be handled within 24 hours.
 
 ## Red Alerts
 

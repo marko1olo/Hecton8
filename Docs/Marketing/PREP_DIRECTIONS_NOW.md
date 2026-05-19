@@ -51,15 +51,15 @@ Immediate prep:
 - run every Steam, post, press, and creator pitch through the checklist;
 - require one concrete differentiator in every public copy block: pressure, machinery, salvage, corrosion, black water, Seed Ship, acoustic dread, heavy traversal.
 
-Done files:
+Use existing files:
 
 - `Docs/Marketing/NO_COOP_PUBLIC_POSITIONING.md`
+- `Docs/Marketing/BRAND_AND_POSITIONING_BIBLE.md`
 - `Docs/Marketing/CreatorOutreach/PITCH_BANK.md`
+- `Docs/Marketing/Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md`
+- `Docs/Marketing/Creative/VISUAL_IDENTITY_AND_KEY_ART_DIRECTION.md`
 
-Next documents to expand later:
-
-- `FEATURE_BOUNDARIES_FOR_PUBLIC_COPY.md`
-- `VISUAL_IDENTITY_DO_AND_DONT.md`
+Do not create `FEATURE_BOUNDARIES_FOR_PUBLIC_COPY.md` or `VISUAL_IDENTITY_DO_AND_DONT.md`. Their purpose is already covered by the files above.
 
 ## Direction 02 - Steam Funnel Preparation
 
@@ -89,15 +89,15 @@ Do not:
 - put co-op tags anywhere;
 - mention performance without capture.
 
-Done file:
+Use existing files:
 
 - `Docs/Marketing/Steam/STEAM_WISHLIST_AND_NEXT_FEST_PLAN.md`
+- `Docs/Marketing/Steam/STORE_PAGE_COPY_MATRIX.md`
+- `Docs/Marketing/Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md`
+- `Docs/Marketing/Creative/CAPSULE_TRAILER_THUMBNAIL_BRIEFS.md`
+- `Docs/Marketing/Analytics/MEASUREMENT_AND_UTM_PLAN.md`
 
-Needed next:
-
-- `STORE_PAGE_COPY_MATRIX.md`
-- `STEAM_CAPSULE_BRIEF.md`
-- `STEAM_UTM_NAMING.md`
+Do not create separate `STEAM_CAPSULE_BRIEF.md` or `STEAM_UTM_NAMING.md`; those responsibilities already live in the files above.
 
 ## Direction 03 - Visual Proof Pipeline
 

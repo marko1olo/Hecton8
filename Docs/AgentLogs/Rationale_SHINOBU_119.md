@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_119
 
-Status: POLISH STATIC PASS / BUILD BLOCKED BY EXTERNAL DEPENDENCY
+Status: POLISH STATIC PASS R3 / BUILD BLOCKED BY EXTERNAL STALE WORLD SOURCE INCLUDE
 
 ## Initial Domain Boundary
 
@@ -156,8 +156,16 @@ Hardware Impact: Editor-only control. Runtime hot path remains unchanged except 
 
 ## Build Wall R2
 
-Problem: After the SHINOBU-owned flood bridge repair, CPU gate opened at 24 and a new `dotnet build Hecton8.Core.csproj` failed before domain compilation because `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` is deleted in the worktree while still listed in the generated project.
-Solution: Recorded as external dependency wall. Did not restore or edit the World-domain file.
-Rejected Alternatives: Reverting another agent/user deletion or masking the project include from generated `.csproj`.
+Problem: After the SHINOBU-owned flood bridge repair, CPU gate opened at 24 and a new `dotnet build Hecton8.Core.csproj` failed before domain compilation because `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` is listed in `Hecton8.Core.csproj` but is absent from the filesystem and not tracked by `git ls-files` in this checkout.
+Solution: Recorded as external stale generated-project/source dependency wall. Did not synthesize, restore, or edit the World-domain file.
+Rejected Alternatives: Inventing a World-domain source file or masking the project include from generated `.csproj`.
 Scalability potential: None; build infrastructure dependency.
 Hardware Impact: Avoids repeated builds until the missing World source is resolved.
+
+## Ultra Polish R3 Static Reconciliation
+
+Problem: The repeated mandate exposed a process defect: the first strict prompt extraction regex only matched `<AGENT_PROMPT id="SHINOBU_119">` and missed the actual tag with `role` and `chat_name` attributes.
+Solution: Reran prompt extraction with an attribute-tolerant CLI regex and reread the full 20-task assignment from `CURRENT_BATCH.md`, plus `AGENTS.md`, `Docs/PROJECT_STATE_STATIC_XRAY.md`, the binary payload ledger, HFI architecture, and the selected mandate files. No new code change was required after the R2 devirtualization/AUP/editor repairs.
+Rejected Alternatives: Trusting the status file alone or accepting the failed strict regex as sufficient evidence would violate the batch protocol.
+Scalability potential: No runtime behavior change; the R2 code path still scales cadence 5Hz..50Hz, iterations 1..5, dirty GPU upload, and shader-side visual overkill from the same scalar truth.
+Hardware Impact: Static proof only. Current source sweeps are clean for exact Burst directives, forbidden SHINOBU hot-path allocation tokens, `Pack=1`, sequential SHINOBU DTO layout, flood listener interface arrays, and direct audio facade calls. `dotnet build` remains blocked by the unrelated absent World-domain source listed by `Hecton8.Core.csproj`, not by a SHINOBU-owned compile error observed in the latest attempt.

@@ -19,7 +19,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/VR Somatic Provider")]
-    public sealed class VRSomaticProvider : MonoBehaviour, IVRSomaticProvider, IUpdatable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener
+    public sealed partial class VRSomaticProvider : MonoBehaviour, IVRSomaticProvider, IUpdatable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener
     {
         private const int HeadCollisionCommandCount = 6;
         private const int HeadCollisionMaxHitsPerCommand = 1;
@@ -120,6 +120,7 @@ namespace Hecton8.Gameplay
         private static readonly int SomaticStateId = Shader.PropertyToID("_HectonVRSomaticState");
         private static readonly int VrComfortJerkStateId = Shader.PropertyToID("_HectonVRComfortJerkState");
         private static readonly int VrComfortKccStateId = Shader.PropertyToID("_HectonVRComfortKccState");
+        private static readonly int VrSomaticComfortStateId = Shader.PropertyToID("_HectonVRSomaticComfortState");
         private static readonly int VrComfortVignetteId = Shader.PropertyToID("_VRComfortVignette");
 
         private struct VaultNativeArray<T> where T : struct
@@ -461,6 +462,7 @@ namespace Hecton8.Gameplay
             DispatcherJobSwap.TryComplete(ref _headCollisionHandle, true);
             DispatcherJobSwap.TryComplete(ref _rootSyncHandle, true);
             DispatcherJobSwap.TryComplete(ref _handKinematicsHandle, true);
+            CompleteSomaticComfortForBarrier();
             _stateFlags &= ~(StateHeadCollisionScheduled | StateRootSyncScheduled | StateHandKinematicsScheduled | StateHasPreviousHeadPose | StateRootInitialized);
             _lastObservedAupShiftSequence = shiftData.Sequence;
             _headLinearSpeedMetersPerSecond = 0f;
@@ -472,6 +474,7 @@ namespace Hecton8.Gameplay
             _headAngularJerk01 = 0f;
             _accelerationComfortVignette01 = 0f;
             ResetKccAngularComfortState();
+            ResetSomaticComfortStateForShift();
             _accelerationReleaseBelowTimer = 0f;
             ResetComfortFramePressureState();
             _jerkCullBlend01 = 0f;
@@ -522,6 +525,7 @@ namespace Hecton8.Gameplay
             ResetHeadMotionIfAupShifted(headPosition, headRotation);
             UpdateHeadMotion(headPosition, headRotation, safeDeltaTime);
             UpdateKccAngularComfortState(safeDeltaTime);
+            ScheduleSomaticComfortKernel(in headAup, headRotation, safeDeltaTime);
             if (_decoupledRootTransform == null)
                 PublishComfortVignette(_kccAngularComfortVignette01);
 
@@ -543,6 +547,7 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            CompleteSomaticComfortIfReady();
             CompleteRootSyncIfReady();
             CompleteHandKinematicsIfReady();
 
@@ -604,6 +609,7 @@ namespace Hecton8.Gameplay
         {
             if (!Application.isPlaying)
             {
+                ResetSomaticComfortBuffers();
                 DisposeNativeBuffers();
                 return;
             }
@@ -616,6 +622,7 @@ namespace Hecton8.Gameplay
             TryUnregisterUpdate();
             TryUnregisterService();
             ApplyInactiveState(0f, hadRuntimeState);
+            ResetSomaticComfortBuffers();
             DisposeNativeBuffers();
         }
 
@@ -1614,8 +1621,10 @@ namespace Hecton8.Gameplay
                 VignetteAngularSpeedStart = SanitizeMinimum(comfortVignetteAngularSpeedStart, 0.01f),
                 VignetteAngularSpeedFull = SanitizeMinimum(comfortVignetteAngularSpeedFull, 0.02f),
                 VignetteMaximum = Sanitize01(ResolveComfortVignetteMaximum(), 0f),
-                AccelerationVignette01 = math.max(Sanitize01(_accelerationComfortVignette01, 0f), Sanitize01(_kccAngularComfortVignette01, 0f)),
-                KccHorizonLock01 = Sanitize01(_kccHorizonLock01, 0f)
+                AccelerationVignette01 = math.max(
+                    math.max(Sanitize01(_accelerationComfortVignette01, 0f), Sanitize01(_kccAngularComfortVignette01, 0f)),
+                    Sanitize01(_somaticFovTunnelingIntensity01, 0f)),
+                KccHorizonLock01 = math.max(Sanitize01(_kccHorizonLock01, 0f), Sanitize01(_somaticHorizonLockBlend01, 0f))
             };
 
             VRSomaticRootSyncJob job = new VRSomaticRootSyncJob
@@ -2007,6 +2016,7 @@ namespace Hecton8.Gameplay
             _lastPublishedSomaticState = Vector4.positiveInfinity;
             _lastPublishedJerkState = Vector4.positiveInfinity;
             _lastPublishedKccComfortState = Vector4.positiveInfinity;
+            InvalidateSomaticComfortPublishCache();
         }
 
         private void ResetBreathingAudioPublishCache()
@@ -2066,11 +2076,15 @@ namespace Hecton8.Gameplay
                 Shader.SetGlobalVector(VrComfortKccStateId, kccState);
                 _lastPublishedKccComfortState = kccState;
             }
+
+            PublishSomaticComfortShaderState();
         }
 
         private void PublishComfortVignette(float vignette01)
         {
-            float sanitized = math.max(Sanitize01(vignette01, 0f), Sanitize01(_kccAngularComfortVignette01, 0f));
+            float sanitized = math.max(
+                math.max(Sanitize01(vignette01, 0f), Sanitize01(_kccAngularComfortVignette01, 0f)),
+                Sanitize01(_somaticFovTunnelingIntensity01, 0f));
             if (math.abs(sanitized - _lastPublishedComfortVignette01) <= ShaderPublishEpsilon)
                 return;
 
@@ -2398,10 +2412,32 @@ namespace Hecton8.Gameplay
             if (UnsafeUtility.SizeOf<VRSomaticBlackBoxEntry>() != 128 ||
                 UnsafeUtility.SizeOf<VRSomaticRootSyncInput>() != 80 ||
                 UnsafeUtility.SizeOf<VRSomaticRootSyncOutput>() != 32 ||
-                UnsafeUtility.SizeOf<HeadCastSample>() != 48)
+                UnsafeUtility.SizeOf<HeadCastSample>() != 48 ||
+                UnsafeUtility.SizeOf<SomaticComfortStateDTO>() != 32 ||
+                UnsafeUtility.SizeOf<VrComfortProfileDTO>() != 64 ||
+                UnsafeUtility.SizeOf<VrComfortProfileLookupSlotDTO>() != 16 ||
+                UnsafeUtility.SizeOf<SomaticKinematicHistoryDTO>() != 96 ||
+                UnsafeUtility.SizeOf<SomaticDerivativeDTO>() != 64 ||
+                UnsafeUtility.SizeOf<ComfortTelemetryEntry>() != 64 ||
+                UnsafeUtility.SizeOf<SomaticMockSicknessSampleDTO>() != 64 ||
+                OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.FovTunnelingIntensity)) != 0 ||
+                OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.HorizonLockBlend)) != 4 ||
+                OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.FoveatedScaleMultiplier)) != 8 ||
+                OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.ActiveComfortFlags)) != 12 ||
+                OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.ReservedParameters)) != 16)
             {
                 Debug.LogError("[VRSomaticProvider] Native layout contract drift.");
             }
+        }
+
+        private static int OffsetOf<T>(string fieldName) where T : struct
+        {
+            System.Reflection.FieldInfo field = typeof(T).GetField(
+                fieldName,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.NonPublic);
+            return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
 
         private static float SanitizeAudioCutoffHz(float value)
@@ -2782,6 +2818,8 @@ namespace Hecton8.Gameplay
                     vault,
                     vault.GetBufferHandle<float3>(BufferID.ShinobuVRSomaticHandPhysicalPositions, HandCount, SystemID.GameplayPlayer, NativeArrayOptions.ClearMemory));
             }
+
+            EnsureSomaticComfortBuffers(vault);
         }
 
         private void DisposeNativeBuffers()
@@ -2798,6 +2836,7 @@ namespace Hecton8.Gameplay
             HandTargets = default;
             HandPhysicalPositions = default;
             _blackBox = default;
+            ResetSomaticComfortBuffers();
             _dataVault = null;
             _headCollisionHandle = default;
             _rootSyncHandle = default;

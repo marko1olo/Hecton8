@@ -46,10 +46,6 @@ namespace Hecton8.Thermodynamics
         private const BufferID VaultSourceIdsBuffer = BufferID.ThermodynamicsSourceIds;
         private const BufferID VaultEntityAupsBuffer = BufferID.ThermodynamicsEntityAups;
         private const BufferID VaultEntityIdsBuffer = BufferID.ThermodynamicsEntityIds;
-        private const BufferID VaultEntityDamageTimersBuffer = BufferID.ThermodynamicsEntityDamageTimers;
-        private const BufferID VaultEntityDamageAccumulatorsBuffer = BufferID.ThermodynamicsEntityDamageAccumulators;
-        private const BufferID VaultMockDamageSignalsBuffer = BufferID.ThermodynamicsMockDamageSignals;
-        private const BufferID VaultCombatDamageSignalsBuffer = BufferID.ThermodynamicsCombatDamageSignals;
         private const BufferID VaultUpdraftSignalsBuffer = BufferID.ThermodynamicsUpdraftSignals;
         private const BufferID VaultSignalCountersBuffer = BufferID.ThermodynamicsSignalCounters;
         private const BufferID VaultTelemetryRingBuffer = BufferID.ThermodynamicsTelemetryRing;
@@ -59,7 +55,6 @@ namespace Hecton8.Thermodynamics
         private const float DefaultCellSizeMeters = 10f;
         private const float TierSwitchHysteresisSeconds = 3f;
         private const float CsvPollSeconds = 1f;
-        private const float DamageIntervalSeconds = 1f;
         private const float UpdraftThresholdCelsius = 120f;
         private const float DefaultRadiationDecayCoefficient = 0.9975f;
         private const int LowTierVisualUploadStride = 4;
@@ -70,7 +65,6 @@ namespace Hecton8.Thermodynamics
         private const uint TelemetryFlagLowTier = 1u << 1;
         private const uint TelemetryFlagRebase = 1u << 2;
         private const uint TelemetryFlagHealthPressureLowTier = 1u << 3;
-        private const uint MockPlayerEntityId = 1u;
         private static readonly int HeatTexturePropertyId = Shader.PropertyToID("_HectonThermoHazardHeatTex3D");
         private static readonly int GridMetaPropertyId = Shader.PropertyToID("_HectonThermoHazardGridMeta");
 
@@ -93,9 +87,9 @@ namespace Hecton8.Thermodynamics
         [Tooltip("Uploads the front temperature buffer into a global RFloat Texture3D for heat-haze shaders.")]
         private bool enableVisualTextureUpload = true;
 
-        [SerializeField]
-        [Tooltip("Forces the 16^3 toaster-grid path regardless of hardware tier.")]
-        private bool forceLowResolution;
+        [SerializeField, Range(0.05f, 1f)]
+        [Tooltip("Continuous quality ceiling for designer/debug thermal load shedding; 1 keeps hardware quality unchanged.")]
+        private float qualityCeiling = 1f;
 
         private VaultBufferHandle<float> _temperatureFront;
         private VaultBufferHandle<float> _temperatureBack;
@@ -107,10 +101,6 @@ namespace Hecton8.Thermodynamics
         private VaultBufferHandle<uint> _sourceIds;
         private VaultBufferHandle<double3> _entityAups;
         private VaultBufferHandle<uint> _entityIds;
-        private VaultBufferHandle<float> _entityDamageTimers;
-        private VaultBufferHandle<float> _entityDamageAccumulators;
-        private VaultBufferHandle<ThermodynamicsMockDamageSignal> _mockDamageSignals;
-        private VaultBufferHandle<ThermodynamicsCombatDamageSignal> _combatDamageSignals;
         private VaultBufferHandle<ThermalUpdraftSignal> _updraftSignals;
         private VaultBufferHandle<int> _signalCounters;
         private VaultBufferHandle<ThermodynamicsHazardTelemetryEntry> _telemetryRing;
@@ -134,6 +124,7 @@ namespace Hecton8.Thermodynamics
         private int _lastTextureVersion = -1;
         private int _vaultMirrorVersion = -1;
         private int _healthPressureLowTierFrames;
+        private uint _simulationFrame;
         private float _tierSwitchTimer;
         private float _decayAccumulator;
         private float _csvPollTimer;
@@ -151,7 +142,6 @@ namespace Hecton8.Thermodynamics
         private bool _vaultMirrorRequested;
         private uint _shiftSequence;
         private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
-        private static GlobalDataVault _standaloneVault;
 
         /// <summary>True after native buffers are allocated and the runtime is registered.</summary>
         public bool IsInitialized => _temperatureFront.IsCreated && _constants.IsCreated;
@@ -337,7 +327,7 @@ namespace Hecton8.Thermodynamics
         }
 
         /// <summary>
-        /// Registers or updates an entity hazard sample slot for throttled damage emission.
+        /// Registers or updates an entity sample slot for external owners. This runtime never emits damage.
         /// </summary>
         public bool TryUpsertEntity(uint entityId, double3 aup)
         {
@@ -358,12 +348,8 @@ namespace Hecton8.Thermodynamics
             if (_entityCount >= MaxEntityCount)
                 return false;
 
-            NativeArray<float> damageTimers = ResolveArray(ref _entityDamageTimers);
-            NativeArray<float> damageAccumulators = ResolveArray(ref _entityDamageAccumulators);
             entityIds[_entityCount] = entityId;
             entityAups[_entityCount] = aup;
-            damageTimers[_entityCount] = 0f;
-            damageAccumulators[_entityCount] = 0f;
             _entityCount++;
             return true;
         }
@@ -504,10 +490,6 @@ namespace Hecton8.Thermodynamics
             _sourceIds = AcquireBuffer<uint>(VaultSourceIdsBuffer, MaxSourceCount);
             _entityAups = AcquireBuffer<double3>(VaultEntityAupsBuffer, MaxEntityCount);
             _entityIds = AcquireBuffer<uint>(VaultEntityIdsBuffer, MaxEntityCount);
-            _entityDamageTimers = AcquireBuffer<float>(VaultEntityDamageTimersBuffer, MaxEntityCount);
-            _entityDamageAccumulators = AcquireBuffer<float>(VaultEntityDamageAccumulatorsBuffer, MaxEntityCount);
-            _mockDamageSignals = AcquireBuffer<ThermodynamicsMockDamageSignal>(VaultMockDamageSignalsBuffer, MaxSignalsPerFrame);
-            _combatDamageSignals = AcquireBuffer<ThermodynamicsCombatDamageSignal>(VaultCombatDamageSignalsBuffer, MaxSignalsPerFrame);
             _updraftSignals = AcquireBuffer<ThermalUpdraftSignal>(VaultUpdraftSignalsBuffer, MaxSignalsPerFrame);
             _signalCounters = AcquireBuffer<int>(VaultSignalCountersBuffer, 4);
             _csvBytes = AcquireBuffer<byte>(VaultCsvBytesBuffer, CsvBufferBytes);
@@ -555,8 +537,7 @@ namespace Hecton8.Thermodynamics
             if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
                 return latest;
 
-            _standaloneVault ??= GlobalDataVault.Create(64);
-            return _standaloneVault;
+            throw new InvalidOperationException("Thermodynamics GlobalDataVault unavailable.");
         }
 
         private NativeArray<T> ResolveArray<T>(ref VaultBufferHandle<T> handle) where T : struct
@@ -619,10 +600,6 @@ namespace Hecton8.Thermodynamics
             _sourceIds = default;
             _entityAups = default;
             _entityIds = default;
-            _entityDamageTimers = default;
-            _entityDamageAccumulators = default;
-            _mockDamageSignals = default;
-            _combatDamageSignals = default;
             _updraftSignals = default;
             _signalCounters = default;
             _telemetryRing = default;
@@ -631,6 +608,7 @@ namespace Hecton8.Thermodynamics
             _vaultTemperatureFrontMirror = default;
             _vaultRadiationFrontMirror = default;
             _vaultMirrorVersion = -1;
+            _simulationFrame = 0u;
             _csvBytes = default;
             _binaryConstantBytes = default;
             _simulationHandle = default;
@@ -700,7 +678,9 @@ namespace Hecton8.Thermodynamics
 
         private void ResolveResolutionWithHysteresis(float dt)
         {
-            int desired = UsesLowResolution() ? LowResolution : HighResolution;
+            float quality = ResolveContinuousQualityWeight();
+            float curvedQuality = quality * quality * (3f - (2f * quality));
+            int desired = math.clamp((int)math.round(math.lerp(LowResolution, HighResolution, curvedQuality)), LowResolution, HighResolution);
             if (desired == _desiredResolution)
             {
                 _tierSwitchTimer = 0f;
@@ -715,12 +695,26 @@ namespace Hecton8.Thermodynamics
             _tierSwitchTimer = 0f;
         }
 
-        private bool UsesLowResolution()
+        private float ResolveContinuousQualityWeight()
         {
-            if (forceLowResolution || _healthPressureLowTierFrames > 0)
-                return true;
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            float quality = math.isfinite(weight) ? math.saturate(weight) : ResolveFallbackQualityWeight(_cachedScalabilityTier);
+            quality = math.min(quality, math.saturate(qualityCeiling));
 
-            return IsLowTier(_cachedScalabilityTier);
+            float pressure01 = math.saturate(_healthPressureLowTierFrames * math.rcp(math.max(1f, HealthPressureLowTierFrames)));
+            float pressureCurve = pressure01 * pressure01 * (3f - (2f * pressure01));
+            return math.saturate(quality * math.lerp(1f, 0.1f, pressureCurve));
+        }
+
+        private static float ResolveFallbackQualityWeight(HectonQualityTier tier)
+        {
+            if (tier == HectonQualityTier.Ultra)
+                return 1f;
+            if (tier == HectonQualityTier.High)
+                return 0.82f;
+            if (tier == HectonQualityTier.Mid)
+                return 0.55f;
+            return 0.1f;
         }
 
         private void RefreshScalabilityTierFromRegistry()
@@ -743,11 +737,6 @@ namespace Hecton8.Thermodynamics
                     _healthPressureLowTierFrames = HealthPressureLowTierFrames;
                 }
             }
-        }
-
-        private static bool IsLowTier(HectonQualityTier tier)
-        {
-            return tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350 || tier == HectonQualityTier.Unknown;
         }
 
         private void ApplyStableResolutionIfNeeded()
@@ -799,9 +788,6 @@ namespace Hecton8.Thermodynamics
             sourceIds[0] = MockHazardGenerator.MockHeatSourceId;
             sourceIds[1] = MockHazardGenerator.MockRadiationSourceId;
             _mockSeeded = true;
-
-            double3 mockEntityAup = _gridOriginAup + new double3(cellSizeMeters * 2.5, cellSizeMeters * 2.0, cellSizeMeters * 2.5);
-            TryUpsertEntity(MockPlayerEntityId, mockEntityAup);
         }
 
         private void ScheduleSimulation(float dt)
@@ -822,16 +808,11 @@ namespace Hecton8.Thermodynamics
             NativeArray<float> temperatureSourcesArray = ResolveArray(ref _temperatureSources);
             NativeArray<float> radiationSourcesArray = ResolveArray(ref _radiationSources);
             NativeArray<HazardSourceDTO> sources = ResolveArray(ref _sources);
-            NativeArray<double3> entityAups = ResolveArray(ref _entityAups);
-            NativeArray<uint> entityIds = ResolveArray(ref _entityIds);
-            NativeArray<float> entityDamageTimers = ResolveArray(ref _entityDamageTimers);
-            NativeArray<float> entityDamageAccumulators = ResolveArray(ref _entityDamageAccumulators);
-            NativeArray<ThermodynamicsMockDamageSignal> mockDamageSignals = ResolveArray(ref _mockDamageSignals);
-            NativeArray<ThermodynamicsCombatDamageSignal> combatDamageSignals = ResolveArray(ref _combatDamageSignals);
             NativeArray<ThermalUpdraftSignal> updraftSignals = ResolveArray(ref _updraftSignals);
             NativeArray<int> signalCounters = ResolveArray(ref _signalCounters);
             NativeArray<ThermodynamicsHazardTelemetryEntry> telemetryScratch = ResolveArray(ref _telemetryScratch);
             ThermodynamicsHazardConstants constants = GetConstantsValue();
+            uint simulationFrame = ++_simulationFrame;
             ResetCountersJob resetJob = new ResetCountersJob
             {
                 Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(signalCounters),
@@ -876,7 +857,7 @@ namespace Hecton8.Thermodynamics
                     RadiationHash = RadiationHazardHash,
                     MixedHash = MixedHazardHash
                 };
-                handle = emissionJob.Schedule(math.max(1, _sourceCount), 1, handle);
+                handle = emissionJob.Schedule(handle);
 
                 DiffusionJob diffusionJob = new DiffusionJob
                 {
@@ -886,37 +867,11 @@ namespace Hecton8.Thermodynamics
                     RadiationSources = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(radiationSourcesArray),
                     TemperatureBack = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(temperatureBack),
                     RadiationBack = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(radiationBack),
-                    UpdraftSignals = (ThermalUpdraftSignal*)NativeArrayUnsafeUtility.GetUnsafePtr(updraftSignals),
-                    Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(signalCounters),
-                    GridOriginAup = _gridOriginAup,
-                    CellSizeMeters = math.max(1f, cellSizeMeters),
                     Resolution = _activeResolution,
-                    Frame = unchecked((uint)Time.frameCount),
                     Constants = constants,
                     ApplyRadiationDecay = applyDecay ? 1 : 0
                 };
                 handle = diffusionJob.Schedule(activeCellCount, 64, handle);
-
-                EntityDamageSamplingJob damageJob = new EntityDamageSamplingJob
-                {
-                    TemperatureBack = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(temperatureBack),
-                    RadiationBack = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(radiationBack),
-                    EntityAups = (double3*)NativeArrayUnsafeUtility.GetUnsafePtr(entityAups),
-                    EntityIds = (uint*)NativeArrayUnsafeUtility.GetUnsafePtr(entityIds),
-                    EntityDamageTimers = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(entityDamageTimers),
-                    EntityDamageAccumulators = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(entityDamageAccumulators),
-                    MockSignals = (ThermodynamicsMockDamageSignal*)NativeArrayUnsafeUtility.GetUnsafePtr(mockDamageSignals),
-                    CombatSignals = (ThermodynamicsCombatDamageSignal*)NativeArrayUnsafeUtility.GetUnsafePtr(combatDamageSignals),
-                    Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(signalCounters),
-                    EntityCount = _entityCount,
-                    Resolution = _activeResolution,
-                    GridOriginAup = _gridOriginAup,
-                    CellSizeMeters = math.max(1f, cellSizeMeters),
-                    DeltaTime = dt,
-                    Frame = unchecked((uint)Time.frameCount),
-                    Constants = constants
-                };
-                handle = damageJob.Schedule(math.max(1, _entityCount), 16, handle);
             }
 
             ScanTelemetryJob scanJob = new ScanTelemetryJob
@@ -924,15 +879,19 @@ namespace Hecton8.Thermodynamics
                 TemperatureBack = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(temperatureBack),
                 RadiationBack = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(radiationBack),
                 Telemetry = (ThermodynamicsHazardTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetryScratch),
+                UpdraftSignals = (ThermalUpdraftSignal*)NativeArrayUnsafeUtility.GetUnsafePtr(updraftSignals),
+                Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(signalCounters),
                 Resolution = _activeResolution,
                 CellCount = activeCellCount,
                 GridOrigin = float3.zero,
+                GridOriginAup = _gridOriginAup,
+                CellSizeMeters = math.max(1f, cellSizeMeters),
                 GridOriginHash = HashAupMillimeters(_gridOriginAup),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = simulationFrame,
                 GridVersion = unchecked((uint)_gridVersion),
                 SourceCount = unchecked((uint)_sourceCount),
                 ShiftSequence = _shiftSequence,
-                LowTier = _activeResolution == LowResolution ? 1u : 0u,
+                LowTier = _activeResolution < HighResolution ? 1u : 0u,
                 HealthPressureLowTier = _healthPressureLowTierFrames > 0 ? 1u : 0u
             };
             handle = scanJob.Schedule(handle);
@@ -956,47 +915,12 @@ namespace Hecton8.Thermodynamics
         {
             NativeArray<int> signalCounters = ResolveArray(ref _signalCounters);
             NativeArray<ThermalUpdraftSignal> updraftSignals = ResolveArray(ref _updraftSignals);
-            NativeArray<ThermodynamicsMockDamageSignal> mockDamageSignals = ResolveArray(ref _mockDamageSignals);
-            NativeArray<ThermodynamicsCombatDamageSignal> combatDamageSignals = ResolveArray(ref _combatDamageSignals);
             int updraftCount = math.min(MaxSignalsPerFrame, math.max(0, signalCounters[0]));
             for (int i = 0; i < updraftCount; i++)
             {
                 ThermalUpdraftSignal signal = updraftSignals[i];
                 if (math.isfinite(signal.TemperatureCelsius))
                     SignalBus<ThermalUpdraftSignal>.Push(in signal);
-            }
-
-            int mockDamageCount = math.min(MaxSignalsPerFrame, math.max(0, signalCounters[1]));
-            for (int i = 0; i < mockDamageCount; i++)
-            {
-                ThermodynamicsMockDamageSignal signal = mockDamageSignals[i];
-                if (math.isfinite(signal.Damage) && signal.Damage > 0f)
-                    SignalBus<ThermodynamicsMockDamageSignal>.Push(in signal);
-            }
-
-            int combatDamageCount = math.min(MaxSignalsPerFrame, math.max(0, signalCounters[2]));
-            for (int i = 0; i < combatDamageCount; i++)
-            {
-                ThermodynamicsCombatDamageSignal staged = combatDamageSignals[i];
-                if (math.isfinite(staged.Magnitude) && staged.Magnitude > 0f)
-                {
-                    CombatDamageSignal signal = new CombatDamageSignal
-                    {
-                        ImpactAup = staged.ImpactAup,
-                        Direction = staged.Direction,
-                        Magnitude = staged.Magnitude,
-                        DamageType = staged.DamageType,
-                        TargetHash = staged.TargetHash,
-                        SourceHash = staged.SourceHash,
-                        Frame = staged.Frame,
-                        SourceId = staged.SourceId,
-                        TargetId = staged.TargetId,
-                        Channel = staged.Channel,
-                        Flags = staged.Flags,
-                        IntegrityDelta = staged.IntegrityDelta
-                    };
-                    SignalBus<CombatDamageSignal>.Push(in signal);
-                }
             }
         }
 
@@ -1368,28 +1292,13 @@ namespace Hecton8.Thermodynamics
             return x + (y * resolution) + (z * resolution * resolution);
         }
 
-        private static int IncrementCounter(int* counters, int counterIndex, int limit)
-        {
-            int index = System.Threading.Interlocked.Increment(ref counters[counterIndex]) - 1;
-            return index < limit ? index : -1;
-        }
-
-        private static void AtomicAddFloat(float* address, float value)
+        private static void AddFinite(float* address, float value)
         {
             if (!math.isfinite(value) || value == 0f)
                 return;
 
-            ref int target = ref UnsafeUtility.As<float, int>(ref UnsafeUtility.AsRef<float>(address));
-            int oldBits;
-            int newBits;
-            do
-            {
-                oldBits = target;
-                float oldValue = math.asfloat(oldBits);
-                float newValue = math.isfinite(oldValue) ? oldValue + value : value;
-                newBits = math.asint(newValue);
-            }
-            while (System.Threading.Interlocked.CompareExchange(ref target, newBits, oldBits) != oldBits);
+            float oldValue = *address;
+            *address = math.isfinite(oldValue) ? oldValue + value : value;
         }
 
         private static float Shield(int x, int y, int z, int nx, int ny, int nz, float rockShieldingFactor)
@@ -1413,7 +1322,7 @@ namespace Hecton8.Thermodynamics
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ResetCountersJob : IJob
         {
-            [NativeDisableUnsafePtrRestriction] public int* Counters;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public int* Counters;
             public int CounterCount;
 
             public void Execute()
@@ -1426,8 +1335,8 @@ namespace Hecton8.Thermodynamics
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ClearSourceGridJob : IJobParallelFor
         {
-            [NativeDisableUnsafePtrRestriction] public float* TemperatureSources;
-            [NativeDisableUnsafePtrRestriction] public float* RadiationSources;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* TemperatureSources;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* RadiationSources;
 
             public void Execute(int index)
             {
@@ -1437,11 +1346,11 @@ namespace Hecton8.Thermodynamics
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct EmissionJob : IJobParallelFor
+        private struct EmissionJob : IJob
         {
-            [NativeDisableUnsafePtrRestriction] public HazardSourceDTO* Sources;
-            [NativeDisableUnsafePtrRestriction] public float* TemperatureSources;
-            [NativeDisableUnsafePtrRestriction] public float* RadiationSources;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public HazardSourceDTO* Sources;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* TemperatureSources;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* RadiationSources;
             public double3 GridOriginAup;
             public float CellSizeMeters;
             public int Resolution;
@@ -1450,43 +1359,44 @@ namespace Hecton8.Thermodynamics
             public uint RadiationHash;
             public uint MixedHash;
 
-            public void Execute(int sourceIndex)
+            public void Execute()
             {
-                if (sourceIndex >= SourceCount)
-                    return;
-
-                HazardSourceDTO source = Sources[sourceIndex];
-                if (!math.all(math.isfinite(source.AUP)) || !math.isfinite(source.Intensity) || source.Intensity <= 0f)
-                    return;
-
-                float radius = math.max(CellSizeMeters, source.Radius);
-                double3 offset = source.AUP - GridOriginAup;
-                float3 grid = (float3)(offset / math.max(1f, CellSizeMeters)) + new float3(Resolution * 0.5f);
-                int3 center = (int3)math.round(grid);
-                int radiusCells = math.max(1, (int)math.ceil(radius / math.max(1f, CellSizeMeters)));
-                int minX = math.max(0, center.x - radiusCells);
-                int maxX = math.min(Resolution - 1, center.x + radiusCells);
-                int minY = math.max(0, center.y - radiusCells);
-                int maxY = math.min(Resolution - 1, center.y + radiusCells);
-                int minZ = math.max(0, center.z - radiusCells);
-                int maxZ = math.min(Resolution - 1, center.z + radiusCells);
-                float radiusSq = radius * radius;
-
-                for (int z = minZ; z <= maxZ; z++)
+                int count = math.max(0, SourceCount);
+                for (int sourceIndex = 0; sourceIndex < count; sourceIndex++)
                 {
-                    for (int y = minY; y <= maxY; y++)
+                    HazardSourceDTO source = Sources[sourceIndex];
+                    if (!math.all(math.isfinite(source.AUP)) || !math.isfinite(source.Intensity) || source.Intensity <= 0f)
+                        continue;
+
+                    float radius = math.max(CellSizeMeters, source.Radius);
+                    double3 offset = source.AUP - GridOriginAup;
+                    float3 grid = (float3)(offset / math.max(1f, CellSizeMeters)) + new float3(Resolution * 0.5f);
+                    int3 center = (int3)math.round(grid);
+                    int radiusCells = math.max(1, (int)math.ceil(radius / math.max(1f, CellSizeMeters)));
+                    int minX = math.max(0, center.x - radiusCells);
+                    int maxX = math.min(Resolution - 1, center.x + radiusCells);
+                    int minY = math.max(0, center.y - radiusCells);
+                    int maxY = math.min(Resolution - 1, center.y + radiusCells);
+                    int minZ = math.max(0, center.z - radiusCells);
+                    int maxZ = math.min(Resolution - 1, center.z + radiusCells);
+                    float radiusSq = radius * radius;
+
+                    for (int z = minZ; z <= maxZ; z++)
                     {
-                        for (int x = minX; x <= maxX; x++)
+                        for (int y = minY; y <= maxY; y++)
                         {
-                            float3 cellCenter = (new float3(x, y, z) - new float3(Resolution * 0.5f)) * CellSizeMeters;
-                            float distanceSq = math.lengthsq(cellCenter - (float3)offset);
-                            float falloff = radiusSq * math.rcp(math.max(1f, distanceSq));
-                            float contribution = source.Intensity * math.saturate(falloff);
-                            int cellIndex = Flatten(x, y, z, Resolution);
-                            if (source.HazardTypeHash == HeatHash || source.HazardTypeHash == MixedHash)
-                                AtomicAddFloat(TemperatureSources + cellIndex, contribution);
-                            if (source.HazardTypeHash == RadiationHash || source.HazardTypeHash == MixedHash)
-                                AtomicAddFloat(RadiationSources + cellIndex, contribution);
+                            for (int x = minX; x <= maxX; x++)
+                            {
+                                float3 cellCenter = (new float3(x, y, z) - new float3(Resolution * 0.5f)) * CellSizeMeters;
+                                float distanceSq = math.lengthsq(cellCenter - (float3)offset);
+                                float falloff = radiusSq * math.rcp(math.max(1f, distanceSq));
+                                float contribution = source.Intensity * math.saturate(falloff);
+                                int cellIndex = Flatten(x, y, z, Resolution);
+                                if (source.HazardTypeHash == HeatHash || source.HazardTypeHash == MixedHash)
+                                    AddFinite(TemperatureSources + cellIndex, contribution);
+                                if (source.HazardTypeHash == RadiationHash || source.HazardTypeHash == MixedHash)
+                                    AddFinite(RadiationSources + cellIndex, contribution);
+                            }
                         }
                     }
                 }
@@ -1496,20 +1406,15 @@ namespace Hecton8.Thermodynamics
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct DiffusionJob : IJobParallelFor
         {
-            [NativeDisableUnsafePtrRestriction] public float* TemperatureFront;
-            [NativeDisableUnsafePtrRestriction] public float* RadiationFront;
-            [NativeDisableUnsafePtrRestriction] public float* TemperatureSources;
-            [NativeDisableUnsafePtrRestriction] public float* RadiationSources;
-            [NativeDisableUnsafePtrRestriction] public float* TemperatureBack;
-            [NativeDisableUnsafePtrRestriction] public float* RadiationBack;
-            [NativeDisableUnsafePtrRestriction] public ThermalUpdraftSignal* UpdraftSignals;
-            [NativeDisableUnsafePtrRestriction] public int* Counters;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* TemperatureFront;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* RadiationFront;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* TemperatureSources;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* RadiationSources;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* TemperatureBack;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* RadiationBack;
             public ThermodynamicsHazardConstants Constants;
-            public double3 GridOriginAup;
-            public float CellSizeMeters;
             public int Resolution;
             public int ApplyRadiationDecay;
-            public uint Frame;
 
             public void Execute(int index)
             {
@@ -1573,124 +1478,16 @@ namespace Hecton8.Thermodynamics
 
                 TemperatureBack[index] = nextHeat;
                 RadiationBack[index] = nextRad;
-
-                if (nextHeat > UpdraftThresholdCelsius)
-                {
-                    int signalIndex = IncrementCounter(Counters, 0, MaxSignalsPerFrame);
-                    if (signalIndex >= 0)
-                    {
-                        double3 aup = GridOriginAup + ((new double3(x, y, z) - new double3(Resolution * 0.5)) * CellSizeMeters);
-                        UpdraftSignals[signalIndex] = new ThermalUpdraftSignal
-                        {
-                            Aup = aup,
-                            TemperatureCelsius = nextHeat,
-                            Intensity01 = math.saturate((nextHeat - UpdraftThresholdCelsius) * 0.01f),
-                            CellIndex = unchecked((uint)index),
-                            Frame = Frame,
-                            Flags = 0
-                        };
-                    }
-                }
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct EntityDamageSamplingJob : IJobParallelFor
-        {
-            [NativeDisableUnsafePtrRestriction] public float* TemperatureBack;
-            [NativeDisableUnsafePtrRestriction] public float* RadiationBack;
-            [NativeDisableUnsafePtrRestriction] public double3* EntityAups;
-            [NativeDisableUnsafePtrRestriction] public uint* EntityIds;
-            [NativeDisableUnsafePtrRestriction] public float* EntityDamageTimers;
-            [NativeDisableUnsafePtrRestriction] public float* EntityDamageAccumulators;
-            [NativeDisableUnsafePtrRestriction] public ThermodynamicsMockDamageSignal* MockSignals;
-            [NativeDisableUnsafePtrRestriction] public ThermodynamicsCombatDamageSignal* CombatSignals;
-            [NativeDisableUnsafePtrRestriction] public int* Counters;
-            public ThermodynamicsHazardConstants Constants;
-            public double3 GridOriginAup;
-            public float CellSizeMeters;
-            public float DeltaTime;
-            public int Resolution;
-            public int EntityCount;
-            public uint Frame;
-
-            public void Execute(int index)
-            {
-                if (index >= EntityCount)
-                    return;
-
-                uint entityId = EntityIds[index];
-                if (entityId == 0u)
-                    return;
-
-                float timer = math.max(0f, EntityDamageTimers[index] - DeltaTime);
-                ThermodynamicsHazardSample sample = SampleTrilinear(
-                    TemperatureBack,
-                    RadiationBack,
-                    Resolution,
-                    CellSizeMeters,
-                    GridOriginAup,
-                    EntityAups[index],
-                    Constants);
-                float damage = math.max(0f, sample.HeatDamage * 0.05f) + math.max(0f, sample.RadiationDamage * 8f);
-                EntityDamageAccumulators[index] += damage * DeltaTime;
-                if (timer > 0f || EntityDamageAccumulators[index] <= 0f)
-                {
-                    EntityDamageTimers[index] = timer;
-                    return;
-                }
-
-                uint lcg = entityId * 1664525u + Frame * 1013904223u;
-                bool mockFire = sample.TemperatureCelsius > Constants.HeatDamageThresholdCelsius && ((lcg >> 30) & 1u) == 0u;
-                float burstDamage = EntityDamageAccumulators[index];
-                EntityDamageAccumulators[index] = 0f;
-                EntityDamageTimers[index] = DamageIntervalSeconds;
-
-                if (mockFire)
-                {
-                    int mockIndex = IncrementCounter(Counters, 1, MaxSignalsPerFrame);
-                    if (mockIndex >= 0)
-                    {
-                        MockSignals[mockIndex] = new ThermodynamicsMockDamageSignal
-                        {
-                            Aup = EntityAups[index],
-                            Normal = new float3(0f, 1f, 0f),
-                            Damage = burstDamage,
-                            EntityId = entityId,
-                            Flags = 1
-                        };
-                    }
-                }
-
-                int combatIndex = IncrementCounter(Counters, 2, MaxSignalsPerFrame);
-                if (combatIndex >= 0)
-                {
-                    CombatSignals[combatIndex] = new ThermodynamicsCombatDamageSignal
-                    {
-                        ImpactAup = EntityAups[index],
-                        Direction = new float3(0f, 1f, 0f),
-                        Magnitude = burstDamage,
-                        DamageType = MixedHazardHash,
-                        TargetHash = entityId,
-                        SourceHash = MixedHazardHash,
-                        Frame = Frame,
-                        SourceId = 16,
-                        TargetId = (ushort)math.min(entityId, ushort.MaxValue),
-                        Channel = 3,
-                        Flags = CombatDamageSignal.DirectRuntimeFlag,
-                        IntegrityDelta = 0
-                    };
-                }
             }
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct RebaseGridJob : IJobParallelFor
         {
-            [NativeDisableUnsafePtrRestriction] public float* TemperatureFront;
-            [NativeDisableUnsafePtrRestriction] public float* RadiationFront;
-            [NativeDisableUnsafePtrRestriction] public float* TemperatureBack;
-            [NativeDisableUnsafePtrRestriction] public float* RadiationBack;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* TemperatureFront;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* RadiationFront;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* TemperatureBack;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* RadiationBack;
             public int3 ShiftCells;
             public int Resolution;
             public float AmbientCelsius;
@@ -1721,10 +1518,14 @@ namespace Hecton8.Thermodynamics
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ScanTelemetryJob : IJob
         {
-            [NativeDisableUnsafePtrRestriction] public float* TemperatureBack;
-            [NativeDisableUnsafePtrRestriction] public float* RadiationBack;
-            [NativeDisableUnsafePtrRestriction] public ThermodynamicsHazardTelemetryEntry* Telemetry;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* TemperatureBack;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public float* RadiationBack;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public ThermodynamicsHazardTelemetryEntry* Telemetry;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalUpdraftSignal* UpdraftSignals;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public int* Counters;
             public float3 GridOrigin;
+            public double3 GridOriginAup;
+            public float CellSizeMeters;
             public uint GridOriginHash;
             public int Resolution;
             public int CellCount;
@@ -1744,6 +1545,8 @@ namespace Hecton8.Thermodynamics
                     flags |= TelemetryFlagHealthPressureLowTier;
 
                 uint nanIndex = 0u;
+                int updraftCount = 0;
+                int plane = Resolution * Resolution;
                 for (int i = 0; i < CellCount; i++)
                 {
                     float temp = TemperatureBack[i];
@@ -1758,7 +1561,27 @@ namespace Hecton8.Thermodynamics
 
                     maxTemp = math.max(maxTemp, temp);
                     maxRad = math.max(maxRad, rad);
+                    if (temp > UpdraftThresholdCelsius && updraftCount < MaxSignalsPerFrame)
+                    {
+                        int z = i / plane;
+                        int rem = i - z * plane;
+                        int y = rem / Resolution;
+                        int x = rem - y * Resolution;
+                        double3 aup = GridOriginAup + ((new double3(x, y, z) - new double3(Resolution * 0.5)) * CellSizeMeters);
+                        UpdraftSignals[updraftCount] = new ThermalUpdraftSignal
+                        {
+                            Aup = aup,
+                            TemperatureCelsius = temp,
+                            Intensity01 = math.saturate((temp - UpdraftThresholdCelsius) * 0.01f),
+                            CellIndex = unchecked((uint)i),
+                            Frame = Frame,
+                            Flags = 0
+                        };
+                        updraftCount++;
+                    }
                 }
+
+                Counters[0] = updraftCount;
 
                 Telemetry[0] = new ThermodynamicsHazardTelemetryEntry
                 {

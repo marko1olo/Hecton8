@@ -5,7 +5,7 @@ Agent: SHINOBU_123
 Declared Role: LEVIATHAN_PROCEDURAL_IK_RIGGER
 Authoritative XML Block: FOUND
 Task Count: 20
-Status: POLISH PASS 2 APPLIED; COMPILE PENDING CPU GATE
+Status: POLISH PASS 3 APPLIED; COMPILE PENDING CPU GATE
 
 ## Evidence
 
@@ -13,8 +13,9 @@ Status: POLISH PASS 2 APPLIED; COMPILE PENDING CPU GATE
 - Task count in the XML block: 20.
 - Mandatory docs reread: `AGENTS.md`, `Docs/Actual Domains of Project.txt`, `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`, current status, and rationale.
 - Relevant mandates read: IK/FABRIK, contextual physical IK, VAT/GPU animation, Zero-GC, native memory/job system, telemetry dump, AUP determinism, ARM64 layout.
-- Compile gate: `dotnet build` not launched. Gate history: CPU `97%`; then CPU `100%` with active `dotnet` process (`Id=36732`); latest check is CPU `93%` with no dotnet/csc process listed. User rule still forbids build when CPU >50%.
-- Forensic report: Pass 2 `<SELF_AUDIT>` and canonical bottom audit appended to `Docs/AgentLogs/LOG_SHINOBU_123.md`; compile proof remains pending CPU gate.
+- Compile gate: `dotnet build` not launched. Gate history: CPU `97%`; then CPU `100%` with active `dotnet` process (`Id=36732`); then CPU `93%` with no dotnet/csc; latest pass-3 check is CPU `99%` with no dotnet/csc output. User rule still forbids build when CPU >50%.
+- Forensic report: Pass 3 `<SELF_AUDIT>` appended to `Docs/AgentLogs/LOG_SHINOBU_123.md`; compile proof remains pending CPU gate.
+- Polish pass 3 tightened literal task evidence: telemetry now stores named root AUP, evaluated bones, average iterations, and measured solver latency lanes inside the 96B Vault ring; gizmos draw green/red/blue as specified; the tuner reads live runtime bones/solver microseconds through a snapshot interface instead of reflection.
 
 ## Checklist
 
@@ -33,11 +34,11 @@ Status: POLISH PASS 2 APPLIED; COMPILE PENDING CPU GATE
 - [x] Task 13: Collision proxy staging | DOD: added `StageCreatureCollidersJob` and 64B `LeviathanCapsuleColliderDTO`; composite solver stages collider proxies from matrices. Rejected: runtime `CapsuleCollider` instantiation.
 - [x] Task 14: Rollback fence | DOD: touched runtime jobs use Burst `FloatMode.Deterministic`; no `Time.deltaTime` in the job math. Rejected: `FloatMode.Fast` on rollback-relevant IK.
 - [x] Task 15: Zero init overhead | DOD: spine and tentacle large Vault buffers use `NativeArrayOptions.UninitializedMemory`; seed paths explicitly initialize. Rejected: clearing every matrix/proxy buffer at boot.
-- [x] Task 16: 300-frame black box | DOD: 300-entry spine and tentacle telemetry rings remain in Vault; dump paths include `Docs/AgentLogs/Dump_LEVIATHAN_RIGGER.bin`. Rejected: chat-only crash diagnosis.
-- [x] Task 17: Editor tuner | DOD: UI Toolkit tuner now exposes quality, swim frequency, sine amplitude, FABRIK tolerance, and damping sliders; selected `FaunaKinematicsRuntime` fields are edited via SerializedObject. Rejected: layout-only facade.
+- [x] Task 16: 300-frame black box | DOD: 300-entry spine and tentacle telemetry rings remain in Vault; spine telemetry lanes now explicitly record root AUP, active bones, average iterations, quality weight, and measured schedule-to-completion solver microseconds before dump to `Docs/AgentLogs/Dump_LEVIATHAN_RIGGER.bin`. Rejected: padding-as-proof telemetry and chat-only crash diagnosis.
+- [x] Task 17: Editor tuner | DOD: UI Toolkit tuner now exposes quality, swim frequency, sine amplitude, FABRIK tolerance, and damping sliders; selected `FaunaKinematicsRuntime` publishes a no-reflection `LeviathanProceduralTunerSnapshot` readout for active bones, solver microseconds, iterations, and quality. Rejected: layout-only facade and private-field reflection.
 - [x] Task 18: CSV constraints | DOD: byte parser hydrates `leviathan_rig_constraints.csv` from Vault scratch without managed strings; binary reader also uses endian-safe byte hydration. Rejected: JSON/string split.
-- [x] Task 19: Gizmos | DOD: `OnDrawGizmos` draws live Vault bone lines when solver is not scheduled. Rejected: Transform traversal for rig x-ray.
-- [x] Task 20: Self-audit | DOD: `TrySelfAudit(out uint faultFlags)` validates layouts, Vault buffers, and matrix finiteness; final audit appended to log. Rejected: report without byte-layout proof.
+- [x] Task 19: Gizmos | DOD: `OnDrawGizmos` draws live Vault bone lines when solver is not scheduled: green standard spine, red active IK/target chain, blue tail secondary spring overlay. Rejected: Transform traversal and single-color rig x-ray.
+- [x] Task 20: Self-audit | DOD: `TrySelfAudit(out uint faultFlags)` validates size/offset layout through `LeviathanTerrainIkLayout.Validate()`, Vault buffers, and matrix finiteness; pass 3 audit appended to log. Rejected: report without byte-layout proof.
 
 ## Verification
 
@@ -45,5 +46,6 @@ Status: POLISH PASS 2 APPLIED; COMPILE PENDING CPU GATE
 - Static grep: named XML jobs now exist: `MockLeviathanTargetJob`, `ProceduralSpineMotionJob`, `InverseKinematicsFABRIKJob`, `SecondaryMotionSpringJob`, `ComputeFinalBoneMatricesJob`, `StageCreatureCollidersJob`.
 - Unity asset hygiene: `.meta` files added for the two new script assets to prevent GUID churn.
 - `git diff --check` on touched files: no whitespace errors; CRLF conversion warnings only.
-- `Docs/AgentLogs/LOG_SHINOBU_123.md`: Pass 2 forensic report plus canonical bottom audit appended with 20-task reconciliation, DTO byte offsets, Vault handles, dependency graph, compile guard, and Dear Lie proof.
-- Build: NOT RUN. Latest gate was CPU `93%` with no dotnet/csc process listed; user rule blocks build at >50% CPU.
+- `Docs/AgentLogs/LOG_SHINOBU_123.md`: Pass 2 forensic report remains historical; pass 3 audit adds named telemetry lanes, offset checks, snapshot tuner proof, semantic gizmos, Vault handles, dependency graph, compile guard, and Dear Lie proof.
+- Pass 3 static checks: no Animator/LookAt path in touched Leviathan/Fauna IK files; no hot `Pack=1`, raw `NativeArray<float4x4>`, persistent NativeArray allocation, LINQ, foreach, or string.Format in touched runtime files; `git diff --check` passes for pass 3 files with CRLF warnings only.
+- Build: NOT RUN. Latest gate was CPU `99%` with no dotnet/csc process output; user rule blocks build at >50% CPU.

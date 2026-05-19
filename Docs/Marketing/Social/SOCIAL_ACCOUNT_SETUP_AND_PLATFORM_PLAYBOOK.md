@@ -91,6 +91,35 @@ Date:
 
 Reject account creation if any field is missing. A blank social profile is acceptable; orphaned credentials are not.
 
+## 2026-05-19 Agent-Assisted Browser Work Boundary V0
+
+Use this if the owner later wants an agent to help inside a browser session. This is not active now; it is the safe operating mode for future account work.
+
+| Action | Agent may do | Agent must not do |
+|---|---|---|
+| Public handle check | Open public profile URLs, record taken/candidate/inconclusive. | Claim availability from login walls or JS placeholders. |
+| Account registration | Fill fields only while owner controls project email, password manager, 2FA, and backup-code storage. | Create accounts under agent-owned, temporary, personal, or unrecorded credentials. |
+| Login | Use credentials only when owner is present or has supplied a controlled handoff path. | Extract browser cookies, inspect personal sessions, or store secrets in docs. |
+| Profile setup | Paste approved bio, display name, avatar/banner path, and links. | Publish posts, follow accounts, DM creators, or reveal unapproved assets. |
+| Recovery hardening | Prompt owner to save 2FA and backup codes in the vault. | Move past recovery/2FA screens without documented custody. |
+| Browser focus | Prefer background/public web checks and avoid visible windows when possible. | Hijack the active desktop workflow or open noisy tabs unnecessarily. |
+
+Minimum proof before an agent registers anything:
+
+```text
+Project email exists:
+Password manager vault open:
+2FA owner present:
+Backup-code destination ready:
+Approved handle:
+Approved display name:
+Approved bio:
+Approved avatar/banner:
+Account URL destination in vault:
+```
+
+Abort if any field is blank. The correct fallback is a reservation checklist, not a half-owned public account.
+
 ### Reservation Order
 
 | Priority | Platform | First try | Second try | Third try | Must record |
@@ -153,6 +182,32 @@ Public assets not live yet.
 ```
 
 Check for accidental Cyrillic/Latin character substitutions before publishing the name.
+
+## 2026-05-19 Account Page Field Kit V0
+
+Paste these fields only after the account exists under owner-controlled credentials.
+
+| Field | Primary value | Backup value | Notes |
+|---|---|---|---|
+| Display name | `HECTON-8` | `HECTON-8 Game` | Keep hyphen consistent. |
+| Username/handle | `Hecton8Game` | `PlayHecton8` | Do not use unrelated/taken `Hecton8` handles. |
+| Short bio | `Single-player deep-sea survival about pressure, salvage, machinery, and black water.` | `Deep-sea survival. Pressure, salvage, machinery, black water.` | No co-op, no FPS, no competitor claim. |
+| Long bio | `HECTON-8 is a single-player deep-sea survival game about pressure, salvage, machinery, and the Seed Ship anomaly.` | `Official HECTON-8 account. Public assets are released only when captured from the current build.` | Use on YouTube/About pages. |
+| Location | blank | blank | Avoid fake studio geography. |
+| Website | `[Steam URL when live]` | `[presskit URL when live]` | Do not link placeholders publicly. |
+| Contact | `[project email]` | blank | Use only after inbox is ready. |
+| Avatar | approved logo mark | text-only `HECTON-8` mark | Do not use concept art as proof. |
+| Banner | approved in-game screenshot/capsule | black-water machinery crop | Must pass asset QA. |
+
+If a platform forces a first post, use:
+
+```text
+Official HECTON-8 account reserved.
+
+Public gameplay assets are not live yet. HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and black water.
+```
+
+Do not add a Steam link until the URL exists and UTM rules are ready.
 
 ## Profile Bio Template
 

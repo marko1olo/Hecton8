@@ -2,68 +2,140 @@
 
 Agent: SHINOBU_126
 Role: VR_SOMATIC_COMFORT_ENGINEER
-Status: PENDING VERIFICATION / COMPILE BLOCKED BY CPU GUARD
+Status: PENDING VERIFICATION / BUILD BLOCKED BY COMPILER PROCESS GUARD
 
-## Decision 01 - Missing Live XML Prompt
+## Decision 01 - Live XML Authority
 
-Problem: `Docs/Tasks/CURRENT_BATCH.md` does not contain `<AGENT_PROMPT id="SHINOBU_126">`; CLI extraction and `rg` search found no active block.
-Solution: Treat the user-provided assignment as a single explicit runtime task and log XML absence as batch drift. Domain is bounded by Echelon 4 item 39: VR Somatic Comfort.
-Rejected Alternatives: Reading archived SOMATIC prompts would violate batch hygiene; inventing a 20-task XML count would be false reporting.
-Scalability potential: Low/Middle/High/Ultra comfort logic must consume continuous `GlobalQualityWeight`, not tier booleans.
-Hardware Impact: Avoiding archive-driven scope creep protects MX350/i3 frame budget; target runtime hot-path cost remains below 0.1 ms and 0 B GC.
+Problem: The working memory summary was stale and claimed the SHINOBU_126 XML block was absent.
+Solution: Re-read `Docs/Tasks/CURRENT_BATCH.md` by CLI and used the live `<AGENT_PROMPT id="SHINOBU_126">` block as authority. Task count is 20.
+Rejected Alternatives: Continuing from stale status would have produced false scope and false task reconciliation.
+Scalability potential: The XML requires one continuous comfort kernel from flat-screen subtle vignette to VR strong tunnel; no tier fork.
+Hardware Impact: Scope stays inside VR somatic comfort, avoiding cross-domain rebuild churn.
 
-## Decision 02 - Mandate Set
+## Decision 02 - Data Sovereignty
 
-Problem: VR comfort touches player kinematics, presentation, XR masking/foveation, telemetry, and global execution phase rules.
-Solution: Use zero-GC, physics integrity, foveated simulation, VR stencil masking, global registry DI, execution phases, crash telemetry, and AUP determinism mandates as active constraints.
-Rejected Alternatives: Treating FOV narrowing and horizon lock as camera MonoBehaviour polish would couple to render camera properties and violate the user's camera-independent math requirement.
-Scalability potential: Low uses cheap scalar gating; Middle increases smoothing precision; High/Ultra add denser telemetry and smoother visual output while preserving the same deterministic math.
-Hardware Impact: Continuous scalar comfort output lets low-end silicon buy vestibular stability with minimal ALU; high-end hardware spends saved cycles on smoother presentation rather than more simulation truth.
+Problem: The assignment requires persistent history, profiles, derivatives, mock sickness samples, telemetry, and CSV scratch without local persistent `NativeArray` ownership.
+Solution: Added `BufferID.ShinobuVRSomaticComfortWrite/Read/Derivatives/History/Profile/ComfortTelemetry/MockSickness/CsvScratch` and resolved them through `VaultNativeArray<T>`.
+Rejected Alternatives: Private `NativeArray` fields with `Allocator.Persistent`; unmanaged maps outside DataVault.
+Scalability potential: Low/Middle/High/Ultra all read the same fixed Vault buffers; only cadence and scalars change.
+Hardware Impact: Fixed memory: state 64 B, derivatives 64 B, history 96 B, profiles 256 B, profile lookup 128 B, telemetry 19.2 KB, mock 8 KB, scratch 4 KB.
 
-## Decision 03 - KCC Angular Acceleration Source
+## Decision 03 - BufferID Collision Repair
 
-Problem: Existing VR comfort computed head angular acceleration from HMD rotation; the assignment requires KCC angular acceleration and camera-independent math.
-Solution: Consume the non-destructive `SignalBus<KccVelocitySignal>.GetFrameSnapshot()` view, derive signed planar yaw delta with `atan2(cross, dot)`, divide by KCC signal frame delta, clamp angular velocity to 16 rad/s and acceleration to 240 rad/s^2, then drive comfort scalars from acceleration magnitude.
-Rejected Alternatives: Reading `Camera.main`, HMD transform yaw, or KCC GameObject rotation would couple math to camera/body presentation and add fragile cross-domain dependencies.
-Scalability potential: Low lowers acceleration thresholds and raises assist through continuous `GlobalQualityWeight`; Middle keeps stock smoothing; High/Ultra tolerate sharper motion before visual clamp and spend budget on smoother presentation.
-Hardware Impact: Runtime math is two float2 operations, one atan2, clamps, and lerps per new KCC signal. Estimated hot-path cost: 3-8 us on i3/MX350 class CPU, 0 B GC. Avoided camera lookup/property path estimate: 10-40 us per frame and unknown XR camera side effects.
+Problem: Initial comfort IDs `70150-70157` collided with Quest DAG buffers in `BufferID`.
+Solution: Moved comfort IDs to free contiguous range `70166-70173` after enum collision audit.
+Rejected Alternatives: Leaving duplicate enum values would let Vault routes alias unrelated quest data.
+Scalability potential: Stable buffer identities are required for all hardware profiles.
+Hardware Impact: Prevents undefined reads/writes; no runtime cost.
 
-## Decision 04 - FOV And Horizon Output
+## Decision 04 - Camera-Independent Kinematics
 
-Problem: FOV narrowing and horizon stabilization must react to body-turn acceleration without mutating camera FOV or depending on camera component state.
-Solution: Feed KCC vignette into existing `_VRComfortVignette`, publish `_HectonVRComfortKccState`, and pass `KccHorizonLock01` into `VRSomaticRootSyncJob` to lower the horizon correction threshold during sharp KCC turns.
-Rejected Alternatives: Setting `Camera.fieldOfView`, adding a per-camera post effect component, or binary low/ultra quality branches. Those violate camera independence and scalability rules.
-Scalability potential: Low: early tunnel, stronger horizon lock. Middle: default continuous smoothing. High: delayed tunnel, lower opacity. Ultra: same deterministic input, more visual headroom for downstream shaders.
-Hardware Impact: Added root job work is scalar math only. Estimated added job cost: 1-3 us on i3/MX350. Saved cycles versus physical vestibular/camera inertia simulation: estimated 35-80 us and zero transform hierarchy churn.
+Problem: VR comfort must protect against KCC/vehicle angular acceleration without depending on camera FOV or camera rotation properties.
+Solution: Source motion from `SignalBus<KccVelocitySignal>` and AUP/head state; compute local AUP deltas by subtracting double positions before float cast; compute quaternion delta with guarded normalization.
+Rejected Alternatives: `Camera.main`, `Camera.fieldOfView`, HMD-only yaw, GameObject transform dependencies.
+Scalability potential: Low quality samples derivatives less often; high/ultra can sample every frame while using the same math.
+Hardware Impact: Derivative job is O(1), cadence collapses toward 5 Hz at low quality; no GC.
 
-## Decision 05 - Black Box ABI
+## Decision 05 - SomaticComfortStateDTO ABI
 
-Problem: Crash analysis needed KCC comfort state, but the old 64-byte blackbox entry only stored head speed and generic vignette.
-Solution: Bump blackbox version to 3, keep 300-frame circular `NativeArray`, expand entry to explicit 128 bytes, and dump KCC angular velocity, angular acceleration, KCC vignette, horizon lock, signal sequence, signal frame, and signal source id to `Docs/AgentLogs/Dump_SHINOBU_126.bin`.
-Rejected Alternatives: Text logs in hot path, managed lists, or changing public `VRSomaticSnapshot`; all create allocation risk or downstream ABI churn.
-Scalability potential: Low/Middle/High/Ultra share the same telemetry schema; higher devices can interpret denser visual state without changing runtime contracts.
-Hardware Impact: Memory grows from 19.2 KB to 38.4 KB for 300 frames, a fixed +19.2 KB. Runtime write remains one struct assignment; estimated added cost below 2 us, 0 B GC.
+Problem: Rendering needs a compact stable comfort payload with no CS1612 property copies and ARM64-safe layout.
+Solution: `SomaticComfortStateDTO` uses `[StructLayout(LayoutKind.Explicit, Size = 32)]` with offsets 0/4/8/12/16 and raw public fields. Editor/development validation checks `UnsafeUtility.SizeOf` plus field offsets.
+Rejected Alternatives: Sequential layout, properties, `Pack=1`, mutable camera properties.
+Scalability potential: Same 32-byte payload feeds all quality levels and shader consumers.
+Hardware Impact: One 32-byte write/read copy via `UnsafeUtility.MemCpy`.
 
-## Decision 06 - Verification Guard
+## Decision 06 - Dear Lie Comfort Strategy
 
-Problem: Compile verification is required, but current guard measured `_Total Processor Time` at 100% five times. User rule forbids `dotnet build` when CPU is above 50% or `dotnet/csc` is running.
-Solution: Run `git diff --check`, static hot-path allocation scans, process guard, and CPU guard. Mark compile as blocked by CPU guard instead of violating the build policy.
-Rejected Alternatives: Launching `dotnet build Assembly-CSharp.csproj` under 100% CPU, or claiming compile passed without objective output.
-Scalability potential: Build deferral does not affect runtime tiers; it prevents adding integration load while another workload owns the machine.
-Hardware Impact: Avoided build contention on CPU-saturated host. Runtime verification remains pending; static audit found no new hot-path managed containers, LINQ, `Camera.main`, scene search, coroutine, or `ToString` use.
+Problem: Physically simulating vestibular inertia or counter-rotating camera motion would be expensive and likely nauseating.
+Solution: Use optical fakes: EWMA FOV tunneling scalar, horizon-lock blend scalar/quaternion, and foveated multiplier under thermal/VRAM pressure.
+Rejected Alternatives: Camera transform override in solver, rigidbody/capsule inertia simulation, runtime postprocess profile mutation.
+Scalability potential: Low: stronger tunnel, lower derivative sample cadence, more foveated pressure. Middle: default smoothing. High/Ultra: per-frame derivatives and less aggressive tunnel while preserving the same safety clamps.
+Hardware Impact: O(1) jobs replace camera/postprocess churn; estimated avoided cost 35-80 us/frame versus transform/inertia simulation, plus avoided profile GC.
 
-## Decision 07 - Signal Route Repair
+## Decision 07 - Continuous Sample Cadence
 
-Problem: The first implementation read KCC through concrete `PhysicsDeterminismSignals`, but source archaeology found a second KCC publisher pushing `KccVelocitySignal` directly into the typed SignalBus. That could miss valid body-turn data and violated one-route signal discipline.
-Solution: Remove the `Hecton8.Physics` dependency and consume the non-destructive `SignalBus<KccVelocitySignal>.GetFrameSnapshot()` view. Select the newest signal by frame, sequence, then source id, and track frame/sequence/source in blackbox state.
-Rejected Alternatives: Keeping the concrete physics helper, destructively calling `TryReadFrame`, or adding a new global latest accessor in Core. The first misses a route, the second steals signals from other readers, the third expands global API surface.
-Scalability potential: Low/Middle/High/Ultra share one signal route; quality only changes comfort thresholds and smoothing, not ownership.
-Hardware Impact: Snapshot scan is bounded by the lane frame count; expected KCC count is 1-2. Estimated cost: 1-4 us on i3/MX350, 0 B GC. Avoided duplicate-route bug cost is correctness, not measurable CPU.
+Problem: A `HistoryDepth` scalar alone did not actually reduce CPU load on weak hardware.
+Solution: Kept XML formula `historyDepth = (int)math.lerp(2, 8, GlobalQualityWeight)` and added derivative sample stride `math.lerp(12, 1, GlobalQualityWeight)`. FOV and horizon jobs still run every frame against the last valid derivative so visual easing remains continuous.
+Rejected Alternatives: Always sampling derivatives at 60 Hz; binary low-end switch.
+Scalability potential: Low quality trends toward 5 Hz derivative sampling at 60 FPS; Ultra samples every frame.
+Hardware Impact: Saves two AUP double3 reconstructions, quaternion delta, atan2, and vector clamps on skipped derivative frames.
 
-## Decision 08 - DTO Layout And Burst Hardening
+## Decision 08 - Foveated Pressure Bridge
 
-Problem: The first KCC patch left touched DTOs sequential/pack-4 and root input size was 76 bytes, not a clean ARM64-friendly multiple. Burst jobs also lacked explicit `CompileSynchronously=true` and `NoAlias` on arrays.
-Solution: Convert `VRSomaticBlackBoxEntry` to explicit 128 bytes, `VRSomaticRootSyncInput` to explicit 80 bytes, `VRSomaticRootSyncOutput` to explicit 32 bytes, and `HeadCastSample` to explicit 48 bytes. Add `ValidateNativeLayouts()` using `UnsafeUtility.SizeOf<T>()` in editor/development builds. Add `CompileSynchronously=true` and `[NoAlias]` to touched job NativeArrays.
-Rejected Alternatives: Leaving sequential layout to compiler packing or padding with comments only. ARM64 alignment must be machine-verifiable, not narrative.
-Scalability potential: Fixed ABI across all quality weights; high-end shader/readback tooling can consume the richer blackbox without runtime contract drift.
-Hardware Impact: Explicit layout removes unplanned 76-byte root records and 36-byte head samples. Blackbox memory increases to 38.4 KB total for 300 frames, still below one 64 KB page class and 0 B GC.
+Problem: VR frame misses cause sickness; fill-rate pressure must feed comfort without a direct dependency on a sibling rendering assembly.
+Solution: Read typed global health/thermal pressure signals and convert them into `FoveatedScaleMultiplier`.
+Rejected Alternatives: Direct renderer calls, hardware-class booleans, camera pipeline mutation.
+Scalability potential: Thermal pressure smoothly increases peripheral resolution reduction as `GlobalQualityWeight` drops.
+Hardware Impact: Scalar pressure read is O(signal count), expected tiny; GPU savings happen downstream.
+
+## Decision 09 - Black Box And Dump Path
+
+Problem: Non-finite comfort derivatives must be reconstructable without managed hot-path logs.
+Solution: Added 300-entry `ComfortTelemetryEntry` Vault ring and exceptional binary dump to `Docs/AgentLogs/Dump_VR_SURGEON.bin`; existing main blackbox still dumps `Dump_SHINOBU_126.bin`.
+Rejected Alternatives: `Debug.Log` per frame, managed lists, text telemetry in gameplay.
+Scalability potential: Same schema across all quality levels.
+Hardware Impact: 19.2 KB fixed telemetry memory; per-frame write is one 64-byte struct.
+
+## Decision 10 - CSV And Designer Facade
+
+Problem: Designers need comfort tuning without recompiling C#.
+Solution: Added cold `Data/UX/vr_comfort_profiles.csv`, span-based ASCII parser, FNV-1a profile hashes, editor tuner sliders, UI Toolkit root, and telemetry graph.
+Rejected Alternatives: `string.Split`, managed row objects, runtime file parsing, or persistent `NativeHashMap` outside Vault. NativeHashMap was rejected because current DataVault provides buffer handles, not map handles; a fixed hashed profile array preserves Vault ownership.
+Scalability potential: Profiles can tune Low/Middle/High/Ultra comfort response from data.
+Hardware Impact: Parser/editor allocations are cold/editor-only; gameplay path remains 0 B GC.
+
+## Decision 11 - Build Guard
+
+Problem: Compile verification is required, but user forbids builds while CPU >50% or any `dotnet/csc/VBCSCompiler` process is running.
+Solution: Ran static audits and guard. Latest guard was CPU 32% with 7 active `dotnet` processes, so no build was launched.
+Rejected Alternatives: Violating explicit build guard or claiming compile success without output.
+Scalability potential: No runtime effect; protects developer hardware and parallel agents.
+Hardware Impact: Avoided build contention.
+
+## Decision 12 - Mock Solver Injection And Profile Lookup
+
+Problem: The mock sickness path filled sample rows but did not inject those values into the derivative buffer or run the comfort evaluator, so it could not actually profile smoothing. The CSV path also lacked map-style lookup behavior while a private `NativeParallelHashMap` would violate Vault ownership.
+Solution: `GenerateMockSicknessData()` now schedules sample generation, injects one deterministic sample into `SomaticDerivativeDTO`, then runs FOV and horizon jobs. CSV ingestion now writes profiles plus a Vault-backed open-address lookup slot buffer.
+Rejected Alternatives: Sample-only mock data, private persistent `NativeParallelHashMap`, managed dictionaries, or runtime `string.Split`.
+Scalability potential: Mock amplitude and sample cadence continue to use `GlobalQualityWeight`; lookup capacity is fixed and deterministic.
+Hardware Impact: Adds one 16-byte * 8 lookup table = 128 bytes fixed Vault memory. Mock injection remains cold/test path; gameplay hot path unchanged.
+
+## Decision 13 - Skipped-Frame Derivative Timing
+
+Problem: Quality-scaled derivative cadence initially skipped frames but divided the multi-frame AUP/quaternion delta by single-frame `dt`, overestimating velocity and acceleration at low quality.
+Solution: `ComputeSomaticDerivativesJob` now derives `sampleDt = dt * frameDelta`, clamps frame delta to 1..120, and divides deltas by the real sample interval.
+Rejected Alternatives: Removing quality cadence or accepting inflated acceleration spikes under thermal pressure.
+Scalability potential: Low-tier cadence saves CPU without mathematically lying about velocity magnitude; Ultra remains per-frame.
+Hardware Impact: Adds two integer guards and one multiply in the sampled derivative job; prevents false FOV tunnel spikes on weak devices.
+
+## Decision 14 - NaN Writeback Hardening And Audit Boundary
+
+Problem: A corrupt previous-state scalar could survive into FOV/horizon EWMA lerp, and telemetry foveated writes used `math.max` without a finite predicate. Static enum audit also found an unrelated `BufferID` value collision at `70200` outside the comfort range.
+Solution: Guarded previous FOV and horizon scalars before interpolation, guarded telemetry foveated writes before ring insertion, kept SHINOBU comfort IDs in the unique `70166-70174` range, and documented the unrelated `70200` collision without editing another domain's ownership.
+Rejected Alternatives: Assuming seeded buffers never corrupt; silently editing Save/Construction enum values outside SHINOBU_126 scope.
+Scalability potential: Low/Middle/High/Ultra all share the same finite writeback path; only cadence and scalar magnitudes vary.
+Hardware Impact: Adds three scalar finite checks in hot scalar publication/recording paths; prevents NaN propagation into shader constants, telemetry hashes, and blackbox dumps.
+
+## Decision 15 - FOV Baseline Semantics Repair
+
+Problem: The FOV target formula treated flat-screen/VR baseline as a side multiplier and then used `max()` with `FovAggressiveness`, allowing profile aggressiveness to erase the mandated continuous 0.05-style flat to 0.8-style VR intervention strength.
+Solution: Renamed the stress scalar to `motion01`, computed `interventionStrength = lerp(FlatScreenBaselineFovTunnel, VrBaselineFovTunnel, RuntimeComfortBlend01)`, then calculated `target = saturate(motion01 * interventionStrength * responseGain * comfortWeight)`.
+Rejected Alternatives: Keeping a cosmetic baseline that only affects output when it is larger than aggressiveness; adding an `if (isVR)` branch.
+Scalability potential: Flat/Middle/VR/Ultra all use the same scalar kernel. Runtime mode, user profile, and `GlobalQualityWeight` only reshape multipliers.
+Hardware Impact: Same operation count class; replaces one `max` route with explicit multiply chain and preserves deterministic scalar output.
+
+## Decision 16 - NaN Pressure Gate Hardening
+
+Problem: The Burst comfort jobs still relied on `math.saturate()` and `math.max()` around inputs that could be NaN after memory corruption or bad signals. That can preserve NaN and poison FOV, horizon, pressure, and shader globals.
+Solution: Added `SanitizeJob01()` and `SanitizeJobNonNegative()` in the comfort job file; guarded derivative magnitudes, runtime comfort blend, impact shock, pressure inputs, foveated shader publication, and managed pressure release before interpolation.
+Rejected Alternatives: Trusting DataVault initialization, or relying on `math.saturate()` as a NaN scrubber.
+Scalability potential: Low/Middle/High/Ultra keep the same math path; the guards only prevent corrupt inputs from changing quality cadence or shader pressure.
+Hardware Impact: Adds a small number of scalar finite predicates in O(1) jobs; avoids catastrophic NaN propagation into global shader constants and telemetry hashes.
+
+## Decision 17 - Shader Consumer For Somatic Foveation
+
+Problem: The foveated multiplier was published in `_HectonVRSomaticComfortState`, but CoreLit did not consume it, leaving the pressure valve as a data payload instead of a render effect.
+Solution: `Hecton_CoreLit.hlsl` now reads `_HectonVRSomaticComfortState.z/w` inside `HectonCoreLitEvaluateXRFoveatedMask()` and scales peripheral resolve weight continuously by pressure. This is a shader-only consumer, so there is no direct C# assembly dependency on a sibling render domain.
+Rejected Alternatives: Editing `HectonXRRuntimeState` ownership, calling renderer APIs directly from the gameplay provider, or adding a hardware-tier branch.
+Scalability potential: Weak devices can increase peripheral quantized resolve under pressure; high/ultra devices keep full baseline unless pressure rises.
+Hardware Impact: Adds three scalar HLSL ops plus finite clamps in the foveated mask. Expected GPU savings happen by reducing peripheral shader work when pressure rises.

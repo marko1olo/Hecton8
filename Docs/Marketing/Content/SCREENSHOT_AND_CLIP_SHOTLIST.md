@@ -238,6 +238,67 @@ Viewer takeaway:
 
 The story is systemic, not a lore popup.
 
+## 2026-05-19 Capture Packet V0
+
+Use this table the moment a playable scene can produce images. It maps planned asset IDs to exact capture intent, minimum frame content, and reject codes. If a planned shot cannot be captured honestly, leave it `PLANNED_CAPTURE`; do not fake it with concept art.
+
+| Asset ID | Capture intent | Camera/readability requirement | Must include | Reject code if failed | First use |
+|---|---|---|---|---|---|
+| `PLAN-SHOT-001` | Identity hero | 16:9, player light or machine silhouette in lower third, black-water scale visible. | industrial silhouette, silt, one route/danger cue. | `GENERIC_VISUAL` or `NO_PLAYER_VERB` | `POST-001`, Steam screenshot 1 candidate. |
+| `PLAN-SHOT-002` | Pressure room | 16:9 and 4:3 crop both readable; no clean sci-fi corridor read. | gauge/seal/pipe/dirty glass/warning light. | `DERIVATIVE_COMPETITOR_READ` or `BAD_COMPOSITION` | `POST-002`, capsule `CAP-001`. |
+| `PLAN-SHOT-003` | Salvage contact | Tool/target relationship must be readable at thumbnail size. | tool, salvage object, hazard/route cost, reward reason. | `NO_PLAYER_VERB` | `POST-003`, capsule `CAP-002`. |
+| `PLAN-SHOT-004` | Heavy machine | Must imply mass; avoid toy-like scale. | vehicle/exosuit/pump/ballast or real heavy mechanism. | `FEATURE_NOT_PUBLIC` or `GENERIC_VISUAL` | `POST-011`, capsule `CAP-004`. |
+| `PLAN-SHOT-005` | Base stress | Must show system consequence and response path. | leak/flood/warning/repair route, not only red UI. | `NO_PLAYER_VERB` or `UI_UNREADABLE` | `POST-004`, capsule `CAP-001`. |
+| `PLAN-SHOT-006` | Threat silhouette | Threat must not be fully revealed and must not read as terrain. | scale reference, sonar/floodlight relation, unsafe route. | `TOO_DARK` or `GENERIC_VISUAL` | `POST-005`. |
+| `PLAN-SHOT-007` | Seed Ship signal | Must look like system interference, not abstract poster art. | instrument corruption, anomaly cue, route pull. | `CONCEPT_NOT_GAMEPLAY` or `BAD_COMPOSITION` | `POST-006`, capsule `CAP-003`. |
+| `PLAN-SHOT-008` | Low-spec readability | Internal proof frame only; same composition as a stronger asset if possible. | cheap settings identity read, no public FPS claim. | `PERF_CLAIM_UNPROVED` | internal QA only. |
+| `PLAN-CLIP-001` | Pressure leak decision | First 3 seconds show warning/leak/action choice. | warning, leak, response, escalation. | `NO_PLAYER_VERB` | `POST-008`, creator warmup. |
+| `PLAN-CLIP-002` | Sonar saw it first | Instrument change must be readable before visual reveal. | ping, vague shape, partial silhouette, retreat/loss. | `UI_UNREADABLE` | `POST-009`, capsule `CAP-003` stills. |
+| `PLAN-CLIP-003` | Salvage failure | Escalation must follow player action, not random event. | tool hit, reward, reaction, forced choice. | `NO_PLAYER_VERB` | `POST-010`, creator warmup. |
+| `PLAN-CLIP-004` | Heavy machine startup | Machine motion must show weight and underwater context. | lever/pump/ballast, slow mass movement, pressure response. | `GENERIC_VISUAL` | `POST-011`, capsule `CAP-004` stills. |
+
+### Capture Session Checklist
+
+```text
+Build ID:
+Scene/area:
+Quality preset:
+Resolution:
+Capture tool:
+Owner:
+Date:
+Asset IDs attempted:
+Known build issues visible:
+Performance claim planned? no unless measured:
+```
+
+### Per-Asset Review Form
+
+```text
+Asset ID:
+Filename:
+Build:
+Hook:
+First 3-second read:
+Player verb visible? yes/no
+Pressure/machinery cue visible? yes/no
+Co-op implication? yes/no
+Performance implication? yes/no
+Clone-risk cue:
+QA score:
+Decision: APPROVED_INTERNAL / APPROVED_PUBLIC / REVISION / QA_FAIL
+Rejection code:
+Next action:
+```
+
+### Capture Kill Rules
+
+- If three attempts at an asset ID fail the same reject code, stop capturing and revise the scene/lighting/UI.
+- If the only good frame is a cinematic camera that hides player context, use it as internal mood reference, not public gameplay proof.
+- If a shot requires a lore caption to make sense, it is not a first-pack asset.
+- If a clip is only impressive after 10 seconds, recut or kill it for short-form.
+- If comments would likely ask "is this co-op?", remove extra player silhouettes or helpers.
+
 ## Capture Naming
 
 Use:

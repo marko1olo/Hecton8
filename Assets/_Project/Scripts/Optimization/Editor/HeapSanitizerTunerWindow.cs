@@ -29,6 +29,22 @@ namespace Hecton8.Optimization.Editor
         private Label[] _trackerRows;
         private IVisualElementScheduledItem _updateLoop;
         private bool _isUpdatingControls;
+        private bool _statusLabelInitialized;
+        private bool _governorRegisteredLabelState;
+        private int _lastActiveHandles = int.MinValue;
+        private int _lastCacheHits = int.MinValue;
+        private int _lastCacheMisses = int.MinValue;
+        private int _lastReleasedHandles = int.MinValue;
+        private int _lastVisibleRows = -1;
+        private bool _lastLeakVisible;
+        private uint _lastLeakHash;
+        private ulong _lastLeakBundle;
+        private int _lastLeakRefCount;
+        private uint[] _rowHashes;
+        private int[] _rowRefCounts;
+        private ulong[] _rowSlots;
+        private int[] _rowTtlTenths;
+        private byte[] _rowFlags;
 
         [MenuItem("HECTON-8/Optimization/Heap Sanitizer Tuner")]
         private static void Open()
@@ -52,6 +68,7 @@ namespace Hecton8.Optimization.Editor
             CreateTuningControls(rootVisualElement);
             CreateGraphBand(rootVisualElement);
             CreateTrackerRows(rootVisualElement);
+            ResetEditorCaches();
 
             _updateLoop = rootVisualElement.schedule.Execute(UpdateUi).Every(250);
             UpdateUi();
@@ -166,6 +183,11 @@ namespace Hecton8.Optimization.Editor
             root.Add(scroll);
 
             _trackerRows = new Label[MaxRows]; // COLD ALLOC: Label[64] - editor tracker rows - owner: HeapSanitizerTunerWindow
+            _rowHashes = new uint[MaxRows]; // COLD ALLOC: uint[64] - editor row cache - owner: HeapSanitizerTunerWindow
+            _rowRefCounts = new int[MaxRows]; // COLD ALLOC: int[64] - editor row cache - owner: HeapSanitizerTunerWindow
+            _rowSlots = new ulong[MaxRows]; // COLD ALLOC: ulong[64] - editor row cache - owner: HeapSanitizerTunerWindow
+            _rowTtlTenths = new int[MaxRows]; // COLD ALLOC: int[64] - editor row cache - owner: HeapSanitizerTunerWindow
+            _rowFlags = new byte[MaxRows]; // COLD ALLOC: byte[64] - editor row cache - owner: HeapSanitizerTunerWindow
             for (int i = 0; i < MaxRows; i++)
             {
                 Label row = new Label();
@@ -180,16 +202,39 @@ namespace Hecton8.Optimization.Editor
             AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
             if (governor == null)
             {
-                _statusLabel.text = "AssetLifecycleGovernor: not registered";
+                SetStatusRegistered(false);
                 SetRowsVisible(0);
                 return;
             }
 
-            _statusLabel.text = "AssetLifecycleGovernor: registered";
-            _activeLabel.text = "Active: " + governor.GetHeapSanitizerActiveHandleCount().ToString();
-            _hitsLabel.text = "Hits: " + governor.GetHeapSanitizerCacheHitCount().ToString();
-            _missesLabel.text = "Misses: " + governor.GetHeapSanitizerCacheMissCount().ToString();
-            _releasedLabel.text = "Released: " + governor.GetHeapSanitizerOrphanedReleaseCount().ToString();
+            SetStatusRegistered(true);
+            int active = governor.GetHeapSanitizerActiveHandleCount();
+            int hits = governor.GetHeapSanitizerCacheHitCount();
+            int misses = governor.GetHeapSanitizerCacheMissCount();
+            int released = governor.GetHeapSanitizerOrphanedReleaseCount();
+            if (active != _lastActiveHandles)
+            {
+                _activeLabel.text = "Active: " + active.ToString();
+                _lastActiveHandles = active;
+            }
+
+            if (hits != _lastCacheHits)
+            {
+                _hitsLabel.text = "Hits: " + hits.ToString();
+                _lastCacheHits = hits;
+            }
+
+            if (misses != _lastCacheMisses)
+            {
+                _missesLabel.text = "Misses: " + misses.ToString();
+                _lastCacheMisses = misses;
+            }
+
+            if (released != _lastReleasedHandles)
+            {
+                _releasedLabel.text = "Released: " + released.ToString();
+                _lastReleasedHandles = released;
+            }
 
             _isUpdatingControls = true;
             _ttlSlider.SetValueWithoutNotify(governor.GetHeapSanitizerBaseTtlSeconds());
@@ -238,14 +283,25 @@ namespace Hecton8.Optimization.Editor
         {
             if (governor.TryGetHeapSanitizerLeakSuspectAt(0, out uint hash, out ulong bundle, out int refCount))
             {
-                _leakBanner.style.display = DisplayStyle.Flex;
-                _leakBanner.text = "LEAK SUSPECT  asset=0x" + hash.ToString("X8") +
-                                   " bundle=0x" + bundle.ToString("X16") +
-                                   " ref=" + refCount.ToString();
+                if (!_lastLeakVisible)
+                    _leakBanner.style.display = DisplayStyle.Flex;
+                if (!_lastLeakVisible || hash != _lastLeakHash || bundle != _lastLeakBundle || refCount != _lastLeakRefCount)
+                {
+                    _leakBanner.text = "LEAK SUSPECT  asset=0x" + hash.ToString("X8") +
+                                       " bundle=0x" + bundle.ToString("X16") +
+                                       " ref=" + refCount.ToString();
+                    _lastLeakHash = hash;
+                    _lastLeakBundle = bundle;
+                    _lastLeakRefCount = refCount;
+                }
+
+                _lastLeakVisible = true;
                 return;
             }
 
-            _leakBanner.style.display = DisplayStyle.None;
+            if (_lastLeakVisible)
+                _leakBanner.style.display = DisplayStyle.None;
+            _lastLeakVisible = false;
         }
 
         private void UpdateTrackerRows(AssetLifecycleGovernor governor)
@@ -256,24 +312,78 @@ namespace Hecton8.Optimization.Editor
                 if (!governor.TryGetHeapSanitizerTrackerAt(i, out AssetTrackerDTO tracker, out float ttl, out byte flags))
                     break;
 
-                _trackerRows[i].text = "0x" + tracker.AssetHash.ToString("X8") +
-                                       " | ref " + tracker.ReferenceCount.ToString() +
-                                       " | slot " + tracker.HandlePointer.ToString() +
-                                       " | ttl " + ttl.ToString("0.0") +
-                                       " | flags 0x" + flags.ToString("X2");
+                int ttlTenths = Mathf.RoundToInt(ttl * 10f);
+                if (_rowHashes[i] != tracker.AssetHash ||
+                    _rowRefCounts[i] != tracker.ReferenceCount ||
+                    _rowSlots[i] != tracker.HandlePointer ||
+                    _rowTtlTenths[i] != ttlTenths ||
+                    _rowFlags[i] != flags)
+                {
+                    _trackerRows[i].text = "0x" + tracker.AssetHash.ToString("X8") +
+                                           " | ref " + tracker.ReferenceCount.ToString() +
+                                           " | slot " + tracker.HandlePointer.ToString() +
+                                           " | ttl " + (ttlTenths * 0.1f).ToString("0.0") +
+                                           " | flags 0x" + flags.ToString("X2");
+                    _rowHashes[i] = tracker.AssetHash;
+                    _rowRefCounts[i] = tracker.ReferenceCount;
+                    _rowSlots[i] = tracker.HandlePointer;
+                    _rowTtlTenths[i] = ttlTenths;
+                    _rowFlags[i] = flags;
+                }
+
                 visible++;
             }
 
             SetRowsVisible(visible);
         }
 
+        private void SetStatusRegistered(bool registered)
+        {
+            if (_statusLabelInitialized && _governorRegisteredLabelState == registered)
+                return;
+
+            _statusLabel.text = registered
+                ? "AssetLifecycleGovernor: registered"
+                : "AssetLifecycleGovernor: not registered";
+            _governorRegisteredLabelState = registered;
+            _statusLabelInitialized = true;
+        }
+
+        private void ResetEditorCaches()
+        {
+            _statusLabelInitialized = false;
+            _lastActiveHandles = int.MinValue;
+            _lastCacheHits = int.MinValue;
+            _lastCacheMisses = int.MinValue;
+            _lastReleasedHandles = int.MinValue;
+            _lastVisibleRows = -1;
+            _lastLeakVisible = false;
+            _lastLeakHash = 0u;
+            _lastLeakBundle = 0UL;
+            _lastLeakRefCount = 0;
+            if (_rowHashes == null)
+                return;
+
+            for (int i = 0; i < _rowHashes.Length; i++)
+            {
+                _rowHashes[i] = uint.MaxValue;
+                _rowRefCounts[i] = int.MinValue;
+                _rowSlots[i] = ulong.MaxValue;
+                _rowTtlTenths[i] = int.MinValue;
+                _rowFlags[i] = byte.MaxValue;
+            }
+        }
+
         private void SetRowsVisible(int visible)
         {
             if (_trackerRows == null)
                 return;
+            if (_lastVisibleRows == visible)
+                return;
 
             for (int i = 0; i < _trackerRows.Length; i++)
                 _trackerRows[i].style.display = i < visible ? DisplayStyle.Flex : DisplayStyle.None;
+            _lastVisibleRows = visible;
         }
 
         private void OnTtlChanged(ChangeEvent<float> evt)

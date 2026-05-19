@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Reflection;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -27,6 +28,12 @@ namespace Hecton8.Physics
         public const int CableTensionForceStrideBytes = 32;
         public const int CableAabbStrideBytes = 32;
         public const int BlackBoxEntryStrideBytes = 64;
+        public const int TetherAupNodeStrideBytes = 64;
+        public const int TetherAupConstraintStrideBytes = 32;
+        public const int TetherAupEndpointStrideBytes = 64;
+        public const int TetherAupForcePacketStrideBytes = 64;
+        public const int TetherSplineVertexStrideBytes = 32;
+        public const int TetherAupTelemetryStrideBytes = 64;
         public const int BlackBoxCapacity = 300;
         public const float MinConstraintLength = 0.0001f;
         public const float MinConstraintLengthSq = MinConstraintLength * MinConstraintLength;
@@ -48,7 +55,31 @@ namespace Hecton8.Physics
                    UnsafeUtility.SizeOf<CableSnappedSignal>() == CableSnappedSignalStrideBytes &&
                    UnsafeUtility.SizeOf<CableTensionForceDTO>() == CableTensionForceStrideBytes &&
                    UnsafeUtility.SizeOf<CableAabbDTO>() == CableAabbStrideBytes &&
-                   UnsafeUtility.SizeOf<VerletCableBlackBoxEntry>() == BlackBoxEntryStrideBytes;
+                   UnsafeUtility.SizeOf<VerletCableBlackBoxEntry>() == BlackBoxEntryStrideBytes &&
+                   ValidateTetherAupLayouts();
+        }
+
+        public static bool ValidateTetherAupLayouts()
+        {
+            return UnsafeUtility.SizeOf<TetherNodeDTO>() == TetherAupNodeStrideBytes &&
+                   OffsetOf<TetherNodeDTO>(nameof(TetherNodeDTO.CurrentAUP)) == 0 &&
+                   OffsetOf<TetherNodeDTO>(nameof(TetherNodeDTO.PreviousAUP)) == 24 &&
+                   OffsetOf<TetherNodeDTO>(nameof(TetherNodeDTO.InverseMass)) == 48 &&
+                   OffsetOf<TetherNodeDTO>(nameof(TetherNodeDTO.Flags)) == 52 &&
+                   OffsetOf<TetherNodeDTO>("_pad0") == 56 &&
+                   UnsafeUtility.SizeOf<TetherConstraintDTO>() == TetherAupConstraintStrideBytes &&
+                   UnsafeUtility.SizeOf<TetherEndpointAupDTO>() == TetherAupEndpointStrideBytes &&
+                   UnsafeUtility.SizeOf<TetherForcePacketDTO>() == TetherAupForcePacketStrideBytes &&
+                   UnsafeUtility.SizeOf<TetherSplineVertexDTO>() == TetherSplineVertexStrideBytes &&
+                   UnsafeUtility.SizeOf<TetherAupTelemetryEntry>() == TetherAupTelemetryStrideBytes;
+        }
+
+        private static int OffsetOf<T>(string fieldName) where T : struct
+        {
+            FieldInfo field = typeof(T).GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
 
         public static int ResolveIterationBudget(byte tier, int requested)
@@ -78,6 +109,74 @@ namespace Hecton8.Physics
         public float InvMass;
         public float3 OldPosition;
         public float _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct TetherNodeDTO
+    {
+        [FieldOffset(0)] public double3 CurrentAUP;
+        [FieldOffset(24)] public double3 PreviousAUP;
+        [FieldOffset(48)] public float InverseMass;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] private ulong _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct TetherConstraintDTO
+    {
+        [FieldOffset(0)] public int NodeA;
+        [FieldOffset(4)] public int NodeB;
+        [FieldOffset(8)] public float RestLength;
+        [FieldOffset(12)] public float Stiffness;
+        [FieldOffset(16)] public uint Flags;
+        [FieldOffset(20)] public uint CableId;
+        [FieldOffset(24)] private ulong _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct TetherEndpointAupDTO
+    {
+        [FieldOffset(0)] public double3 AnchorAUP;
+        [FieldOffset(24)] public double3 PayloadAUP;
+        [FieldOffset(48)] public float3 AbyssalCurrentAcceleration;
+        [FieldOffset(60)] public float GlobalQualityWeight;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct TetherForcePacketDTO
+    {
+        [FieldOffset(0)] public double3 ApplicationAUP;
+        [FieldOffset(24)] public float3 Force;
+        [FieldOffset(36)] public float Tension;
+        [FieldOffset(40)] public int CableId;
+        [FieldOffset(44)] public int BodySlot;
+        [FieldOffset(48)] public uint Flags;
+        [FieldOffset(52)] public uint FrameIndex;
+        [FieldOffset(56)] private ulong _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct TetherSplineVertexDTO
+    {
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float U;
+        [FieldOffset(16)] public float3 Tangent;
+        [FieldOffset(28)] public float Tension01;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct TetherAupTelemetryEntry
+    {
+        [FieldOffset(0)] public uint FrameIndex;
+        [FieldOffset(4)] public int NodeCount;
+        [FieldOffset(8)] public int IterationCount;
+        [FieldOffset(12)] public float MaxTension;
+        [FieldOffset(16)] public double3 AnchorAUP;
+        [FieldOffset(40)] public uint StateHash;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public float CpuMicroseconds;
+        [FieldOffset(52)] public float GlobalQualityWeight;
+        [FieldOffset(56)] private ulong _pad0;
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 16)]
@@ -862,6 +961,33 @@ namespace Hecton8.Physics
     {
         private const uint DefaultHash = 0x5645524Cu;
 
+        public static int Parse(ReadOnlySpan<byte> csv, NativeArray<CableMaterialDTO> output)
+        {
+            if (!output.IsCreated || output.Length == 0 || csv.Length == 0)
+                return 0;
+
+            int parsed = 0;
+            int cursor = 0;
+            while (cursor < csv.Length && parsed < output.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < csv.Length && csv[cursor] != (byte)'\n' && csv[cursor] != (byte)'\r')
+                    cursor++;
+
+                ReadOnlySpan<byte> line = csv.Slice(lineStart, cursor - lineStart);
+                if (TryParseLine(line, parsed, out CableMaterialDTO material))
+                {
+                    output[parsed] = material;
+                    parsed++;
+                }
+
+                while (cursor < csv.Length && (csv[cursor] == (byte)'\n' || csv[cursor] == (byte)'\r'))
+                    cursor++;
+            }
+
+            return parsed;
+        }
+
         public static int Parse(ReadOnlySpan<char> csv, NativeArray<CableMaterialDTO> output)
         {
             if (!output.IsCreated || output.Length == 0 || csv.Length == 0)
@@ -887,6 +1013,96 @@ namespace Hecton8.Physics
             }
 
             return parsed;
+        }
+
+        private static bool TryParseLine(ReadOnlySpan<byte> line, int rowIndex, out CableMaterialDTO material)
+        {
+            material = default;
+            line = Trim(line);
+            if (line.Length == 0 || line[0] == (byte)'#')
+                return false;
+
+            uint materialHash = DefaultHash + (uint)rowIndex;
+            bool hasKey = false;
+            float density = 1.45f;
+            float yield = 0.18f;
+            float snap = 0.38f;
+            float stiffness = 0.82f;
+            float damping = 0.975f;
+            float friction = 0.42f;
+            float radius = 0.035f;
+
+            int fieldIndex = 0;
+            int cursor = 0;
+            while (cursor <= line.Length)
+            {
+                int start = cursor;
+                while (cursor < line.Length && line[cursor] != (byte)',')
+                    cursor++;
+
+                ReadOnlySpan<byte> field = Trim(line.Slice(start, cursor - start));
+                if (fieldIndex == 0 && field.Length > 0 && !TryParseFloat(field, out _))
+                {
+                    if (StartsWithAlpha(field))
+                    {
+                        materialHash = HashKey(field);
+                        hasKey = true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else if (field.Length > 0 && TryParseFloat(field, out float value))
+                {
+                    int numericIndex = hasKey ? fieldIndex - 1 : fieldIndex;
+                    switch (numericIndex)
+                    {
+                        case 0:
+                            density = value;
+                            break;
+                        case 1:
+                            yield = value;
+                            break;
+                        case 2:
+                            snap = value;
+                            break;
+                        case 3:
+                            stiffness = value;
+                            break;
+                        case 4:
+                            damping = value;
+                            break;
+                        case 5:
+                            friction = value;
+                            break;
+                        case 6:
+                            radius = value;
+                            break;
+                    }
+                }
+                else if (field.Length > 0 && hasKey && fieldIndex == 1 && StartsWithAlpha(field))
+                {
+                    return false;
+                }
+
+                fieldIndex++;
+                cursor++;
+                if (cursor > line.Length)
+                    break;
+            }
+
+            material = new CableMaterialDTO
+            {
+                MaterialHash = materialHash,
+                LinearDensity = math.max(0.001f, density),
+                YieldStretch01 = math.max(0f, yield),
+                SnapStretch01 = math.max(yield + 0.01f, snap),
+                SolverTuning = new float4(math.saturate(stiffness), math.saturate(damping), math.saturate(friction), math.max(0.001f, radius)),
+                VisualTuning = new float4(math.max(0.001f, radius), 0.35f, 0.22f, 0f),
+                LoadTuning = new float4(24f, 3f, 5f, 10f)
+            };
+            return true;
         }
 
         private static bool TryParseLine(ReadOnlySpan<char> line, int rowIndex, out CableMaterialDTO material)
@@ -989,6 +1205,15 @@ namespace Hecton8.Physics
             return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
         }
 
+        private static bool StartsWithAlpha(ReadOnlySpan<byte> text)
+        {
+            if (text.Length == 0)
+                return false;
+
+            byte c = text[0];
+            return (c >= (byte)'A' && c <= (byte)'Z') || (c >= (byte)'a' && c <= (byte)'z');
+        }
+
         private static uint HashKey(ReadOnlySpan<char> text)
         {
             uint hash = 2166136261u;
@@ -997,6 +1222,21 @@ namespace Hecton8.Physics
                 char c = text[i];
                 if (c >= 'A' && c <= 'Z')
                     c = (char)(c + 32);
+                hash ^= c;
+                hash *= 16777619u;
+            }
+
+            return hash == 0u ? DefaultHash : hash;
+        }
+
+        private static uint HashKey(ReadOnlySpan<byte> text)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < text.Length; i++)
+            {
+                byte c = text[i];
+                if (c >= (byte)'A' && c <= (byte)'Z')
+                    c = (byte)(c + 32);
                 hash ^= c;
                 hash *= 16777619u;
             }
@@ -1015,9 +1255,25 @@ namespace Hecton8.Physics
             return start <= end ? text.Slice(start, end - start + 1) : ReadOnlySpan<char>.Empty;
         }
 
+        private static ReadOnlySpan<byte> Trim(ReadOnlySpan<byte> text)
+        {
+            int start = 0;
+            int end = text.Length - 1;
+            while (start < text.Length && IsWhite(text[start]))
+                start++;
+            while (end >= start && IsWhite(text[end]))
+                end--;
+            return start <= end ? text.Slice(start, end - start + 1) : ReadOnlySpan<byte>.Empty;
+        }
+
         private static bool IsWhite(char c)
         {
             return c == ' ' || c == '\t';
+        }
+
+        private static bool IsWhite(byte c)
+        {
+            return c == (byte)' ' || c == (byte)'\t';
         }
 
         private static bool TryParseFloat(ReadOnlySpan<char> text, out float value)
@@ -1055,6 +1311,54 @@ namespace Hecton8.Physics
                 while (index < text.Length && text[index] >= '0' && text[index] <= '9')
                 {
                     fraction = fraction * 10f + (text[index] - '0');
+                    divisor *= 10f;
+                    index++;
+                    any = true;
+                }
+            }
+
+            if (!any || index != text.Length)
+                return false;
+
+            value = sign * (integer + fraction / divisor);
+            return math.isfinite(value);
+        }
+
+        private static bool TryParseFloat(ReadOnlySpan<byte> text, out float value)
+        {
+            value = 0f;
+            if (text.Length == 0)
+                return false;
+
+            int index = 0;
+            float sign = 1f;
+            if (text[index] == (byte)'-')
+            {
+                sign = -1f;
+                index++;
+            }
+            else if (text[index] == (byte)'+')
+            {
+                index++;
+            }
+
+            float integer = 0f;
+            bool any = false;
+            while (index < text.Length && text[index] >= (byte)'0' && text[index] <= (byte)'9')
+            {
+                integer = integer * 10f + (text[index] - (byte)'0');
+                index++;
+                any = true;
+            }
+
+            float fraction = 0f;
+            float divisor = 1f;
+            if (index < text.Length && text[index] == (byte)'.')
+            {
+                index++;
+                while (index < text.Length && text[index] >= (byte)'0' && text[index] <= (byte)'9')
+                {
+                    fraction = fraction * 10f + (text[index] - (byte)'0');
                     divisor *= 10f;
                     index++;
                     any = true;

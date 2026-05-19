@@ -165,7 +165,7 @@ namespace Hecton8.Editor
                 return;
             }
 
-            string csv = File.ReadAllText(_csvPath);
+            byte[] csv = File.ReadAllBytes(_csvPath);
             VaultBufferHandle<CableMaterialDTO> materialsHandle = vault.GetBufferHandle<CableMaterialDTO>(
                 BufferID.VerletCableMaterials,
                 MaterialCapacity,

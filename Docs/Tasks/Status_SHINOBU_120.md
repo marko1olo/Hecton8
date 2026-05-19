@@ -19,7 +19,7 @@ Last update: 2026-05-19
 - ARCH_Signal_Lane_Segregation.txt
 
 ## Current Loop
-Loop 9/5 polish pass active by source/static audit after subagent findings and CSV path hardening. Unity compile/profiler still not run after CPU guards sampled 89.43 to 100 percent; one guard also found active `csc` and `dotnet` processes, so build remains blocked by project rule until CPU <=50 and no dotnet/csc process is active. No runtime-complete claim is authorized.
+Loop 19/5 runtime DTO boundary sanitization and camera-local shader noise active. A guarded narrow Core build was attempted earlier only after CPU sampled below the 50 percent threshold and no `dotnet`/`csc` process was active. The build failed before SHINOBU validation on a non-SHINOBU dependency: `Hecton8.Core.csproj` includes missing `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`. That file is absent on disk and not SHINOBU-owned. No runtime-complete claim is authorized.
 
 ## Iterative Loops
 - Loop 1: Tasks 01-05. Registry/domain read, prefab/fog scans, DTO/contracts/job implementation. Compile skipped by guard. Prompt re-extracted after block with SHINOBU_120 regex.
@@ -61,7 +61,7 @@ Loop 9/5 polish pass active by source/static audit after subagent findings and C
 - [x] Double-buffered point-light GPU upload. DOD: two persistent GraphicsBuffers, inactive-buffer upload, active-buffer flip, `UnsafeUtility.MemCpy`. Rejected: single buffer CPU write while GPU may read.
 - [x] Strengthened Dear Lie shader path. DOD: low-quality proxy uses explicit 4x4 Bayer dither blended with temporal noise and bypasses the raymarch loop. Rejected: stochastic-only dither without ordered matrix proof.
 - [x] Added directional scattering from `_SunDirection` and `_FinalGiantAbyssLight`. DOD: primary directional light contribution exists alongside PointLightDTO scattering. Rejected: point-light-only raymarch.
-- [x] Flow advection now multiplies sampled `_AbyssalFlowFieldTexture` by `_Time.y` inside the noise coordinate path. DOD: current field motion is visible without CPU fluid simulation. Rejected: static flow offset.
+- [x] Flow advection now multiplies sampled `_AbyssalFlowFieldTexture` by the explicit SHINOBU visual phase in `_HectonVolumetricFogCompositeParams.w`. DOD: current field motion is visible without CPU fluid simulation or hidden Unity `_Time`. Rejected: static flow offset and implicit global time.
 - [x] UI Toolkit tuner no longer uses `System.Func` mutation wrappers for DTO sliders. DOD: direct ref mutation via `VolumetricFogParamsAccess.ElementAt`. Rejected: editor delegate churn for simple field writes.
 - [x] Cached DataVault route now avoids registry polling while a valid vault exists. DOD: `GlobalRegistry.DataVault` is used only when cached vault is null/fenced. Rejected: hot-path registry lookup every frame.
 - [x] RenderGraph now declares SHINOBU constant/structured buffer reads. DOD: `_paramsBuffer` and active point-light buffer are imported with `renderGraph.ImportBuffer`, declared with `builder.UseBuffer`, and bound per compute dispatch. Rejected: hidden `Shader.SetGlobalConstantBuffer` global state before the graph pass.
@@ -82,3 +82,59 @@ Loop 9/5 polish pass active by source/static audit after subagent findings and C
 - Shader grep after polish: `ResolveBayer4`, `ResolveProxyDither`, `ResolveDirectionalScattering`, `_AbyssalFlowFieldTexture`, and proxy loop bypass are present.
 - `git diff --check` on edited SHINOBU files: clean.
 - Compile guard after polish: CPU sampled 97.716%, 100%, 100% with active `csc`/`dotnet`, then 89.43% with no dotnet/csc; build not launched because CPU stayed above 50%.
+
+## Compile-Wall Evidence - 2026-05-19
+- Guard condition before build: CPU below 50 percent and no active `dotnet`/`csc` process, so a narrow `Hecton8.Core.csproj` build was legal by AGENTS.md.
+- Command attempted: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`.
+- Result: build failed with `CS2001` because `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` is referenced by `Hecton8.Core.csproj` and absent on disk.
+- Boundary decision: no restoration, deletion, or csproj mutation was performed because the missing World file is outside SHINOBU_120 authority.
+- Strike count: compile-wall strike 1, `[BLOCKED BY DEPENDENCY]` for Unity/Core compile proof only. SHINOBU static checks remain the current evidence level.
+
+## Loop 11 - Bandwidth, Layout, Variant Audit - 2026-05-19
+- [x] Cached `VolumetricFogNativeLayout.Validate()` after static initialization. DOD: render/editor calls now return a static bool instead of repeating `Marshal.OffsetOf` reflection on every RenderGraph record. Rejected: deleting layout validation entirely. Microseconds: PENDING PROFILER.
+- [x] Added SHINOBU constant-buffer dirty gate. DOD: `VolumetricFogParamsDTO` hashes four float4 lanes and skips `LockBufferForWrite` when the 64B page is unchanged. Rejected: blind CBuffer upload every frame. Microseconds: PENDING PROFILER.
+- [x] Removed unused `_MATH_LOD_LOW/_MATH_LOD_HIGH` variants from `Hecton_VolumetricFog.compute`. DOD: no preprocessor branch referenced those keywords inside the compute shader; GlobalQualityWeight DTO remains the active continuous quality route. Rejected: carrying dead variants that increase warmup/variant surface. Microseconds: PENDING PROFILER.
+- [x] Verification: `git diff --check` over SHINOBU runtime/contracts/shader/docs returned only repo CRLF warnings. Bad-pattern grep found no blind `UploadConstantBuffer(` call, no `_Time`, no temp RT/blit/SetData/GetData/File.ReadAllBytes/new byte[]/NativeHashMap/Allocator.Temp/sibling biome concrete route. One `Marshal.OffsetOf` call remains cold-only behind cached static validation.
+- [BLOCKED BY DEPENDENCY] Compile proof remains blocked by missing non-SHINOBU `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`; no new build was launched in this loop.
+
+## Loop 12 - Point-Light Structured Buffer Dirty Page - 2026-05-19
+- [x] Added dirty hash for the 8-entry `PointLightDTO` structured buffer page. DOD: completed mock-light jobs hash the active count and float4 lanes; unchanged pages skip `LockBufferForWrite`, buffer flip, and GPU upload. Rejected: uploading identical synthetic lights during low-quality visual-phase cadence freezes. Microseconds: PENDING PROFILER.
+- [x] Reset point-light dirty state on structured-buffer recreation and teardown. DOD: cold buffer reallocation forces the next completed page to upload once. Rejected: stale dirty flag after graphics-resource loss. Microseconds: PENDING PROFILER.
+- [BLOCKED BY DEPENDENCY] Compile proof unchanged: Core build still stops on missing non-SHINOBU World source before this domain can be validated.
+
+## Loop 13 - AUP-Local Camera Input Sanitization - 2026-05-19
+- [x] Replaced raw camera transform use for fog DTO/job inputs with a Core floating-origin offset snapshot and immediate local float3 recast. DOD: SHINOBU does not import `Hecton8.World.AbsoluteUniversePosition` from a sibling domain, but camera local coordinates are now derived through `HectonFloatingOrigin.CurrentTotalOffsetDouble` before narrowing. Rejected: adding a direct World/AUP using to the Visor runtime. Microseconds: PENDING PROFILER.
+- [x] Finite-normalized camera forward before scheduling mock lights. DOD: non-finite or zero forward vectors fall back to +Z before Burst job input. Rejected: trusting `Transform.forward` to stay finite forever. Microseconds: PENDING PROFILER.
+- [BLOCKED BY DEPENDENCY] Compile proof unchanged: missing non-SHINOBU World source still blocks Core build.
+
+## Loop 14 - Quality Continuum Math Authority - 2026-05-19
+- [x] Converted SHINOBU quality-control curves to Unity.Mathematics scalar authority. DOD: ray steps, internal scale, proxy blend, point-light count, visual phase cadence, setup quality clamp, and estimate scaling now use `math.saturate`, `math.lerp`, cubic polynomial smoothing, and an explicit `math.step` survival floor for the low-end proxy. Rejected: leaving mixed `Mathf` quality code that made the GlobalQualityWeight continuum less auditable. Microseconds: PENDING PROFILER.
+- [x] Verification: `git diff --check` returned only CRLF warnings; quality grep found `ResolveQualityCurve` and `math.step` and no `Mathf.Clamp01(quality)`, `Mathf.Lerp(VolumetricFogConstants...)`, `Mathf.Lerp(5f...)`, `Mathf.Clamp01(HomeostasisBrain...)`, or `Mathf.SmoothStep` in the SHINOBU runtime feature.
+- [BLOCKED BY DEPENDENCY] Compile proof unchanged: missing non-SHINOBU World source still blocks Core build; no new build was launched in this loop.
+
+## Loop 15 - Finite Quality Scalar Vaccination - 2026-05-19
+- [x] Added finite-saturated scalar gate for quality and estimate curves. DOD: `ResolveFiniteSaturated` now converts NaN/infinity to `0.0` before `math.saturate`; GlobalQualityWeight, render-scale estimate, ray steps, proxy blend, visual cadence, and point-light count now fail toward minimum survival cost instead of propagating NaN. Rejected: trusting `math.saturate` alone as a NaN guard. Microseconds: PENDING PROFILER.
+- [x] Added finite fallback endpoints for editor internal-scale settings. DOD: invalid `minimumInternalScale` falls back to 0.25 and invalid `maximumInternalScale` falls back to 0.67 before render-target sizing. Rejected: allowing editor NaN to poison quantized RTHandle dimensions. Microseconds: PENDING PROFILER.
+- [x] Verification: `git diff --check` returned only CRLF warnings; quality grep shows `ResolveFiniteSaturated` guarding quality curve, proxy blend, point-light count, setup quality, estimate scale, and `HomeostasisBrain.GlobalQualityWeight`.
+- [BLOCKED BY DEPENDENCY] Compile proof unchanged: missing non-SHINOBU World source still blocks Core build; no new build was launched in this loop.
+
+## Loop 16 - Shader FBM Octave Collapse - 2026-05-19
+- [x] Removed mandatory second FBM detail evaluation from low/middle raymarch density. DOD: `ResolveFogDensity` now computes one coarse FBM by default, then blends in the expensive fine FBM only after a continuous quality ramp above 0.35. Rejected: paying two FBM paths as soon as proxyBlend drops below 1.0. Microseconds: PENDING PROFILER.
+- [x] Verification: `git diff --check` returned only CRLF warnings; shader grep shows `fineBlend` gating the second `Fbm3` call inside `ResolveFogDensity`.
+- [BLOCKED BY DEPENDENCY] Compile/shader import proof unchanged: missing non-SHINOBU World source still blocks Core build; no new build was launched in this loop.
+
+## Loop 17 - External Shader-Global Snapshot Consolidation - 2026-05-19
+- [x] Consolidated MarineSnow/AbyssalFlow global shader reads into one RenderGraph-record snapshot. DOD: telemetry no longer calls `Shader.GetGlobalTexture` or `Shader.GetGlobalFloat`; it receives pre-read MarineSnow/flow-active flags from the same snapshot used for graph texture binding. Rejected: duplicate global state reads inside telemetry after resource binding already needed those values. Microseconds: PENDING PROFILER.
+- [x] Verification: `git diff --check` returned only CRLF warnings; grep shows `Shader.GetGlobalTexture/GetGlobalFloat` only in the single external snapshot block before `UpdateVaultAndGpuState`, not inside `RecordTelemetry`.
+- [BLOCKED BY DEPENDENCY] Compile proof unchanged: missing non-SHINOBU World source still blocks Core build; no new build was launched in this loop.
+
+## Loop 18 - Editor Facade NaN Quarantine - 2026-05-19
+- [x] Hardened Abyssal Atmosphere Tuner writes before they touch vault DTOs. DOD: slider reads and slider apply methods now route through finite fallback clamps; invalid designer/editor values collapse to domain defaults instead of writing NaN into `VolumetricFogParamsDTO`. Rejected: treating editor UI as harmless because it is cold-only. Microseconds: PENDING PROFILER.
+- [x] Verification: `git diff --check` returned only CRLF warnings; tuner grep shows `ClampFinite` on default quality seed and all density/scatter/extinction/anisotropy/flow/quality writes, with no raw `math.clamp(value...)` or `math.saturate(HomeostasisBrain...)` route left.
+- [BLOCKED BY DEPENDENCY] Compile proof unchanged: missing non-SHINOBU World source still blocks Core build; no new build was launched in this loop.
+
+## Loop 19 - Runtime DTO Boundary Sanitization And Local Noise - 2026-05-19
+- [x] Hardened runtime settings/vault/CSV profile inputs before they become `VolumetricFogParamsDTO` or telemetry evidence. DOD: fog color, density, scattering, extinction, anisotropy, opacity break, flow, max ray distance, silt strength, bilateral scale, profile depth ranges, absorption/scatter lanes, debug heatmap, and estimated GPU time now pass finite fallback clamps in the runtime feature. Rejected: relying on inspector ranges or shader output clamps after DTO poisoning. Microseconds: PENDING PROFILER.
+- [x] Moved shader FBM coordinates from `samplePositionWS` to `samplePositionLocal + wrappedCameraNoiseOffset`. DOD: raymarch still samples AbyssalFlow using the owner world/sample coordinate, but the high-frequency fog noise now obeys camera-local/AUP-wrapped precision rather than large float world coordinates. Rejected: continuing world-space FBM and hoping origin shifts always happen before precision loss. Microseconds: PENDING PROFILER.
+- [x] Verification: `git diff --check` returned only CRLF warnings; bad-pattern grep found no temp RT, blit, SetData/GetData, File.ReadAllBytes, new byte[], NativeHashMap, Allocator.Temp, Pack=, `_Time`, `multi_compile`, or direct Environment/World using in SHINOBU files. Shader grep confirms `ResolveFogDensity(samplePositionLocal, samplePositionWS, ...)` and no `samplePositionWS + _HectonVolumetricFogFlowAdvection` coordinate route.
+- [BLOCKED BY DEPENDENCY] Compile proof unchanged: missing non-SHINOBU World source still blocks Core build; no new build was launched in this loop.

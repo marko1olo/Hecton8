@@ -632,17 +632,19 @@ namespace Hecton8.World
 namespace Hecton8.Core.Contracts.Signals
 {
     /// <summary>
-    /// Biomass publication emitted after a flora plant is generated. Size: 48 bytes.
+    /// Biomass publication emitted after a flora plant is generated. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct FloraSpawnedSignal : ISignal
     {
-        public Hecton8.World.FloraAupCell AupCell;
-        public uint SpeciesHash;
-        public uint PlantHash;
-        public float Biomass;
-        public uint MatrixOffset;
-        public uint MatrixCount;
-        public uint Reserved0;
+        [FieldOffset(0)] public Hecton8.World.FloraAupCell AupCell;
+        [FieldOffset(24)] public uint SpeciesHash;
+        [FieldOffset(28)] public uint PlantHash;
+        [FieldOffset(32)] public float Biomass;
+        [FieldOffset(36)] public uint MatrixOffset;
+        [FieldOffset(40)] public uint MatrixCount;
+        [FieldOffset(44)] public uint Reserved0;
+        [FieldOffset(48)] public ulong Reserved1;
+        [FieldOffset(56)] public ulong Reserved2;
     }
 }

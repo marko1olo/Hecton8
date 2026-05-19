@@ -42,6 +42,240 @@ Exact Microseconds saved:
   <Scalability>Low=1 diffusion pass, Middle=2-3, High=4, Ultra=5 via continuous GlobalQualityWeight.</Scalability>
   <VerificationStatus>STATIC_SOURCE_PASS; BUILD_BLOCKED_CPU_100</VerificationStatus>
 </SELF_AUDIT>
+
+## 2026-05-19 Cached Vault Consumer Polish
+
+What was wrong:
+- The SHINOBU-added macro biomass reader in `EcosystemDirector` called `ResolveDataVault()`. That helper can read `GlobalRegistry.DataVault` when `_dataVault` is empty, so a spawn-query path had a cold-discovery escape hatch.
+
+What was done:
+- `TryGetMacroVaultBiomassAvailability` now reads `_dataVault` directly and returns false when the cached Vault is absent.
+- This preserves the existing cold initialization owner and keeps macro hydration behind `IEcosystemDirectorService` plus `MacroEcosystemVaultContract`.
+
+Cinematic cheats used:
+- No new simulation. The Dear Lie remains scalar biomass lookup plus visual hydration, not global fish entities.
+
+Exact microseconds saved:
+- Expected sub-microsecond per hydration query by skipping a possible registry property read. Source-only estimate; profiler proof is still absent.
+
+Regression model:
+- CPU: lower or equal on the query path.
+- GC: no managed allocation added.
+- Memory: no new buffers or fields.
+- Cadence: unchanged; macro remains FrostTick producer, consumer remains pull-only.
+- Correctness: if cold init has not cached `_dataVault`, macro read fails closed and legacy biomass fallback remains the route.
+
+Verification:
+- Extracted `TryGetMacroVaultBiomassAvailability` method body returned `HOT_METHOD_REGISTRY_CLEAN`.
+- Macro forbidden-pattern scan returned no hits for Physics, managed dictionary authority, local native maps, coroutines, Unity random, or frame-counter usage in edited macro files.
+- DTO/property/Pack=1 scan on macro runtime and contract returned no hits.
+- `git diff --check` returned exit 0 with line-ending warnings only.
+- Build was not launched: active `dotnet` processes existed and CPU samples were 72.8/14.8/49.5.
+
+## 2026-05-19 Macro Consumer Handle Cache Polish
+
+What was wrong:
+- The macro consumer path no longer hit `GlobalRegistry`, but it still reacquired three typed Vault views through `TryGetBuffer<T>` on every biomass query.
+
+What was done:
+- Added cached `VaultBufferHandle<MacroEcosystemSectorVaultRecord>`, `VaultBufferHandle<MacroEcosystemSectorIndexRecord>`, and `VaultBufferHandle<MacroEcosystemTuningVaultRecord>` fields to `EcosystemDirector`.
+- `TryGetMacroVaultBiomassAvailability` now resolves those handles through `TryResolveMacroEcosystemVaultSnapshot`.
+- Runtime-state disposal resets the handles alongside `_dataVault`.
+
+Cinematic cheats used:
+- Unchanged. Global fish truth remains integer biomass sectors; visible fish are hydrated near the player.
+
+Exact microseconds saved:
+- Expected sub-microsecond per query by removing repeated typed view acquisition. Source-only estimate; profiler proof is still pending.
+
+Regression model:
+- CPU: lower or equal on successful macro query path.
+- GC: no managed allocation added; handles are value-type metadata fields.
+- Memory: three handle structs, no NativeArray cache and no private population storage.
+- Cadence: unchanged.
+- Correctness: handle generation remains checked by `VaultBufferHandle<T>.Resolve`; absent handles fail closed to the legacy biomass path.
+
+Verification:
+- Extracted `TryGetMacroVaultBiomassAvailability` plus helper body returned `HOT_METHOD_HANDLE_ROUTE_CLEAN`.
+- Macro forbidden-pattern scan returned no hits.
+- DTO/property/Pack=1 scan on macro runtime and contract returned no hits.
+- `git diff --check` returned exit 0 with line-ending warnings only.
+- Build was not launched: active `dotnet` processes existed and CPU samples were 97.2/100/99.8.
+
+## 2026-05-19 Contract Mirror Layout Proof
+
+What was wrong:
+- The producer DTO layout was asserted, but the contract mirror records used by World were only source-matched by inspection.
+
+What was done:
+- `MacroEcosystemLayoutManifest` now asserts size and critical offsets for `MacroEcosystemSectorVaultRecord`, `MacroEcosystemSectorIndexRecord`, and `MacroEcosystemTuningVaultRecord`.
+
+Cinematic cheats used:
+- None. This is ABI proof for the existing Dear Lie route.
+
+Exact microseconds saved:
+- No hot-path saving claimed. This prevents a Vault type-mismatch fatal path before gameplay.
+
+Regression model:
+- CPU: one-time boot/editor offset checks only.
+- GC: no hot-path allocation.
+- Memory: no new runtime storage.
+- Cadence: unchanged.
+- Correctness: consumer mirror records must now match writer DTO stride/offsets before macro boot proceeds.
+
+Verification:
+- Assertion scan found contract mirror layout checks for sector, index, and tuning records.
+- Macro forbidden-pattern scan returned no hits.
+- Extracted consumer method stayed `HOT_METHOD_HANDLE_ROUTE_CLEAN`.
+- `git diff --check` returned exit 0 with line-ending warnings only.
+- Build was not launched: active `dotnet` processes existed and CPU samples were 94.2/100/99.8.
+
+## 2026-05-19 Pack Directive Hygiene
+
+What was wrong:
+- `EcosystemDirector` still had explicit-layout structs with `Pack=1` in the same SHINOBU-touched ecosystem route. The offsets and sizes were already manually fixed, making Pack=1 redundant and hostile to the ARM64 mandate.
+
+What was done:
+- Removed `Pack=1` from the touched `EcosystemDirector` explicit-layout structs while preserving every `Size` and `FieldOffset`.
+
+Cinematic cheats used:
+- None. This is memory ABI hygiene.
+
+Exact microseconds saved:
+- No measured hot-path saving claimed. The change removes an ARM64 alignment hazard.
+
+Regression model:
+- CPU: neutral or lower if alignment-sensitive native array access was affected.
+- GC: unchanged.
+- Memory: same explicit struct sizes.
+- Cadence: unchanged.
+- Correctness: binary field offsets remain explicit; save/telemetry schema shape is preserved by `Size` and `FieldOffset`.
+
+Verification:
+- Touched-file Pack=1 scan across macro runtime, macro contract, and ecosystem consumer returned no hits.
+- Macro forbidden-pattern scan returned no hits.
+- Extracted consumer method stayed `HOT_METHOD_HANDLE_ROUTE_CLEAN`.
+- `git diff --check` returned exit 0 with line-ending warnings only.
+- Build was not launched: no dotnet/csc rows were returned, but CPU samples were 100/100/100.
+
+## 2026-05-19 Snapshot Race Polish
+
+What was wrong:
+- Static review found that macro diffusion can write `ShinobuMacroEcosystemSectorFront` while consumers read it through the contract route.
+- DataVault `TryLockBuffer` prevents relocation/compaction, but it is not a read/write coherency fence for external consumers.
+
+What was done:
+- Added `MacroEcosystemVaultContract.TuningFlagSnapshotWriteInFlight`.
+- Macro sets the flag before scheduling the FrostTick job chain and clears it only after `_activeJobHandle.Complete()` in the existing LateFrame/forced shutdown completion path.
+- `EcosystemDirector` now reads tuning before the sector payload and rejects macro biomass while the flag is active, falling back to legacy biomass rather than consuming a torn front buffer.
+- Static macro direct readers also reject reads while `_jobScheduled` is true.
+- Architecture docs now include a route card for the macro Vault snapshot route with review disposition `YELLOW` because runtime proof is still gated.
+
+Cinematic Cheats used:
+- Consumer fallback is still data-only biomass; no physical fish, NavMesh, or Physics query is introduced to hide the unavailable macro snapshot.
+
+Exact Microseconds saved:
+- Frame-time savings are not claimed. The patch adds one `uint` flag test to the spawn query route and removes a deterministic torn-read failure mode.
+
+<SELF_AUDIT id="SHINOBU_116" evidence="STATIC_SOURCE_SNAPSHOT_GATE">
+  <Race>Macro front buffer writes are fenced by `TuningFlagSnapshotWriteInFlight`; consumers fail closed during the scheduled job window.</Race>
+  <NoBlocking>Consumers do not call `JobHandle.Complete()` and do not spin-wait for macro jobs.</NoBlocking>
+  <RouteCard>Documented in `Docs/ARCHITECTURE/MACRO_ECOSYSTEM_MATHEMATICIAN.md`; disposition is `YELLOW` until Unity compile/runtime/profiler evidence exists.</RouteCard>
+  <StaticChecks>Direct concrete World/Ambient macro coupling clean; macro forbidden-pattern scan clean; DTO property scan clean; Burst attribute count matches deterministic flag count.</StaticChecks>
+  <BuildGate>No dotnet/csc process rows reported; latest `Get-Counter` CPU samples 99.4/37.1/86.5, so build was not launched.</BuildGate>
+  <NaNGate>World contract reader now rejects non-finite positions before sector hashing.</NaNGate>
+</SELF_AUDIT>
+
+## 2026-05-19 Compile-Wall Route Polish
+
+What was wrong:
+- `EcosystemDirector` still had a concrete `Hecton8.Ecosystem.MacroEcosystemMathematicianRuntime` call in the biomass query route.
+- Ambient was already behind `IEcosystemDirectorService`, but the service implementation still pulled from a sibling concrete runtime type.
+
+What was done:
+- Added `Assets/_Project/Scripts/Core/Contracts/MacroEcosystemVaultContract.cs` with explicit-layout contract records for macro sector, index, and tuning buffers plus shared sector hash/open-address probe math.
+- Removed `using Hecton8.Ecosystem` from `EcosystemDirector`.
+- Replaced the concrete macro runtime call with `TryGetMacroVaultBiomassAvailability`, which reads `ShinobuMacroEcosystemSectorFront`, `ShinobuMacroEcosystemIndexEntries`, and `ShinobuMacroEcosystemTuning` through `IDataVault` and contract records.
+- Kept legacy `EcosystemDirector` biomass fallback unchanged when macro snapshot buffers are absent.
+
+Cinematic Cheats used:
+- Spawn hydration still reads one scalar sector record; no visual fish are simulated globally.
+- The service route remains a Dear Lie over Vault biomass, not a physical population manager.
+
+Exact Microseconds saved:
+- Frame-time savings are not claimed. This is compile-wall and ownership hardening.
+- Query complexity remains expected O(1): open-address sector index probe plus one sector/tuning read.
+- Iteration-speed savings are structural: World no longer needs a concrete macro runtime reference for the hydration route.
+
+<SELF_AUDIT id="SHINOBU_116" evidence="STATIC_SOURCE_ROUTE_POLISH">
+  <CompileGuard>No `World/EcosystemDirector.cs` or `AI/Ambient/AmbientBiotaDirector.cs` reference to `MacroEcosystemMathematicianRuntime` or `using Hecton8.Ecosystem` remains.</CompileGuard>
+  <VaultRoute>Reader path: `IEcosystemDirectorService -> EcosystemDirector -> IDataVault -> MacroEcosystemVaultContract`.</VaultRoute>
+  <Ownership>Macro runtime remains sole writer of `ShinobuMacroEcosystem*` buffers; World only reads contract-record snapshots.</Ownership>
+  <StructLayout>
+    <MacroEcosystemSectorVaultRecord size="32" offsets="0,8,12,16,20,24-31" />
+    <MacroEcosystemSectorIndexRecord size="16" offsets="0,8,12" />
+    <MacroEcosystemTuningVaultRecord size="64" offsets="0..60" />
+  </StructLayout>
+</SELF_AUDIT>
+
+## 2026-05-19 Fault-Path and Biome Spec Polish Pass
+
+What was wrong:
+- The population job had previously used aggregate fault-counter thinking; a parallel sector solver must not write one shared fault location.
+- Biome CSV ingestion existed, but player builds still needed a guaranteed numeric baseline when the editor CSV bridge is absent.
+- Layout proof focused on the primary sector DTO; secondary Vault DTOs also carry rollback, telemetry, and Burst ABI risk.
+
+What was done:
+- Added/used `ShinobuMacroEcosystemFaultFlags` as one `uint` fault slot per sector. `EcosystemPopulationJob` writes only `FaultFlags[index]`; telemetry reduction reads the array and folds invalid-math state into the black box entry.
+- Seeded default biome specs into the Vault during cold boot and kept CSV reload under `#if UNITY_EDITOR`. Player FrostTick no longer depends on file probing for biome capacity/resistance/toxin parameters.
+- Fed biome spec carrying capacity, migration resistance, temperature optimum, and toxin penalty into LV and diffusion math.
+- Hardened `FrostTick` sector count against short front/back/remainder/coord/fault buffers.
+- Expanded `MacroEcosystemLayoutManifest` to assert offsets for sector coords, remainders, index entries, biome specs, tuning, telemetry, and 64-byte counters.
+
+Cinematic Cheats used:
+- Biome ecology remains scalar sector truth. Local fish, predators, and rare resources are hydration decisions over biomass and toxin/temperature weights.
+- Migration remains 4-neighbor Jacobi leakage, not NavMesh or physics motion.
+- Toxic reactor/vent pressure is a continuous coefficient cascade, not a spawned hazard object query.
+
+Exact Microseconds saved:
+- Per-sector fault flags avoid shared counter contention in `IJobParallelFor`; expected 5-30 us only under invalid-math/fault-heavy FrostTick windows, pending profiler proof.
+- Player-runtime CSV file probing removed; saved cost is spike-risk removal, not claimed steady-frame measurement.
+- Default spec seeding is cold boot only; hot path cost remains the existing table probe.
+- Expanded layout manifest is cold one-time proof; hot path cost is 0 us after verification flag is set.
+
+<SELF_AUDIT id="SHINOBU_116" evidence="STATIC_SOURCE_POLISH">
+  <TwentyTaskReconciliation>
+    <Task id="01" result="PASS">No static fish spawner authority introduced.</Task>
+    <Task id="02" result="PASS">No managed population dictionary authority introduced.</Task>
+    <Task id="03" result="PASS">Hot DTOs remain public fields, no get/set property pattern.</Task>
+    <Task id="04" result="PASS">Primary sector DTO 32B; secondary DTO sizes and offsets now asserted.</Task>
+    <Task id="05" result="PASS">Mock 10k sectors still generated cold with deterministic biome hashes.</Task>
+    <Task id="06" result="PASS">LV job now consumes biome capacity/temp/toxin coefficients.</Task>
+    <Task id="07" result="PASS">Diffusion job consumes biome migration resistance and temperature suitability.</Task>
+    <Task id="08" result="PASS">Dear Lie route remains service-backed; no GameObject spawn authority added.</Task>
+    <Task id="09" result="PASS">Toxicity cascade now includes biome toxin penalty.</Task>
+    <Task id="10" result="PASS">Runtime remains scheduled FrostTick job chain.</Task>
+    <Task id="11" result="PASS">Diffusion pass count still derives from continuous GlobalQualityWeight.</Task>
+    <Task id="12" result="PASS">Biomass endpoints remain uint plus remainder DTO fractions.</Task>
+    <Task id="13" result="PASS">Sector hashing remains long-coordinate FNV route.</Task>
+    <Task id="14" result="PASS">Jobs stay deterministic float mode; no Unity time/random/physics authority.</Task>
+    <Task id="15" result="PASS">Vault buffers still request uninitialized memory and cold jobs initialize them.</Task>
+    <Task id="16" result="PASS">Telemetry now reads per-sector fault flags, no shared parallel fault counter.</Task>
+    <Task id="17" result="PASS">Editor tuner route unchanged.</Task>
+    <Task id="18" result="PASS">Default spec seed plus editor-only CSV reload into Vault spec table.</Task>
+    <Task id="19" result="PASS">Heatmap route unchanged, editor-only.</Task>
+    <Task id="20" result="PASS_WITH_BUILD_GATE">Static audit updated; build remains subject to CPU/no-dotnet gate.</Task>
+  </TwentyTaskReconciliation>
+  <StructLayoutVerification>
+    <EcosystemSectorDTO size="32" math="8+4+4+4+4+8 padding = 32; 32 % 16 = 0" />
+    <BiomeEcosystemSpecDTO size="24" math="6 uint/float lanes * 4 = 24; 24 % 8 = 0" />
+    <MacroEcosystemCounterDTO size="64" falseSharingFence="true" math="4+4+56 = 64; one cache line" />
+    <FaultFlags elementSize="4" owner="ShinobuMacroEcosystemFaultFlags" note="uint array, one writer per sector index" />
+  </StructLayoutVerification>
+  <VaultStatus privatePersistentArrays="0">70433,70434,70435,70436,70437,70438,70439,70440,70441,70442,70447</VaultStatus>
+  <PointerAliasing>NoAlias on independent job fields; per-sector fault writes are index-disjoint.</PointerAliasing>
+  <DearLie>Global ecology remains O(sectors * diffusionSteps) scalar math; spawn hydration stays O(1) expected lookup and visual-only downstream instancing.</DearLie>
+</SELF_AUDIT>
 ## 2026-05-19 Session Start
 What was wrong: Macro ecosystem authority was not yet verified in source for this batch.
 What was done: Extracted `SHINOBU_116` prompt from `Docs/Tasks/CURRENT_BATCH.md`, confirmed 20 tasks, read domain and eight mandates.

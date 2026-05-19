@@ -17,7 +17,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(FaunaBrain))]
-    internal sealed class FaunaKinematicsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable
+    internal sealed class FaunaKinematicsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable, ILeviathanProceduralTunerSource
     {
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LEVIATHAN_RIGGER.bin";
         private const string BiteTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_FAUNA_BITE_IK_SOLVER.bin";
@@ -25,7 +25,6 @@ namespace Hecton8.AI
         private const ulong BiteTelemetryDumpMagic = 0x4642494B30303031UL;
         private const int TelemetryEntryPayloadBytes = 96;
         private const int BiteTelemetryEntryPayloadBytes = 128;
-        private const int TelemetryEntryPaddingFloatCount = 7;
         private const float ConstraintIterationHysteresisSeconds = 2.5f;
         private const int MaxSegments = LeviathanTerrainIkConstants.MaxSegments;
         private const int LowTierSegments = LeviathanTerrainIkConstants.LowTierSegments;
@@ -135,6 +134,8 @@ namespace Hecton8.AI
 
         private JobHandle _pendingHandle;
         private JobHandle _disposeHandle;
+        private long _solverScheduleTimestamp;
+        private float _lastBurstSolveMicros;
         private bool _solverScheduled;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
@@ -192,6 +193,17 @@ namespace Hecton8.AI
             activeSegmentCount = math.min(_activeSegmentCount, leviathanBones.Length);
             bones = leviathanBones.AsReadOnly();
             return activeSegmentCount > 0;
+        }
+
+        public void GetLeviathanProceduralTunerSnapshot(out LeviathanProceduralTunerSnapshot snapshot)
+        {
+            snapshot = new LeviathanProceduralTunerSnapshot
+            {
+                ActiveSegmentCount = _activeSegmentCount,
+                ConstraintIterations = _resolvedConstraintIterations,
+                BurstSolveMicros = _lastBurstSolveMicros,
+                GlobalQualityWeight = _globalQualityWeight
+            };
         }
 
         internal bool TryGetLeviathanBoneGraphicsBuffer(out GraphicsBuffer buffer, out int activeSegmentCount)
@@ -365,6 +377,8 @@ namespace Hecton8.AI
                 RequestedSegmentCount = _activeSegmentCount,
                 ConstraintIterations = _resolvedConstraintIterations,
                 FrameIndex = _frameIndex,
+                BurstSolveMicros = _lastBurstSolveMicros,
+                RootAup = ResolveOwnerAupDouble3(),
                 RuntimeFlags = runtimeFlags
             };
 
@@ -401,6 +415,7 @@ namespace Hecton8.AI
                 scheduledHandle = biteJob.Schedule(scheduledHandle);
             }
 
+            _solverScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             _pendingHandle = scheduledHandle;
             _solverScheduled = true;
         }
@@ -422,6 +437,7 @@ namespace Hecton8.AI
                 return;
 
             _solverScheduled = false;
+            CaptureCompletedSolverTelemetry();
             AdvanceFrameIndex();
             ApplyPendingOriginShiftRebase();
 
@@ -453,6 +469,7 @@ namespace Hecton8.AI
                 }
 
                 _solverScheduled = false;
+                CaptureCompletedSolverTelemetry();
                 AdvanceFrameIndex();
                 if (TelemetryHasInvalidFrame())
                     DumpTelemetryBlackBoxOnce();
@@ -777,7 +794,10 @@ namespace Hecton8.AI
         private void DisposePersistentBuffers()
         {
             if (_solverScheduled)
+            {
                 DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);
+                CaptureCompletedSolverTelemetry();
+            }
 
             _disposeHandle = default;
             DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
@@ -812,6 +832,7 @@ namespace Hecton8.AI
 
             DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);
             _solverScheduled = false;
+            CaptureCompletedSolverTelemetry();
             AdvanceFrameIndex();
             if (TelemetryHasInvalidFrame())
                 DumpTelemetryBlackBoxOnce();
@@ -2012,6 +2033,58 @@ namespace Hecton8.AI
             return (telemetryRing[index].Flags & LeviathanTerrainIkConstants.TelemetryFlagInvalid) != 0u;
         }
 
+        private void CaptureCompletedSolverTelemetry()
+        {
+            CaptureSolverLatencyMicros();
+            PatchLatestTelemetrySolveMicros();
+        }
+
+        private void CaptureSolverLatencyMicros()
+        {
+            long start = _solverScheduleTimestamp;
+            _solverScheduleTimestamp = 0L;
+            if (start <= 0L)
+            {
+                _lastBurstSolveMicros = 0f;
+                return;
+            }
+
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - start;
+            double elapsedMicros = elapsedTicks > 0L
+                ? (elapsedTicks * 1000000.0) / System.Diagnostics.Stopwatch.Frequency
+                : 0.0;
+            _lastBurstSolveMicros = !double.IsNaN(elapsedMicros) && !double.IsInfinity(elapsedMicros)
+                ? (float)math.min(elapsedMicros, 1000000.0)
+                : 0f;
+        }
+
+        private void PatchLatestTelemetrySolveMicros()
+        {
+            if (!TryResolveSpineVaultBuffers(
+                    out _,
+                    out _,
+                    out _,
+                    out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
+                    out NativeArray<int> telemetryCursor) ||
+                telemetryRing.Length <= 0 ||
+                telemetryCursor.Length <= 0)
+            {
+                return;
+            }
+
+            int cursor = telemetryCursor[0];
+            if (cursor == 0)
+                return;
+
+            int index = (cursor - 1) % telemetryRing.Length;
+            if (index < 0)
+                index += telemetryRing.Length;
+
+            LeviathanTerrainIkTelemetryEntry entry = telemetryRing[index];
+            entry.BurstSolveMicros = SanitizePositiveFinite(_lastBurstSolveMicros, 0f, 0f);
+            telemetryRing[index] = entry;
+        }
+
         private void AdvanceFrameIndex()
         {
             _frameIndex = _frameIndex == int.MaxValue ? 0 : _frameIndex + 1;
@@ -2078,10 +2151,12 @@ namespace Hecton8.AI
                 writer.Write(entry.IntendedVelocity.z);
                 writer.Write(entry.MaxTerrainPushMeters);
                 writer.Write(entry.TailWhipSecondsRemaining);
-                writer.Write(entry.Padding0);
-                writer.Write(entry.Padding1);
-                for (int paddingIndex = 0; paddingIndex < TelemetryEntryPaddingFloatCount; paddingIndex++)
-                    writer.Write(0f);
+                writer.Write(entry.GlobalQualityWeight);
+                writer.Write(entry.RootAup.x);
+                writer.Write(entry.RootAup.y);
+                writer.Write(entry.RootAup.z);
+                writer.Write(entry.AverageFabrikIterations);
+                writer.Write(entry.BurstSolveMicros);
             }
         }
 
@@ -2187,6 +2262,12 @@ namespace Hecton8.AI
                 : float3.zero;
         }
 
+        private double3 ResolveOwnerAupDouble3()
+        {
+            AbsoluteUniversePosition ownerAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(ResolveOwnerRuntimePosition()));
+            return ownerAup.ToAbsoluteDouble3();
+        }
+
         private float3 ResolveOwnerForward()
         {
             float3 forward = _cachedTransform != null ? (float3)_cachedTransform.forward : new float3(0f, 0f, 1f);
@@ -2230,6 +2311,8 @@ namespace Hecton8.AI
                 faultFlags |= 1u << 1;
             if (LeviathanTerrainIkLayout.ColliderProxyDtoBytes != Unity.Collections.LowLevel.Unsafe.UnsafeUtility.SizeOf<LeviathanCapsuleColliderDTO>())
                 faultFlags |= 1u << 2;
+            if (!LeviathanTerrainIkLayout.Validate())
+                faultFlags |= 1u << 7;
 
             if (!TryResolveSpineVaultBuffers(
                     out _,
@@ -2281,8 +2364,10 @@ namespace Hecton8.AI
                 return;
             }
 
-            Gizmos.color = Color.cyan;
             int count = math.min(_activeSegmentCount, leviathanBones.Length);
+            bool activeIk = _strikeActive || _strikeSignalActive || _headLookTargetActive;
+            bool tailSpringActive = math.isfinite(_tailWhipSecondsRemaining) && _tailWhipSecondsRemaining > 0f;
+            int secondaryStart = math.max(1, count >> 1);
             for (int i = 1; i < count; i++)
             {
                 float4 previous = leviathanBones[i - 1].LocalToWorld.c3;
@@ -2290,7 +2375,25 @@ namespace Hecton8.AI
                 if (!math.all(math.isfinite(previous)) || !math.all(math.isfinite(current)))
                     continue;
 
+                Gizmos.color = activeIk && i <= 3
+                    ? Color.red
+                    : tailSpringActive && i >= secondaryStart
+                        ? Color.blue
+                        : Color.green;
                 Gizmos.DrawLine(new Vector3(previous.x, previous.y, previous.z), new Vector3(current.x, current.y, current.z));
+            }
+
+            if (activeIk && count > 0)
+            {
+                float4 head = leviathanBones[0].LocalToWorld.c3;
+                float3 target = _strikeActive || _strikeSignalActive
+                    ? _strikeTargetWorldPosition
+                    : _headLookTargetWorldPosition;
+                if (math.all(math.isfinite(head)) && math.all(math.isfinite(target)))
+                {
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawLine(new Vector3(head.x, head.y, head.z), ToVector3(target));
+                }
             }
         }
 #endif

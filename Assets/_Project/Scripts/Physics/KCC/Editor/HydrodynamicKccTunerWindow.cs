@@ -18,6 +18,7 @@ namespace Hecton8.Physics.KCC.Editor
         private Slider _buoyancyScalar;
         private Slider _quality;
         private VelocityGraphElement _graph;
+        private double _nextGraphRepaintTime;
 
         [MenuItem("HECTON-8/Kinematics/Hydrodynamic KCC Tuner")]
         public static void Open()
@@ -69,8 +70,12 @@ namespace Hecton8.Physics.KCC.Editor
 
         private void Update()
         {
-            if (_graph != null)
+            double now = EditorApplication.timeSinceStartup;
+            if (_graph != null && now >= _nextGraphRepaintTime)
+            {
+                _nextGraphRepaintTime = now + 0.05d;
                 _graph.MarkDirtyRepaint();
+            }
         }
 
         private void ReadFromVault()
@@ -159,8 +164,11 @@ namespace Hecton8.Physics.KCC.Editor
                 IDataVault vault = GlobalRegistry.DataVault;
                 if (vault == null ||
                     !vault.TryGetBuffer(BufferID.ShinobuHydroKccTelemetryRing, out NativeArray<KinematicTelemetryEntry> telemetry) ||
+                    !vault.TryGetBuffer(BufferID.ShinobuHydroKccTelemetryCursor, out NativeArray<int> cursor) ||
                     !telemetry.IsCreated ||
-                    telemetry.Length == 0)
+                    telemetry.Length == 0 ||
+                    !cursor.IsCreated ||
+                    cursor.Length == 0)
                 {
                     painter.MoveTo(new Vector2(rect.xMin, rect.yMax));
                     painter.LineTo(new Vector2(rect.xMax, rect.yMax));
@@ -169,13 +177,19 @@ namespace Hecton8.Physics.KCC.Editor
                 }
 
                 float maxSpeed = 0.001f;
+                int cursorIndex = math.clamp(cursor[0], 0, telemetry.Length - 1);
+                int startIndex = (cursorIndex + 1) % telemetry.Length;
                 for (int i = 0; i < telemetry.Length; i++)
-                    maxSpeed = math.max(maxSpeed, telemetry[i].Speed);
+                {
+                    int telemetryIndex = (startIndex + i) % telemetry.Length;
+                    maxSpeed = math.max(maxSpeed, telemetry[telemetryIndex].Speed);
+                }
 
                 for (int i = 0; i < telemetry.Length; i++)
                 {
+                    int telemetryIndex = (startIndex + i) % telemetry.Length;
                     float x = rect.xMin + rect.width * (i / math.max(1f, telemetry.Length - 1f));
-                    float y = rect.yMax - rect.height * math.saturate(telemetry[i].Speed / maxSpeed);
+                    float y = rect.yMax - rect.height * math.saturate(telemetry[telemetryIndex].Speed / maxSpeed);
                     if (i == 0)
                         painter.MoveTo(new Vector2(x, y));
                     else

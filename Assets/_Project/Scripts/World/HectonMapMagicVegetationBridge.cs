@@ -1269,7 +1269,7 @@ namespace Hecton8.World
             public TerrainHoleSourceType SourceType;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct TerrainHoleMaskBuildJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<TerrainHoleRecord> TerrainHoles;
@@ -4614,7 +4614,7 @@ namespace Hecton8.World
             return JobHandle.CombineDependencies(current, next);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct DefragPoolJob : IJob
         {
             [ReadOnly] public NativeArray<ChunkSliceMoveRecord> Moves;
@@ -4672,7 +4672,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ReduceAverageDensityJob : IJob
         {
             [ReadOnly] public NativeArray<float> Input;

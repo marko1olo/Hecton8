@@ -124,8 +124,8 @@ Hardware Impact: Avoids per-frame dictionary lookup during page reveal and keeps
 
 ## Decision 13 - Source-Aware Blackbox Flags
 
-Problem: The black-box ring could show bytes/chars/ticks but could not prove whether a fault happened on real MMF/Babel bytes or the Vault mock fallback.
-Solution: Runtime state flags encode source bits at 8-9 (`1=MMF/Babel`, `2=Vault mock`); telemetry packs stream state, source bits, and canvas-split proof, and hashes now mix source bytes plus flags.
+Problem: The black-box ring could show bytes/chars/ticks but could not prove whether a fault happened on real H8LR/MMF/Babel bytes or the Vault mock fallback.
+Solution: Runtime state flags encode source bits at 8-9. After Decision 15 the labels are `1=H8LR`, `2=Babel fallback`, `3=Vault mock`; telemetry packs stream state, source bits, and canvas-split proof, and hashes now mix source bytes plus flags.
 Rejected Alternatives: Leaving source implicit was rejected because a dump that cannot distinguish production bytes from fallback bytes is not forensic evidence.
 Scalability potential: Same flags across all quality weights; high-tier visual behavior never changes authoritative source semantics.
 Hardware Impact: Normal-frame cost is a few bit operations in the already-written telemetry row; accepted because it prevents expensive post-crash ambiguity.
@@ -137,3 +137,11 @@ Solution: Copy contract signal/player AUP fields immediately into `PdaAup48`, a 
 Rejected Alternatives: Keeping `using Hecton8.World` was rejected because UI presentation does not need World behavior, only contract-provided coordinates. Duplicating the full World AUP type was rejected; the PDA only needs six primitive fields and explicit padding.
 Scalability potential: Low/Middle/High/Ultra all use the same primitive AUP copy. Higher tiers spend saved UI time on faster reveal, not on richer coordinate math.
 Hardware Impact: No claimed frame-time win. The gain is compile-wall isolation and safer ARM64 proof. Token math remains sub-us and deterministic on i3/MX350-class silicon.
+
+## Decision 15 - H8LR Source Truth And Windowed Lore Pages
+
+Problem: The prior source order could prove only the small `Data/Balance/Baked/Babel_Dictionary.h8bin` fallback. The real encyclopedia payload is `Data/Lore/Encyclopedia.h8bin` with H8LR records, so Babel-first routing was a false proof for Task 06.
+Solution: Use `PdaH8lrLoreStore` as the primary owner-local H8LR reader. It memory-maps the raw UTF-8 blob where MMF is available and otherwise mirrors the file into Vault buffer `(BufferID)70570` with 8 MiB capacity. `PDAEncyclopediaStreamer` now resolves H8LR first, then Babel, then the deterministic Vault mock. H8LR header/record DTOs are explicit 16-byte rows and are included in editor layout validation.
+Rejected Alternatives: Continuing Babel-first was rejected because it hides the actual lore binary. Reusing Narrative `LoreMmfEncyclopedia` was rejected because that reader expects H8LE index+payload, not H8LR. Loading Markdown or JSON into strings was rejected because it violates the zero-GC UI path and creates freeze risk.
+Scalability potential: Low/Middle stream the same byte source through small decode/typewriter budgets and 32768-char rolling windows. High/Ultra use larger reveal cadence from `GlobalQualityWeight` while keeping source bytes immutable; saved CPU can be spent on richer PDA presentation later without changing unlock truth.
+Hardware Impact: On MX350/i3 and Quest-class devices the main gain is correctness plus eliminating the previous false fallback. The 8 MiB Vault mirror is cold, native, and used only where MMF is unavailable. Runtime decode remains budgeted; exact microseconds and GC proof remain PENDING VERIFICATION until Unity profiler/GCMonitor evidence exists.

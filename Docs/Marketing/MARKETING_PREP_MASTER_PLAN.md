@@ -49,6 +49,31 @@ Do now:
 9. Prepare agent workflows.
 10. Define asset gates and kill criteria.
 
+## 2026-05-19 Current Execution Override
+
+This plan is subordinate to `MARKETING_CONTROL_TOWER.md`.
+
+Current state:
+
+- CRM-100 staged queue has 0 raw rows;
+- 13 planned asset slots exist;
+- no real screenshot pack exists;
+- no Steam page, demo, launch, public account, public post, UTM link, or paid spend exists.
+
+Therefore the next useful work is not more broad lead volume. Use agent time on:
+
+1. planned capture readiness;
+2. asset metadata completion after capture;
+3. QA scoring and reject codes;
+4. Promise Lint for any copy that might become public;
+5. source/risk corrections that unblock a concrete gate.
+
+Resume large lead expansion only if:
+
+- the user explicitly asks for a new source-backed lead sprint;
+- first assets prove a segment gap in the current CRM;
+- Wave A outreach cannot be assembled from current verified/needs-asset rows.
+
 Do not do now:
 
 - broad outreach;
@@ -76,8 +101,8 @@ Objective: build the machine, not hype.
 
 Actions:
 
-- Write 20 Steam short description variants.
-- Build 300+ creator/press targets.
+- Maintain Steam short description variants only when they are tied to the planned asset IDs.
+- Build more creator/press targets only after the current CRM-100/asset-fit gate proves a gap.
 - Create 10 pitch archetypes and 50 subject lines.
 - Create a weekly competitor monitoring loop.
 - Prepare press kit shell.

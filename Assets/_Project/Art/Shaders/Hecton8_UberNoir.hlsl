@@ -148,7 +148,7 @@ struct H8HullDentDTO
     float Depth;
 };
 StructuredBuffer<H8HullDentDTO> _HectonHullDentDTOBuffer;
-float4 _HectonHullDentDTOParams; // x=active count, y=dto enabled, z=max depth scar, w=quality tier
+float4 _HectonHullDentDTOParams; // x=active count, y=dto enabled, z=max depth scar, w=profile metadata
 struct H8DeformationStateDTO
 {
     float3 LocalPosition;
@@ -174,7 +174,7 @@ float _H8GlobalQualityWeight;
 #endif
 float4 _GlobalWakeBuffer[H8_UBER_NOIR_MAX_GLOBAL_WAKES];
 float4 _GlobalWakeVectors[H8_UBER_NOIR_MAX_GLOBAL_WAKES];
-float4 _GlobalWakeParams; // x=slot limit, y=low tier, z=active count, w=stress
+float4 _GlobalWakeParams; // x=slot limit, y=budget pressure, z=active count, w=stress
 
 #if defined(H8_UBERNOIR_SHADOW_CASTER_PASS)
 float3 _LightDirection;
@@ -341,6 +341,11 @@ float H8UberNoirGlobalQualityWeight()
     float globalWeight = isfinite(_H8GlobalQualityWeight) ? saturate(_H8GlobalQualityWeight) : 1.0;
     float materialActive = (_H8UberNoirMaterialFlags != 0u) ? 1.0 : 0.0;
     return saturate(lerp(globalWeight, materialWeight, materialActive));
+}
+
+float H8UberNoirFeatureScalar(float value)
+{
+    return isfinite(value) ? saturate(value) : 0.0;
 }
 
 float3 H8UberNoirMaterialStablePosition(float3 positionWS)
@@ -579,7 +584,7 @@ half H8UberNoirFogIgnDither(float4 positionCS, half fogCurve)
 void H8UberNoirClipDitheredTransparency(half alpha, float4 positionCS)
 {
     half threshold = (half)_Cutoff;
-    half ditherActive = (half)step(0.5, _UberNoirFeatureFlags.w);
+    half ditherActive = (half)H8UberNoirFeatureScalar(_UberNoirFeatureFlags.w);
 #if !defined(_MATH_LOD_LOW)
     half blueNoiseAllowed = ditherActive * (half)H8UberNoirHighCostAllowed();
     [branch]
@@ -612,9 +617,9 @@ H8UberNoirInstanceData H8UberNoirLoadInstance(uint instanceID)
     float useBufferSource = _UberNoirInstanceParams.z;
     uint bufferCount = (uint)(isfinite(bufferCountSource) ? max(bufferCountSource, 0.0) : 0.0);
     uint bufferOffset = (uint)(isfinite(bufferOffsetSource) ? max(bufferOffsetSource, 0.0) : 0.0);
-    uint useBuffer = (uint)(isfinite(useBufferSource) ? step(0.5, useBufferSource) : 0.0);
+    float useBuffer = H8UberNoirFeatureScalar(useBufferSource);
     [branch]
-    if ((useBuffer != 0u) && (bufferCount > 0u))
+    if ((useBuffer > H8_UBER_NOIR_EPS) && (bufferCount > 0u))
     {
         uint clampedId = min(instanceID, bufferCount - 1u);
         uint bufferIndex = bufferOffset + clampedId;
@@ -673,14 +678,16 @@ float H8UberNoirGaussianFalloff(float distSq, float radius)
 
 float3 H8UberNoirEvaluateDeformationNormalBiasOS(float3 positionOS, float3 normalOS)
 {
-    float featureMask = step(0.5, _UberNoirFeatureFlags.z);
+    float featureMask = H8UberNoirFeatureScalar(_UberNoirFeatureFlags.z);
     int activeCount = H8UberNoirActiveDeformationStateCount();
     if (activeCount <= 0 || featureMask <= 0.0)
         return float3(0.0, 0.0, 0.0);
 
     float3 safePositionOS = H8UberNoirFinite3(positionOS, float3(0.0, 0.0, 0.0));
     float3 safeNormalOS = H8UberNoirSafeNormalize(normalOS, float3(0.0, 1.0, 0.0));
-    float quality = saturate(max(_HectonDeformationStateParams.w, H8UberNoirGlobalQualityWeight()));
+    float quality = isfinite(_HectonDeformationStateParams.w)
+        ? saturate(_HectonDeformationStateParams.w)
+        : H8UberNoirGlobalQualityWeight();
     float3 bias = float3(0.0, 0.0, 0.0);
 
     [loop]
@@ -707,7 +714,7 @@ float3 H8UberNoirEvaluateDeformationNormalBiasOS(float3 positionOS, float3 norma
 
 float3 H8UberNoirApplyHullDentsOS(float3 positionOS, float3 normalOS)
 {
-    float featureMask = step(0.5, _UberNoirFeatureFlags.z);
+    float featureMask = H8UberNoirFeatureScalar(_UberNoirFeatureFlags.z);
     float strength = max(_UberNoirBendParams.x, 0.0) * featureMask;
     float3 dentedPosition = H8UberNoirFinite3(positionOS, float3(0.0, 0.0, 0.0));
     float3 safeNormalOS = H8UberNoirSafeNormalize(normalOS, float3(0.0, 1.0, 0.0));
@@ -735,7 +742,7 @@ float3 H8UberNoirApplyHullDentsOS(float3 positionOS, float3 normalOS)
         return H8UberNoirFinite3(dentedPosition, positionOS);
     }
 
-    int dtoActiveCount = (int)clamp(_HectonHullDentDTOParams.x * step(0.5, _HectonHullDentDTOParams.y), 0.0, (float)H8_UBER_NOIR_MAX_GPU_HULL_DENTS);
+    int dtoActiveCount = (int)clamp(_HectonHullDentDTOParams.x * H8UberNoirFeatureScalar(_HectonHullDentDTOParams.y), 0.0, (float)H8_UBER_NOIR_MAX_GPU_HULL_DENTS);
     if (dtoActiveCount > 0)
     {
         [loop]
@@ -820,7 +827,7 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
 #else
     float3 safePositionWS = H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0));
     float featureSource = _UberNoirFeatureFlags.z;
-    float featureMask = isfinite(featureSource) ? step(0.5, featureSource) : 0.0;
+    float featureMask = H8UberNoirFeatureScalar(featureSource);
     float localStrengthSource = _UberNoirBendParams.x;
     float localStrength = isfinite(localStrengthSource) ? max(localStrengthSource, 0.0) : 0.0;
     [branch]
@@ -866,7 +873,7 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
 
 float H8UberNoirEvaluateHullDentScarOS(float3 positionOS)
 {
-    float featureMask = step(0.5, _UberNoirFeatureFlags.z);
+    float featureMask = H8UberNoirFeatureScalar(_UberNoirFeatureFlags.z);
     float scar = 0.0;
     int deformationActiveCount = H8UberNoirActiveDeformationStateCount();
     if (deformationActiveCount > 0)
@@ -888,7 +895,7 @@ float H8UberNoirEvaluateHullDentScarOS(float3 positionOS)
         return saturate(scar * featureMask);
     }
 
-    int dtoActiveCount = (int)clamp(_HectonHullDentDTOParams.x * step(0.5, _HectonHullDentDTOParams.y), 0.0, (float)H8_UBER_NOIR_MAX_GPU_HULL_DENTS);
+    int dtoActiveCount = (int)clamp(_HectonHullDentDTOParams.x * H8UberNoirFeatureScalar(_HectonHullDentDTOParams.y), 0.0, (float)H8_UBER_NOIR_MAX_GPU_HULL_DENTS);
     if (dtoActiveCount > 0)
     {
         [loop]
@@ -926,7 +933,7 @@ half3 H8UberNoirApplyBentHullNormalBiasWS(half3 normalWS, half3 viewDirWS)
 #if defined(_MATH_LOD_LOW)
     return normalWS;
 #else
-    float featureMask = step(0.5, _UberNoirFeatureFlags.z);
+    float featureMask = H8UberNoirFeatureScalar(_UberNoirFeatureFlags.z);
     float crushDepth = max(_HectonSubmarineCrushDepthParams.y, H8_UBER_NOIR_EPS);
     float crush01 = saturate(max(_HectonSubmarineCrushDepthParams.x, 0.0) * H8UberNoirSafeRcp(crushDepth));
     float habitat01 = saturate(_HectonHabitatStressParams.x);
@@ -1093,7 +1100,9 @@ float2 H8UberNoirResolveRustPomUv(
     float2 rustUv = rawUv * rustScale + rustOffset;
     rustPacked = SAMPLE_TEXTURE2D(_RustDetailMap, sampler_RustDetailMap, rustUv);
 
-    float pomEnabled = step(H8_UBER_NOIR_EPS, rust01) * step(_UberNoirRustParams.y, rust01) * step(0.5, _UberNoirFeatureFlags.x) * step(_HectonMaterialDecayRuntime.z, 0.5) * H8UberNoirHighCostAllowed();
+    float rustActive = H8UberNoirSmoothRange01(_UberNoirRustParams.y, _UberNoirRustParams.y + 0.08, rust01);
+    float decayAllowed = 1.0 - H8UberNoirSmoothRange01(0.45, 0.55, _HectonMaterialDecayRuntime.z);
+    float pomEnabled = H8UberNoirFeatureScalar(_UberNoirFeatureFlags.x) * rustActive * decayAllowed * H8UberNoirHighCostAllowed();
     [branch]
     if (pomEnabled <= 0.0)
         return baseUv;
@@ -1219,12 +1228,12 @@ half3 H8UberNoirEvaluateAnalyticalCaustics(float3 positionWS, half3 normalWS, Li
 #if defined(_MATH_LOD_LOW)
     float stablePhase = dot(stablePosition.xz, float2(0.031, -0.023)) + _Time.y * max(_H8UberNoirCausticSpeed.x, 0.01);
     half caustic = (half)(H8UberNoirTriangle01(stablePhase) * H8UberNoirTriangle01(stablePhase * 1.37 + 0.19));
-    half featureMask = (half)(step(0.5, _UberNoirFeatureFlags.y) * step(H8_UBER_NOIR_EPS, _UberNoirCausticParams.x));
+    half featureMask = (half)(H8UberNoirFeatureScalar(_UberNoirFeatureFlags.y) * saturate(_UberNoirCausticParams.x * 32.0));
     half normalMask = saturate(normalWS.y);
     half3 tint = (half3)max(_UberNoirCausticColor.rgb, _NoirAbyssFloorColor.rgb);
     return tint * caustic * normalMask * featureMask * (half)(_UberNoirCausticParams.x * _H8UberNoirCausticSpeed.y * lerp(0.05, 0.18, q));
 #else
-    float featureMask = step(0.5, _UberNoirFeatureFlags.y) * step(H8_UBER_NOIR_EPS, _UberNoirCausticParams.x);
+    float featureMask = H8UberNoirFeatureScalar(_UberNoirFeatureFlags.y) * saturate(_UberNoirCausticParams.x * 32.0);
     float normalMask = saturate(normalWS.y);
     float cheapCaustic = H8UberNoirTriangle01(dot(stablePosition.xz, float2(0.019, 0.031)) + _Time.y * _H8UberNoirCausticSpeed.x);
     half cheapIntensity = (half)(featureMask * normalMask * _UberNoirCausticParams.x * _H8UberNoirCausticSpeed.y * q * 0.16);
@@ -1246,7 +1255,7 @@ half3 H8UberNoirEvaluateAnalyticalCaustics(float3 positionWS, half3 normalWS, Li
     float caustic = H8UberNoirEvaluateProceduralCaustics(uv);
 
 #if defined(H8_UBERNOIR_CAUSTICS_TEXTURED)
-    float texturedCausticAllowed = step(0.5, _HectonCausticsRuntimeParams.x) * H8UberNoirHighCostAllowed();
+    float texturedCausticAllowed = H8UberNoirFeatureScalar(_HectonCausticsRuntimeParams.x) * H8UberNoirHighCostAllowed();
     [branch]
     if (texturedCausticAllowed > H8_UBER_NOIR_EPS)
     {
@@ -1480,7 +1489,7 @@ half3 H8UberNoirApplyNoirFog(half3 color, half fogFactor, half3 extinctionColor,
 half3 H8UberNoirApplyScreenRefraction(H8UberNoirVaryings input, H8UberNoirSurface surface, half3 color)
 {
 #if !defined(_MATH_LOD_LOW) && defined(H8_UBERNOIR_SCREEN_REFRACTION)
-    float active = step(H8_UBER_NOIR_EPS, _UberNoirRefractionParams.x) * step(H8_UBER_NOIR_EPS, _UberNoirRefractionParams.z) * H8UberNoirHighCostAllowed();
+    float active = saturate(_UberNoirRefractionParams.x * 32.0) * saturate(_UberNoirRefractionParams.z * 32.0) * H8UberNoirHighCostAllowed();
     [branch]
     if (active <= H8_UBER_NOIR_EPS)
         return color;

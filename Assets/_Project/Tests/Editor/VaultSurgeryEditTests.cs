@@ -125,6 +125,9 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultHotEntityData>() & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultColdEntityData>() & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultAup64>() & 7);
+            Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultAupSectorLocal32>() & 7);
+            Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultSovereigntyTelemetryEntry>() & 7);
+            Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultMemoryAddressShiftRecord>() & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultRelocationRecord>() & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultMemoryBlockSnapshot>() & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<BlockDescriptor>() & 7);
@@ -136,11 +139,20 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual((int)BufferID.VaultAup64, VaultBufferContract.Aup64BufferId);
             Assert.AreEqual((int)BufferID.VaultEntityBucketMap, VaultBufferContract.EntityBucketMapBufferId);
             Assert.AreEqual((int)BufferID.VaultSharedTransformMatrices, VaultBufferContract.SharedTransformMatricesBufferId);
-            Assert.AreEqual(6, VaultBufferContract.OwnedBufferCount);
+            Assert.AreEqual((int)BufferID.VaultSovereigntyTelemetryRing, VaultBufferContract.TelemetryRingBufferId);
+            Assert.AreEqual((int)BufferID.AcousticEchoPendingTaps, VaultBufferContract.AcousticEchoPendingTapsBufferId);
+            Assert.AreEqual((int)BufferID.VaultAupSectorLocal32, VaultBufferContract.AupSectorLocal32BufferId);
+            Assert.AreEqual((int)BufferID.VaultSovereigntyActiveEntityCount, VaultBufferContract.ActiveEntityCountBufferId);
+            Assert.AreEqual((int)BufferID.VaultMemoryProfileCsvScratch, VaultBufferContract.CsvScratchBufferId);
+            Assert.AreEqual((int)BufferID.VaultMemoryAddressShiftRecords, VaultBufferContract.AddressShiftRecordsBufferId);
+            Assert.AreEqual((int)BufferID.VaultMemoryAddressShiftCount, VaultBufferContract.AddressShiftCountBufferId);
+            Assert.AreEqual(16, VaultBufferContract.OwnedBufferCount);
             Assert.AreEqual((int)BufferID.VaultMemoryLayoutConfig, VaultBufferContract.MinBufferId);
-            Assert.AreEqual((int)BufferID.VaultSharedTransformMatrices, VaultBufferContract.MaxBufferId);
+            Assert.AreEqual((int)BufferID.VaultMemoryAddressShiftCount, VaultBufferContract.MaxBufferId);
             Assert.IsTrue(VaultBufferContract.OwnsBufferId(BufferID.VaultMemoryLayoutConfig));
             Assert.IsTrue(VaultBufferContract.OwnsBufferId(BufferID.VaultSharedTransformMatrices));
+            Assert.IsTrue(VaultBufferContract.OwnsBufferId(BufferID.VaultMemoryAddressShiftCount));
+            Assert.IsFalse(VaultBufferContract.OwnsBufferId(BufferID.WristHudState));
             Assert.IsFalse(VaultBufferContract.OwnsBufferId(BufferID.FloraGenomeCsvScratch));
         }
 

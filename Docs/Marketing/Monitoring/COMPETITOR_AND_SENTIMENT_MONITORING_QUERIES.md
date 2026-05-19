@@ -28,6 +28,40 @@ Current interpretation:
 - HECTON-8 public attack language remains forbidden.
 - The best marketing asset is a screenshot/clip that instantly says "this is heavier, colder, more industrial, and not the same emotional contract."
 
+## 2026-05-19 Verification Sprint Addendum
+
+This pass rechecked the launch-week baseline through current public web sources. Treat all live counts as volatile.
+
+| Finding | Source snapshot | Evidence class | HECTON-8 action |
+|---|---|---|---|
+| Steam page is extremely strong, not "mixed." | Steam store page fetched 2026-05-19 showed Early Access date 2026-05-14, 36,799 English reviews at 93% positive, 4-player co-op copy, 11 supported languages, and tags including Multiplayer, Survival, Underwater, Horror, Exploration, Co-op, Open World, Atmospheric, Early Access, and Base Building. | Official platform page | Do not frame HECTON-8 as a rescue from a failed launch. We need a narrower identity: machinery, pressure, black water, single-player reliability. |
+| Launch demand is massive. | PC Gamer reported 2M copies in 12 hours and more than 651K peak concurrent players across Steam/Epic/Xbox, with Steam above 467K. | Press report citing press release / SteamDB-style counts | Competitor gravity is real. Creator outreach must assume every underwater-survival creator has already seen SN2. Pitch must offer a different emotional contract, not "another Subnautica-like." |
+| Performance story is mixed, not a clean failure. | PC Gamer settings article says SN2 can run well across hardware but becomes more demanding in asset-heavy areas; anecdotal Reddit reports include both poor and acceptable performance. | Press technical guidance + community signal | HECTON-8 cannot exploit "SN2 performs badly" publicly. Internal target: show stable first route before public clips; public performance claims require hardware/build/settings proof. |
+| Co-op pain exists but is anecdotal and specific. | Reddit posts on 2026-05-18 mention joiner desync, inventory/interact lock, teleporting, and growbed-related lag/bug recovery; other users also report playable co-op. | Community signal | Keep no-coop public stance. Internally, shared persistence remains the scary part if co-op ever enters scope. Do not promise networking as a differentiator. |
+| EULA/privacy concern is a trust signal, not a campaign weapon. | Notebookcheck covered negative Steam reviews focused on EULA/privacy/remote-access concerns while overall reception remained positive. | Press/community signal | HECTON-8 should prepare clean disclosure/creator/key policies, but never moralize against SN2 in public copy. |
+| UE5/shader-stutter claims need strict filtering. | Search surfaced SEO guides claiming UE5 shader stutter as a fix category, but stronger evidence is mixed and often anecdotal. | Low-confidence web/SEO signal | Do not write "UE5 shader stutter" into public or engineering claims without profiler/player-report clusters. Keep only as a monitoring query. |
+
+### Honest Competitive Read
+
+SN2 currently owns scale, wishlists, co-op attention, review volume, language coverage, and creator oxygen. HECTON-8 does not beat that with a budget. HECTON-8 can only avoid being crushed by proving a more specific promise:
+
+- heavier industrial hardware;
+- harsher pressure and black-water readability;
+- Seed Ship anomaly as a system hook;
+- single-player scope honesty;
+- screenshots that show player verbs and machinery in the same frame;
+- no performance claims until measured.
+
+### Next Monitoring Delta
+
+Recheck these before HECTON-8's first screenshot drop:
+
+1. Steam review trend: did SN2 stay above Very Positive?
+2. Top repeated negative tags: performance, content depth, co-op, EULA, base building, grind, vehicles.
+3. Positive themes: what players keep praising despite complaints.
+4. Creator titles: whether "worth it", "co-op", "base building", or "performance" dominates.
+5. Patch notes: whether SN2 fixes any pain point HECTON-8 planned to exploit.
+
 ## Evidence Classes
 
 | Class | Use |

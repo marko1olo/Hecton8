@@ -21,7 +21,11 @@ namespace Hecton8.World.ProceduralWreckage
         public const int TelemetryFrames = 300;
         public const int CsvScratchBytes = 32768;
         public const int IndirectArgsUintCount = 4;
+        public const int RuleBinaryHeaderBytes = 16;
+        public const int RuleBinaryRecordBytes = 64;
         public const float Epsilon = 0.0001f;
+        public const uint RuleBinaryMagic = 0x52573848u;
+        public const uint RuleBinaryVersion = 1u;
         public const uint DumpMagic = 0x57464357u;
         public const uint DumpEndianMarker = 0x01020304u;
         public const uint FaultNoRules = 0x4E4F5255u;
@@ -213,9 +217,9 @@ namespace Hecton8.World.ProceduralWreckage
         [FieldOffset(40)]
         public uint Version;
         [FieldOffset(44)]
-        public uint LastCsvHash;
+        public uint LastRulePayloadHash;
         [FieldOffset(48)]
-        public ulong LastCsvWriteTicks;
+        public ulong LastRulePayloadWriteTicks;
         [FieldOffset(56)]
         public uint Flags;
         [FieldOffset(60)]
@@ -351,7 +355,7 @@ namespace Hecton8.World.ProceduralWreckage
         [FieldOffset(40)]
         public uint ActiveRuleCount;
         [FieldOffset(44)]
-        public uint _pad1;
+        public uint BinaryRuleCount;
         [FieldOffset(48)]
         public ulong _pad2;
         [FieldOffset(56)]

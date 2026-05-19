@@ -109,7 +109,7 @@ namespace Hecton8.EditorTools
                 dto.FogColorAndDensity = new float4(0.015f, 0.045f, 0.065f, 0.045f);
                 dto.ScatteringParams = new float4(0.85f, 0.12f, 0.42f, 0.97f);
                 dto.FlowAdvection = new float4(0f, 0f, 0f, 2.25f);
-                dto.QualityAndLimits = new float4(math.saturate(HomeostasisBrain.GlobalQualityWeight), 4f, 70f, 1f);
+                dto.QualityAndLimits = new float4(ClampFinite(HomeostasisBrain.GlobalQualityWeight, 0f, 1f, 0f), 4f, 70f, 1f);
             }
 
             SetSliderWithoutNotify(_density, dto.FogColorAndDensity.w);
@@ -125,7 +125,12 @@ namespace Hecton8.EditorTools
         private static void SetSliderWithoutNotify(Slider slider, float value)
         {
             if (slider != null)
-                slider.SetValueWithoutNotify(value);
+                slider.SetValueWithoutNotify(math.isfinite(value) ? value : 0f);
+        }
+
+        private static float ClampFinite(float value, float min, float max, float fallback)
+        {
+            return math.isfinite(value) ? math.clamp(value, min, max) : fallback;
         }
 
         private void ApplyDensity(float value)
@@ -134,7 +139,7 @@ namespace Hecton8.EditorTools
                 return;
 
             ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            dto.FogColorAndDensity.w = math.clamp(value, 0f, 0.3f);
+            dto.FogColorAndDensity.w = ClampFinite(value, 0f, 0.3f, 0.045f);
         }
 
         private void ApplyScatter(float value)
@@ -143,7 +148,7 @@ namespace Hecton8.EditorTools
                 return;
 
             ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            dto.ScatteringParams.x = math.clamp(value, 0f, 4f);
+            dto.ScatteringParams.x = ClampFinite(value, 0f, 4f, 0.85f);
         }
 
         private void ApplyExtinction(float value)
@@ -152,7 +157,7 @@ namespace Hecton8.EditorTools
                 return;
 
             ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            dto.ScatteringParams.y = math.clamp(value, 0.001f, 2f);
+            dto.ScatteringParams.y = ClampFinite(value, 0.001f, 2f, 0.12f);
         }
 
         private void ApplyAnisotropy(float value)
@@ -161,7 +166,7 @@ namespace Hecton8.EditorTools
                 return;
 
             ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            dto.ScatteringParams.z = math.clamp(value, -0.95f, 0.95f);
+            dto.ScatteringParams.z = ClampFinite(value, -0.95f, 0.95f, 0.42f);
         }
 
         private void ApplyFlow(float value)
@@ -170,12 +175,12 @@ namespace Hecton8.EditorTools
                 return;
 
             ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            dto.FlowAdvection.w = math.clamp(value, 0f, 8f);
+            dto.FlowAdvection.w = ClampFinite(value, 0f, 8f, 2.25f);
         }
 
         private void ApplyQuality(float value)
         {
-            float quality = math.saturate(value);
+            float quality = ClampFinite(value, 0f, 1f, 0f);
             HomeostasisBrain.SetForcedGlobalQualityWeightForTuner(quality, true);
             if (!TryResolveParams(out NativeArray<VolumetricFogParamsDTO> parameters))
                 return;

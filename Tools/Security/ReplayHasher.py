@@ -48,6 +48,8 @@ SHUFFLE_DOMAIN_HI = b"H8SAVE_SHUFFLE_HI_V1"
 MASTER_DOMAIN = b"H8SAVE_MASTER_V1"
 MASTER_DOMAIN_LO = b"_LO"
 MASTER_DOMAIN_HI = b"_HI"
+CONTRACT_VERSION_HASH_LO = 0x3896D9732E4BE5E9
+CONTRACT_VERSION_HASH_HI = 0x3D8F5142E842BDF3
 
 XXH3_SECRET = bytes(
     [
@@ -404,6 +406,8 @@ def build_master_preimage(
             _pack_u64(hash_payload64),
             _pack_u64(world_seed),
             _pack_u64(sector_hash),
+            _pack_u64(CONTRACT_VERSION_HASH_LO),
+            _pack_u64(CONTRACT_VERSION_HASH_HI),
         )
     )
 
@@ -633,9 +637,9 @@ def _command_self_test(_: argparse.Namespace) -> int:
     expected_master_preimage_hex = (
         "4838534156455f4d41535445525f5631544345480a00070c5634123d8f010000"
         "efbeadde2500000000040000480000000010000000200000efcdab8967452301"
-        "15cd5b07000000004f9721c5ffffffff"
+        "15cd5b07000000004f9721c5ffffffffe9e54b2e73d99638f3bd42e842518f3d"
     )
-    if len(master_preimage) != 80 or master_preimage.hex() != expected_master_preimage_hex:
+    if len(master_preimage) != 96 or master_preimage.hex() != expected_master_preimage_hex:
         print("SELFTEST_FAIL master preimage bytes", file=sys.stderr)
         return 1
 
@@ -718,8 +722,8 @@ def _command_self_test(_: argparse.Namespace) -> int:
                 0x0123456789ABCDEF, 123456789, -987654321,
             ),
             (
-                0x82C250ACAADCFCEE, 0x750FEB3BE2F001A7,
-                0x32C38E7EA8C9246D, 0x8CB2B6D20A988126,
+                0x8FE1E070164A96D5, 0x9BB3607B11A8BCF9,
+                0x064D4D0C5A908C82, 0x36409BD1C7FA745E,
             ),
         ),
         (
@@ -730,8 +734,8 @@ def _command_self_test(_: argparse.Namespace) -> int:
                 0, 0, 0,
             ),
             (
-                0xDE3030DC92701D20, 0x61F632E4C94036E0,
-                0xD32D8C3FC40D9B2C, 0x32AD2AC782FBC2D2,
+                0xCA41DA417F5D0DC8, 0x70F0ADB782C28C33,
+                0x4B8E036B2B64F3AB, 0x72251E3D18A7D704,
             ),
         ),
         (
@@ -742,8 +746,8 @@ def _command_self_test(_: argparse.Namespace) -> int:
                 0xFFFFFFFFFFFFFFFF, -1, -(1 << 63),
             ),
             (
-                0xCB301BFADACAB4C0, 0xCD6F36F58F2C9958,
-                0x2BB872AE52FAE5E0, 0xCD689265F6679EB8,
+                0xD84A1C1B9978D6F3, 0x68D263C13DFFDC66,
+                0x7B54EA22BB95B0AD, 0xE1DC432A72B91F40,
             ),
         ),
         (
@@ -754,8 +758,8 @@ def _command_self_test(_: argparse.Namespace) -> int:
                 0x8000000000000001, -(1 << 63), (1 << 63) - 1,
             ),
             (
-                0x9ABC26720E6046D4, 0xC384FAF183EB3129,
-                0xC3ECFA32D54764A9, 0x6657FAE4288EA743,
+                0x7C9E77508B643107, 0xDE61F1B388FD514B,
+                0x5B65BEB8C156BBE5, 0x11C3D7EC04D726C8,
             ),
         ),
     )

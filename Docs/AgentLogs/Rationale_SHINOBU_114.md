@@ -46,7 +46,7 @@ Hardware Impact: Linear CSR reads should outperform scattered hash/list traversa
 ## Decision 005 - Visual Fake And Telemetry
 
 Problem: Physical resource objects in pipes would waste CPU and hide solver failures.
-Solution: Edge `Flow01` drives existing pipe shader scalar via `ConnectionSplineBatchRenderer.SetPipeNodeFlow`; telemetry ring records nodes/components/iterations/micros and dumps to `Docs/AgentLogs/Dump_LOGISTICS_SURGEON.bin` on fault.
+Solution: Edge `Flow01` drives existing pipe shader scalar via `ConnectionSplineBatchRenderer.SetPipeNodeFlow`; telemetry ring records nodes/components/iterations/micros and dumps to both `Docs/AgentLogs/Dump_SHINOBU_114.bin` and `Docs/AgentLogs/Dump_LOGISTICS_SURGEON.bin` on fault.
 Rejected Alternatives: Debug GameObjects, particle payloads, or string-only diagnostics. They add GC and do not preserve forensic state.
 Scalability potential: Low still shows coarse flow pulses; Middle/High/Ultra increase smoothness through solver iterations and shader scalar density.
 Hardware Impact: Removes per-item simulation entirely; ring write is fixed O(1), target below 5 us pending profiler.
@@ -58,6 +58,14 @@ Solution: Expand the existing `ShinobuLogisticsCounters` Vault int lane with thr
 Rejected Alternatives: Keeping local native queues/lists was rejected because it creates memory ownership outside GlobalDataVault. Adding new BufferIDs for BFS and breach scratch was rejected because the existing counters lane can hold the bounded int scratch without widening Core.Memory again. Publishing a local breach signal was rejected because `FluidIncursionSignal` already owns the public flood/incursion route.
 Scalability potential: Low keeps one Jacobi sweep and sparse oxygen cadence while still isolating islands exactly; Middle/High/Ultra increase convergence and shader flow smoothness without changing ABI. On top-tier hardware the saved CPU path buys denser visual scalar response in pipe shaders rather than physical resource objects.
 Hardware Impact: i3/MX350 avoids NativeQueue block churn, local container lifetime tracking, and hash/list traversal; expected gain is static until Unity profiler proof. RTX-class hardware gets cleaner SIMD aliasing input for Burst and smoother high-iteration flow visuals.
+
+## Decision 007 - ARM64 Telemetry And CSV Scratch Polish
+
+Problem: Ultra-polish audit found two stale seams: `LogisticsGraphTelemetryEntry` relied on sequential layout with only total size asserted, and the cold CSV importer owned a private managed `byte[16KB]` scratch buffer with a stale SHINOBU_13 owner comment. The fault export also lacked the global `Dump_SHINOBU_114.bin` path.
+Solution: Convert `LogisticsGraphTelemetryEntry` to `[StructLayout(LayoutKind.Explicit, Size = 64)]` with 0/8/12/16/20/24/28/32/36/40/44/48/52/56/60 offsets; expand editor offset validation to node, edge, tuning, component spec, and telemetry DTOs; route fault dumps to `Dump_SHINOBU_114.bin`, `Dump_LOGISTICS_SURGEON.bin`, and `Dump_SHINOBU_114.h8dump`; add `BufferID.ShinobuLogisticsCsvScratch=70550` and read CSV bytes directly into Vault-owned native scratch via `Span<byte>` over the NativeArray pointer.
+Rejected Alternatives: Keeping sequential telemetry was rejected because size-only proof does not catch field drift. Keeping private `byte[]` was rejected because it is persistent managed staging outside the Vault, even if cold/editor gated. Reusing unrelated Babel/input CSV scratch lanes was rejected because one fact needs one owner and one route.
+Scalability potential: Low keeps CSV reload cold and absent from player hot path; Middle/High keep designer hot reload at safe phase boundaries; Ultra can add richer editor previews without widening gameplay DTOs.
+Hardware Impact: i3/MX350 avoids managed scratch retention and guards telemetry cache-line predictability. Runtime speed is unchanged until a fault/CSV reload path; the value is sovereignty, ARM64 field proof, and forensic route correctness.
 
 ## Route Card - SHINOBU_114 Vault CSR Lanes
 
@@ -78,10 +86,10 @@ Cadence: topology rebuild on mutation/mock rebuild; flow solve on existing slow 
 Expected max events/reads per frame: 1000 nodes, 2500 flat edges, 6000 CSR adjacency entries, 300 telemetry rows.
 GlobalQualityWeight behavior: smoothstep-shaped `math.lerp(1,10.999,weightCurve)` iteration count; oxygen cadence blends 5..1; Jacobi smoothing scales 0.72..1.0 through the same curve.
 
-Payload/data shape: unmanaged DTOs and primitive arrays only. BFS queue, reachable order, and breach node side-effects are int slices inside `ShinobuLogisticsCounters`.
-Managed fields present: no.
+Payload/data shape: unmanaged DTOs and primitive arrays only. BFS queue, reachable order, and breach node side-effects are int slices inside `ShinobuLogisticsCounters`; cold CSV staging uses `ShinobuLogisticsCsvScratch=70550`.
+Managed fields present: cold `string _csvPath` and `DateTime _csvLastWriteUtc` for editor/development CSV reload only; no managed hot-path arrays or containers.
 UnityEngine.Object fields present: no.
-Layout proof: `ValidateLayouts` uses `UnsafeUtility.SizeOf` and explicit field offsets.
+Layout proof: `ValidateLayouts` uses `UnsafeUtility.SizeOf`; editor validation checks explicit field offsets for node, edge, tuning, component spec, and telemetry DTOs.
 Capacity: `MaxNodes=1000`, `MaxDirectedEdges=3000`, `MaxAdjacencyEntries=6000`.
 Overflow/failure mode: `CapacityExceeded` fault flag; source-less islands forced to zero; NaN/infinite-loop faults dump black box.
 
@@ -100,3 +108,27 @@ H-Phi impact expected: low to medium, because added global buffers are cohesive 
 Runtime proof required before acceptance: Unity compile, play-mode mock graph solve, GC allocation capture, profiler timing, visual gizmo screenshot.
 Reviewer: Integrator
 Status: PROPOSED pending compile/runtime proof.
+
+## Verification Note 001 - Compile Wall Boundary
+
+Problem: After the ARM64/Vault scratch patch, a compile check was required, but project rules forbid build under CPU >50 percent or while `dotnet`/`csc` is already running.
+Solution: Waited for CPU guard to sample below the limit (`44.393,22.728,13.718`) and no `dotnet`/`csc` process output, then ran `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`. The build failed before SHINOBU_114-specific errors on unrelated files: `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs` missing `UberNoirReconstructionConstantsDTO`, `MockReconstructionInputSignal`, `ReconstructionTelemetryEntry`, and `UberNoirReconstructionVaultIds`; `Assets/_Project/Scripts/Optimization/AssetRecord.cs` missing `double3`.
+Rejected Alternatives: Fixing Visor reconstruction or Optimization asset records inside the base logistics patch was rejected as cross-domain sabotage. Re-running build immediately was rejected because it would reproduce the same unrelated compile wall.
+Scalability potential: No runtime scalability claim changes; this is verification routing only.
+Hardware Impact: No runtime impact. Compile proof remains blocked by unrelated source errors.
+
+## Decision 008 - CSV Retry Fence And Full Vault Audit Hash
+
+Problem: The cold CSV hot-reload path assigned `_csvLastWriteUtc` before successful native-scratch read and parse. A transient file-lock, partial write, or zero-byte read could therefore suppress retry of the same timestamp until a designer saved again. `SelfAuditArchitecture` also hashed only a subset of the Vault lanes, which weakened forensic coverage for the H-Phi proof.
+Solution: Move `_csvLastWriteUtc = writeUtc` after `ReadFileIntoNativeScratch` and `ParseCsv`, and treat `read <= 0` as `CsvParseFault` without advancing the timestamp. Failed imports now retry on the next editor/development SlowTick. Clamp file length and solver microsecond telemetry with explicit `long` intermediates instead of mixed-width `math.min` calls. Expand `SelfAuditArchitecture` to include every SHINOBU_114 Vault BufferID: nodes, edges, state flags, oxygen front/back, pressure/yield/reinforcement, AUP/local positions, priority/visited/cell map, counters, tuning, black box, component IDs, pressure front/back, edge remainders, CSR conductance/flow, component specs, and CSV scratch.
+Rejected Alternatives: Timestamping before parse was rejected because it hides transient I/O failure. Treating empty input as valid was rejected because it can be a partial-save race and silently clears designer intent. Relying on Unity.Mathematics overload selection for mixed `long`/`int` min was rejected because explicit clamps are clearer and lower compile risk. Adding a managed retry queue was rejected because the path is cold and the timestamp fence is enough. Keeping a partial audit hash was rejected because the final self-audit must identify one owner route for every persistent native lane.
+Scalability potential: Low/Middle/High/Ultra runtime math is unchanged; designer iteration is safer because a failed CSV read does not require a manual file touch. Ultra editor previews can rely on the same Vault route proof without widening gameplay DTOs.
+Hardware Impact: No hot-path cost. The cold-path branch saves human debugging time and prevents stale balance data from being mistaken for solver failure on weak hardware test passes.
+
+## Decision 009 - Parallel Jacobi Kernel Split
+
+Problem: Task 07 explicitly required `LogisticsFlowSolverJob` to be an `IJobParallelFor`, but the previous implementation kept island BFS, Jacobi sweeps, integer conservation, oxygen solve, and telemetry in one serial `IJob`. That was deterministic, but it weakened the evidence trail and left parallel pressure relaxation on the table.
+Solution: Split the solve chain into owner-local stages: `LogisticsFlowPrepareJob` performs serial component BFS into Vault scratch lanes; `LogisticsFlowSolverJob : IJobParallelFor` executes one Jacobi sweep per scheduled job over CSR offsets with `[NoAlias]` read/write buffers; odd sweep counts use `LogisticsPressureCopyJob` to normalize the final result into `PressureFront`; `LogisticsFlowFinalizeJob` runs the serial conservation boundary, breach side effects, oxygen/pressure update, and black-box write. The job chain is dependency-threaded through `JobHandle` without mid-frame `Complete()`.
+Rejected Alternatives: Keeping the serial all-in-one job was rejected because it failed the exact Task 07 shape. Parallelizing BFS and final quantization was rejected because component discovery uses queue state and final milli-unit conservation must stay ordered to avoid race-driven drift. Atomic writes from the parallel Jacobi job were rejected; the math now sanitizes every denominator/input and finalization performs the fault sweep without shared parallel mutation.
+Scalability potential: Low runs one parallel pressure sweep plus one copy/finalize boundary, preserving 5Hz-ish degraded behavior through cadence. Middle/High/Ultra schedule more independent pressure sweeps using the same ping-pong buffers, buying smoother pipe shader flow without changing DTOs or adding GameObjects.
+Hardware Impact: i3/MX350 gains deterministic job-worker distribution for node pressure reads when graph size grows; RTX-class machines can spend 8-10 sweeps on visual smoothness. Exact microseconds remain pending because compile/runtime proof is blocked by active `dotnet` processes and CPU over 50 percent.

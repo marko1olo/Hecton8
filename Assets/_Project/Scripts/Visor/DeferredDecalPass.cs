@@ -1,7 +1,9 @@
 using System;
-using System.Runtime.InteropServices;
-using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
@@ -26,17 +28,17 @@ namespace Hecton8.Visor
             [Tooltip("Fullscreen deferred decal shader. Must reconstruct world position from depth and project the global crack decal buffer.")]
             public Shader deferredDecalShader = null;
 
-            [Tooltip("Atlas sampled by the deferred decal pass.")]
-            public Texture2D decalAtlas = null;
+            [Tooltip("Texture2DArray atlas sampled by the deferred decal pass. Null uses procedural scorch fallback.")]
+            public Texture2DArray decalAtlas = null;
 
             [Tooltip("Maximum number of active decals uploaded to the fullscreen decal buffer.")]
-            [Range(1, 256)] public int maxDecals = 256;
+            [Range(1, 1024)] public int maxDecals = DynamicDecalVaultRuntime.MaxCapacity;
 
-            [Tooltip("Atlas column count used to decode structural rupture atlas indices.")]
-            [Range(1, 8)] public int atlasColumns = 4;
+            [Tooltip("Base fade time consumed by the Vault-backed decay job.")]
+            [Range(0.25f, 60f)] public float baseFadeTimeSeconds = 7.5f;
 
-            [Tooltip("Atlas row count used to decode structural rupture atlas indices.")]
-            [Range(1, 8)] public int atlasRows = 4;
+            [Tooltip("Texture array slice count. CPU writes MaterialHash as an already-resolved slice index.")]
+            [Range(1, 16)] public int atlasSlices = DynamicDecalVaultRuntime.AtlasSliceCount;
 
             [Tooltip("Global additive tint for the projected rust/crack decals.")]
             public Color decalTint = new Color(0.72f, 0.44f, 0.32f, 1f);
@@ -45,29 +47,19 @@ namespace Hecton8.Visor
             [Range(0f, 4f)] public float intensity = 1f;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        private struct DecalGpuData
-        {
-            public Vector4 Row0;
-            public Vector4 Row1;
-            public Vector4 Row2;
-            public Vector4 Row3;
-            public Vector4 AtlasRect;
-            public Vector4 Tint;
-        }
-
         private sealed class DeferredDecalCompositePass : ScriptableRenderPass, IDisposable
         {
-            private const int MaxFluidScreenSpaceDecals = 32;
-
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Deferred Decals");
-            private readonly DecalGpuData[] _decalUpload = new DecalGpuData[256]; // COLD ALLOC: DecalGpuData[256] - deferred decal upload cache for global crack matrices - owner: DeferredDecalPass
-            private readonly Matrix4x4[] _fluidDecalMatrices = new Matrix4x4[MaxFluidScreenSpaceDecals]; // COLD ALLOC: Matrix4x4[32] - screen-space fluid decal matrix scratch - owner: DeferredDecalPass
-            private readonly Color[] _fluidDecalColors = new Color[MaxFluidScreenSpaceDecals]; // COLD ALLOC: Color[32] - screen-space fluid decal tint scratch - owner: DeferredDecalPass
 
             private FeatureSettings _settings;
             private Material _material;
-            private GraphicsBuffer _decalBuffer;
+            private GraphicsBuffer _decalBufferA;
+            private GraphicsBuffer _decalBufferB;
+            private int _bufferCapacity;
+            private int _writeBufferIndex;
+            private int _readBufferIndex;
+            private int _readCount;
+            private bool _hasReadableBuffer;
 
             public DeferredDecalCompositePass()
             {
@@ -86,16 +78,12 @@ namespace Hecton8.Visor
 
             public void Dispose()
             {
-                if (_decalBuffer != null)
-                {
-                    _decalBuffer.Release();
-                    _decalBuffer = null;
-                }
+                ReleaseBuffers();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                if (_settings == null || _material == null || _settings.decalAtlas == null)
+                if (_settings == null || _material == null)
                     return;
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
@@ -106,8 +94,24 @@ namespace Hecton8.Visor
                 if (cameraData.cameraType == CameraType.Preview || cameraData.cameraType == CameraType.Reflection)
                     return;
 
-                int decalCount = UploadDecalBuffer();
-                if (decalCount <= 0)
+                GraphicsBuffer readableBuffer = _hasReadableBuffer ? ResolveBuffer(_readBufferIndex) : null;
+                int readableCount = _hasReadableBuffer ? _readCount : 0;
+                bool hasUpload = DynamicDecalVaultRuntime.ExecuteVisualSync(
+                    cameraData.camera,
+                    Time.deltaTime,
+                    _settings.maxDecals,
+                    _settings.baseFadeTimeSeconds,
+                    out DynamicDecalFrameStats stats);
+                if (hasUpload)
+                    UploadDecalBuffer(in stats);
+                else if (stats.ActiveCount <= 0)
+                {
+                    _hasReadableBuffer = false;
+                    _readCount = 0;
+                    return;
+                }
+
+                if (readableBuffer == null || readableCount <= 0)
                     return;
 
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
@@ -123,17 +127,20 @@ namespace Hecton8.Visor
                 compositeDesc.msaaSamples = MSAASamples.None;
                 TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
 
-                _material.SetBuffer(ShaderConstants.DecalBufferId, _decalBuffer);
-                _material.SetInt(ShaderConstants.DecalCountId, decalCount);
-                _material.SetTexture(ShaderConstants.DecalAtlasId, _settings.decalAtlas);
+                _material.SetBuffer(ShaderConstants.DecalBufferId, readableBuffer);
+                _material.SetInt(ShaderConstants.DecalCountId, readableCount);
+                if (_settings.decalAtlas != null)
+                    _material.SetTexture(ShaderConstants.DecalAtlasId, _settings.decalAtlas);
                 _material.SetVector(
                     ShaderConstants.DecalAtlasParamsId,
                     new Vector4(
-                        Mathf.Max(1, _settings.atlasColumns),
-                        Mathf.Max(1, _settings.atlasRows),
+                        Mathf.Max(1, _settings.atlasSlices),
+                        Mathf.Clamp(DynamicDecalVaultRuntime.LowCapacity, 1, DynamicDecalVaultRuntime.MaxCapacity),
                         Mathf.Max(0f, _settings.intensity),
-                        0f));
+                        _settings.decalAtlas != null ? 1f : 0f));
                 _material.SetColor(ShaderConstants.DecalTintId, _settings.decalTint);
+                Vector3 cameraPosition = cameraData.camera != null ? cameraData.camera.transform.position : Vector3.zero;
+                _material.SetVector(ShaderConstants.DecalCameraPositionId, new Vector4(cameraPosition.x, cameraPosition.y, cameraPosition.z, 1f));
 
                 using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
                            new RenderGraphUtils.BlitMaterialParameters(sourceTexture, compositeTexture, _material, 0),
@@ -146,97 +153,92 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = compositeTexture;
             }
 
-            private int UploadDecalBuffer()
+            private void UploadDecalBuffer(in DynamicDecalFrameStats stats)
             {
-                int safeCapacity = Mathf.Clamp(_settings.maxDecals, 1, _decalUpload.Length);
-                EnsureDecalBuffer(safeCapacity);
-
-                var matrices = BaseDegradationSystem.GlobalCrackDecalMatrices;
-                var atlasIndices = BaseDegradationSystem.GlobalCrackDecalAtlasIndices;
-                int atlasColumns = Mathf.Max(1, _settings.atlasColumns);
-                int atlasRows = Mathf.Max(1, _settings.atlasRows);
-                int uploadCount = 0;
-                int structuralDecalCount = Mathf.Min(safeCapacity, matrices.Count, atlasIndices.Count);
-
-                for (int decalIndex = 0; decalIndex < structuralDecalCount; decalIndex++)
-                {
-                    Matrix4x4 worldToDecal = matrices[decalIndex].inverse;
-                    int atlasIndex = Mathf.Max(0, atlasIndices[decalIndex]);
-
-                    _decalUpload[uploadCount] = new DecalGpuData
-                    {
-                        Row0 = worldToDecal.GetRow(0),
-                        Row1 = worldToDecal.GetRow(1),
-                        Row2 = worldToDecal.GetRow(2),
-                        Row3 = worldToDecal.GetRow(3),
-                        AtlasRect = ResolveAtlasRect(atlasIndex, atlasColumns, atlasRows),
-                        Tint = new Vector4(_settings.decalTint.r, _settings.decalTint.g, _settings.decalTint.b, _settings.decalTint.a)
-                    };
-                    uploadCount++;
-                }
-
-                uploadCount = AppendFluidScreenSpaceDecals(uploadCount, safeCapacity, atlasColumns, atlasRows);
-                if (uploadCount <= 0)
-                    return 0;
-
-                GraphicsBufferUploadUtility.UploadArray(_decalBuffer, _decalUpload, uploadCount);
-                return uploadCount;
-            }
-
-            private int AppendFluidScreenSpaceDecals(int uploadCount, int safeCapacity, int atlasColumns, int atlasRows)
-            {
-                if (uploadCount >= safeCapacity || GlobalRegistry.AbyssalFluidDecals == null)
-                    return uploadCount;
-
-                int remainingCapacity = Mathf.Min(MaxFluidScreenSpaceDecals, safeCapacity - uploadCount);
-                int fluidDecalCount = GlobalRegistry.AbyssalFluidDecals.CopyScreenSpaceDecals(
-                    _fluidDecalMatrices,
-                    _fluidDecalColors,
-                    remainingCapacity);
-                if (fluidDecalCount <= 0)
-                    return uploadCount;
-
-                Vector4 fullAtlasRect = ResolveAtlasRect(0, atlasColumns, atlasRows);
-                for (int decalIndex = 0; decalIndex < fluidDecalCount && uploadCount < safeCapacity; decalIndex++)
-                {
-                    Matrix4x4 worldToDecal = _fluidDecalMatrices[decalIndex].inverse;
-                    Color tint = _fluidDecalColors[decalIndex];
-                    _decalUpload[uploadCount] = new DecalGpuData
-                    {
-                        Row0 = worldToDecal.GetRow(0),
-                        Row1 = worldToDecal.GetRow(1),
-                        Row2 = worldToDecal.GetRow(2),
-                        Row3 = worldToDecal.GetRow(3),
-                        AtlasRect = fullAtlasRect,
-                        Tint = new Vector4(tint.r, tint.g, tint.b, tint.a)
-                    };
-                    uploadCount++;
-                }
-
-                return uploadCount;
-            }
-
-            private static Vector4 ResolveAtlasRect(int atlasIndex, int atlasColumns, int atlasRows)
-            {
-                float invColumns = 1f / atlasColumns;
-                float invRows = 1f / atlasRows;
-                int atlasX = atlasIndex % atlasColumns;
-                int atlasY = (atlasIndex / atlasColumns) % atlasRows;
-                return new Vector4(atlasX * invColumns, atlasY * invRows, invColumns, invRows);
-            }
-
-            private void EnsureDecalBuffer(int requiredCapacity)
-            {
-                if (_decalBuffer != null && _decalBuffer.count == requiredCapacity)
+                int uploadCount = Mathf.Clamp(stats.UploadCount, 0, DynamicDecalVaultRuntime.MaxCapacity);
+                if (uploadCount <= 0 || !stats.UploadBuffer.IsCreated)
                     return;
 
-                if (_decalBuffer != null)
+                EnsureDecalBuffers(Mathf.Clamp(_settings.maxDecals, 1, DynamicDecalVaultRuntime.MaxCapacity));
+                GraphicsBuffer target = ResolveBuffer(_writeBufferIndex);
+                if (target == null)
+                    return;
+
+                long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+                NativeArray<DecalInstanceDTO> mapped = target.LockBufferForWrite<DecalInstanceDTO>(0, uploadCount);
+                try
                 {
-                    _decalBuffer.Release();
-                    _decalBuffer = null;
+                    unsafe
+                    {
+                        DynamicDecalMappedUploadJob uploadJob = new DynamicDecalMappedUploadJob
+                        {
+                            Source = stats.UploadBuffer,
+                            Destination = (DecalInstanceDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped),
+                            Count = uploadCount
+                        };
+                        JobHandle handle = uploadJob.Schedule();
+                        H8Memory.RegisterActiveJob(SystemID.Vfx, handle);
+                        handle.Complete();
+                    }
+                }
+                finally
+                {
+                    target.UnlockBufferAfterWrite<DecalInstanceDTO>(uploadCount);
                 }
 
-                _decalBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<DecalGpuData>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[maxDecals] - deferred crack/rust decal buffer - owner: DeferredDecalPass
+                float uploadUs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - startTicks) *
+                                         1000000.0d /
+                                         System.Diagnostics.Stopwatch.Frequency);
+                DynamicDecalVaultRuntime.RecordGpuUploadMicroseconds(uploadUs);
+                _readBufferIndex = _writeBufferIndex;
+                _readCount = uploadCount;
+                _hasReadableBuffer = true;
+                _writeBufferIndex ^= 1;
+            }
+
+            private void EnsureDecalBuffers(int requiredCapacity)
+            {
+                if (_decalBufferA != null &&
+                    _decalBufferB != null &&
+                    _bufferCapacity == requiredCapacity &&
+                    _decalBufferA.count == requiredCapacity &&
+                    _decalBufferB.count == requiredCapacity)
+                {
+                    return;
+                }
+
+                ReleaseBuffers();
+                _bufferCapacity = requiredCapacity;
+                _writeBufferIndex = 0;
+                _readBufferIndex = 0;
+                _readCount = 0;
+                _hasReadableBuffer = false;
+                _decalBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<DecalInstanceDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[decal capacity A] - dynamic deferred decal double-buffer upload - owner: SHINOBU_149
+                _decalBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<DecalInstanceDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[decal capacity B] - dynamic deferred decal double-buffer upload - owner: SHINOBU_149
+            }
+
+            private GraphicsBuffer ResolveBuffer(int index)
+            {
+                return (index & 1) == 0 ? _decalBufferA : _decalBufferB;
+            }
+
+            private void ReleaseBuffers()
+            {
+                if (_decalBufferA != null)
+                {
+                    _decalBufferA.Release();
+                    _decalBufferA = null;
+                }
+
+                if (_decalBufferB != null)
+                {
+                    _decalBufferB.Release();
+                    _decalBufferB = null;
+                }
+
+                _bufferCapacity = 0;
+                _readCount = 0;
+                _hasReadableBuffer = false;
             }
         }
 
@@ -247,6 +249,7 @@ namespace Hecton8.Visor
             internal static readonly int DecalAtlasId = Shader.PropertyToID("_HectonDeferredDecalAtlas");
             internal static readonly int DecalAtlasParamsId = Shader.PropertyToID("_HectonDeferredDecalAtlasParams");
             internal static readonly int DecalTintId = Shader.PropertyToID("_HectonDeferredDecalTint");
+            internal static readonly int DecalCameraPositionId = Shader.PropertyToID("_HectonDeferredDecalCameraWS");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();

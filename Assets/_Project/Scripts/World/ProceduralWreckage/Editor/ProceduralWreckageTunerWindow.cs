@@ -35,9 +35,11 @@ namespace Hecton8.World.ProceduralWreckage.Editor
             rootVisualElement.style.paddingBottom = 8;
 
             Button resolveButton = new Button(ResolveVault) { text = "Resolve Vault" };
+            Button loadBinaryButton = new Button(LoadBinary) { text = "Load H8BIN Rules" };
             Button loadCsvButton = new Button(LoadCsv) { text = "Load CSV Rules" };
             Button dumpButton = new Button(DumpBlackBox) { text = "Dump Black Box" };
             rootVisualElement.Add(resolveButton);
+            rootVisualElement.Add(loadBinaryButton);
             rootVisualElement.Add(loadCsvButton);
             rootVisualElement.Add(dumpButton);
 
@@ -121,6 +123,16 @@ namespace Hecton8.World.ProceduralWreckage.Editor
             UpdateTelemetryReadout();
         }
 
+        private void LoadBinary()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || !_hasHandles)
+                return;
+
+            ProceduralWreckageVault.TryLoadBinaryRules(vault, ref _handles, ProjectRoot());
+            UpdateTelemetryReadout();
+        }
+
         private void DumpBlackBox()
         {
             IDataVault vault = GlobalRegistry.DataVault;
@@ -189,6 +201,9 @@ namespace Hecton8.World.ProceduralWreckage.Editor
                 " | Render " + counters.RenderMatrixCount +
                 " | Debris " + counters.DebrisCount +
                 " | Loot Requests " + counters.LootCount +
+                " | Rules " + counters.ActiveRuleCount +
+                " | H8BIN " + counters.BinaryRuleCount +
+                " | CSV " + counters.CsvRuleCount +
                 " | Backtracks " + telemetry.BacktrackIterations +
                 " | Est. Burst ms " + telemetry.EstimatedComputeMs.ToString("0.000");
         }

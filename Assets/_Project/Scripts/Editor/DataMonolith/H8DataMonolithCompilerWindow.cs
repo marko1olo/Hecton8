@@ -103,6 +103,10 @@ namespace Hecton8.EditorValidation
             WriteTemplate("Fauna_template.csv", "Id,version_id,Name,Description,SwimSpeed,TurnRate,Aggression01,FleeDistanceM,BiolumIntensity,AccessFrequency");
             WriteTemplate("Economy_template.csv", "Id,version_id,Name,Description,BasePrice,Scarcity01,Demand01,SupplyRefreshSeconds,AccessFrequency");
             WriteTemplate("Physics_template.csv", "Id,version_id,Name,Description,MassKg,AddedMass,LinearDrag,Buoyancy,CrushDepthM,AccessFrequency");
+            WriteStructTemplate<H8ItemRecord>("H8ItemRecord_struct_template.csv");
+            WriteStructTemplate<H8CreatureTraitRecord>("H8CreatureTraitRecord_struct_template.csv");
+            WriteStructTemplate<H8EconomyRecord>("H8EconomyRecord_struct_template.csv");
+            WriteStructTemplate<H8PhysicsConstantsRecord>("H8PhysicsConstantsRecord_struct_template.csv");
             WriteLayoutManifest();
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
             _status.text = "Schemas written: " + SchemaFolder;
@@ -113,6 +117,24 @@ namespace Hecton8.EditorValidation
         {
             string path = Path.Combine(SchemaFolder, fileName);
             File.WriteAllText(path, header + Environment.NewLine, Encoding.UTF8);
+        }
+
+        private static void WriteStructTemplate<T>(string fileName)
+            where T : unmanaged
+        {
+            FieldInfo[] fields = typeof(T).GetFields(BindingFlags.Instance | BindingFlags.Public);
+            Array.Sort(fields, CompareFieldOffsets);
+            StringBuilder builder = new StringBuilder(512);
+            for (int i = 0; i < fields.Length; i++)
+            {
+                if (i != 0)
+                    builder.Append(',');
+
+                builder.Append(fields[i].Name);
+            }
+
+            builder.AppendLine();
+            File.WriteAllText(Path.Combine(SchemaFolder, fileName), builder.ToString(), Encoding.UTF8);
         }
 
         private static void WriteLayoutManifest()
@@ -181,7 +203,12 @@ namespace Hecton8.EditorValidation
             string[] csv = Directory.GetFiles(root, "*.csv", SearchOption.AllDirectories);
             Array.Sort(csv, StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < csv.Length; i++)
+            {
+                if (!H8DataMonolithCompiler.IsSourcePath(csv[i]))
+                    continue;
+
                 _sourceList.Add(new Label(csv[i].Replace('\\', '/') + "  utc=" + File.GetLastWriteTimeUtc(csv[i]).ToString("u")));
+            }
         }
 
         private void RefreshLayout()

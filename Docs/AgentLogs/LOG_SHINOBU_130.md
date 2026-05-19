@@ -67,14 +67,14 @@ What was wrong:
 - The player AUP token route still depended on a registry convenience slot during setup, but the rationale did not explicitly prove hot-path caching.
 - The "Dear Lie" reveal existed as scalar component state; the XML asked for `TypewriterTextJob`, and the Vault law is cleaner with a 64-byte DTO row.
 - Per-frame reveal could re-enter `BabelDictionaryStore.GetUtf8()` for an unchanged active entry, adding lookup/telemetry work that has no visual value.
-- The black-box ring could report bytes/chars/ticks but could not distinguish real MMF/Babel bytes from Vault mock fallback bytes.
+- The black-box ring could report bytes/chars/ticks but could not distinguish real H8LR/MMF/Babel bytes from Vault mock fallback bytes.
 
 What was done:
 - `Tick` now refreshes PDA visibility from the static PDA state only when the `PDAEvents` lane is unavailable; normal runtime visibility is event-driven.
 - Player pose for `^DISCOVERY_DISTANCE^` uses cached `IPlayerRuntimeContext` refreshed by `IGlobalRegistryHotSwapListener`; no registry polling is hidden in token formatting.
 - Added `PdaTypewriterStateDTO` as a 64-byte Vault row `(BufferID)70569`; `TypewriterTextJob` now owns reveal accumulator/count math with Burst Fast/Standard and `[NoAlias]`.
 - Active UTF-8 source cache now stores unmanaged pointer, byte length, and source bits after first successful MMF or Vault mock lookup per entry.
-- Runtime state flags encode source bits at 8-9 (`1=MMF/Babel`, `2=Vault mock`); telemetry packs stream state, source bits, and canvas-split proof, and state hashes mix bytes/flags.
+- Runtime state flags encode source bits at 8-9; Loop 8 remaps labels to `1=H8LR`, `2=Babel fallback`, `3=Vault mock`. Telemetry packs stream state, source bits, and canvas-split proof, and state hashes mix bytes/flags.
 - `Docs/ARCHITECTURE/PDA_ENCYCLOPEDIA_STREAMER.md`, `Docs/Tasks/Status_SHINOBU_130.md`, and this rationale/log lane were updated with the new 70569/typewriter/source-cache facts.
 
 Cinematic Cheats used:
@@ -287,4 +287,76 @@ Compile status:
   <DEAR_LIE_CONFIRMATION>
     The Dear Lie remains quality-weighted typewriter reveal: same O(n) total text work, bounded per-frame TMP submission.
   </DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
+## Loop 8 H8LR Source-Truth Report
+
+What was wrong:
+- The streamer still treated the small Babel dictionary path as primary proof. That was false for real encyclopedia pages because `Data/Lore/Encyclopedia.h8bin` is H8LR raw UTF-8, not the Babel balance dictionary.
+- A 8192-char page could deadlock longer entries after filling the char buffer while `_sourceByteCursor` still had unread bytes.
+- A 4-byte UTF-8 scalar crossing the page/budget edge could be marked invalid instead of deferred.
+
+What was done:
+- Promoted `PdaH8lrLoreStore` to primary source: H8LR first, Babel fallback second, Vault mock last.
+- Added Vault buffer `(BufferID)70570` as an 8 MiB H8LR native mirror fallback for platforms without MMF.
+- Changed the default/editor hash to `0xAEC57EAC`, matching the first H8LR record in `Data/Lore/Encyclopedia.h8bin`.
+- Expanded `CharBufferPool.EncyclopediaPageCapacity` to 32768 chars and added rolling-window continuation for entries larger than one page.
+- Added H8LR header/record DTO layout validation to `ValidatePdaStreamerLayouts` and the UI Toolkit tuner.
+- Guarded MMF pointer release so failed `AcquirePointer` cannot cascade into a bad `Dispose()`.
+
+Cinematic Cheats used:
+- The Dear Lie remains typewriter reveal. H8LR source bytes are true; presentation is throttled. Low-tier devices dirty fewer TMP characters per frame while high/ultra reveal faster using the same source pointer.
+
+Exact Microseconds saved:
+- No measured claim. Static source proof only. Expected gain is eliminating a false fallback path and preventing full-entry string materialization; profiler/GC proof remains pending.
+
+Verification:
+- Parsed `Data/Lore/Encyclopedia.h8bin`: magic `0x524C3848`, version `1`, count `2`, record0 `0xAEC57EAC offset=48 length=25003`, record1 `0xBC52DB39 offset=25056 length=16861`, file bytes `41920`.
+- Static scan over `PDAEncyclopediaStreamer.cs` and `PdaH8lrLoreStore.cs` found no direct World namespace/type, JSON, `File.ReadAllText`, `Encoding.GetString`, `TMP_Text.text`, concat/string format, `foreach`, `.Complete()`, `Pack=1`, `NativeHashMap`, or `NativeList` hits.
+- No `dotnet build` was launched; known compile wall is still the external missing World source previously recorded.
+
+<SELF_AUDIT phase="LOOP_8_H8LR_SOURCE_TRUTH">
+  <TASK_RECONCILIATION>
+    <Task id="01" status="PASS">Runtime lore loading uses H8LR/Babel/native spans, not JSON or `File.ReadAllText`.</Task>
+    <Task id="02" status="PASS">Hot PDA text still writes `Span<char>` and `TMP_Text.SetCharArray`; static scan found no runtime string assembly hits.</Task>
+    <Task id="03" status="PASS">Bitmask remains raw public fields in the Vault DTO.</Task>
+    <Task id="04" status="PASS">State/runtime/meta/telemetry/typewriter/AUP/H8LR DTO layouts are validated.</Task>
+    <Task id="05" status="PASS">Vault mock database remains deterministic fallback for CI/editor isolation.</Task>
+    <Task id="06" status="PASS">Real H8LR `.h8bin` is now the first source; mock lookup still uses `ExtractLoreSpanJob` for binary-search proof.</Task>
+    <Task id="07" status="PASS">UTF-8 decoder remains allocation-free and now defers 4-byte scalars at budget/page boundaries.</Task>
+    <Task id="08" status="PASS">`TypewriterTextJob` remains the Dear Lie reveal throttle.</Task>
+    <Task id="09" status="PASS">Signal unlock route still performs CAS-backed atomic OR into the dense masks.</Task>
+    <Task id="10" status="PASS">Canvas split state remains validated and recorded.</Task>
+    <Task id="11" status="PASS">Decode budget and reveal cadence still use continuous `GlobalQualityWeight`.</Task>
+    <Task id="12" status="PASS">Token replacement remains inside the decode stream.</Task>
+    <Task id="13" status="PASS">AUP distance token still subtracts player/discovery AUP and casts localized delta to `float3`.</Task>
+    <Task id="14" status="PASS">Unlock state remains contiguous 128-byte rollback truth.</Task>
+    <Task id="15" status="PASS">State rows still use `UninitializedMemory` and cold Burst clear.</Task>
+    <Task id="16" status="PASS">300-frame telemetry ring and dual dump filenames remain active.</Task>
+    <Task id="17" status="PASS">UI Toolkit tuner now uses the real H8LR default hash and displays H8LR DTO layout.</Task>
+    <Task id="18" status="PASS">CSV metadata ingest remains cold byte-span parser.</Task>
+    <Task id="19" status="PASS">Raw UTF-8 hex x-ray now checks H8LR before Babel/mock.</Task>
+    <Task id="20" status="FAIL_BLOCKED_EXTERNAL">Static no-GC proof improved; Unity profiler/GC proof is still unavailable because compile/runtime proof is blocked outside this domain.</Task>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <EncyclopediaStateDTO size="128">Mask0/1/2/3 offsets 0/8/16/24, grid longs 32/40/48, local floats 56/60/64, quality 68, uint state fields 72..124. 128 bytes = two 64-byte lines.</EncyclopediaStateDTO>
+    <PdaH8lrHeaderDTO size="16">Magic offset 0, Version 4, Count 8, Reserved0 12. 16-byte aligned.</PdaH8lrHeaderDTO>
+    <PdaH8lrRecordDTO size="16">Hash offset 0, ByteOffset 4, ByteLength 8, Reserved0 12. 16-byte aligned.</PdaH8lrRecordDTO>
+    <PdaAup48 size="48">GridX/Y/Z offsets 0/8/16, LocalX/Y/Z offsets 24/28/32, Reserved0 36, Reserved1 40. 48-byte multiple of 16.</PdaAup48>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    Below quality 0.3 the decoder consumes the same H8LR bytes but advances small char budgets and a slow typewriter cursor, reducing TMP rebuild pressure. Higher weights lerp toward larger decode chunks and faster reveal; no binary low/high switch was added.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No private runtime arrays were added. Vault buffers now requested: 70560 state, 70561 runtime, 70562 metadata, 70563 telemetry, 70564 cursor, 70565 mock UTF8, 70566 mock index, 70567 CSV scratch, 70568 lookup result, 70569 typewriter, 70570 H8LR mirror.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Clear/extract/typewriter jobs keep `[NoAlias]`. H8LR reader is a cold/lazy byte-span source, not a Burst job. No `.Complete()` calls exist in the PDA runtime/H8LR reader scan.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef reference or sibling-domain concrete dependency was added. The reader lives under `Hecton8.UI` and uses Core contracts/Vault plus `System.IO.MemoryMappedFiles` behind platform guards.
+  </COMPILE_GUARD>
+  <THE_DEAR_LIE_CONFIRMATION>
+    Before: one large page risked immediate full TMP rebuild or a stalled buffer. After: page reveal is windowed and quality-weighted; complexity remains O(n) total bytes but per-frame work is bounded by decode budget and visible-character cadence.
+  </THE_DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>

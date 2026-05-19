@@ -214,26 +214,26 @@ namespace Hecton8.Core.Data
     /// <summary>
     /// Dependency-free text request payload used by Babel vacuum tests. Size: 16 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct MockTextRequestSignal : ISignal
     {
-        public uint TextHash;
-        public uint FrameIndex;
-        public ushort LocaleId;
-        public ushort Flags;
-        public uint _pad0;
+        [FieldOffset(0)] public uint TextHash;
+        [FieldOffset(4)] public uint FrameIndex;
+        [FieldOffset(8)] public ushort LocaleId;
+        [FieldOffset(10)] public ushort Flags;
+        [FieldOffset(12)] public uint _pad0;
     }
 
     /// <summary>
     /// Decoupled voice-over request. Audio owns consumption. Size: 16 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct PlayVoiceOverSignal : ISignal
     {
-        public uint TextHash;
-        public uint VoiceHash;
-        public uint FrameIndex;
-        public uint Flags;
+        [FieldOffset(0)] public uint TextHash;
+        [FieldOffset(4)] public uint VoiceHash;
+        [FieldOffset(8)] public uint FrameIndex;
+        [FieldOffset(12)] public uint Flags;
     }
 
     /// <summary>

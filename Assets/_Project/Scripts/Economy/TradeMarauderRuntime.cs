@@ -286,20 +286,21 @@ namespace Hecton8.Economy
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MockInventoryTransactionSignal : ISignal
     {
-        public double3 Aup;
-        public uint ItemHash;
-        public int DeltaBaseQuantity;
-        public int DeltaMarauderQuantity;
-        public int MarauderIndex;
-        public uint Frame;
-        public byte Reason;
-        public byte Flags;
-        public ushort Reserved0;
-        public uint Reserved1;
-        public ulong Reserved2;
+        [FieldOffset(0)] public double3 Aup;
+        [FieldOffset(24)] public uint ItemHash;
+        [FieldOffset(28)] public int DeltaBaseQuantity;
+        [FieldOffset(32)] public int DeltaMarauderQuantity;
+        [FieldOffset(36)] public int MarauderIndex;
+        [FieldOffset(40)] public uint Frame;
+        [FieldOffset(44)] public byte Reason;
+        [FieldOffset(45)] public byte Flags;
+        [FieldOffset(46)] public ushort Reserved0;
+        [FieldOffset(48)] public uint Reserved1;
+        [FieldOffset(52)] public uint ReservedPadding;
+        [FieldOffset(56)] public ulong Reserved2;
     }
 
     public partial struct MockPlayerInventory

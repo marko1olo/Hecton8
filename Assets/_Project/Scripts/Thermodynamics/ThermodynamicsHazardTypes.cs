@@ -79,16 +79,18 @@ namespace Hecton8.Thermodynamics
     }
 
     /// <summary>
-    /// Local blind damage proof signal. Size: 48 bytes.
+    /// Local blind damage proof signal. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct ThermodynamicsMockDamageSignal : ISignal
     {
-        public double3 Aup;
-        public float3 Normal;
-        public float Damage;
-        public uint EntityId;
-        public uint Flags;
+        [FieldOffset(0)] public double3 Aup;
+        [FieldOffset(24)] public float3 Normal;
+        [FieldOffset(36)] public float Damage;
+        [FieldOffset(40)] public uint EntityId;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public ulong _pad0;
+        [FieldOffset(56)] public ulong _pad1;
     }
 
     /// <summary>
@@ -152,6 +154,9 @@ namespace Hecton8.Thermodynamics
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct HeatSourceDTO
     {
+        public const uint FlagPersistent = 1u << 0;
+        public const uint FlagMock = 1u << 1;
+
         [FieldOffset(0)] public double3 Aup;
         [FieldOffset(24)] public float IntensityCelsiusPerSecond;
         [FieldOffset(28)] public float RadiusMeters;
@@ -162,7 +167,7 @@ namespace Hecton8.Thermodynamics
         [FieldOffset(48)] public float ConductivityOverride;
         [FieldOffset(52)] public float ConvectionGain;
         [FieldOffset(56)] public float Phase01;
-        [FieldOffset(60)] public uint _pad0;
+        [FieldOffset(60)] public uint LastTouchedFrame;
     }
 
     /// <summary>

@@ -121,7 +121,7 @@ namespace Hecton8.Modding
         [FieldOffset(32)] public int ApprovedAssetCount;
         [FieldOffset(36)] public int LastDumpFrame;
         [FieldOffset(40)] public uint Flags;
-        [FieldOffset(44)] public uint Reserved0;
+        [FieldOffset(44)] public uint PendingOverflowDropped;
         [FieldOffset(48)] public ulong Reserved1;
         [FieldOffset(56)] public ulong Reserved2;
     }
@@ -386,7 +386,7 @@ namespace Hecton8.Modding
         [FieldOffset(48)] public uint KernelRejected;
         [FieldOffset(52)] public uint KernelSuppressed;
         [FieldOffset(56)] public uint HapticFallbacks;
-        [FieldOffset(60)] public uint Reserved4;
+        [FieldOffset(60)] public uint AupViolations;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -1054,6 +1054,7 @@ namespace Hecton8.Modding
             NativeArray<ModSandboxRingState> ringState = ResolveRingState();
             NativeArray<ModKernelCameraJuiceImpulse> cameraJuiceImpulses = ResolveBuffer(ref _kernelCameraJuiceImpulseHandle);
             NativeArray<ModKernelCameraJuiceState> cameraJuiceState = ResolveBuffer(ref _kernelCameraJuiceStateHandle);
+            NativeArray<ModKernelTuningProfile> kernelProfiles = ResolveBuffer(ref _kernelTuningProfilesHandle);
             if (!staging.IsCreated ||
                 staging.Length < 2 ||
                 !statsBuffer.IsCreated ||
@@ -1116,6 +1117,7 @@ namespace Hecton8.Modding
                 RejectionWriter = SignalBus<ModInteractionRejectedPayload>.ParallelWriter,
                 CameraJuiceImpulses = cameraJuiceImpulses,
                 CameraJuiceState = cameraJuiceState,
+                KernelProfiles = kernelProfiles,
                 Count = 2,
                 Frame = (uint)Time.frameCount,
                 OpcodeRecordCount = state.OpcodeCount,
@@ -1725,6 +1727,25 @@ namespace Hecton8.Modding
             return math.clamp(sum, FutureCommandSandboxConstants.LowTierMinCommandsPerSignature, fallbackBudget);
         }
 
+        private static int ResolveSmallestKernelProfileFrameBudget(int fallbackBudget)
+        {
+            NativeArray<ModKernelTuningProfile> profiles = ResolveBuffer(ref _kernelTuningProfilesHandle);
+            if (!profiles.IsCreated || profiles.Length == 0)
+                return fallbackBudget;
+
+            int smallest = fallbackBudget;
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                ModKernelTuningProfile profile = profiles[i];
+                if (profile.OpcodeHash == 0u)
+                    continue;
+                if (profile.MaxPerFrame > 0)
+                    smallest = math.min(smallest, profile.MaxPerFrame);
+            }
+
+            return smallest;
+        }
+
         private static bool IsRollbackFrozen()
         {
             if (_rollbackFreezeOverride)
@@ -2004,7 +2025,7 @@ namespace Hecton8.Modding
                 RollbackSuppressed = rollbackSuppressed,
                 HapticFallbacks = stats.HapticFallbacks,
                 GlobalQualityWeight = quality,
-                AupViolations = (stats.RejectionMask & ((uint)FutureCommandRejectReason.InvalidAup | (uint)FutureCommandRejectReason.AupViolation)) != 0u ? 1u : 0u,
+                AupViolations = stats.AupViolations,
                 PendingQueueDepth = pendingDepth,
                 FaultHash = stats.FaultHash,
                 Flags = stats.RejectionMask,
@@ -2170,6 +2191,9 @@ namespace Hecton8.Modding
             {
                 state.PendingHead = AdvanceRingIndex(state.PendingHead, pendingRing.Length);
                 state.PendingCount = math.max(0, state.PendingCount - 1);
+                state.PendingOverflowDropped = state.PendingOverflowDropped == uint.MaxValue
+                    ? uint.MaxValue
+                    : state.PendingOverflowDropped + 1u;
             }
 
             pendingRing[state.PendingTail] = envelope;
@@ -2224,29 +2248,6 @@ namespace Hecton8.Modding
             ulong bits = UnsafeUtility.As<double, ulong>(ref value);
             ulong reversed = ReverseBytes64(bits);
             return UnsafeUtility.As<ulong, double>(ref reversed);
-        }
-
-        private static int DropThermalBacklog(ref ModSandboxRingState state, int ringCapacity, float quality, int maxCommandsPerSignature)
-        {
-            if (ringCapacity <= 0 || state.PendingCount <= 0)
-                return 0;
-
-            float thermalShed01 = math.saturate((0.30f - math.saturate(quality)) * 3.3333333f);
-            float shedGate = math.step(0.0001f, thermalShed01);
-            if (shedGate <= 0f)
-                return 0;
-            thermalShed01 *= shedGate;
-
-            int safeWindow = math.max(
-                FutureCommandSandboxConstants.LowTierMinCommandsPerSignature * 2,
-                maxCommandsPerSignature);
-            int overflow = math.max(0, state.PendingCount - safeWindow);
-            int dropCount = math.min(state.PendingCount, (int)math.round(overflow * thermalShed01));
-            for (int i = 0; i < dropCount; i++)
-                state.PendingHead = AdvanceRingIndex(state.PendingHead, ringCapacity);
-
-            state.PendingCount = math.max(0, state.PendingCount - dropCount);
-            return dropCount;
         }
 
         private static int FindModderLeaseSlot(NativeArray<ModderMemoryLease> leases, uint signature, out bool found)
@@ -2361,8 +2362,17 @@ namespace Hecton8.Modding
             uint frame = (uint)Time.frameCount;
             uint rollbackActive = IsRollbackFrozen() ? 1u : 0u;
             ModSandboxRingState state = ringState[0];
+            uint enqueueOverflowDropped = state.PendingOverflowDropped;
+            if (enqueueOverflowDropped != 0u)
+            {
+                state.PendingOverflowDropped = 0u;
+                ringState[0] = state;
+            }
+
             MemClearArray(statsBuffer);
-            if (state.PendingCount > globalBudget)
+            int smallestProfileBudget = ResolveSmallestKernelProfileFrameBudget(int.MaxValue);
+            bool profileCapMayTrip = smallestProfileBudget != int.MaxValue && state.PendingCount > smallestProfileBudget;
+            if (state.PendingCount > globalBudget || profileCapMayTrip)
             {
                 LoadSheddingJob shedJob = new LoadSheddingJob
                 {
@@ -2377,7 +2387,10 @@ namespace Hecton8.Modding
                 state = ringState[0];
             }
 
-            uint thermalDropped = statsBuffer[0].Dropped;
+            uint shedDropped = statsBuffer[0].Dropped;
+            uint thermalDropped = enqueueOverflowDropped > uint.MaxValue - shedDropped
+                ? uint.MaxValue
+                : enqueueOverflowDropped + shedDropped;
             int drainCount = 0;
             MemClearElements(staging, 0, math.min(globalBudget, staging.Length));
             while (drainCount < globalBudget && state.PendingCount > 0)
@@ -2448,6 +2461,7 @@ namespace Hecton8.Modding
                 RejectionWriter = SignalBus<ModInteractionRejectedPayload>.ParallelWriter,
                 CameraJuiceImpulses = cameraJuiceImpulses,
                 CameraJuiceState = cameraJuiceState,
+                KernelProfiles = kernelProfiles,
                 Count = drainCount,
                 Frame = frame,
                 OpcodeRecordCount = state.OpcodeCount,
@@ -2559,22 +2573,44 @@ namespace Hecton8.Modding
                 int count = math.min(state.PendingCount, math.min(PendingRing.Length, Scratch.Length));
                 int safeBudget = math.clamp(DynamicBudget, 0, count);
                 int overflow = math.max(0, count - safeBudget);
-                if (overflow <= 0)
-                    return;
+
+                int survivalCap = ResolveOpcodeFrameBudget(FutureCommandOpcodes.SurvivalOverride);
+                int hapticCap = ResolveOpcodeFrameBudget(FutureCommandOpcodes.HapticPulse);
+                int subtitleCap = ResolveOpcodeFrameBudget(FutureCommandOpcodes.SubtitleCue);
 
                 int optionalCount = 0;
                 int standardCount = 0;
                 int survivalCount = 0;
+                int survivalOpcodeCount = 0;
+                int hapticOpcodeCount = 0;
+                int subtitleOpcodeCount = 0;
                 for (int i = 0; i < count; i++)
                 {
                     int index = RingIndex(state.PendingHead, i, PendingRing.Length);
-                    int priority = ResolveDropPriority(PendingRing[index].OpcodeHash);
+                    uint opcodeHash = PendingRing[index].OpcodeHash;
+                    int priority = ResolveDropPriority(opcodeHash);
                     if (priority == 0)
                         optionalCount++;
                     else if (priority == 1)
                         standardCount++;
                     else
                         survivalCount++;
+
+                    uint normalizedOpcode = NormalizeProfileOpcode(opcodeHash);
+                    if (normalizedOpcode == FutureCommandOpcodes.SurvivalOverride)
+                        survivalOpcodeCount++;
+                    else if (normalizedOpcode == FutureCommandOpcodes.HapticPulse)
+                        hapticOpcodeCount++;
+                    else if (normalizedOpcode == FutureCommandOpcodes.SubtitleCue)
+                        subtitleOpcodeCount++;
+                }
+
+                if (overflow <= 0 &&
+                    survivalOpcodeCount <= survivalCap &&
+                    hapticOpcodeCount <= hapticCap &&
+                    subtitleOpcodeCount <= subtitleCap)
+                {
+                    return;
                 }
 
                 int dropOptional = math.min(overflow, optionalCount);
@@ -2587,6 +2623,10 @@ namespace Hecton8.Modding
                 int optionalDropped = 0;
                 int standardDropped = 0;
                 int survivalDropped = 0;
+                int profileDropped = 0;
+                int survivalKept = 0;
+                int hapticKept = 0;
+                int subtitleKept = 0;
                 for (int i = 0; i < count; i++)
                 {
                     int index = RingIndex(state.PendingHead, i, PendingRing.Length);
@@ -2610,6 +2650,38 @@ namespace Hecton8.Modding
                         continue;
                     }
 
+                    uint normalizedOpcode = NormalizeProfileOpcode(envelope.OpcodeHash);
+                    if (normalizedOpcode == FutureCommandOpcodes.SurvivalOverride)
+                    {
+                        if (survivalKept >= survivalCap)
+                        {
+                            profileDropped++;
+                            continue;
+                        }
+
+                        survivalKept++;
+                    }
+                    else if (normalizedOpcode == FutureCommandOpcodes.HapticPulse)
+                    {
+                        if (hapticKept >= hapticCap)
+                        {
+                            profileDropped++;
+                            continue;
+                        }
+
+                        hapticKept++;
+                    }
+                    else if (normalizedOpcode == FutureCommandOpcodes.SubtitleCue)
+                    {
+                        if (subtitleKept >= subtitleCap)
+                        {
+                            profileDropped++;
+                            continue;
+                        }
+
+                        subtitleKept++;
+                    }
+
                     Scratch[kept] = envelope;
                     kept++;
                 }
@@ -2622,10 +2694,14 @@ namespace Hecton8.Modding
                 state.PendingCount = kept;
                 RingState[0] = state;
 
-                FutureCommandValidationStats stats = default;
-                stats.Dropped = (uint)(optionalDropped + standardDropped + survivalDropped);
-                stats.RejectionMask = (uint)FutureCommandRejectReason.ThermalShed;
-                Stats[0] = stats;
+                int totalDropped = optionalDropped + standardDropped + survivalDropped + profileDropped;
+                if (totalDropped > 0)
+                {
+                    FutureCommandValidationStats stats = default;
+                    stats.Dropped = (uint)totalDropped;
+                    stats.RejectionMask = (uint)FutureCommandRejectReason.ThermalShed;
+                    Stats[0] = stats;
+                }
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2661,15 +2737,43 @@ namespace Hecton8.Modding
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private int ResolveOpcodeFrameBudget(uint opcodeHash)
+            {
+                uint normalizedOpcode = NormalizeProfileOpcode(opcodeHash);
+                if (!KernelProfiles.IsCreated || normalizedOpcode == 0u)
+                    return int.MaxValue;
+
+                for (int i = 0; i < KernelProfiles.Length; i++)
+                {
+                    ModKernelTuningProfile profile = KernelProfiles[i];
+                    if (profile.OpcodeHash == normalizedOpcode)
+                        return profile.MaxPerFrame > 0 ? profile.MaxPerFrame : int.MaxValue;
+                    if (profile.OpcodeHash == 0u)
+                        return int.MaxValue;
+                }
+
+                return int.MaxValue;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static uint NormalizeProfileOpcode(uint opcodeHash)
+            {
+                return opcodeHash == FutureCommandOpcodes.TriggerSubtitleCue
+                    ? FutureCommandOpcodes.SubtitleCue
+                    : opcodeHash;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private float ResolvePriorityWeight(uint opcodeHash)
             {
-                if (!KernelProfiles.IsCreated || opcodeHash == 0u)
+                uint normalizedOpcode = NormalizeProfileOpcode(opcodeHash);
+                if (!KernelProfiles.IsCreated || normalizedOpcode == 0u)
                     return -1f;
 
                 for (int i = 0; i < KernelProfiles.Length; i++)
                 {
                     ModKernelTuningProfile profile = KernelProfiles[i];
-                    if (profile.OpcodeHash == opcodeHash)
+                    if (profile.OpcodeHash == normalizedOpcode)
                         return profile.PriorityWeight;
                     if (profile.OpcodeHash == 0u)
                         return -1f;
@@ -2683,7 +2787,7 @@ namespace Hecton8.Modding
         private unsafe struct ValidateFutureCommandEnvelopeJob : IJob
         {
             [NoAlias] [ReadOnly] public NativeArray<FutureCommandEnvelope> Inputs;
-            [NoAlias] public NativeArray<FutureCommandValidationStats> Stats;
+            [NoAlias] [WriteOnly] public NativeArray<FutureCommandValidationStats> Stats;
             [NoAlias] [ReadOnly] public NativeArray<FutureCommandOpcodeRecord> OpcodeRecords;
             [NoAlias] public NativeArray<ModderFrameCounter> PerModCounters;
             [NoAlias] [ReadOnly] public NativeArray<ModderMemoryLease> MemoryLeases;
@@ -2702,6 +2806,7 @@ namespace Hecton8.Modding
             [NoAlias] [WriteOnly] public NativeQueue<HapticPulseSignal>.ParallelWriter HapticWriter;
             [NoAlias] [WriteOnly] public NativeQueue<SubtitleCueSignal>.ParallelWriter SubtitleWriter;
             [NoAlias] [WriteOnly] public NativeQueue<ModInteractionRejectedPayload>.ParallelWriter RejectionWriter;
+            [NoAlias] [ReadOnly] public NativeArray<ModKernelTuningProfile> KernelProfiles;
             public int Count;
             public int OpcodeRecordCount;
             public int MaxCommandsPerSignature;
@@ -2741,6 +2846,7 @@ namespace Hecton8.Modding
 
                 if (!IsFiniteBoundedAup(envelope.TargetAUP))
                 {
+                    stats.AupViolations++;
                     RejectEnvelope(in envelope, ref stats, FutureCommandRejectReason.InvalidAup, FutureCommandSandboxConstants.FaultHashInvalidAup);
                     stats.RejectionMask |= (uint)FutureCommandRejectReason.AupViolation;
                     stats.KernelRejected++;
@@ -2893,6 +2999,7 @@ namespace Hecton8.Modding
                 if (!IsKernelAupFiniteBounded(envelope.TargetAUP))
                 {
                     stats.KernelRejected++;
+                    stats.AupViolations++;
                     RejectEnvelope(in envelope, ref stats, FutureCommandRejectReason.AupViolation, FutureCommandSandboxConstants.FaultHashInvalidAup);
                     return false;
                 }
@@ -2901,6 +3008,7 @@ namespace Hecton8.Modding
                 if (!math.all(math.isfinite(localDeltaD)))
                 {
                     stats.KernelRejected++;
+                    stats.AupViolations++;
                     RejectEnvelope(in envelope, ref stats, FutureCommandRejectReason.AupViolation, FutureCommandSandboxConstants.FaultHashInvalidAup);
                     return false;
                 }
@@ -2909,6 +3017,7 @@ namespace Hecton8.Modding
                 if (!math.all(math.isfinite(localDelta)))
                 {
                     stats.KernelRejected++;
+                    stats.AupViolations++;
                     RejectEnvelope(in envelope, ref stats, FutureCommandRejectReason.AupViolation, FutureCommandSandboxConstants.FaultHashInvalidAup);
                     return false;
                 }
@@ -2921,9 +3030,14 @@ namespace Hecton8.Modding
                 }
 
                 uint waveformHash = math.asuint(envelope.PayloadData.x);
-                float intensity = math.saturate(envelope.PayloadData.y);
-                float duration = math.clamp(envelope.PayloadData.z, 0.01f, 5f);
-                float range = math.isfinite(envelope.PayloadData.w) && envelope.PayloadData.w > 0f ? envelope.PayloadData.w : 32f;
+                bool hasProfile = TryResolveKernelProfile(FutureCommandOpcodes.HapticPulse, out ModKernelTuningProfile profile);
+                float intensityScale = hasProfile ? math.max(0f, profile.IntensityScale) : 1f;
+                float intensity = math.saturate(envelope.PayloadData.y * intensityScale);
+                float durationMax = hasProfile ? math.max(0.01f, profile.MaxDurationSeconds) : 5f;
+                float duration = math.clamp(envelope.PayloadData.z, 0.01f, durationMax);
+                float rangeMax = hasProfile ? math.max(1f, profile.RangeMeters) : 32f;
+                float requestedRange = math.isfinite(envelope.PayloadData.w) && envelope.PayloadData.w > 0f ? envelope.PayloadData.w : rangeMax;
+                float range = math.clamp(requestedRange, 1f, rangeMax);
                 float distanceSq = math.max(1f, math.lengthsq(localDelta));
                 float rangeSq = math.max(1f, range * range);
                 if (distanceSq > rangeSq)
@@ -2936,7 +3050,8 @@ namespace Hecton8.Modding
                 float rangeEnergy = rangeSq * inverseSquare;
                 float scaledIntensity = math.saturate(intensity * rangeEnergy);
                 float fallback01 = math.saturate((0.35f - math.saturate(GlobalQualityWeight)) * 2.8571429f);
-                float fallbackScalar = (TuningFlags & FutureCommandSandboxConstants.KernelFlagForceHapticCameraFallback) != 0u
+                uint hapticFlags = TuningFlags | (hasProfile ? profile.Flags : 0u);
+                float fallbackScalar = (hapticFlags & FutureCommandSandboxConstants.KernelFlagForceHapticCameraFallback) != 0u
                     ? 1f
                     : fallback01;
                 if (fallbackScalar > 0.0001f)
@@ -2974,10 +3089,16 @@ namespace Hecton8.Modding
                     return false;
                 }
 
+                bool hasProfile = TryResolveKernelProfile(
+                    envelope.OpcodeHash == FutureCommandOpcodes.TriggerSubtitleCue
+                        ? FutureCommandOpcodes.SubtitleCue
+                        : envelope.OpcodeHash,
+                    out ModKernelTuningProfile profile);
+                float durationMax = hasProfile ? math.max(0.05f, profile.MaxDurationSeconds) : 30f;
                 SubtitleWriter.Enqueue(new SubtitleCueSignal
                 {
                     TokenHash = tokenHash,
-                    Duration = math.clamp(envelope.PayloadData.y, 0.05f, 30f),
+                    Duration = math.clamp(envelope.PayloadData.y, 0.05f, durationMax),
                     Priority = (uint)math.clamp((int)math.round(math.max(0f, envelope.PayloadData.z)), 0, 255),
                     _pad0 = 0u
                 });
@@ -3292,6 +3413,28 @@ namespace Hecton8.Modding
                 return false;
             }
 
+            private bool TryResolveKernelProfile(uint opcodeHash, out ModKernelTuningProfile profile)
+            {
+                profile = default;
+                if (!KernelProfiles.IsCreated || opcodeHash == 0u || KernelProfiles.Length == 0)
+                    return false;
+
+                for (int i = 0; i < KernelProfiles.Length; i++)
+                {
+                    ModKernelTuningProfile candidate = KernelProfiles[i];
+                    if (candidate.OpcodeHash == opcodeHash)
+                    {
+                        profile = candidate;
+                        return true;
+                    }
+
+                    if (candidate.OpcodeHash == 0u)
+                        return false;
+                }
+
+                return false;
+            }
+
             private int FindCounterSlot(uint signature, out bool found)
             {
                 found = false;
@@ -3459,6 +3602,7 @@ namespace Hecton8.Modding
             [NoAlias] [ReadOnly] public NativeArray<FutureCommandEnvelope> Inputs;
             [NoAlias] public NativeArray<ModKernelCameraJuiceImpulse> CameraJuiceImpulses;
             [NoAlias] public NativeArray<ModKernelCameraJuiceState> CameraJuiceState;
+            [NoAlias] [ReadOnly] public NativeArray<ModKernelTuningProfile> KernelProfiles;
             [NoAlias] [WriteOnly] public NativeQueue<HapticPulseSignal>.ParallelWriter Output;
             public int Count;
             public uint Frame;
@@ -3473,9 +3617,11 @@ namespace Hecton8.Modding
                 for (int i = 0; i < count; i++)
                 {
                     FutureCommandEnvelope envelope = Inputs[i];
+                    double3 absAup = math.abs(envelope.TargetAUP);
                     if (envelope.OpcodeHash != FutureCommandOpcodes.HapticPulse ||
                         RollbackActive != 0u ||
                         !math.all(math.isfinite(envelope.TargetAUP)) ||
+                        !math.all(absAup <= new double3(FutureCommandSandboxConstants.KernelMaxAupMagnitudeMeters)) ||
                         !math.all(math.isfinite(new float3(envelope.PayloadData.y, envelope.PayloadData.z, envelope.PayloadData.w))) ||
                         envelope.PayloadData.y < 0f ||
                         envelope.PayloadData.z <= 0f)
@@ -3488,15 +3634,19 @@ namespace Hecton8.Modding
                     if (!math.all(math.isfinite(localDelta)))
                         continue;
 
-                    float range = envelope.PayloadData.w > 0f ? envelope.PayloadData.w : 32f;
+                    bool hasProfile = TryResolveKernelProfile(FutureCommandOpcodes.HapticPulse, out ModKernelTuningProfile profile);
+                    float rangeMax = hasProfile ? math.max(1f, profile.RangeMeters) : 32f;
+                    float range = math.clamp(envelope.PayloadData.w > 0f ? envelope.PayloadData.w : rangeMax, 1f, rangeMax);
                     float rangeSq = math.max(1f, range * range);
                     float distanceSq = math.max(1f, math.lengthsq(localDelta));
                     if (distanceSq > rangeSq)
                         continue;
 
-                    float scaledIntensity = math.saturate(math.saturate(envelope.PayloadData.y) * rangeSq * math.rcp(distanceSq));
+                    float intensityScale = hasProfile ? math.max(0f, profile.IntensityScale) : 1f;
+                    float scaledIntensity = math.saturate(math.saturate(envelope.PayloadData.y * intensityScale) * rangeSq * math.rcp(distanceSq));
                     float fallback01 = math.saturate((0.35f - math.saturate(GlobalQualityWeight)) * 2.8571429f);
-                    float fallbackScalar = (TuningFlags & FutureCommandSandboxConstants.KernelFlagForceHapticCameraFallback) != 0u ? 1f : fallback01;
+                    uint hapticFlags = TuningFlags | (hasProfile ? profile.Flags : 0u);
+                    float fallbackScalar = (hapticFlags & FutureCommandSandboxConstants.KernelFlagForceHapticCameraFallback) != 0u ? 1f : fallback01;
                     if (fallbackScalar > 0.0001f)
                     {
                         WriteFallbackImpulse(envelope.TargetAUP, scaledIntensity * fallbackScalar);
@@ -3509,11 +3659,33 @@ namespace Hecton8.Modding
                         TargetAUP = envelope.TargetAUP,
                         WaveformHash = waveformHash == 0u ? (envelope.ModderSignature ^ FutureCommandOpcodes.HapticPulse) : waveformHash,
                         Intensity = scaledIntensity,
-                        Duration = math.clamp(envelope.PayloadData.z, 0.01f, 5f),
+                        Duration = math.clamp(envelope.PayloadData.z, 0.01f, hasProfile ? math.max(0.01f, profile.MaxDurationSeconds) : 5f),
                         Flags = 0u,
                         _pad0 = 0UL
                     });
                 }
+            }
+
+            private bool TryResolveKernelProfile(uint opcodeHash, out ModKernelTuningProfile profile)
+            {
+                profile = default;
+                if (!KernelProfiles.IsCreated || opcodeHash == 0u || KernelProfiles.Length == 0)
+                    return false;
+
+                for (int i = 0; i < KernelProfiles.Length; i++)
+                {
+                    ModKernelTuningProfile candidate = KernelProfiles[i];
+                    if (candidate.OpcodeHash == opcodeHash)
+                    {
+                        profile = candidate;
+                        return true;
+                    }
+
+                    if (candidate.OpcodeHash == 0u)
+                        return false;
+                }
+
+                return false;
             }
 
             private void WriteFallbackImpulse(double3 targetAup, float scalar)
@@ -3543,6 +3715,7 @@ namespace Hecton8.Modding
         internal struct SubtitleCueKernelJob : IJob
         {
             [NoAlias] [ReadOnly] public NativeArray<FutureCommandEnvelope> Inputs;
+            [NoAlias] [ReadOnly] public NativeArray<ModKernelTuningProfile> KernelProfiles;
             [NoAlias] [WriteOnly] public NativeQueue<SubtitleCueSignal>.ParallelWriter Output;
             public int Count;
             public uint RollbackActive;
@@ -3556,7 +3729,9 @@ namespace Hecton8.Modding
                 for (int i = 0; i < count; i++)
                 {
                     FutureCommandEnvelope envelope = Inputs[i];
-                    if (envelope.OpcodeHash != FutureCommandOpcodes.SubtitleCue ||
+                    bool subtitleOpcode = envelope.OpcodeHash == FutureCommandOpcodes.SubtitleCue ||
+                                          envelope.OpcodeHash == FutureCommandOpcodes.TriggerSubtitleCue;
+                    if (!subtitleOpcode ||
                         math.asuint(envelope.PayloadData.x) == 0u ||
                         !math.all(math.isfinite(new float2(envelope.PayloadData.y, envelope.PayloadData.z))) ||
                         envelope.PayloadData.y <= 0f)
@@ -3564,14 +3739,41 @@ namespace Hecton8.Modding
                         continue;
                     }
 
+                    bool hasProfile = TryResolveKernelProfile(
+                        envelope.OpcodeHash == FutureCommandOpcodes.TriggerSubtitleCue
+                            ? FutureCommandOpcodes.SubtitleCue
+                            : envelope.OpcodeHash,
+                        out ModKernelTuningProfile profile);
                     Output.Enqueue(new SubtitleCueSignal
                     {
                         TokenHash = math.asuint(envelope.PayloadData.x),
-                        Duration = math.clamp(envelope.PayloadData.y, 0.05f, 30f),
+                        Duration = math.clamp(envelope.PayloadData.y, 0.05f, hasProfile ? math.max(0.05f, profile.MaxDurationSeconds) : 30f),
                         Priority = (uint)math.clamp((int)math.round(math.max(0f, envelope.PayloadData.z)), 0, 255),
                         _pad0 = 0u
                     });
                 }
+            }
+
+            private bool TryResolveKernelProfile(uint opcodeHash, out ModKernelTuningProfile profile)
+            {
+                profile = default;
+                if (!KernelProfiles.IsCreated || opcodeHash == 0u || KernelProfiles.Length == 0)
+                    return false;
+
+                for (int i = 0; i < KernelProfiles.Length; i++)
+                {
+                    ModKernelTuningProfile candidate = KernelProfiles[i];
+                    if (candidate.OpcodeHash == opcodeHash)
+                    {
+                        profile = candidate;
+                        return true;
+                    }
+
+                    if (candidate.OpcodeHash == 0u)
+                        return false;
+                }
+
+                return false;
             }
         }
 

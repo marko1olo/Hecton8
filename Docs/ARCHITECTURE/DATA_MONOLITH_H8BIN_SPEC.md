@@ -15,11 +15,13 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+
+R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
-## 2026-05-19 DOC_GLOBAL R31 Current Boundary Note
+## 2026-05-19 DOC_GLOBAL R32 Current Boundary Note
 
-R31 reread confirmed this file remains a static DataMonolith binary-spec contract, not product payload existence, runtime I/O, or platform-storage proof. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`; R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `57` RealtimeCSG vendor references; `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
+R32 artifact-backed reread evidence keeps this file as a static DataMonolith binary-spec contract, not product payload existence, runtime I/O, or platform-storage proof. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`; R31 remains the prior current-boundary propagation correction. R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`); `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
 
 Owners: `H8DataMonolithTypes`, `H8StaticDataArena`, `H8DataHash`, `H8DataMonolithCompiler`
 
@@ -49,8 +51,9 @@ Owners: `H8DataMonolithTypes`, `H8StaticDataArena`, `H8DataHash`, `H8DataMonolit
 
 | Field | Type | Meaning |
 |---|---|---|
-| `WorldSeed` | `uint` | authored seed or 0 |
-| `AppVersionHash` | `uint` | FNV-1a app version hash |
+| `Magic` | `uint` | `H8DM`, duplicated in the directory for corruption triage |
+| `FormatVersion` | `ushort` | binary format version |
+| `HeaderBytes` | `ushort` | fixed value `16` |
 | `Checksum64` | `ulong` | XXHash3-64 for bytes `[16..blobLength)` |
 
 ## Directory
@@ -96,17 +99,30 @@ Current section ids:
 | 22 | `HudLayouts` |
 | 23 | `LocalizationUtf8` |
 | 24 | `SectorPageDirectory` |
+| 25 | `Economy` |
+| 26 | `PhysicsConstants` |
 
 ## Critical Record Sizes
 
 | Record | Size |
 |---|---:|
-| `H8ItemRecord` | 64 |
+| `H8ItemRecord` | 80 |
 | `H8CreatureTraitRecord` | 64 |
 | `H8CreatureGenomeTraitBlock` | 32 |
 | `H8BiomeRecord` | 64 |
+| `H8EconomyRecord` | 64 |
+| `H8PhysicsConstantsRecord` | 64 |
+| `H8DataMonolithTelemetryEntry` | 64 |
+| `H8StaticLocalizationReference` | 16 |
 
-Other monolith records are explicitly packed and sized in source. Consumers must use source constants and `UnsafeUtility.SizeOf<T>()`, not hand-written byte math.
+Other monolith records use explicit layout and source-owned sizes. Consumers must use source constants and `UnsafeUtility.SizeOf<T>()`, not hand-written byte math.
+
+## UTF-8 Text Slices
+
+All localization keys, names, descriptions, addressable keys, and static error messages are stored in
+the `LocalizationUtf8` section as null-terminated UTF-8 bytes. Text-bearing fixed records store
+unsigned offsets plus byte lengths. Empty/missing strings use `uint.MaxValue` as the offset sentinel
+and `0` as byte length.
 
 ## ItemID Hashing
 
@@ -124,12 +140,13 @@ Item, creature, biome, recipe, and many section ids use the same 32-bit FNV-1a c
 
 ## I/O Truth
 
-Source truth as of 2026-05-12:
+Source truth as of 2026-05-19 SHINOBU_103:
 
-- runtime monolith load: `H8StaticDataArena` uses boot-only `File.ReadAllBytes` staging, then blits into persistent native memory
+- runtime monolith load: `H8StaticDataArena` requests `GlobalDataVault` BufferID `71103`, attempts MMF on desktop, and falls back to direct `FileStream.Read(Span<byte>)` into Vault-owned bytes on hostile platforms.
+- runtime no-vault behavior: allocation fails closed; `H8StaticDataArena` does not allocate a private persistent `NativeArray<byte>` fallback.
 - editor bake: `H8DataMonolithCompiler` uses editor-only `MemoryStream` and `File.WriteAllBytes`
-- save system I/O is FileStream/native-window based; Data Monolith has not yet been converted to FileStream streaming
+- checksum: runtime recomputes XXHash3-64 over bytes `[16..blobLength)` before setting Ready.
 
-Do not document the Data Monolith as POSIX/FileStream-complete until `H8StaticDataArena` stops using `File.ReadAllBytes`.
+Do not document the Data Monolith as Unity runtime/profiler/player-build proven until a guarded Unity import, bake, boot, and GC/profiler pass produces fresh artifacts.
 
 STATUS: STATIC_SOURCE REVIEWED / RUNTIME PENDING

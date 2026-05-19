@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -22,7 +23,6 @@ namespace Hecton8.UI
         private const int ActiveRuntimeCapacity = 4;
         private const int HighResolution = 512;
         private const int LowResolution = 256;
-        private const int LowTierFrameModulo = 6;
         private const float AttentionCullDistanceMeters = 20f;
         private const float AttentionCullDistanceSq = AttentionCullDistanceMeters * AttentionCullDistanceMeters;
         private const uint FaultLayoutMismatch = 1u << 0;
@@ -30,23 +30,27 @@ namespace Hecton8.UI
         private const uint FaultNonFinite = 1u << 2;
         private const uint FaultVaultUnavailable = 1u << 3;
         private const string NativeOwner = nameof(TerminalOsRuntime);
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_TERMINAL_OS.bin";
-        private const string DumpMirrorRelativePath = "Docs/AgentLogs/Dump_TERMINAL_OS.h8dump";
-        private const BufferID TerminalStatesBufferId = (BufferID)70520;
-        private const BufferID ScreenCommandsBufferId = (BufferID)70521;
-        private const BufferID GlyphUvsBufferId = (BufferID)70522;
-        private const BufferID TerminalPositionsBufferId = (BufferID)70523;
-        private const BufferID TerminalForwardsBufferId = (BufferID)70524;
-        private const BufferID DirtyIndicesBufferId = (BufferID)70525;
-        private const BufferID TelemetryRingBufferId = (BufferID)70526;
-        private const BufferID MockPowerBufferId = (BufferID)70527;
-        private const BufferID MockDamageBufferId = (BufferID)70528;
-        private const BufferID MockPowerStatusBufferId = (BufferID)70529;
-        private const BufferID VirtualButtonsBufferId = (BufferID)70530;
-        private const BufferID PanelInstancesBufferId = (BufferID)70531;
-        private const BufferID TerminalClickScratchBufferId = (BufferID)70532;
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_TERMINAL_SURGEON.bin";
+        private const string DumpMirrorRelativePath = "Docs/AgentLogs/Dump_TERMINAL_SURGEON.h8dump";
+        private const BufferID TerminalStatesBufferId = (BufferID)71360;
+        private const BufferID ScreenCommandsBufferId = (BufferID)71361;
+        private const BufferID GlyphUvsBufferId = (BufferID)71362;
+        private const BufferID TerminalPositionsBufferId = (BufferID)71363;
+        private const BufferID TerminalForwardsBufferId = (BufferID)71364;
+        private const BufferID DirtyIndicesBufferId = (BufferID)71365;
+        private const BufferID TelemetryRingBufferId = (BufferID)71366;
+        private const BufferID MockPowerBufferId = (BufferID)71367;
+        private const BufferID MockDamageBufferId = (BufferID)71368;
+        private const BufferID MockPowerStatusBufferId = (BufferID)71369;
+        private const BufferID ButtonAabbBufferId = (BufferID)71370;
+        private const BufferID PanelInstancesBufferId = (BufferID)71371;
+        private const BufferID TerminalClickScratchBufferId = (BufferID)71372;
+        private const BufferID TerminalPlanesBufferId = (BufferID)71373;
+        private const BufferID GazeRayBufferId = (BufferID)71374;
+        private const BufferID TerminalInteractionsBufferId = (BufferID)71375;
         private const uint TerminalClickLaneHash = 0x54434C4Bu; // TCLK
         private const uint TerminalCommandLaneHash = 0x54434D44u; // TCMD
+        private const uint InteractionUiLaneHash = 0x54554931u; // TUI1
         private const string TerminalInstancedKeyword = "HECTON_TERMINAL_INSTANCED";
 
         // COLD ALLOC: TerminalOsRuntime[4] - active terminal runtime bridge for SHINOBU_49 diegetic glitch DTO writes - owner: TerminalOsRuntime
@@ -64,6 +68,7 @@ namespace Hecton8.UI
         private static readonly int TerminalResolutionYId = Shader.PropertyToID("_TerminalResolutionY");
         private static readonly int DirtyTerminalCountId = Shader.PropertyToID("_DirtyTerminalCount");
         private static readonly int TimeSeedId = Shader.PropertyToID("_TimeSeed");
+        private static readonly int HectonDiegeticGlitchQualityWeightId = Shader.PropertyToID("_HectonDiegeticGlitchQualityWeight");
 
         [Header("GPU")]
         [SerializeField] private ComputeShader terminalBlitCompute;
@@ -81,6 +86,12 @@ namespace Hecton8.UI
         [SerializeField] private bool mockGeneratorEnabled = true;
         [SerializeField] private string layoutCsvRelativePath = "Assets/StreamingAssets/terminal_layouts.csv";
 
+        [Header("Interaction Solver")]
+        [SerializeField, Range(0.5f, 30f)] private float interactionMaxDistanceMeters = 10f;
+        [SerializeField, Range(-0.5f, 0.95f)] private float interactionViewConeCos = -0.05f;
+        [SerializeField, Range(0f, 1f)] private float hologramDistortionIntensity = 0.35f;
+        [SerializeField, Range(0f, 1f)] private float minimumQualityWeight;
+
         private IDataVault _vault;
         private VaultBufferHandle<TerminalStateDTO> _terminalStatesHandle;
         private VaultBufferHandle<ScreenCommandDTO> _screenCommandsHandle;
@@ -92,9 +103,12 @@ namespace Hecton8.UI
         private VaultBufferHandle<MockPowerStateSignal> _mockPowerSignalHandle;
         private VaultBufferHandle<MockDamageScalarSignal> _mockDamageSignalHandle;
         private VaultBufferHandle<MockPowerStatusSignal> _mockPowerStatusSignalHandle;
-        private VaultBufferHandle<TerminalVirtualButtonDTO> _virtualButtonsHandle;
+        private VaultBufferHandle<ButtonAABBDTO> _buttonAabbHandle;
         private VaultBufferHandle<TerminalPanelInstanceDTO> _panelInstancesHandle;
         private VaultBufferHandle<TerminalClickSignal> _clickScratchHandle;
+        private VaultBufferHandle<TerminalPlaneDTO> _terminalPlanesHandle;
+        private VaultBufferHandle<GazeRayDTO> _gazeRayHandle;
+        private VaultBufferHandle<TerminalInteractionDTO> _terminalInteractionsHandle;
 
         private readonly GraphicsBuffer[] _stateBuffers = new GraphicsBuffer[2];
         private GraphicsBuffer _screenCommandBuffer;
@@ -107,8 +121,10 @@ namespace Hecton8.UI
 
         private JobHandle _formatHandle;
         private JobHandle _clickResolveHandle;
+        private JobHandle _terminalInteractionHandle;
         private bool _formatScheduled;
         private bool _clickResolveScheduled;
+        private bool _terminalInteractionScheduled;
         private bool _registeredLateFrame;
         private bool _nativeResourcesReady;
         private bool _graphicsResourcesReady;
@@ -118,6 +134,7 @@ namespace Hecton8.UI
         private bool _panelInstanceUploadDirty;
         private bool _blackBoxDumped;
         private bool _lowTier;
+        private bool _inputPressedLastFrame;
         private int _terminalCount;
         private int _buttonCount;
         private int _writeBufferIndex;
@@ -133,13 +150,19 @@ namespace Hecton8.UI
         private int _nextCameraResolveFrame;
         private int _lastDirtyCount;
         private int _lastDispatchedCount;
+        private int _framesBetweenUpdates = 1;
+        private int _lastEvaluatedTerminalCount;
+        private uint _lastHoveredTerminalHash;
         private uint _lastFaultFlags;
         private float _lastFormatMainThreadMilliseconds;
         private float _lastUploadMicroseconds;
         private float _lastDispatchMicroseconds;
+        private float _lastIntersectionMicroseconds;
         private float _lastPower01;
         private float _lastDamage01;
         private float _lastDiegeticGlitchIntensity;
+        private float _globalQualityWeight = 1f;
+        private IInputService _input;
         private HectonQualityTier _cachedTier = HectonQualityTier.Unknown;
         private string _csvFullPath;
         private string _dumpFullPath;
@@ -156,6 +179,7 @@ namespace Hecton8.UI
             int frame = Time.frameCount;
             RefreshScalabilityPolicy();
             TryFinalizeClickResolveJob();
+            TryFinalizeTerminalInteractionJob();
 
             if (_formatScheduled)
             {
@@ -181,9 +205,10 @@ namespace Hecton8.UI
             }
 
             _lastDispatchedCount = dispatchedCount;
+            UpdatePanelInstancesIfNeeded();
+            TryScheduleTerminalInteractionPipeline(frame);
             TryScheduleClickResolveJob();
             TryScheduleFormatJob(frame);
-            UpdatePanelInstancesIfNeeded();
             RenderInstancedPanels();
             uint faultFlags = _lastFaultFlags;
             if (_terminalCount >= TerminalOsConstants.ActiveTargetTerminals && _lastFormatMainThreadMilliseconds > 0.5f)
@@ -416,6 +441,9 @@ namespace Hecton8.UI
             if (_attentionCameraCache == null && attentionCameraOverride != null)
                 _attentionCameraCache = attentionCameraOverride;
 
+            if (_input == null || !_input.IsInitialized)
+                _input = GlobalRegistry.Input;
+
             if (string.IsNullOrEmpty(_csvFullPath))
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -430,7 +458,12 @@ namespace Hecton8.UI
             _lastFaultFlags &= ~FaultLayoutMismatch;
             if (UnsafeUtility.SizeOf<TerminalStateDTO>() != TerminalOsConstants.TerminalStateStrideBytes ||
                 UnsafeUtility.SizeOf<ScreenCommandDTO>() != TerminalOsConstants.ScreenCommandStrideBytes ||
-                UnsafeUtility.SizeOf<TerminalPanelInstanceDTO>() != 80)
+                UnsafeUtility.SizeOf<TerminalInteractionDTO>() != TerminalOsConstants.TerminalInteractionStrideBytes ||
+                UnsafeUtility.SizeOf<TerminalPlaneDTO>() != TerminalOsConstants.TerminalPlaneStrideBytes ||
+                UnsafeUtility.SizeOf<GazeRayDTO>() != TerminalOsConstants.GazeRayStrideBytes ||
+                UnsafeUtility.SizeOf<ButtonAABBDTO>() != TerminalOsConstants.ButtonAabbStrideBytes ||
+                UnsafeUtility.SizeOf<TerminalPanelInstanceDTO>() != 80 ||
+                UnsafeUtility.SizeOf<TerminalTelemetryEntry>() != 64)
             {
                 _lastFaultFlags |= FaultLayoutMismatch;
             }
@@ -442,16 +475,17 @@ namespace Hecton8.UI
             if (_textureResolution > 0 && frame < _nextTierRefreshFrame)
                 return;
 
-            _nextTierRefreshFrame = frame + (_lowTier ? 120 : 60);
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier == _cachedTier && _textureResolution > 0)
-                return;
+            float quality = math.max(ResolveGlobalQualityWeight01(), math.saturate(minimumQualityWeight));
+            _globalQualityWeight = quality;
+            _framesBetweenUpdates = math.clamp((int)math.round(math.lerp(1f, 15f, 1f - quality)), 1, 15);
+            _nextTierRefreshFrame = frame + math.clamp((int)math.round(math.lerp(30f, 120f, 1f - quality)), 30, 120);
 
-            bool lowTier = tier == HectonQualityTier.Unknown || tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
-            int targetResolution = lowTier ? LowResolution : HighResolution;
+            float resolutionCurve = Smooth01(quality);
+            int targetResolution = AlignResolution((int)math.round(math.lerp(LowResolution, HighResolution, resolutionCurve)));
             bool resolutionChanged = _textureResolution != targetResolution;
             _cachedTier = tier;
-            _lowTier = lowTier;
+            _lowTier = quality < 0.35f;
             if (_terminalTextureArray != null && Application.isPlaying)
                 return;
 
@@ -463,6 +497,43 @@ namespace Hecton8.UI
                 _bindingsDirty = true;
                 ForceAllDirty();
             }
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            if (math.isfinite(weight))
+                return math.saturate(weight);
+
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            switch (tier)
+            {
+                case HectonQualityTier.Ultra:
+                    return 1f;
+                case HectonQualityTier.High:
+                    return 0.82f;
+                case HectonQualityTier.Mid:
+                    return 0.52f;
+                case HectonQualityTier.Low:
+                case HectonQualityTier.Mx350:
+                case HectonQualityTier.Unknown:
+                default:
+                    return 0.18f;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int AlignResolution(int value)
+        {
+            int clamped = math.clamp(value, LowResolution, HighResolution);
+            return (clamped + 7) & ~7;
         }
 
         private void EnsureNativeResources()

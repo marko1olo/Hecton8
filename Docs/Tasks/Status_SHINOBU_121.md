@@ -55,3 +55,17 @@ Task Count: 20 authoritative tasks extracted
 - New code will live under `Assets/_Project/Scripts/World/ProceduralWreckage` with its own asmdef and cast-only Vault `BufferID`s to avoid core enum churn.
 - Static scans over the new folder found no `Instantiate`, `List`, `Dictionary`, `UnityEngine.Random`, `Time.deltaTime`, `.Complete()`, `Pack=1`, local `NativeArray` allocation sites, `Allocator.Persistent`, or `Allocator.TempJob`.
 - `dotnet build` was not launched: CPU samples were 99.42% and 100%, above the explicit >50% build gate. Compile status remains PENDING VERIFICATION.
+
+## Polish Loop 6 - Mandate Reconciliation
+
+- [x] Endian-aware `wreckage_module_rules.h8bin` cold loader | DOD practice: optional binary rules now parse from Vault scratch into aligned `WreckageRuleDTO` records with `math.reversebytes` handling; invalid or absent payload keeps deterministic mock rules | Alternative rejected: raw `MemCpy` of unknown endian/file structs into runtime arrays | Estimate: 0 us hot path, cold boot/editor only.
+- [x] Binary/CSV source counters in padded cache-line counter DTO | DOD practice: reused offset 44 in `WreckagePaddedCounterDTO` for `BinaryRuleCount` without changing 64-byte size | Alternative rejected: adding a second counter buffer/global route | Estimate: 0 us hot path except one cold scalar write after payload load.
+- [x] Global Authority route card | DOD practice: added `Docs/ARCHITECTURE/PROCEDURAL_WRECKAGE_GLOBAL_AUTHORITY_ROUTE_CARD_SHINOBU_121.md` with owner, phase, cadence, capacity, failure mode, telemetry, shutdown, stale-handle behavior, and proof debt | Alternative rejected: claiming Vault route readiness from code comments/chat | Estimate: 0 us runtime.
+- [x] Route disposition honesty | DOD practice: route card marked `YELLOW / PENDING VERIFICATION` because Unity import, Burst compile, GCMonitor, Frame Debugger, and player proof are absent | Alternative rejected: self-awarding `GREEN` without artifacts | Estimate: 0 us runtime.
+- [x] Build gate rechecked | DOD practice: CPU sampled 28% then 78%; no `dotnet`/`csc` process observed, but no narrow `Hecton8.World.ProceduralWreckage.csproj` exists and CPU returned above 50% before a compile was launched | Alternative rejected: wide rebuild under active CPU pressure | Estimate: prevents compile-wall load spike.
+
+## Polish Loop 7 - NaN and Build-Gate Recheck
+
+- [x] Debris matrix NaN fallback | DOD practice: `GenerateDebrisFieldJob` now checks debris `LocalMatrix` and `SectorAUP` before writing to Vault; non-finite values fall back to root AUP, identity rotation, 0.5m bounds, and `FaultNonFinite` | Alternative rejected: assuming deterministic curl noise can never create bad data | Estimate: one finite check per debris row.
+- [x] Self-audit non-finite delta guard | DOD practice: `WreckageSelfAuditJob` now rejects non-finite pair deltas and records `FaultNonFinite` instead of computing overlap from corrupt positions | Alternative rejected: letting NaN overlap silently poison audit output | Estimate: one finite check per audited pair, capped at 256 nodes.
+- [x] Compile gate rechecked again | DOD practice: CPU sampled 100% with active `csc`/`dotnet`, then 99% with no compiler process; both states remain above the explicit CPU threshold | Alternative rejected: launching a competing build under explicit prohibition | Estimate: prevents compile-wall and file-lock noise.

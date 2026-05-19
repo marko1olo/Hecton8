@@ -30,7 +30,7 @@ namespace Hecton8.Physics
         public uint Pad3;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct TetherVerletIntegrationJob : IJobParallelFor
     {
         private const byte PinnedNodeMask = 1;
@@ -153,7 +153,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct VerletCableSolverJob : IJob
     {
         private const float MinLengthSq = 0.000001f;
@@ -330,7 +330,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct TetherVisualGpuSplineCopyJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<float3> Positions;
@@ -355,7 +355,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct TetherVerletOriginShiftJob : IJobParallelFor
     {
         public NativeArray<float3> Positions;
@@ -384,7 +384,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct TetherVerletTelemetryJob : IJob
     {
         public NativeArray<TetherVerletTelemetryEntry> TelemetryRing;

@@ -15,11 +15,13 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+
+R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
-## 2026-05-19 DOC_GLOBAL R31 Current Boundary Note
+## 2026-05-19 DOC_GLOBAL R32 Current Boundary Note
 
-R31 reread confirmed this file remains static future-seam handoff/reservation context, not permission to add direct dependencies or proof that reserved systems exist at runtime. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`; R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `57` RealtimeCSG vendor references; `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
+R32 artifact-backed reread evidence keeps this file as static future-seam handoff/reservation context, not permission to add direct dependencies or proof that reserved systems exist at runtime. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`; R31 remains the prior current-boundary propagation correction. R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`); `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
 
 ## Purpose
 
@@ -202,10 +204,11 @@ owners must prove before the public API expands.
 - No Unity import proof.
 - No Unity Console proof.
 - No Play Mode proof.
-- A temporary Roslyn syntax/compile check against Unity editor assemblies passed; this is not Unity
-  import proof.
+- A temporary Roslyn syntax/compile check against Unity editor assemblies was reported; artifact tuple absent; Unity
+  import/compile proof remains pending.
 - No profiler, GCMonitor, Memory Profiler, player build, platform build, save/load, or visual proof.
 - Runtime microseconds saved: `0us`.
-- Latest temporary Roslyn/net10 harness result: all six fixed DTOs are `64` bytes; self-audit returns
+- Temporary Roslyn/net10 harness result was reported; artifact tuple absent; treat as static-tool orientation only:
+  all six fixed DTOs are `64` bytes; self-audit returns
   `ok=True`, `records=7`, `mask=0x000000FE`, `flags=0x0000003F`, `bytes=512`, `blackbox=300`,
   public mod API counts `8/7`, and `reportErrors=0x00000000`.

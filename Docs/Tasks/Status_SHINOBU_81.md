@@ -3,7 +3,7 @@
 Agent: SHINOBU_81
 Domain: COMPETITIVE_INTELLIGENCE_AND_UX_ANALYST
 Task count: 13
-Current status: COMPLETE / RESEARCH ONLY / CORE BUILD VERIFIED
+Current status: ACTIVE / MARKETING PREP / DOCS ONLY / RUNTIME PENDING
 Started: 2026-05-18
 
 ## Prompt Extraction
@@ -394,3 +394,168 @@ Started: 2026-05-18
 - [x] Owned audience signup gate V0 added | DOD: updated `Docs/Marketing/Audience/OWNED_AUDIENCE_EMAIL_AND_NEWSLETTER_PLAN.md` with demo alert, playtest waitlist, devlog digest, and press/creator contact modes, each with allowed timing, fields, promise, and stop condition. | Alternative rejected: pushing a vague newsletter before the project has real update value. | Estimate: 0us runtime impact.
 - [x] Owned audience source/backlog boundary updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`; no signup push is authorized before real demo/playtest/devlog/presskit value exists. | Alternative rejected: treating signup copy as live audience capture. | Estimate: 0us runtime impact.
 - Verification status: docs-only; no form published and no emails collected/sent; no compile rerun because known unrelated `PlayerBuilder.cs` compile wall remains.
+
+## 2026-05-19 Active Marketing Work Addendum 40
+
+- [x] First public incident triage gate added | DOD: updated `Docs/Marketing/Community/CRISIS_AND_MODERATION_PLAYBOOK.md` with clone/co-op/darkness/AI-looking/performance/press/regional/key-scam thresholds, first-hour moderator script, and 24-hour keep/revise/kill rule. | Alternative rejected: improvising public moderation after the first screenshot or Steam beat goes live. | Estimate: 0us runtime impact.
+- [x] Steam forum/review moderation gate added | DOD: updated `Docs/Marketing/Feedback/STEAM_REVIEWS_FORUMS_AND_SUPPORT_RESPONSE_PLAYBOOK.md` with pinned thread requirements, triage buckets, first-week response limits, and daily digest template. | Alternative rejected: responding to every review/thread or opening support surfaces without pinned routing. | Estimate: 0us runtime impact.
+- [x] Active control tower loop added | DOD: updated `Docs/Marketing/Operations/DAILY_AGENT_TASK_LOOP.md` with lane selection, evidence gate, noon kill check, and end-cut `ADVANCE/HOLD/KILL` decisions. | Alternative rejected: letting agents keep producing generic docs instead of rows/assets/sources/risks/decisions. | Estimate: 0us runtime impact.
+- [x] Execution-stage risks added | DOD: updated `Docs/Marketing/Data/MARKETING_RISK_REGISTER.md` with RISK-031 through RISK-038 and updated `SOURCE_LEDGER.md` plus `MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: leaving new public-ops gates disconnected from the source/backlog spine. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no Steam page/forum/review/demo/account/public post exists or is implied; no compile rerun because known unrelated `PlayerBuilder.cs` compile wall remains and user explicitly warned not to build unless needed.
+
+## 2026-05-19 Active Marketing Work Addendum 41
+
+- [x] Capsule rough decision packet added | DOD: updated `Docs/Marketing/Creative/VISUAL_IDENTITY_AND_KEY_ART_DIRECTION.md` with `CAP-001` through `CAP-004`, required source assets, cold-read questions, pass thresholds, kill conditions, export requirements, and decision order. | Alternative rejected: commissioning or choosing key art by taste before in-game proof exists. | Estimate: 0us runtime impact.
+- [x] Capsule rough test packet added | DOD: updated `Docs/Marketing/Creative/CAPSULE_TRAILER_THUMBNAIL_BRIEFS.md` with source asset dependencies, clone-risk guards, cold-read form, and paid-art gate. | Alternative rejected: spending on final capsule/key art before small-capsule readability and clone-risk proof. | Estimate: 0us runtime impact.
+- [x] Capsule source/backlog boundary updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 4 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`; packet remains blocked by real asset capture and cold-read results. | Alternative rejected: leaving the backlog row as an unresolved one-line creative task. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no real screenshots, capsule art, Steam asset, public post, or paid spend exists or is implied; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 42
+
+- [x] SN2 launch-week monitoring refreshed | DOD: updated `Docs/Marketing/Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md` with `2026-05-19 Verification Sprint Addendum`, separating official/press launch strength from mixed/anecdotal performance, co-op, and EULA signals. | Alternative rejected: using weak SEO/reddit stutter claims as public attack material. | Estimate: 0us runtime impact.
+- [x] Competitor monitoring source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 5 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`; current asset implication is industrial pressure/machinery/scope honesty, not "SN2 failed". | Alternative rejected: leaving old baseline without current evidence class separation. | Estimate: 0us runtime impact.
+- Verification status: docs/web-research only; no gameplay capture, Steam page, public post, or product claim implied; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 43
+
+- [x] Marketing control tower refreshed | DOD: updated `Docs/Marketing/MARKETING_CONTROL_TOWER.md` to reflect CRM-100/0 raw state, 13 planned asset slots, 0 USD spend recommendation, candidate-only social handles, press/curator triage state, and current top priorities centered on real screenshot/clip capture and QA. | Alternative rejected: leaving old "first 50 raw" and pre-capsule priorities as the primary agent map. | Estimate: 0us runtime impact.
+- [x] Control tower source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 33 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: updating the control tower without tying it back into the source/backlog spine. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no assets/accounts/Steam page/outreach/spend exists or is implied; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 44
+
+- [x] Agent-assisted browser/account boundary added | DOD: updated `Docs/Marketing/Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md` with allowed/forbidden browser/account actions, required owner-controlled credential prerequisites, and abort conditions. | Alternative rejected: creating platform accounts now under unowned or undocumented credentials. | Estimate: 0us runtime impact.
+- [x] Account page field kit added | DOD: added display name, handle, bio, link, contact, avatar/banner, and forced-first-post fields for future owner-controlled account setup. | Alternative rejected: improvising profiles during registration and accidentally adding co-op/performance/competitor claims. | Estimate: 0us runtime impact.
+- [x] Pre-asset quiet content pack added | DOD: updated `Docs/Marketing/Content/POST_BANK_AND_HOOK_LIBRARY.md` with ten optional low-frequency account posts that do not require screenshots and do not ask for wishlists. | Alternative rejected: posting empty hype or staying with no copy plan for freshly reserved handles. | Estimate: 0us runtime impact.
+- [x] Social/content source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 34 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`; no browser/private account action occurred. | Alternative rejected: leaving account/content preparation outside the source/backlog spine. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no private browser profile inspected, no account created, no login performed, no post published, no credential stored; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 45
+
+- [x] Capture packet V0 added | DOD: updated `Docs/Marketing/Content/SCREENSHOT_AND_CLIP_SHOTLIST.md` with every `PLAN-SHOT-*` and `PLAN-CLIP-*` mapped to capture intent, camera/readability requirement, must-include elements, reject code, and first use. | Alternative rejected: letting first captures be judged by taste or broad "looks cool" criteria. | Estimate: 0us runtime impact.
+- [x] Per-asset capture review form added | DOD: added capture session checklist, per-asset review form, and capture kill rules. | Alternative rejected: accepting assets that need lore/caption explanation or cinematic-only framing. | Estimate: 0us runtime impact.
+- [x] Planned capture metadata workflow added | DOD: updated `Docs/Marketing/Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` with planned-to-raw-to-approved status promotion rules and metadata field updates. | Alternative rejected: creating new asset IDs after capture or jumping from planned slot to public approval. | Estimate: 0us runtime impact.
+- [x] Capture source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 35 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`; no real asset file is implied. | Alternative rejected: leaving capture packet disconnected from the source/backlog spine. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no screenshot/clip/capsule file captured or approved; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 46
+
+- [x] Proof-gate dashboard V0 added | DOD: updated `Docs/Marketing/KPI/MARKETING_DASHBOARD_SPEC.md` with asset-gate and first-public-beat tables, advance thresholds, and weekly current-state summary. | Alternative rejected: judging first posts by likes/impressions instead of player-verb, intended nouns, clone, co-op, and confusion counts. | Estimate: 0us runtime impact.
+- [x] Minimum measurement packet added | DOD: updated `Docs/Marketing/Analytics/MEASUREMENT_AND_UTM_PLAN.md` with asset/campaign/link/feedback/spend packet requirements, canonical first-beat IDs, and first-link rules. | Alternative rejected: inventing UTM/beat IDs after posts go live. | Estimate: 0us runtime impact.
+- [x] Proof-measurement source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 36 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`; no public link/data is implied. | Alternative rejected: leaving measurement setup detached from execution backlog. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no Steam URL, UTM link, post, paid spend, or measured data exists; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 47
+
+- [x] Promise lint gate added | DOD: updated `Docs/Marketing/Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md` with sentence tags, forbidden-to-allowed rewrite matrix, proof requirements, search terms, and approved public scope lines. | Alternative rejected: trusting humans/agents to remember no-coop, no-zero-stutter, no-date, and no-competitor-attack rules during launch pressure. | Estimate: 0us runtime impact.
+- [x] Launch war-room dry run added | DOD: updated `Docs/Marketing/Launch/LAUNCH_DAY_AND_FIRST_WEEK_WAR_ROOM.md` with owner map, 45-minute dry run, kill conditions, first-week signal gates, and expansion rule. | Alternative rejected: waiting until launch day to discover missing support, measurement, build truth, or public-reply ownership. | Estimate: 0us runtime impact.
+- [x] Demo access scoring added | DOD: updated `Docs/Marketing/Campaigns/CAMPAIGN_03_FIRST_DEMO_OUTREACH.md` with row scoring, send thresholds, Batch A composition, and outreach stop rules. | Alternative rejected: sending demo keys from creator fame or raw list rank instead of proof fit and verified routes. | Estimate: 0us runtime impact.
+- [x] Website/presskit holding state added | DOD: updated `Docs/Marketing/Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md` with no-link holding page copy, forbidden elements, minimum presskit packet, and presskit send kill conditions. | Alternative rejected: publishing a vanity page or presskit shell before Steam/assets/contact proof exists. | Estimate: 0us runtime impact.
+- [x] Promise/launch/demo/site source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and rows 37-40 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`; no roadmap, launch, demo access, public site, presskit, key, or public link is implied. | Alternative rejected: leaving these execution gates detached from the current control tower. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no account/browser/login/post/key/demo/launch/site action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 48
+
+- [x] Control tower gate propagation added | DOD: updated `Docs/Marketing/MARKETING_CONTROL_TOWER.md` so current operating state, absolute boundaries, work lanes, immediate actions, and top priorities reference promise lint, holding-page, presskit, and launch/demo owner gates. | Alternative rejected: letting future agents read stale control-tower priorities after deeper docs changed. | Estimate: 0us runtime impact.
+- [x] Risk register expanded for promise/site/launch execution | DOD: updated `Docs/Marketing/Data/MARKETING_RISK_REGISTER.md` with RISK-039 through RISK-041 and top-risk reminders for promise lint and named launch/demo owners. | Alternative rejected: relying on scattered docs instead of risk-table prevention/response ownership. | Estimate: 0us runtime impact.
+- [x] Control/risk source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 41 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`; no public surface exists. | Alternative rejected: silent control tower/risk edits with no source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no account/browser/login/post/key/demo/launch/site action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 49
+
+- [x] Marketing README entry path cleaned | DOD: updated `Docs/Marketing/README.md` so hard rules and directory map reference Promise Lint, launch dry run, no-link site state, and presskit minimums. | Alternative rejected: leaving the main index behind the current gate system. | Estimate: 0us runtime impact.
+- [x] Prep directions anti-sprawl cleanup added | DOD: updated `Docs/Marketing/PREP_DIRECTIONS_NOW.md` to route feature-boundary, visual-do/dont, capsule, and UTM responsibilities into existing files instead of creating new docs. | Alternative rejected: letting stale "Needed next" bullets spawn duplicate files. | Estimate: 0us runtime impact.
+- [x] Entry cleanup source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 42 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: silent entry-doc edits with no source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no account/browser/login/post/key/demo/launch/site action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 50
+
+- [x] Daily agent loop current cut corrected | DOD: updated `Docs/Marketing/Operations/DAILY_AGENT_TASK_LOOP.md` so CRM-100/0 raw state stops default lead expansion and routes no-screenshot work toward asset gates, copy tests, source rechecks, and risk closure. | Alternative rejected: letting old daily quotas push agents back into lead generation after the first staged queue is closed. | Estimate: 0us runtime impact.
+- [x] Campaign 00 pre-screenshot tasks corrected | DOD: updated `Docs/Marketing/Campaigns/CAMPAIGN_00_PRE_SCREENSHOT_SETUP.md` so immediate tasks start with planned capture and matching existing `NEEDS_ASSET` rows, not automatic first-250 verification. | Alternative rejected: treating old lead-volume goals as the current bottleneck. | Estimate: 0us runtime impact.
+- [x] Active-loop correction source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 43 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: changing daily execution behavior without source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no account/browser/login/post/key/demo/launch/site action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 51
+
+- [x] Master plan execution override added | DOD: updated `Docs/Marketing/MARKETING_PREP_MASTER_PLAN.md` with current CRM-100/13 planned asset/no public surface state and active work focus. | Alternative rejected: leaving old broad plan language as if more lead volume were still the default. | Estimate: 0us runtime impact.
+- [x] 90-day calendar scheduling override added | DOD: updated `Docs/Marketing/Schedule/90_DAY_MARKETING_OPERATIONS_CALENDAR.md` so Weeks 3 and 8 do not authorize more creator verification/sends before asset gates. | Alternative rejected: letting a reusable calendar override current proof state. | Estimate: 0us runtime impact.
+- [x] Master/calendar override source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 44 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: silent broad-plan changes with no source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no account/browser/login/post/key/demo/launch/site action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 52
+
+- [x] Weekly agent routine corrected | DOD: updated `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md` so the before-screenshot weekly routine starts with planned asset packet, asset-to-lead matching, asset-linked hooks, Promise Lint, and source/risk changes; raw lead verification reopens only through explicit source-backed sprint. | Alternative rejected: leaving a hidden "verify 25 raw leads" loop in the master backlog after CRM-100 closure. | Estimate: 0us runtime impact.
+- [x] Weekly routine source trail updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` with the weekly-routine correction. | Alternative rejected: changing the master routine without source ledger. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no account/browser/login/post/key/demo/launch/site action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 53
+
+- [x] CRM-to-asset unlock map added | DOD: updated `Docs/Marketing/CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` with `CRM-100 Asset Unlock Map V0`, mapping current high-signal creator rows to `PLAN-SHOT-*` and `PLAN-CLIP-*` assets, regional unlock notes, and capture priority by creator utility. | Alternative rejected: capture priority by taste or restarting raw lead expansion. | Estimate: 0us runtime impact.
+- [x] CRM-asset unlock source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 46 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`; no creator is send-ready from this table alone. | Alternative rejected: leaving creator utility detached from planned capture IDs. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no account/browser/login/post/key/demo/launch/site/contact action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 54
+
+- [x] Planned asset metadata unlock notes added | DOD: updated all 13 rows in `Docs/Marketing/Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` so the `notes` field carries creator-unlock hints or explicit no-public-unlock boundaries. | Alternative rejected: forcing future capture/QA operators to cross-open outreach docs to understand asset utility. | Estimate: 0us runtime impact.
+- [x] Asset metadata unlock source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 47 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`; notes remain planning hints only. | Alternative rejected: silent CSV metadata change with no source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs/data-only; no asset captured or approved; no creator/contact/account/browser action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 55
+
+- [x] Creator utility QA gate added | DOD: updated `Docs/Marketing/QA/MARKETING_ASSET_QA_CHECKLIST.md` with a 0-4 creator utility gate and hard rule that utility cannot override visual QA thresholds. | Alternative rejected: letting high-value creator unlocks push weak or misleading assets into outreach. | Estimate: 0us runtime impact.
+- [x] Creator utility QA source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 48 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: changing asset approval criteria without source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no asset captured or approved; no creator/contact/account/browser action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 56
+
+- [x] First screenshot campaign bound to creator utility | DOD: updated `Docs/Marketing/Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md` so required inputs include creator utility, Wave A creator micro-feedback requires utility 3/4+, and the T+48h stop rule checks exact CRM row plus contact route. | Alternative rejected: allowing Campaign 01 to use any visually passable asset for creator outreach without proving it unlocks the right creator segment. | Estimate: 0us runtime impact.
+- [x] Screenshot-campaign utility source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 49 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: changing the campaign gate without source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no screenshot captured or approved; no creator/contact/account/browser action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 57
+
+- [x] Post bank bound to creator utility | DOD: updated `Docs/Marketing/Content/POST_BANK_AND_HOOK_LIBRARY.md` so asset-to-post rows, creator warmup lines, and the 72-hour sequence require utility 3/4+, named CRM row mapping, exact contact route, and normal visual QA before creator-facing use. | Alternative rejected: keeping public post copy and creator warmup copy on separate gates. | Estimate: 0us runtime impact.
+- [x] Post-bank utility source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 50 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: changing content execution without source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no post published, no asset captured, no creator/contact/account/browser action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 58
+
+- [x] Creator human-send packet bound to utility gate | DOD: updated `Docs/Marketing/CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` so first human-send prerequisites require creator utility 3/4+, Wave A rows carry per-recipient utility gates, and the send log records `creator_utility_score`. | Alternative rejected: allowing Wave A to send because an asset exists but without proving recipient fit. | Estimate: 0us runtime impact.
+- [x] Creator-send utility source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 51 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: changing send criteria without source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no creator/contact/account/browser action occurred; no screenshot captured or approved; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 59
+
+- [x] CRM schema and live CSV gained send-log fields | DOD: updated `Docs/Marketing/CreatorOutreach/CREATOR_CRM_SCHEMA_AND_SCORING.md` and `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv` with explicit fields for outreach batch, sent date, send-route verification, asset IDs sent, `creator_utility_score`, UTM content, reply deadline, follow-up permission, post-send reply state, and coverage URL. | Alternative rejected: stuffing send facts into `next_action` or unstructured notes. | Estimate: 0us runtime impact.
+- [x] CRM send-log source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 52 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: changing CRM data shape without source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs/data-only; CSV parse still required after edit; no outreach/contact/account/browser action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 60
+
+- [x] Asset metadata gained creator utility fields | DOD: updated `Docs/Marketing/Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` and `Docs/Marketing/Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` with `creator_rows_unlocked`, `creator_utility_score`, and `creator_send_gate`. Planned rows stay at score 0 and `BLOCKED_PLANNED_CAPTURE` until real capture/QA. | Alternative rejected: keeping creator unlocks only inside free-text notes. | Estimate: 0us runtime impact.
+- [x] Asset metadata utility source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 53 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: changing asset data shape without source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs/data-only; no asset captured or approved; no creator/contact/account/browser action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 61
+
+- [x] Control tower updated with structured utility gate state | DOD: updated `Docs/Marketing/MARKETING_CONTROL_TOWER.md` so current state, G1 gate, immediate actions, and top priorities reference CRM send-log fields, asset-side creator utility fields, `BLOCKED_PLANNED_CAPTURE`, utility 3/4+, and Wave A `asset_ids_sent`/`creator_utility_score` logging. | Alternative rejected: leaving the top-level entry point behind deeper gate changes. | Estimate: 0us runtime impact.
+- [x] Control-tower utility source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 54 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: changing the control tower without source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no asset captured, no outreach/contact/account/browser action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 62
+
+- [x] Creator utility bypass risk added | DOD: updated `Docs/Marketing/Data/MARKETING_RISK_REGISTER.md` with RISK-042 and top-risk reminder for bypassing creator utility gates because an asset looks good or a creator is high-value. | Alternative rejected: treating utility bypass as implicit process knowledge. | Estimate: 0us runtime impact.
+- [x] Utility-risk source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 55 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: changing risk control without source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no outreach/contact/account/browser action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 63
+
+- [x] Daily agent loop bound to creator utility fields | DOD: updated `Docs/Marketing/Operations/DAILY_AGENT_TASK_LOOP.md` so ASSET_GATE, CRM_CLEANUP, Noon Kill, Asset Critic, and screenshot-era quotas require creator utility, creator send gate, CRM mapping, and send-log fields before outreach escalation. | Alternative rejected: letting daily operators score assets without filling the fields that block premature creator sends. | Estimate: 0us runtime impact.
+- [x] Daily-loop utility source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 56 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: changing the agent loop without source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no outreach/contact/account/browser action occurred; no compile rerun.
+
+## 2026-05-19 Active Marketing Work Addendum 64
+
+- [x] README propagated creator utility gates | DOD: updated `Docs/Marketing/README.md` hard rules, directory map, and first asset gate to state that creator outreach cannot proceed from asset existence alone and requires asset QA, creator utility 3/4+, creator send gate, named CRM row, exact route, and send-log fields. | Alternative rejected: letting future agents enter through README and miss the deeper utility gate. | Estimate: 0us runtime impact.
+- [x] README utility source/backlog updated | DOD: updated `Docs/Marketing/Data/SOURCE_LEDGER.md` and row 57 in `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. | Alternative rejected: changing the entry index without source/backlog trail. | Estimate: 0us runtime impact.
+- Verification status: docs-only; no outreach/contact/account/browser action occurred; no compile rerun.

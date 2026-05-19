@@ -4,7 +4,7 @@ Agent: SHINOBU_119
 Domain: Echelon 6 Habitat & Vehicles / Fluid Incursion
 Batch block: `Docs/Tasks/CURRENT_BATCH.md` `<AGENT_PROMPT id="SHINOBU_119">`
 Task count: 20
-Status: POLISH STATIC PASS / BUILD BLOCKED BY EXTERNAL DEPENDENCY
+Status: POLISH STATIC PASS R3 / BUILD BLOCKED BY EXTERNAL STALE WORLD SOURCE INCLUDE
 
 ## Mandates Selected Before Coding
 
@@ -107,8 +107,8 @@ Status: POLISH STATIC PASS / BUILD BLOCKED BY EXTERNAL DEPENDENCY
   Alternative rejected: enabling water shader just for debug.
   Estimate: editor-only, no runtime cost.
 - [x] Task 20: SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION
-  DOD practice: route cards added, `[NoAlias]` static sweep clean, Burst directives verified, flood-specific interface-array dispatch removed, diff check clean, compile blocked by external deleted source.
-  Alternative rejected: adding a flood listener array of interfaces or editing unrelated deleted World files.
+  DOD practice: route cards added, `[NoAlias]` static sweep clean, Burst directives verified, flood-specific interface-array dispatch removed, diff check clean, compile blocked by external stale World source include.
+  Alternative rejected: adding a flood listener array of interfaces or inventing unrelated World files.
   Estimate: avoids compounding machine load.
 
 ## Compile Attempts
@@ -125,4 +125,6 @@ Status: POLISH STATIC PASS / BUILD BLOCKED BY EXTERNAL DEPENDENCY
 - Attempt gate 05: CPU returned 80 and `Get-Process dotnet,csc` returned none. Follow-up build not launched by explicit CPU rule.
 - Attempt gate 06: CPU returned 94 and `Get-Process dotnet,csc` returned none. Follow-up build still blocked by explicit CPU rule. Static sweeps remained clean.
 - Ultra polish sweep 04: removed `IPhysicsFloodMassShiftEventListener[]`/RegistryBucket flood dispatch from `PhysicsEventBus`, converted `FloodMassShiftEvent` to readonly fields, preserved unmanaged `PhysicsEventPayload` enqueue plus `SubmarineFloodStateSignal` route, changed ingress depth to local AUP delta, added deck-height surface-head transfer to BFS equalization, added water density to editor tuner, and normalized SHINOBU job Burst attributes to deterministic exact flags without `OptimizeFor`.
-- Compile attempt 07: CPU gate opened at 24 and `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false` ran. It failed before domain compile on missing unrelated tracked file `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`, currently deleted in the worktree. SHINOBU did not edit or revert that World-domain deletion.
+- Compile attempt 07: CPU gate opened at 24 and `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false` ran. It failed before domain compile on missing unrelated World-domain file `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`, which is listed in `Hecton8.Core.csproj` but absent from the filesystem and not tracked by `git ls-files` in this checkout. SHINOBU did not edit or synthesize that World-domain source.
+- Ultra mandate refresh 05: reread `AGENTS.md`, Unity MCP skill instructions, `Docs/PROJECT_STATE_STATIC_XRAY.md`, `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`, HFI architecture, and the SHINOBU mandate set. The first strict XML regex missed `role/chat_name` attributes; rerun with an attribute-tolerant CLI regex extracted the full 20-task `SHINOBU_119` prompt.
+- Static sweep 05: exact Burst directive grep clean; layout/property grep clean; hot-path forbidden token grep clean; flood listener-interface grep clean. One `.position` hit remains only in cold boot AUP seeding through `_cachedTransform.position`, not runtime water-plane authority. `git diff --check` on touched SHINOBU files passed with only repository CRLF normalization warnings.

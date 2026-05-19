@@ -2031,6 +2031,8 @@ namespace Hecton8.Core
         void ConsumeBattery(uint toolId, float normalizedBatteryDelta);
         void ConsumeBattery(uint toolId, float normalizedBatteryDrainRate, float deltaSeconds);
         void SetHeat(uint toolId, float normalizedHeat);
+        void SetToolActive(uint toolId, bool active);
+        bool TryGetPublishedActiveEquipmentState(uint toolId, out ActiveEquipmentDTO state);
         void SetDurability(uint toolId, float normalizedDurability);
     }
 

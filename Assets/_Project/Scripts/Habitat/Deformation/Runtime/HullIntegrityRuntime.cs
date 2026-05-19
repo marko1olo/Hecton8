@@ -51,6 +51,7 @@ namespace Hecton8.Habitat.Deformation
         private const BufferID HullMaterialStrengthBufferId = (BufferID)70096;
         private const BufferID HullMaterialStrengthCsvScratchBufferId = (BufferID)70097;
         private const BufferID ExternalPressure01BufferId = (BufferID)70098;
+        private const BufferID PendingVisualImpactsBufferId = (BufferID)70099;
 
         private static readonly ProfilerMarker _tickMarker = new ProfilerMarker("H8.Habitat.HullIntegrity.Tick");
         private static readonly ProfilerMarker _lateMarker = new ProfilerMarker("H8.Habitat.HullIntegrity.LateFrame");
@@ -137,6 +138,7 @@ namespace Hecton8.Habitat.Deformation
         private VaultBufferHandle<MockCombatDamageSignal> _damageSignalsHandle;
         private VaultBufferHandle<DeformationStateDTO> _deformationStatesHandle;
         private VaultBufferHandle<HullImpactDTO> _mockImpactsHandle;
+        private VaultBufferHandle<HullImpactDTO> _pendingVisualImpactsHandle;
         private VaultBufferHandle<DeformationTelemetryEntry> _deformationTelemetryHandle;
         private VaultBufferHandle<int> _deformationTelemetryCursorHandle;
         private VaultBufferHandle<BreachJetDTO> _breachJetsHandle;
@@ -153,21 +155,18 @@ namespace Hecton8.Habitat.Deformation
         private GraphicsBuffer _breachJetBufferB;
         private GraphicsBuffer _breachJetArgsBufferA;
         private GraphicsBuffer _breachJetArgsBufferB;
-        private NativeQueue<HullImpactDTO> _impactQueue;
         private int _gpuReadIndex;
         private int _deformationGpuReadIndex;
         private int _deformationGpuPendingIndex = -1;
         private int _breachGpuReadIndex;
-        private int _cachedDentCap = HullIntegrityConstants.LowTierDentCapacity;
+        private int _cachedDentCap = HullIntegrityConstants.MinTrackedDentCapacity;
         private float _cachedGlobalQualityWeight = 1f;
         private int _cachedShaderDentLimit = HullIntegrityConstants.MinShaderDentCapacity;
-        private int _cachedQualityTier;
         private int _cachedHealthState;
-        private int _pendingQualityTier = -1;
         private int _pendingDentCap;
         private int _pendingHealthState;
         private float _pendingQualitySeconds;
-        private byte _cachedProfileTier;
+        private byte _cachedScalabilityProfileByte;
         private int _activeModuleCount;
         private int _registeredUpdate;
         private int _registeredLate;
@@ -203,8 +202,7 @@ namespace Hecton8.Habitat.Deformation
 
         private void Awake()
         {
-            CacheColdQualityTier();
-            _cachedQualityTier = _cachedProfileTier;
+            CacheColdScalabilityProfile();
             _cachedGlobalQualityWeight = ResolveGlobalQualityWeight();
             _cachedDentCap = ResolveDentCap(_cachedGlobalQualityWeight);
             _cachedShaderDentLimit = ResolveShaderDentLimit(_cachedGlobalQualityWeight, DefaultVisualOverkillLimit);
@@ -242,8 +240,6 @@ namespace Hecton8.Habitat.Deformation
             ReleaseBuffer(ref _breachJetBufferB);
             ReleaseBuffer(ref _breachJetArgsBufferA);
             ReleaseBuffer(ref _breachJetArgsBufferB);
-            if (_impactQueue.IsCreated)
-                _impactQueue.Dispose();
             _initialized = 0;
         }
 
@@ -312,12 +308,13 @@ namespace Hecton8.Habitat.Deformation
                 NativeArray<MockCombatDamageSignal> damageSignals = _damageSignalsHandle.Resolve(_dataVault);
                 NativeArray<HullDentDTO> dents = _dentsHandle.Resolve(_dataVault);
                 NativeArray<DeformationStateDTO> deformationStates = _deformationStatesHandle.Resolve(_dataVault);
+                NativeArray<HullImpactDTO> pendingVisualImpacts = _pendingVisualImpactsHandle.Resolve(_dataVault);
                 NativeArray<BreachJetDTO> breachJets = _breachJetsHandle.Resolve(_dataVault);
                 NativeArray<BreachJetIndirectArgsDTO> breachJetArgs = _breachJetArgsHandle.Resolve(_dataVault);
                 NativeArray<HullMaterialStrengthDTO> materialStrengths = _materialStrengthsHandle.Resolve(_dataVault);
                 NativeArray<float> externalPressure01 = _externalPressure01Handle.Resolve(_dataVault);
 
-                if (!modules.IsCreated || !ledger.IsCreated || !depthSignal.IsCreated || !counters.IsCreated || !damageSignals.IsCreated || !dents.IsCreated || !deformationStates.IsCreated || !breachJets.IsCreated || !breachJetArgs.IsCreated || !materialStrengths.IsCreated || !externalPressure01.IsCreated)
+                if (!modules.IsCreated || !ledger.IsCreated || !depthSignal.IsCreated || !counters.IsCreated || !damageSignals.IsCreated || !dents.IsCreated || !deformationStates.IsCreated || !pendingVisualImpacts.IsCreated || !breachJets.IsCreated || !breachJetArgs.IsCreated || !materialStrengths.IsCreated || !externalPressure01.IsCreated)
                     return;
 
                 if (counters.Length > HullIntegrityConstants.CounterPendingDamageCount)
@@ -392,7 +389,7 @@ namespace Hecton8.Habitat.Deformation
 
                 handle = new AccumulateHullDamageJob
                 {
-                    Impacts = _impactQueue,
+                    Impacts = pendingVisualImpacts,
                     States = deformationStates,
                     Counters = counters,
                     MaterialStrengths = materialStrengths,
@@ -520,6 +517,7 @@ namespace Hecton8.Habitat.Deformation
             CheckCsvOverrideCold();
             CheckMaterialStrengthCsvCold();
 #endif
+            RefreshBreachJetCameraCold();
         }
 
         /// <inheritdoc />
@@ -540,7 +538,7 @@ namespace Hecton8.Habitat.Deformation
                 module.LocalCenter,
                 module.Stress01,
                 module.PeakStress01,
-                (byte)_cachedQualityTier);
+                _cachedScalabilityProfileByte);
             return true;
         }
 
@@ -566,7 +564,7 @@ namespace Hecton8.Habitat.Deformation
         {
             if (_initialized == 0 && !TryInitialize())
                 return false;
-            if (_jobScheduled || !_impactQueue.IsCreated)
+            if (_jobScheduled)
                 return false;
 
             NativeArray<HullImpactDTO> impacts = _mockImpactsHandle.Resolve(_dataVault);
@@ -694,8 +692,7 @@ namespace Hecton8.Habitat.Deformation
             if (!ValidateLayouts())
                 return false;
 
-            CacheColdQualityTier();
-            _cachedQualityTier = _cachedProfileTier;
+            CacheColdScalabilityProfile();
             _cachedDentCap = ResolveDentCap(_cachedGlobalQualityWeight);
             _cachedShaderDentLimit = ResolveShaderDentLimit(_cachedGlobalQualityWeight, DefaultVisualOverkillLimit);
             _cachedHealthState = HealthStateNominal;
@@ -761,6 +758,11 @@ namespace Hecton8.Habitat.Deformation
                 HullIntegrityConstants.MaxMockHullImpactCount,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
+            _pendingVisualImpactsHandle = _dataVault.GetBufferHandle<HullImpactDTO>(
+                PendingVisualImpactsBufferId,
+                HullIntegrityConstants.MaxMockHullImpactCount,
+                SystemID.HullIntegrity,
+                NativeArrayOptions.UninitializedMemory);
             _deformationTelemetryHandle = _dataVault.GetBufferHandle<DeformationTelemetryEntry>(
                 DeformationTelemetryBufferId,
                 HullIntegrityConstants.TelemetryFrameCapacity,
@@ -809,6 +811,7 @@ namespace Hecton8.Habitat.Deformation
                 !_damageSignalsHandle.IsCreated ||
                 !_deformationStatesHandle.IsCreated ||
                 !_mockImpactsHandle.IsCreated ||
+                !_pendingVisualImpactsHandle.IsCreated ||
                 !_deformationTelemetryHandle.IsCreated ||
                 !_deformationTelemetryCursorHandle.IsCreated ||
                 !_breachJetsHandle.IsCreated ||
@@ -820,18 +823,13 @@ namespace Hecton8.Habitat.Deformation
                 return false;
             }
 
-            if (!_impactQueue.IsCreated)
-            {
-                _impactQueue = new NativeQueue<HullImpactDTO>(Allocator.Persistent); // COLD ALLOC: NativeQueue<HullImpactDTO>[256 prewarm] - deferred visual hull impact lane - owner: SHINOBU_109
-                PrewarmImpactQueue(HullIntegrityConstants.MaxMockHullImpactCount);
-            }
-
             EnsureGpuBuffers();
             ClearBootBuffers();
             WriteDefaultTuning();
             GenerateEmergencyMockIntegrity();
             BuildEmergencyScratchProof();
             BindInitialShaderState();
+            RefreshBreachJetCameraCold();
             _initialized = 1;
             _forceGpuUpload = 1;
             return true;
@@ -1056,7 +1054,7 @@ namespace Hecton8.Habitat.Deformation
                 SourceId = (ushort)(BreachSignalHash & 0xFFFFu),
                 Flags = BaseModuleCompromisedSignal.MaxDeformationFlag,
                 StressIndex = (byte)math.min(255, moduleIndex),
-                QualityTier = (byte)_cachedQualityTier
+                QualityTier = _cachedScalabilityProfileByte
             };
 
             SignalBus<FluidIncursionSignal>.Push(in flood);
@@ -1203,7 +1201,7 @@ namespace Hecton8.Habitat.Deformation
             _gpuReadIndex = writeIndex;
             GraphicsBuffer readBuffer = _gpuReadIndex == 0 ? _dentBufferA : _dentBufferB;
             float maxDepth = ResolveMaxDentDepth(dents, _cachedDentCap);
-            Vector4 dtoParams = new Vector4(activeCount, activeCount > 0 ? 1f : 0f, maxDepth, _cachedQualityTier);
+            Vector4 dtoParams = new Vector4(activeCount, activeCount > 0 ? 1f : 0f, maxDepth, _cachedScalabilityProfileByte);
 
             if (_lastUploadedDentCount != activeCount || _lastDentParams != dtoParams)
             {
@@ -1369,15 +1367,24 @@ namespace Hecton8.Habitat.Deformation
             if (_cachedBreachJetCamera != null && _cachedBreachJetCamera.isActiveAndEnabled)
                 return _cachedBreachJetCamera;
 
+            return null;
+        }
+
+        private void RefreshBreachJetCameraCold()
+        {
+            if (breachJetCameraOverride != null && breachJetCameraOverride.isActiveAndEnabled)
+            {
+                _cachedBreachJetCamera = breachJetCameraOverride;
+                return;
+            }
+
+            if (_cachedBreachJetCamera != null && _cachedBreachJetCamera.isActiveAndEnabled)
+                return;
+
             IPlayerRuntimeContext player = GlobalRegistry.Player;
             Camera playerCamera = player != null ? player.PlayerCamera : null;
             if (playerCamera != null && playerCamera.isActiveAndEnabled)
-            {
                 _cachedBreachJetCamera = playerCamera;
-                return _cachedBreachJetCamera;
-            }
-
-            return null;
         }
 
         private void GenerateEmergencyMockIntegrity()
@@ -1429,6 +1436,7 @@ namespace Hecton8.Habitat.Deformation
             handle = ScheduleMemClear(_tuningHandle, handle);
             handle = ScheduleMemClear(_damageSignalsHandle, handle);
             handle = ScheduleMemClear(_mockImpactsHandle, handle);
+            handle = ScheduleMemClear(_pendingVisualImpactsHandle, handle);
             handle = ScheduleMemClear(_deformationTelemetryHandle, handle);
             handle = ScheduleMemClear(_deformationTelemetryCursorHandle, handle);
             handle = ScheduleMemClear(_breachJetsHandle, handle);
@@ -1450,19 +1458,6 @@ namespace Hecton8.Habitat.Deformation
                 Ptr = handle.ptr,
                 Bytes = (long)handle.Length * UnsafeUtility.SizeOf<T>()
             }.Schedule(dependency);
-        }
-
-        private void PrewarmImpactQueue(int count)
-        {
-            if (!_impactQueue.IsCreated)
-                return;
-
-            int safeCount = math.clamp(count, 0, HullIntegrityConstants.MaxMockHullImpactCount);
-            for (int i = 0; i < safeCount; i++)
-                _impactQueue.Enqueue(default);
-            while (_impactQueue.TryDequeue(out _))
-            {
-            }
         }
 
         private void BuildEmergencyScratchProof()
@@ -1540,10 +1535,9 @@ namespace Hecton8.Habitat.Deformation
 
         private void DrainQualitySignals(float deltaTime, in HullIntegrityTuningDTO tuning)
         {
-            DrainScalabilityTierSignals();
+            DrainScalabilityProfileSignals();
 
             int healthState = ResolveHealthState();
-            int desiredTier = _cachedProfileTier;
             float qualityWeight = ResolveGlobalQualityWeight();
             if (healthState == HealthStateCritical)
             {
@@ -1557,16 +1551,16 @@ namespace Hecton8.Habitat.Deformation
             _cachedGlobalQualityWeight = math.saturate(qualityWeight);
             _cachedShaderDentLimit = ResolveShaderDentLimit(_cachedGlobalQualityWeight, tuning.VisualOverkillLimit);
             int desiredCap = ResolveDentCap(_cachedGlobalQualityWeight);
-            ApplyDentQualityWithHysteresis(desiredTier, desiredCap, healthState, deltaTime);
+            ApplyDentQualityWithHysteresis(desiredCap, healthState, deltaTime);
         }
 
-        private void DrainScalabilityTierSignals()
+        private void DrainScalabilityProfileSignals()
         {
-            ReadOnlySpan<ScalabilityChangedEvent> tierSignals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
-            if (tierSignals.Length == 0)
+            ReadOnlySpan<ScalabilityChangedEvent> profileSignals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
+            if (profileSignals.Length == 0)
                 return;
 
-            _cachedProfileTier = ScalabilityTierProfiles.Normalize(tierSignals[tierSignals.Length - 1].CurrentTier);
+            _cachedScalabilityProfileByte = ScalabilityTierProfiles.Normalize(profileSignals[profileSignals.Length - 1].CurrentTier);
         }
 
         private static int ResolveHealthState()
@@ -1582,9 +1576,9 @@ namespace Hecton8.Habitat.Deformation
             return state == SystemHealthIndexSignal.StateWarning ? HealthStateWarning : HealthStateNominal;
         }
 
-        private void ApplyDentQualityWithHysteresis(int desiredTier, int desiredCap, int healthState, float deltaTime)
+        private void ApplyDentQualityWithHysteresis(int desiredCap, int healthState, float deltaTime)
         {
-            if (desiredTier == _cachedQualityTier && desiredCap == _cachedDentCap && healthState == _cachedHealthState)
+            if (desiredCap == _cachedDentCap && healthState == _cachedHealthState)
             {
                 ResetPendingDentQuality();
                 return;
@@ -1593,13 +1587,12 @@ namespace Hecton8.Habitat.Deformation
             bool immediateDowngrade = desiredCap < _cachedDentCap || healthState > _cachedHealthState;
             if (immediateDowngrade)
             {
-                ApplyDentQuality(desiredTier, desiredCap, healthState);
+                ApplyDentQuality(desiredCap, healthState);
                 return;
             }
 
-            if (_pendingQualityTier != desiredTier || _pendingDentCap != desiredCap || _pendingHealthState != healthState)
+            if (_pendingDentCap != desiredCap || _pendingHealthState != healthState)
             {
-                _pendingQualityTier = desiredTier;
                 _pendingDentCap = desiredCap;
                 _pendingHealthState = healthState;
                 _pendingQualitySeconds = 0f;
@@ -1608,12 +1601,11 @@ namespace Hecton8.Habitat.Deformation
 
             _pendingQualitySeconds += math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             if (_pendingQualitySeconds >= DentCapUpgradeHysteresisSeconds)
-                ApplyDentQuality(desiredTier, desiredCap, healthState);
+                ApplyDentQuality(desiredCap, healthState);
         }
 
-        private void ApplyDentQuality(int qualityTier, int dentCap, int healthState)
+        private void ApplyDentQuality(int dentCap, int healthState)
         {
-            _cachedQualityTier = qualityTier;
             _cachedDentCap = dentCap;
             _cachedHealthState = healthState;
             _forceGpuUpload = 1;
@@ -1622,15 +1614,14 @@ namespace Hecton8.Habitat.Deformation
 
         private void ResetPendingDentQuality()
         {
-            _pendingQualityTier = -1;
             _pendingDentCap = _cachedDentCap;
             _pendingHealthState = _cachedHealthState;
             _pendingQualitySeconds = 0f;
         }
 
-        private void CacheColdQualityTier()
+        private void CacheColdScalabilityProfile()
         {
-            _cachedProfileTier = ScalabilityTierProfiles.Normalize(GlobalRegistry.ScalabilityTierProfileByte);
+            _cachedScalabilityProfileByte = ScalabilityTierProfiles.Normalize(GlobalRegistry.ScalabilityTierProfileByte);
             _cachedGlobalQualityWeight = ResolveGlobalQualityWeight();
         }
 
@@ -1640,10 +1631,10 @@ namespace Hecton8.Habitat.Deformation
             float survivalGate = math.step(0.0001f, q);
             float curve = q * q * (3f - 2f * q) * survivalGate;
             int capacity = (int)math.round(math.lerp(
-                HullIntegrityConstants.LowTierDentCapacity,
-                HullIntegrityConstants.UltraTierDentCapacity,
+                HullIntegrityConstants.MinTrackedDentCapacity,
+                HullIntegrityConstants.MaxTrackedDentCapacity,
                 curve));
-            return math.clamp(capacity, HullIntegrityConstants.LowTierDentCapacity, HullIntegrityConstants.UltraTierDentCapacity);
+            return math.clamp(capacity, HullIntegrityConstants.MinTrackedDentCapacity, HullIntegrityConstants.MaxTrackedDentCapacity);
         }
 
         private static int ResolveShaderDentLimit(float globalQualityWeight, float visualOverkillLimit)
@@ -1703,18 +1694,35 @@ namespace Hecton8.Habitat.Deformation
 
         private bool EnqueueVisualImpact(double3 impactAup, float magnitude, uint damageTypeHash)
         {
-            if (!_impactQueue.IsCreated || _jobScheduled)
+            if (_jobScheduled)
                 return false;
 
             if (!math.all(math.isfinite(impactAup)) || !math.isfinite(magnitude))
                 return false;
 
-            _impactQueue.Enqueue(new HullImpactDTO
+            NativeArray<HullImpactDTO> impacts = _pendingVisualImpactsHandle.Resolve(_dataVault);
+            NativeArray<int> counters = _countersHandle.Resolve(_dataVault);
+            if (!impacts.IsCreated || !counters.IsCreated || counters.Length <= HullIntegrityConstants.CounterPendingVisualImpactCount)
+                return false;
+
+            int pending = math.clamp(counters[HullIntegrityConstants.CounterPendingVisualImpactCount], 0, impacts.Length);
+            if (pending >= impacts.Length)
+            {
+                if (counters.Length > HullIntegrityConstants.CounterDiscardedImpactCount)
+                {
+                    int discarded = math.max(0, counters[HullIntegrityConstants.CounterDiscardedImpactCount]);
+                    counters[HullIntegrityConstants.CounterDiscardedImpactCount] = discarded < 0x3FFFFFFF ? discarded + 1 : discarded;
+                }
+                return false;
+            }
+
+            impacts[pending] = new HullImpactDTO
             {
                 ImpactAup = impactAup,
                 Magnitude = math.max(0f, magnitude),
                 DamageTypeHash = damageTypeHash
-            });
+            };
+            counters[HullIntegrityConstants.CounterPendingVisualImpactCount] = pending + 1;
             return true;
         }
 
@@ -1741,7 +1749,7 @@ namespace Hecton8.Habitat.Deformation
                 SourceId = (ushort)(source.SourceHash & 0xFFFFu),
                 ActiveDentCount = (byte)math.min(255, activeDents),
                 Flags = 0,
-                QualityTier = (byte)_cachedQualityTier,
+                QualityTier = _cachedScalabilityProfileByte,
                 Channel = 0,
                 DamageType = source.DamageType
             };

@@ -103,6 +103,72 @@ Targets:
 - confusion below 20% of useful comments;
 - clone comments declining over asset iterations.
 
+## 2026-05-19 Proof-Gate Dashboard V0
+
+Use this before Steam telemetry exists. It measures whether the project is allowed to move from G0 prep to G1 screenshot drop, then from G1 to Steam page launch.
+
+### Asset Gate Table
+
+| Field | Type | Notes |
+|---|---|---|
+| asset_id | text | Must match `PLAN-SHOT-*`, `PLAN-CLIP-*`, or `PLAN-CAPSULE-*`. |
+| build_id | text | Required after capture. |
+| status | enum | `PLANNED_CAPTURE`, `RAW`, `REVISION`, `QA_FAIL`, `APPROVED_INTERNAL`, `APPROVED_PUBLIC`, `DEPRECATED`, `LEGAL_HOLD`. |
+| qa_score | int | 0-12 for screenshots, use clip checklist for clips. |
+| cold_read_genre_correct | int | Count of viewers who identify underwater survival. |
+| cold_read_player_verb | int | Count of viewers who name player action/problem. |
+| clone_comments | int | Count of clone/derivative comments. |
+| unreadable_comments | int | Count of darkness/clarity failures. |
+| ai_or_concept_comments | int | Count of fake/AI/concept-art suspicion. |
+| decision | enum | `KEEP`, `REVISE`, `KILL`, `HOLD`. |
+| next_action | text | Capture again, recut, approve, or block. |
+
+Minimum to advance Campaign 01:
+
+- at least 6 real assets are no longer `PLANNED_CAPTURE`;
+- at least 4 screenshots score 10/12 or higher;
+- identity hero or salvage shot passes cold-read genre at 70%;
+- no asset selected for lead use has unresolved co-op/performance/AI-looking risk;
+- final decision is `KEEP`, not `REVISE`.
+
+### First Public Beat Table
+
+| Field | Type | Notes |
+|---|---|---|
+| beat_id | text | Example: `screenshot_drop_01_x_post_001`. |
+| asset_id | text | Exact asset used. |
+| platform | text | X, Bluesky, Reddit, Steam, YouTube. |
+| campaign | text | `screenshot_drop_01`, `steam_page_launch`, etc. |
+| post_url | url | Blank until public. |
+| useful_comments | int | Non-meme feedback. |
+| intended_nouns | int | Comments naming pressure, machine, salvage, base, black water, Seed Ship. |
+| confusion_comments | int | Comments asking what the game/action is. |
+| clone_comments | int | Direct derivative comparison. |
+| co_op_comments | int | Assumes or asks for multiplayer. |
+| decision | enum | `ADVANCE`, `HOLD`, `REVISE`, `KILL`. |
+
+Decision rule:
+
+- `ADVANCE` only if intended nouns outnumber confusion + clone + co-op comments.
+- `REVISE` if interest exists but confusion repeats.
+- `KILL` if lead asset causes clone, AI-looking, or false-feature damage.
+- raw likes do not affect the decision.
+
+### Weekly Current-State Summary
+
+```text
+Week:
+Current gate: G0/G1/G2/G3/G4
+Assets captured:
+Assets approved public:
+Campaign 01 decision:
+Steam page status:
+Creator Wave A status:
+Spend status:
+Top blocker:
+Next action:
+```
+
 ## Weekly Report Format
 
 Title:

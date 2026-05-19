@@ -289,3 +289,161 @@ Cinematic cheats used:
 
 Microseconds saved:
 - Manual sanity itself saves 0 us. Runtime design still targets 30-200 us saved per 64-voice frame versus PhysX raycasts; profiler proof remains blocked by the external missing-file compile wall.
+
+## 2026-05-19 Selected-Lane DSP Handoff Hardening
+
+What was wrong:
+- `ApplyAcousticDspOutputToSelection()` bounded its search by `max(_virtualVoiceSortCount, _acousticOcclusionOutputCount)`. That could read stale `AcousticDspOutputDTO` rows from older frames and made audio sync work scale with total virtual ingress instead of submitted physical voices.
+
+What was done:
+- Changed the bound to `math.clamp(_acousticOcclusionOutputCount, 0, _acousticDspOutputPool.Length)`.
+- Added a smoke-test assertion so the verifier catches regressions back to virtual-row scanning.
+
+Cinematic cheats used:
+- None new. This protects the existing selected-lane Dear Lie: only voices that survive continuous priority culling receive SDF/Sabine DSP rows.
+
+Microseconds saved:
+- Avoids up to 936 stale-row probes when 64 voices are submitted from a 1000-voice virtual pool. Estimated 5-40 us saved on i3/MX350-class CPUs under heavy event pressure.
+
+## 2026-05-19 Rollback Deterministic Burst Hardening
+
+What was wrong:
+- `VirtualVoiceSortJob` and `MockAcousticEmitterJob` used `FloatMode.Fast`. The acoustic domain reads rollback suppression and determines voice ranking/state, so platform-specific fast-float drift is unacceptable.
+
+What was done:
+- Switched `VirtualVoiceSortJob`, `MockAcousticEmitterJob`, and `AcousticOcclusionJob` to `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]`.
+- Added a smoke-test assertion rejecting `FloatMode.Fast` in `AudioVirtualizationJobs.cs`.
+
+Cinematic cheats used:
+- No new fake. This makes the existing SDF/Sabine fake deterministic across x86 and ARM64.
+
+Microseconds saved:
+- No direct saving. Determinism may cost a small ALU margin, but replacing PhysX rays with byte-SDF sampling remains the controlling performance win.
+
+## 2026-05-19 SDF Metadata Ownership Hardening
+
+What was wrong:
+- The acoustic job consumed owner-published SDF bytes but still used listener-centered hardcoded dimensions/origin/cell/range. That risks sampling valid bytes through the wrong coordinate frame.
+
+What was done:
+- Added `TrySnapshotAcousticSdfPayload()` in `SpatialAudioManager`.
+- The schedule now queries `HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload()` for dimensions, origin, cell size, and range.
+- The Vault `BufferID.VoxelSdfTexture3D` byte lane is used only when its length is at least the owner payload voxel count; otherwise the owner-published native SDF is used.
+- `SdfOriginMeters` is passed to Burst as `sdfOrigin - listenerRuntimePosition`, preserving listener-relative sample positions after AUP source/listener subtraction.
+- Smoke tester now asserts the metadata route and listener-relative origin conversion.
+
+Cinematic cheats used:
+- The system still uses a bounded byte-SDF line integral and Sabine clearance scalar. This patch removes fake metadata, not the performance-saving acoustic fake.
+
+Microseconds saved:
+- No direct speed win. It prevents wrong SDF sampling that would waste the occlusion math and force designers back toward PhysX-style debugging. Runtime complexity remains O(selectedVoices * taps).
+
+## 2026-05-19 Acoustic Compute Telemetry Hardening
+
+What was wrong:
+- Task 16 required the recorder to store SDF occlusion compute time, but the current blackbox only stored sort timing plus aggregate reverb/LPF values. That made the 1.0 ms acoustic tripwire impossible to prove from `Dump_ACOUSTIC_SURGEON.bin`.
+
+What was done:
+- Added `AcousticOcclusionTimeMs` to `VirtualVoiceStatistics` and `VirtualVoiceTelemetryEntry`; both structs remain `[StructLayout(LayoutKind.Sequential, Size = 64)]`.
+- Timestamped the selected-lane `AcousticOcclusionJob` schedule/completion with `System.Diagnostics.Stopwatch.GetTimestamp()`.
+- Updated the 300-frame blackbox write, state hash, binary dump writer, and fatal dump trigger: non-finite SDF timing or `> 1.0 ms` now dumps `Docs/AgentLogs/Dump_ACOUSTIC_SURGEON.bin`.
+- Exposed the SDF timing in `AbyssalAcousticsTunerWindow` and `SabineReverbDspTunerWindow`.
+- Extended the editor smoke tester so regressions lose the telemetry field, timestamp, or 1.0 ms tripwire visibly fail.
+
+Cinematic cheats used:
+- No new physical simulation. The measured operation remains the selected-lane byte-SDF line integral plus Sabine clearance scalar. The patch records the cost of the fake instead of replacing it with ray truth.
+
+Microseconds saved:
+- Runtime speed is not the goal of this patch. Added overhead is one timestamp pair per SDF job and one float in each blackbox entry. The value is forensic: QA can now prove whether the 12..64 voice, 1..8 tap SDF path actually stays under the 1.0 ms tripwire.
+
+<SELF_AUDIT_DELTA>
+  <TELEMETRY_ACOUSTIC_RECORDER status="PASS_STATIC">
+    <StatsStruct>VirtualVoiceStatistics remains 64 bytes: previous reserved 4-byte slot is now AcousticOcclusionTimeMs.</StatsStruct>
+    <BlackBoxStruct>VirtualVoiceTelemetryEntry remains 64 bytes: added AcousticOcclusionTimeMs and retained explicit reserved padding.</BlackBoxStruct>
+    <TimingRoute>ScheduleAcousticOcclusionJob records _acousticOcclusionStartTicks; TryCompleteAcousticOcclusion writes _lastAcousticOcclusionTimeMs after JobHandle completion.</TimingRoute>
+    <DumpRoute>Dump writer persists entry.AcousticOcclusionTimeMs; blackbox dumps at non-finite timing or &gt;1.0 ms.</DumpRoute>
+    <Verification>git diff --check PASS with CRLF warnings only; audio raycast grep PASS_NO_HITS; virtualization propagation grep PASS_NO_HITS; forbidden Fast/Default/SdfVoxels-default grep PASS_NO_HITS.</Verification>
+  </TELEMETRY_ACOUSTIC_RECORDER>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Build Gate Refresh After Telemetry Patch
+
+What was wrong:
+- The status still named the historical missing World source file as the current build blocker. Other agents may have changed project references since that legal build attempt.
+
+What was done:
+- Rechecked `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`: file remains absent.
+- Rechecked `.csproj/.sln/.slnx` references with `rg`: no current project-file reference to that missing source remains.
+- Checked build gate: CPU samples fluctuated between 49% and 91%; active compiler/runtime processes include `csc`, `dotnet`, and `VBCSCompiler`.
+- Did not launch `dotnet build` under the explicit CPU/compiler rule.
+
+Cinematic cheats used:
+- None. This is verification gate hygiene.
+
+Microseconds saved:
+- 0 us runtime. The saved cost is workstation contention: no build was launched into a saturated machine while another compiler process is active.
+
+<SELF_AUDIT_DELTA>
+  <BUILD_GATE_REFRESH status="PENDING_GATE_CLOSED">
+    <MissingFileStillAbsent>true</MissingFileStillAbsent>
+    <CurrentProjectReferenceToMissingFile>false</CurrentProjectReferenceToMissingFile>
+    <CpuLoadPercent>49-91</CpuLoadPercent>
+    <ActiveCompilerProcesses>csc; dotnet; VBCSCompiler</ActiveCompilerProcesses>
+    <BuildAction>WITHHELD_UNDER_USER_RULE</BuildAction>
+  </BUILD_GATE_REFRESH>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Literal Acoustic Telemetry Repair
+
+What was wrong:
+- Task 16 named an `AcousticTelemetryEntry` recorder. The previous patch reused a virtual voice telemetry DTO and also allowed a preliminary sort-only row to enter the blackbox before the selected-lane SDF job completed.
+
+What was done:
+- Added `Hecton8.Audio.Virtualization.AcousticTelemetryEntry` as a 64-byte telemetry DTO.
+- Moved `_virtualVoiceBlackBox` to `NativeArray<AcousticOcclusionTelemetryEntry>` while keeping the same 300-entry Vault buffer ID.
+- Qualified the existing portal telemetry row as `AcousticPortalTelemetryEntry` so the propagation-path 40-byte portal recorder remains separate from the SDF acoustic recorder.
+- Changed `TryCompleteVirtualVoiceSort()` so normal telemetry is pushed immediately only when no SDF job was scheduled. If an SDF job is scheduled, `TryCompleteAcousticOcclusion()` writes the single frame row after the SDF completion timestamp is known.
+- Extended `ShinobuAcousticDspSmokeTester` to assert the dedicated DTO, 64-byte size, acoustic ring alias, and one-shot post-SDF telemetry route.
+
+Cinematic cheats used:
+- No new simulation. This preserves the existing Dear Lie: byte-SDF line integral plus Sabine clearance scalar instead of PhysX rays or acoustic raytracing.
+
+Microseconds saved:
+- Removes one duplicate normal telemetry write on frames with selected SDF voices, roughly 0.2-1.0 us depending cache state. The larger gain is forensic accuracy: the 300-entry ring now represents 300 acoustic frames instead of potentially 150 paired sort/SDF rows.
+
+<SELF_AUDIT_DELTA>
+  <TELEMETRY_ACOUSTIC_RECORDER status="PASS_STATIC">
+    <AcousticTelemetryEntry>Added in Hecton8.Audio.Virtualization; sequential 64-byte DTO with explicit reserved padding.</AcousticTelemetryEntry>
+    <VaultRing>_virtualVoiceBlackBox now aliases NativeArray&lt;AcousticOcclusionTelemetryEntry&gt; from BufferID.SpatialAudioVirtualVoiceBlackBox, count 300.</VaultRing>
+    <DuplicatePushRepair>Sort completion pushes telemetry only when _acousticOcclusionScheduled is false; SDF frames push after TryCompleteAcousticOcclusion records AcousticOcclusionTimeMs.</DuplicatePushRepair>
+    <PortalIsolation>Portal path uses AcousticPortalTelemetryEntry alias for Hecton8.Audio.Propagation.AcousticTelemetryEntry; no Audio.Virtualization asmdef propagation reference was added.</PortalIsolation>
+    <Verification>git diff --check PASS with CRLF warnings only; forbidden audio virtualization grep PASS_NO_HITS for raycasts, Fast float, propagation coupling, Default property, SdfVoxels default hardwire, and Pack=1.</Verification>
+  </TELEMETRY_ACOUSTIC_RECORDER>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Post-Repair Build Gate
+
+What was wrong:
+- The telemetry repair changed C# source, so compile proof is needed before Task 20 can move. The user forbids `dotnet build` while CPU is above 50% or any compiler process is active.
+
+What was done:
+- Rechecked compiler processes: no `dotnet`, `csc`, `MSBuild`, or `VBCSCompiler` process was active.
+- Rechecked CPU twice with `typeperf`: first set 93.31%, 60.76%, 38.60%; second set 47.60%, 100%, 100%.
+- Did not launch `dotnet build` because both CPU sample sets breached the 50% gate.
+- Rechecked the previous missing World source reference: file is still absent, but no `.csproj/.sln/.slnx` reference currently exists.
+
+Cinematic cheats used:
+- None. This is verification discipline.
+
+Microseconds saved:
+- 0 us runtime. It avoids build contention on a saturated workstation; SHINOBU_112 compile/profiler proof remains pending.
+
+<SELF_AUDIT_DELTA>
+  <POST_REPAIR_BUILD_GATE status="PENDING_GATE_CLOSED">
+    <CompilerProcessesActive>false</CompilerProcessesActive>
+    <CpuSamplesFirst>93.31;60.76;38.60</CpuSamplesFirst>
+    <CpuSamplesSecond>47.60;100.00;100.00</CpuSamplesSecond>
+    <BuildAction>WITHHELD_UNDER_USER_RULE</BuildAction>
+    <CurrentProjectReferenceToMissingWorldFile>false</CurrentProjectReferenceToMissingWorldFile>
+  </POST_REPAIR_BUILD_GATE>
+</SELF_AUDIT_DELTA>

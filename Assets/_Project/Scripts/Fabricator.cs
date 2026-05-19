@@ -129,7 +129,7 @@ namespace Hecton8.Crafting
         [Header("Holographic Assembly")]
         [Tooltip("Preview mesh host under the fabricator. The result mesh is assigned here without material cloning.")]
         [SerializeField] private MeshFilter assemblyPreviewMeshFilter;
-        [Tooltip("Preview renderer driven by Hecton_HologramAssembly and a cached MaterialPropertyBlock.")]
+        [Tooltip("Preview renderer driven by Hecton_HologramAssembly and the SHINOBU_142 Vault shader buffer.")]
         [SerializeField] private MeshRenderer assemblyPreviewRenderer;
         [Tooltip("Shared holographic material using Assets/_Project/Art/Shaders/Hecton_HologramAssembly.shader.")]
         [SerializeField] private Material hologramAssemblyMaterial;
@@ -223,7 +223,6 @@ namespace Hecton8.Crafting
         private float _weldingLoopNextPitchUpdateTime;
         private float _weldingLoopPitch = 1f;
         private uint _weldingLoopPitchSeed = 0x8F31C2A7u;
-        private MaterialPropertyBlock _assemblyPropertyBlock;
         private Material _assemblyActualMaterial;
         private float _assemblyBaseY;
         private float _assemblyTopY = 1f;
@@ -231,6 +230,7 @@ namespace Hecton8.Crafting
         private float _assemblyProgress01;
         private float _assemblyQuality;
         private uint _assemblyTargetHash;
+        private int _fabricationJobSlot = -1;
         private bool _assemblyPreviewActive;
         private bool _assemblyMaterialSwapped;
         private bool _assemblyOriginShiftListenerRegistered;
@@ -304,14 +304,6 @@ namespace Hecton8.Crafting
         private const string NativeMemoryOwner = nameof(Fabricator);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
-        private static readonly int AssemblyHeightYId = Shader.PropertyToID("_AssemblyHeightY");
-        private static readonly int AssemblyBaseYId = Shader.PropertyToID("_AssemblyBaseY");
-        private static readonly int AssemblyTopYId = Shader.PropertyToID("_AssemblyTopY");
-        private static readonly int AssemblyQualityId = Shader.PropertyToID("_AssemblyQuality");
-        private static readonly int AssemblyPowerPauseId = Shader.PropertyToID("_PowerPause01");
-        private static readonly int AssemblyBaseColorId = Shader.PropertyToID("_BaseColor");
-        private static readonly int AssemblyPausedColorId = Shader.PropertyToID("_PausedColor");
-        private static readonly int AssemblyWorldToFabricatorId = Shader.PropertyToID("_AssemblyWorldToFabricator");
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API — QUERIES
@@ -327,11 +319,23 @@ namespace Hecton8.Crafting
         }
 
         /// <summary>Normalizovannyy progress (0..1).</summary>
-        public float CraftProgress => _isCrafting && _activeRecipe != null
-            ? Mathf.Clamp01(_craftTimer / Mathf.Max(0.001f, _activeRecipe.craftTime * Mathf.Max(1, _activeCraftMultiplier)))
-            : 0f;
+        public float CraftProgress => ResolveCraftProgress01();
 
         public float CraftingProgress01 => CraftProgress;
+
+        private float ResolveCraftProgress01()
+        {
+            if (!_isCrafting || _activeRecipe == null)
+                return 0f;
+
+            if (_fabricationJobSlot >= 0 &&
+                FabricationAssemblerRuntime.TryReadSnapshot(_fabricationJobSlot, out FabricationRuntimeSnapshot snapshot))
+            {
+                return Mathf.Clamp01(snapshot.Progress01);
+            }
+
+            return Mathf.Clamp01(_craftTimer / Mathf.Max(0.001f, _activeRecipe.craftTime * Mathf.Max(1, _activeCraftMultiplier)));
+        }
 
         /// <summary>Aktivnyy retsept (null esli ne kraftim).</summary>
         public RecipeData ActiveRecipe => _activeRecipe;
@@ -455,7 +459,6 @@ namespace Hecton8.Crafting
             _activeCraftPowerMultiplier = 1f;
             _sparkProxyLightKey = unchecked((int)EntityId.ToULong(GetEntityId()) ^ 0x4641424C);
             _errorFeedbackBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - fabricator error emission property staging - owner: Fabricator
-            _assemblyPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - hologram assembly shader staging - owner: Fabricator
             if (assemblyFallbackMesh == null)
                 EnsureSharedAssemblyFallbackMesh();
             EndAssemblyVisual();
@@ -547,15 +550,11 @@ namespace Hecton8.Crafting
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            _fabricatorAupCached = false;
             CacheFabricatorAup();
             if (_assemblyPreviewActive && !_assemblyMaterialSwapped)
             {
                 ApplyAssemblyVisualProgress(_assemblyProgress01, IsPausedNoPower);
-            }
-            else if (_assemblyPreviewActive && _assemblyActualMaterial == null && assemblyPreviewRenderer != null && _assemblyPropertyBlock != null)
-            {
-                _assemblyPropertyBlock.SetMatrix(AssemblyWorldToFabricatorId, transform.worldToLocalMatrix);
-                assemblyPreviewRenderer.SetPropertyBlock(_assemblyPropertyBlock);
             }
         }
 
@@ -716,6 +715,7 @@ namespace Hecton8.Crafting
             _isCrafting   = true;
             _runningExothermicHeatInjected = false;
             _lastPublishedProgress = -1f;
+            FabricationAssemblerRuntime.EnsureRuntime();
             EnqueueCraftingTask(recipe, _activeCraftPowerMultiplier, safeMultiplier);
             BeginAssemblyVisual(recipe);
             SetFabricationSparksActive(true);
@@ -844,7 +844,11 @@ namespace Hecton8.Crafting
                 return;
             }
 
-            if (!HasFabricationProgressPower())
+            float previousProgress = task.Progress;
+            bool pausedByPower = !HasFabricationProgressPower();
+            UpdateFabricationVaultSlot(pausedByPower);
+
+            if (!TryReadFabricationProgress(ref task, out float durationSeconds, out float progress, out bool craftCompleted))
             {
                 _craftingTaskQueue.Enqueue(task);
                 SetFabricationSparksActive(false);
@@ -852,16 +856,18 @@ namespace Hecton8.Crafting
                 return;
             }
 
+            if (pausedByPower)
+            {
+                _craftTimer = progress * durationSeconds;
+                _craftingTaskQueue.Enqueue(task);
+                SetFabricationSparksActive(false);
+                ApplyAssemblyVisualProgress(progress, true);
+                return;
+            }
+
             _activeCraftPowerMultiplier = Mathf.Max(1f, task.PowerMultiplier);
             SetFabricationSparksActive(true);
             ApplyRunningExothermicHeatIfNeeded();
-            float previousProgress = task.Progress;
-            bool craftCompleted = AdvanceCraftingTask(
-                ref task,
-                SlowTickDeltaSeconds,
-                ResolveCraftThermalThrottleMultiplier(),
-                out float durationSeconds,
-                out float progress);
             _craftTimer = task.Progress * durationSeconds;
             ApplyAssemblyVisualProgress(progress, false);
             PublishPowerDrainSignal((progress - previousProgress) / SlowTickDeltaSeconds, progress, false);
@@ -903,6 +909,63 @@ namespace Hecton8.Crafting
             task.Progress = math.saturate(task.Progress + ((safeDelta * throttle) / durationSeconds));
             progress = task.Progress;
             return progress >= 1f;
+        }
+
+        private bool TryReadFabricationProgress(
+            ref CraftingTask task,
+            out float durationSeconds,
+            out float progress,
+            out bool craftCompleted)
+        {
+            durationSeconds = Mathf.Max(0.001f, task.DurationSeconds);
+            progress = Mathf.Clamp01(task.Progress);
+            craftCompleted = false;
+
+            if (_fabricationJobSlot < 0 && _assemblyPreviewActive && _activeRecipe != null)
+                BeginFabricationVaultJob(_activeRecipe);
+
+            if (_fabricationJobSlot < 0)
+                return false;
+
+            if (!FabricationAssemblerRuntime.TryReadSnapshot(_fabricationJobSlot, out FabricationRuntimeSnapshot snapshot))
+                return false;
+
+            durationSeconds = Mathf.Max(0.001f, snapshot.DurationSeconds);
+            progress = Mathf.Clamp01(snapshot.Progress01);
+            task.Progress = progress;
+            craftCompleted = (snapshot.Flags & FabricationAssemblerFlags.Completed) != 0u || progress >= 1f;
+            return true;
+        }
+
+        private void UpdateFabricationVaultSlot(bool paused)
+        {
+            if (_fabricationJobSlot < 0)
+                return;
+
+            FabricationAssemblerRuntime.TryUpdateSlot(
+                _fabricationJobSlot,
+                paused ? 0f : ResolveFabricationPowerPotential01(),
+                ResolveCraftThermalThrottleMultiplier(),
+                paused,
+                transform.worldToLocalMatrix,
+                _assemblyBaseY,
+                _assemblyTopY);
+        }
+
+        private float ResolveFabricationPowerPotential01()
+        {
+            if (!HasOperationalPower)
+                return 0f;
+
+            IPowerGridService powerGrid = GlobalRegistry.PowerGrid;
+            if (powerGrid != null && powerGrid.BatterySnapshot.EmergencyReserveActive)
+                return 0f;
+
+            PowerGrid grid = CurrentPowerGrid;
+            if (grid != null && grid.HasPowerDeficit)
+                return Mathf.Clamp01(grid.SupplyRatio);
+
+            return 1f;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1926,6 +1989,7 @@ namespace Hecton8.Crafting
             _assemblyMaterialSwapped = false;
             _assemblyActualMaterial = null;
             _assemblyProgress01 = 0f;
+            _fabricationJobSlot = -1;
 
             if (assemblyPreviewMeshFilter == null ||
                 assemblyPreviewRenderer == null ||
@@ -1951,7 +2015,37 @@ namespace Hecton8.Crafting
             assemblyPreviewRenderer.receiveShadows = false;
             assemblyPreviewRenderer.enabled = true;
             _assemblyPreviewActive = true;
+            BeginFabricationVaultJob(recipe);
             ApplyAssemblyVisualProgress(0f, false);
+        }
+
+        private void BeginFabricationVaultJob(RecipeData recipe)
+        {
+            if (recipe == null)
+                return;
+
+            Transform target = outputSocket != null ? outputSocket : transform;
+            AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromRuntimePosition(target.position);
+            AbsoluteUniversePosition fabricatorAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            float duration = Mathf.Max(0.001f, recipe.craftTime * Mathf.Max(1, _activeCraftMultiplier));
+            float powerDrainWatts = Mathf.Max(0f, craftPowerDraw * Mathf.Max(1f, _activeCraftPowerMultiplier));
+
+            if (FabricationAssemblerRuntime.TryBeginJob(
+                    ResolveFabricatorSignalHash(),
+                    _assemblyTargetHash,
+                    targetAup.ToAbsoluteDouble3(),
+                    fabricatorAup.ToAbsoluteDouble3(),
+                    duration,
+                    ResolveCraftThermalThrottleMultiplier(),
+                    powerDrainWatts,
+                    _assemblyBaseY,
+                    _assemblyTopY,
+                    transform.worldToLocalMatrix,
+                    false,
+                    out int slot))
+            {
+                _fabricationJobSlot = slot;
+            }
         }
 
         private bool TryResolveAssemblySource(ItemData item, out Mesh sourceMesh, out Material actualMaterial)
@@ -2113,31 +2207,18 @@ namespace Hecton8.Crafting
 
         private static float ResolveAssemblyQuality()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350 ||
-                   tier == HectonQualityTier.Unknown
-                ? 0f
-                : 1f;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 1f);
         }
 
         private void ApplyAssemblyVisualProgress(float progress01, bool paused)
         {
-            if (!_assemblyPreviewActive || _assemblyMaterialSwapped || assemblyPreviewRenderer == null || _assemblyPropertyBlock == null)
+            if (!_assemblyPreviewActive || _assemblyMaterialSwapped || assemblyPreviewRenderer == null)
                 return;
 
             _assemblyProgress01 = math.saturate(progress01);
             _assemblyCurrentHeightY = math.lerp(_assemblyBaseY, _assemblyTopY, _assemblyProgress01);
-            _assemblyPropertyBlock.Clear();
-            _assemblyPropertyBlock.SetFloat(AssemblyHeightYId, _assemblyCurrentHeightY);
-            _assemblyPropertyBlock.SetFloat(AssemblyBaseYId, _assemblyBaseY);
-            _assemblyPropertyBlock.SetFloat(AssemblyTopYId, _assemblyTopY);
-            _assemblyPropertyBlock.SetFloat(AssemblyQualityId, _assemblyQuality);
-            _assemblyPropertyBlock.SetFloat(AssemblyPowerPauseId, paused ? 1f : 0f);
-            _assemblyPropertyBlock.SetColor(AssemblyBaseColorId, assemblyBaseColor);
-            _assemblyPropertyBlock.SetColor(AssemblyPausedColorId, assemblyPausedColor);
-            _assemblyPropertyBlock.SetMatrix(AssemblyWorldToFabricatorId, transform.worldToLocalMatrix);
-            assemblyPreviewRenderer.SetPropertyBlock(_assemblyPropertyBlock);
+            UpdateFabricationVaultSlot(paused);
         }
 
         private void CompleteAssemblyVisual()
@@ -2150,7 +2231,6 @@ namespace Hecton8.Crafting
             {
                 if (_assemblyActualMaterial != null)
                 {
-                    assemblyPreviewRenderer.SetPropertyBlock(null);
                     assemblyPreviewRenderer.sharedMaterial = _assemblyActualMaterial;
                 }
 
@@ -2162,10 +2242,14 @@ namespace Hecton8.Crafting
             _assemblyProgress01 = 1f;
             _assemblyCurrentHeightY = _assemblyTopY;
             _assemblyMaterialSwapped = true;
+            FabricationAssemblerRuntime.ClearSlot(_fabricationJobSlot);
+            _fabricationJobSlot = -1;
         }
 
         private void EndAssemblyVisual()
         {
+            FabricationAssemblerRuntime.ClearSlot(_fabricationJobSlot);
+            _fabricationJobSlot = -1;
             _assemblyPreviewActive = false;
             _assemblyMaterialSwapped = false;
             _assemblyActualMaterial = null;
@@ -2175,7 +2259,6 @@ namespace Hecton8.Crafting
 
             if (assemblyPreviewRenderer != null)
             {
-                assemblyPreviewRenderer.SetPropertyBlock(null);
                 assemblyPreviewRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 assemblyPreviewRenderer.receiveShadows = false;
                 assemblyPreviewRenderer.enabled = false;

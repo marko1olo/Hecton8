@@ -9,6 +9,7 @@ namespace Hecton8.EditorTools
 {
     public sealed class ModKernelInspectorWindow : EditorWindow
     {
+        private const double RefreshIntervalSeconds = 0.10d;
         private readonly KernelHistogramElement _histogram = new KernelHistogramElement();
         private Label _statusLabel;
         private Label _shedLabel;
@@ -17,6 +18,7 @@ namespace Hecton8.EditorTools
         private FloatField _rangeField;
         private IntegerField _ttlField;
         private uint _lastShedTotal;
+        private double _nextRefreshTime;
 
         [MenuItem("HECTON-8/Mod Kernel Inspector")]
         public static void Open()
@@ -71,6 +73,11 @@ namespace Hecton8.EditorTools
 
         private void Tick()
         {
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextRefreshTime)
+                return;
+
+            _nextRefreshTime = now + RefreshIntervalSeconds;
             FutureCommandSandboxValidator.Initialize();
             FutureCommandSandboxTuning tuning = FutureCommandSandboxValidator.GetTuningSnapshot();
             uint shedTotal = 0u;

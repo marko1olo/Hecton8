@@ -14,11 +14,13 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+
+R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
-## 2026-05-19 DOC_GLOBAL R31 Current Boundary Note
+## 2026-05-19 DOC_GLOBAL R32 Current Boundary Note
 
-R31 reread confirmed this ledger remains static cinematic-cheat/source orientation, not profiler, frame-time, or visual-quality proof. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`; R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `57` RealtimeCSG vendor references; `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
+R32 artifact-backed reread evidence keeps this ledger as static cinematic-cheat/source orientation, not profiler, frame-time, or visual-quality proof. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`; R31 remains the prior current-boundary propagation correction. R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`); `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
 
 Scope: source-backed ledger of deliberate performance cheats that replace physical simulation with controlled presentation.
 
@@ -61,6 +63,12 @@ Mandate authority:
 | Tether/cable physics | Old ConfigurableJoint/AddForce path is stale against current AGENTS.md; new production path must use custom constraint packets or visual fake. | Documentation-only. |
 | Tool/hand physics | Welds, anchors, grabs, drag, recoil, and scatter now route through owned physics packets or presentation fakes; direct tool-side Unity physics calls are stale. | Documentation-only. |
 | Underwater audio | HRTF/ITD/ILD becomes optional accessibility/headphone processing, not default underwater realism. | Documentation-only. |
+
+## May 19 Entries
+
+| Cheat | Source evidence | Expensive path avoided | Runtime-proof state |
+|---|---|---|---|
+| Abyssal swarm procedural silhouette | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs` writes Vault-owned `BoidMatrixDTO`/custom lanes, uploads through double-buffered `GraphicsBuffer.LockBufferForWrite`, exposes a cold material-bound `IRenderable` draw seam, and `Assets/_Project/Art/Shaders/Hecton_AbyssalSwarmProcedural.shader` consumes `_H8ShinobuBoidMatrices`/`_H8ShinobuBoidCustomData` using `SV_VertexID`/`SV_InstanceID`. | Per-fish `GameObject`, `Animator`, `SkinnedMeshRenderer`, mesh instantiation, and CPU-owned matrix arrays for 100,000 fish. | Static source/asset route only. `MAT_AbyssalSwarmProcedural.mat` exists, but Unity import, shader warmup/retention, scene/material binding, Frame Debugger, GCMonitor, and profiler proof remain pending; current project compile is blocked outside SHINOBU by missing Visor/Equipment/Comfort DTO dependencies. |
 
 ## May 7 Entries
 

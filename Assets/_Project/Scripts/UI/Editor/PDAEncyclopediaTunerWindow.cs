@@ -35,7 +35,7 @@ namespace Hecton8.UI.Editor
             root.Add(_stateLabel);
 
             _hashField = new TextField("Entry hash");
-            _hashField.value = "0xA1300001";
+            _hashField.value = "0xAEC57EAC";
             root.Add(_hashField);
 
             _rawLabel = new Label("Raw UTF-8 x-ray not loaded.");
@@ -90,10 +90,13 @@ namespace Hecton8.UI.Editor
                 out int telemetryBytes,
                 out int typewriterBytes,
                 out int aupBytes,
+                out int h8lrHeaderBytes,
+                out int h8lrRecordBytes,
                 out int runtimeSourceBytesOffset,
                 out int telemetryFlagsOffset,
                 out int typewriterReserved3Offset,
-                out int aupReserved1Offset);
+                out int aupReserved1Offset,
+                out int h8lrRecordReserved0Offset);
             _stateLabel.text =
                 $"Entry: 0x{state.LastEntryHash:X8}\n" +
                 $"Unlocked: {state.UnlockedCount}/256  Revision: {state.Revision}\n" +
@@ -101,8 +104,8 @@ namespace Hecton8.UI.Editor
                 $"State: {(PdaEncyclopediaStreamState)state.StreamState}  Fault: 0x{state.FaultHash:X8}\n" +
                 $"Mask[0..3]: {mask.Mask0:X16} {mask.Mask1:X16} {mask.Mask2:X16} {mask.Mask3:X16}\n" +
                 $"Layout: {sizeBytes} bytes  Mask0@{mask0Offset} Mask3@{mask3Offset}\n" +
-                $"DTOs: {(layoutsValid ? "OK" : "FAIL")}  E/R/M/T/TW/AUP={encyclopediaBytes}/{runtimeBytes}/{entryMetaBytes}/{telemetryBytes}/{typewriterBytes}/{aupBytes}\n" +
-                $"Offsets: SourceBytes@{runtimeSourceBytesOffset} TelemetryFlags@{telemetryFlagsOffset} TypewriterPad@{typewriterReserved3Offset} AUPPad@{aupReserved1Offset}";
+                $"DTOs: {(layoutsValid ? "OK" : "FAIL")}  E/R/M/T/TW/AUP/H8H/H8R={encyclopediaBytes}/{runtimeBytes}/{entryMetaBytes}/{telemetryBytes}/{typewriterBytes}/{aupBytes}/{h8lrHeaderBytes}/{h8lrRecordBytes}\n" +
+                $"Offsets: SourceBytes@{runtimeSourceBytesOffset} TelemetryFlags@{telemetryFlagsOffset} TypewriterPad@{typewriterReserved3Offset} AUPPad@{aupReserved1Offset} H8LRPad@{h8lrRecordReserved0Offset}";
         }
 
         private void SelectHash()

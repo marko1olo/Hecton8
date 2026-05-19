@@ -42,6 +42,12 @@ Use this schema in a future CSV/Sheet/Notion/database.
 | `last_verified` | yes | YYYY-MM-DD | Required before outreach. |
 | `source` | yes | URL/file | Where row came from. |
 | `outreach_batch` | optional | batch id | Example: `screenshots_A_001`. |
+| `contact_route_verified` | optional | yes/no/date or route note | Required before any send; do not infer from platform presence. |
+| `asset_ids_sent` | optional | comma-separated asset IDs | Must match approved asset metadata rows. |
+| `creator_utility_score` | optional | 0/4 to 4/4 | Required for creator-facing asset sends; 3/4 minimum. |
+| `utm_content` | optional | approved UTM content slug | Required only when an official public link exists. |
+| `reply_deadline` | optional | YYYY-MM-DD | Used to prevent endless follow-up drift. |
+| `followup_allowed` | optional | yes/no | One follow-up only and only with new asset/demo value. |
 | `last_contacted` | optional | date |  |
 | `reply_status` | optional | NONE, POSITIVE, NEGATIVE, NEEDS_BUILD, RATE_CARD, COVERED |  |
 | `coverage_url` | optional | URL |  |
@@ -120,6 +126,7 @@ A lead is outreach-ready only if:
 - contact route verified;
 - pitch angle assigned;
 - one asset exists for their format;
+- creator-facing asset utility score is 3/4+ when the outreach asks for feedback, preview interest, or future coverage;
 - no co-op language;
 - no fake performance claim;
 - no generic pitch.

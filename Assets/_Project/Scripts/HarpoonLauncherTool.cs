@@ -5,7 +5,10 @@ using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.Tools;
 using Unity.Mathematics;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Hecton8.Gameplay
 {
@@ -13,6 +16,10 @@ namespace Hecton8.Gameplay
     public sealed class HarpoonLauncherTool : PlayerTool
     {
         private const string HarpoonCategory = "HARPOON";
+        private const string TracerShaderName = "Hecton8/Physics/TetherLineStrip";
+        private static readonly int _TetherPositionsId = Shader.PropertyToID("_TetherPositions");
+        private static readonly int _TetherSegmentTensionsId = Shader.PropertyToID("_TetherSegmentTensions");
+        private static readonly int _TetherDrawParamsId = Shader.PropertyToID("_TetherDrawParams");
         private enum TetherRegistrationResult : byte
         {
             None = 0,
@@ -144,12 +151,16 @@ namespace Hecton8.Gameplay
         [SerializeField] private float tetherPullBonus = 1.35f;
 
         [Header("Tracer")]
-        [SerializeField] private LineRenderer tracer;
         [SerializeField] private float tracerLifetime = 0.08f;
+        [SerializeField] private Color tracerColor = new Color(0.46f, 0.98f, 0.94f, 0.95f);
+        [SerializeField, Range(0.002f, 0.05f)] private float tracerRadius = 0.012f;
 
         private Transform _cachedTransform;
         private float _cooldown;
         private float _tracerTimer;
+        private bool _tracerActive;
+        private Vector3 _tracerStartPoint;
+        private Vector3 _tracerEndPoint;
         private float _nextFeedbackAt;
         private Rigidbody _tetheredBody;
         private Collider _tetheredCollider;
@@ -170,12 +181,17 @@ namespace Hecton8.Gameplay
         private FixedCharBuffer _hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - harpoon HUD staging buffer - owner: HarpoonLauncherTool
         private FixedCharBuffer _logTitleBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - harpoon operation log title staging buffer - owner: HarpoonLauncherTool
         private FixedCharBuffer _logSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - harpoon operation log summary staging buffer - owner: HarpoonLauncherTool
+        private GraphicsBuffer _tracerPositionBuffer;
+        private GraphicsBuffer _tracerTensionBuffer;
+        private GraphicsBuffer _tracerDrawParamsBuffer;
+        private MaterialPropertyBlock _tracerPropertyBlock;
 
         private void Awake()
         {
             _cachedTransform = transform;
             ResolveHeavyTowWinch();
             EnsureTracer();
+            GetTracerMaterial();
             SetTracer(false, Vector3.zero);
         }
 
@@ -507,41 +523,35 @@ namespace Hecton8.Gameplay
 
         private void SetTracer(bool active, Vector3 endPoint)
         {
-            if (tracer == null)
-                return;
-
-            tracer.enabled = active;
+            _tracerActive = active;
             if (!active)
                 return;
 
-            tracer.SetPosition(0, Vector3.zero);
-            tracer.SetPosition(1, _cachedTransform.InverseTransformPoint(endPoint));
+            _tracerStartPoint = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            _tracerEndPoint = IsFinite(endPoint) ? endPoint : _tracerStartPoint;
         }
 
         private void EnsureTracer()
         {
-            if (tracer != null)
+            if (_tracerPositionBuffer != null && _tracerTensionBuffer != null && _tracerDrawParamsBuffer != null)
                 return;
 
-            GameObject tracerRoot = new GameObject("Tracer");
-            tracerRoot.transform.SetParent(transform, false);
-            tracerRoot.transform.localPosition = Vector3.zero;
-            tracerRoot.transform.localRotation = Quaternion.identity;
-
-            tracer = tracerRoot.AddComponent<LineRenderer>();
-            tracer.alignment = LineAlignment.View;
-            tracer.useWorldSpace = false;
-            tracer.positionCount = 2;
-            tracer.startWidth = 0.012f;
-            tracer.endWidth = 0.005f;
-            tracer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            tracer.receiveShadows = false;
-            tracer.textureMode = LineTextureMode.Stretch;
-            tracer.numCapVertices = 2;
-            tracer.sharedMaterial = GetTracerMaterial();
-            tracer.startColor = new Color(0.46f, 0.98f, 0.94f, 0.95f);
-            tracer.endColor = new Color(0.46f, 0.98f, 0.94f, 0.2f);
-            tracer.enabled = false;
+            _tracerPositionBuffer ??= new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                2,
+                UnsafeUtility.SizeOf<GpuCableSplinePointDTO>()); // COLD ALLOC: GraphicsBuffer[2] - harpoon GPU tracer points - owner: HarpoonLauncherTool
+            _tracerTensionBuffer ??= new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                1,
+                UnsafeUtility.SizeOf<float>()); // COLD ALLOC: GraphicsBuffer[1] - harpoon tracer stress scalar - owner: HarpoonLauncherTool
+            _tracerDrawParamsBuffer ??= new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                1,
+                UnsafeUtility.SizeOf<GpuCableDrawParamsDTO>()); // COLD ALLOC: GraphicsBuffer[1] - harpoon tracer draw constants - owner: HarpoonLauncherTool
+            _tracerPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - harpoon tracer GPU bindings - owner: HarpoonLauncherTool
         }
 
         private static Material GetTracerMaterial()
@@ -549,12 +559,111 @@ namespace Hecton8.Gameplay
             if (s_tracerMaterial != null)
                 return s_tracerMaterial;
 
-            Shader shader = Shader.Find("Sprites/Default");
+            Shader shader = Shader.Find(TracerShaderName);
             if (shader == null)
-                shader = Shader.Find("Unlit/Color");
+                return null;
 
-            s_tracerMaterial = new Material(shader);
+            s_tracerMaterial = new Material(shader)
+            {
+                name = "MAT_Runtime_HarpoonGpuTracer",
+                hideFlags = HideFlags.DontSave
+            };
             return s_tracerMaterial;
+        }
+
+        private void LateUpdate()
+        {
+            RenderTracer();
+        }
+
+        private void RenderTracer()
+        {
+            if (!_tracerActive || _tracerTimer <= 0f)
+                return;
+
+            Material material = GetTracerMaterial();
+            if (material == null)
+                return;
+
+            EnsureTracer();
+            if (_tracerPositionBuffer == null || _tracerTensionBuffer == null || _tracerDrawParamsBuffer == null)
+                return;
+
+            Vector3 start = IsFinite(_tracerStartPoint) ? _tracerStartPoint : transform.position;
+            Vector3 end = IsFinite(_tracerEndPoint) ? _tracerEndPoint : start;
+            UploadTracerGpuData(start, end);
+
+            _tracerPropertyBlock.SetBuffer(_TetherPositionsId, _tracerPositionBuffer);
+            _tracerPropertyBlock.SetBuffer(_TetherSegmentTensionsId, _tracerTensionBuffer);
+            _tracerPropertyBlock.SetBuffer(_TetherDrawParamsId, _tracerDrawParamsBuffer);
+
+            Vector3 midpoint = (start + end) * 0.5f;
+            Vector3 size = AbsVector(end - start) + Vector3.one * Mathf.Max(0.1f, tracerRadius * 8f);
+            RenderParams renderParams = new RenderParams(material)
+            {
+                matProps = _tracerPropertyBlock,
+                worldBounds = new Bounds(midpoint, size),
+                layer = gameObject.layer
+            };
+            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, 1);
+        }
+
+        private void UploadTracerGpuData(Vector3 start, Vector3 end)
+        {
+            NativeArray<GpuCableSplinePointDTO> points = _tracerPositionBuffer.LockBufferForWrite<GpuCableSplinePointDTO>(0, 2);
+            points[0] = new GpuCableSplinePointDTO
+            {
+                Position = new float3(start.x, start.y, start.z),
+                Tension01 = 0f
+            };
+            points[1] = new GpuCableSplinePointDTO
+            {
+                Position = new float3(end.x, end.y, end.z),
+                Tension01 = 0f
+            };
+            _tracerPositionBuffer.UnlockBufferAfterWrite<GpuCableSplinePointDTO>(2);
+
+            NativeArray<float> tensions = _tracerTensionBuffer.LockBufferForWrite<float>(0, 1);
+            tensions[0] = 0f;
+            _tracerTensionBuffer.UnlockBufferAfterWrite<float>(1);
+
+            Color safeColor = tracerColor;
+            NativeArray<GpuCableDrawParamsDTO> drawParams = _tracerDrawParamsBuffer.LockBufferForWrite<GpuCableDrawParamsDTO>(0, 1);
+            drawParams[0] = new GpuCableDrawParamsDTO
+            {
+                Color = new float4(safeColor.r, safeColor.g, safeColor.b, safeColor.a),
+                StressColor = new float4(1f, 0.55f, 0.18f, 0.95f),
+                Params0 = new float4(0f, 1f, 2f, Mathf.Max(0.002f, tracerRadius)),
+                Params1 = new float4(0f, 0f, 0f, 0f),
+                Params2 = new float4(Time.time, 0f, 0f, 0f)
+            };
+            _tracerDrawParamsBuffer.UnlockBufferAfterWrite<GpuCableDrawParamsDTO>(1);
+        }
+
+        private void OnDestroy()
+        {
+            ReleaseTracerResources();
+        }
+
+        private void ReleaseTracerResources()
+        {
+            if (_tracerPositionBuffer != null)
+            {
+                _tracerPositionBuffer.Release();
+                _tracerPositionBuffer = null;
+            }
+
+            if (_tracerTensionBuffer != null)
+            {
+                _tracerTensionBuffer.Release();
+                _tracerTensionBuffer = null;
+            }
+
+            if (_tracerDrawParamsBuffer != null)
+            {
+                _tracerDrawParamsBuffer.Release();
+                _tracerDrawParamsBuffer = null;
+            }
         }
 
         private void ResolveHeavyTowWinch()
@@ -805,6 +914,11 @@ namespace Hecton8.Gameplay
 
             float invLength = math.rsqrt(lengthSq);
             return direction * invLength;
+        }
+
+        private static Vector3 AbsVector(Vector3 value)
+        {
+            return new Vector3(Mathf.Abs(value.x), Mathf.Abs(value.y), Mathf.Abs(value.z));
         }
 
         private bool TryGetAssessmentCached(out HarpoonAssessment assessment)

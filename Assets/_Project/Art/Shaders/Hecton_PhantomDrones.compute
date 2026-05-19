@@ -9,6 +9,7 @@ float _PhantomBaseRadius;
 float _PhantomVerticalAmplitude;
 float _PhantomScale;
 int _PhantomCount;
+int _PhantomCapacity;
 
 #define HECTON_PHANTOM_THREADS 64
 #define HECTON_TWO_PI 6.28318530718
@@ -45,8 +46,15 @@ float4x4 BuildMatrix(float3 positionWS, float angleRadians, float scaleMeters)
 void CS_UpdatePhantomDrones(uint3 id : SV_DispatchThreadID)
 {
     uint index = id.x;
-    if (index >= (uint)_PhantomCount)
+    if (index >= (uint)_PhantomCapacity)
         return;
+
+    if (index >= (uint)_PhantomCount)
+    {
+        _PhantomMatrices[index] = (float4x4)0;
+        _PhantomColors[index] = float4(0.0, 0.0, 0.0, 0.0);
+        return;
+    }
 
     float seed = Hash01(index + 17u);
     float layer = (float)(index % 5u);

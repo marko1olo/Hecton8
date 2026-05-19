@@ -38,15 +38,61 @@ namespace Hecton8.Animation.IK
         public const int ColliderProxyDtoBytes = 64;
         public const int TelemetryEntryBytes = 96;
         public const int MockTargetDtoBytes = 32;
+        public const int TunerSnapshotBytes = 16;
+        private static readonly int s_boneLocalToWorldOffset = FieldOffset<LeviathanBoneDTO>(nameof(LeviathanBoneDTO.LocalToWorld));
+        private static readonly int s_constraintParentIndexOffset = FieldOffset<LeviathanBoneConstraintsDTO>(nameof(LeviathanBoneConstraintsDTO.ParentIndex));
+        private static readonly int s_constraintChainIdOffset = FieldOffset<LeviathanBoneConstraintsDTO>(nameof(LeviathanBoneConstraintsDTO.ChainId));
+        private static readonly int s_constraintFlagsOffset = FieldOffset<LeviathanBoneConstraintsDTO>(nameof(LeviathanBoneConstraintsDTO.Flags));
+        private static readonly int s_constraintSegmentLengthOffset = FieldOffset<LeviathanBoneConstraintsDTO>(nameof(LeviathanBoneConstraintsDTO.SegmentLengthMeters));
+        private static readonly int s_constraintMaxBendOffset = FieldOffset<LeviathanBoneConstraintsDTO>(nameof(LeviathanBoneConstraintsDTO.MaxBendRadians));
+        private static readonly int s_colliderCenterOffset = FieldOffset<LeviathanCapsuleColliderDTO>(nameof(LeviathanCapsuleColliderDTO.Center));
+        private static readonly int s_colliderAxisOffset = FieldOffset<LeviathanCapsuleColliderDTO>(nameof(LeviathanCapsuleColliderDTO.Axis));
+        private static readonly int s_colliderAabbExtentsOffset = FieldOffset<LeviathanCapsuleColliderDTO>(nameof(LeviathanCapsuleColliderDTO.AabbExtents));
+        private static readonly int s_telemetryRootAupOffset = FieldOffset<LeviathanTerrainIkTelemetryEntry>(nameof(LeviathanTerrainIkTelemetryEntry.RootAup));
+        private static readonly int s_telemetryBurstSolveMicrosOffset = FieldOffset<LeviathanTerrainIkTelemetryEntry>(nameof(LeviathanTerrainIkTelemetryEntry.BurstSolveMicros));
+        private static readonly int s_mockTargetAupOffset = FieldOffset<LeviathanMockTargetDTO>(nameof(LeviathanMockTargetDTO.TargetAup));
 
         public static bool Validate()
         {
             return UnsafeUtility.SizeOf<LeviathanBoneDTO>() == BoneDtoBytes &&
+                   s_boneLocalToWorldOffset == 0 &&
                    UnsafeUtility.SizeOf<LeviathanBoneConstraintsDTO>() == BoneConstraintDtoBytes &&
+                   s_constraintParentIndexOffset == 0 &&
+                   s_constraintChainIdOffset == 4 &&
+                   s_constraintFlagsOffset == 6 &&
+                   s_constraintSegmentLengthOffset == 8 &&
+                   s_constraintMaxBendOffset == 12 &&
                    UnsafeUtility.SizeOf<LeviathanCapsuleColliderDTO>() == ColliderProxyDtoBytes &&
+                   s_colliderCenterOffset == 0 &&
+                   s_colliderAxisOffset == 16 &&
+                   s_colliderAabbExtentsOffset == 48 &&
                    UnsafeUtility.SizeOf<LeviathanTerrainIkTelemetryEntry>() == TelemetryEntryBytes &&
-                   UnsafeUtility.SizeOf<LeviathanMockTargetDTO>() == MockTargetDtoBytes;
+                   s_telemetryRootAupOffset == 64 &&
+                   s_telemetryBurstSolveMicrosOffset == 92 &&
+                   UnsafeUtility.SizeOf<LeviathanMockTargetDTO>() == MockTargetDtoBytes &&
+                   s_mockTargetAupOffset == 0 &&
+                   UnsafeUtility.SizeOf<LeviathanProceduralTunerSnapshot>() == TunerSnapshotBytes;
         }
+
+        private static int FieldOffset<T>(string fieldName) where T : struct
+        {
+            System.Reflection.FieldInfo field = typeof(T).GetField(fieldName);
+            return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
+        }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct LeviathanProceduralTunerSnapshot
+    {
+        [FieldOffset(0)] public int ActiveSegmentCount;
+        [FieldOffset(4)] public int ConstraintIterations;
+        [FieldOffset(8)] public float BurstSolveMicros;
+        [FieldOffset(12)] public float GlobalQualityWeight;
+    }
+
+    public interface ILeviathanProceduralTunerSource
+    {
+        void GetLeviathanProceduralTunerSnapshot(out LeviathanProceduralTunerSnapshot snapshot);
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -92,15 +138,10 @@ namespace Hecton8.Animation.IK
         [FieldOffset(40)] public float3 IntendedVelocity;
         [FieldOffset(52)] public float MaxTerrainPushMeters;
         [FieldOffset(56)] public float TailWhipSecondsRemaining;
-        [FieldOffset(60)] public float Padding0;
-        [FieldOffset(64)] public float Padding1;
-        [FieldOffset(68)] public float Padding2;
-        [FieldOffset(72)] public float Padding3;
-        [FieldOffset(76)] public float Padding4;
-        [FieldOffset(80)] public float Padding5;
-        [FieldOffset(84)] public float Padding6;
-        [FieldOffset(88)] public float Padding7;
-        [FieldOffset(92)] public float Padding8;
+        [FieldOffset(60)] public float GlobalQualityWeight;
+        [FieldOffset(64)] public double3 RootAup;
+        [FieldOffset(88)] public float AverageFabrikIterations;
+        [FieldOffset(92)] public float BurstSolveMicros;
     }
 
     public static class LeviathanTerrainIkBlackBox
@@ -216,18 +257,20 @@ namespace Hecton8.Animation.IK
             WriteFloat3(writer, entry.IntendedVelocity);
             writer.Write(entry.MaxTerrainPushMeters);
             writer.Write(entry.TailWhipSecondsRemaining);
-            writer.Write(entry.Padding0);
-            writer.Write(entry.Padding1);
-            writer.Write(entry.Padding2);
-            writer.Write(entry.Padding3);
-            writer.Write(entry.Padding4);
-            writer.Write(entry.Padding5);
-            writer.Write(entry.Padding6);
-            writer.Write(entry.Padding7);
-            writer.Write(entry.Padding8);
+            writer.Write(entry.GlobalQualityWeight);
+            WriteDouble3(writer, entry.RootAup);
+            writer.Write(entry.AverageFabrikIterations);
+            writer.Write(entry.BurstSolveMicros);
         }
 
         private static void WriteFloat3(BinaryWriter writer, float3 value)
+        {
+            writer.Write(value.x);
+            writer.Write(value.y);
+            writer.Write(value.z);
+        }
+
+        private static void WriteDouble3(BinaryWriter writer, double3 value)
         {
             writer.Write(value.x);
             writer.Write(value.y);
@@ -379,6 +422,8 @@ namespace Hecton8.Animation.IK
         public int RequestedSegmentCount;
         public int ConstraintIterations;
         public int FrameIndex;
+        public float BurstSolveMicros;
+        public double3 RootAup;
         public uint RuntimeFlags;
 
         public void Execute()
@@ -945,8 +990,10 @@ namespace Hecton8.Animation.IK
             entry.IntendedVelocity = SanitizeFinite(intended, float3.zero);
             entry.MaxTerrainPushMeters = math.select(0f, maxTerrainPush, math.isfinite(maxTerrainPush));
             entry.TailWhipSecondsRemaining = tailWhipSecondsRemaining;
-            entry.Padding0 = SanitizeQualityWeight(qualityWeight);
-            entry.Padding1 = iterations;
+            entry.GlobalQualityWeight = SanitizeQualityWeight(qualityWeight);
+            entry.RootAup = SanitizeFiniteDouble3(RootAup);
+            entry.AverageFabrikIterations = iterations;
+            entry.BurstSolveMicros = SanitizePositiveFinite(BurstSolveMicros, 0f, 0f);
             TelemetryRing[index] = entry;
             if (cursor == int.MaxValue)
             {
@@ -995,6 +1042,11 @@ namespace Hecton8.Animation.IK
         {
             float lengthSq = math.lengthsq(value);
             return lengthSq > MinLengthSq && math.isfinite(lengthSq) ? lengthSq * math.rsqrt(lengthSq) : 0f;
+        }
+
+        private static double3 SanitizeFiniteDouble3(double3 value)
+        {
+            return math.all(math.isfinite(value)) ? value : double3.zero;
         }
 
         public static bool TryResolveSdfVoxelCount(int3 dimensions, out int voxelCount)

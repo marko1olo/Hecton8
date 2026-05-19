@@ -97,6 +97,33 @@ Reject all roughs that:
 
 First paid-art spend gate: only after one direction survives a 10-person thumbnail test and the screenshot pack scores at least 10/12 in `QA/MARKETING_ASSET_QA_CHECKLIST.md`.
 
+## 2026-05-19 Capsule Rough Decision Packet V0
+
+Use this once `PLAN-SHOT-*` captures exist. The goal is not "pretty key art"; the goal is to find one capsule direction that reads at Steam capsule size without lying about the build.
+
+| Test ID | Candidate rough | Required source assets | Cold-read question | Pass threshold | Kill condition |
+|---|---|---|---|---:|---|
+| CAP-001 | Pressure Hatch Primary | `PLAN-SHOT-002`, `PLAN-SHOT-005`, optional `PLAN-CLIP-001` still | "What is happening to this place?" | 7/10 viewers mention pressure, base, machine, or danger. | If viewers say spaceship, generic horror, or cannot identify underwater context. |
+| CAP-002 | Floodlight Salvage Route | `PLAN-SHOT-001`, `PLAN-SHOT-003`, `PLAN-CLIP-003` still | "What would you do next?" | 7/10 viewers mention salvage, descent, route, tool, or wreck. | If viewers only say diver, ocean, Subnautica-like, or pretty water. |
+| CAP-003 | Seed Ship Instrument Corruption | `PLAN-SHOT-007`, `PLAN-CLIP-002` still | "What is the mystery?" | 6/10 viewers mention signal, anomaly, structure, or instrument failure. | If viewers read it as abstract sci-fi UI, logo art, or non-game poster. |
+| CAP-004 | Heavy Machine Startup | `PLAN-SHOT-004`, `PLAN-CLIP-004` still | "What makes this game different?" | 7/10 viewers mention machinery, industrial, vehicle/tool, or hostile depth. | If it looks like generic mech/sci-fi and loses underwater survival read. |
+
+### Test Export Requirements
+
+- Export each rough in Steam small capsule, header capsule, vertical capsule, and 16:9 thumbnail crop.
+- Use the same logo/title treatment across all roughs, so the test measures image direction first.
+- Show each rough for 3 seconds, then ask the cold-read question without context.
+- Record exact viewer words, not cleaned-up summaries.
+- A rough fails if title readability fails at small capsule size even when the image direction is strong.
+
+### Decision Order
+
+1. Pick the highest clarity rough, not the most cinematic rough.
+2. If two roughs tie, choose the one with lower clone risk.
+3. If all roughs fail underwater survival read, return to screenshot capture; do not pay for final art.
+4. If all roughs pass genre but fail HECTON identity, add machinery/pressure/salt/glass cues before commissioning.
+5. If Seed Ship wins but no gameplay proof exists, hold it for trailer thumbnail and use Pressure Hatch for Steam.
+
 ## Capsule Rules
 
 - Title readable at thumbnail size.

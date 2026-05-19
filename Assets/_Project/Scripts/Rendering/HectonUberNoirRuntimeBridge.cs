@@ -21,6 +21,7 @@ namespace Hecton8.Core
         private const int RecoveryFramesRequired = 120;
         private const float StressShedThreshold = 0.8f;
         private const float StressRecoveryThreshold = 0.72f;
+        private const float FeatureMaskEpsilon = 0.001f;
         private const uint DumpMagic = 0x55424E52u; // UBNR
         private const string IntegratorDumpFileName = "Dump_UBER_NOIR_INTEGRATOR.bin";
         private const string IntegratorH8DumpFileName = "Dump_UBER_NOIR_INTEGRATOR.h8dump";
@@ -267,10 +268,13 @@ namespace Hecton8.Core
                 entry.VisualOverkill01 = visualOverkill01;
                 entry.QualityTier = tier;
                 entry.Flags = 0u;
-                entry.StateHash = Mix(featureMask ^ ((uint)math.round(stress01 * 1000f) << 12) ^ (tier << 24));
-                entry.PomEnabled01 = (featureMask & FeaturePom) != 0u ? 1f : 0f;
-                entry.SecondaryCaustics01 = (featureMask & FeatureSecondaryCaustics) != 0u ? 1f : 0f;
-                entry.Refraction01 = (featureMask & FeatureScreenRefraction) != 0u ? 1f : 0f;
+                uint stressBucket = (uint)math.round(math.saturate(stress01) * 1000f);
+                uint highCostBucket = (uint)math.round(math.saturate(highCostAllowed01) * 1000f);
+                uint overkillBucket = (uint)math.round(math.saturate(visualOverkill01) * 1000f);
+                entry.StateHash = Mix(featureMask ^ (stressBucket << 12) ^ (tier << 24) ^ (highCostBucket << 2) ^ (overkillBucket << 14));
+                entry.PomEnabled01 = math.saturate(highCostAllowed01);
+                entry.SecondaryCaustics01 = math.saturate(highCostAllowed01);
+                entry.Refraction01 = math.saturate(highCostAllowed01);
                 entry.Reserved0 = 0f;
                 ring[_telemetryCursor] = entry;
 
@@ -460,14 +464,14 @@ namespace Hecton8.Core
             if (stressShed)
                 mask |= FeatureHomeostasisShed;
 
-            if (highCostAllowed01 > 0.5f)
+            if (highCostAllowed01 > FeatureMaskEpsilon)
             {
                 mask |= FeaturePom | FeatureSecondaryCaustics | FeatureScreenRefraction;
                 if (!lowTier)
                     mask |= FeatureBlueNoiseDither;
             }
 
-            if (visualOverkill01 > 0.5f)
+            if (visualOverkill01 > FeatureMaskEpsilon)
                 mask |= FeatureVisualOverkill;
 
             return mask;

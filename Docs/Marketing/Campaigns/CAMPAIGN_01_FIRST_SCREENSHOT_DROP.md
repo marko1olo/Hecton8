@@ -143,6 +143,7 @@ This checklist ties Campaign 01 to the current asset, experiment, UTM, social, F
 |---|---|---|
 | Asset metadata | `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` | `PLAN-SHOT-001`, `PLAN-SHOT-003`, and at least one of `PLAN-SHOT-002/004/005` have actual file path, build ID, and QA score. |
 | Asset QA | `QA/MARKETING_ASSET_QA_CHECKLIST.md` | Steam-use shots score 10/12; critique-only shots score at least 9/12. |
+| Creator utility | `QA/MARKETING_ASSET_QA_CHECKLIST.md`, `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv`, `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` | Any asset used for creator micro-feedback scores at least 3/4 on creator utility and maps to named CRM rows; utility cannot override visual QA thresholds. |
 | Steam assembly | `Steam/STORE_PAGE_COPY_MATRIX.md` | Candidate A/B/C chosen by cold read; no co-op/perf/large-world promises. |
 | Steam asset ticket | `Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md` | Reject codes filled for killed captures; no weak frame survives by taste. |
 | Experiment plan | `Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md` | AB-001, AB-002, and AB-004 are ready to log. |
@@ -159,7 +160,7 @@ This checklist ties Campaign 01 to the current asset, experiment, UTM, social, F
 | T+0h | First public critique post, no wishlist CTA | Best screenshot | Useful comments per view, clone/dark/AI confusion | 2+ repeated confusion patterns in first response set. |
 | T+6h | Reply pass | FAQ matrix | Repeated objections logged as asset/copy issues | Do not argue; revise source if repeated. |
 | T+24h | Second post only if first did not fail | Alternate screenshot or clip | AB-001/AB-003 comparison | Hold if first post exposed clarity failure. |
-| T+48h | Wave A creator micro-feedback, max 10 | Best asset pack | Reply quality | Stop if contact routes are not verified or assets mismatch creator. |
+| T+48h | Wave A creator micro-feedback, max 10 | Best asset pack with creator utility 3/4+ | Reply quality, exact CRM row, exact contact route | Stop if contact routes are not verified, assets mismatch creator, or utility score is below 3/4. |
 | T+72h | Campaign note | All signals | Keep/revise/kill decision | Do not move to Steam page launch without a clear winner. |
 
 ### Campaign Result Must End In One Decision

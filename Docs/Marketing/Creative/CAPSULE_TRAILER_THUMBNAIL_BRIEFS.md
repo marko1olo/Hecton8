@@ -60,6 +60,43 @@ Use 2-3, not all:
 | Base Pressure Failure | Interior/exterior split: pressure hatch, warning light, water/silt pressing outside. | Could look too horror-only. | Does base-as-machine read instantly? |
 | Salvage Descent | Player/tool/vehicle descends toward industrial wreck with gauges/floodlights. | Could look derivative if too blue. | Does it show a player verb and distinct machinery? |
 
+## 2026-05-19 Capsule Rough Test Packet V0
+
+Do not buy final capsule art before this packet has real source assets and cold-read results.
+
+| Rough | Source asset dependency | Thumbnail text allowed? | Required read | Clone-risk guard | Decision if pass |
+|---|---|---|---|---|---|
+| Pressure Hatch | `PLAN-SHOT-002` or `PLAN-SHOT-005` | No, title only. | "base pressure failure" or "industrial underwater survival" | use hatch/gauge/salt/warning light, not clean corridor | Steam primary capsule candidate |
+| Floodlight Route | `PLAN-SHOT-001` and `PLAN-SHOT-003` | No, title only. | "salvage route into danger" | keep water black-green, avoid hero diver pose | creator/Reddit thumbnail candidate |
+| Seed Ship Signal | `PLAN-SHOT-007` or `PLAN-CLIP-002` | One short word only if reviewed. | "signal/anomaly below" | require real instrument/cockpit/visor proof | hold for trailer unless gameplay proof is strong |
+| Heavy Machine | `PLAN-SHOT-004` or `PLAN-CLIP-004` | No, title only. | "machines matter" | show underwater context in same frame | alternate Steam capsule if base visuals are weak |
+
+### Cold-Read Test Form
+
+```text
+Rough ID:
+Viewer:
+Viewed size: small capsule / header / vertical / 16:9
+Three-second read:
+What genre is this?
+What is the player doing or facing?
+What makes it distinct?
+What does it remind you of?
+Title readable? yes/no
+Decision: Pass / Revise / Kill
+```
+
+### Paid-Art Gate
+
+Spend 0 USD on final key art until:
+
+- one rough passes at small capsule size;
+- matching gameplay screenshot source is approved;
+- the rough does not imply co-op or fake performance;
+- clone comparison is not the first association from cold readers;
+- Steam short description Candidate A still matches the image;
+- the project owner has reserved/confirmed official social/Steam contact links.
+
 ## Trailer Brief
 
 Target: 60 seconds reveal; cut into 20s and 6s versions.
@@ -154,4 +191,3 @@ Score every candidate from 1-5:
 | Honesty | Is it representative of real gameplay? |
 
 Kill any asset below 3 in genre read, thumbnail read, or honesty.
-

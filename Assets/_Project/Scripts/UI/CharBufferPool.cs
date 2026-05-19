@@ -19,7 +19,7 @@ namespace Hecton8.UI
         private const int MaskWordCount = (SlotCount + MaskWordBits - 1) / MaskWordBits;
         internal const int RequiredBabelTextCapacity = 128;
         internal const int RequiredVrTextCapacity = 256;
-        internal const int EncyclopediaPageCapacity = 8192;
+        internal const int EncyclopediaPageCapacity = 32768;
         private const int SlotLength = RequiredVrTextCapacity;
         private const int EncyclopediaPageSlotCount = 4;
         private const int BabelArenaLength = SlotCount * RequiredBabelTextCapacity;
@@ -29,7 +29,7 @@ namespace Hecton8.UI
         private static readonly char[][] s_slots = CreateSlots(SlotLength);
         // COLD ALLOC: char[500][128] - TMP char[] bridge for native Babel arena slots - owner: CharBufferPool
         private static readonly char[][] s_babelTmpBridges = CreateSlots(RequiredBabelTextCapacity);
-        // COLD ALLOC: char[4][8192] - long-form PDA encyclopedia TMP staging pages - owner: CharBufferPool
+        // COLD ALLOC: char[4][32768] - long-form PDA encyclopedia TMP staging pages - owner: CharBufferPool
         private static readonly char[][] s_encyclopediaPages = CreateSlots(EncyclopediaPageSlotCount, EncyclopediaPageCapacity);
         // COLD ALLOC: ulong[8] - fixed free-slot bitmap for CharBufferPool - owner: CharBufferPool
         private static readonly ulong[] s_freeMasks = CreateFreeMasks();

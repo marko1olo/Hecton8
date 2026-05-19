@@ -282,6 +282,7 @@ namespace Hecton8.UI
         private const int MockUtf8Bytes = 64 * 1024;
         private const int MockEntryCapacity = 8;
         private const int CsvScratchBytes = 64 * 1024;
+        private const int H8lrMirrorBytes = 8 * 1024 * 1024;
         private const int TitleBufferCapacity = 128;
         private const int MetaBufferCapacity = 256;
         private const long AupDeltaClampCells = 1000000L;
@@ -290,15 +291,17 @@ namespace Hecton8.UI
         private const uint FaultMissingVault = 0x5641554Cu;
         private const uint FaultMissingText = 0x54455854u;
         private const uint FaultUtf8Invalid = 0x55544638u;
-        private const uint DefaultEntryHash = 0xA1300001u;
+        private const uint DefaultEntryHash = 0xAEC57EACu;
+        private const uint H8lrSourceId = PdaH8lrLoreStore.MagicH8lr;
         private const uint StateFlagEditorBulkUnlock = 1u;
         private const uint StateFlagPreciseAup = 2u;
         private const uint StateFlagCanvasSplit = 4u;
         private const int StateFlagSourceShift = 8;
         private const uint StateFlagSourceMask = 3u << StateFlagSourceShift;
         private const uint TelemetryFlagCanvasSplit = 1u << 16;
-        private const uint TextSourceMmf = 1u;
-        private const uint TextSourceVaultMock = 2u;
+        private const uint TextSourceH8lr = 1u;
+        private const uint TextSourceBabel = 2u;
+        private const uint TextSourceVaultMock = 3u;
         private const BufferID UnlockMaskBufferId = (BufferID)70560;
         private const BufferID RuntimeStateBufferId = (BufferID)70561;
         private const BufferID MetadataBufferId = (BufferID)70562;
@@ -309,6 +312,7 @@ namespace Hecton8.UI
         private const BufferID CsvScratchBufferId = (BufferID)70567;
         private const BufferID MockLookupResultBufferId = (BufferID)70568;
         private const BufferID TypewriterStateBufferId = (BufferID)70569;
+        private const BufferID H8lrMirrorBufferId = (BufferID)70570;
 
         private static readonly uint TokenDepthHash = ComputeStaticAsciiHash("DEPTH".AsSpan());
         private static readonly uint TokenEntryHashHash = ComputeStaticAsciiHash("ENTRY_HASH".AsSpan());
@@ -327,6 +331,8 @@ namespace Hecton8.UI
         [SerializeField] private Canvas dynamicTextCanvas;
 
         [Header("Data")]
+        [SerializeField] private bool openDefaultH8lrOnEnable = true;
+        [SerializeField] private string h8lrPathOverride;
         [SerializeField] private bool openDefaultBabelOnEnable = true;
         [SerializeField] private string dictionaryPathOverride;
         [SerializeField] private string metadataCsvRelativePath = "Docs/PDA/lore_metadata.csv";
@@ -350,7 +356,9 @@ namespace Hecton8.UI
         private VaultBufferHandle<byte> _csvScratchHandle;
         private VaultBufferHandle<BabelLookupResultDTO> _mockLookupResultHandle;
         private VaultBufferHandle<PdaTypewriterStateDTO> _typewriterStateHandle;
+        private VaultBufferHandle<byte> _h8lrMirrorHandle;
         private IPlayerRuntimeContext _playerContext;
+        private PdaH8lrLoreStore _h8lrLoreStore;
         private BabelDictionaryStore _babelStore;
         private bool _ownsBabelStore;
         private bool _registeredUpdate;
@@ -359,6 +367,7 @@ namespace Hecton8.UI
         private bool _registeredHotSwap;
         private bool _vaultReady;
         private bool _mockSeeded;
+        private bool _h8lrMetadataSeeded;
         private bool _coldBootstrapAttempted;
         private bool _isPdaVisible;
         private bool _needsEntryReload = true;
@@ -422,6 +431,13 @@ namespace Hecton8.UI
             _vaultReady = false;
             _playerContext = null;
             ResetActiveSourceCache();
+
+            if (_h8lrLoreStore != null)
+            {
+                _h8lrLoreStore.Dispose();
+                _h8lrLoreStore = null;
+                _h8lrMetadataSeeded = false;
+            }
 
             if (_ownsBabelStore && _babelStore != null)
             {
@@ -505,6 +521,7 @@ namespace Hecton8.UI
             }
 
             _activeSourceBytes = source.Length;
+            TryAdvanceTextWindowForLongEntry(source.Length);
             float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
             long decodeStart = Stopwatch.GetTimestamp();
             int decodeBudget = ResolveDecodeBudget(quality);
@@ -579,9 +596,17 @@ namespace Hecton8.UI
             _csvScratchHandle = default;
             _mockLookupResultHandle = default;
             _typewriterStateHandle = default;
+            _h8lrMirrorHandle = default;
             _mockSeeded = false;
+            _h8lrMetadataSeeded = false;
             _coldBootstrapAttempted = false;
             ResetActiveSourceCache();
+
+            if (_h8lrLoreStore != null)
+            {
+                _h8lrLoreStore.Dispose();
+                _h8lrLoreStore = null;
+            }
 
             if (_babelStore != null)
                 _babelStore.BindDataVault(_vault);
@@ -722,10 +747,13 @@ namespace Hecton8.UI
             out int telemetrySizeBytes,
             out int typewriterSizeBytes,
             out int aupSizeBytes,
+            out int h8lrHeaderSizeBytes,
+            out int h8lrRecordSizeBytes,
             out int runtimeSourceBytesOffset,
             out int telemetryFlagsOffset,
             out int typewriterReserved3Offset,
-            out int aupReserved1Offset)
+            out int aupReserved1Offset,
+            out int h8lrRecordReserved0Offset)
         {
             encyclopediaSizeBytes = UnsafeUtility.SizeOf<EncyclopediaStateDTO>();
             runtimeSizeBytes = UnsafeUtility.SizeOf<PdaEncyclopediaRuntimeStateDTO>();
@@ -733,20 +761,26 @@ namespace Hecton8.UI
             telemetrySizeBytes = UnsafeUtility.SizeOf<PdaEncyclopediaTelemetryEntry>();
             typewriterSizeBytes = UnsafeUtility.SizeOf<PdaTypewriterStateDTO>();
             aupSizeBytes = UnsafeUtility.SizeOf<PdaAup48>();
+            h8lrHeaderSizeBytes = UnsafeUtility.SizeOf<PdaH8lrHeaderDTO>();
+            h8lrRecordSizeBytes = UnsafeUtility.SizeOf<PdaH8lrRecordDTO>();
             runtimeSourceBytesOffset = Marshal.OffsetOf<PdaEncyclopediaRuntimeStateDTO>(nameof(PdaEncyclopediaRuntimeStateDTO.SourceBytes)).ToInt32();
             telemetryFlagsOffset = Marshal.OffsetOf<PdaEncyclopediaTelemetryEntry>(nameof(PdaEncyclopediaTelemetryEntry.Flags)).ToInt32();
             typewriterReserved3Offset = Marshal.OffsetOf<PdaTypewriterStateDTO>(nameof(PdaTypewriterStateDTO.Reserved3)).ToInt32();
             aupReserved1Offset = Marshal.OffsetOf<PdaAup48>(nameof(PdaAup48.Reserved1)).ToInt32();
+            h8lrRecordReserved0Offset = Marshal.OffsetOf<PdaH8lrRecordDTO>(nameof(PdaH8lrRecordDTO.Reserved0)).ToInt32();
             return encyclopediaSizeBytes == 128 &&
                    runtimeSizeBytes == 128 &&
                    entryMetaSizeBytes == 64 &&
                    telemetrySizeBytes == 64 &&
                    typewriterSizeBytes == 64 &&
                    aupSizeBytes == 48 &&
+                   h8lrHeaderSizeBytes == 16 &&
+                   h8lrRecordSizeBytes == 16 &&
                    runtimeSourceBytesOffset == 92 &&
                    telemetryFlagsOffset == 48 &&
                    typewriterReserved3Offset == 56 &&
-                   aupReserved1Offset == 40;
+                   aupReserved1Offset == 40 &&
+                   h8lrRecordReserved0Offset == 12;
         }
 
         public bool EditorTryWriteRawUtf8Hex(uint hash, Span<char> destination, out int written)
@@ -760,12 +794,19 @@ namespace Hecton8.UI
                 return false;
 
             ReadOnlySpan<byte> source = ReadOnlySpan<byte>.Empty;
-            EnsureBabelStore();
-            if (_babelStore != null && _babelStore.IsOpen)
+            EnsureH8lrLoreStore();
+            if (TryGetH8lrUtf8(hash, out ReadOnlySpan<byte> h8lrSource))
+                source = h8lrSource;
+
+            if (source.Length == 0)
             {
-                source = _babelStore.GetUtf8(hash);
-                if (IsBabelErrorSentinel(source))
-                    source = ReadOnlySpan<byte>.Empty;
+                EnsureBabelStore();
+                if (_babelStore != null && _babelStore.IsOpen)
+                {
+                    source = _babelStore.GetUtf8(hash);
+                    if (IsBabelErrorSentinel(source))
+                        source = ReadOnlySpan<byte>.Empty;
+                }
             }
 
             if (source.Length == 0)
@@ -1035,12 +1076,18 @@ namespace Hecton8.UI
             if (_activeUtf8Ptr != null && _activeUtf8Length > 0)
                 return new ReadOnlySpan<byte>(_activeUtf8Ptr, _activeUtf8Length);
 
+            if (TryGetH8lrUtf8(_activeEntryHash, out ReadOnlySpan<byte> h8lrUtf8))
+            {
+                CacheActiveSource(h8lrUtf8, TextSourceH8lr);
+                return h8lrUtf8;
+            }
+
             if (_babelStore != null && _babelStore.IsOpen)
             {
                 ReadOnlySpan<byte> mappedUtf8 = _babelStore.GetUtf8(_activeEntryHash);
                 if (mappedUtf8.Length > 0 && !IsBabelErrorSentinel(mappedUtf8))
                 {
-                    CacheActiveSource(mappedUtf8, TextSourceMmf);
+                    CacheActiveSource(mappedUtf8, TextSourceBabel);
                     return mappedUtf8;
                 }
             }
@@ -1052,6 +1099,13 @@ namespace Hecton8.UI
             }
 
             return ReadOnlySpan<byte>.Empty;
+        }
+
+        private bool TryGetH8lrUtf8(uint hash, out ReadOnlySpan<byte> utf8)
+        {
+            utf8 = ReadOnlySpan<byte>.Empty;
+            PdaH8lrLoreStore store = _h8lrLoreStore;
+            return store != null && store.IsOpen && store.TryGetUtf8(hash, out utf8);
         }
 
         private void CacheActiveSource(ReadOnlySpan<byte> source, uint sourceFlags)
@@ -1087,6 +1141,24 @@ namespace Hecton8.UI
                    source[2] == (byte)'R' &&
                    source[3] == (byte)'O' &&
                    source[4] == (byte)'R';
+        }
+
+        private void TryAdvanceTextWindowForLongEntry(int sourceLength)
+        {
+            if (!_bodyLease.IsValid ||
+                sourceLength <= 0 ||
+                _sourceByteCursor >= sourceLength ||
+                _decodedLength < _bodyLease.Span.Length ||
+                _visibleLength < _decodedLength)
+            {
+                return;
+            }
+
+            _decodedLength = 0;
+            _visibleLength = 0;
+            _lastSubmittedLength = -1;
+            _charAccumulator = 0f;
+            ResetTypewriterState();
         }
 
         private int DecodeUtf8Budgeted(ReadOnlySpan<byte> source, Span<char> destination, int budgetChars)
@@ -1138,8 +1210,11 @@ namespace Hecton8.UI
                         continue;
                     }
                 }
-                else if ((b0 & 0xF8) == 0xF0 && sourceCursor + 3 < source.Length && outputCursor + 1 < destination.Length && produced + 2 <= budget)
+                else if ((b0 & 0xF8) == 0xF0 && sourceCursor + 3 < source.Length)
                 {
+                    if (outputCursor + 1 >= destination.Length || produced + 2 > budget)
+                        break;
+
                     byte b1 = source[sourceCursor + 1];
                     byte b2 = source[sourceCursor + 2];
                     byte b3 = source[sourceCursor + 3];
@@ -1490,7 +1565,8 @@ namespace Hecton8.UI
                    _metadataHandle.IsCreated &&
                    _telemetryHandle.IsCreated &&
                    _mockLookupResultHandle.IsCreated &&
-                   _typewriterStateHandle.IsCreated;
+                   _typewriterStateHandle.IsCreated &&
+                   _h8lrMirrorHandle.IsCreated;
         }
 
         private void TryColdBootstrap()
@@ -1503,6 +1579,7 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffersCold())
                 return;
 
+            EnsureH8lrLoreStore();
             EnsureBabelStore();
             SeedMockLoreDatabase();
         }
@@ -1567,6 +1644,11 @@ namespace Hecton8.UI
             _typewriterStateHandle = _vault.GetBufferHandle<PdaTypewriterStateDTO>(
                 TypewriterStateBufferId,
                 1,
+                SystemID.UI,
+                NativeArrayOptions.UninitializedMemory);
+            _h8lrMirrorHandle = _vault.GetBufferHandle<byte>(
+                H8lrMirrorBufferId,
+                H8lrMirrorBytes,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
 
@@ -1637,6 +1719,29 @@ namespace Hecton8.UI
                 CharBufferPool.TryAcquire(out _metaLease);
         }
 
+        private void EnsureH8lrLoreStore()
+        {
+            if (!openDefaultH8lrOnEnable || !EnsureVaultBuffers())
+                return;
+
+            if (_h8lrLoreStore != null && _h8lrLoreStore.IsOpen)
+            {
+                SeedH8lrMetadata();
+                return;
+            }
+
+            if (_h8lrLoreStore == null)
+                _h8lrLoreStore = new PdaH8lrLoreStore();
+
+            NativeArray<byte> mirror = _h8lrMirrorHandle.Resolve(_vault);
+            bool opened = !string.IsNullOrEmpty(h8lrPathOverride)
+                ? _h8lrLoreStore.Open(Path.GetFullPath(h8lrPathOverride), mirror)
+                : _h8lrLoreStore.OpenDefault(mirror);
+
+            if (opened)
+                SeedH8lrMetadata();
+        }
+
         private void EnsureBabelStore()
         {
             if (_babelStore != null)
@@ -1658,6 +1763,47 @@ namespace Hecton8.UI
             }
 
             _babelStore.OpenDefault();
+        }
+
+        private void SeedH8lrMetadata()
+        {
+            if (_h8lrMetadataSeeded || !EnsureVaultBuffers())
+                return;
+
+            PdaH8lrLoreStore store = _h8lrLoreStore;
+            if (store == null || !store.IsOpen)
+                return;
+
+            int count = math.min(store.EntryCount, MaxMetadataEntries);
+            int imported = 0;
+            for (int i = 0; i < count; i++)
+            {
+                if (!store.TryGetRecord(i, out PdaH8lrRecordDTO record) || record.Hash == 0u)
+                    continue;
+
+                ushort bitIndex = ResolveOrCreateBitIndex(record.Hash);
+                ref PdaEncyclopediaEntryMetaDTO meta = ref _metadataHandle.GetElementAsRef(_vault, bitIndex);
+                if (meta.SourceId != H8lrSourceId)
+                    imported++;
+
+                meta.EntryHash = record.Hash;
+                meta.BitIndex = bitIndex;
+                meta.SourceId = H8lrSourceId;
+                meta.TitleHash = record.Hash;
+                meta.Flags |= 2u;
+                meta.Revision++;
+            }
+
+            if (imported > 0)
+            {
+                ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+                state.Revision++;
+                ref EncyclopediaStateDTO encyclopedia = ref _unlockMaskHandle.GetElementAsRef(_vault, 0);
+                encyclopedia.Revision = state.Revision;
+                encyclopedia.MetadataCount = state.MetadataCount;
+            }
+
+            _h8lrMetadataSeeded = true;
         }
 
         private void SeedMockLoreDatabase()
@@ -1688,7 +1834,8 @@ namespace Hecton8.UI
                 };
 
                 PdaAup48 aup = default;
-                UnlockEntry(hash, in aup, 0x5348494Eu, (uint)Time.frameCount, false);
+                uint sourceId = TryGetH8lrUtf8(hash, out _) ? H8lrSourceId : 0x5348494Eu;
+                UnlockEntry(hash, in aup, sourceId, (uint)Time.frameCount, false);
             }
 
             ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);

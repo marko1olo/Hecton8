@@ -245,6 +245,8 @@ namespace Hecton8.Gameplay
         public virtual void OnUnequip()
         {
             IsEquipped = false;
+            if (TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered)
+                service.SetToolActive(_runtimeToolId, false);
         }
 
         public virtual void UsePrimary(float deltaTime)
@@ -579,26 +581,8 @@ namespace Hecton8.Gameplay
             if (requestedDrain <= 0f)
                 return true;
 
-            float remainingDrain = requestedDrain;
-            if (HasModularUpgrade(ToolUpgradeBits.WirelessCharging) &&
-                GlobalRegistry.Submarine != null &&
-                GlobalRegistry.Submarine.AtmosphereSystem != null &&
-                GlobalRegistry.PowerGrid != null &&
-                GlobalRegistry.PowerGrid.TryQueueWirelessToolDrain(requestedDrain, out float grantedDrain))
-            {
-                remainingDrain = math.isfinite(grantedDrain)
-                    ? FiniteNonNegativeOrZero(requestedDrain - grantedDrain)
-                    : requestedDrain;
-            }
-
-            if (remainingDrain <= 0f)
-                return true;
-
-            float rawBatteryBefore = service.GetBatteryNormalized(_runtimeToolId, 0f);
-            float batteryBefore = math.isfinite(rawBatteryBefore) ? math.saturate(rawBatteryBefore) : 0f;
-            float remainingDrainRate = safeDeltaTime > 0f ? remainingDrain / safeDeltaTime : 0f;
-            service.ConsumeBattery(_runtimeToolId, remainingDrainRate, safeDeltaTime);
-            return batteryBefore + 0.0001f >= remainingDrain;
+            service.SetToolActive(_runtimeToolId, true);
+            return HasToolEnergyOrWirelessPath();
         }
 
         protected void SyncModularDurability()

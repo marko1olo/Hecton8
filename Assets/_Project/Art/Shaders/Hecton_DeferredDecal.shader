@@ -39,22 +39,25 @@ Shader "Hidden/Hecton8/DeferredDecal"
 
             struct DecalData
             {
-                float4 Row0;
-                float4 Row1;
-                float4 Row2;
-                float4 Row3;
-                float4 AtlasRect;
-                float4 Tint;
+                float4 LocalToWorldC0;
+                float4 LocalToWorldC1;
+                float4 LocalToWorldC2;
+                float4 LocalToWorldC3;
+                uint MaterialHash;
+                float Opacity01;
+                float BirthTime;
+                uint Flags;
             };
 
             TEXTURE2D_X(_BlitTexture);
-            TEXTURE2D(_HectonDeferredDecalAtlas);
+            TEXTURE2D_ARRAY(_HectonDeferredDecalAtlas);
             SAMPLER(sampler_HectonDeferredDecalAtlas);
 
             StructuredBuffer<DecalData> _HectonDeferredDecals;
             int _HectonDeferredDecalCount;
             float4 _HectonDeferredDecalAtlasParams;
             float4 _HectonDeferredDecalTint;
+            float4 _HectonDeferredDecalCameraWS;
 
             Varyings Vert(Attributes input)
             {
@@ -77,7 +80,7 @@ Shader "Hidden/Hecton8/DeferredDecal"
             #endif
                 if (!validDepth)
                 {
-                    positionWS = 0.0.xxx;
+                    positionWS = float3(0.0, 0.0, 0.0);
                     return false;
                 }
 
@@ -85,27 +88,67 @@ Shader "Hidden/Hecton8/DeferredDecal"
                 return true;
             }
 
+            float3 ResolveDecalLocalPosition(DecalData decal, float3 cameraRelativePosition)
+            {
+                float3 origin = decal.LocalToWorldC3.xyz;
+                float3 relative = cameraRelativePosition - origin;
+                float3 xAxis = decal.LocalToWorldC0.xyz;
+                float3 yAxis = decal.LocalToWorldC1.xyz;
+                float3 zAxis = decal.LocalToWorldC2.xyz;
+                float xLenSq = max(dot(xAxis, xAxis), 1.0e-5);
+                float yLenSq = max(dot(yAxis, yAxis), 1.0e-5);
+                float zLenSq = max(dot(zAxis, zAxis), 1.0e-5);
+                return float3(
+                    dot(relative, xAxis) / xLenSq,
+                    dot(relative, yAxis) / yLenSq,
+                    dot(relative, zAxis) / zLenSq);
+            }
+
+            half4 SampleDeferredDecal(DecalData decal, float3 localPosition)
+            {
+                float2 projectorUv = localPosition.xy + 0.5;
+                if (_HectonDeferredDecalAtlasParams.w > 0.5)
+                {
+                    uint sliceCount = (uint)max(_HectonDeferredDecalAtlasParams.x, 1.0);
+                    uint slice = decal.MaterialHash % sliceCount;
+                    return SAMPLE_TEXTURE2D_ARRAY(_HectonDeferredDecalAtlas, sampler_HectonDeferredDecalAtlas, projectorUv, slice);
+                }
+
+                float2 centered = projectorUv * 2.0 - 1.0;
+                float radial = saturate(1.0 - dot(centered, centered));
+                float brokenRing = 0.72 + 0.28 * sin((centered.x * 37.0) + (centered.y * 19.0) + decal.MaterialHash * 1.71);
+                float alpha = saturate(radial * radial * brokenRing);
+                half3 scorch = half3(0.08h, 0.055h, 0.035h);
+                half3 blood = half3(0.22h, 0.015h, 0.01h);
+                half3 acid = half3(0.18h, 0.32h, 0.08h);
+                half materialT = half((float)(decal.MaterialHash & 3u) * (1.0 / 3.0));
+                half3 tint = lerp(scorch, blood, saturate(materialT * 1.5h));
+                tint = lerp(tint, acid, saturate((materialT - 0.5h) * 2.0h));
+                return half4(tint, alpha);
+            }
+
             half3 ProjectDeferredDecals(float3 scenePositionWS)
             {
-                half3 accumulated = 0.0h.xxx;
+                half3 accumulated = half3(0.0h, 0.0h, 0.0h);
+                float3 cameraRelativePosition = scenePositionWS - _HectonDeferredDecalCameraWS.xyz;
                 [loop]
-                for (int decalIndex = 0; decalIndex < 256; decalIndex++)
+                for (int decalIndex = 0; decalIndex < 1024; decalIndex++)
                 {
                     if (decalIndex >= _HectonDeferredDecalCount)
                         break;
 
                     DecalData decal = _HectonDeferredDecals[decalIndex];
-                    float4x4 worldToDecal = float4x4(decal.Row0, decal.Row1, decal.Row2, decal.Row3);
-                    float3 localPosition = mul(worldToDecal, float4(scenePositionWS, 1.0)).xyz;
-                    if (any(abs(localPosition) > 0.5.xxx))
+                    if ((decal.Flags & 1u) == 0u || decal.Opacity01 <= 0.0001)
                         continue;
 
-                    float2 projectorUv = localPosition.xy + 0.5;
-                    float2 atlasUv = decal.AtlasRect.xy + projectorUv * decal.AtlasRect.zw;
-                    half4 decalSample = SAMPLE_TEXTURE2D(_HectonDeferredDecalAtlas, sampler_HectonDeferredDecalAtlas, atlasUv);
+                    float3 localPosition = ResolveDecalLocalPosition(decal, cameraRelativePosition);
+                    if (any(abs(localPosition) > float3(0.5, 0.5, 0.5)))
+                        continue;
+
+                    half4 decalSample = SampleDeferredDecal(decal, localPosition);
                     half depthFade = saturate(1.0h - abs(localPosition.z) * 2.0h);
-                    half4 decalTint = half4(decal.Tint);
-                    accumulated += decalSample.rgb * decalTint.rgb * (decalSample.a * decalTint.a * depthFade * _HectonDeferredDecalAtlasParams.z);
+                    half4 decalTint = half4(_HectonDeferredDecalTint);
+                    accumulated += decalSample.rgb * decalTint.rgb * (decalSample.a * decalTint.a * half(decal.Opacity01) * depthFade * _HectonDeferredDecalAtlasParams.z);
                 }
 
                 return accumulated;

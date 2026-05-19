@@ -3,7 +3,7 @@
 Date: 2026-05-19
 Agent: SHINOBU_123
 Declared Role: LEVIATHAN_PROCEDURAL_IK_RIGGER
-Status: BLOCKED BY MISSING ASSIGNMENT
+Status: POLISH PASS 3 APPLIED; COMPILE PENDING CPU GATE
 
 ## Decision 01: Halt Before Coding
 
@@ -199,3 +199,51 @@ Rejected Alternatives: Running a build after the dotnet process exited was rejec
 Scalability potential: Not runtime. The decision preserves local iteration stability during concurrent batch execution.
 
 Hardware Impact: Avoided adding a Unity/dotnet compile load on a machine already reporting 93% CPU.
+
+## Decision 16: Replace Telemetry Padding With Forensic Lanes
+
+Problem: Task 16 required root AUP, evaluated bones, average FABRIK iterations, and Burst compute time. The 96B terrain telemetry DTO only stored quality and iterations in anonymous padding, which made the black-box dump weak evidence.
+
+Solution: Preserve the 96B ring-buffer ABI and replace the unused padding lanes with named fields: `GlobalQualityWeight` at byte 60, `double3 RootAup` at byte 64, `AverageFabrikIterations` at byte 88, and `BurstSolveMicros` at byte 92. Runtime stamps root AUP from `AbsoluteUniversePosition.ToAbsoluteDouble3()` and patches the latest telemetry entry after job completion with measured schedule-to-completion microseconds.
+
+Rejected Alternatives: Expanding telemetry to 128B was rejected because the existing 300-entry Vault ring and dump stride were already aligned and sufficient. Leaving generic padding was rejected because the dump would not answer the forensic question.
+
+Scalability potential: Low/Middle/High/Ultra all share one 96B telemetry contract; quality weight and iteration count show exactly how much math was shed each frame.
+
+Hardware Impact: Hot job cost is four scalar writes plus one `double3` write per frame. Expected i3/MX350 overhead is below 1 us; forensic gain is eliminating blind crash reports.
+
+## Decision 17: Editor Facade Snapshot Contract
+
+Problem: The tuner exposed sliders and DTO sizes but did not show live generation time and bone count. A reflection-based readout would work in Editor, but it would be architecturally lazy and allocate/box values during inspection.
+
+Solution: Add `LeviathanProceduralTunerSnapshot` and `ILeviathanProceduralTunerSource`. The internal runtime implements the public snapshot interface, and the UI Toolkit window reads active bones, solver microseconds, resolved iterations, and quality through that interface.
+
+Rejected Alternatives: Private-field reflection and `GetComponents` array scans were rejected. A runtime UI panel was rejected because Task 17 requested an Editor facade.
+
+Scalability potential: Designers can see when low quality collapses segment/iteration work and when high/ultra spends budget on smoother IK without recompiling.
+
+Hardware Impact: Runtime hot-path impact is 0 us unless the editor asks for a snapshot. Editor readout avoids reflection boxing churn.
+
+## Decision 18: Exact Gizmo Color Semantics
+
+Problem: Task 19 specified green spine bones, red active IK chains, and blue secondary springs. The previous x-ray used one cyan color, which proved Vault reads but not the requested semantic debug surface.
+
+Solution: Keep the same Vault bone source and assign colors per segment: green for standard spine, red for the head/active IK target chain, blue for tail secondary spring overlay during tail-whip secondary motion.
+
+Rejected Alternatives: Transform traversal was rejected because the rig truth is in Vault matrices. A separate debug GameObject hierarchy was rejected because it would reintroduce managed Transform state for an Animator-replacement system.
+
+Scalability potential: The gizmo reflects the same active segment budget that `GlobalQualityWeight` resolved; low devices show fewer evaluated bones, high/ultra show the full chain.
+
+Hardware Impact: Editor-only. Runtime player cost is 0 us.
+
+## Decision 19: Pass 3 Build Gate Still Fails
+
+Problem: Pass 3 changed C# runtime/editor files and should be compiler-verified, but the explicit build gate forbids `dotnet build` while CPU load exceeds 50% or another compiler process is active.
+
+Solution: Rechecked the gate after static verification. `Get-Process dotnet,csc` produced no process output, but CPU load was `99%`, so no build was launched.
+
+Rejected Alternatives: Launching a build at 99% CPU was rejected because it violates the user's machine-protection rule. Reporting compile success from static checks was rejected because no compiler executed.
+
+Scalability potential: Not runtime. This protects the multi-agent iteration environment from a self-inflicted compile wall.
+
+Hardware Impact: Avoided adding dotnet/Unity compile load to a system already at 99% CPU; estimated developer-machine stall avoided: 30-180 seconds.

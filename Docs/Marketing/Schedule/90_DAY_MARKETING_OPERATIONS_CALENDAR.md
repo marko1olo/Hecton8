@@ -10,6 +10,20 @@ This calendar starts when the team can produce at least rough in-game screenshot
 
 No co-op messaging. No paid scaling. No public performance claims without proof.
 
+## 2026-05-19 Scheduling Override
+
+Current gate is `G0`: no public screenshot pack, no Steam page, no demo, no public traffic. CRM-100 already has 0 raw staged rows.
+
+Until rough in-game screenshots exist, do not execute this calendar as a lead-volume calendar. Use the calendar only as a sequence model and keep weekly work focused on:
+
+- planned capture readiness;
+- asset QA;
+- Promise Lint;
+- source/risk corrections tied to a gate;
+- owner-controlled account/handle custody only if the human has project credentials ready.
+
+Weeks 3 and 8 are not authorization to verify/send more creators now. They activate only after the asset gate can identify which creator segment is worth contacting.
+
 ## Phase Overview
 
 | Phase | Days | Goal | Public output |
@@ -62,7 +76,7 @@ Deliverables:
 
 Tasks:
 
-- verify 50 creator leads from priority shortlist;
+- verify 50 creator leads from priority shortlist only if the current CRM/asset-fit gate has a real gap;
 - mark active/inactive/language/contact route;
 - promote only high-fit leads to warm list;
 - write 20 personalized opener drafts;

@@ -89,6 +89,18 @@ namespace Hecton8.Core.Contracts
     }
 
     /// <summary>
+    /// Contract-owned Vault IDs for the Uber Noir reconstruction surface.
+    /// </summary>
+    public static class UberNoirReconstructionVaultIds
+    {
+        public const int Constants = 71030;
+        public const int Telemetry = 71031;
+        public const int AestheticProfiles = 71032;
+        public const int CsvScratch = 71033;
+        public const int MockSignal = 71034;
+    }
+
+    /// <summary>
     /// SIMD-aligned dynamic-resolution hot state. Size: 16 bytes.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 16)]

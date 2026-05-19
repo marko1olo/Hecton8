@@ -551,3 +551,253 @@ What was done -> Updated `Docs/Marketing/Audience/OWNED_AUDIENCE_EMAIL_AND_NEWSL
 Cinematic Cheats used -> No runtime cheats. Marketing cheat: an email signup must offer one concrete future value, not vague interest capture.
 
 Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents premature list growth, consent mistakes, and low-quality email traffic.
+
+## 2026-05-19 - Public Incident, Steam Forum, And Agent Control Gates
+
+What was wrong -> The prep stack had campaign gates, but first public backlash, Steam forum/review routing, and daily agent work still had enough ambiguity to create noise: likes could mask wrong expectations, forums could become ad hoc support, and agents could keep producing more documents instead of decisions.
+
+What was done -> Updated `Docs/Marketing/Community/CRISIS_AND_MODERATION_PLAYBOOK.md` with `First Public Incident Triage Gate V0`; updated `Docs/Marketing/Feedback/STEAM_REVIEWS_FORUMS_AND_SUPPORT_RESPONSE_PLAYBOOK.md` with `Steam Forum Launch Moderation Gate V0`; updated `Docs/Marketing/Operations/DAILY_AGENT_TASK_LOOP.md` with `Active Control Tower Loop V0`; updated `Docs/Marketing/Data/MARKETING_RISK_REGISTER.md` with RISK-031 through RISK-038; updated source ledger and backlog index.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: use small controlled gates, pinned routing, and row/asset/source/risk decisions to avoid expensive reputation recovery later.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces public-response thrash, unsupported Steam replies, over-documentation, and premature expansion after misleading engagement.
+
+## 2026-05-19 - Capsule Rough Decision And Test Packet
+
+What was wrong -> The visual direction file had useful concepts, but the backlog row still lacked an executable rough-test packet tied to planned asset IDs and paid-spend gates.
+
+What was done -> Updated `Docs/Marketing/Creative/VISUAL_IDENTITY_AND_KEY_ART_DIRECTION.md` with `Capsule Rough Decision Packet V0` and `Docs/Marketing/Creative/CAPSULE_TRAILER_THUMBNAIL_BRIEFS.md` with `Capsule Rough Test Packet V0`. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Marketing fake-first move: test rough compositions and cold-read clarity before spending on final art.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents paid capsule/key-art spend from polishing a generic or misleading direction.
+
+## 2026-05-19 - SN2 Launch-Week Monitoring Refresh
+
+What was wrong -> The competitor monitoring baseline needed a current evidence split. SN2 complaints exist, but the larger current signal is a massive, highly liked launch.
+
+What was done -> Updated `Docs/Marketing/Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md` with `Verification Sprint Addendum`, using Steam, PC Gamer, Notebookcheck, and Reddit signals. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Intelligence cheat: do not fight the competitor's strength; route observations into asset proof and scope honesty.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents bad "SN2 failed" positioning and keeps HECTON-8 focused on industrial-pressure differentiation.
+
+## 2026-05-19 - Marketing Control Tower Refresh
+
+What was wrong -> The control tower is the anti-sprawl entry point, but it still contained stale priority text after CRM, asset, budget, capsule, monitoring, and public-ops gates moved forward.
+
+What was done -> Updated `Docs/Marketing/MARKETING_CONTROL_TOWER.md` with current operating state and proof-first priorities. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational cheat: route every future agent into the current bottleneck instead of letting them rediscover stale tasks.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents future agent time from being spent on already-closed raw lead staging or duplicate strategy docs.
+
+## 2026-05-19 - Browser/Account Handoff And Quiet Content Pack
+
+What was wrong -> The user authorized browser/account work, but account creation without credential custody would create orphaned official accounts. Also, reserved accounts need safe copy if they must exist before screenshots.
+
+What was done -> Updated `Docs/Marketing/Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md` with agent-assisted browser/account boundary and account page field kit. Updated `Docs/Marketing/Content/POST_BANK_AND_HOOK_LIBRARY.md` with pre-asset quiet account posts. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: prepare exact fields and low-risk copy before touching real accounts.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents credential loss, premature posting, and empty hype from newly reserved handles.
+
+## 2026-05-19 - Capture Packet And Metadata Workflow
+
+What was wrong -> Planned asset IDs existed, but the capture team still needed a hard per-shot packet that says what to capture, how to reject it, and how to promote metadata after capture.
+
+What was done -> Updated `Docs/Marketing/Content/SCREENSHOT_AND_CLIP_SHOTLIST.md` with `Capture Packet V0`; updated `Docs/Marketing/Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` with `Planned Capture To Metadata Workflow V0`. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: reject weak capture before editing, posting, or Steam assembly spends time on it.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents first screenshots/clips from being approved by taste instead of player-verb, pressure, machinery, and claim-truth checks.
+
+## 2026-05-19 - Proof-Gate Dashboard And Measurement Packet
+
+What was wrong -> Measurement existed in broad form, but first public assets still needed a strict proof-gate dashboard and first-link packet before URLs and posts exist.
+
+What was done -> Updated `Docs/Marketing/KPI/MARKETING_DASHBOARD_SPEC.md` with `Proof-Gate Dashboard V0`; updated `Docs/Marketing/Analytics/MEASUREMENT_AND_UTM_PLAN.md` with `Minimum Measurement Packet Before Public Links`. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Measurement cheat: force early public signal into counted nouns/confusion/clone/co-op fields instead of arguing about likes.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents first campaign data from becoming unstructured anecdotes.
+
+## 2026-05-19 - Promise, Launch, Demo, And Site Gates
+
+What was wrong -> The stack was close to execution-ready, but public copy, launch ownership, demo access, and site/presskit readiness still relied too much on humans remembering constraints under pressure.
+
+What was done -> Updated `Docs/Marketing/Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md` with `Promise Lint Gate V0`; updated `Docs/Marketing/Launch/LAUNCH_DAY_AND_FIRST_WEEK_WAR_ROOM.md` with `War Room Dry Run Gate V0`; updated `Docs/Marketing/Campaigns/CAMPAIGN_03_FIRST_DEMO_OUTREACH.md` with `Demo Access Batch Scoring V0`; updated `Docs/Marketing/Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md` with `No-Link Holding State V0` and presskit minimums. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: reject bad public claims, bad launch ownership, bad creator sends, and bad presskit shells before money, keys, or traffic touch them.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents retractions, support chaos, key leakage, and weak placeholder pages from becoming first impressions.
+
+## 2026-05-19 - Control Tower And Risk Propagation
+
+What was wrong -> New gates were added in deeper docs, but the top-level control tower and risk register still needed to expose them or future agents could route around them.
+
+What was done -> Updated `Docs/Marketing/MARKETING_CONTROL_TOWER.md` with promise/copy, site/presskit, and launch/demo ops states and priority links. Updated `Docs/Marketing/Data/MARKETING_RISK_REGISTER.md` with RISK-039 through RISK-041. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: keep one current map so future work starts from proof gates instead of rediscovering constraints.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces stale-instruction risk and prevents launch/site/copy mistakes from escaping through old control-tower paths.
+
+## 2026-05-19 - Entry Index Anti-Sprawl Cleanup
+
+What was wrong -> The main README and prep-directions file could still route future agents into duplicate docs or miss the newest Promise Lint/site/launch gates.
+
+What was done -> Updated `Docs/Marketing/README.md` with Promise Lint and refreshed directory descriptions. Updated `Docs/Marketing/PREP_DIRECTIONS_NOW.md` to route old "needed next" responsibilities into existing files and explicitly reject duplicate new docs. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: kill duplicate work at the entry point before it becomes more files.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces documentation sprawl and future agent misrouting.
+
+## 2026-05-19 - Active Loop Lead-Expansion Correction
+
+What was wrong -> Daily agent quotas and Campaign 00 still pointed at more lead verification, even though CRM-100 has 0 raw rows and the current blocker is real screenshot/clip proof.
+
+What was done -> Updated `Docs/Marketing/Operations/DAILY_AGENT_TASK_LOOP.md` with the current cut and changed no-screenshot quotas for the CRM-100/0 raw state. Updated `Docs/Marketing/Campaigns/CAMPAIGN_00_PRE_SCREENSHOT_SETUP.md` so immediate tasks start with planned capture and asset matching. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: stop easy lead-volume work before it hides the harder missing asset proof.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents agent hours from being burned on additional raw/triage leads before the first public visual proof exists.
+
+## 2026-05-19 - Master Plan And Calendar Override
+
+What was wrong -> The broad master plan and 90-day calendar still had older sequence language that could push the next cycle toward lead volume instead of asset proof.
+
+What was done -> Updated `Docs/Marketing/MARKETING_PREP_MASTER_PLAN.md` with a current execution override and updated `Docs/Marketing/Schedule/90_DAY_MARKETING_OPERATIONS_CALENDAR.md` with a scheduling override. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: keep the broad plan as scaffolding but make the current gate state the authority.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents broad planning docs from steering agents away from the missing screenshot/clip proof.
+
+## 2026-05-19 - Weekly Routine Correction
+
+What was wrong -> The master backlog still contained a default "verify 25 raw leads" weekly routine before screenshots, despite CRM-100/0 raw and the current asset-proof bottleneck.
+
+What was done -> Updated `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md` so the weekly routine now starts with planned asset packet, asset-to-lead matching, asset-linked hooks, Promise Lint, and source/risk corrections. Updated source ledger, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: prevent an easy measurable routine from hiding the missing public proof.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: stops recurring low-value lead work until assets prove a new segment gap.
+
+## 2026-05-19 - CRM-100 Asset Unlock Map
+
+What was wrong -> The CRM and planned asset IDs were both present, but not connected tightly enough to tell capture which first assets unlock actual creator utility.
+
+What was done -> Updated `Docs/Marketing/CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` with `CRM-100 Asset Unlock Map V0`, mapping `PLAN-SHOT-*` and `PLAN-CLIP-*` assets to current creator rows and regional gates. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: use planned screenshots/clips as unlock keys for specific creator segments instead of capturing by taste.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents first capture work from producing assets that do not unlock outreach.
+
+## 2026-05-19 - Asset Metadata Creator-Unlock Notes
+
+What was wrong -> The asset metadata CSV did not carry creator utility, so future capture/QA operators would need to cross-open outreach docs to understand why a planned asset matters.
+
+What was done -> Updated all 13 planned rows in `Docs/Marketing/Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` with creator-unlock notes or explicit no-public-unlock boundaries. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: put utility in the metadata row so weak assets die before they consume QA, editing, Steam, or outreach time.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces cross-document lookup and helps the first capture packet prioritize outreach value.
+
+## 2026-05-19 - Creator Utility Asset QA Gate
+
+What was wrong -> Creator unlock value could accidentally become an excuse to ship a weak asset.
+
+What was done -> Updated `Docs/Marketing/QA/MARKETING_ASSET_QA_CHECKLIST.md` with a creator utility score and a hard rule that utility cannot override screenshot/clip QA thresholds. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: use creator utility to prioritize capture only, then kill weak assets before outreach.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents high-value creator rows from receiving unclear or misleading assets.
+
+## 2026-05-19 - First Screenshot Campaign Creator Utility Gate
+
+What was wrong -> Campaign 01 could still run creator micro-feedback from a visually passable asset pack without requiring that the assets match named creator rows.
+
+What was done -> Updated `Docs/Marketing/Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md` to require creator utility 3/4+ for Wave A creator micro-feedback, exact CRM row mapping, exact contact route checks, and preservation of visual QA thresholds. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: make the first campaign reject mismatched assets before they consume scarce creator attention.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces wasted outreach and prevents generic “best screenshot” sends to creators with different audience fit.
+
+## 2026-05-19 - Post Bank Creator Utility Binding
+
+What was wrong -> The post bank and creator warmup lines could be used as generic copy even after creator utility became a formal gate elsewhere.
+
+What was done -> Updated `Docs/Marketing/Content/POST_BANK_AND_HOOK_LIBRARY.md` so creator-facing use requires utility 3/4+, named CRM row mapping, exact contact route verification, and visual QA. Updated the 72-hour sequence so Hour 48 uses Campaign 01 Wave A only when those gates pass. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: keep creator outreach locked behind the same utility gate as asset QA and Campaign 01 instead of letting copy momentum create sends.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents scarce creator replies from being spent on assets that merely look good but do not match the recipient segment.
+
+## 2026-05-19 - Creator Send Packet Utility Proof
+
+What was wrong -> The human-send packet listed required assets, but not per-recipient creator utility proof or a field to log the score.
+
+What was done -> Updated `Docs/Marketing/CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` so every creator-facing asset requires utility 3/4+, Wave A rows include per-recipient utility gates, and the send log records `creator_utility_score`. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: make recipient fit a recorded gate, not an assumption derived from asset existence.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents first outreach wave from wasting high-signal recipients on mismatched proof.
+
+## 2026-05-19 - CRM Send-Log Fields
+
+What was wrong -> The workflow now required structured send proof, but the CRM schema and live CSV did not have fields for creator utility, asset IDs, UTM, route proof, reply deadline, or follow-up state.
+
+What was done -> Updated `Docs/Marketing/CreatorOutreach/CREATOR_CRM_SCHEMA_AND_SCORING.md` and added blank send-log columns to `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv`: `outreach_batch`, `sent_date`, `contact_route_verified_for_send`, `asset_ids_sent`, `creator_utility_score`, `utm_content`, `reply_deadline`, `followup_allowed`, `reply_status_after_send`, and `coverage_url`. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: keep all send facts on the CRM row so no separate spreadsheet is needed before the first wave.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: avoids free-text send logging and makes future outreach audit-able.
+
+## 2026-05-19 - Asset Metadata Creator Utility Fields
+
+What was wrong -> Creator utility existed in QA and CRM logic, but asset metadata did not own the asset-side score or send gate.
+
+What was done -> Updated `Docs/Marketing/Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` and `Docs/Marketing/Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` with `creator_rows_unlocked`, `creator_utility_score`, and `creator_send_gate`. Planned assets remain blocked with score 0 until real capture and QA. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: put utility state on the asset row so future agents can filter readiness instead of re-reading prose notes.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents creator send readiness from being inferred from notes or taste.
+
+## 2026-05-19 - Control Tower Utility Gate Propagation
+
+What was wrong -> The top-level control tower still described the older state and did not expose the new structured creator utility gates.
+
+What was done -> Updated `Docs/Marketing/MARKETING_CONTROL_TOWER.md` so current state, G1 proof, immediate actions, and top priorities mention CRM send-log fields, asset `creator_send_gate`, creator utility 3/4+, and Wave A `asset_ids_sent`/`creator_utility_score` logging. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: prevent future agents from bypassing deep gates by starting from stale top-level instructions.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces routing error and keeps execution focused on real captured assets.
+
+## 2026-05-19 - Creator Utility Bypass Risk
+
+What was wrong -> The risk register did not name the new failure mode where a strong-looking asset or high-value creator bypasses structured utility proof.
+
+What was done -> Updated `Docs/Marketing/Data/MARKETING_RISK_REGISTER.md` with RISK-042 and a top-risk reminder. Prevention is now explicit: no creator-facing send without `creator_utility_score`, `creator_send_gate`, named CRM mapping, and `asset_ids_sent`. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: turn a likely human shortcut into a named blocker before any outreach happens.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces reputation damage risk from premature high-value creator contact.
+
+## 2026-05-19 - Daily Loop Creator Utility Binding
+
+What was wrong -> The daily agent loop could still accept asset/CRM work without the new creator utility and send-log fields.
+
+What was done -> Updated `Docs/Marketing/Operations/DAILY_AGENT_TASK_LOOP.md` so ASSET_GATE, CRM_CLEANUP, Noon Kill, Asset Critic, and screenshot-era quotas require creator utility, creator send gate, CRM mapping, and send-log fields before outreach escalation. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: make daily process reject incomplete utility/send data before it becomes outreach.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces repeated manual review by forcing every daily asset/CRM pass to update the same fields.
+
+## 2026-05-19 - README Creator Utility Propagation
+
+What was wrong -> The marketing README did not state the creator utility/send-log gate, so it could become a stale entry path.
+
+What was done -> Updated `Docs/Marketing/README.md` hard rules, directory map, and first asset gate. It now states creator outreach cannot proceed from asset existence alone and requires asset QA, utility 3/4+, `creator_send_gate`, named CRM row, exact contact route, and send-log fields. Updated source ledger, backlog, status, and rationale.
+
+Cinematic Cheats used -> No runtime cheats. Operational fake-first move: make both entry points reject creator outreach without structured proof.
+
+Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents new agents from missing the utility gate when starting from README.

@@ -11,19 +11,19 @@ namespace Hecton8.Core.Contracts.Signals
     {
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct FrameTimeSignal : ISignal
     {
-        public uint Frame;
-        public float CurrentFrameTimeMs;
-        public float FrameTimeEwmaMs;
-        public float TargetFrameTimeMs;
-        public float JitterSigmaMs;
-        public byte PressureLevel;
-        public byte Flags;
-        public ushort Reserved;
-        public uint Sequence;
-        private uint _pad0;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public float CurrentFrameTimeMs;
+        [FieldOffset(8)] public float FrameTimeEwmaMs;
+        [FieldOffset(12)] public float TargetFrameTimeMs;
+        [FieldOffset(16)] public float JitterSigmaMs;
+        [FieldOffset(20)] public byte PressureLevel;
+        [FieldOffset(21)] public byte Flags;
+        [FieldOffset(22)] public ushort Reserved;
+        [FieldOffset(24)] public uint Sequence;
+        [FieldOffset(28)] public uint _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]

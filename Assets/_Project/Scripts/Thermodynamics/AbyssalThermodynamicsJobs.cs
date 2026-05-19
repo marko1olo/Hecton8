@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -109,19 +108,13 @@ namespace Hecton8.Thermodynamics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void AtomicAddFloat(float* target, float value)
+        public static void AddFinite(float* target, float value)
         {
-            int* intPtr = (int*)target;
-            int oldBits;
-            int newBits;
-            do
-            {
-                oldBits = *intPtr;
-                float oldValue = math.asfloat(oldBits);
-                float nextValue = oldValue + value;
-                newBits = math.asint(nextValue);
-            }
-            while (Interlocked.CompareExchange(ref UnsafeUtility.AsRef<int>(intPtr), newBits, oldBits) != oldBits);
+            if (!math.isfinite(value) || value == 0f)
+                return;
+
+            float current = *target;
+            *target = math.isfinite(current) ? current + value : value;
         }
     }
 
@@ -199,11 +192,11 @@ namespace Hecton8.Thermodynamics
                 source.FalloffExponent = 1.55f;
                 source.ProfileHash = ProfileHash;
                 source.SourceId = 0xAB710000u + (uint)i;
-                source.Flags = 1u;
+                source.Flags = HeatSourceDTO.FlagMock;
                 source.ConductivityOverride = Tuning.WaterThermalConductivity;
                 source.ConvectionGain = 1f;
                 source.Phase01 = math.frac((Frame * 0.001f) + t);
-                source._pad0 = 0u;
+                source.LastTouchedFrame = Frame;
                 Sources[i] = source;
             }
 
@@ -219,6 +212,8 @@ namespace Hecton8.Thermodynamics
         [NativeDisableUnsafePtrRestriction, NoAlias] public int* SourceCount;
         public ThermalGridTuningDTO Tuning;
         public float DeltaTime;
+        public uint Frame;
+        public uint SourceTtlFrames;
 
         public void Execute()
         {
@@ -232,6 +227,12 @@ namespace Hecton8.Thermodynamics
                 HeatSourceDTO source = Sources[sourceIndex];
                 if (source.RadiusMeters <= 0f || source.IntensityCelsiusPerSecond == 0f)
                     continue;
+                if ((source.Flags & HeatSourceDTO.FlagPersistent) == 0u &&
+                    SourceTtlFrames > 0u &&
+                    Frame - source.LastTouchedFrame > SourceTtlFrames)
+                {
+                    continue;
+                }
 
                 int3 centerCell = AbyssalThermalMath.MapAupToWrappedCell(source.Aup, origin, cellSize, resolution);
                 int radiusCells = math.clamp((int)math.ceil(source.RadiusMeters / cellSize), 1, math.max(resolution.x, math.max(resolution.y, resolution.z)));
@@ -255,9 +256,11 @@ namespace Hecton8.Thermodynamics
                             int index = AbyssalThermalMath.Index(ix, iy, iz, resolution);
                             float weight = math.pow(math.saturate(1f - (distance * invRadius)), falloff);
                             float heat = source.IntensityCelsiusPerSecond * DeltaTime * weight;
+                            if (!math.isfinite(heat) || heat == 0f)
+                                continue;
 
                             ThermalCellDTO* cell = Injection + index;
-                            AbyssalThermalMath.AtomicAddFloat(&cell->TemperatureCelsius, heat);
+                            AbyssalThermalMath.AddFinite(&cell->TemperatureCelsius, heat);
                             cell->ThermalConductivity = math.select(Tuning.WaterThermalConductivity, source.ConductivityOverride, source.ConductivityOverride > 0f);
                             cell->ConvectionVelocityY = math.max(cell->ConvectionVelocityY, heat * source.ConvectionGain);
                             cell->Flags |= AbyssalThermalMath.CellFlagInjected;
@@ -367,19 +370,126 @@ namespace Hecton8.Thermodynamics
         public void Execute(int index)
         {
             double3 aup = SampleAups[index];
-            int3 cell = AbyssalThermalMath.MapAupToWrappedCell(aup, Tuning.GridOriginAup, Tuning.CellSizeMeters, Tuning.GridResolution);
-            int cellIndex = AbyssalThermalMath.Index(cell.x, cell.y, cell.z, Tuning.GridResolution);
-            ThermalCellDTO value = Cells[cellIndex];
             double3 localDouble = aup - Tuning.GridOriginAup;
+            float cellSize = math.max(0.001f, Tuning.CellSizeMeters);
+            float3 local = new float3((float)localDouble.x, (float)localDouble.y, (float)localDouble.z);
+            float3 grid = local / cellSize;
+            int3 baseCell = (int3)math.floor(grid);
+            float3 fraction = math.frac(grid);
+            int3 nearestCell = new int3(
+                AbyssalThermalMath.PositiveModulo(baseCell.x, Tuning.GridResolution.x),
+                AbyssalThermalMath.PositiveModulo(baseCell.y, Tuning.GridResolution.y),
+                AbyssalThermalMath.PositiveModulo(baseCell.z, Tuning.GridResolution.z));
+            int cellIndex = AbyssalThermalMath.Index(nearestCell.x, nearestCell.y, nearestCell.z, Tuning.GridResolution);
+            ThermalCellDTO nearest = Cells[cellIndex];
+
+            float temperature = nearest.TemperatureCelsius;
+            float convection = nearest.ConvectionVelocityY;
+            float conductivity = nearest.ThermalConductivity;
+            uint flags = nearest.Flags;
+            float interpolationWeight = ResolveInterpolationWeight(Tuning.GlobalQualityWeight);
+            if (interpolationWeight > 0f)
+            {
+                SampleTrilinear(baseCell, fraction, out float triTemperature, out float triConvection, out float triConductivity);
+                temperature = math.lerp(temperature, triTemperature, interpolationWeight);
+                convection = math.lerp(convection, triConvection, interpolationWeight);
+                conductivity = math.lerp(conductivity, triConductivity, interpolationWeight);
+            }
+
+            if (!math.isfinite(temperature))
+            {
+                temperature = Tuning.AmbientTemperatureCelsius;
+                flags |= AbyssalThermalMath.CellFlagNaN;
+            }
+
+            if (!math.isfinite(convection))
+                convection = 0f;
+
+            if (!math.isfinite(conductivity))
+                conductivity = Tuning.WaterThermalConductivity;
 
             ThermalSampleResultDTO result;
-            result.TemperatureCelsius = value.TemperatureCelsius;
-            result.ConvectionVelocityY = value.ConvectionVelocityY;
+            result.TemperatureCelsius = temperature;
+            result.ConvectionVelocityY = convection;
             result.CellIndex = (uint)cellIndex;
-            result.Flags = value.Flags;
-            result.LocalGridPosition = new float3((float)localDouble.x, (float)localDouble.y, (float)localDouble.z);
-            result.Conductivity = value.ThermalConductivity;
+            result.Flags = flags;
+            result.LocalGridPosition = local;
+            result.Conductivity = conductivity;
             Results[index] = result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveInterpolationWeight(float globalQualityWeight)
+        {
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float t = math.saturate((q - 0.15f) * math.rcp(0.65f));
+            float smooth = t * t * (3f - (2f * t));
+            return smooth * math.step(0.15f, q);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SampleTrilinear(int3 baseCell, float3 fraction, out float temperature, out float convection, out float conductivity)
+        {
+            ThermalCellDTO c000 = ReadCell(baseCell.x, baseCell.y, baseCell.z);
+            ThermalCellDTO c100 = ReadCell(baseCell.x + 1, baseCell.y, baseCell.z);
+            ThermalCellDTO c010 = ReadCell(baseCell.x, baseCell.y + 1, baseCell.z);
+            ThermalCellDTO c110 = ReadCell(baseCell.x + 1, baseCell.y + 1, baseCell.z);
+            ThermalCellDTO c001 = ReadCell(baseCell.x, baseCell.y, baseCell.z + 1);
+            ThermalCellDTO c101 = ReadCell(baseCell.x + 1, baseCell.y, baseCell.z + 1);
+            ThermalCellDTO c011 = ReadCell(baseCell.x, baseCell.y + 1, baseCell.z + 1);
+            ThermalCellDTO c111 = ReadCell(baseCell.x + 1, baseCell.y + 1, baseCell.z + 1);
+
+            temperature = Lerp8(
+                c000.TemperatureCelsius,
+                c100.TemperatureCelsius,
+                c010.TemperatureCelsius,
+                c110.TemperatureCelsius,
+                c001.TemperatureCelsius,
+                c101.TemperatureCelsius,
+                c011.TemperatureCelsius,
+                c111.TemperatureCelsius,
+                fraction);
+            convection = Lerp8(
+                c000.ConvectionVelocityY,
+                c100.ConvectionVelocityY,
+                c010.ConvectionVelocityY,
+                c110.ConvectionVelocityY,
+                c001.ConvectionVelocityY,
+                c101.ConvectionVelocityY,
+                c011.ConvectionVelocityY,
+                c111.ConvectionVelocityY,
+                fraction);
+            conductivity = Lerp8(
+                c000.ThermalConductivity,
+                c100.ThermalConductivity,
+                c010.ThermalConductivity,
+                c110.ThermalConductivity,
+                c001.ThermalConductivity,
+                c101.ThermalConductivity,
+                c011.ThermalConductivity,
+                c111.ThermalConductivity,
+                fraction);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ThermalCellDTO ReadCell(int x, int y, int z)
+        {
+            int ix = AbyssalThermalMath.PositiveModulo(x, Tuning.GridResolution.x);
+            int iy = AbyssalThermalMath.PositiveModulo(y, Tuning.GridResolution.y);
+            int iz = AbyssalThermalMath.PositiveModulo(z, Tuning.GridResolution.z);
+            return Cells[AbyssalThermalMath.Index(ix, iy, iz, Tuning.GridResolution)];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Lerp8(float c000, float c100, float c010, float c110, float c001, float c101, float c011, float c111, float3 t)
+        {
+            float x00 = math.lerp(c000, c100, t.x);
+            float x10 = math.lerp(c010, c110, t.x);
+            float x01 = math.lerp(c001, c101, t.x);
+            float x11 = math.lerp(c011, c111, t.x);
+            float y0 = math.lerp(x00, x10, t.y);
+            float y1 = math.lerp(x01, x11, t.y);
+            return math.lerp(y0, y1, t.z);
         }
     }
 

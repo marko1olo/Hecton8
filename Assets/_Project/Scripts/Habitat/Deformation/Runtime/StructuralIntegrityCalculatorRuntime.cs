@@ -31,6 +31,7 @@ namespace Hecton8.Habitat.Deformation
         private const int SolverLockTelemetryCursor = 1 << 6;
         private const int SolverLockTuning = 1 << 7;
         private const int SolverLockSdf = 1 << 8;
+        private const ulong StructuralMutationGuardMask = 1UL << 45;
 
         private static StructuralIntegrityCalculatorRuntime s_activeRuntime;
 
@@ -102,12 +103,48 @@ namespace Hecton8.Habitat.Deformation
 
         private void OnDisable()
         {
-            CompleteScheduled();
+            CompleteScheduled(true);
             TryUnregisterTickables();
             ReleaseGpuBuffers();
             if (s_activeRuntime == this)
                 s_activeRuntime = null;
             _initialized = 0;
+        }
+
+        private void OnDrawGizmos()
+        {
+            if (_initialized == 0 || _jobScheduled != 0)
+                return;
+
+            NativeArray<IntegrityStateDTO> states = _statesHandle.Resolve(_dataVault);
+            NativeArray<double3> aups = _nodeAupsHandle.Resolve(_dataVault);
+            NativeArray<StructuralTuningDTO> tuningArray = _tuningHandle.Resolve(_dataVault);
+            if (!states.IsCreated || !aups.IsCreated || !tuningArray.IsCreated || tuningArray.Length == 0)
+                return;
+
+            StructuralTuningDTO tuning = tuningArray[0];
+            int count = math.min(_activeNodeCount, math.min(states.Length, aups.Length));
+            count = math.min(count, 512);
+            for (int i = 0; i < count; i++)
+            {
+                IntegrityStateDTO state = states[i];
+                if (state.NodeHash == 0u)
+                    continue;
+
+                float stress = math.saturate(math.isfinite(state.CurrentStress) ? state.CurrentStress : 1f);
+                Color color = Color.Lerp(Color.green, Color.yellow, math.saturate(stress / 0.8f));
+                if (stress >= 0.95f)
+                {
+                    float pulse = Mathf.PingPong(Time.realtimeSinceStartup * 4f, 1f);
+                    color = Color.Lerp(Color.red, Color.white, pulse * 0.35f);
+                }
+
+                double3 relative = aups[i] - tuning.SeaLevelAup;
+                Vector3 position = new Vector3((float)relative.x, (float)relative.y, (float)relative.z);
+                float size = math.lerp(0.18f, 0.85f, stress);
+                Gizmos.color = color;
+                Gizmos.DrawWireCube(position, Vector3.one * size);
+            }
         }
 
         public void Tick(float deltaTime)
@@ -137,8 +174,15 @@ namespace Hecton8.Habitat.Deformation
             {
                 if (_jobScheduled != 0)
                 {
-                    CompleteScheduled();
-                    AfterSolverComplete();
+                    try
+                    {
+                        CompleteScheduled(false);
+                        AfterSolverComplete();
+                    }
+                    finally
+                    {
+                        UnlockSolverBuffers();
+                    }
                 }
             }
         }
@@ -158,7 +202,7 @@ namespace Hecton8.Habitat.Deformation
         {
             state = default;
             aup = default;
-            if (_initialized == 0 || (uint)index >= (uint)_activeNodeCount)
+            if (_initialized == 0 || _jobScheduled != 0 || (uint)index >= (uint)_activeNodeCount)
                 return false;
 
             NativeArray<IntegrityStateDTO> states = _statesHandle.Resolve(_dataVault);
@@ -174,7 +218,7 @@ namespace Hecton8.Habitat.Deformation
         public bool TryGetTuning(out StructuralTuningDTO tuning)
         {
             tuning = default;
-            if (_initialized == 0)
+            if (_initialized == 0 || _jobScheduled != 0)
                 return false;
 
             NativeArray<StructuralTuningDTO> tuningArray = _tuningHandle.Resolve(_dataVault);
@@ -185,36 +229,77 @@ namespace Hecton8.Habitat.Deformation
             return true;
         }
 
-        public void SetTuning(in StructuralTuningDTO tuning)
+        public bool TryGetTelemetrySample(int framesBack, out StructuralTelemetryEntry entry)
         {
-            if (_initialized == 0)
-                return;
+            entry = default;
+            if (_initialized == 0 || _jobScheduled != 0)
+                return false;
 
-            NativeArray<StructuralTuningDTO> tuningArray = _tuningHandle.Resolve(_dataVault);
-            if (!tuningArray.IsCreated || tuningArray.Length == 0)
-                return;
+            NativeArray<StructuralTelemetryEntry> telemetry = _telemetryHandle.Resolve(_dataVault);
+            NativeArray<int> cursor = _telemetryCursorHandle.Resolve(_dataVault);
+            if (!telemetry.IsCreated || !cursor.IsCreated || telemetry.Length == 0 || cursor.Length == 0)
+                return false;
 
-            StructuralTuningDTO sanitized = SanitizeTuning(tuning, ResolveGlobalQualityWeight());
-            tuningArray[0] = sanitized;
-            basePressureKPa = sanitized.BasePressureKPa;
-            pressureGradientKPaPerMeter = sanitized.PressureGradientKPaPerMeter;
-            pressureToStressScale = sanitized.PressureToStressScale;
-            materialStrengthFactor = sanitized.MaterialStrengthFactor;
-            bucklingStart01 = sanitized.BucklingStart01;
-            bucklingVisualIntensity = sanitized.BucklingVisualIntensity;
-            supportDamping = sanitized.SupportDamping;
-            collapseStress01 = sanitized.CollapseStress01;
-            sdfMetersPerVoxel = sanitized.SdfMetersPerVoxel;
-            sdfRangeMeters = sanitized.SdfRangeMeters;
+            int capacity = math.min(telemetry.Length, StructuralIntegrityConstants.TelemetryFrameCapacity);
+            int clampedBack = math.clamp(framesBack, 0, capacity - 1);
+            int slot = cursor[0] - 1 - clampedBack;
+            while (slot < 0)
+                slot += capacity;
+            slot %= capacity;
+
+            entry = telemetry[slot];
+            return entry.Sequence != 0u || entry.Frame != 0u || entry.ActiveNodeCount != 0;
         }
 
-        public void RegenerateMockGraph()
+        public void SetTuning(in StructuralTuningDTO tuning)
         {
-            if (_initialized == 0)
+            if (_initialized == 0 || _jobScheduled != 0)
                 return;
 
-            CompleteScheduled();
-            GenerateEmergencyMockStressData();
+            if (!TryAcquireStructuralMutationGuard())
+                return;
+
+            bool tuningLocked = false;
+            if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity))
+            {
+                ReleaseStructuralMutationGuard();
+                return;
+            }
+
+            tuningLocked = true;
+            try
+            {
+                NativeArray<StructuralTuningDTO> tuningArray = _tuningHandle.Resolve(_dataVault);
+                if (!tuningArray.IsCreated || tuningArray.Length == 0)
+                    return;
+
+                StructuralTuningDTO sanitized = SanitizeTuning(tuning, ResolveGlobalQualityWeight());
+                tuningArray[0] = sanitized;
+                basePressureKPa = sanitized.BasePressureKPa;
+                pressureGradientKPaPerMeter = sanitized.PressureGradientKPaPerMeter;
+                pressureToStressScale = sanitized.PressureToStressScale;
+                materialStrengthFactor = sanitized.MaterialStrengthFactor;
+                bucklingStart01 = sanitized.BucklingStart01;
+                bucklingVisualIntensity = sanitized.BucklingVisualIntensity;
+                supportDamping = sanitized.SupportDamping;
+                collapseStress01 = sanitized.CollapseStress01;
+                sdfMetersPerVoxel = sanitized.SdfMetersPerVoxel;
+                sdfRangeMeters = sanitized.SdfRangeMeters;
+            }
+            finally
+            {
+                if (tuningLocked)
+                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity);
+                ReleaseStructuralMutationGuard();
+            }
+        }
+
+        public bool RegenerateMockGraph()
+        {
+            if (_initialized == 0 || _jobScheduled != 0)
+                return false;
+
+            return GenerateEmergencyMockStressData();
         }
 
         private bool TryInitialize()
@@ -300,47 +385,103 @@ namespace Hecton8.Habitat.Deformation
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
             SignalBus<BaseModuleCompromisedSignal>.EnsureInitialized();
 
-            ClearBootBuffers();
-            WriteDefaultMaterials();
+            if (!ClearBootBuffers())
+                return false;
+            if (!WriteDefaultMaterials())
+                return false;
             TryLoadMaterialStrengthCsv();
-            WriteDefaultTuning();
             _activeNodeCount = math.clamp(mockNodeCount, 1, StructuralIntegrityConstants.MaxNodeCapacity);
+            if (!WriteDefaultTuning())
+                return false;
             if (generateMockGraphOnEnable)
-                GenerateEmergencyMockStressData();
+            {
+                if (!GenerateEmergencyMockStressData())
+                    return false;
+            }
 
             EnsureGpuBuffers();
             _initialized = 1;
             return true;
         }
 
-        private void ClearBootBuffers()
+        private bool ClearBootBuffers()
         {
-            NativeArray<IntegrityStateDTO> states = _statesHandle.Resolve(_dataVault);
-            NativeArray<double3> aups = _nodeAupsHandle.Resolve(_dataVault);
-            NativeArray<int> offsets = _csrOffsetsHandle.Resolve(_dataVault);
-            NativeArray<int> destinations = _csrDestinationsHandle.Resolve(_dataVault);
-            NativeArray<byte> flags = _edgeFlagsHandle.Resolve(_dataVault);
-            NativeArray<StructuralTelemetryEntry> telemetry = _telemetryHandle.Resolve(_dataVault);
-            NativeArray<int> telemetryCursor = _telemetryCursorHandle.Resolve(_dataVault);
-            // COLD SYNC JOB: boot-time explicit memclear of Vault buffers acquired with UninitializedMemory.
-            new StructuralIntegrityClearJob
+            if (!TryAcquireStructuralMutationGuard())
+                return false;
+
+            if (!TryLockSolverBuffers(false))
             {
-                States = states,
-                NodeAups = aups,
-                CsrOffsets = offsets,
-                CsrDestinations = destinations,
-                EdgeFlags = flags,
-                Telemetry = telemetry,
-                TelemetryCursor = telemetryCursor
-            }.Schedule().Complete();
+                ReleaseStructuralMutationGuard();
+                return false;
+            }
+
+            bool cleared = false;
+            try
+            {
+                NativeArray<IntegrityStateDTO> states = _statesHandle.Resolve(_dataVault);
+                NativeArray<double3> aups = _nodeAupsHandle.Resolve(_dataVault);
+                NativeArray<int> offsets = _csrOffsetsHandle.Resolve(_dataVault);
+                NativeArray<int> destinations = _csrDestinationsHandle.Resolve(_dataVault);
+                NativeArray<byte> flags = _edgeFlagsHandle.Resolve(_dataVault);
+                NativeArray<StructuralTelemetryEntry> telemetry = _telemetryHandle.Resolve(_dataVault);
+                NativeArray<int> telemetryCursor = _telemetryCursorHandle.Resolve(_dataVault);
+                // COLD SYNC JOB: boot-time explicit memclear of Vault buffers acquired with UninitializedMemory.
+                new StructuralIntegrityClearJob
+                {
+                    States = states,
+                    NodeAups = aups,
+                    CsrOffsets = offsets,
+                    CsrDestinations = destinations,
+                    EdgeFlags = flags,
+                    Telemetry = telemetry,
+                    TelemetryCursor = telemetryCursor
+                }.Schedule().Complete();
+                cleared = true;
+            }
+            finally
+            {
+                UnlockSolverBuffers();
+                ReleaseStructuralMutationGuard();
+            }
+
+            return cleared;
         }
 
-        private void WriteDefaultTuning()
+        private bool WriteDefaultTuning()
         {
-            NativeArray<StructuralTuningDTO> tuning = _tuningHandle.Resolve(_dataVault);
-            if (!tuning.IsCreated || tuning.Length == 0)
-                return;
+            if (!TryAcquireStructuralMutationGuard())
+                return false;
 
+            bool tuningLocked = false;
+            if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity))
+            {
+                ReleaseStructuralMutationGuard();
+                return false;
+            }
+
+            tuningLocked = true;
+            bool written = false;
+            try
+            {
+                NativeArray<StructuralTuningDTO> tuning = _tuningHandle.Resolve(_dataVault);
+                if (!tuning.IsCreated || tuning.Length == 0)
+                    return false;
+
+                WriteDefaultTuning(tuning);
+                written = true;
+            }
+            finally
+            {
+                if (tuningLocked)
+                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity);
+                ReleaseStructuralMutationGuard();
+            }
+
+            return written;
+        }
+
+        private void WriteDefaultTuning(NativeArray<StructuralTuningDTO> tuning)
+        {
             tuning[0] = SanitizeTuning(new StructuralTuningDTO
             {
                 SeaLevelAup = new double3(seaLevelAup.x, seaLevelAup.y, seaLevelAup.z),
@@ -360,41 +501,82 @@ namespace Hecton8.Habitat.Deformation
             }, ResolveGlobalQualityWeight());
         }
 
-        private void GenerateEmergencyMockStressData()
+        private bool GenerateEmergencyMockStressData()
         {
-            NativeArray<IntegrityStateDTO> states = _statesHandle.Resolve(_dataVault);
-            NativeArray<double3> aups = _nodeAupsHandle.Resolve(_dataVault);
-            NativeArray<int> offsets = _csrOffsetsHandle.Resolve(_dataVault);
-            NativeArray<int> destinations = _csrDestinationsHandle.Resolve(_dataVault);
-            NativeArray<byte> flags = _edgeFlagsHandle.Resolve(_dataVault);
-            NativeArray<StructuralMaterialStrengthEntry> materials = _materialsHandle.Resolve(_dataVault);
-            if (!states.IsCreated || !aups.IsCreated || !offsets.IsCreated || !destinations.IsCreated || !flags.IsCreated)
-                return;
+            if (!TryAcquireStructuralMutationGuard())
+                return false;
 
-            _activeNodeCount = math.clamp(mockNodeCount, 1, math.min(StructuralIntegrityConstants.MaxNodeCapacity, states.Length));
-            // COLD SYNC JOB: deterministic mock topology generation for isolated profiling and CI fallback data.
-            new GenerateMockStructuralStressJob
+            if (!TryLockSolverBuffers(false))
             {
-                States = states,
-                NodeAups = aups,
-                CsrOffsets = offsets,
-                CsrDestinations = destinations,
-                EdgeFlags = flags,
-                Materials = materials,
-                NodeCount = _activeNodeCount,
-                BaseHash = StructuralIntegrityConstants.DefaultBaseHash,
-                SeaLevelAup = new double3(seaLevelAup.x, seaLevelAup.y, seaLevelAup.z),
-                GlassHash = _glassHash,
-                TitaniumHash = _titaniumHash,
-                PlasteelHash = _plasteelHash
-            }.Schedule().Complete();
+                ReleaseStructuralMutationGuard();
+                return false;
+            }
 
-            _activeEdgeCount = offsets.IsCreated && _activeNodeCount < offsets.Length ? offsets[_activeNodeCount] : 0;
-            WriteDefaultTuning();
+            bool materialsLocked = false;
+            if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity))
+            {
+                UnlockSolverBuffers();
+                ReleaseStructuralMutationGuard();
+                return false;
+            }
+
+            materialsLocked = true;
+            bool generated = false;
+            try
+            {
+                NativeArray<IntegrityStateDTO> states = _statesHandle.Resolve(_dataVault);
+                NativeArray<double3> aups = _nodeAupsHandle.Resolve(_dataVault);
+                NativeArray<int> offsets = _csrOffsetsHandle.Resolve(_dataVault);
+                NativeArray<int> destinations = _csrDestinationsHandle.Resolve(_dataVault);
+                NativeArray<byte> flags = _edgeFlagsHandle.Resolve(_dataVault);
+                NativeArray<StructuralMaterialStrengthEntry> materials = _materialsHandle.Resolve(_dataVault);
+                NativeArray<StructuralTuningDTO> tuning = _tuningHandle.Resolve(_dataVault);
+                if (!states.IsCreated || !aups.IsCreated || !offsets.IsCreated || !destinations.IsCreated || !flags.IsCreated || !materials.IsCreated ||
+                    !tuning.IsCreated || tuning.Length == 0)
+                {
+                    return false;
+                }
+
+                _activeNodeCount = math.clamp(mockNodeCount, 1, math.min(StructuralIntegrityConstants.MaxNodeCapacity, states.Length));
+                // COLD SYNC JOB: deterministic mock topology generation for isolated profiling and CI fallback data.
+                new GenerateMockStructuralStressJob
+                {
+                    States = states,
+                    NodeAups = aups,
+                    CsrOffsets = offsets,
+                    CsrDestinations = destinations,
+                    EdgeFlags = flags,
+                    Materials = materials,
+                    NodeCount = _activeNodeCount,
+                    BaseHash = StructuralIntegrityConstants.DefaultBaseHash,
+                    SeaLevelAup = new double3(seaLevelAup.x, seaLevelAup.y, seaLevelAup.z),
+                    GlassHash = _glassHash,
+                    TitaniumHash = _titaniumHash,
+                    PlasteelHash = _plasteelHash
+                }.Schedule().Complete();
+
+                _activeEdgeCount = offsets.IsCreated && _activeNodeCount < offsets.Length ? offsets[_activeNodeCount] : 0;
+                WriteDefaultTuning(tuning);
+                generated = true;
+            }
+            finally
+            {
+                if (materialsLocked)
+                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity);
+                UnlockSolverBuffers();
+                ReleaseStructuralMutationGuard();
+            }
+
+            return generated;
         }
 
         private void ScheduleSolver(float quality, int framesBetweenUpdates)
         {
+            NativeArray<byte> sdf = default;
+            bool includeSdfLock = _dataVault.TryGetBuffer(BufferID.VoxelSdfTexture3D, out sdf) && sdf.IsCreated;
+            if (!TryLockSolverBuffers(includeSdfLock))
+                return;
+
             NativeArray<IntegrityStateDTO> states = _statesHandle.Resolve(_dataVault);
             NativeArray<double3> aups = _nodeAupsHandle.Resolve(_dataVault);
             NativeArray<int> offsets = _csrOffsetsHandle.Resolve(_dataVault);
@@ -403,15 +585,21 @@ namespace Hecton8.Habitat.Deformation
             NativeArray<StructuralTelemetryEntry> telemetry = _telemetryHandle.Resolve(_dataVault);
             NativeArray<int> telemetryCursor = _telemetryCursorHandle.Resolve(_dataVault);
             NativeArray<StructuralTuningDTO> tuning = _tuningHandle.Resolve(_dataVault);
-            if (!states.IsCreated || !aups.IsCreated || !offsets.IsCreated || !destinations.IsCreated || !edgeFlags.IsCreated || !telemetry.IsCreated || !telemetryCursor.IsCreated || !tuning.IsCreated)
+            if (!states.IsCreated || !aups.IsCreated || !offsets.IsCreated || !destinations.IsCreated || !edgeFlags.IsCreated ||
+                !telemetry.IsCreated || !telemetryCursor.IsCreated || !tuning.IsCreated || telemetryCursor.Length == 0 || tuning.Length == 0)
+            {
+                UnlockSolverBuffers();
                 return;
+            }
 
             StructuralTuningDTO current = SanitizeTuning(tuning[0], quality);
             current.ActiveNodeCount = _activeNodeCount;
             tuning[0] = current;
 
-            NativeArray<byte> sdf = default;
-            _dataVault.TryGetBuffer(BufferID.VoxelSdfTexture3D, out sdf);
+            if (includeSdfLock)
+                _dataVault.TryGetBuffer(BufferID.VoxelSdfTexture3D, out sdf);
+            else
+                sdf = default;
             int sdfDimension = ResolveSdfDimension(sdf);
             int sdfFallback = sdfDimension <= 1 ? 1 : 0;
             int safeCount = math.clamp(_activeNodeCount, 0, math.min(states.Length, aups.Length));
@@ -462,6 +650,7 @@ namespace Hecton8.Habitat.Deformation
             {
                 States = states,
                 CsrOffsets = offsets,
+                CsrDestinations = destinations,
                 EdgeFlags = edgeFlags,
                 ActiveNodeCount = safeCount
             }.Schedule(safeCount, batchSize, handle);
@@ -485,14 +674,85 @@ namespace Hecton8.Habitat.Deformation
             _jobScheduled = 1;
         }
 
-        private void CompleteScheduled()
+        private void CompleteScheduled(bool releaseLocks)
         {
             if (_jobScheduled == 0)
                 return;
 
-            _scheduledHandle.Complete();
-            _scheduledHandle = default;
-            _jobScheduled = 0;
+            try
+            {
+                _scheduledHandle.Complete();
+            }
+            finally
+            {
+                _scheduledHandle = default;
+                _jobScheduled = 0;
+                if (releaseLocks)
+                    UnlockSolverBuffers();
+            }
+        }
+
+        private bool TryLockSolverBuffers(bool includeSdf)
+        {
+            if (_solverLockMask != 0 || _dataVault == null)
+                return false;
+
+            int mask = 0;
+            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityStates, SolverLockStates, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityNodeAups, SolverLockNodeAups, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityCsrOffsets, SolverLockOffsets, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityCsrDestinations, SolverLockDestinations, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityEdgeFlags, SolverLockEdgeFlags, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityTelemetryRing, SolverLockTelemetry, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityTelemetryCursor, SolverLockTelemetryCursor, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryLockSolverBuffer(BufferID.StructuralIntegrityTuning, SolverLockTuning, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (includeSdf && !TryLockSolverBuffer(BufferID.VoxelSdfTexture3D, SolverLockSdf, ref mask)) { UnlockSolverBuffers(mask); return false; }
+
+            _solverLockMask = mask;
+            return true;
+        }
+
+        private bool TryLockSolverBuffer(BufferID id, int bit, ref int mask)
+        {
+            if (!_dataVault.TryLockBuffer(id, SystemID.HullIntegrity))
+                return false;
+
+            mask |= bit;
+            return true;
+        }
+
+        private bool TryAcquireStructuralMutationGuard()
+        {
+            return _dataVault != null && _dataVault.TryAcquireMutationGuard(StructuralMutationGuardMask);
+        }
+
+        private void ReleaseStructuralMutationGuard()
+        {
+            if (_dataVault != null)
+                _dataVault.ReleaseMutationGuard(StructuralMutationGuardMask);
+        }
+
+        private void UnlockSolverBuffers()
+        {
+            int mask = _solverLockMask;
+            _solverLockMask = 0;
+            UnlockSolverBuffers(mask);
+        }
+
+        private void UnlockSolverBuffers(int mask)
+        {
+            if (_dataVault == null || mask == 0)
+                return;
+
+            if ((mask & SolverLockSdf) != 0) _dataVault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.HullIntegrity);
+            if ((mask & SolverLockTuning) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity);
+            if ((mask & SolverLockTelemetryCursor) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTelemetryCursor, SystemID.HullIntegrity);
+            if ((mask & SolverLockTelemetry) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTelemetryRing, SystemID.HullIntegrity);
+            if ((mask & SolverLockEdgeFlags) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityEdgeFlags, SystemID.HullIntegrity);
+            if ((mask & SolverLockDestinations) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityCsrDestinations, SystemID.HullIntegrity);
+            if ((mask & SolverLockOffsets) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityCsrOffsets, SystemID.HullIntegrity);
+            if ((mask & SolverLockNodeAups) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityNodeAups, SystemID.HullIntegrity);
+            if ((mask & SolverLockStates) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityStates, SystemID.HullIntegrity);
         }
 
         private void AfterSolverComplete()
@@ -553,8 +813,8 @@ namespace Hecton8.Habitat.Deformation
             if (_stateBufferA == null || _stateBufferA.count != StructuralIntegrityConstants.MaxNodeCapacity || _stateBufferA.stride != stride)
             {
                 ReleaseGpuBuffers();
-                _stateBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, StructuralIntegrityConstants.MaxNodeCapacity, stride); // COLD ALLOC: GraphicsBuffer[4096] - structural state upload A - owner: SHINOBU_115
-                _stateBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, StructuralIntegrityConstants.MaxNodeCapacity, stride); // COLD ALLOC: GraphicsBuffer[4096] - structural state upload B - owner: SHINOBU_115
+                _stateBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, StructuralIntegrityConstants.MaxNodeCapacity, stride); // COLD ALLOC: GraphicsBuffer[4096] - structural state upload A - owner: SHINOBU_115
+                _stateBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, StructuralIntegrityConstants.MaxNodeCapacity, stride); // COLD ALLOC: GraphicsBuffer[4096] - structural state upload B - owner: SHINOBU_115
                 _gpuReadIndex = 0;
             }
         }
@@ -605,12 +865,41 @@ namespace Hecton8.Habitat.Deformation
             }
         }
 
-        private void WriteDefaultMaterials()
+        private bool WriteDefaultMaterials()
         {
-            NativeArray<StructuralMaterialStrengthEntry> materials = _materialsHandle.Resolve(_dataVault);
-            if (!materials.IsCreated)
-                return;
+            if (!TryAcquireStructuralMutationGuard())
+                return false;
 
+            bool materialsLocked = false;
+            if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity))
+            {
+                ReleaseStructuralMutationGuard();
+                return false;
+            }
+
+            materialsLocked = true;
+            bool written = false;
+            try
+            {
+                NativeArray<StructuralMaterialStrengthEntry> materials = _materialsHandle.Resolve(_dataVault);
+                if (!materials.IsCreated)
+                    return false;
+
+                WriteDefaultMaterials(materials);
+                written = true;
+            }
+            finally
+            {
+                if (materialsLocked)
+                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity);
+                ReleaseStructuralMutationGuard();
+            }
+
+            return written;
+        }
+
+        private void WriteDefaultMaterials(NativeArray<StructuralMaterialStrengthEntry> materials)
+        {
             for (int i = 0; i < materials.Length; i++)
                 materials[i] = default;
 
@@ -626,7 +915,7 @@ namespace Hecton8.Habitat.Deformation
             if (!File.Exists(path))
             {
                 if (_materialTableInitialized == 0)
-                    WriteDefaultMaterials();
+                    return WriteDefaultMaterials();
                 return false;
             }
 
@@ -634,24 +923,59 @@ namespace Hecton8.Habitat.Deformation
             if (_materialTableInitialized != 0 && ticks == _lastCsvWriteTicks)
                 return true;
 
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(_dataVault);
-            NativeArray<StructuralMaterialStrengthEntry> materials = _materialsHandle.Resolve(_dataVault);
-            if (!scratch.IsCreated || !materials.IsCreated)
+            if (!TryAcquireStructuralMutationGuard())
                 return false;
 
-            int bytesRead;
-            byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-            using (FileStream stream = File.OpenRead(path))
+            if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityCsvScratch, SystemID.HullIntegrity))
             {
-                bytesRead = stream.Read(new Span<byte>(scratchPtr, scratch.Length));
+                ReleaseStructuralMutationGuard();
+                return false;
             }
 
-            WriteDefaultMaterials();
-            ParseMaterialCsv(new ReadOnlySpan<byte>(scratchPtr, bytesRead), materials);
-            _lastCsvWriteTicks = ticks;
-            _materialTableInitialized = 1;
-            ApplyMaterialsToStatesCold();
-            return true;
+            bool materialsLocked = false;
+            bool loaded = false;
+            try
+            {
+                if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity))
+                    return false;
+
+                materialsLocked = true;
+                NativeArray<byte> scratch = _csvScratchHandle.Resolve(_dataVault);
+                NativeArray<StructuralMaterialStrengthEntry> materials = _materialsHandle.Resolve(_dataVault);
+                if (!scratch.IsCreated || !materials.IsCreated)
+                    return false;
+
+                int bytesRead;
+                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                using (FileStream stream = new FileStream(
+                    path,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite,
+                    StructuralIntegrityConstants.CsvScratchBytes,
+                    FileOptions.SequentialScan))
+                {
+                    bytesRead = stream.Read(new Span<byte>(scratchPtr, scratch.Length));
+                }
+
+                WriteDefaultMaterials(materials);
+                ParseMaterialCsv(new ReadOnlySpan<byte>(scratchPtr, bytesRead), materials);
+                _lastCsvWriteTicks = ticks;
+                _materialTableInitialized = 1;
+                loaded = true;
+            }
+            finally
+            {
+                if (materialsLocked)
+                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity);
+                _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityCsvScratch, SystemID.HullIntegrity);
+                ReleaseStructuralMutationGuard();
+            }
+
+            if (loaded)
+                return ApplyMaterialsToStatesCold();
+
+            return loaded;
         }
 
         private void ParseMaterialCsv(ReadOnlySpan<byte> bytes, NativeArray<StructuralMaterialStrengthEntry> materials)
@@ -706,28 +1030,62 @@ namespace Hecton8.Habitat.Deformation
             UpsertMaterial(materials, materialHash, baseStrength, buckling, pressureScale);
         }
 
-        private void ApplyMaterialsToStatesCold()
+        private bool ApplyMaterialsToStatesCold()
         {
-            NativeArray<IntegrityStateDTO> states = _statesHandle.Resolve(_dataVault);
-            NativeArray<StructuralMaterialStrengthEntry> materials = _materialsHandle.Resolve(_dataVault);
-            if (!states.IsCreated || !materials.IsCreated || _activeNodeCount <= 0)
-                return;
+            if (_activeNodeCount <= 0)
+                return true;
 
-            // COLD SYNC JOB: material CSV reload is skipped while the solver fence is alive.
-            new StructuralMaterialStrengthApplyJob
+            if (!TryAcquireStructuralMutationGuard())
+                return false;
+
+            bool statesLocked = false;
+            if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityStates, SystemID.HullIntegrity))
             {
-                States = states,
-                Materials = materials,
-                ActiveNodeCount = _activeNodeCount,
-                GlassHash = _glassHash,
-                TitaniumHash = _titaniumHash,
-                PlasteelHash = _plasteelHash
-            }.Schedule(_activeNodeCount, 64).Complete();
+                ReleaseStructuralMutationGuard();
+                return false;
+            }
+
+            statesLocked = true;
+            bool materialsLocked = false;
+            bool applied = false;
+            try
+            {
+                if (!_dataVault.TryLockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity))
+                    return false;
+
+                materialsLocked = true;
+                NativeArray<IntegrityStateDTO> states = _statesHandle.Resolve(_dataVault);
+                NativeArray<StructuralMaterialStrengthEntry> materials = _materialsHandle.Resolve(_dataVault);
+                if (!states.IsCreated || !materials.IsCreated)
+                    return false;
+
+                // COLD SYNC JOB: material CSV reload is skipped while the solver fence is alive.
+                new StructuralMaterialStrengthApplyJob
+                {
+                    States = states,
+                    Materials = materials,
+                    ActiveNodeCount = _activeNodeCount,
+                    GlassHash = _glassHash,
+                    TitaniumHash = _titaniumHash,
+                    PlasteelHash = _plasteelHash
+                }.Schedule(_activeNodeCount, 64).Complete();
+                applied = true;
+            }
+            finally
+            {
+                if (materialsLocked)
+                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityMaterialStrengths, SystemID.HullIntegrity);
+                if (statesLocked)
+                    _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityStates, SystemID.HullIntegrity);
+                ReleaseStructuralMutationGuard();
+            }
+
+            return applied;
         }
 
         private static void UpsertMaterial(NativeArray<StructuralMaterialStrengthEntry> materials, uint hash, float baseStrength, float bucklingStart, float pressureScale)
         {
-            if (!materials.IsCreated || hash == 0u)
+            if (!materials.IsCreated || materials.Length == 0 || hash == 0u)
                 return;
 
             StructuralMaterialStrengthEntry entry = new StructuralMaterialStrengthEntry
@@ -738,22 +1096,29 @@ namespace Hecton8.Habitat.Deformation
                 PressureScale = math.max(0.01f, math.isfinite(pressureScale) ? pressureScale : 1f)
             };
 
+            int start = (int)(hash % (uint)materials.Length);
             int firstEmpty = -1;
-            for (int i = 0; i < materials.Length; i++)
+            for (int probe = 0; probe < materials.Length; probe++)
             {
-                StructuralMaterialStrengthEntry current = materials[i];
+                int index = WrapMaterialIndex(start + probe, materials.Length);
+                StructuralMaterialStrengthEntry current = materials[index];
                 if (current.MaterialHash == hash)
                 {
-                    materials[i] = entry;
+                    materials[index] = entry;
                     return;
                 }
 
                 if (firstEmpty < 0 && current.MaterialHash == 0u)
-                    firstEmpty = i;
+                    firstEmpty = index;
             }
 
             if (firstEmpty >= 0)
                 materials[firstEmpty] = entry;
+        }
+
+        private static int WrapMaterialIndex(int value, int length)
+        {
+            return (length & (length - 1)) == 0 ? (value & (length - 1)) : (value % length);
         }
 
         private void DumpTelemetry(string relativePath, in StructuralTelemetryEntry faultEntry)

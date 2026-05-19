@@ -88,12 +88,13 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Drain up to 18 labels this tick.
+        /// Drain a GlobalQualityWeight-scaled number of labels this tick.
         /// </summary>
         public int DrainTick(TMP_FontAsset newFont, Material newMaterial)
         {
             int processed = 0;
-            while (_count > 0 && processed < MaxPerTick)
+            int budget = ResolveDirtyBudget(_count);
+            while (_count > 0 && processed < budget)
             {
                 PendingSwap pending = _pending[_head];
                 _pending[_head] = default;
@@ -164,10 +165,20 @@ namespace Hecton8.UI
 
         private static bool ShouldStripRichTextForCurrentTier()
         {
-            Hecton8.Core.HectonQualityTier tier = Hecton8.Core.GlobalRegistry.ScalabilityTier;
-            return tier == Hecton8.Core.HectonQualityTier.Unknown ||
-                   tier == Hecton8.Core.HectonQualityTier.Low ||
-                   tier == Hecton8.Core.HectonQualityTier.Mx350;
+            float quality = ResolveGlobalQualityWeight();
+            float richTextWeight = math.saturate((quality - 0.35f) * 2.5f);
+            return richTextWeight < 0.5f;
+        }
+
+        private static int ResolveDirtyBudget(int pendingCount)
+        {
+            return BabelSubtitleSyncRuntime.ResolveCanvasDirtyBudget(math.min(pendingCount, MaxPerTick));
+        }
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            float quality = Hecton8.Core.HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(0f, quality, math.isfinite(quality)));
         }
 
         private struct PendingSwap

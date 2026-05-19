@@ -113,7 +113,7 @@ namespace Hecton8.Core.Memory
         /// <summary>Attempts to read an existing generation-checked handle without creating or growing it.</summary>
         bool TryGetBufferHandle<T>(BufferID bufferId, out VaultBufferHandle<T> handle) where T : struct;
 
-        /// <summary>Attempts to acquire a cache-line-aligned pointer slice from a vault-owned buffer.</summary>
+        /// <summary>Attempts to acquire a pointer slice from a cache-line-aligned vault block; non-zero startIndex alignment depends on stride and offset.</summary>
         bool TryAcquireSlice<T>(
             BufferID bufferId,
             int requiredLength,
@@ -123,7 +123,7 @@ namespace Hecton8.Core.Memory
             out VaultBufferSlice<T> slice,
             NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct;
 
-        /// <summary>Validates a generation-checked handle; stale cached metadata fails fast.</summary>
+        /// <summary>Validates or refreshes a generation-checked handle; unsafe stale metadata fails fast.</summary>
         bool ResolveBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct;
 
         /// <summary>Attempts to read the current generation for a buffer.</summary>
@@ -195,7 +195,7 @@ namespace Hecton8.Core.Memory
     [StructLayout(LayoutKind.Sequential, Size = 24)]
     public unsafe struct VaultBufferHandle<T> where T : struct
     {
-        /// <summary>Cached raw pointer. Invalid after a generation mismatch; resolver fails fast.</summary>
+        /// <summary>Cached raw pointer. Resolver refreshes it after allowed generation bumps; unsafe stale metadata fails fast.</summary>
         public void* ptr;
 
         /// <summary>Cached buffer generation.</summary>
@@ -343,101 +343,101 @@ namespace Hecton8.Core.Memory
     /// <summary>
     /// Fixed-size relocation record copied from the memory assembly to the Core signal bridge.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct VaultRelocationRecord
     {
         public const byte FlagAddressChanged = 1 << 0;
         public const byte FlagFenceProtected = 1 << 1;
         public const byte FlagWatchdogBreached = 1 << 2;
 
-        public long OldPointer;
-        public long NewPointer;
-        public int BufferId;
-        public int ByteLength;
-        public uint Generation;
-        public byte Flags;
-        public byte SystemId;
-        public ushort Reserved;
+        [FieldOffset(0)] public long OldPointer;
+        [FieldOffset(8)] public long NewPointer;
+        [FieldOffset(16)] public int BufferId;
+        [FieldOffset(20)] public int ByteLength;
+        [FieldOffset(24)] public uint Generation;
+        [FieldOffset(28)] public byte Flags;
+        [FieldOffset(29)] public byte SystemId;
+        [FieldOffset(30)] public ushort Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     internal struct VaultBufferMeta
     {
-        public long OffsetBytes;
-        public long Bytes;
-        public int Length;
-        public int Stride;
-        public int Alignment;
-        public int BlockIndex;
-        public Allocator Allocator;
-        public uint Version;
-        public SystemID Owner;
-        public SystemID LastAliasRequester;
-        public uint Reserved0;
+        [FieldOffset(0)] public long OffsetBytes;
+        [FieldOffset(8)] public long Bytes;
+        [FieldOffset(16)] public int Length;
+        [FieldOffset(20)] public int Stride;
+        [FieldOffset(24)] public int Alignment;
+        [FieldOffset(28)] public int BlockIndex;
+        [FieldOffset(32)] public Allocator Allocator;
+        [FieldOffset(36)] public uint Version;
+        [FieldOffset(40)] public SystemID Owner;
+        [FieldOffset(42)] public SystemID LastAliasRequester;
+        [FieldOffset(44)] public uint Reserved0;
     }
 
     /// <summary>
     /// Immutable block snapshot used by editor diagnostics. Size: 48 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct VaultMemoryBlockSnapshot
     {
-        public long OffsetBytes;
-        public long Bytes;
-        public int BufferKey;
-        public int H8BlockIndex;
-        public uint Version;
-        public ushort Owner;
-        public ushort LockCount;
-        public byte State;
-        public byte Flags;
-        public ushort Reserved0;
-        public uint Reserved1;
-        public long Reserved2;
+        [FieldOffset(0)] public long OffsetBytes;
+        [FieldOffset(8)] public long Bytes;
+        [FieldOffset(16)] public int BufferKey;
+        [FieldOffset(20)] public int H8BlockIndex;
+        [FieldOffset(24)] public uint Version;
+        [FieldOffset(28)] public ushort Owner;
+        [FieldOffset(30)] public ushort LockCount;
+        [FieldOffset(32)] public byte State;
+        [FieldOffset(33)] public byte Flags;
+        [FieldOffset(34)] public ushort Reserved0;
+        [FieldOffset(36)] public uint Reserved1;
+        [FieldOffset(40)] public long Reserved2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct VaultArenaBlock
     {
-        public long OffsetBytes;
-        public long Bytes;
-        public int BufferKey;
-        public int H8BlockIndex;
-        public uint Version;
-        public byte State;
-        public byte Reserved0;
-        public ushort Reserved1;
+        [FieldOffset(0)] public long OffsetBytes;
+        [FieldOffset(8)] public long Bytes;
+        [FieldOffset(16)] public int BufferKey;
+        [FieldOffset(20)] public int H8BlockIndex;
+        [FieldOffset(24)] public uint Version;
+        [FieldOffset(28)] public byte State;
+        [FieldOffset(29)] public byte Reserved0;
+        [FieldOffset(30)] public ushort Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct MemoryDefragTelemetryEntry
     {
-        public long TotalFreeSpaceBytes;
-        public long LargestContiguousBlockBytes;
-        public long LastMovedBytes;
-        public long TotalMovedBytes;
-        public long PendingMassiveMoveBytes;
-        public ulong ActiveMutationGuardMask;
-        public uint Sequence;
-        public uint Frame;
-        public uint VaultGenerationID;
-        public uint ActiveBurstLockMask;
-        public int BlockCount;
-        public int ActiveBufferCount;
-        public int WatchdogBreaches;
-        public int EmergencyOverflowCursorBytes;
-        public float HeapFragmentationRatio;
-        public ushort LastRelocatedSystemId;
-        public ushort Reserved16;
-        public byte Flags;
-        public byte IsFragmented;
-        public byte WatchdogExceeded;
-        public byte MemoryStarvationWarnings;
-        public uint Reserved32;
-        public long ReservedLong0;
-        public long ReservedLong1;
-        public long ReservedLong2;
-        public long ReservedLong3;
+        [FieldOffset(0)] public long TotalFreeSpaceBytes;
+        [FieldOffset(8)] public long LargestContiguousBlockBytes;
+        [FieldOffset(16)] public long LastMovedBytes;
+        [FieldOffset(24)] public long TotalMovedBytes;
+        [FieldOffset(32)] public long PendingMassiveMoveBytes;
+        [FieldOffset(40)] public ulong ActiveMutationGuardMask;
+        [FieldOffset(48)] public uint Sequence;
+        [FieldOffset(52)] public uint Frame;
+        [FieldOffset(56)] public uint VaultGenerationID;
+        [FieldOffset(60)] public uint ActiveBurstLockMask;
+        [FieldOffset(64)] public int BlockCount;
+        [FieldOffset(68)] public int ActiveBufferCount;
+        [FieldOffset(72)] public int WatchdogBreaches;
+        [FieldOffset(76)] public int EmergencyOverflowCursorBytes;
+        [FieldOffset(80)] public float HeapFragmentationRatio;
+        [FieldOffset(84)] public ushort LastRelocatedSystemId;
+        [FieldOffset(86)] public ushort Reserved16;
+        [FieldOffset(88)] public byte Flags;
+        [FieldOffset(89)] public byte IsFragmented;
+        [FieldOffset(90)] public byte WatchdogExceeded;
+        [FieldOffset(91)] public byte MemoryStarvationWarnings;
+        [FieldOffset(92)] public uint Reserved32;
+        [FieldOffset(96)] public long ReservedLong0;
+        [FieldOffset(104)] public long ReservedLong1;
+        [FieldOffset(112)] public long ReservedLong2;
+        [FieldOffset(120)] public long ReservedLong3;
     }
 
     /// <summary>

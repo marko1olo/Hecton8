@@ -48,32 +48,33 @@ namespace Hecton8.Inventory
     /// Unmanaged inventory payload carried by the native event queue.
     /// Managed references are resolved through the sidecar slot table during LateUpdate dispatch.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct InventoryEventPayload
     {
-        public float TotalMassKg;
-        public float CarryCapacityKg;
-        public float Load01;
-        public uint ItemHashId;
-        public int ReferenceSlot;
-        public ushort EventType;
-        public ushort Reserved;
+        [FieldOffset(0)] public float TotalMassKg;
+        [FieldOffset(4)] public float CarryCapacityKg;
+        [FieldOffset(8)] public float Load01;
+        [FieldOffset(12)] public uint ItemHashId;
+        [FieldOffset(16)] public int ReferenceSlot;
+        [FieldOffset(20)] public ushort EventType;
+        [FieldOffset(22)] public ushort Reserved;
     }
 
     /// <summary>
     /// Unmanaged physical-drop request emitted by inventory owners after persistence accepts the drop.
     /// World/presentation layers own hydration and prefab visuals.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct InventoryPhysicalDropRequestPayload
     {
-        public Vector3 RuntimePosition;
-        public Vector3 InitialImpulse;
-        public ulong GeneticsMask;
-        public uint ItemHashId;
-        public int Quantity;
-        public ushort QualityMilli;
-        public ushort Reserved;
+        [FieldOffset(0)] public Vector3 RuntimePosition;
+        [FieldOffset(12)] public Vector3 InitialImpulse;
+        [FieldOffset(24)] public ulong GeneticsMask;
+        [FieldOffset(32)] public uint ItemHashId;
+        [FieldOffset(36)] public int Quantity;
+        [FieldOffset(40)] public ushort QualityMilli;
+        [FieldOffset(42)] public ushort Reserved;
+        [FieldOffset(44)] public uint _pad0;
     }
 
     /// <summary>

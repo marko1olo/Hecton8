@@ -15,6 +15,8 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+
+R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Owner Source: `Assets/_Project/Scripts/Core/GlobalSignals.cs`
@@ -23,13 +25,13 @@ Owner Source: `Assets/_Project/Scripts/Core/GlobalSignals.cs`
 
 `GlobalSignals` is the retained direct-queue bridge and `SignalBus<T>` initialization surface. First-party broadcasts use typed `SignalBus<T>` lanes unless a direct `NativeQueue` lane is explicitly documented with owner, capacity, overflow policy, layout, and telemetry. It is not the old five-bus prose model and not a catch-all event bus.
 
-R27 source-counter snapshot, retained until a newer counter pass reruns it:
+2026-05-19 SHINOBU_02 read-only source recapture, retained until a locked counter pass reruns it:
 
 | Fact | Value |
 |---|---:|
 | Direct `CreateQueue(...)` native queue slots in `InitializeAllQueues()` | 73 |
-| Typed `SignalBus<T>.EnsureInitialized()` lanes in the `GlobalSignals` initialization surface | 133 including `DebugSignal` via `ConfigureDebugSignalLane()` |
-| Modding validator source `ISignal` structs | current static validator pass reports `Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, and `ModCommandSizeBytes=64`; this is static schema/input-surface proof only, not runtime-lane, profiler, or mod smoke proof |
+| Typed `SignalBus<T>.EnsureInitialized()` lanes in the `GlobalSignals` initialization surface | 132 by 2026-05-19 SHINOBU_02 read-only source recapture; direct `CreateQueue(...)` slots remain 73 |
+| Modding validator source `ISignal` structs | current static validator pass reports `Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, and `ModCommandSizeBytes=64`; this is static schema/input-surface proof only, not runtime-lane, profiler, or mod smoke proof |
 | signal struct sizes | validator source exists via `ValidateSignalSize` / `ValidateSignalPayload`; current static validator pass covers Mod API schema only and is not compile, runtime-lane, profiler, or mod smoke proof |
 | fallback SPSC container | `SpscSignalRingBuffer<T>` |
 
@@ -48,6 +50,10 @@ R27 source-counter snapshot, retained until a newer counter pass reruns it:
 The `ParallelWriter` API exists only for job/background producers that cannot touch Unity objects and cannot block the main thread.
 
 Exposed writer lanes:
+
+The list below is a legacy non-authoritative sample. Current source exposes 34
+named writer properties plus generic `SignalBus<T>.ParallelWriter`; regenerate
+with the grep command in `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md` before exact use.
 
 - `DamageSignalWriter`
 - `ImpactSignalWriter`

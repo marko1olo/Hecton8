@@ -291,14 +291,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_AP
 Required result:
 
 - `Status = PASS`
-- `SourceSignals = 161`
+- `SourceSignals = 162`
 - `AllowedProjectedSignals = 2`
-- `DeniedByDefaultSignals = 159`
+- `DeniedByDefaultSignals = 160`
 - `ProjectionBridgeSignals = CombatDamageSignal,WeatherChangedSignal`
 - `AcceptedCommandOpcodes = 8`
 - `CommandRejectReasons = 19`
 - `PublicApiSurfaces = 16`
-- `PublicApiMethods = 34`
+- `PublicApiMethods = 35`
 - `PublicApiProperties = 2`
 - `ModEventDtoSizeBytes = 64`
 - `ModEventDtoFieldOffsets = 15`

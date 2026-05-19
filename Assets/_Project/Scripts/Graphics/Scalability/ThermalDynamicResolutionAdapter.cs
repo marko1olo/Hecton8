@@ -79,6 +79,7 @@ namespace Hecton8.Graphics.Scalability
         private const float SharpenEpsilon = 0.001f;
         private const float VisualBudgetEpsilon = 0.01f;
         private const float VisualFeatureFeather = 0.14f;
+        private const float VisualFeatureFlagEpsilon = 0.001f;
         private const int AupShiftLockFrames = 3;
         private const int PressureHysteresisFrames = 3;
         private const int RecoveryHysteresisFrames = 15;
@@ -126,6 +127,7 @@ namespace Hecton8.Graphics.Scalability
         private VaultBufferHandle<ResolutionScaleState> _scaleStateHandle;
         private VaultBufferHandle<DrsTelemetryEntry> _telemetryHandle;
         private VaultBufferHandle<ScalabilityStateDTO> _scalabilityStateHandle;
+        private VaultBufferHandle<MockReconstructionInputSignal> _mockReconstructionInputHandle;
         private JobHandle _stressEwmaHandle;
         private int _telemetryCursor;
         private uint _sequence;
@@ -187,8 +189,12 @@ namespace Hecton8.Graphics.Scalability
         private bool _fsrUpscalerAllowed;
         private bool _cameraShieldRegistered;
         private bool _mockQualityWeightActive;
+        private bool _mockReconstructionScaleActive;
+        private bool _mockReconstructionQualityActive;
         private bool _visualFeatureWeightsCommitted;
         private float _mockQualityWeight01 = 1f;
+        private float _mockReconstructionScale01 = PolicyMaxScale;
+        private float _mockReconstructionQuality01 = PolicyMaxScale;
         private string _blackBoxDumpPath;
         private DrsScaleLimitsDTO _scaleLimits;
         private ResolutionScaleState _scaleStateMirror;
@@ -476,6 +482,7 @@ namespace Hecton8.Graphics.Scalability
                 tickFrameMs,
                 EwmaAlpha);
             ConsumeSignals();
+            ConsumeMockReconstructionInputFromVault();
             _latestFrameTimeEwmaMs = SanitizePositive(_latestFrameTimeEwmaMs, TargetFrameTimeMs);
             _latestSystemHealth01 = Sanitize01(_latestSystemHealth01);
             _latestGpuUtil01 = Sanitize01(_latestGpuUtil01);
@@ -528,6 +535,13 @@ namespace Hecton8.Graphics.Scalability
             float nextScale = panicDrop
                 ? targetScale
                 : ResolveSmoothedRenderScale(_currentScale, targetScale, deltaTime);
+            if (_mockReconstructionScaleActive)
+            {
+                flags |= FlagFramePressure;
+                targetScale = _mockReconstructionScale01;
+                nextScale = _mockReconstructionScale01;
+            }
+
             nextScale = ClampRenderScale(nextScale);
             nextScale = ResolvePixelStableRenderScale(nextScale);
             _targetScale = targetScale;
@@ -738,10 +752,28 @@ namespace Hecton8.Graphics.Scalability
                 return;
             }
 
-            _mockQualityWeightActive = true;
-            _mockQualityWeight01 = math.saturate(signal.GlobalQualityWeight01);
+            bool active = signal.Flags != 0u && signal.RenderScale01 > 0f;
+            _mockReconstructionScaleActive = active;
+            _mockReconstructionScale01 = active
+                ? math.clamp(signal.RenderScale01, 0.3f, PolicyMaxScale)
+                : PolicyMaxScale;
+            _mockReconstructionQualityActive = active;
+            _mockReconstructionQuality01 = active
+                ? math.saturate(signal.GlobalQualityWeight01)
+                : PolicyMaxScale;
+            if (!active)
+            {
+                _latestGlobalQualityWeight01 = _mockQualityWeightActive
+                    ? ResolveQualitySignalWeight()
+                    : PolicyMaxScale;
+                return;
+            }
+
             _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
-            float forcedScale = math.clamp(signal.RenderScale01, 0.3f, PolicyMaxScale);
+            float forcedScale = _mockReconstructionScale01;
+            _currentScale = forcedScale;
+            _targetScale = forcedScale;
+            s_systemScalePercentage = forcedScale * 100f;
             _drsState.CurrentRenderScale = forcedScale;
             _drsState.TargetRenderScale = forcedScale;
             _drsState.UpscalerTypeHash = forcedScale < PolicyMaxScale - ScaleEpsilon
@@ -853,6 +885,58 @@ namespace Hecton8.Graphics.Scalability
             if (shiftSignals.Length > 0)
                 _aupShiftLockFrames = math.max(_aupShiftLockFrames, AupShiftLockFrames);
 
+        }
+
+        private unsafe void ConsumeMockReconstructionInputFromVault()
+        {
+            if (!TryReadMockReconstructionInputFromVault(out MockReconstructionInputSignal signal))
+                return;
+
+            ConsumeMockReconstructionInputSignal(in signal);
+        }
+
+        private unsafe bool TryReadMockReconstructionInputFromVault(out MockReconstructionInputSignal signal)
+        {
+            signal = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            BufferID bufferId = (BufferID)UberNoirReconstructionVaultIds.MockSignal;
+            if (!_mockReconstructionInputHandle.IsCreated ||
+                _mockReconstructionInputHandle.BufferId != bufferId)
+            {
+                if (!vault.TryGetBufferHandle<MockReconstructionInputSignal>(bufferId, out _mockReconstructionInputHandle) ||
+                    !_mockReconstructionInputHandle.IsCreated)
+                {
+                    return false;
+                }
+            }
+
+            if (!vault.TryLockBuffer(bufferId, SystemID.GraphicsScalability))
+                return false;
+
+            try
+            {
+                void* pointer = _mockReconstructionInputHandle.ResolvePointer(vault);
+                if (pointer == null || _mockReconstructionInputHandle.Length <= 0)
+                    return false;
+
+                signal = UnsafeUtility.AsRef<MockReconstructionInputSignal>(pointer);
+                if (signal.Flags == 0u &&
+                    !_mockReconstructionScaleActive &&
+                    !_mockReconstructionQualityActive)
+                {
+                    return false;
+                }
+
+                return math.isfinite(signal.RenderScale01) &&
+                       math.isfinite(signal.GlobalQualityWeight01);
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(bufferId, SystemID.GraphicsScalability);
+            }
         }
 
         private float ResolvePolicyScale(HectonQualityTier tier, float stress01, ref byte flags)
@@ -1093,6 +1177,7 @@ namespace Hecton8.Graphics.Scalability
             _scaleStateHandle = default;
             _telemetryHandle = default;
             _scalabilityStateHandle = default;
+            _mockReconstructionInputHandle = default;
         }
 
         private void UpdateScaleState(byte flags)
@@ -1989,6 +2074,8 @@ namespace Hecton8.Graphics.Scalability
             float qualityWeight = ResolvePublishedGlobalQualityWeight();
             if (_mockQualityWeightActive)
                 qualityWeight = math.min(qualityWeight, Sanitize01(_mockQualityWeight01));
+            if (_mockReconstructionQualityActive)
+                qualityWeight = math.min(qualityWeight, Sanitize01(_mockReconstructionQuality01));
 
             return qualityWeight;
         }
@@ -2005,8 +2092,13 @@ namespace Hecton8.Graphics.Scalability
             if (!math.isfinite(cachedQualityWeight))
                 return PolicyMaxScale;
 
-            if (_frameCounter == 0u && cachedQualityWeight <= 0f && !_mockQualityWeightActive)
+            if (_frameCounter == 0u &&
+                cachedQualityWeight <= 0f &&
+                !_mockQualityWeightActive &&
+                !_mockReconstructionQualityActive)
+            {
                 return PolicyMaxScale;
+            }
 
             return math.saturate(cachedQualityWeight);
         }
@@ -2040,19 +2132,29 @@ namespace Hecton8.Graphics.Scalability
             if (_scalabilityStateHandle.Length <= 0)
                 return false;
 
-            void* pointer = _scalabilityStateHandle.ResolvePointer(vault);
-            if (pointer == null)
+            if (!vault.TryLockBuffer(BufferID.ShinobuScalabilityState, SystemID.GraphicsScalability))
                 return false;
 
-            float value = *(float*)pointer;
-            if (!math.isfinite(value))
-                return false;
+            try
+            {
+                void* pointer = _scalabilityStateHandle.ResolvePointer(vault);
+                if (pointer == null)
+                    return false;
 
-            if (_frameCounter == 0u && value <= 0f && !_mockQualityWeightActive)
-                return false;
+                float value = *(float*)pointer;
+                if (!math.isfinite(value))
+                    return false;
 
-            qualityWeight = math.saturate(value);
-            return true;
+                if (_frameCounter == 0u && value <= 0f && !_mockQualityWeightActive)
+                    return false;
+
+                qualityWeight = math.saturate(value);
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuScalabilityState, SystemID.GraphicsScalability);
+            }
         }
 
         private bool TryRefreshScalabilityStateHandle(IDataVault vault)
@@ -2334,12 +2436,12 @@ namespace Hecton8.Graphics.Scalability
         private static uint ResolveVisualFeatureFlags(Vector4 weights0, Vector4 weights1)
         {
             uint flags = 0u;
-            flags |= (uint)math.step(0.5f, weights0.x) * VisualFeatureVisorSalt;
-            flags |= (uint)math.step(0.5f, weights0.y) * VisualFeatureVolumetricSilt;
-            flags |= (uint)math.step(0.5f, weights0.z) * VisualFeatureProceduralHullDents;
-            flags |= (uint)math.step(0.5f, weights0.w) * VisualFeaturePom16Tap;
-            flags |= (uint)math.step(0.5f, weights1.x) * VisualFeatureSubsurfaceScatter;
-            flags |= (uint)math.step(0.5f, weights1.y) * VisualFeatureRaymarchedFog;
+            flags |= (weights0.x > VisualFeatureFlagEpsilon ? 1u : 0u) * VisualFeatureVisorSalt;
+            flags |= (weights0.y > VisualFeatureFlagEpsilon ? 1u : 0u) * VisualFeatureVolumetricSilt;
+            flags |= (weights0.z > VisualFeatureFlagEpsilon ? 1u : 0u) * VisualFeatureProceduralHullDents;
+            flags |= (weights0.w > VisualFeatureFlagEpsilon ? 1u : 0u) * VisualFeaturePom16Tap;
+            flags |= (weights1.x > VisualFeatureFlagEpsilon ? 1u : 0u) * VisualFeatureSubsurfaceScatter;
+            flags |= (weights1.y > VisualFeatureFlagEpsilon ? 1u : 0u) * VisualFeatureRaymarchedFog;
             return flags;
         }
 

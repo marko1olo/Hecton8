@@ -140,8 +140,8 @@ namespace Hecton8.EditorValidation
         {
             return !string.IsNullOrEmpty(assetPath) &&
                    !IsGeneratedBalancePath(assetPath) &&
-                   (IsUnderSourceRoot(assetPath, SourceFolder) ||
-                    IsUnderSourceRoot(assetPath, BalanceSourceFolder));
+                   (IsUnderAbsoluteRoot(assetPath, SourceFolder) ||
+                    IsUnderAbsoluteRoot(assetPath, BalanceSourceFolder));
         }
 
         private static string[] CollectSourceFiles(string searchPattern)
@@ -197,17 +197,6 @@ namespace Hecton8.EditorValidation
         {
             string normalizedPath = Path.GetFullPath(path).Replace('\\', '/').TrimEnd('/');
             string normalizedRoot = Path.GetFullPath(relativeRoot).Replace('\\', '/').TrimEnd('/');
-            return normalizedPath.StartsWith(normalizedRoot + "/", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(normalizedPath, normalizedRoot, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsUnderSourceRoot(string path, string relativeRoot)
-        {
-            if (string.IsNullOrEmpty(path))
-                return false;
-
-            string normalizedPath = path.Replace('\\', '/');
-            string normalizedRoot = relativeRoot.Replace('\\', '/');
             return normalizedPath.StartsWith(normalizedRoot + "/", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(normalizedPath, normalizedRoot, StringComparison.OrdinalIgnoreCase);
         }
@@ -305,6 +294,8 @@ namespace Hecton8.EditorValidation
                         break;
                 }
             }
+
+            Align16(stream);
 
             H8DataBlobDirectory directory = new H8DataBlobDirectory
             {
@@ -426,12 +417,49 @@ namespace Hecton8.EditorValidation
 
             for (int i = 0; i < dataSet.LootCdf.Count; i++)
                 ValidateItemReference("loot.item", dataSet.LootCdf[i].ItemHash, itemHashes);
+
+            for (int i = 0; i < dataSet.RawEconomyRows.Count; i++)
+                ValidateEconomyItemReferences(dataSet.RawEconomyRows[i], itemHashes);
         }
 
         private static void ValidateItemReference(string owner, uint hash, HashSet<uint> itemHashes)
         {
             if (hash != 0u && !itemHashes.Contains(hash))
                 ThrowBrokenReference(owner, hash);
+        }
+
+        private static void ValidateEconomyItemReferences(CsvRow row, HashSet<uint> itemHashes)
+        {
+            ValidateItemReference("economy.item_id", Hash(Get(row, "item_id", string.Empty)), itemHashes);
+            ValidateItemReference("economy.item", Hash(Get(row, "item", string.Empty)), itemHashes);
+            ValidateItemReference("economy.output_id", Hash(Get(row, "output_id", string.Empty)), itemHashes);
+            ValidateItemReference("economy.output", Hash(Get(row, "output", string.Empty)), itemHashes);
+            ValidateItemReference("economy.recipe_output_id", Hash(Get(row, "recipe_output_id", string.Empty)), itemHashes);
+            ValidateItemReference("economy.recipe_output", Hash(Get(row, "recipe_output", string.Empty)), itemHashes);
+            ValidatePackedItemReferences("economy.ingredients", Get(row, "ingredients", string.Empty), itemHashes);
+            ValidatePackedItemReferences("economy.ingredient_ids", Get(row, "ingredient_ids", string.Empty), itemHashes);
+            ValidatePackedItemReferences("economy.recipe", Get(row, "recipe", string.Empty), itemHashes);
+            ValidatePackedItemReferences("economy.recipe_items", Get(row, "recipe_items", string.Empty), itemHashes);
+        }
+
+        private static void ValidatePackedItemReferences(string owner, string packedIds, HashSet<uint> itemHashes)
+        {
+            if (string.IsNullOrWhiteSpace(packedIds))
+                return;
+
+            ReadOnlySpan<char> ids = packedIds.AsSpan();
+            int start = 0;
+            while (start <= ids.Length)
+            {
+                int separator = start < ids.Length ? ids.Slice(start).IndexOf(';') : -1;
+                int length = separator >= 0 ? separator : ids.Length - start;
+                ReadOnlySpan<char> token = TrimAscii(ids.Slice(start, length));
+                start = separator >= 0 ? start + separator + 1 : ids.Length + 1;
+                if (token.Length == 0)
+                    continue;
+
+                ValidateItemReference(owner, Hash(token), itemHashes);
+            }
         }
 
         private static void ThrowBrokenReference(string owner, uint hash)
@@ -488,6 +516,7 @@ namespace Hecton8.EditorValidation
                     dataSet.Creatures.Add(ParseCreature(row, localizationPool));
                     break;
                 case "economy":
+                    dataSet.RawEconomyRows.Add(row);
                     dataSet.Economy.Add(ParseEconomy(row, localizationPool));
                     break;
                 case "physics":
@@ -567,8 +596,8 @@ namespace Hecton8.EditorValidation
             ulong mask0 = 0UL;
             ulong mask1 = 0UL;
             int ingredientCount = AddRecipeMask(Get(row, "recipe", string.Empty), ref mask0, ref mask1);
-            int nameOffset = localizationPool.Add(name, out int nameBytes);
-            int descriptionOffset = localizationPool.Add(description, out int descriptionBytes);
+            uint nameOffset = localizationPool.Add(name, out int nameBytes);
+            uint descriptionOffset = localizationPool.Add(description, out int descriptionBytes);
 
             return new H8ItemRecord
             {
@@ -596,6 +625,8 @@ namespace Hecton8.EditorValidation
         private static H8CreatureTraitRecord ParseCreature(CsvRow row, LocalizationPool localizationPool)
         {
             string id = Get(row, "id", Get(row, "species_id", string.Empty));
+            string displayName = Get(row, "name", id);
+            uint displayNameOffset = localizationPool.Add(displayName, out int displayNameBytes);
             float swimSpeed = ParseFloat(row, "swimspeed", ParseFloat(row, "cruise_speed", 1f));
             float turnRate = ParseFloat(row, "turnrate", ParseFloat(row, "metabolism", 1f));
             float aggression = ParseFloat(row, "aggression01", ParseFloat(row, "aggression", 0f));
@@ -618,8 +649,9 @@ namespace Hecton8.EditorValidation
                     PressureMinMeters = ParseFloat(row, "min_depth", 0f),
                     PressureMaxMeters = ParseFloat(row, "max_depth", fleeDistance)
                 },
-                DisplayNameUtf8Offset = localizationPool.Add(Get(row, "name", id)),
-                LootTableHash = Hash(Get(row, "loot_table", string.Empty))
+                DisplayNameUtf8Offset = displayNameOffset,
+                LootTableHash = Hash(Get(row, "loot_table", string.Empty)),
+                DisplayNameUtf8ByteLength = (uint)displayNameBytes
             };
         }
 
@@ -628,8 +660,8 @@ namespace Hecton8.EditorValidation
             string id = Get(row, "id", string.Empty);
             string name = Get(row, "name", id);
             string description = Get(row, "description", string.Empty);
-            int nameOffset = localizationPool.Add(name, out int nameBytes);
-            int descriptionOffset = localizationPool.Add(description, out int descriptionBytes);
+            uint nameOffset = localizationPool.Add(name, out int nameBytes);
+            uint descriptionOffset = localizationPool.Add(description, out int descriptionBytes);
             return new H8EconomyRecord
             {
                 HashId = Hash(id),
@@ -651,8 +683,8 @@ namespace Hecton8.EditorValidation
             string id = Get(row, "id", string.Empty);
             string name = Get(row, "name", id);
             string description = Get(row, "description", string.Empty);
-            int nameOffset = localizationPool.Add(name, out int nameBytes);
-            int descriptionOffset = localizationPool.Add(description, out int descriptionBytes);
+            uint nameOffset = localizationPool.Add(name, out int nameBytes);
+            uint descriptionOffset = localizationPool.Add(description, out int descriptionBytes);
             return new H8PhysicsConstantsRecord
             {
                 HashId = Hash(id),
@@ -675,6 +707,8 @@ namespace Hecton8.EditorValidation
         private static H8BiomeRecord ParseBiome(CsvRow row, LocalizationPool localizationPool)
         {
             string id = Get(row, "id", Get(row, "biome_id", string.Empty));
+            string displayName = Get(row, "name", id);
+            uint displayNameOffset = localizationPool.Add(displayName, out int displayNameBytes);
             return new H8BiomeRecord
             {
                 BiomeHash = Hash(id),
@@ -688,9 +722,10 @@ namespace Hecton8.EditorValidation
                 LightScatterR = ParseFloat(row, "scatter_r", 0.08f),
                 LightScatterG = ParseFloat(row, "scatter_g", 0.18f),
                 LightScatterB = ParseFloat(row, "scatter_b", 0.24f),
-                DisplayNameUtf8Offset = localizationPool.Add(Get(row, "name", id)),
+                DisplayNameUtf8Offset = displayNameOffset,
                 HeatmapId = Hash(Get(row, "heatmap_id", string.Empty)),
-                RadiationFieldHash = Hash(Get(row, "radiation_id", string.Empty))
+                RadiationFieldHash = Hash(Get(row, "radiation_id", string.Empty)),
+                DisplayNameUtf8ByteLength = (uint)displayNameBytes
             };
         }
 
@@ -778,11 +813,14 @@ namespace Hecton8.EditorValidation
 
         private static H8AudioClipRegistryRecord ParseAudio(CsvRow row, LocalizationPool localizationPool)
         {
+            string addressableKey = Get(row, "addressable_key", string.Empty);
+            uint addressableOffset = localizationPool.Add(addressableKey, out int addressableBytes);
             return new H8AudioClipRegistryRecord
             {
                 EventHash = Hash(Get(row, "event_id", Get(row, "id", string.Empty))),
-                AddressableKeyUtf8Offset = localizationPool.Add(Get(row, "addressable_key", string.Empty)),
-                BankHash = Hash(Get(row, "bank", string.Empty))
+                AddressableKeyUtf8Offset = addressableOffset,
+                BankHash = Hash(Get(row, "bank", string.Empty)),
+                AddressableKeyUtf8ByteLength = (uint)addressableBytes
             };
         }
 
@@ -851,6 +889,8 @@ namespace Hecton8.EditorValidation
         private static H8GhostModuleRecord ParseGhostModule(CsvRow row, LocalizationPool localizationPool)
         {
             string id = Get(row, "id", string.Empty);
+            string displayName = Get(row, "name", id);
+            uint displayNameOffset = localizationPool.Add(displayName, out int displayNameBytes);
             return new H8GhostModuleRecord
             {
                 ModuleHash = Hash(id),
@@ -861,7 +901,8 @@ namespace Hecton8.EditorValidation
                 PowerRequirement = ParseFloat(row, "power", 0f),
                 BuildCostScalar = ParseFloat(row, "build_cost", 1f),
                 RecipeHash = Hash(Get(row, "recipe_id", string.Empty)),
-                DisplayNameUtf8Offset = localizationPool.Add(Get(row, "name", id))
+                DisplayNameUtf8Offset = displayNameOffset,
+                DisplayNameUtf8ByteLength = (uint)displayNameBytes
             };
         }
 
@@ -887,11 +928,14 @@ namespace Hecton8.EditorValidation
 
         private static H8SopErrorRecord ParseSopError(CsvRow row, LocalizationPool localizationPool)
         {
+            string message = Get(row, "message", string.Empty);
+            uint messageOffset = localizationPool.Add(message, out int messageBytes);
             return new H8SopErrorRecord
             {
                 ErrorHash = Hash(Get(row, "id", string.Empty)),
-                MessageUtf8Offset = localizationPool.Add(Get(row, "message", string.Empty)),
-                Severity = ParseUInt(row, "severity", 0u)
+                MessageUtf8Offset = messageOffset,
+                Severity = ParseUInt(row, "severity", 0u),
+                MessageUtf8ByteLength = (uint)messageBytes
             };
         }
 
@@ -1614,8 +1658,8 @@ namespace Hecton8.EditorValidation
             ulong mask0 = 0UL;
             ulong mask1 = 0UL;
             int ingredientCount = AddRecipeMask(item.recipe, ref mask0, ref mask1);
-            int nameOffset = localizationPool.Add(item.name, out int nameBytes);
-            int descriptionOffset = localizationPool.Add(item.description, out int descriptionBytes);
+            uint nameOffset = localizationPool.Add(item.name, out int nameBytes);
+            uint descriptionOffset = localizationPool.Add(item.description, out int descriptionBytes);
             return new H8ItemRecord
             {
                 HashId = Hash(item.id),
@@ -1639,6 +1683,7 @@ namespace Hecton8.EditorValidation
 
         private static H8CreatureTraitRecord ToCreatureRecord(JsonCreature creature, LocalizationPool localizationPool)
         {
+            uint displayNameOffset = localizationPool.Add(creature.name, out int displayNameBytes);
             return new H8CreatureTraitRecord
             {
                 SpeciesHash = Hash(creature.id),
@@ -1656,13 +1701,15 @@ namespace Hecton8.EditorValidation
                     PressureMinMeters = creature.minDepth,
                     PressureMaxMeters = creature.maxDepth
                 },
-                DisplayNameUtf8Offset = localizationPool.Add(creature.name),
-                LootTableHash = Hash(creature.lootTable)
+                DisplayNameUtf8Offset = displayNameOffset,
+                LootTableHash = Hash(creature.lootTable),
+                DisplayNameUtf8ByteLength = (uint)displayNameBytes
             };
         }
 
         private static H8BiomeRecord ToBiomeRecord(JsonBiome biome, LocalizationPool localizationPool)
         {
+            uint displayNameOffset = localizationPool.Add(biome.name, out int displayNameBytes);
             return new H8BiomeRecord
             {
                 BiomeHash = Hash(biome.id),
@@ -1676,9 +1723,10 @@ namespace Hecton8.EditorValidation
                 LightScatterR = biome.scatterR,
                 LightScatterG = biome.scatterG,
                 LightScatterB = biome.scatterB,
-                DisplayNameUtf8Offset = localizationPool.Add(biome.name),
+                DisplayNameUtf8Offset = displayNameOffset,
                 HeatmapId = Hash(biome.heatmapId),
-                RadiationFieldHash = Hash(biome.radiationId)
+                RadiationFieldHash = Hash(biome.radiationId),
+                DisplayNameUtf8ByteLength = (uint)displayNameBytes
             };
         }
 
@@ -1710,31 +1758,34 @@ namespace Hecton8.EditorValidation
 
         private sealed class LocalizationPool
         {
-            private readonly Dictionary<string, int> _offsetByValue = new Dictionary<string, int>(StringComparer.Ordinal); // COLD ALLOC: Dictionary<string,int>[source loc count] - editor-only localization pool de-duplication - owner: H8DataMonolithCompiler
+            private readonly Dictionary<string, uint> _offsetByValue = new Dictionary<string, uint>(StringComparer.Ordinal); // COLD ALLOC: Dictionary<string,uint>[source loc count] - editor-only localization pool de-duplication - owner: H8DataMonolithCompiler
             private readonly MemoryStream _bytes = new MemoryStream(4096); // COLD ALLOC: MemoryStream[4KB] - editor-only UTF-8 string block writer - owner: H8DataMonolithCompiler
             private readonly byte[] _scratch = new byte[Utf8ScratchBytes]; // COLD ALLOC: byte[2048] - editor-only UTF-8 encoding scratch - owner: H8DataMonolithCompiler
 
-            internal int Add(string value)
+            internal uint Add(string value)
             {
                 return Add(value, out _);
             }
 
-            internal int Add(string value, out int byteCount)
+            internal uint Add(string value, out int byteCount)
             {
                 if (string.IsNullOrEmpty(value))
                 {
                     byteCount = 0;
-                    return -1;
+                    return uint.MaxValue;
                 }
 
                 byteCount = Encoding.UTF8.GetByteCount(value);
                 if (byteCount > _scratch.Length)
                     throw new InvalidOperationException("[H8DataMonolithCompiler] UTF-8 localization entry exceeds scratch capacity: bytes=" + byteCount);
 
-                if (_offsetByValue.TryGetValue(value, out int offset))
+                if (_offsetByValue.TryGetValue(value, out uint offset))
                     return offset;
 
-                offset = (int)_bytes.Position;
+                if (_bytes.Position > uint.MaxValue)
+                    throw new InvalidOperationException("[H8DataMonolithCompiler] UTF-8 localization pool exceeded 4GB.");
+
+                offset = (uint)_bytes.Position;
                 int written = Encoding.UTF8.GetBytes(value, 0, value.Length, _scratch, 0);
                 _bytes.Write(_scratch, 0, written);
                 _bytes.WriteByte(0);
@@ -1776,6 +1827,7 @@ namespace Hecton8.EditorValidation
             internal readonly List<H8QuestEdgeRecord> QuestEdges = new List<H8QuestEdgeRecord>(256);
             internal readonly List<H8LootCdfRecord> LootCdf = new List<H8LootCdfRecord>(256);
             internal readonly List<CsvRow> RawLootRows = new List<CsvRow>(256);
+            internal readonly List<CsvRow> RawEconomyRows = new List<CsvRow>(128);
             internal readonly List<H8VoxelMaterialRecord> VoxelMaterials = new List<H8VoxelMaterialRecord>(128);
             internal readonly List<H8AudioClipRegistryRecord> AudioClips = new List<H8AudioClipRegistryRecord>(256);
             internal readonly List<H8VfxScalarRecord> VfxScalars = new List<H8VfxScalarRecord>(128);

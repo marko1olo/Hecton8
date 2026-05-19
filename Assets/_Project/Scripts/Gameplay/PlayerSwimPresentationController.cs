@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Animation.KineticCharacter;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
@@ -29,14 +30,14 @@ namespace Hecton8.Gameplay
         private const int ReferenceResolveRetryFrameInterval = 8;
         private const int HandObstacleWallContactMaxPhysicsFrameAge = 2;
         private const float HandObstaclePlaneEpsilon = 0.0001f;
-        private static readonly int _WaveSlopeForwardHash = Animator.StringToHash("WaveSlopeForward");
-        private static readonly int _WaveSlopeLateralHash = Animator.StringToHash("WaveSlopeLateral");
-        private static readonly int _WaveSlopeXHash = Animator.StringToHash("WaveSlopeX");
-        private static readonly int _WaveSlopeZHash = Animator.StringToHash("WaveSlopeZ");
-        private static readonly int _WaveCrestReachHash = Animator.StringToHash("WaveCrestReach");
-        private static readonly int _WaveDescentTuckHash = Animator.StringToHash("WaveDescentTuck");
-        private static readonly int _WaveLeanWeightHash = Animator.StringToHash("WaveLeanWeight");
-        private static readonly int _ImmersionDepthHash = Animator.StringToHash("ImmersionDepth");
+        private static readonly int _WaveSlopeForwardShaderId = Shader.PropertyToID("_H8SwimWaveSlopeForward");
+        private static readonly int _WaveSlopeLateralShaderId = Shader.PropertyToID("_H8SwimWaveSlopeLateral");
+        private static readonly int _WaveSlopeXShaderId = Shader.PropertyToID("_H8SwimWaveSlopeX");
+        private static readonly int _WaveSlopeZShaderId = Shader.PropertyToID("_H8SwimWaveSlopeZ");
+        private static readonly int _WaveCrestReachShaderId = Shader.PropertyToID("_H8SwimWaveCrestReach");
+        private static readonly int _WaveDescentTuckShaderId = Shader.PropertyToID("_H8SwimWaveDescentTuck");
+        private static readonly int _WaveLeanWeightShaderId = Shader.PropertyToID("_H8SwimWaveLeanWeight");
+        private static readonly int _ImmersionDepthShaderId = Shader.PropertyToID("_H8SwimImmersionDepth");
         private static readonly int _BreathingPhaseShaderId = Shader.PropertyToID("_BreathingPhase");
         private static readonly int _SwimVatSpeedScalarShaderId = Shader.PropertyToID("_HectonSwimVatSpeedScalar");
 
@@ -85,8 +86,8 @@ namespace Hecton8.Gameplay
         [Tooltip("Optional render-layer slave that visualizes the current swim presentation with near-camera blockout arms.")]
         [SerializeField] private PlayerSwimBlockoutRig swimBlockoutRig;
 
-        [Tooltip("Optional animator that receives Crest-derived wave-slope parameters for spine leaning and future IK.")]
-        [SerializeField] private Animator swimAnimator;
+        [Tooltip("Procedural Burst/Vault owner that receives Crest-derived wave-slope parameters for spine leaning and IK.")]
+        [SerializeField] private KineticCharacterAnimatorRuntime kineticAnimatorRuntime;
 
         [Tooltip("Future swim viewmodel root driven by this controller.")]
         [SerializeField] private Transform viewModelRoot;
@@ -658,6 +659,14 @@ namespace Hecton8.Gameplay
         private float _previousCameraYaw;
         private int _lastDrivenFrame = -1;
         private int _nextReferenceResolveFrame = -1;
+        private int _lastWaveSlopeForwardShaderByte = int.MinValue;
+        private int _lastWaveSlopeLateralShaderByte = int.MinValue;
+        private int _lastWaveSlopeXShaderByte = int.MinValue;
+        private int _lastWaveSlopeZShaderByte = int.MinValue;
+        private int _lastWaveCrestReachShaderByte = int.MinValue;
+        private int _lastWaveDescentTuckShaderByte = int.MinValue;
+        private int _lastWaveLeanWeightShaderByte = int.MinValue;
+        private int _lastImmersionDepthShaderByte = int.MinValue;
         private int _lastBreathingPhaseShaderByte = int.MinValue;
         private int _lastSwimVatSpeedScalarByte = int.MinValue;
         private float _swimVatSpeedScalar;
@@ -801,17 +810,7 @@ namespace Hecton8.Gameplay
             _waveDescentTuckCurrent = 0f;
             _waveLeanWeightCurrent = 0f;
             _immersionDepthCurrent = 0f;
-            if (swimAnimator != null)
-            {
-                swimAnimator.SetFloat(_WaveSlopeForwardHash, 0f);
-                swimAnimator.SetFloat(_WaveSlopeLateralHash, 0f);
-                swimAnimator.SetFloat(_WaveSlopeXHash, 0f);
-                swimAnimator.SetFloat(_WaveSlopeZHash, 0f);
-                swimAnimator.SetFloat(_WaveCrestReachHash, 0f);
-                swimAnimator.SetFloat(_WaveDescentTuckHash, 0f);
-                swimAnimator.SetFloat(_WaveLeanWeightHash, 0f);
-                swimAnimator.SetFloat(_ImmersionDepthHash, 0f);
-            }
+            ResetProceduralWaveSignals();
 
             Shader.SetGlobalFloat(_BreathingPhaseShaderId, 0f);
             _lastBreathingPhaseShaderByte = int.MinValue;
@@ -824,6 +823,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            ResetProceduralWaveSignals();
             Shader.SetGlobalFloat(_BreathingPhaseShaderId, 0f);
             _lastBreathingPhaseShaderByte = int.MinValue;
             Shader.SetGlobalFloat(_SwimVatSpeedScalarShaderId, 0f);
@@ -1031,11 +1031,11 @@ namespace Hecton8.Gameplay
             if (swimBlockoutRig == null)
                 gameObject.TryGetComponent(out swimBlockoutRig);
 
-            if (swimAnimator == null)
+            if (kineticAnimatorRuntime == null)
             {
-                gameObject.TryGetComponent(out swimAnimator);
-                if (swimAnimator == null)
-                    swimAnimator = ComponentReferenceUtility.ResolveOwnedComponent<Animator>(transform);
+                gameObject.TryGetComponent(out kineticAnimatorRuntime);
+                if (kineticAnimatorRuntime == null && Application.isPlaying)
+                    kineticAnimatorRuntime = gameObject.AddComponent<KineticCharacterAnimatorRuntime>(); // COLD ALLOC: runtime component creation during player presentation bootstrap only.
             }
 
             if (allowSingletonAccess && _inputService == null)

@@ -61,6 +61,16 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void UberNoirReconstructionVaultIds_AreStable()
+        {
+            Assert.AreEqual(71030, UberNoirReconstructionVaultIds.Constants);
+            Assert.AreEqual(71031, UberNoirReconstructionVaultIds.Telemetry);
+            Assert.AreEqual(71032, UberNoirReconstructionVaultIds.AestheticProfiles);
+            Assert.AreEqual(71033, UberNoirReconstructionVaultIds.CsvScratch);
+            Assert.AreEqual(71034, UberNoirReconstructionVaultIds.MockSignal);
+        }
+
+        [Test]
         public void ReconstructionTelemetryEntry_OneCacheLineLayout_IsExact()
         {
             Assert.AreEqual(64, UnsafeUtility.SizeOf<ReconstructionTelemetryEntry>());

@@ -1295,7 +1295,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            RegisterThermalSpatialEvent(positionWS, radiusWS, heatIntensity);
+            RegisterThermalSpatialEvent(positionWS, radiusWS, heatIntensity, sourceId);
             PublishTemperatureChangedSignal(
                 positionWS,
                 heatIntensity,
@@ -3091,7 +3091,7 @@ namespace Hecton8.World
                     float eruptiveHeatScale = ResolveVentHeatScale(i);
                     float hazardRadius = Mathf.Max(vent.RadiusWS, vent.RadiusWS * ventHeatRadiusMultiplier);
                     HectonHazardManager.Unregister(vent.HazardSourceId);
-                    RegisterThermalSpatialEvent(vent.PositionWS, hazardRadius, vent.HeatIntensity * eruptiveHeatScale);
+                    RegisterThermalSpatialEvent(vent.PositionWS, hazardRadius, vent.HeatIntensity * eruptiveHeatScale, unchecked((uint)vent.HazardSourceId));
                 }
                 else
                 {
@@ -3100,10 +3100,12 @@ namespace Hecton8.World
             }
         }
 
-        private void RegisterThermalSpatialEvent(Vector3 positionWS, float radiusWS, float heatIntensity)
+        private void RegisterThermalSpatialEvent(Vector3 positionWS, float radiusWS, float heatIntensity, uint sourceId = 0u)
         {
             if (radiusWS <= 0f || heatIntensity <= 0f)
                 return;
+
+            PublishThermalSourceSignal(positionWS, radiusWS, heatIntensity, sourceId);
 
             WorldSpatialHashGrid.RegisterTransientEvent(
                 positionWS,
@@ -3132,6 +3134,37 @@ namespace Hecton8.World
                     Heat01 = Mathf.Clamp01(heatIntensity / Mathf.Max(1f, ventHeatIntensity * seismicEruptionHeatMultiplier))
                 });
             }
+        }
+
+        private static void PublishThermalSourceSignal(Vector3 positionWS, float radiusWS, float heatIntensity, uint sourceId)
+        {
+            ThermalSourceSignal signal = default;
+            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(positionWS);
+            signal.RadiusMeters = math.max(0f, radiusWS);
+            signal.IntensityCelsiusPerSecond = math.max(0f, heatIntensity);
+            signal.SourceId = sourceId != 0u ? sourceId : BuildTransientThermalSourceId(positionWS, radiusWS);
+            signal.Frame = unchecked((uint)math.max(0, HectonArenaAllocator.CurrentFrameSequence));
+            SignalBus<ThermalSourceSignal>.Push(in signal);
+        }
+
+        private static uint BuildTransientThermalSourceId(Vector3 positionWS, float radiusWS)
+        {
+            const uint fnvOffset = 2166136261u;
+            const uint fnvPrime = 16777619u;
+            uint hash = fnvOffset;
+            float3 quantized = math.round(new float3(positionWS.x, positionWS.y, positionWS.z) * 0.25f);
+            hash = FoldThermalSourceHash(hash, math.asuint(quantized.x), fnvPrime);
+            hash = FoldThermalSourceHash(hash, math.asuint(quantized.y), fnvPrime);
+            hash = FoldThermalSourceHash(hash, math.asuint(quantized.z), fnvPrime);
+            hash = FoldThermalSourceHash(hash, math.asuint(radiusWS), fnvPrime);
+            return hash == 0u ? 1u : hash;
+        }
+
+        private static uint FoldThermalSourceHash(uint hash, uint value, uint prime)
+        {
+            hash ^= value;
+            hash *= prime;
+            return hash;
         }
 
         private void ClearHazardSources()

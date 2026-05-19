@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.World;
@@ -23,7 +24,6 @@ namespace Hecton8.Physics
         [FieldOffset(33)] public byte _pad0;
         [FieldOffset(34)] public byte _pad1;
         [FieldOffset(35)] public byte _pad2;
-        [FieldOffset(36)] public uint _pad3;
         [FieldOffset(36)] public uint CullingFlags;
     }
 
@@ -73,6 +73,20 @@ namespace Hecton8.Physics
         [FieldOffset(28)] public uint _pad0;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct PhysicsCullingCounter64
+    {
+        [FieldOffset(0)] public int Value;
+        [FieldOffset(4)] public uint Flags;
+        [FieldOffset(8)] public ulong _pad0;
+        [FieldOffset(16)] public ulong _pad1;
+        [FieldOffset(24)] public ulong _pad2;
+        [FieldOffset(32)] public ulong _pad3;
+        [FieldOffset(40)] public ulong _pad4;
+        [FieldOffset(48)] public ulong _pad5;
+        [FieldOffset(56)] public ulong _pad6;
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct PhysicsCullingTuningDTO
     {
@@ -106,7 +120,7 @@ namespace Hecton8.Physics
         private const int PhysicsCullingMockSeismicSignalCapacity = 4;
         private const int PhysicsCullingCsvScratchCapacity = 4096;
         private const int PhysicsCullingLegacyRadiiHeaderBytes = 64;
-        private const int PhysicsCullingMaxCandidateCells = 9;
+        private const int PhysicsCullingSpatialBucketCapacity = MaxTrackedBodies * 2;
         private const int PhysicsCullingMockBodiesPerGenerate = 1000;
         private const float PhysicsCullingDefaultDebrisWakeRadiusMeters = 50f;
         private const float PhysicsCullingDefaultVehicleWakeRadiusMeters = 200f;
@@ -120,7 +134,6 @@ namespace Hecton8.Physics
         private const float PhysicsCullingFrustumInnerSphereRadiusMeters = 20f;
         private const float PhysicsCullingWakeRadiusSqScale = 0.81f;
         private const uint PhysicsCullingDtoExemptFlag = 1u;
-        private const string PhysicsCullingNativeOwner = nameof(GlobalPhysicsStateManager);
         private const string PhysicsCullingProfilesRelativePath = "Docs/Modding/physics_culling_profiles.csv";
 
         private VaultBufferBinding<PhysicsCullingDTO> _physicsCullingDtos =
@@ -141,14 +154,23 @@ namespace Hecton8.Physics
             new VaultBufferBinding<MockSeismicShockwaveSignal>(BufferID.ShinobuPhysicsCullingMockSeismicSignals, PhysicsCullingMockSeismicSignalCapacity, OwnerSystemId);
         private VaultBufferBinding<PhysicsCullingTargetWakeRequestSignal> _physicsWakeRequestMirror =
             new VaultBufferBinding<PhysicsCullingTargetWakeRequestSignal>(BufferID.ShinobuPhysicsCullingWakeRequestMirror, PhysicsCullingTargetWakeQueueCapacity, OwnerSystemId);
-
-        private NativeParallelMultiHashMap<int, int> _physicsSpatialHash;
-        private NativeQueue<int> _physicsStateChangedIndices;
-        private NativeQueue<PhysicsCullingTargetWakeRequestSignal> _physicsTargetWakeRequests;
+        private VaultBufferBinding<int> _physicsSpatialBucketHeads =
+            new VaultBufferBinding<int>(BufferID.ShinobuPhysicsCullingSpatialBucketHeads, PhysicsCullingSpatialBucketCapacity, OwnerSystemId);
+        private VaultBufferBinding<int> _physicsSpatialNext =
+            new VaultBufferBinding<int>(BufferID.ShinobuPhysicsCullingSpatialNext, MaxTrackedBodies, OwnerSystemId);
+        private VaultBufferBinding<int> _physicsSpatialCellHashes =
+            new VaultBufferBinding<int>(BufferID.ShinobuPhysicsCullingSpatialCellHashes, MaxTrackedBodies, OwnerSystemId);
+        private VaultBufferBinding<int> _physicsStateChangedIndices =
+            new VaultBufferBinding<int>(BufferID.ShinobuPhysicsCullingChangedIndices, MaxTrackedBodies, OwnerSystemId);
+        private VaultBufferBinding<PhysicsCullingCounter64> _physicsStateChangedCount =
+            new VaultBufferBinding<PhysicsCullingCounter64>(BufferID.ShinobuPhysicsCullingChangedCount, 1, OwnerSystemId);
+        private VaultBufferBinding<PhysicsCullingCounter64> _physicsTargetWakeRequestCount =
+            new VaultBufferBinding<PhysicsCullingCounter64>(BufferID.ShinobuPhysicsCullingWakeRequestCount, 1, OwnerSystemId);
+        private VaultBufferBinding<byte> _physicsCullingCsvScratch =
+            new VaultBufferBinding<byte>(BufferID.ShinobuPhysicsCullingCsvScratch, PhysicsCullingCsvScratchCapacity, OwnerSystemId);
+        private VaultBufferBinding<byte> _physicsCullingLegacyRadiiScratch =
+            new VaultBufferBinding<byte>(BufferID.ShinobuPhysicsCullingLegacyRadiiScratch, PhysicsCullingLegacyRadiiHeaderBytes, OwnerSystemId);
         private readonly Plane[] _physicsFrustumPlaneScratch = new Plane[6];
-        private readonly byte[] _physicsCullingCsvScratch = new byte[PhysicsCullingCsvScratchCapacity];
-        private readonly byte[] _physicsCullingLegacyRadiiScratch = new byte[PhysicsCullingLegacyRadiiHeaderBytes];
-        private readonly int3[] _physicsCullingNeighborCells = new int3[PhysicsCullingMaxCandidateCells];
         private int _physicsCullingFrameTelemetryWriteIndex;
         private int _physicsCullingMockBodyCount;
         private int _physicsSpatialHashLastCount = -1;
@@ -179,38 +201,22 @@ namespace Hecton8.Physics
                 _physicsMockSeismicSignals.Ensure(NativeArrayOptions.UninitializedMemory);
             if (!_physicsWakeRequestMirror.IsCreated)
                 _physicsWakeRequestMirror.Ensure(NativeArrayOptions.UninitializedMemory);
-
-            if (!_physicsSpatialHash.IsCreated)
-            {
-                _physicsSpatialHash = new NativeParallelMultiHashMap<int, int>(MaxTrackedBodies, Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeParallelMultiHashMap(
-                    _physicsSpatialHash,
-                    PhysicsCullingNativeOwner,
-                    nameof(_physicsSpatialHash),
-                    NativeAllocationLifetime.Session);
-            }
-
+            if (!_physicsSpatialBucketHeads.IsCreated)
+                _physicsSpatialBucketHeads.Ensure(NativeArrayOptions.UninitializedMemory);
+            if (!_physicsSpatialNext.IsCreated)
+                _physicsSpatialNext.Ensure(NativeArrayOptions.UninitializedMemory);
+            if (!_physicsSpatialCellHashes.IsCreated)
+                _physicsSpatialCellHashes.Ensure(NativeArrayOptions.UninitializedMemory);
             if (!_physicsStateChangedIndices.IsCreated)
-            {
-                _physicsStateChangedIndices = new NativeQueue<int>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _physicsStateChangedIndices,
-                    MaxTrackedBodies,
-                    PhysicsCullingNativeOwner,
-                    nameof(_physicsStateChangedIndices),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_physicsTargetWakeRequests.IsCreated)
-            {
-                _physicsTargetWakeRequests = new NativeQueue<PhysicsCullingTargetWakeRequestSignal>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _physicsTargetWakeRequests,
-                    PhysicsCullingTargetWakeQueueCapacity,
-                    PhysicsCullingNativeOwner,
-                    nameof(_physicsTargetWakeRequests),
-                    NativeAllocationLifetime.Session);
-            }
+                _physicsStateChangedIndices.Ensure(NativeArrayOptions.UninitializedMemory);
+            if (!_physicsStateChangedCount.IsCreated)
+                _physicsStateChangedCount.Ensure(NativeArrayOptions.ClearMemory);
+            if (!_physicsTargetWakeRequestCount.IsCreated)
+                _physicsTargetWakeRequestCount.Ensure(NativeArrayOptions.ClearMemory);
+            if (!_physicsCullingCsvScratch.IsCreated)
+                _physicsCullingCsvScratch.Ensure(NativeArrayOptions.UninitializedMemory);
+            if (!_physicsCullingLegacyRadiiScratch.IsCreated)
+                _physicsCullingLegacyRadiiScratch.Ensure(NativeArrayOptions.UninitializedMemory);
 
             InitializePhysicsCullingTuningIfNeeded();
         }
@@ -225,7 +231,15 @@ namespace Hecton8.Physics
                 (_physicsCullingFrameTelemetry.IsCreated && _physicsCullingFrameTelemetry.Length < PhysicsCullingFrameTelemetryCapacity) ||
                 (_physicsCullingTuning.IsCreated && _physicsCullingTuning.Length < 1) ||
                 (_physicsMockSeismicSignals.IsCreated && _physicsMockSeismicSignals.Length < PhysicsCullingMockSeismicSignalCapacity) ||
-                (_physicsWakeRequestMirror.IsCreated && _physicsWakeRequestMirror.Length < PhysicsCullingTargetWakeQueueCapacity);
+                (_physicsWakeRequestMirror.IsCreated && _physicsWakeRequestMirror.Length < PhysicsCullingTargetWakeQueueCapacity) ||
+                (_physicsSpatialBucketHeads.IsCreated && _physicsSpatialBucketHeads.Length < PhysicsCullingSpatialBucketCapacity) ||
+                (_physicsSpatialNext.IsCreated && _physicsSpatialNext.Length < MaxTrackedBodies) ||
+                (_physicsSpatialCellHashes.IsCreated && _physicsSpatialCellHashes.Length < MaxTrackedBodies) ||
+                (_physicsStateChangedIndices.IsCreated && _physicsStateChangedIndices.Length < MaxTrackedBodies) ||
+                (_physicsStateChangedCount.IsCreated && _physicsStateChangedCount.Length < 1) ||
+                (_physicsTargetWakeRequestCount.IsCreated && _physicsTargetWakeRequestCount.Length < 1) ||
+                (_physicsCullingCsvScratch.IsCreated && _physicsCullingCsvScratch.Length < PhysicsCullingCsvScratchCapacity) ||
+                (_physicsCullingLegacyRadiiScratch.IsCreated && _physicsCullingLegacyRadiiScratch.Length < PhysicsCullingLegacyRadiiHeaderBytes);
         }
 
         private void ReleaseUndersizedShinobu37PhysicsCullingState()
@@ -239,6 +253,14 @@ namespace Hecton8.Physics
             ReleaseUndersizedVaultBuffer(ref _physicsCullingTuning, 1);
             ReleaseUndersizedVaultBuffer(ref _physicsMockSeismicSignals, PhysicsCullingMockSeismicSignalCapacity);
             ReleaseUndersizedVaultBuffer(ref _physicsWakeRequestMirror, PhysicsCullingTargetWakeQueueCapacity);
+            ReleaseUndersizedVaultBuffer(ref _physicsSpatialBucketHeads, PhysicsCullingSpatialBucketCapacity);
+            ReleaseUndersizedVaultBuffer(ref _physicsSpatialNext, MaxTrackedBodies);
+            ReleaseUndersizedVaultBuffer(ref _physicsSpatialCellHashes, MaxTrackedBodies);
+            ReleaseUndersizedVaultBuffer(ref _physicsStateChangedIndices, MaxTrackedBodies);
+            ReleaseUndersizedVaultBuffer(ref _physicsStateChangedCount, 1);
+            ReleaseUndersizedVaultBuffer(ref _physicsTargetWakeRequestCount, 1);
+            ReleaseUndersizedVaultBuffer(ref _physicsCullingCsvScratch, PhysicsCullingCsvScratchCapacity);
+            ReleaseUndersizedVaultBuffer(ref _physicsCullingLegacyRadiiScratch, PhysicsCullingLegacyRadiiHeaderBytes);
             _physicsCullingTuningInitialized = false;
         }
 
@@ -262,31 +284,26 @@ namespace Hecton8.Physics
                 _physicsMockSeismicSignals.Length >= PhysicsCullingMockSeismicSignalCapacity &&
                 _physicsWakeRequestMirror.IsCreated &&
                 _physicsWakeRequestMirror.Length >= PhysicsCullingTargetWakeQueueCapacity &&
-                _physicsSpatialHash.IsCreated &&
+                _physicsSpatialBucketHeads.IsCreated &&
+                _physicsSpatialBucketHeads.Length >= PhysicsCullingSpatialBucketCapacity &&
+                _physicsSpatialNext.IsCreated &&
+                _physicsSpatialNext.Length >= MaxTrackedBodies &&
+                _physicsSpatialCellHashes.IsCreated &&
+                _physicsSpatialCellHashes.Length >= MaxTrackedBodies &&
                 _physicsStateChangedIndices.IsCreated &&
-                _physicsTargetWakeRequests.IsCreated;
+                _physicsStateChangedIndices.Length >= MaxTrackedBodies &&
+                _physicsStateChangedCount.IsCreated &&
+                _physicsStateChangedCount.Length >= 1 &&
+                _physicsTargetWakeRequestCount.IsCreated &&
+                _physicsTargetWakeRequestCount.Length >= 1 &&
+                _physicsCullingCsvScratch.IsCreated &&
+                _physicsCullingCsvScratch.Length >= PhysicsCullingCsvScratchCapacity &&
+                _physicsCullingLegacyRadiiScratch.IsCreated &&
+                _physicsCullingLegacyRadiiScratch.Length >= PhysicsCullingLegacyRadiiHeaderBytes;
         }
 
         private void ReleaseShinobu37PhysicsCullingState()
         {
-            if (_physicsSpatialHash.IsCreated)
-            {
-                _physicsSpatialHash.Dispose();
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(PhysicsCullingNativeOwner, nameof(_physicsSpatialHash));
-            }
-
-            if (_physicsStateChangedIndices.IsCreated)
-            {
-                _physicsStateChangedIndices.Dispose();
-                NativeMemorySentinel.UnregisterNativeQueue(PhysicsCullingNativeOwner, nameof(_physicsStateChangedIndices));
-            }
-
-            if (_physicsTargetWakeRequests.IsCreated)
-            {
-                _physicsTargetWakeRequests.Dispose();
-                NativeMemorySentinel.UnregisterNativeQueue(PhysicsCullingNativeOwner, nameof(_physicsTargetWakeRequests));
-            }
-
             _physicsCullingDtos.ReleaseView();
             _physicsFrozenVelocities.ReleaseView();
             _physicsCullingStateAges.ReleaseView();
@@ -296,6 +313,14 @@ namespace Hecton8.Physics
             _physicsCullingTuning.ReleaseView();
             _physicsMockSeismicSignals.ReleaseView();
             _physicsWakeRequestMirror.ReleaseView();
+            _physicsSpatialBucketHeads.ReleaseView();
+            _physicsSpatialNext.ReleaseView();
+            _physicsSpatialCellHashes.ReleaseView();
+            _physicsStateChangedIndices.ReleaseView();
+            _physicsStateChangedCount.ReleaseView();
+            _physicsTargetWakeRequestCount.ReleaseView();
+            _physicsCullingCsvScratch.ReleaseView();
+            _physicsCullingLegacyRadiiScratch.ReleaseView();
             _physicsCullingTuningInitialized = false;
         }
 
@@ -373,16 +398,35 @@ namespace Hecton8.Physics
             tuning = default;
             if (string.IsNullOrEmpty(path))
                 return false;
+            if (!_physicsCullingLegacyRadiiScratch.IsCreated &&
+                !_physicsCullingLegacyRadiiScratch.Ensure(NativeArrayOptions.UninitializedMemory))
+            {
+                return false;
+            }
+
+            NativeArray<byte> scratch = _physicsCullingLegacyRadiiScratch.AsNativeArray();
+            if (!scratch.IsCreated || scratch.Length < 16)
+                return false;
 
             try
             {
-                int bytesRead;
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, PhysicsCullingLegacyRadiiHeaderBytes, FileOptions.SequentialScan))
+                unsafe
                 {
-                    bytesRead = stream.Read(_physicsCullingLegacyRadiiScratch, 0, _physicsCullingLegacyRadiiScratch.Length);
-                }
+                    int bytesRead;
+                    using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, PhysicsCullingLegacyRadiiHeaderBytes, FileOptions.SequentialScan))
+                    {
+                        int maxBytes = math.min(scratch.Length, PhysicsCullingLegacyRadiiHeaderBytes);
+                        bytesRead = stream.Read(new Span<byte>(NativeArrayUnsafeUtility.GetUnsafePtr(scratch), maxBytes));
+                    }
 
-                return TryParseLegacyPhysicsCullingRadiiHeader(_physicsCullingLegacyRadiiScratch, bytesRead, out tuning);
+                    if (bytesRead <= 0)
+                        return false;
+
+                    int safeBytes = math.min(bytesRead, scratch.Length);
+                    return TryParseLegacyPhysicsCullingRadiiHeader(
+                        new ReadOnlySpan<byte>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch), safeBytes),
+                        out tuning);
+                }
             }
             catch (Exception)
             {
@@ -391,13 +435,13 @@ namespace Hecton8.Physics
             }
         }
 
-        private static bool TryParseLegacyPhysicsCullingRadiiHeader(byte[] bytes, int bytesRead, out PhysicsCullingTuningDTO tuning)
+        private static bool TryParseLegacyPhysicsCullingRadiiHeader(ReadOnlySpan<byte> bytes, out PhysicsCullingTuningDTO tuning)
         {
             tuning = default;
-            if (bytes == null || bytesRead < 16)
+            if (bytes.Length < 16)
                 return false;
 
-            if (bytesRead >= 28 &&
+            if (bytes.Length >= 28 &&
                 TryBuildPhysicsCullingTuningFromLegacyFloats(
                     ReadSingleLittleEndian(bytes, 8),
                     ReadSingleLittleEndian(bytes, 12),
@@ -454,9 +498,9 @@ namespace Hecton8.Physics
             return true;
         }
 
-        private static float ReadSingleLittleEndian(byte[] bytes, int offset)
+        private static float ReadSingleLittleEndian(ReadOnlySpan<byte> bytes, int offset)
         {
-            if (bytes == null || offset < 0 || offset + 4 > bytes.Length)
+            if (offset < 0 || offset + 4 > bytes.Length)
                 return float.NaN;
 
             uint bits =
@@ -469,11 +513,9 @@ namespace Hecton8.Physics
 
         private void ClearShinobu37PhysicsCullingState()
         {
-            if (_physicsSpatialHash.IsCreated)
-                _physicsSpatialHash.Clear();
+            ClearPhysicsCullingSpatialHash();
             ClearPhysicsStateChangedQueue();
-            if (_physicsTargetWakeRequests.IsCreated)
-                _physicsTargetWakeRequests.Clear();
+            ClearPhysicsTargetWakeRequests();
 
             int clearCount = math.min(MaxTrackedBodies, _physicsCullingDtos.IsCreated ? _physicsCullingDtos.Length : 0);
             for (int i = 0; i < clearCount; i++)
@@ -483,6 +525,10 @@ namespace Hecton8.Physics
                 _physicsCullingStateAges[i] = default;
                 _physicsCullingSpatialCandidates[i] = default;
                 _physicsCullingSpatialCandidateMask[i] = default;
+                if (_physicsSpatialNext.IsCreated)
+                    _physicsSpatialNext[i] = -1;
+                if (_physicsSpatialCellHashes.IsCreated)
+                    _physicsSpatialCellHashes[i] = 0;
             }
 
             if (_physicsCullingFrameTelemetry.IsCreated)
@@ -587,8 +633,13 @@ namespace Hecton8.Physics
 
         private int BuildPhysicsCullingSpatialCandidates(in AbsoluteUniversePosition cameraAup, int jobCount)
         {
-            if (!_physicsSpatialHash.IsCreated || !_physicsCullingDtos.IsCreated)
+            if (!_physicsSpatialBucketHeads.IsCreated ||
+                !_physicsSpatialNext.IsCreated ||
+                !_physicsSpatialCellHashes.IsCreated ||
+                !_physicsCullingDtos.IsCreated)
+            {
                 return 0;
+            }
 
             int count = math.min(jobCount, math.min(_physicsCullingDtos.Length, MaxTrackedBodies));
             for (int i = 0; i < count; i++)
@@ -598,20 +649,27 @@ namespace Hecton8.Physics
 
             double3 cameraAbsolute = cameraAup.ToAbsoluteDouble3();
             int3 cameraCell = ResolvePhysicsCullingCell(cameraAbsolute);
-            BuildPhysicsCullingNeighborCells(cameraCell);
 
             int candidateCount = 0;
-            for (int i = 0; i < PhysicsCullingMaxCandidateCells; i++)
+            for (int z = -1; z <= 1; z++)
             {
-                int cellHash = HashPhysicsCullingCell(_physicsCullingNeighborCells[i]);
-                if (!_physicsSpatialHash.TryGetFirstValue(cellHash, out int bodyIndex, out NativeParallelMultiHashMapIterator<int> iterator))
-                    continue;
-
-                do
+                for (int x = -1; x <= 1; x++)
                 {
-                    TryAddPhysicsCullingCandidate(bodyIndex, ref candidateCount);
+                    int cellHash = HashPhysicsCullingCell(new int3(cameraCell.x + x, cameraCell.y, cameraCell.z + z));
+                    int bucket = ResolvePhysicsCullingSpatialBucket(cellHash);
+                    int bodyIndex = _physicsSpatialBucketHeads[bucket];
+                    int guard = 0;
+                    while (bodyIndex >= 0 && guard < MaxTrackedBodies)
+                    {
+                        int currentIndex = bodyIndex;
+                        bodyIndex = (uint)currentIndex < (uint)_physicsSpatialNext.Length ? _physicsSpatialNext[currentIndex] : -1;
+                        guard++;
+                        if ((uint)currentIndex >= (uint)count || _physicsSpatialCellHashes[currentIndex] != cellHash)
+                            continue;
+
+                        TryAddPhysicsCullingCandidate(currentIndex, ref candidateCount);
+                    }
                 }
-                while (_physicsSpatialHash.TryGetNextValue(out bodyIndex, ref iterator));
             }
 
             for (int i = 0; i < count; i++)
@@ -643,7 +701,7 @@ namespace Hecton8.Physics
 
         private void RebuildPhysicsCullingSpatialHash(int count)
         {
-            _physicsSpatialHash.Clear();
+            ClearPhysicsCullingSpatialHash();
             int safeCount = math.min(count, math.min(_physicsCullingDtos.Length, MaxTrackedBodies));
             for (int i = 0; i < safeCount; i++)
             {
@@ -651,8 +709,41 @@ namespace Hecton8.Physics
                 if (dto.InstanceId == 0 && i >= _trackedBodyCount)
                     continue;
 
-                _physicsSpatialHash.Add(HashPhysicsCullingCell(ResolvePhysicsCullingCell(dto.AUP)), i);
+                int cellHash = HashPhysicsCullingCell(ResolvePhysicsCullingCell(dto.AUP));
+                int bucket = ResolvePhysicsCullingSpatialBucket(cellHash);
+                _physicsSpatialCellHashes[i] = cellHash;
+                _physicsSpatialNext[i] = _physicsSpatialBucketHeads[bucket];
+                _physicsSpatialBucketHeads[bucket] = i;
             }
+        }
+
+        private void ClearPhysicsCullingSpatialHash()
+        {
+            if (_physicsSpatialBucketHeads.IsCreated)
+            {
+                int bucketCount = math.min(_physicsSpatialBucketHeads.Length, PhysicsCullingSpatialBucketCapacity);
+                for (int i = 0; i < bucketCount; i++)
+                    _physicsSpatialBucketHeads[i] = -1;
+            }
+
+            if (_physicsSpatialNext.IsCreated)
+            {
+                int nextCount = math.min(_physicsSpatialNext.Length, MaxTrackedBodies);
+                for (int i = 0; i < nextCount; i++)
+                    _physicsSpatialNext[i] = -1;
+            }
+
+            if (_physicsSpatialCellHashes.IsCreated)
+            {
+                int hashCount = math.min(_physicsSpatialCellHashes.Length, MaxTrackedBodies);
+                for (int i = 0; i < hashCount; i++)
+                    _physicsSpatialCellHashes[i] = 0;
+            }
+        }
+
+        private static int ResolvePhysicsCullingSpatialBucket(int cellHash)
+        {
+            return cellHash & (PhysicsCullingSpatialBucketCapacity - 1);
         }
 
         private void TryAddPhysicsCullingCandidate(int bodyIndex, ref int candidateCount)
@@ -667,18 +758,6 @@ namespace Hecton8.Physics
             _physicsCullingSpatialCandidateMask[bodyIndex] = 1;
             _physicsCullingSpatialCandidates[candidateCount] = bodyIndex;
             candidateCount++;
-        }
-
-        private void BuildPhysicsCullingNeighborCells(int3 cameraCell)
-        {
-            int write = 0;
-            for (int z = -1; z <= 1; z++)
-            {
-                for (int x = -1; x <= 1; x++)
-                {
-                    _physicsCullingNeighborCells[write++] = new int3(cameraCell.x + x, cameraCell.y, cameraCell.z + z);
-                }
-            }
         }
 
         private static int3 ResolvePhysicsCullingCell(double3 absoluteAup)
@@ -703,8 +782,28 @@ namespace Hecton8.Physics
 
         private void ClearPhysicsStateChangedQueue()
         {
-            if (_physicsStateChangedIndices.IsCreated)
-                _physicsStateChangedIndices.Clear();
+            if (_physicsStateChangedCount.IsCreated)
+                _physicsStateChangedCount[0] = default;
+        }
+
+        private void AddPhysicsStateChangedIndex(int bodyIndex)
+        {
+            if (!_physicsStateChangedIndices.IsCreated || !_physicsStateChangedCount.IsCreated)
+                return;
+
+            PhysicsCullingCounter64 counter = _physicsStateChangedCount[0];
+            int writeIndex = counter.Value;
+            if ((uint)writeIndex >= (uint)_physicsStateChangedIndices.Length)
+            {
+                counter.Flags |= 1u;
+                counter.Value = _physicsStateChangedIndices.Length;
+                _physicsStateChangedCount[0] = counter;
+                return;
+            }
+
+            _physicsStateChangedIndices[writeIndex] = bodyIndex;
+            counter.Value = writeIndex + 1;
+            _physicsStateChangedCount[0] = counter;
         }
 
         private AbsoluteUniversePosition ResolvePhysicsCullingCameraAup(in AbsoluteUniversePosition playerAup, ref float3 cameraForward)
@@ -766,14 +865,30 @@ namespace Hecton8.Physics
 
         private static float ResolvePhysicsCullingHardwareRadiusSqScale()
         {
+            float q = ResolvePhysicsCullingGlobalQualityWeight();
+            float smooth = q * q * (3f - (2f * q));
+            float baseScale = math.lerp(0.25f, 1.44f, smooth);
+            float ultraRamp = math.saturate((q - 0.75f) / math.max(0.0001f, 0.25f));
+            ultraRamp = ultraRamp * ultraRamp * math.step(0.75f, q);
+            return math.lerp(baseScale, 2.25f, ultraRamp);
+        }
+
+        private static float ResolvePhysicsCullingGlobalQualityWeight()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            if (math.isfinite(weight))
+                return math.saturate(weight);
+
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350)
+            if (tier == HectonQualityTier.Low)
+                return 0.1f;
+            if (tier == HectonQualityTier.Mx350)
                 return 0.25f;
             if (tier == HectonQualityTier.High)
-                return 1.44f;
+                return 0.75f;
             if (tier == HectonQualityTier.Ultra)
-                return 2.25f;
-            return 1f;
+                return 1f;
+            return 0.5f;
         }
 
         private float ResolvePhysicsCullingHysteresisSeconds()
@@ -954,8 +1069,22 @@ namespace Hecton8.Physics
         public void QueueTargetedPhysicsWakeRequest(in PhysicsCullingTargetWakeRequestSignal request)
         {
             EnsureNativeState();
-            if (_physicsTargetWakeRequests.IsCreated)
-                _physicsTargetWakeRequests.Enqueue(request);
+            if (!_physicsWakeRequestMirror.IsCreated || !_physicsTargetWakeRequestCount.IsCreated)
+                return;
+
+            PhysicsCullingCounter64 counter = _physicsTargetWakeRequestCount[0];
+            int writeIndex = counter.Value;
+            if ((uint)writeIndex >= (uint)math.min(_physicsWakeRequestMirror.Length, PhysicsCullingTargetWakeQueueCapacity))
+            {
+                counter.Flags |= 1u;
+                counter.Value = math.min(_physicsWakeRequestMirror.Length, PhysicsCullingTargetWakeQueueCapacity);
+                _physicsTargetWakeRequestCount[0] = counter;
+                return;
+            }
+
+            _physicsWakeRequestMirror[writeIndex] = request;
+            counter.Value = writeIndex + 1;
+            _physicsTargetWakeRequestCount[0] = counter;
         }
 
         public bool TryGetPhysicsCullingTuning(out PhysicsCullingTuningDTO tuning)
@@ -1023,15 +1152,32 @@ namespace Hecton8.Physics
 
         private void FlushPhysicsTargetWakeRequests()
         {
-            if (!_physicsTargetWakeRequests.IsCreated)
+            if (!_physicsWakeRequestMirror.IsCreated || !_physicsTargetWakeRequestCount.IsCreated)
                 return;
 
-            int processed = 0;
-            while (processed < PhysicsCullingTargetWakeQueueCapacity && _physicsTargetWakeRequests.TryDequeue(out PhysicsCullingTargetWakeRequestSignal request))
+            PhysicsCullingCounter64 counter = _physicsTargetWakeRequestCount[0];
+            int requestCount = math.min(counter.Value, math.min(_physicsWakeRequestMirror.Length, PhysicsCullingTargetWakeQueueCapacity));
+            for (int i = 0; i < requestCount; i++)
             {
+                PhysicsCullingTargetWakeRequestSignal request = _physicsWakeRequestMirror[i];
                 ProcessTargetedPhysicsWakeRequest(in request);
-                processed++;
+                _physicsWakeRequestMirror[i] = default;
             }
+
+            _physicsTargetWakeRequestCount[0] = default;
+        }
+
+        private void ClearPhysicsTargetWakeRequests()
+        {
+            if (_physicsTargetWakeRequestCount.IsCreated)
+                _physicsTargetWakeRequestCount[0] = default;
+
+            if (!_physicsWakeRequestMirror.IsCreated)
+                return;
+
+            int requestCount = math.min(_physicsWakeRequestMirror.Length, PhysicsCullingTargetWakeQueueCapacity);
+            for (int i = 0; i < requestCount; i++)
+                _physicsWakeRequestMirror[i] = default;
         }
 
         private void ProcessTargetedPhysicsWakeRequest(in PhysicsCullingTargetWakeRequestSignal request)
@@ -1058,8 +1204,7 @@ namespace Hecton8.Physics
             _rigidbodyAwakeResults[bodyIndex] = 1;
             _rigidbodyCullingCommandResults[bodyIndex] = CullingCommandAwake;
             _physicsCullingStateAges[bodyIndex] = 0f;
-            if (_physicsStateChangedIndices.IsCreated)
-                _physicsStateChangedIndices.Enqueue(bodyIndex);
+            AddPhysicsStateChangedIndex(bodyIndex);
         }
 
         public int GenerateMockPhysicsBodies(int count = PhysicsCullingMockBodiesPerGenerate)
@@ -1138,7 +1283,8 @@ namespace Hecton8.Physics
                 CommandResults = _rigidbodyCullingCommandResults,
                 StateAges = _physicsCullingStateAges,
                 Signal = signal,
-                ChangedIndices = _physicsStateChangedIndices.AsParallelWriter()
+                ChangedIndices = _physicsStateChangedIndices,
+                ChangedCount = _physicsStateChangedCount
             };
             int jobCount = math.min(MaxTrackedBodies, _trackedBodyCount + _physicsCullingMockBodyCount);
             job.Schedule(jobCount, 64).Complete();
@@ -1212,14 +1358,31 @@ namespace Hecton8.Physics
             if (ticks == _physicsCullingCsvLastWriteTicks)
                 return;
 
-            int bytesRead = 0;
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            if (!_physicsCullingCsvScratch.IsCreated &&
+                !_physicsCullingCsvScratch.Ensure(NativeArrayOptions.UninitializedMemory))
             {
-                bytesRead = stream.Read(_physicsCullingCsvScratch, 0, _physicsCullingCsvScratch.Length);
+                return;
             }
 
-            if (bytesRead > 0 && TryIngestPhysicsCullingCsv(new ReadOnlySpan<byte>(_physicsCullingCsvScratch, 0, bytesRead)))
-                _physicsCullingCsvLastWriteTicks = ticks;
+            NativeArray<byte> scratch = _physicsCullingCsvScratch.AsNativeArray();
+            if (!scratch.IsCreated || scratch.Length <= 0)
+                return;
+
+            unsafe
+            {
+                int bytesRead;
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    int maxBytes = math.min(scratch.Length, PhysicsCullingCsvScratchCapacity);
+                    bytesRead = stream.Read(new Span<byte>(NativeArrayUnsafeUtility.GetUnsafePtr(scratch), maxBytes));
+                }
+
+                if (bytesRead > 0 &&
+                    TryIngestPhysicsCullingCsv(new ReadOnlySpan<byte>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch), math.min(bytesRead, scratch.Length))))
+                {
+                    _physicsCullingCsvLastWriteTicks = ticks;
+                }
+            }
 #endif
         }
 
@@ -1404,15 +1567,16 @@ namespace Hecton8.Physics
             return hash;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct MockSeismicShockwaveWakeJob : IJobParallelFor
         {
-            [NativeDisableParallelForRestriction] public NativeArray<PhysicsCullingDTO> Dtos;
-            [NativeDisableParallelForRestriction] public NativeArray<byte> AwakeResults;
-            [NativeDisableParallelForRestriction] public NativeArray<byte> CommandResults;
-            [NativeDisableParallelForRestriction] public NativeArray<float> StateAges;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<PhysicsCullingDTO> Dtos;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<byte> AwakeResults;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<byte> CommandResults;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<float> StateAges;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> ChangedIndices;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<PhysicsCullingCounter64> ChangedCount;
             public MockSeismicShockwaveSignal Signal;
-            public NativeQueue<int>.ParallelWriter ChangedIndices;
 
             public unsafe void Execute(int index)
             {
@@ -1437,22 +1601,41 @@ namespace Hecton8.Physics
                     AwakeResults[index] = 1;
                     CommandResults[index] = CullingCommandAwake;
                     StateAges[index] = 0f;
-                    ChangedIndices.Enqueue(index);
+                    EnqueueChangedIndex(index);
                 }
+            }
+
+            private unsafe void EnqueueChangedIndex(int index)
+            {
+                if (ChangedIndices.Length <= 0 || ChangedCount.Length <= 0)
+                    return;
+
+                PhysicsCullingCounter64* counterPtr = (PhysicsCullingCounter64*)ChangedCount.GetUnsafePtr();
+                ref int value = ref UnsafeUtility.AsRef<int>(&counterPtr->Value);
+                int writeIndex = Interlocked.Increment(ref value) - 1;
+                if ((uint)writeIndex < (uint)ChangedIndices.Length)
+                {
+                    ChangedIndices[writeIndex] = index;
+                    return;
+                }
+
+                counterPtr->Flags |= 1u;
+                Interlocked.Exchange(ref value, ChangedIndices.Length);
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct PhysicsDistanceCullingJobShinobu37 : IJobParallelFor
         {
-            [NativeDisableParallelForRestriction] public NativeArray<PhysicsCullingDTO> Dtos;
-            [ReadOnly] public NativeArray<byte> CurrentStates;
-            [ReadOnly] public NativeArray<int> CandidateIndices;
-            [NativeDisableParallelForRestriction] public NativeArray<byte> AwakeResults;
-            [NativeDisableParallelForRestriction] public NativeArray<byte> CommandResults;
-            [NativeDisableParallelForRestriction] public NativeArray<float> DistanceSqResults;
-            [NativeDisableParallelForRestriction] public NativeArray<float> StateAges;
-            public NativeQueue<int>.ParallelWriter ChangedIndices;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<PhysicsCullingDTO> Dtos;
+            [ReadOnly, NoAlias] public NativeArray<byte> CurrentStates;
+            [ReadOnly, NoAlias] public NativeArray<int> CandidateIndices;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<byte> AwakeResults;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<byte> CommandResults;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<float> DistanceSqResults;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<float> StateAges;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> ChangedIndices;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<PhysicsCullingCounter64> ChangedCount;
             public double3 CameraAbsoluteAup;
             public float3 CameraForward;
             public float KinematicSleepDistanceMeters;
@@ -1508,7 +1691,7 @@ namespace Hecton8.Physics
                     AwakeResults[index] = 1;
                     CommandResults[index] = CullingCommandAwake | CullingCommandInvalidInput;
                     DistanceSqResults[index] = 0f;
-                    ChangedIndices.Enqueue(index);
+                    EnqueueChangedIndex(index);
                     return;
                 }
 
@@ -1519,7 +1702,7 @@ namespace Hecton8.Physics
                     AwakeResults[index] = 1;
                     CommandResults[index] = CullingCommandAwake | CullingCommandInvalidInput;
                     DistanceSqResults[index] = 0f;
-                    ChangedIndices.Enqueue(index);
+                    EnqueueChangedIndex(index);
                     return;
                 }
 
@@ -1569,7 +1752,7 @@ namespace Hecton8.Physics
                 if (newSleep != previousSleep || command != previousCommand)
                 {
                     StateAges[index] = 0f;
-                    ChangedIndices.Enqueue(index);
+                    EnqueueChangedIndex(index);
                 }
                 else
                 {
@@ -1600,6 +1783,24 @@ namespace Hecton8.Physics
                 if ((currentState & CullingStateMeshColliderStripped) != 0)
                     command |= CullingCommandStripMeshColliders;
                 return command;
+            }
+
+            private unsafe void EnqueueChangedIndex(int index)
+            {
+                if (ChangedIndices.Length <= 0 || ChangedCount.Length <= 0)
+                    return;
+
+                PhysicsCullingCounter64* counterPtr = (PhysicsCullingCounter64*)ChangedCount.GetUnsafePtr();
+                ref int value = ref UnsafeUtility.AsRef<int>(&counterPtr->Value);
+                int writeIndex = Interlocked.Increment(ref value) - 1;
+                if ((uint)writeIndex < (uint)ChangedIndices.Length)
+                {
+                    ChangedIndices[writeIndex] = index;
+                    return;
+                }
+
+                counterPtr->Flags |= 1u;
+                Interlocked.Exchange(ref value, ChangedIndices.Length);
             }
         }
     }

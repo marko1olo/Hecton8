@@ -1597,10 +1597,10 @@ namespace Hecton8.Bootstrap
                 VaultLegacyBinaryArchaeology.TryApplyMemoryOverridesCsv(_globalDataVault, overrideCsvPath);
             }
 
-            PreallocateDataVaultPrimaryBuffers(_globalDataVault);
+            PreallocateDataVaultPrimaryBuffers(_globalDataVault, in memoryLayoutConfig);
         }
 
-        private static void PreallocateDataVaultPrimaryBuffers(IDataVault vault)
+        private static void PreallocateDataVaultPrimaryBuffers(IDataVault vault, in VaultMemoryLayoutConfig memoryLayoutConfig)
         {
             if (vault == null)
                 return;
@@ -1615,6 +1615,11 @@ namespace Hecton8.Bootstrap
                 512,
                 SystemID.GlobalPhysicsStateManager,
                 NativeArrayOptions.ClearMemory);
+            VaultSovereigntyMaintenance.PrewarmBuffers(
+                vault,
+                memoryLayoutConfig.HotEntityCapacity > 0
+                    ? memoryLayoutConfig.HotEntityCapacity
+                    : VaultSovereigntyMaintenance.DefaultHotEntityCapacity);
         }
 
         private static void InitializeBootstrapEventBuses()

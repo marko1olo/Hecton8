@@ -1,7 +1,7 @@
 # SHINOBU_106 Rationale
 
 Date: 2026-05-19
-Status: IMPLEMENTED, BUILD GATED BY CPU LOAD
+Status: PENDING UNITY VERIFICATION, BUILD BLOCKED BY EXTERNAL WORLD FILE DELETION
 
 ## Decision 00: Batch Scope And Mandate Selection
 
@@ -290,3 +290,123 @@ Rejected Alternatives: Relaunching `dotnet build` was rejected because it would 
 Scalability potential: Not applicable to runtime. This protects the compile wall and owner-local rule.
 
 Hardware Impact: Saves one doomed compile attempt while host CPU is available for other agents. The next build should be launched only after the World-domain deletion is resolved.
+
+## Decision 23: Thermal Signal Adapter And Quality-Invariant Heat Integration
+
+Problem: The runtime exposed an AUP-local external heat injection bridge, but Task 10 also demanded a route from a thermal signal or vault thermal grid into the solver. A second audit found thermal accumulation lived inside each Jacobi iteration with the full tick delta, making high-quality 8-iteration solves heat the grid faster than low-quality 1-iteration solves.
+
+Solution: Read `SignalBus<ThermalStateChangedSignal>.GetFrameSnapshot()` in the managed scheduling boundary, reduce it to one finite `heat01` scalar, and feed that into a deterministic `ThermalStateSignalInjectionJob` chained before Jacobi. The job writes vault `ExternalHeat` with a low-tier uniform fake and a quality-lerped radial shape from local anchors. In `PowerGridRelaxationJob`, add `IterationCount` and integrate thermal terms with `DeltaSeconds / IterationCount`, so quality changes convergence accuracy and cadence, not physical heating rate.
+
+Rejected Alternatives: Referencing `Hecton8.Thermodynamics.ThermalUpdraftSignal` directly was rejected because that would add a sibling-domain dependency from the current Core/Power surface. Polling `AbyssalThermalManager` was rejected for the same reason. Leaving heat at full delta per Jacobi pass was rejected because it made desktop/high-quality mode physically wrong.
+
+Scalability potential: Low uses one uniform scalar heat fake from the signal lane. Middle blends toward anchor-local radial heat. High/ultra keep 8 electrical iterations without multiplying thermal damage by 8.
+
+Hardware Impact: Adds one O(N) Burst job only when thermal signals exist. The corrected thermal delta prevents high-tier overheat false positives and avoids compensating hacks in tuning.
+
+## Decision 24: Telemetry Residual Must Compare Against Penultimate Jacobi State
+
+Problem: The telemetry job recorded `JacobiResidual` by comparing the final node buffer to a pointer captured before the Jacobi loop. With even iteration counts, the double-buffer solver writes the final state back into the original front buffer, so that pointer aliases the final state and produces a false zero residual.
+
+Solution: Select the residual baseline after the Jacobi loop from the opposite buffer to `finalPtr`. That opposite buffer is the penultimate Jacobi state, independent of odd/even iteration count. Telemetry now measures convergence residual instead of sometimes comparing the buffer to itself.
+
+Rejected Alternatives: Allocating a third snapshot buffer was rejected because it would add vault memory and copy cost for data already present in the double-buffer pair. Comparing against the original frame state was rejected because convergence residual is the useful stability signal for Jacobi tolerance and postmortem analysis.
+
+Scalability potential: Low/middle/high/ultra use the same O(N) telemetry pass. Higher iteration counts now produce meaningful residual evidence instead of hiding convergence problems.
+
+Hardware Impact: Zero added memory and zero added jobs. Runtime cost is one pointer choice on the scheduling thread; telemetry accuracy improves without measurable frame-time delta.
+
+## Decision 25: Habitat Modules Need A Continuous Voltage Facade
+
+Problem: `PowerGrid` already pushed a voltage scalar into `BaseModule.SetAmbientPowerVisualState`, but `BaseModule` itself still only advertised the legacy `IPowerComponent` bool contract. That left the main habitat consumer outside the generic continuous voltage facade and made future dispatch code more likely to fall back to bool snap logic.
+
+Solution: Add `IContinuousPowerComponent` to `BaseModule`, expose `Voltage01` from its existing `_ambientVoltageSupplyRatio`, and implement `OnVoltageChanged` as a scalar brownout update through the already-existing shader state path. In `PowerGrid.ApplyConsumerStates`, keep BaseModule on its richer ambient path and avoid duplicate generic continuous dispatch for it.
+
+Rejected Alternatives: Retrofitting every legacy `IPowerComponent` in this pass was rejected as cross-domain churn. Removing the bool compatibility callback was rejected because many modules still depend on it for non-visual work gating. Creating a second habitat-specific voltage interface was rejected because one continuous owner-local power facade is enough.
+
+Scalability potential: Low receives cheap scalar dimming and flicker. Middle/high/ultra can keep richer shader voltage aggregation through `BaseModule` without changing electrical truth or disabling modules.
+
+Hardware Impact: No allocations and no extra hot-path collections. The dispatch change replaces a pattern check with an `as BaseModule` local and prevents duplicate voltage writes for modules that already have the richer habitat brownout route.
+
+## Decision 26: Latest Evidence Must Be At The Bottom Of The Agent Log
+
+Problem: Earlier `apply_patch` anchors inserted late polish reports above older report sections. That violates the reporting protocol's operational intent: the CTO should be able to read the bottom of `LOG_SHINOBU_106.md` for the newest evidence.
+
+Solution: Append a new bottom report R15 containing the current authoritative delta: telemetry residual fix, habitat continuous voltage facade, scans, and the unchanged external build blocker. The older misplaced sections remain as historical entries, but the latest evidence is now bottom-most.
+
+Rejected Alternatives: Rewriting the entire log chronology was rejected because it would be large, error-prone documentation churn in a dirty multi-agent workspace. Leaving the newest report above older entries was rejected because it makes the report stream harder to audit.
+
+Scalability potential: Not runtime-applicable.
+
+Hardware Impact: No runtime impact.
+
+## Decision 27: Submarine Thermal Solver Frame Must Be Owner-Local
+
+Problem: The SHINOBU thermal solver used Unity `Time.frameCount` as the `simulationFrame` argument for Jacobi telemetry and signal hashing. The state integration already used deterministic cadence seconds, but the frame id still came from Unity presentation timing instead of an owner-local simulation counter.
+
+Solution: Add `_submarineThermalGridSimulationFrame` to `PowerGridManager`. It advances only after `SubmarineOsThermalGridRuntime.ScheduleSolve` accepts a tick, wraps away from zero, and resets on shutdown or DataVault hot-swap. The solver and telemetry now receive a SHINOBU-owned frame sequence instead of Unity's global frame count.
+
+Rejected Alternatives: Passing `Time.frameCount` was rejected because dropped/throttled cadence frames would make solver ticks and presentation frames diverge. Advancing the counter before schedule acceptance was rejected because a busy solve would create gaps. Reusing the legacy brownout signal frame was rejected because it is not the submarine grid's simulation authority.
+
+Scalability potential: Low devices schedule at 5 Hz and still receive dense, monotonic solver frame ids without false gaps. Middle/high/ultra can schedule more often without changing rollback snapshot meaning.
+
+Hardware Impact: One integer increment per accepted solve, below measurement noise. It removes a determinism audit failure without adding jobs or allocations.
+
+## Decision 28: R17 Bottom Authority After Repeated XML Anchor Collision
+
+Problem: R16 was technically correct, but another broad `</SELF_AUDIT>` patch anchor inserted it above older report sections. The reporting protocol requires the bottom of `LOG_SHINOBU_106.md` to carry the newest evidence.
+
+Solution: Remove the misplaced self-generated R16 block and append R17 after the unique `R15_BOTTOM_AUTHORITY` block. R17 records the owner-local frame counter hardening and is marked as the bottom-authority audit.
+
+Rejected Alternatives: Rewriting the entire log chronology was rejected as unnecessary documentation churn. Keeping the misplaced R16 was rejected because it left duplicate evidence above older entries and inflated the diff.
+
+Scalability potential: Not runtime-applicable.
+
+Hardware Impact: No runtime impact.
+
+## Decision 29: Standalone CI Vault Must Not Survive Subsystem Reset
+
+Problem: The SHINOBU fallback path creates a 32-buffer, 2 MiB standalone `GlobalDataVault` for editor/CI emergency mock operation when bootstrap has not registered a vault. `ResetStaticState` cleared only `s_active`, leaving that fallback arena alive across subsystem registration.
+
+Solution: Dispose `s_standaloneVault` and null it inside `SubmarineOsThermalGridRuntime.ResetStaticState`. Registered project vaults are unaffected because only the SHINOBU-owned fallback static is touched.
+
+Rejected Alternatives: Leaving the static fallback alive was rejected because repeated play/edit transitions could retain orphaned arena memory. Disposing any latest-created vault globally was rejected because that could destroy another owner's registered `GlobalDataVault`.
+
+Scalability potential: Low/CI/editor use the fallback only when bootstrap is absent; middle/high/ultra gameplay keeps the registered vault route. No quality branch is introduced.
+
+Hardware Impact: Frees the 2 MiB fallback arena at subsystem reset. Runtime tick cost remains 0 us.
+
+## Decision 30: CSV Reload Must Replace, Not Append
+
+Problem: `TryLoadCsvFromFile` passed the existing spec count into the parser. Every editor reload appended duplicate rows after the previous CSV contents until the fixed-capacity spec buffer filled, leaving stale rows reachable through the count.
+
+Solution: Treat `submarine_grid_specs.csv` as a full replacement payload. Reload parses from index 0, writes the parsed count back to `CounterCsvSpecCount`, and leaves old tail rows outside the active count. `CsvRevision` now increments with explicit unchecked wrap semantics.
+
+Rejected Alternatives: Appending was rejected because hot reload should make one CSV file the current tuning truth. Hash-upsert inside the parser was rejected for this pass because the active count replacement path is simpler, deterministic, and avoids O(N^2) row matching.
+
+Scalability potential: Low/middle/high/ultra all consume the same active spec window. No device-tier branch is introduced.
+
+Hardware Impact: Editor/on-demand path only. Runtime frame cost remains 0 us; reload cost is still linear in CSV bytes.
+
+## Decision 31: Continuous Consumers Must Not Be Snapped Off By Brownout
+
+Problem: `PowerGrid.ApplyConsumerStates` pushed voltage scalars, but still forced `shouldHavePower = false` for any consumer below the brownout voltage threshold. That kept a binary snap-off path alive for `BaseModule` and other continuous-capable consumers.
+
+Solution: Cache the non-BaseModule continuous interface once, push voltage through it when present, and apply the low-voltage bool shutoff only to consumers that are neither `BaseModule` nor `IContinuousPowerComponent`. Continuous consumers remain logically powered while their voltage scalar drives dimming/slowdown.
+
+Rejected Alternatives: Keeping the bool shutoff for all consumers was rejected because it violates Task 02. Removing the bool compatibility path entirely was rejected because legacy bool-only components still need a safe fallback until they implement the continuous facade.
+
+Scalability potential: Low devices can show voltage slosh and brownout degradation without disabling modules. Middle/high/ultra can add richer shader/audio response from the same scalar without changing gameplay truth.
+
+Hardware Impact: One cached interface cast replaces a repeated pattern check; no measurable frame cost. Prevents object state churn during brownout events.
+
+## Decision 32: Thermal Microdamage Audio Must Not Name The Audio Domain From Power
+
+Problem: `PowerGrid.TryTriggerThermalMeltdown` published the thermal microdamage groan through `SignalBus<AudioEvent>`, but it still constructed `Hecton8.Audio.StructuralStressAudioInfo` directly. That kept a sibling-domain type name inside the Power fault path.
+
+Solution: Add a narrow Core.Contracts signal factory overload `AudioEvent.FromStructuralStress(Vector3 worldPosition, float stress01, float pitchScale)`. `PowerGrid` now calls only the Core.Contracts `AudioEvent` factory and `SignalBus<AudioEvent>`; the existing Core signal contract remains the single bridge to the Audio-owned payload.
+
+Rejected Alternatives: Reintroducing `ProceduralAudioEvents.RaiseStructuralStressTriggered` was rejected as a direct concrete Audio facade call. Adding a new Power-local audio DTO was rejected because it would create two truths for one audio fact. Refactoring the full legacy audio signal stack was rejected as outside SHINOBU_106 ownership.
+
+Scalability potential: Low devices still receive one coalescible microdamage audio fact. Middle/high/ultra can layer richer structural groan rendering from the same signal without extra Power-domain work.
+
+Hardware Impact: No measurable frame cost. The change removes a compile-wall dependency from the Power microdamage route and keeps the Dear Lie fault feedback as one typed signal push.

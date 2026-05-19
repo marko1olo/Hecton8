@@ -404,14 +404,14 @@ namespace Hecton.Localization
         public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct LocalizationLanguageChangedSignal : ISignal
     {
-        public uint LanguageHash;
-        public uint Revision;
-        public ushort Language;
-        public ushort Flags;
-        public uint _pad0;
+        [FieldOffset(0)] public uint LanguageHash;
+        [FieldOffset(4)] public uint Revision;
+        [FieldOffset(8)] public ushort Language;
+        [FieldOffset(10)] public ushort Flags;
+        [FieldOffset(12)] public uint _pad0;
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 32)]
@@ -1170,6 +1170,20 @@ namespace Hecton.Localization
                     continue;
                 }
 
+                if (current == (byte)'{' &&
+                    TryWriteBraceFormatPlaceholder(utf8Bytes, ref byteCursor, in formatArgs, destination.Slice(0, maxGlyphs), ref charCursor))
+                {
+                    injectedVariable = true;
+                    if (charCursor > maxGlyphs)
+                    {
+                        truncated = true;
+                        charCursor = maxGlyphs;
+                        break;
+                    }
+
+                    continue;
+                }
+
                 if (!TryReadUtf8Scalar(utf8Bytes, byteCursor, out int scalar, out int consumed))
                 {
                     scalar = '\uFFFD';
@@ -1234,6 +1248,61 @@ namespace Hecton.Localization
                 return false;
 
             return ZeroGCFormatter.FastIntToChars(value, destination, ref charCursor);
+        }
+
+        private static bool TryWriteBraceFormatPlaceholder(
+            ReadOnlySpan<byte> utf8Bytes,
+            ref int byteCursor,
+            in BabelFormatArgs formatArgs,
+            Span<char> destination,
+            ref int charCursor)
+        {
+            int start = byteCursor;
+            if ((uint)start >= (uint)utf8Bytes.Length ||
+                utf8Bytes[start] != (byte)'{' ||
+                start + 2 >= utf8Bytes.Length)
+            {
+                return false;
+            }
+
+            int tokenIndex = utf8Bytes[start + 1] - (byte)'0';
+            if ((uint)tokenIndex >= 4u || !formatArgs.TryGet(tokenIndex, out int value))
+                return false;
+
+            int cursor = start + 2;
+            if (cursor < utf8Bytes.Length && utf8Bytes[cursor] == (byte)'}')
+            {
+                if (!ZeroGCFormatter.FastIntToChars(value, destination, ref charCursor))
+                    return false;
+
+                byteCursor = cursor + 1;
+                return true;
+            }
+
+            if (cursor >= utf8Bytes.Length || utf8Bytes[cursor] != (byte)':')
+                return false;
+
+            int formatStart = cursor + 1;
+            int formatEnd = formatStart;
+            while (formatEnd < utf8Bytes.Length && utf8Bytes[formatEnd] != (byte)'}')
+                formatEnd++;
+
+            if (formatEnd >= utf8Bytes.Length)
+                return false;
+
+            int formatLength = formatEnd - formatStart;
+            if (formatLength > 16)
+                return false;
+
+            Span<char> format = stackalloc char[16];
+            for (int i = 0; i < formatLength; i++)
+                format[i] = (char)utf8Bytes[formatStart + i];
+
+            if (!ZeroGCFormatter.FastIntToChars(value, destination, format.Slice(0, formatLength), ref charCursor))
+                return false;
+
+            byteCursor = formatEnd + 1;
+            return true;
         }
 
         private static bool TryReadUtf8Scalar(
@@ -2097,7 +2166,13 @@ namespace Hecton.Localization
                     continue;
                 }
 
-                int offset = SaturatingAdd(staticStartOffset, reference.Utf8Offset);
+                if (reference.Utf8Offset > int.MaxValue)
+                {
+                    DumpTelemetryForCorruption(reference.KeyHash, new int2(-1, reference.ByteLength));
+                    continue;
+                }
+
+                int offset = SaturatingAdd(staticStartOffset, (int)reference.Utf8Offset);
                 if (!_utf8Bytes.IsCreated ||
                     offset < staticStartOffset ||
                     offset < 0 ||
@@ -3006,8 +3081,10 @@ namespace Hecton.Localization
                 int byteCount = UnsafeUtility.SizeOf<BabelTelemetryEntry>() * _telemetryFrames.Length;
                 byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_telemetryFrames);
                 WriteTelemetryDump(Path.Combine(docsPath, "Dump_SHINOBU_39.bin"), source, byteCount);
+                WriteTelemetryDump(Path.Combine(docsPath, "Dump_SHINOBU_150.bin"), source, byteCount);
                 WriteTelemetryDump(Path.Combine(docsPath, "Dump_BABEL_SYSTEM.bin"), source, byteCount);
                 WriteTelemetryDump(Path.Combine(docsPath, "Dump_BABEL_FIXER.bin"), source, byteCount);
+                WriteTelemetryDump(Path.Combine(docsPath, "Dump_BABEL_SURGEON.bin"), source, byteCount);
             }
             catch (Exception)
             {

@@ -21,7 +21,7 @@ namespace Hecton8.World.Biomes
             public float Weight;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public struct BiomeBoundarySdfSampleJob : IJob
         {
             [ReadOnly] public NativeArray<byte> GlobalBiomeMap;

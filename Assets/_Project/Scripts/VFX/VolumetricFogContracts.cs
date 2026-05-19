@@ -67,7 +67,14 @@ namespace Hecton8.VFX
 
     public static class VolumetricFogNativeLayout
     {
+        private static readonly bool s_isValid = ComputeIsValid();
+
         public static bool Validate()
+        {
+            return s_isValid;
+        }
+
+        private static bool ComputeIsValid()
         {
             return UnsafeUtility.SizeOf<VolumetricFogParamsDTO>() == VolumetricFogConstants.ParamsStrideBytes &&
                    OffsetOf<VolumetricFogParamsDTO>(nameof(VolumetricFogParamsDTO.FogColorAndDensity)) == 0 &&

@@ -245,3 +245,259 @@ Verification:
   </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
   <COMPILE_GUARD>No asmdef or sibling runtime reference was added. The edited file remains in Core/Signal Corridor. Current compile proof is blocked by the known missing World source.</COMPILE_GUARD>
 </SELF_AUDIT_LOOP_13>
+
+---
+
+Loop 14 delta: rollback/input DTO explicit-layout closure.
+
+What was wrong:
+- Eight rollback/input signal DTOs still used sequential layout in `GlobalSignals.cs`.
+- `InputStateSignal` wrapped `InputState`, and hot signal consumers read `InputState.Move`, `InputState.Look`, and `InputState.VerticalAxis` computed properties.
+
+What was done:
+- Converted `InputSignal`, `StateCorrectionSignal`, `DesyncDetectedSignal`, `SyncFenceSignal`, `KccVelocitySignal`, `InputStateSignal`, `LockstepSnapshotSignal`, and `SystemGlitchSignal` to explicit layouts with manual `FieldOffset` padding.
+- Added a size guard for `InputStateSignal(32)` beside the existing rollback signal guards.
+- Removed the three computed `InputState` axis properties and replaced lane consumers with direct field dequantization:
+  - move = `(MoveX, MoveY) * AxisInvQuantizeScale`
+  - look = `(LookX, LookY) * LookInvQuantizeScale`
+  - vertical = `Vertical * AxisInvQuantizeScale`
+
+Cinematic Cheats used:
+- No physics fidelity was added. The rollback lane continues to transmit quantized input and authoritative state facts; presentation systems spend the saved CPU, not the corridor.
+
+Exact microseconds saved, estimates until profiler can run:
+- Input dequantization property removal: sub-us per consumer read; expected gain is mostly eliminating hidden accessor copies on deterministic input snapshots.
+- Explicit layout: frame-time gain is data-layout risk reduction, not a direct ALU reduction. It protects memcpy/sort/cache behavior for rollback lanes on ARM64.
+
+Verification:
+- Targeted scan reports PASS for explicit layouts on all eight patched DTOs.
+- Targeted old sequential-layout scan reports zero matches for those DTOs.
+- Targeted scan reports no remaining `InputState.Move`, `InputState.Look`, or `InputState.VerticalAxis` definitions or hot signal-consumer reads.
+- `ValidateSignalSize<InputStateSignal>(32)` is present with the existing rollback size guards.
+- `git diff --check` passed for Loop 14 files with line-ending warnings only.
+- Compile not relaunched: `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` remains absent.
+
+<SELF_AUDIT_LOOP_14>
+  <TASK_RECONCILIATION>
+    <TASK id="03" status="[PASS]">Removed computed input DTO properties from the signal-consumer path; patched signal payloads remain unmanaged public-field DTOs.</TASK>
+    <TASK id="04" status="[PASS]">Converted eight rollback/input signal DTOs to explicit layouts with manual padding.</TASK>
+    <TASK id="14" status="[PASS]">Rollback-facing payloads now have fixed offsets for deterministic ordering/memcpy tooling; existing sort policy remains active.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <InputSignal size="48" math="8+8+4+4+4+4+4+1+1+2+8=48"/>
+    <StateCorrectionSignal size="128" math="48+12+12+16+4+4+4+4+4+1+1+2+4+4+8=128"/>
+    <DesyncDetectedSignal size="32" math="4+4+4+4+4+1+1+2+4+4=32"/>
+    <SyncFenceSignal size="128" math="48+12+12+16+4+4+4+4+1+1+2+4+8+8=128"/>
+    <KccVelocitySignal size="80" math="48+12+4+4+4+4+1+1+2=80"/>
+    <InputStateSignal size="32" math="24+4+1+1+2=32"/>
+    <LockstepSnapshotSignal size="32" math="8+4+4+4+4+4+4=32"/>
+    <SystemGlitchSignal size="32" math="4+4+4+4+4+4+1+1+2+4=32"/>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <COMPILE_GUARD>No new assembly reference or sibling-domain dependency was added. Build is still blocked by the known missing World source outside SHINOBU ownership.</COMPILE_GUARD>
+</SELF_AUDIT_LOOP_14>
+
+---
+
+Loop 15 delta: GlobalSignals and procedural-audio payload closure.
+
+What was wrong:
+- `GlobalSignals.cs` still contained real public `ISignal` DTOs using sequential layout after the rollback pass.
+- `AudioEvent` embedded nested audio payload structs whose layout was not explicit at the signal ABI boundary.
+- `AudioPingTriggerInfo` exposed `StartTimeSeconds` as a computed property, which is an accessor method on a payload used inside a typed signal.
+
+What was done:
+- Converted the remaining `GlobalSignals.cs` sequential signal DTOs touched by the scan to explicit layouts.
+- Converted `AudioPingTriggerInfo`, `HullStressSignal`, and `StructuralStressAudioInfo` in `ProceduralAudioEvents.cs` to explicit public readonly field payloads.
+- Replaced `AudioEvent` with a 128-byte explicit union: 16-byte header plus variant payload at offset 16.
+- Updated `ValidateSignalSize<global::Hecton8.Core.Contracts.Signals.AudioEvent>` from 144 to 128.
+- Removed `AudioPingTriggerInfo.StartTimeSeconds`; source scan found no consumers.
+
+Cinematic Cheats used:
+- The audio route now transports one active variant instead of carrying both variant payload slots. No acoustic simulation was added; the lane carries the compact fact and leaves procedural richness to the audio renderer.
+
+Exact microseconds saved, estimates until profiler can run:
+- `AudioEvent` saves 16 bytes per queued/flushed event. In a 128-event burst that is 2048 bytes less snapshot bandwidth.
+- Property removal is sub-us per read; the real gain is eliminating accessor-method risk from a payload type used in signal snapshots.
+
+Verification:
+- Source scan reports zero real `Sequential ISignal` declarations in `GlobalSignals.cs`.
+- Targeted payload scan reports no `{ get; }`, no `=>`, and no `LayoutKind.Sequential` inside the Loop 15 DTO declarations.
+- `rg` reports no `AudioEvent` 144-byte size guard in active source; the active guard is `AudioEvent(128)`.
+- `git diff --check` passed for `GlobalSignals.cs` and `ProceduralAudioEvents.cs` with line-ending warnings only.
+- Compile not relaunched because `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` remains absent.
+
+<SELF_AUDIT_LOOP_15>
+  <TASK_RECONCILIATION>
+    <TASK id="03" status="[PASS]">Global signal DTO residue and nested audio payload property residue removed from the typed corridor surface.</TASK>
+    <TASK id="04" status="[PASS]">Loop 15 DTOs now use explicit offsets; `AudioEvent` is 128 bytes, not 144.</TASK>
+    <TASK id="17" status="[PASS]">Targeted static scan confirms no sequential layout remains in the patched GlobalSignals/audio payload set.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <AudioEvent size="128" offsets="0 Kind byte; 1 Reserved0 byte; 2 Reserved1 ushort; 4 Reserved2 uint; 8 Reserved3 ulong; 16 AudioPing(48) union StructuralStress(96)" math="16 header + max(48,96) payload = 112, explicit tail to 128"/>
+    <AudioPingTriggerInfo size="48" math="8+4+4+4+12+4+4+1+1+2+4=48"/>
+    <StructuralStressAudioInfo size="96" math="48 AUP + 12 world + 9 floats/uint padding region to 96"/>
+    <DataVaultUpdateSignal size="32" math="4+4+4+4+4+4+2+2+4=32"/>
+    <VoxelCarveEvent size="128" math="8 + 4*float3 + 2*double3 + 2 floats + 4 bytes + 3 uint pads = 128"/>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <H_PHI_VAULT_STATUS>No private NativeArray/NativeList/NativeHashMap was added. Loop 15 changes are DTO-only and reuse existing SignalBus/Vault buffers.</H_PHI_VAULT_STATUS>
+  <COMPILE_GUARD>No asmdef or sibling runtime reference was added. Audio payload edits are cross-domain ABI edits required because `AudioEvent` is a Core signal payload.</COMPILE_GUARD>
+</SELF_AUDIT_LOOP_15>
+
+---
+
+Loop 16 delta: localized public `ISignal` explicit-layout guard.
+
+What was wrong:
+- A repo-wide source scan still found localized public `ISignal` DTOs declared as sequential structs outside `GlobalSignals.cs`.
+- The editor validator only rejected `Pack=1` and non-8-byte sizes, so a future sequential signal could pass if its size was aligned.
+
+What was done:
+- Converted 30 localized public `ISignal` DTOs to explicit `FieldOffset` layouts without changing domain producer/consumer logic.
+- Widened refactored 40/48-byte signal payloads to 64 bytes where the strict signal DTO rule required manual padding: `DroneFleetInventoryTransactionSignal`, `MockPlayerPositionSignal`, `ThermodynamicsMockDamageSignal`, `FloraSpawnedSignal`, `DeltaCrusherMockLaserFireSignal`.
+- Strengthened `SignalPayloadLayoutValidator` to reject any reflected `ISignal` whose `StructLayoutAttribute.Value` is not `LayoutKind.Explicit`.
+
+Cinematic Cheats used:
+- No new simulation was introduced. This pass is ABI hygiene: one fact stays one route, with stable memory stride and no physical-system expansion.
+
+Exact microseconds saved, estimates until profiler can run:
+- Main measurable bandwidth win remains Loop 15's 16 bytes/event on `AudioEvent`.
+- Loop 16 is a preventive ARM64/cache-line safety pass. Expected gain is avoiding unaligned/vectorization regressions, not reducing a specific hot loop today.
+
+Verification:
+- `rg --pcre2 -U` scan for `[StructLayout(LayoutKind.Sequential...)] public ... struct ... : ISignal` reports zero active source matches.
+- Source scan over public `ISignal` declarations reports zero structs missing nearby `StructLayout(LayoutKind.Explicit)`.
+- Search found no active source `SizeOf<T>` or `ValidateSignalSize<T>` expectations for the old 40/48-byte localized signal sizes.
+- `git diff --check` passed for all Loop 16 files with line-ending warnings only.
+- Compile not relaunched: the external World source `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` is still absent and no dotnet/csc process was present.
+
+<SELF_AUDIT_LOOP_16>
+  <TASK_RECONCILIATION>
+    <TASK id="03" status="[PASS]">Localized public signal payloads are explicit public-field unmanaged DTOs after this pass; no managed fields were introduced.</TASK>
+    <TASK id="04" status="[PASS]">Sequential localized public `ISignal` declarations are removed from active source.</TASK>
+    <TASK id="17" status="[PASS]">Editor validator now fails non-explicit `ISignal` layouts, Pack=1, and non-8-byte signal sizes.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <DroneFleetInventoryTransactionSignal size="64" math="5 ints 20 + float3 12 + uint flags 4 + uint pad 4 + 3 ulong pads 24 = 64"/>
+    <MockPlayerPositionSignal size="64" math="double3 24 + frame/seed/flags/pad uints 16 + 3 ulong pads 24 = 64"/>
+    <ThermodynamicsMockDamageSignal size="64" math="double3 24 + float3 12 + damage float 4 + entity/flags uints 8 + 2 ulong pads 16 = 64"/>
+    <FloraSpawnedSignal size="64" math="FloraAupCell 24 + species/plant/biomass/matrix/pad uint region 24 + 2 ulong pads 16 = 64"/>
+    <DeltaCrusherMockLaserFireSignal size="64" math="double3 24 + radius 4 + two 1-byte fields + ushort 2 + material/frame uints 8 + two uint pads 8 + two ulong pads 16 = 64"/>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <H_PHI_VAULT_STATUS>No private persistent collections were added. Some widened DTOs are stored by existing domain vault/scratch buffers; buffer ownership remains with their original domains.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No new jobs were added. Existing SignalBus producers/consumers and job dependency chains were not modified.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>Loop 16 touches signal ABI structs only. No asmdef, sibling-runtime reference, or direct domain dependency was added.</COMPILE_GUARD>
+</SELF_AUDIT_LOOP_16>
+
+---
+
+Loop 17 delta: mod projection continuous quality gate.
+
+What was wrong:
+- `ModEventProjectionBridge.ResolveProjectionCap()` used `GlobalRegistry.ScalabilityTierProfileByte == 0` and jumped between `10` and `50` projected events.
+- `ProjectCombatDamageSignalsJob` and `ProjectWeatherChangedSignalsJob` received a `LowTier` byte, leaving a binary policy inside the native-to-managed projection bridge.
+
+What was done:
+- Replaced the tier byte branch with `SignalBusRegistry.GlobalQualityWeight01`.
+- Added smoothstep curve math: `q*q*(3-2*q)`, then `math.lerp(10, 50, curve)` and `math.clamp`.
+- Passed `float QualityWeight01` into both Burst jobs.
+- Preserved the public mod DTO low-sample bit by deriving it from `math.step(QualityWeight01, 0.3f)` instead of polling the registry tier.
+
+Cinematic Cheats used:
+- No simulation was added. The bridge still projects compact sampled facts from `CombatDamageSignal` and `WeatherChangedSignal`; under pressure it exposes fewer mod callbacks rather than asking gameplay systems to emit alternate event truth.
+
+Exact microseconds saved, estimates until profiler can run:
+- Worst-case managed projection opportunity count drops continuously from 50 toward 10 as quality weight falls.
+- At thermal quality near 0.1, smoothstep is about 0.028, cap is about 11 instead of the old high-tier 50. This avoids up to 39 managed callback dispatch opportunities in a frame; exact cost depends on subscribed mods and remains unmeasured.
+
+Verification:
+- `rg` reports zero `ScalabilityTierProfileByte` in `ModEventProjectionBridge.cs`.
+- `rg` reports no `LowTier` job field in `ModEventProjectionBridge.cs`; the remaining `LowTierProjectionCap` name is a cap constant.
+- `git diff --check` passed for `ModEventProjectionBridge.cs` with line-ending warning only.
+- Compile not relaunched by user instruction and because the known external World source is still absent.
+
+<SELF_AUDIT_LOOP_17>
+  <TASK_RECONCILIATION>
+    <TASK id="02" status="[PASS]">No new gameplay `HectonEventBus` traffic was added; the edited bridge remains a mod/API projection surface.</TASK>
+    <TASK id="09" status="[PASS]">Projection load shedding now consumes continuous `SignalBusRegistry.GlobalQualityWeight01` and smoothstep/lerp math.</TASK>
+    <TASK id="06" status="[PASS]">Existing typed SignalBus source lanes stay unchanged; only the projection budget and job scalar changed.</TASK>
+  </TASK_RECONCILIATION>
+  <SCALABILITY_CURVE_EXPLANATION>Projection cap = round(lerp(10, 50, q*q*(3-2*q))). At q=0.1 the cap is about 11; at q=0.5 it is 30; at q=1.0 it is 50. Below 0.3, mod callbacks are sampled aggressively while first-party signal truth remains in typed snapshots.</SCALABILITY_CURVE_EXPLANATION>
+  <H_PHI_VAULT_STATUS>No private NativeArray/NativeList/NativeHashMap was added. Existing `_projectedEvents` and `_cullTelemetry` ownership remains unchanged in this legacy mod bridge.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Jobs still consume `SignalBus<CombatDamageSignal>.GetFrameSnapshotArray()` and `SignalBus<WeatherChangedSignal>.GetFrameSnapshotArray()` and output to `_projectedEvents.AsParallelWriter()`. `[ReadOnly, NoAlias]` and `[NoAlias]` remain present.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef, sibling runtime reference, or new cross-domain concrete dependency was added.</COMPILE_GUARD>
+</SELF_AUDIT_LOOP_17>
+
+---
+
+Loop 18 delta: inventory native payload Pack=1 removal.
+
+What was wrong:
+- `InventoryPhysicalDropRequestPayload` used `Pack=1` while carrying two `Vector3` values, an `ulong`, and scalar fields through cross-domain inventory event routing.
+- `InventoryEventPayload` was sequential NativeQueue data with implicit offsets.
+
+What was done:
+- Converted `InventoryEventPayload` to `[StructLayout(LayoutKind.Explicit, Size = 24)]`.
+- Converted `InventoryPhysicalDropRequestPayload` to `[StructLayout(LayoutKind.Explicit, Size = 48)]`.
+- Added named `_pad0` at offset 44 so the 48-byte drop payload has explicit tail padding.
+
+Cinematic Cheats used:
+- None added. This pass does not simulate dropped items differently; it only removes unsafe ABI packing from the routing payload.
+
+Exact microseconds saved, estimates until profiler can run:
+- No direct ALU win claimed. The value is avoiding ARM64 unaligned access penalties and future NativeQueue/Burst copy instability on item-drop packets.
+
+Verification:
+- `rg` reports no `Pack = 1` in `InventoryEvents.cs`.
+- `git diff --check` passed for `InventoryEvents.cs` with line-ending warning only.
+- Compile not relaunched by instruction and because the known external World source is still absent.
+
+<SELF_AUDIT_LOOP_18>
+  <TASK_RECONCILIATION>
+    <TASK id="04" status="[PASS]">Removed Pack=1 from a native inventory routing payload and pinned offsets explicitly.</TASK>
+    <TASK id="17" status="[PASS]">Inventory native payloads now have explicit layouts; static scan found no Pack=1 in `InventoryEvents.cs`.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <InventoryEventPayload size="24" offsets="0 TotalMassKg float; 4 CarryCapacityKg float; 8 Load01 float; 12 ItemHashId uint; 16 ReferenceSlot int; 20 EventType ushort; 22 Reserved ushort" math="4+4+4+4+4+2+2=24"/>
+    <InventoryPhysicalDropRequestPayload size="48" offsets="0 RuntimePosition Vector3; 12 InitialImpulse Vector3; 24 GeneticsMask ulong; 32 ItemHashId uint; 36 Quantity int; 40 QualityMilli ushort; 42 Reserved ushort; 44 _pad0 uint" math="12+12+8+4+4+2+2+4=48"/>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <H_PHI_VAULT_STATUS>No private persistent collections were added. Existing `InventoryEvents` NativeQueues and sidecar arrays remain unchanged.</H_PHI_VAULT_STATUS>
+  <COMPILE_GUARD>No asmdef, sibling runtime reference, or new route dependency was added.</COMPILE_GUARD>
+</SELF_AUDIT_LOOP_18>
+
+---
+
+Loop 19 delta: mod projection player-context hot cache.
+
+What was wrong:
+- `ModEventProjectionBridge.ResolvePlayerRuntimePosition()` called `GlobalRegistry.Player` while scheduling projected mod events.
+- The bridge can execute every frame when projected mod subscribers exist, so the resolver was still a hot registry polling point.
+
+What was done:
+- Added `_playerRuntimeContext` to the bridge.
+- Filled it once in `Install()`.
+- Registered the bridge as an `IGlobalRegistryHotSwapListener`.
+- Refreshed the cached player context on `GlobalRegistryServiceSlot.Player` replacement.
+- Changed `ResolvePlayerRuntimePosition()` to read the cached interface only.
+
+Cinematic Cheats used:
+- None added. This is dependency-routing hygiene; position still comes from the owner `IPlayerRuntimeContext` snapshot.
+
+Exact microseconds saved, estimates until profiler can run:
+- Sub-microsecond per projected frame from removing one registry slot read.
+- Higher value is compile-wall and coupling reduction: projected mods no longer force a GlobalRegistry dependency inside the frame resolver.
+
+Verification:
+- `rg` shows the only `GlobalRegistry.Player` in `ModEventProjectionBridge.cs` is the cold cache fill during `Install()`.
+- `rg` confirms `ResolvePlayerRuntimePosition()` reads `_playerRuntimeContext`.
+- `git diff --check` passed for `ModEventProjectionBridge.cs` with line-ending warning only.
+- Compile not relaunched by instruction and because the known external World source is still absent.
+
+<SELF_AUDIT_LOOP_19>
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="[PASS]">Removed hot `GlobalRegistry.Player` lookup from the mod projection resolver.</TASK>
+    <TASK id="10" status="[PASS]">Added hot-swap rebinding for the cached player context.</TASK>
+  </TASK_RECONCILIATION>
+  <DEPENDENCY_INJECTION_REBINDING>Cold fill: `_playerRuntimeContext = GlobalRegistry.Player` in `Install()`. Rebind: `OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot.Player, ...)` assigns the current service as `IPlayerRuntimeContext`. Hot resolver: no GlobalRegistry call.</DEPENDENCY_INJECTION_REBINDING>
+  <H_PHI_VAULT_STATUS>No new native collection was added.</H_PHI_VAULT_STATUS>
+  <COMPILE_GUARD>No asmdef, sibling runtime reference, or new concrete dependency was added.</COMPILE_GUARD>
+</SELF_AUDIT_LOOP_19>

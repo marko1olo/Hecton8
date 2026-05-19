@@ -85,10 +85,6 @@ namespace Hecton8.Core
         public ushort Flags;
         public uint ButtonsBitmask;
 
-        public readonly float2 Move => new float2(MoveX * AxisInvQuantizeScale, MoveY * AxisInvQuantizeScale);
-        public readonly float2 Look => new float2(LookX * LookInvQuantizeScale, LookY * LookInvQuantizeScale);
-        public readonly float VerticalAxis => Vertical * AxisInvQuantizeScale;
-
         public readonly bool HasFlag(InputStateFlags flag)
         {
             return (Flags & (ushort)flag) != 0;

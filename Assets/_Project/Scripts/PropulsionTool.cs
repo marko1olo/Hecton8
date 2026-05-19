@@ -170,7 +170,9 @@ namespace Hecton8.Gameplay
 
         public override void UsePrimary(float deltaTime)
         {
-            base.UsePrimary(deltaTime);
+            if (!TryBeginToolUse(deltaTime, true))
+                return;
+
             _primaryInvokedThisTick = true;
 
             if (_lockedBody != null && !_primaryHeldLastTick)
@@ -184,7 +186,9 @@ namespace Hecton8.Gameplay
 
         public override void UseSecondary(float deltaTime)
         {
-            base.UseSecondary(deltaTime);
+            if (!TryBeginToolUse(deltaTime, false))
+                return;
+
             _secondaryInvokedThisTick = true;
 
             if (!_secondaryHeldLastTick)

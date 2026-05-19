@@ -627,37 +627,14 @@ namespace Hecton8.Gameplay
 
             // Blokiruem logiku v menyu (hotya InputManager dolzhen otklyuchat Player map, 
             // my vse ravno obrabatyvaem perehody i batareyu)
-            bool isMenuOpen = IsGameplayInputBlockedByMenu();
+            IsGameplayInputBlockedByMenu();
 
             // ── Overheat cooldown ──
-            if (_isOverheated)
-            {
-                _overheatCooldownTimer -= deltaTime;
-                if (_overheatCooldownTimer <= 0f)
-                {
-                    _isOverheated = false;
-                    _overheatCooldownTimer = 0f;
-                }
-            }
-            else if (enableHeatBuildup && _isOn)
-            {
-                _heatLevel += deltaTime / Mathf.Max(overheatTime, 0.01f);
-                if (_heatLevel >= 1f)
-                {
-                    TriggerOverheat();
-                }
-            }
-            else
-            {
-                _heatLevel -= deltaTime * cooldownRate;
-                if (_heatLevel < 0f) _heatLevel = 0f;
-            }
+            _overheatCooldownTimer = _isOverheated ? _overheatCooldownTimer : 0f;
 
             // ── Battery drain ──
-            if (_isOn && enableBatteryDrain && survivalSystem != null && _externalBatteryTool == null)
-            {
-                ProcessBatteryDrain(deltaTime);
-            }
+            if (_isOn && _externalBatteryTool == null && EnergyPercent <= 1f)
+                TurnOff();
 
             // ── Flickering ──
             UpdateExternalInterference(deltaTime);
@@ -736,6 +713,33 @@ namespace Hecton8.Gameplay
         {
             if (ReferenceEquals(_externalBatteryTool, batteryTool))
                 _externalBatteryTool = null;
+        }
+
+        internal void ApplyCentralThermalState(float heat01, bool overheated)
+        {
+            float nextHeat = Mathf.Clamp01(heat01);
+            bool becameOverheated = overheated && !_isOverheated;
+            _heatLevel = nextHeat;
+
+            if (overheated)
+            {
+                _isOverheated = true;
+                _overheatCooldownTimer = overheatCooldownPeriod;
+                if (_isOn)
+                    TurnOff();
+                if (becameOverheated)
+                {
+                    PlaySound(overheatSound);
+                    FlashlightEvents.RaiseOverheat(EnergyPercent, _heatLevel);
+                }
+                return;
+            }
+
+            if (_isOverheated)
+            {
+                _isOverheated = false;
+                _overheatCooldownTimer = 0f;
+            }
         }
 
         public void CycleBeamMode()
@@ -1106,32 +1110,7 @@ namespace Hecton8.Gameplay
 
         private void ProcessBatteryDrain(float deltaTime)
         {
-            _batteryDrainAccumulator += batteryDrainRate * deltaTime;
-
-            if (_batteryDrainAccumulator >= 1f)
-            {
-                int drainAmount = Mathf.FloorToInt(_batteryDrainAccumulator);
-                _batteryDrainAccumulator -= drainAmount;
-
-                survivalSystem.DrainEnergy(drainAmount);
-            }
-
-            float energyPercent = survivalSystem.EnergyPercent;
-
-            if (energyPercent <= lowBatteryThreshold)
-            {
-                if (!_lowBatteryWarningPlayed)
-                {
-                    PlaySound(lowBatterySound);
-                    _lowBatteryWarningPlayed = true;
-                }
-
-                if (energyPercent <= 1f)
-                {
-                    FlashlightEvents.RaiseBatteryDepleted(energyPercent, _heatLevel);
-                    TurnOff();
-                }
-            }
+            _batteryDrainAccumulator = 0f;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1140,13 +1119,7 @@ namespace Hecton8.Gameplay
 
         private void TriggerOverheat()
         {
-            _isOverheated = true;
-            _overheatCooldownTimer = overheatCooldownPeriod;
-            _heatLevel = 1f;
-
-            TurnOff();
-            PlaySound(overheatSound);
-            FlashlightEvents.RaiseOverheat(EnergyPercent, _heatLevel);
+            ApplyCentralThermalState(1f, true);
         }
 
         // ══════════════════════════════════════════════════════════

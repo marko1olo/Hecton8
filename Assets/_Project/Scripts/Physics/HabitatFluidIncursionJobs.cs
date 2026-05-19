@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Burst;
@@ -8,6 +10,72 @@ using Unity.Mathematics;
 
 namespace Hecton8.Physics
 {
+    internal static class HabitatFluidIncursionMath
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveIngressVolume(
+            float currentVolume,
+            float maxVolume,
+            float breachAreaSquareMeters,
+            float depthMeters,
+            float fixedDeltaTime,
+            float dischargeCoefficient,
+            float maximumIngressPerSecondNormalized,
+            float gravityMetersPerSecondSquared,
+            float epsilon)
+        {
+            float safeMaxVolume = math.max(0f, maxVolume);
+            float safeCurrentVolume = math.clamp(currentVolume, 0f, safeMaxVolume);
+            float remainingCapacity = safeMaxVolume - safeCurrentVolume;
+            if (breachAreaSquareMeters <= epsilon || remainingCapacity <= epsilon)
+                return safeCurrentVolume;
+
+            float ingressVelocity = ResolveTorricelliIngressVelocity(depthMeters, gravityMetersPerSecondSquared);
+            float cd = math.clamp(dischargeCoefficient, HectonPhysicsContract.FluidDischargeCoefficientMin, 1f);
+            float deltaVolume = ingressVelocity * breachAreaSquareMeters * cd * math.max(0f, fixedDeltaTime);
+            if (!math.isfinite(deltaVolume))
+                deltaVolume = 0f;
+
+            float maxIngressScale = math.max(HectonPhysicsContract.FluidMaximumIngressScaleMin, maximumIngressPerSecondNormalized) * math.max(0f, fixedDeltaTime);
+            float maxIngressThisStep = safeMaxVolume * maxIngressScale;
+            deltaVolume = math.clamp(deltaVolume, 0f, math.min(remainingCapacity, maxIngressThisStep));
+            return safeCurrentVolume + deltaVolume;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SafeCubeRoot(float value)
+        {
+            float safeValue = math.max(0f, value);
+            if (safeValue <= 0f)
+                return 0f;
+
+            float estimate = math.asfloat((math.asint(safeValue) / 3) + HectonPhysicsContract.CubeRootMagicBias);
+            float estimateSq = math.max(estimate * estimate, HectonPhysicsContract.FluidSqrtEpsilon);
+            estimate = ((estimate + estimate) + safeValue * math.rcp(estimateSq)) * HectonPhysicsContract.CubeRootNewtonOneThird;
+            return math.isfinite(estimate) ? estimate : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveTorricelliIngressVelocity(float depthMeters, float gravityMetersPerSecondSquared)
+        {
+            float safeDepth = math.max(0f, depthMeters);
+            float safeGravity = math.max(0f, gravityMetersPerSecondSquared);
+            float velocity = ApproximateSqrtPositive(2f * safeGravity * safeDepth);
+            return math.isfinite(velocity) ? velocity : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ApproximateSqrtPositive(float value)
+        {
+            float safeValue = math.max(0f, value);
+            if (safeValue <= 0f)
+                return 0f;
+
+            float magnitude = safeValue * math.rsqrt(math.max(safeValue, HectonPhysicsContract.FluidSqrtEpsilon));
+            return math.isfinite(magnitude) ? magnitude : 0f;
+        }
+    }
+
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct FluidCompartmentClearJob : IJobParallelFor
     {

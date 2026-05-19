@@ -1,7 +1,7 @@
 # DOC_GLOBAL_DOCS_REFRESH Rationale
 
 Date: 2026-05-19
-Status: ACTIVE R31 / PRIOR HISTORY ARCHIVED
+Status: ACTIVE R32 / PRIOR HISTORY ARCHIVED
 
 Prior full rationale history is archived at `Docs/Archive/Batch009/AgentLogs/Rationale_DOC_GLOBAL_DOCS_REFRESH.md`. The active file was absent during R27 closeout, so this file records the current live decision without rewriting archived rationale.
 
@@ -14,6 +14,20 @@ Solution: Treat R27 as a static root/architecture/index correction layer. Promot
 Rejected Alternatives: Preserving R26 as current was rejected because R27 source-line counters now read `1204221 / 1184559 / 1199376`, and active indexes would misroute readers. Creating placeholder HPhi or RealtimeCSG files was rejected as fake evidence. Claiming Unity/runtime/profiler/player-build proof was rejected because none was run. Mutating historical archive bodies was rejected; only active entrypoints and current report/tooling were updated.
 
 Scalability potential: Low-tier readers get exact red gates and avoid false proof language. Middle-tier review gets current source scale and active read order. High/Ultra review can target real Unity import, profiler, player build, ModCommand size repair, and RealtimeCSG reference cleanup rather than re-auditing documentation trust.
+
+Hardware Impact: 0 us/frame. Documentation/tooling only. No runtime optimization or microsecond saving is claimed without profiler evidence.
+
+Evidence Class: STATIC_DOC / STATIC_SOURCE / FILESYSTEM / PY_TOOL / POWERSHELL_STATIC / READ_ONLY_SUBAGENT_AUDIT. Runtime verification remains PENDING VERIFICATION.
+
+## Decision 32: R32 Architecture R4 Chain And Proof-Wording Correction
+
+Problem: After R31, active root/architecture docs still had interior evidence drift: May 17 actuality manifests were labeled current, one route card used `STATIC GREEN` without a GREEN artifact tuple, `PDA_ENCYCLOPEDIA_STREAMER.md` and `PROCEDURAL_WRECKAGE_GLOBAL_AUTHORITY_ROUTE_CARD_SHINOBU_121.md` lacked R4 boundaries, several runtime-contract docs lacked local source anchors, Subnautica2 sections used current-proof wording for static snapshots, and concurrent SHINOBU_02 edits temporarily demoted R32 as absent until an R32 artifact existed.
+
+Solution: Treat R32 as a static root/architecture R4-chain/proof-wording layer. Create `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`; promote R32 through root/architecture/report entrypoints; add R4/current-boundary text; add local source anchors; demote historical manifest and current-proof wording; update Mod API static validator tuple to `Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`; and keep AtlasCheck red.
+
+Rejected Alternatives: Leaving R31 as latest after R32 edits was rejected because the R32 report now exists and active docs changed. Preserving `STATIC GREEN` was rejected because no GREEN review artifact tuple was linked. Treating static snapshots, temporary Roslyn checks, or Mod API PASS as Unity/runtime proof was rejected because no Unity import, Play Mode, profiler, GCMonitor, player build, or mod runtime smoke was run. Recapturing physical source-line counters was rejected because this pass corrected root/architecture documentation interiors; R27 remains the latest deliberate physical-line counter snapshot.
+
+Scalability potential: Low-tier readers get exact current boundaries and do not chase absent R32 or historical manifest proof. Middle-tier review can distinguish static source anchors from runtime readiness. High/Ultra review can focus on real Unity/runtime evidence and AtlasCheck missing references.
 
 Hardware Impact: 0 us/frame. Documentation/tooling only. No runtime optimization or microsecond saving is claimed without profiler evidence.
 

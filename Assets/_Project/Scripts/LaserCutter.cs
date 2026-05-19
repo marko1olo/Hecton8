@@ -687,6 +687,8 @@ namespace Hecton8.Gameplay
 
         public override void UsePrimary(float deltaTime)
         {
+            SyncCentralThermalBatteryState();
+
             if (IsBroken)
             {
                 OnToolBrokenWhileUsing();
@@ -707,20 +709,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            base.UsePrimary(deltaTime);
+            if (!TryBeginToolUse(deltaTime, true))
+                return;
+
             Activate();
             _isFiring = true;
             PublishBeamState(true);
-
-            _heatLevel += deltaTime * math.rcp(math.max(overheatTime, 0.1f));
-
-            if (_heatLevel >= 1f)
-            {
-                _heatLevel = 1f;
-                SyncHeatOutputs();
-                TriggerOverheatLockout();
-                return;
-            }
 
             bool didHit = TryGetCutHit(out _hitInfo);
 
@@ -764,7 +758,9 @@ namespace Hecton8.Gameplay
             if (_secondaryLatched)
                 return;
 
-            base.UseSecondary(deltaTime);
+            if (!TryBeginToolUse(deltaTime, false))
+                return;
+
             _secondaryLatched = true;
 
             RaycastHit diagHit;
@@ -784,32 +780,15 @@ namespace Hecton8.Gameplay
 
         public override void ToolTick(float deltaTime)
         {
-            if (_isLockedOut)
-            {
-                _lockoutTimer = math.max(0f, _lockoutTimer - deltaTime);
-                if (_lockoutTimer <= 0f)
-                {
-                      _isLockedOut = false;
-                      _lockoutSoundPlayed = false;
-                      _heatLevel = math.min(_heatLevel, 0.8f);
-                      ClearFlag(OverheatedState);
-                      EnterCooldownState();
-                      SyncHeatOutputs();
-                      PublishHeat();
-                      PublishInfoMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
-                  }
-              }
+            SyncCentralThermalBatteryState();
 
             if (!_isFiring && !_isLockedOut)
             {
-                  if (_heatLevel > 0f)
-                  {
-                      _heatLevel = math.max(0f, _heatLevel - deltaTime * math.max(0f, cooldownRate));
-                      EnterCooldownState();
-                      SyncHeatOutputs();
-                      PublishHeat();
-                  }
-                  else
+                if (_heatLevel > 0f)
+                {
+                    EnterCooldownState();
+                }
+                else
                 {
                     Deactivate();
                 }
@@ -955,6 +934,44 @@ namespace Hecton8.Gameplay
                 "CRITICAL");
         }
 
+        private void SyncCentralThermalBatteryState()
+        {
+            IModularEquipmentService service = GlobalRegistry.ModularEquipment;
+            if (service == null || !service.IsInitialized || RuntimeToolId == 0u)
+                return;
+
+            if (!service.TryGetToolState(RuntimeToolId, out ToolState state))
+                return;
+
+            float nextHeat = math.saturate(state.InternalHeat);
+            bool heatChanged = math.abs(_heatLevel - nextHeat) > 0.002f;
+            _heatLevel = nextHeat;
+            bool overheated = (state.StatusMask & ToolRuntimeStatusMasks.Overheated) != 0u;
+            if (overheated)
+            {
+                if (!_isLockedOut)
+                    TriggerOverheatLockout();
+                else
+                    SetOverheatedState();
+            }
+            else if (_isLockedOut)
+            {
+                _isLockedOut = false;
+                _lockoutTimer = 0f;
+                _lockoutSoundPlayed = false;
+                ClearFlag(OverheatedState);
+                EnterCooldownState();
+                PublishInfoMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
+                heatChanged = true;
+            }
+
+            if (heatChanged)
+            {
+                SyncHeatOutputs();
+                PublishHeat();
+            }
+        }
+
         private void PublishHeat()
         {
             if (math.abs(_heatLevel - _lastPublishedHeat) > 0.02f)
@@ -966,7 +983,6 @@ namespace Hecton8.Gameplay
 
         private void SyncHeatOutputs()
         {
-            SyncModularHeat(_heatLevel);
             if (!math.isfinite(_lastPublishedLaserHitHeat) ||
                 math.abs(_heatLevel - _lastPublishedLaserHitHeat) > ShaderFloatPublishEpsilon)
             {

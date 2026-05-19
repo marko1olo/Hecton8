@@ -22,7 +22,7 @@ namespace Hecton8.Audio
     /// <summary>
     /// Zero-allocation payload for sample-accurate procedural audio triggers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public readonly struct AudioPingTriggerInfo
     {
         /// <summary>
@@ -42,6 +42,9 @@ namespace Hecton8.Audio
             AcousticTransmission01 = 1f;
             LowPassCutoffHz = 22000f;
             Kind = ProceduralAudioPingKind.Sonar;
+            Reserved0 = 0;
+            Reserved1 = 0;
+            Reserved2 = 0u;
         }
 
         public AudioPingTriggerInfo(
@@ -60,40 +63,54 @@ namespace Hecton8.Audio
             AcousticTransmission01 = Mathf.Clamp01(acousticTransmission01);
             LowPassCutoffHz = Mathf.Clamp(lowPassCutoffHz, 80f, 22000f);
             Kind = kind;
+            Reserved0 = 0;
+            Reserved1 = 0;
+            Reserved2 = 0u;
         }
 
         /// <summary>Exact output-sample frame where the ping started rendering.</summary>
-        public long StartSampleFrame { get; }
+        [FieldOffset(0)]
+        public readonly long StartSampleFrame;
 
         /// <summary>Audio output sample rate used to resolve the frame timestamp.</summary>
-        public int SampleRate { get; }
-
-        /// <summary>Exact start time in seconds derived from the sample-frame clock.</summary>
-        public double StartTimeSeconds => StartSampleFrame / (double)SampleRate;
+        [FieldOffset(8)]
+        public readonly int SampleRate;
 
         /// <summary>Normalized ping intensity in the 0..1 range.</summary>
-        public float Intensity { get; }
+        [FieldOffset(12)]
+        public readonly float Intensity;
 
         /// <summary>Primary chirp duration in seconds.</summary>
-        public float ChirpDurationSeconds { get; }
+        [FieldOffset(16)]
+        public readonly float ChirpDurationSeconds;
 
         /// <summary>World-space source for diegetic procedural pings.</summary>
-        public Vector3 WorldPosition { get; }
+        [FieldOffset(20)]
+        public readonly Vector3 WorldPosition;
 
         /// <summary>Acoustic occlusion transmission in the 0..1 range.</summary>
-        public float AcousticTransmission01 { get; }
+        [FieldOffset(32)]
+        public readonly float AcousticTransmission01;
 
         /// <summary>Low-pass cutoff after acoustic occlusion.</summary>
-        public float LowPassCutoffHz { get; }
+        [FieldOffset(36)]
+        public readonly float LowPassCutoffHz;
 
         /// <summary>Semantic route for procedural rendering.</summary>
-        public ProceduralAudioPingKind Kind { get; }
+        [FieldOffset(40)]
+        public readonly ProceduralAudioPingKind Kind;
+        [FieldOffset(41)]
+        public readonly byte Reserved0;
+        [FieldOffset(42)]
+        public readonly ushort Reserved1;
+        [FieldOffset(44)]
+        public readonly uint Reserved2;
     }
 
     /// <summary>
     /// Zero-allocation habitat pressure impulse consumed by structural granular synthesis.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     public readonly struct HullStressSignal
     {
         /// <summary>
@@ -119,6 +136,8 @@ namespace Hecton8.Audio
             AcousticTransmission01 = Mathf.Clamp01(SanitizeFiniteValue(acousticTransmission01));
             LowPassCutoffHz = Mathf.Clamp(SanitizeFiniteOrDefault(lowPassCutoffHz, 22000f), 80f, 22000f);
             AcousticDelaySeconds = Mathf.Max(0f, SanitizeFiniteValue(acousticDelaySeconds));
+            Reserved0 = 0u;
+            Reserved1 = 0u;
         }
 
         /// <summary>
@@ -144,34 +163,49 @@ namespace Hecton8.Audio
             AcousticTransmission01 = Mathf.Clamp01(SanitizeFiniteValue(acousticTransmission01));
             LowPassCutoffHz = Mathf.Clamp(SanitizeFiniteOrDefault(lowPassCutoffHz, 22000f), 80f, 22000f);
             AcousticDelaySeconds = Mathf.Max(0f, SanitizeFiniteValue(acousticDelaySeconds));
+            Reserved0 = 0u;
+            Reserved1 = 0u;
         }
 
         /// <summary>World-space origin for portal routing and AUP conversion.</summary>
-        public Vector3 WorldPosition { get; }
+        [FieldOffset(48)]
+        public readonly Vector3 WorldPosition;
 
         /// <summary>AUP origin snapshot used to survive floating-origin shifts before dispatch.</summary>
-        public AbsoluteUniversePosition SourceAup { get; }
+        [FieldOffset(0)]
+        public readonly AbsoluteUniversePosition SourceAup;
 
         /// <summary>Normalized structural stress in the [0..1] range.</summary>
-        public float Stress01 { get; }
+        [FieldOffset(60)]
+        public readonly float Stress01;
 
         /// <summary>Signed pressure derivative or compression delta that excited the hull.</summary>
-        public float PressureDelta { get; }
+        [FieldOffset(64)]
+        public readonly float PressureDelta;
 
         /// <summary>Depth in meters used for pitch and density cheats.</summary>
-        public float DepthMeters { get; }
+        [FieldOffset(68)]
+        public readonly float DepthMeters;
 
         /// <summary>Pitch multiplier consumed by the fallback clip or granular renderer.</summary>
-        public float PitchScale { get; }
+        [FieldOffset(72)]
+        public readonly float PitchScale;
 
         /// <summary>Portal/path transmission in the [0..1] range.</summary>
-        public float AcousticTransmission01 { get; }
+        [FieldOffset(76)]
+        public readonly float AcousticTransmission01;
 
         /// <summary>Portal/path low-pass cutoff in hertz.</summary>
-        public float LowPassCutoffHz { get; }
+        [FieldOffset(80)]
+        public readonly float LowPassCutoffHz;
 
         /// <summary>Portal/path delay in seconds.</summary>
-        public float AcousticDelaySeconds { get; }
+        [FieldOffset(84)]
+        public readonly float AcousticDelaySeconds;
+        [FieldOffset(88)]
+        public readonly uint Reserved0;
+        [FieldOffset(92)]
+        public readonly uint Reserved1;
 
         internal static float SanitizeFiniteValue(float value)
         {
@@ -195,7 +229,7 @@ namespace Hecton8.Audio
     /// <summary>
     /// Zero-allocation payload for habitat structural stress groan synthesis.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     public readonly struct StructuralStressAudioInfo
     {
         /// <summary>
@@ -213,6 +247,8 @@ namespace Hecton8.Audio
             AcousticTransmission01 = 1f;
             LowPassCutoffHz = 22000f;
             AcousticDelaySeconds = 0f;
+            Reserved0 = 0u;
+            Reserved1 = 0u;
         }
 
         /// <summary>
@@ -229,34 +265,49 @@ namespace Hecton8.Audio
             AcousticTransmission01 = signal.AcousticTransmission01;
             LowPassCutoffHz = signal.LowPassCutoffHz;
             AcousticDelaySeconds = signal.AcousticDelaySeconds;
+            Reserved0 = 0u;
+            Reserved1 = 0u;
         }
 
         /// <summary>World-space origin for spatial routing.</summary>
-        public Vector3 WorldPosition { get; }
+        [FieldOffset(48)]
+        public readonly Vector3 WorldPosition;
 
         /// <summary>AUP origin snapshot used to survive floating-origin shifts before dispatch.</summary>
-        public AbsoluteUniversePosition SourceAup { get; }
+        [FieldOffset(0)]
+        public readonly AbsoluteUniversePosition SourceAup;
 
         /// <summary>Normalized edge stress in the [0..1] range.</summary>
-        public float Stress01 { get; }
+        [FieldOffset(60)]
+        public readonly float Stress01;
 
         /// <summary>Pitch multiplier consumed by the renderer.</summary>
-        public float PitchScale { get; }
+        [FieldOffset(64)]
+        public readonly float PitchScale;
 
         /// <summary>Signed pressure derivative that triggered the structural sound.</summary>
-        public float PressureDelta { get; }
+        [FieldOffset(68)]
+        public readonly float PressureDelta;
 
         /// <summary>Depth snapshot in meters used for low-cost pitch/density cheats.</summary>
-        public float DepthMeters { get; }
+        [FieldOffset(72)]
+        public readonly float DepthMeters;
 
         /// <summary>Portal/path transmission in the [0..1] range.</summary>
-        public float AcousticTransmission01 { get; }
+        [FieldOffset(76)]
+        public readonly float AcousticTransmission01;
 
         /// <summary>Portal/path low-pass cutoff in hertz.</summary>
-        public float LowPassCutoffHz { get; }
+        [FieldOffset(80)]
+        public readonly float LowPassCutoffHz;
 
         /// <summary>Portal/path delay in seconds.</summary>
-        public float AcousticDelaySeconds { get; }
+        [FieldOffset(84)]
+        public readonly float AcousticDelaySeconds;
+        [FieldOffset(88)]
+        public readonly uint Reserved0;
+        [FieldOffset(92)]
+        public readonly uint Reserved1;
     }
 
     public enum AudioEventKind : byte

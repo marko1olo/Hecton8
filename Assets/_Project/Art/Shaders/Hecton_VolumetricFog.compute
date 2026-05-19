@@ -1,7 +1,6 @@
 #pragma kernel RaymarchVolumetricFog
 #pragma kernel CompositeVolumetricFog
 #pragma target 5.0
-#pragma multi_compile _ _MATH_LOD_LOW _MATH_LOD_HIGH
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -244,15 +243,23 @@ float SampleMarineSnowDensity(float2 screenUv)
     return max(0.0, (float)encoded * rcp(scale)) * max(0.0, _HectonMarineSnowFogDensityParams.x) * max(0.0, _HectonVolumetricFogCompositeParams.y);
 }
 
-float ResolveFogDensity(float3 samplePositionWS, float2 screenUv, float normalizedTravel, int octaveCount)
+float ResolveFogDensity(float3 samplePositionLocal, float3 samplePositionWS, float2 screenUv, float normalizedTravel, int octaveCount)
 {
+    float quality = saturate(SafeFiniteScalar(_HectonVolumetricFogQualityAndLimits.x, 0.0));
     float3 flow = SampleAbyssalFlow(samplePositionWS);
-    float3 localWrapped = frac((samplePositionWS + _HectonVolumetricFogFlowAdvection.xyz + flow * _HectonVolumetricFogFlowAdvection.w * ResolveVisualPhaseSeconds()) * 0.0375) * 256.0;
+    float3 localWrapped = frac((samplePositionLocal + _HectonVolumetricFogFlowAdvection.xyz + flow * _HectonVolumetricFogFlowAdvection.w * ResolveVisualPhaseSeconds()) * 0.0375) * 256.0;
     float coarse = Fbm3(localWrapped, octaveCount);
-    float fine = Fbm3(localWrapped * 2.03 + 17.0, max(1, octaveCount - 1));
+    float detail = coarse;
+    float fineBlend = saturate((quality - 0.35) * rcp(0.65));
+    if (fineBlend > 0.001)
+    {
+        float fine = Fbm3(localWrapped * 2.03 + 17.0, max(1, octaveCount - 1));
+        detail = lerp(coarse, coarse * 0.72 + fine * 0.28, fineBlend);
+    }
+
     float stratification = lerp(1.0, 0.38, saturate(normalizedTravel));
     float silt = SampleMarineSnowDensity(screenUv);
-    float noiseDensity = saturate(coarse * 0.72 + fine * 0.28);
+    float noiseDensity = saturate(detail);
     return max(0.0, _HectonVolumetricFogColorAndDensity.w) * (noiseDensity * stratification + silt);
 }
 
@@ -347,8 +354,9 @@ void RaymarchVolumetricFog(uint3 dispatchThreadId : SV_DispatchThreadID)
 
         float travel = (stepIndex + 0.5 + jitter) * stepLength;
         float normalizedTravel = saturate(travel * SafeRcp(max(rayDistance, 0.001)));
-        float3 samplePositionWS = cameraPositionWS + rayDir * travel;
-        float density = ResolveFogDensity(samplePositionWS, screenUv, normalizedTravel, octaveCount);
+        float3 samplePositionLocal = rayDir * travel;
+        float3 samplePositionWS = cameraPositionWS + samplePositionLocal;
+        float density = ResolveFogDensity(samplePositionLocal, samplePositionWS, screenUv, normalizedTravel, octaveCount);
         float stepOpacity = saturate(1.0 - FastNegativeExp(density * extinction * stepLength));
         float transmittance = 1.0 - accumulatedOpacity;
         float3 localScatter = fogColor * scatterCoefficient + ResolveDirectionalScattering(rayDir) + ResolvePointLightScattering(samplePositionWS, rayDir);

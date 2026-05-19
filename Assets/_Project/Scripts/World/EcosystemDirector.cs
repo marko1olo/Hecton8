@@ -8,7 +8,6 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Environment.Fluids;
-using Hecton8.Ecosystem;
 using Hecton8.Gameplay;
 using Hecton8.Systems.AI;
 using Hecton8.UI;
@@ -26,7 +25,7 @@ using MacroSwarmArrival = Hecton8.Core.Contracts.MacroSwarmArrival;
 
 namespace Hecton8.World
 {
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct EcosystemSectorSaveRecord
     {
         [FieldOffset(0)] public int2 SectorCoord;
@@ -34,7 +33,7 @@ namespace Hecton8.World
         [FieldOffset(12)] public uint PackedAdaptation;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct EcosystemBiomassSaveRun
     {
         [FieldOffset(0)] public int2 StartMacroCell;
@@ -45,7 +44,7 @@ namespace Hecton8.World
         [FieldOffset(12)] public uint Reserved;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct EcosystemIndexEntry
     {
         [FieldOffset(0)] public long Key;
@@ -53,7 +52,7 @@ namespace Hecton8.World
         [FieldOffset(12)] public int Occupied;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct MacroSwarmTelemetryEntry
     {
         [FieldOffset(0)] public uint FrameIndex;
@@ -66,7 +65,7 @@ namespace Hecton8.World
         [FieldOffset(28)] public uint Reserved1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     internal struct FaunaMutationTelemetryEntry
     {
         [FieldOffset(0)] public uint FrameIndex;
@@ -241,7 +240,7 @@ namespace Hecton8.World
         private static readonly int _BiolumFlashBangParamsId = Shader.PropertyToID("_BiolumFlashBangParams");
         private static readonly int _BiomassOvergrowthId = Shader.PropertyToID("_HectonBiomassOvergrowth");
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct SectorPopulationState
         {
             [FieldOffset(0)] public int2 SectorCoord;
@@ -431,7 +430,7 @@ namespace Hecton8.World
             return (int)(hash % (uint)math.max(1, capacity));
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct BiomassImpactEvent
         {
             [FieldOffset(0)] public int2 MacroCellCoord;
@@ -441,7 +440,7 @@ namespace Hecton8.World
             [FieldOffset(14)] public ushort Padding1;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct BiomassTelemetryEntry
         {
             [FieldOffset(0)] public uint FrameIndex;
@@ -454,7 +453,7 @@ namespace Hecton8.World
             [FieldOffset(28)] public float FloraOvergrowth01;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct ApexTerritorySample
         {
             [FieldOffset(0)] public AbsoluteUniversePositionBlit128 PositionAup;
@@ -464,7 +463,7 @@ namespace Hecton8.World
             [FieldOffset(60)] public int Padding;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct ApexTerritoryOverlapResult
         {
             [FieldOffset(0)] public int RetreatBrainIndex;
@@ -1063,6 +1062,9 @@ namespace Hecton8.World
         private int _lastSectorResidencySignalDrainFrame;
         private int _scheduledApexTerritoryOverlapCount;
         private IDataVault _dataVault;
+        private VaultBufferHandle<MacroEcosystemSectorVaultRecord> _macroSectorSnapshotHandle;
+        private VaultBufferHandle<MacroEcosystemSectorIndexRecord> _macroSectorIndexHandle;
+        private VaultBufferHandle<MacroEcosystemTuningVaultRecord> _macroTuningHandle;
         private bool _registeredService;
         private bool _registeredSlowTickable;
         private bool _registeredFrostTickable;
@@ -2173,8 +2175,7 @@ namespace Hecton8.World
             preyBiomass01 = 0f;
             predatorBiomass01 = 0f;
             carryingCapacity01 = 0f;
-            float3 runtimePosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
-            if (MacroEcosystemMathematicianRuntime.TryGetBiomassAvailability(runtimePosition, out preyBiomass01, out predatorBiomass01, out carryingCapacity01))
+            if (TryGetMacroVaultBiomassAvailability(worldPosition, out preyBiomass01, out predatorBiomass01, out carryingCapacity01))
                 return true;
 
             if (!IsInitialized || HasPendingSimulationJob())
@@ -2189,6 +2190,98 @@ namespace Hecton8.World
             predatorBiomass01 = math.saturate(_predatorBiomassFront[slotIndex] * math.rcp(capacity));
             carryingCapacity01 = math.saturate(capacity);
             return true;
+        }
+
+        private bool TryGetMacroVaultBiomassAvailability(
+            Vector3 worldPosition,
+            out float preyBiomass01,
+            out float predatorBiomass01,
+            out float carryingCapacity01)
+        {
+            preyBiomass01 = 0f;
+            predatorBiomass01 = 0f;
+            carryingCapacity01 = 0f;
+
+            float3 finiteProbe = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
+            if (!math.all(math.isfinite(finiteProbe)))
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (!TryResolveMacroEcosystemVaultSnapshot(
+                    vault,
+                    out NativeArray<MacroEcosystemSectorVaultRecord> sectors,
+                    out NativeArray<MacroEcosystemSectorIndexRecord> entries,
+                    out NativeArray<MacroEcosystemTuningVaultRecord> tuning))
+                return false;
+
+            long sectorX = (long)math.floor((double)worldPosition.x / MacroEcosystemVaultContract.SectorSizeMeters);
+            long sectorZ = (long)math.floor((double)worldPosition.z / MacroEcosystemVaultContract.SectorSizeMeters);
+            ulong hash = MacroEcosystemVaultContract.ComputeSectorHash(sectorX, 0L, sectorZ);
+            if (!MacroEcosystemVaultContract.TryResolveSectorIndex(entries, hash, out int index) ||
+                (uint)index >= (uint)sectors.Length)
+            {
+                return false;
+            }
+
+            MacroEcosystemTuningVaultRecord tune = tuning[0];
+            if ((tune.Flags & MacroEcosystemVaultContract.TuningFlagSnapshotWriteInFlight) != 0u)
+                return false;
+
+            MacroEcosystemSectorVaultRecord sector = sectors[index];
+            float preyCapacity = math.max(1f, math.select(
+                MacroEcosystemVaultContract.DefaultCarryingCapacityPrey,
+                tune.CarryingCapacityPrey,
+                math.isfinite(tune.CarryingCapacityPrey) & tune.CarryingCapacityPrey > 0f));
+            float predatorCapacity = math.max(1f, math.select(
+                MacroEcosystemVaultContract.DefaultCarryingCapacityPredator,
+                tune.CarryingCapacityPredator,
+                math.isfinite(tune.CarryingCapacityPredator) & tune.CarryingCapacityPredator > 0f));
+
+            preyBiomass01 = math.saturate(sector.PreyBiomass * math.rcp(preyCapacity));
+            predatorBiomass01 = math.saturate(sector.PredatorBiomass * math.rcp(predatorCapacity));
+            float defaultCapacity = MacroEcosystemVaultContract.DefaultCarryingCapacityPrey + MacroEcosystemVaultContract.DefaultCarryingCapacityPredator;
+            carryingCapacity01 = math.saturate((preyCapacity + predatorCapacity) * math.rcp(math.max(1f, defaultCapacity)));
+            return true;
+        }
+
+        private bool TryResolveMacroEcosystemVaultSnapshot(
+            IDataVault vault,
+            out NativeArray<MacroEcosystemSectorVaultRecord> sectors,
+            out NativeArray<MacroEcosystemSectorIndexRecord> entries,
+            out NativeArray<MacroEcosystemTuningVaultRecord> tuning)
+        {
+            sectors = default;
+            entries = default;
+            tuning = default;
+
+            if (vault == null)
+                return false;
+
+            if (!_macroSectorSnapshotHandle.IsCreated &&
+                !vault.TryGetBufferHandle(BufferID.ShinobuMacroEcosystemSectorFront, out _macroSectorSnapshotHandle))
+            {
+                return false;
+            }
+
+            if (!_macroSectorIndexHandle.IsCreated &&
+                !vault.TryGetBufferHandle(BufferID.ShinobuMacroEcosystemIndexEntries, out _macroSectorIndexHandle))
+            {
+                return false;
+            }
+
+            if (!_macroTuningHandle.IsCreated &&
+                !vault.TryGetBufferHandle(BufferID.ShinobuMacroEcosystemTuning, out _macroTuningHandle))
+            {
+                return false;
+            }
+
+            sectors = _macroSectorSnapshotHandle.Resolve(vault);
+            entries = _macroSectorIndexHandle.Resolve(vault);
+            tuning = _macroTuningHandle.Resolve(vault);
+            return sectors.IsCreated && entries.IsCreated && tuning.IsCreated && tuning.Length > 0;
         }
 
         /// <inheritdoc />
@@ -3345,6 +3438,9 @@ namespace Hecton8.World
             _saveSnapshotBiomassRunCount = 0;
             _apexTerritoryBrains = null;
             _dataVault = null;
+            _macroSectorSnapshotHandle = default;
+            _macroSectorIndexHandle = default;
+            _macroTuningHandle = default;
             _activeSectorCount = 0;
             _activeBiomassCellCount = 0;
             _pendingBiomassImpactCount = 0;

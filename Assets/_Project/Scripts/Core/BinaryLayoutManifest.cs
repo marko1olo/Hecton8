@@ -166,10 +166,19 @@ namespace Hecton8.Core
             AssertOffset<VoxelDeltaCompressionTelemetryEntry>(nameof(VoxelDeltaCompressionTelemetryEntry.PayloadHash), 8);
             AssertOffset<VoxelDeltaCompressionTelemetryEntry>(nameof(VoxelDeltaCompressionTelemetryEntry.GlobalQualityWeight), 40);
 
+            AssertSize<VoxelDeltaTelemetryDumpHeaderDTO>(64);
+            AssertOffset<VoxelDeltaTelemetryDumpHeaderDTO>(nameof(VoxelDeltaTelemetryDumpHeaderDTO.Magic), 0);
+            AssertOffset<VoxelDeltaTelemetryDumpHeaderDTO>(nameof(VoxelDeltaTelemetryDumpHeaderDTO.EntryStride), 12);
+            AssertOffset<VoxelDeltaTelemetryDumpHeaderDTO>(nameof(VoxelDeltaTelemetryDumpHeaderDTO.FirstSectorHash), 32);
+            AssertOffset<VoxelDeltaTelemetryDumpHeaderDTO>(nameof(VoxelDeltaTelemetryDumpHeaderDTO.LastFrame), 52);
+
             AssertSize<VoxelDeltaCompressionTuningDTO>(64);
             AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.ProfileHash), 0);
             AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.PruneThreshold01), 16);
             AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.MaxBytesPerFrame), 48);
+            AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.DepthMinMeters), 52);
+            AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.DepthMaxMeters), 56);
+            AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO._pad0), 60);
 
             AssertSize<VoxelDeltaSectorStatsDTO>(64);
             AssertOffset<VoxelDeltaSectorStatsDTO>(nameof(VoxelDeltaSectorStatsDTO.SectorHash), 0);

@@ -7,6 +7,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
+using Hecton8.Visor;
 using Hecton8.VFX;
 using Hecton8.World;
 using Unity.Burst;
@@ -16,7 +17,6 @@ using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 
 namespace Hecton8.Physics
 {
@@ -67,7 +67,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Submarine Structural Grid")]
-    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, ILateFrameTickable, Hecton8.Gameplay.IDamageSignalReceiver, ISubmarineHullBreachReadModel, ISubmarineDamageControlTarget, ISubmarineRepairRoomResolver
+    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, Hecton8.Gameplay.IDamageSignalReceiver, ISubmarineHullBreachReadModel, ISubmarineDamageControlTarget, ISubmarineRepairRoomResolver
     {
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.FixedTick");
         private static readonly ProfilerMarker _damageScheduleProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Schedule");
@@ -427,8 +427,6 @@ namespace Hecton8.Physics
         [SerializeField, Min(0f)] private float integrityByteToCellDamageScale = DefaultIntegrityByteToCellDamageScale;
 
         [Header("Hull Impact Decals")]
-        [Tooltip("Pooled URP decal projector prefab used for heavy impact dent visuals. Null disables dent visuals without touching mesh data.")]
-        [SerializeField] private DecalProjector hullImpactDentDecalPrefab;
         [Tooltip("Minimum projected dent decal size in meters for heavy impacts.")]
         [SerializeField, Min(0.05f)] private float minimumDentDecalSizeMeters = 0.35f;
         [Tooltip("Additional projected decal size added at full heavy-impact severity.")]
@@ -451,10 +449,6 @@ namespace Hecton8.Physics
         [SerializeField, Min(8)] private int hullImpactSparkMaxParticles = 192;
         [Tooltip("Maximum visual spark burst emitted at full impact severity.")]
         [SerializeField, Range(1, 64)] private int hullImpactSparkMaxBurstCount = 50;
-        [Tooltip("Optional glowing scratch decal prefab. Falls back to the dent decal prefab when unset.")]
-        [SerializeField] private DecalProjector hullImpactScratchDecalPrefab;
-        [Tooltip("Cold prewarm count for pooled hull-impact dent/scratch decals. Zero leaves warmup to bootstrap presets.")]
-        [SerializeField, Range(0, 32)] private int hullImpactDecalPoolWarmupCount = 8;
 
         [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional authored hull collider used for automatic local bounds fitting.")]
@@ -505,7 +499,6 @@ namespace Hecton8.Physics
         [SerializeField, Min(0.001f)] private float fakeCrushVoronoiScale = 0.18f;
 
         private bool _registered;
-        private bool _registeredSlowTick;
         private bool _registeredLateFrame;
         private bool _damageReceiverRegistered;
         private bool _damageJobRunning;
@@ -547,8 +540,6 @@ namespace Hecton8.Physics
         private IDataVault _dataVault;
         private VaultBufferHandle<float4> _breachesHandle;
         private VaultBufferHandle<DamageControlTelemetryEntry> _damageControlTelemetryHandle;
-        private bool _hullImpactDentDecalPoolWarmed;
-        private bool _hullImpactScratchDecalPoolWarmed;
         private bool _breachRepairJobRunning;
         private bool _pendingRepairQueued;
         private bool _breachGpuDirty;
@@ -629,15 +620,12 @@ namespace Hecton8.Physics
             TryRegisterDamageReceiver();
             EnsureHullCollisionRelay();
             EnsureHullImpactSparkParticles();
-            if (!TryWarmupHullImpactDecalPools())
-                TryRegisterSlowTick();
         }
 
         private void OnDisable()
         {
             StopHullImpactSparkParticles();
             ClearHullCollisionRelay();
-            TryUnregisterSlowTick();
             TryUnregisterDamageReceiver();
             TryUnregister();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
@@ -651,7 +639,6 @@ namespace Hecton8.Physics
         {
             StopHullImpactSparkParticles();
             ClearHullCollisionRelay();
-            TryUnregisterSlowTick();
             TryUnregisterDamageReceiver();
             TryUnregister();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
@@ -709,12 +696,6 @@ namespace Hecton8.Physics
         public void LateFrameTick()
         {
             RenderLeakPlumeParticles();
-        }
-
-        public void SlowTick()
-        {
-            if (TryWarmupHullImpactDecalPools())
-                TryUnregisterSlowTick();
         }
 
         private void OnCollisionEnter(Collision collision)
@@ -804,7 +785,7 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Spawns one pooled visual impact decal in hull-local space without modifying hull mesh data.
+        /// Queues one visual impact decal in hull-local space without spawning projector objects or mutating hull mesh data.
         /// </summary>
         public void QueueHullImpactDecalLocal(float3 localPoint, float3 localNormal, float impactSpeed, float severity01)
         {
@@ -815,11 +796,11 @@ namespace Hecton8.Physics
             Vector3 worldPoint = cachedTransform.TransformPoint(localPointVector);
             Vector3 worldNormal = cachedTransform.TransformDirection(localNormalVector);
             SpawnHullImpactSparks(worldPoint, worldNormal, severity01);
-            SpawnHullImpactScratchDecal(worldPoint, worldNormal, impactSpeed, severity01);
+            EnqueueHullImpactDecal(worldPoint, worldNormal, impactSpeed, severity01);
         }
 
         /// <summary>
-        /// Spawns a visual-only hull impact decal from an external kinematic sweep without mutating mesh data.
+        /// Queues a visual-only hull impact decal from an external kinematic sweep without mutating mesh data.
         /// </summary>
         public void QueueHullImpactDecalWorld(Vector3 worldPoint, Vector3 outwardNormal, float impactSpeed, float severity01)
         {
@@ -827,7 +808,7 @@ namespace Hecton8.Physics
             _cachedTransform = cachedTransform;
             float severity = math.saturate(severity01);
             Vector3 normal = ResolveSafeDirection(outwardNormal, cachedTransform.up);
-            SpawnHullImpactScratchDecal(worldPoint, normal, impactSpeed, severity);
+            EnqueueHullImpactDecal(worldPoint, normal, impactSpeed, severity);
             TriggerHullImpactCameraShake(severity, worldPoint, normal);
         }
 
@@ -867,41 +848,24 @@ namespace Hecton8.Physics
             _hullImpactSparkParticles.Emit(_hullImpactSparkEmitParams, burstCount);
         }
 
-        private void SpawnHullImpactScratchDecal(Vector3 worldPoint, Vector3 outwardNormal, float impactSpeed, float severity01)
+        private void EnqueueHullImpactDecal(Vector3 worldPoint, Vector3 outwardNormal, float impactSpeed, float severity01)
         {
-            DecalProjector scratchPrefab = hullImpactScratchDecalPrefab != null
-                ? hullImpactScratchDecalPrefab
-                : hullImpactDentDecalPrefab;
-            if (scratchPrefab == null)
-                return;
-
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
-            if (pool == null)
-                return;
-
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
             Vector3 normal = ResolveSafeDirection(outwardNormal, cachedTransform.up);
-            Quaternion rotation = Quaternion.LookRotation(-normal, ResolveStableDecalUp(normal));
             Vector3 position = worldPoint + normal * math.max(0f, dentDecalSurfaceOffsetMeters);
-            GameObject instance = pool.Spawn(scratchPrefab, position, rotation);
-            if (instance == null || !instance.TryGetComponent(out DecalProjector projector))
-            {
-                if (instance != null)
-                    pool.Despawn(instance);
-
-                return;
-            }
-
             float size = DebugResolveHullImpactDentDecalSize(
                 math.max(0.05f, minimumDentDecalSizeMeters),
                 math.max(0f, dentDecalSizeFromSeverityMeters),
                 impactSpeed,
                 severity01);
-            projector.size = new Vector3(size, size, math.max(0.01f, dentDecalProjectionDepthMeters));
-            projector.pivot = new Vector3(0f, 0f, projector.size.z * 0.5f);
-            projector.fadeFactor = math.lerp(0.55f, 1f, math.saturate(severity01));
-            pool.Despawn(projector, math.max(0.1f, dentDecalLifetimeSeconds));
+            DynamicDecalVaultRuntime.TryEnqueueRuntimeImpact(
+                position,
+                normal,
+                DynamicDecalMaterialHashes.HullDent,
+                size,
+                math.max(0.1f, dentDecalLifetimeSeconds),
+                DynamicDecalFlags.HullImpact);
         }
 
         private static void TriggerHullImpactCameraShake(float severity01, Vector3 worldPoint, Vector3 worldNormal)
@@ -971,43 +935,6 @@ namespace Hecton8.Physics
                 return;
 
             _hullImpactSparkParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        }
-
-        private bool TryWarmupHullImpactDecalPools()
-        {
-            int warmupCount = math.max(0, hullImpactDecalPoolWarmupCount);
-            if (warmupCount <= 0 || (_hullImpactDentDecalPoolWarmed && _hullImpactScratchDecalPoolWarmed))
-                return true;
-
-            if (hullImpactDentDecalPrefab == null && hullImpactScratchDecalPrefab == null)
-            {
-                _hullImpactDentDecalPoolWarmed = true;
-                _hullImpactScratchDecalPoolWarmed = true;
-                return true;
-            }
-
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
-            if (pool == null)
-                return false;
-
-            if (!_hullImpactDentDecalPoolWarmed)
-            {
-                if (hullImpactDentDecalPrefab != null)
-                    pool.Warmup(hullImpactDentDecalPrefab, warmupCount);
-
-                _hullImpactDentDecalPoolWarmed = true;
-            }
-
-            if (!_hullImpactScratchDecalPoolWarmed)
-            {
-                DecalProjector scratchPrefab = hullImpactScratchDecalPrefab;
-                if (scratchPrefab != null && !ReferenceEquals(scratchPrefab, hullImpactDentDecalPrefab))
-                    pool.Warmup(scratchPrefab, warmupCount);
-
-                _hullImpactScratchDecalPoolWarmed = true;
-            }
-
-            return _hullImpactDentDecalPoolWarmed && _hullImpactScratchDecalPoolWarmed;
         }
 
         private Vector3 ResolveStableDecalUp(Vector3 normal)
@@ -2370,25 +2297,6 @@ namespace Hecton8.Physics
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
             }
-        }
-
-        private void TryRegisterSlowTick()
-        {
-            if (_registeredSlowTick || !Application.isPlaying)
-                return;
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
-        }
-
-        private void TryUnregisterSlowTick()
-        {
-            if (!_registeredSlowTick)
-                return;
-
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredSlowTick = false;
         }
 
         private void TryRegisterDamageReceiver()

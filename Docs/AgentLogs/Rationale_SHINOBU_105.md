@@ -200,3 +200,173 @@ Solution: Used a guarded PowerShell loop that sampled CPU and dotnet/csc process
 Rejected Alternatives: launching build while CPU was above 50%, launching build while another compiler was active, or editing unrelated deleted files to satisfy the generated project.
 Scalability potential: Not runtime-affecting; this preserves multi-agent workstation throughput.
 Hardware Impact: Build failed before SHINOBU code verification with `CS2001` on missing external source `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`. The file is deleted in the current worktree and outside SHINOBU_105 ownership, so this is a dependency blocker, not a SHINOBU compile result.
+
+## Loop 14 Decisions - GPU ABI And Job-Fence Polish
+
+Problem: Task 14 still carried an indexed-style 32B indirect row while the assignment specifically names `Graphics.DrawProceduralIndirect`, whose argument ABI is four uints. The render bridge also existed mostly as static helper seams, not as a cold-owned double-buffered GPU resource owner.
+Solution: Rebuilt `BoidIndirectArgsDTO` as a 16B explicit layout: vertex count, instance count, start vertex, start instance. Added `ShinobuBoidGpuUploadDispatcher`, which owns double-buffered `GraphicsBuffer` resources for 64B matrices, float4 custom shader lanes, and 16B procedural args, then uploads from Vault with `LockBufferForWrite` and `UnsafeUtility.MemCpy`.
+Rejected Alternatives: Keeping `GraphicsBuffer.IndirectDrawIndexedArgs` for a procedural draw, uploading managed argument arrays, or pretending a static helper was equivalent to runtime GPU ownership.
+Scalability potential: Low writes and draws the same 16B ABI for about 1,000 instances; middle/high/ultra increase only `InstanceCount` and matrix/custom upload count up to 100,000. Shader/VAT richness can scale independently through the custom float4 lane and global quality weight.
+Hardware Impact: The ABI cut reduces the indirect args row from 32B to 16B and removes future confusion between indexed mesh submission and procedural submission. Measured GPU/CPU impact remains pending; current project build remains blocked by the unrelated missing world source.
+
+Problem: `LotkaVolterraMacroJob.Run()` executed synchronously in `ColdTick`, violating the job-fence policy even though it was not a per-frame `Tick`.
+Solution: Schedule the macro job into `_activeJobHandle`, mark it as a macro pipeline, and let `LateFrameTick` finish it through `DispatcherJobSwap.TryComplete` under the existing swap-window discipline. Also moved DataVault lookup to the cold activation path so `Tick`/`ColdTick` call `EnsureVaultState()` against a cached `_dataVault` only.
+Rejected Alternatives: Leaving the synchronous `.Run()` because it is cold, or calling `.Complete()` immediately after scheduling.
+Scalability potential: Low through Ultra keep macro biomass hydration off the immediate caller stack. The active boid budget still scales continuously from sparse hydration to full-density visual overkill.
+Hardware Impact: Avoids a cold-tick main-thread stall source. Exact microseconds are unmeasured because compile/profiler proof is still blocked.
+
+Problem: The emergency flow mock was too easy to misread as a plain triangle-wave placeholder rather than the required deterministic Perlin-style current test field.
+Solution: Kept the cheap triangle base for low quality, then blended in deterministic trilinear value-noise samples through `GlobalQualityWeight` for high-quality Perlin-style current richness. This remains a visual fake, not Navier-Stokes.
+Rejected Alternatives: Real fluid simulation, runtime texture dependency on another agent, or shader-only smoke without CPU steering input.
+Scalability potential: Low stays mostly coarse triangle/curl flow; middle/high/ultra add richer value-noise variation for schooling motion without changing ownership.
+Hardware Impact: Extra ALU only buys visual current richness; no measured timing yet. The branchless blend keeps determinism stable across clients.
+
+## Loop 15 Decisions - Static Verification And Build Gate
+
+Problem: After Loop 14, compile verification was still required, but the previous missing-source blocker may have changed because `Hecton8.Core.csproj` no longer reports the stale world-file include. Launching a build at 100% CPU would violate the user gate.
+Solution: Re-extracted the exact SHINOBU_105 XML block, re-ran static scans against the touched SHINOBU runtime/editor files, and guarded the build with CPU/compiler checks. The probe reported CPU=100 and compiler_count=0, so no build was launched.
+Rejected Alternatives: Running `dotnet build` under saturated CPU, treating an old missing-source failure as current proof without checking the generated project, or editing unrelated world-domain files.
+Scalability potential: Not runtime-affecting. It preserves workstation responsiveness while keeping the source-level proof current.
+Hardware Impact: Avoided adding compiler load to a saturated machine. Runtime microseconds remain unmeasured because the build/profiler gate is still closed.
+
+## Loop 16 Decisions - Vault Boot Gate And Failure Path
+
+Problem: `EnsureVaultState()` still executed `GlobalDataVault.GetBufferHandle` from `Tick` and `ColdTick` after the buffers were already created. Current Vault implementation sanitizes existing buffers on handle reacquisition, so a nominal readiness check could become a hidden O(N) scan over 100,000-row SHINOBU buffers.
+Solution: Added `_vaultBuffersReady` and `AreVaultHandlesCreated()`. Runtime calls now short-circuit after validating handle creation and minimum lengths; `GetBufferHandle` remains a boot/hot-swap/recovery operation only. Reset and dispose clear the readiness flag.
+Rejected Alternatives: Trusting repeated `GetBufferHandle` as cheap, or adding a local persistent NativeArray cache. The first hides hot-path work; the second violates DataVault ownership.
+Scalability potential: Low devices avoid accidental per-frame sanitize scans while running sparse updates. Middle/high/ultra keep the same Vault-owned buffers and scale only through quality-weighted active count and math LOD.
+Hardware Impact: Prevents a potential 100,000-row buffer sanitize route from executing during normal ticks. Exact microseconds remain unmeasured until build/profiler verification is legal.
+
+Problem: The frame and macro schedule blocks caught `Exception`, unlocked job buffers, then rethrew. That protects locks but still converts a recoverable schedule failure into a gameplay crash with no SHINOBU telemetry marker.
+Solution: Replaced the schedule-path rethrows with `GlobalTelemetryBus.PublishPerformanceWarning` using numeric SHINOBU hashes, then return naturally after buffer unlock.
+Rejected Alternatives: Swallowing failure silently, throwing through gameplay, or allocating exception text/log strings.
+Scalability potential: Same across low/middle/high/ultra; failure reporting is numeric and allocation-free.
+Hardware Impact: No normal-frame cost beyond the existing try/catch boundary; failure path keeps the black-box route alive for postmortem analysis.
+
+Problem: Build verification became eligible to probe after code changes, but the explicit workstation rule forbids build execution above 50% CPU or while another compiler is running.
+Solution: Ran the guarded build probe. It reported CPU=64.3 and compiler_count=0, so no `dotnet build` was launched.
+Rejected Alternatives: Violating the CPU gate to get a compile result, or treating static scans as a compiler substitute.
+Scalability potential: Not runtime-affecting; it protects multi-agent workstation throughput.
+Hardware Impact: Avoided adding compiler load while the machine was above the allowed CPU threshold.
+
+## Loop 17 Decisions - Procedural Args Target Hardening
+
+Problem: The double-buffered indirect args resource was created with `GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw` while using a 16-byte `BoidIndirectArgsDTO` stride. Some Unity backend validation treats Raw buffers as 4-byte lanes, so the extra Raw flag could create platform/version-specific failure even though the procedural ABI row itself is correct.
+Solution: Removed `GraphicsBuffer.Target.Raw` from `CreateIndirectArgsBuffer()`. The buffer is now `Target.IndirectArguments` with one 16B `BoidIndirectArgsDTO` element, matching `DrawProceduralIndirect`.
+Rejected Alternatives: Returning to `GraphicsBuffer.IndirectDrawIndexedArgs`, packing the args as four independent uint lanes, or allocating a managed upload array before draw submission.
+Scalability potential: Low/middle/high/ultra all write the same 16B args row; only `InstanceCount` changes with `GlobalQualityWeight`.
+Hardware Impact: Prevents a driver/API validation branch from killing the GPU path. Runtime microseconds are not claimed; this is ABI correctness.
+
+Problem: Build verification was attempted again after the target correction, but the CPU gate closed.
+Solution: Guarded probe reported CPU=98.9 and compiler_count=0, so `dotnet build` was not launched.
+Rejected Alternatives: Launching the compiler under saturated CPU.
+Scalability potential: Not runtime-affecting.
+Hardware Impact: Avoided adding compiler pressure to an already saturated workstation.
+
+## Loop 18 Decisions - Schedule Failure Ownership
+
+Problem: The frame and macro schedule catch blocks were safer than rethrowing, but still had a hidden corruption edge. If any `Schedule()` succeeded and a later scheduling/register step threw before `_jobScheduled` and `_jobLocksHeld` were published, the catch could unlock Vault buffers while Burst jobs were still using them.
+Solution: Added local `scheduledHandle` and `scheduledWork` tracking in both frame and macro scheduling paths. After each successful schedule, the latest handle is retained. On exception, scheduled work is preserved through `_activeJobHandle`, `_jobScheduled`, and `_jobLocksHeld` so late-frame recovery owns completion and unlock. Only pre-schedule failures unlock immediately.
+Rejected Alternatives: Assuming schedule/register exceptions never happen, or forcing `Complete()` in the catch. The first is architectural denial; the second violates dispatcher swap-window ownership.
+Scalability potential: Same across low/middle/high/ultra; this is memory ownership correctness around the same quality-scaled job graph.
+Hardware Impact: No normal-frame allocation or collection added. Failure-path behavior prevents Vault reuse races and keeps recovery in the dispatcher lane.
+
+Problem: Loop 18 needed verification after the ownership patch.
+Solution: Re-ran critical static scans, Burst directive count, `git diff --check`, and the guarded build probe. Static scans found no critical forbidden SHINOBU pattern; 9 job types still have 9 required Burst directives. Build probe reported CPU=100 and compiler_count=0, so no compiler was launched.
+Rejected Alternatives: Launching build under saturated CPU or claiming profiler/compile proof from static scans.
+Scalability potential: Not runtime-affecting.
+Hardware Impact: Avoided compiler load while CPU was saturated; runtime microseconds remain unmeasured.
+
+## Loop 19 Decisions - GPU Upload Route Wiring
+
+Problem: The double-buffered GPU dispatcher existed, but `ShinobuEcosystemBalancer` did not own or invoke it. That left the render matrices and indirect args as Vault output only, making the actual GPU publication route incomplete.
+Solution: Added one cold-owned `ShinobuBoidGpuUploadDispatcher` instance, prewarmed it from `EnsureVaultState()` outside batch/headless mode, and uploaded matrix/custom/indirect payloads from Vault after `DispatcherJobSwap` completed the frame job. The upload publishes `_H8ShinobuBoidMatrices`, `_H8ShinobuBoidCustomData`, and `_H8ShinobuBoidActiveCount`, and writes measured upload milliseconds into telemetry.
+Rejected Alternatives: Inventing a material/draw owner inside SHINOBU, building managed matrix arrays, or allocating the GPU buffers lazily on the first dense gameplay frame.
+Scalability potential: Low uploads the quality-capped active count; middle/high/ultra increase instance count continuously up to the prewarmed capacity. Shader/VAT richness remains a renderer/material concern through the published buffers.
+Hardware Impact: This turns the existing 6.4MB matrix lane into an actual mapped GPU upload route without per-frame managed arrays. Runtime timing is now recorded, but not measured here because build/profiler remains gated.
+
+Problem: Loop 19 needed verification.
+Solution: Re-ran critical static scans, Burst directive count, `git diff --check`, and the guarded build probe. Static scan found no critical forbidden SHINOBU pattern; 9 job types still have 9 required Burst directives. Build probe reported CPU=96.3 and compiler_count=0, so no compiler was launched.
+Rejected Alternatives: Launching build above the CPU gate.
+Scalability potential: Not runtime-affecting.
+Hardware Impact: Avoided compiler pressure under high CPU load.
+
+## Loop 20 Decisions - GPU Buffer Lock Safety
+
+Problem: `GraphicsBuffer.LockBufferForWrite` calls in the static upload helpers and dispatcher upload path did not use `finally`. If a driver call, pointer resolution, or unsafe copy threw after a successful lock, a GPU buffer could remain mapped.
+Solution: Wrapped every SHINOBU `LockBufferForWrite` upload block with a lock flag and `finally`-guarded `UnlockBufferAfterWrite`. This covers render matrices, custom shader data, and indirect args.
+Rejected Alternatives: Assuming `UnsafeUtility.MemCpy` and graphics-driver mapping cannot fail, or only hardening the newly wired dispatcher while leaving public helper seams unsafe.
+Scalability potential: Same across quality weights; this is resource ownership safety for all active counts.
+Hardware Impact: No allocation change. Failure-path safety improves; normal upload path adds only structured `finally` control flow around existing mapped writes.
+
+Problem: Loop 20 needed verification and build-gate check.
+Solution: Re-ran critical static scans, Burst directive count, `git diff --check`, and guarded build probe. Static scan found no critical forbidden SHINOBU pattern; 9 job types still have 9 required Burst directives. Build probe reported CPU=56.6 and compiler_count=0, so no compiler was launched because CPU remained above the <=50 threshold.
+Rejected Alternatives: Launching build at 56.6% CPU.
+Scalability potential: Not runtime-affecting.
+Hardware Impact: Avoided violating the workstation CPU gate.
+
+## Loop 21 Decisions - Procedural Shader Consumer
+
+Problem: The runtime now publishes GPU buffers, but no SHINOBU-owned shader consumed `_H8ShinobuBoidMatrices` and `_H8ShinobuBoidCustomData`. That left visualization dependent on an undocumented external material.
+Solution: Added `Assets/_Project/Art/Shaders/Hecton_AbyssalSwarmProcedural.shader`. It is a single-pass procedural URP shader using `SV_VertexID` and `SV_InstanceID`; it reconstructs column-major matrices from `BoidMatrixDTO`, draws one triangle silhouette per fish, and shades with custom species/quality lanes.
+Rejected Alternatives: Adapting the older `BoidFishInstanced.shader` path that consumes `_BoidsBuffer`, adding shader keywords, adding a mesh dependency, or creating GameObjects/material ownership inside the runtime.
+Scalability potential: Low/middle/high/ultra all consume the same global matrix/custom buffers; active count comes from the continuously scaled indirect args route.
+Hardware Impact: Keeps vertex work to three vertices per fish for the Dear Lie silhouette path. No profiler number is claimed until Unity import/frame proof exists.
+
+Problem: Loop 21 needed static verification and build-gate check.
+Solution: Verified shader/global-buffer symbol alignment and absence of shader keyword variants in the new shader. Critical static scan found no forbidden SHINOBU pattern. Build probe reported CPU=100 and compiler_count=0, so no compiler was launched.
+Rejected Alternatives: Claiming shader import proof without Unity import or launching build under saturated CPU.
+Scalability potential: Not runtime-affecting.
+Hardware Impact: Avoided compiler load at CPU saturation.
+
+## Loop 22 Decisions - Procedural Material Asset
+
+Problem: The procedural shader existed, but without a stable material asset the render owner would either guess the shader binding or create a material at runtime. Runtime material creation violates the cold asset/shader stutter rules and creates a managed-object path around the no-GameObject swarm route.
+Solution: Added `Assets/_Project/Art/Materials/MAT_AbyssalSwarmProcedural.mat` plus `.meta`, bound to the SHINOBU shader GUID `7b6d4f2c9a2f4b94a2a9f7b9e8a10511`. The material has no keywords and uses the existing procedural shader properties, giving boot/warmup systems and render ownership a deterministic asset handle instead of a runtime allocation.
+Rejected Alternatives: `new Material(shader)` inside the swarm runtime, `Resources.Load`, depending on an undocumented external material, or mutating a third-party/shared material.
+Scalability potential: Low/middle/high/ultra share the same material asset while active count and shader lanes scale through `GlobalQualityWeight` and the `_H8ShinobuBoid*` buffers. Top-tier visual overkill stays in shader/VAT lanes without bloating CPU state.
+Hardware Impact: No measured runtime savings claimed. The change blocks a future managed material allocation and shader first-use ambiguity; Unity import and warmup proof remain PENDING VERIFICATION.
+
+Problem: Loop 22 needed verification and build-gate check.
+Solution: Re-scanned shader/material/runtime buffer symbols, forbidden SHINOBU patterns, and `git diff --check`. The symbol scan confirmed material-to-shader GUID binding and `_H8ShinobuBoid*` usage; forbidden scan returned no hits; `git diff --check` reported CRLF normalization warnings only. Guarded build probe reported CPU=100 and compiler_count=0, so no compiler was launched.
+Rejected Alternatives: Claiming Unity material import proof without Unity Editor import, or launching build under saturated CPU.
+Scalability potential: Not runtime-affecting.
+Hardware Impact: Avoided compiler pressure while total CPU was saturated.
+
+## Loop 23 Decisions - Render Dispatch Seam
+
+Problem: GPU upload and shader/material assets existed, but the active draw route was still private to `ShinobuBoidGpuUploadDispatcher`. External render ownership could not safely consume the uploaded matrix/custom/args buffers without either duplicating the dispatcher or guessing private state.
+Solution: Added a cold render seam on `ShinobuEcosystemBalancer`: `BindProceduralRenderMaterial(Material, Bounds, int)` caches a caller-owned material asset and registers the service with `GlobalRegistry.Renderables`; `Render(float)` submits exactly one procedural indirect draw through the existing double-buffered dispatcher; `TryDrawUploadedSwarm()` and `TryGetUploadedSwarmBuffers()` expose explicit non-alloc integration seams for render graph or owner-local callers.
+Rejected Alternatives: Runtime `new Material`, `Shader.Find`, `Resources.Load`, adding a swarm GameObject/MonoBehaviour render proxy, exposing the private dispatcher object, or moving render ownership into a sibling-domain concrete reference.
+Scalability potential: Low/middle/high/ultra still scale through active count, update stride, and shader custom lanes. The render seam adds no quality tier branch; it consumes the same uploaded buffers and indirect args row at every quality weight.
+Hardware Impact: No measured microseconds claimed. This removes the helper-only gap and prevents future per-frame/per-scene material allocation or duplicate GPU buffer ownership. On MX350 the submission remains one procedural indirect draw; on RTX the same route can carry 100,000 instances.
+
+Problem: Loop 23 needed verification and build-gate check.
+Solution: Re-scanned the new render methods, forbidden SHINOBU patterns, Burst directive parity, and `git diff --check`. No forbidden pattern hit; job/Burst parity remained 9/9; `git diff --check` reported CRLF normalization warnings only. Guarded build probe reported CPU=100 and compiler_count=1, and a follow-up process check showed active `dotnet` and `csc`, so no compiler was launched by SHINOBU.
+Rejected Alternatives: Running a second build while another compiler was active, or treating static scans as Unity import/profiler proof.
+Scalability potential: Not runtime-affecting.
+Hardware Impact: Avoided compiler contention on a saturated workstation.
+
+## Loop 24 Decisions - Compile Gate Attempt And External Blocker
+
+Problem: After Loop 23, compile verification was still required. The workstation gate opened with CPU=40.2 and compiler_count=0, so a guarded `dotnet build Hecton8.Core.csproj --no-restore --verbosity:minimal` was legal.
+Solution: Ran the build. It failed on non-SHINOBU missing types and symbols in Visor, Equipment, DeferredDecal, GlobalRegistryContracts, and Somatic editor code: `UberNoirReconstructionConstantsDTO`, `MockReconstructionInputSignal`, `ReconstructionTelemetryEntry`, `UberNoirReconstructionVaultIds`, `DynamicDecalFrameStats`, `ActiveEquipmentDTO`, `EquipmentGridLoadRequest`, `EquipmentTelemetryEntry`, `EquipmentIntegrationCounters`, `EquipmentOverheatSignal`, `VrComfortProfileDTO`, and `ComfortTelemetryEntry`. No compiler error referenced `ShinobuEcosystemBalancer.cs`, the new shader, the new material, or `H8Memory.cs`.
+Rejected Alternatives: Editing Visor/Equipment/Comfort DTO ownership outside SHINOBU_105, reverting SHINOBU render seam without a compiler error pointing at it, or relaunching builds repeatedly against the same external dependency wall.
+Scalability potential: Not runtime-affecting.
+Hardware Impact: Build verification remains PENDING VERIFICATION for SHINOBU because the project compile wall is outside this domain. Runtime microseconds remain unmeasured.
+
+## Loop 25 Decisions - Cinematic Cheat Ledger And Asset Retention Reality
+
+Problem: A shader and material asset alone do not prove asset retention or shader warmup. If no scene, Addressables group, content hash map, or VFX prewarm manifest references the material, Unity import/build may strip or fail to preload it. Pretending otherwise would be fake readiness.
+Solution: Scanned for `ShaderVariantCollection`, `ContentVfxPrewarmManifest`, Addressables data, and SHINOBU material/shader references. The project has source classes/docs for content authority, but no populated `Assets/AddressableAssetsData` files and no authored `ContentVfxPrewarmManifest` assets. Updated `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md` with a SHINOBU_105 procedural silhouette entry that marks material binding, shader warmup/retention, Unity import, Frame Debugger, GCMonitor, and profiler proof as pending.
+Rejected Alternatives: Adding `Resources.Load`, creating an unverified Addressables setup, hand-authoring fragile ScriptableObject YAML for a content manifest without Unity import proof, or claiming the material is retained because it exists on disk.
+Scalability potential: Low/middle/high/ultra keep the same Dear Lie silhouette route; content retention must be solved by ContentAuthority/boot ownership, not by per-tier runtime loads.
+Hardware Impact: Documentation-only 0us. It prevents a future stutter/strip claim from being treated as proven.
+
+## Loop 26 Decisions - Static Validation Forensics
+
+Problem: The broad forbidden-pattern scan across every touched path produced false positives: existing core `H8Memory.cs` DataVault `new NativeArray` owners, existing `H8Memory.cs` `Time.frameCount` telemetry, and unrelated historical text in the cinematic cheat ledger. Reporting that as a SHINOBU violation would be inaccurate; ignoring it would hide validation ambiguity.
+Solution: Re-ran narrower scans against SHINOBU runtime, shader, and material paths, and separately scanned the zero-context diff. The SHINOBU runtime/shader/material scan returned no forbidden hits. The diff scan found only removed lines for the previous `throw;`, cold `job.Run()`, and `GraphicsBuffer.IndirectDrawIndexedArgs` route. Job/Burst parity remained 9 job structs with 9 required Burst directives.
+Rejected Alternatives: Editing `H8Memory.cs` core allocation internals outside SHINOBU ownership, deleting unrelated ledger history, or claiming a clean whole-file scan when the evidence contains known non-domain matches.
+Scalability potential: Not runtime-affecting. It preserves the proof chain for low/middle/high/ultra behavior by separating SHINOBU's actual hot path from core memory-owner code.
+Hardware Impact: 0us runtime. Verification only. `git diff --check` still reports CRLF normalization warnings only; compile remains externally blocked by Visor/Equipment/Comfort DTO gaps.

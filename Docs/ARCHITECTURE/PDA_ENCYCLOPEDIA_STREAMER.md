@@ -1,15 +1,34 @@
 # PDA Encyclopedia Streamer
 
 Owner: SHINOBU_130 / Echelon 8 Presentation & UX.
+Source anchors: `Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs`, `Assets/_Project/Scripts/UI/Editor/PDAEncyclopediaTunerWindow.cs`.
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-19 R32 Architecture Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+
+R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Runtime path:
-- `PDAEncyclopediaStreamer` reads encyclopedia payloads as UTF-8 byte spans from `BabelDictionaryStore.GetUtf8()` first; when the MMF returns the `ERROR` sentinel or no baked dictionary exists, it falls back to a Vault-backed mock UTF-8 slab.
-- The active UTF-8 source pointer is cached per entry after the first MMF/native lookup. Per-frame reveal work reuses the cached unmanaged pointer and byte length instead of re-querying Babel.
+- `PDAEncyclopediaStreamer` reads real encyclopedia payloads from `Data/Lore/Encyclopedia.h8bin` through the owner-local `PdaH8lrLoreStore` first. The H8LR reader maps the file on Editor/Standalone and uses Vault buffer `(BufferID)70570` as an 8 MiB native mirror fallback on platforms without MMF.
+- `BabelDictionaryStore.GetUtf8()` remains a legacy fallback after H8LR. The deterministic Vault mock slab is only the final CI/editor fallback when no real binary source resolves.
+- The active UTF-8 source pointer is cached per entry after the first H8LR/Babel/Vault lookup. Per-frame reveal work reuses the cached unmanaged pointer and byte length instead of re-querying source indexes.
 - The hot path does not call JSON, `Encoding.GetString`, `TMP_Text.text`, or string concatenation. UTF-8 is decoded into a pooled `CharBufferPool.EncyclopediaLease` page and submitted with `TMP_Text.SetCharArray`.
+- `CharBufferPool.EncyclopediaPageCapacity` is 32768 chars. Entries larger than the page stream as rolling windows: once the visible window drains, the decoded char count resets and the byte cursor continues from the same cached source span.
 - Unlock state is `EncyclopediaStateDTO`: exactly 128 bytes in Vault buffer `(BufferID)70560`, with four raw `ulong` masks for 256 dense unlock bits plus AUP/revision metadata.
-- Metadata, runtime state, CSV scratch, a Burst lookup result slot, a 64-byte typewriter DTO, and a 300-frame telemetry ring are stored in adjacent Vault buffers `(BufferID)70561..70569`.
+- Metadata, runtime state, CSV scratch, a Burst lookup result slot, a 64-byte typewriter DTO, H8LR mirror bytes, and a 300-frame telemetry ring are stored in adjacent Vault buffers `(BufferID)70561..70570`.
 - Contract AUP values are copied immediately into owner-local `PdaAup48` primitive fields. The PDA runtime no longer names `Hecton8.World.AbsoluteUniversePosition` directly; distance math uses `HectonPhysicsContract.AupSectorSizeMetersInt` and clamp rails.
-- Editor-time validation now checks all PDA transfer rows: 128-byte state, 128-byte runtime, 64-byte metadata, 64-byte telemetry, 64-byte typewriter, and 48-byte local AUP copy.
+- Editor-time validation now checks all PDA transfer rows: 128-byte state, 128-byte runtime, 64-byte metadata, 64-byte telemetry, 64-byte typewriter, 48-byte local AUP copy, 16-byte H8LR header, and 16-byte H8LR record.
 
 Signals:
 - `ScanCompleteSignal` unlocks lore with precise AUP metadata.
@@ -22,8 +41,8 @@ Scalability:
 - Discovery distance tokens subtract player AUP from stored discovery AUP through `PdaAup48`, clamp impossible sector deltas, cast the localized delta to `float3`, and format into the active `Span<char>`.
 
 Telemetry:
-- Runtime state flags encode active source at bits 8-9: `1 = MMF/Babel`, `2 = Vault mock`. The black-box ring packs stream state in the low byte and source/canvas bits above it.
-- `Data/Lore/Encyclopedia.h8bin` is not claimed by this streamer. The binary ledger classifies it as H8LR script/tool-only until a dedicated H8LR reader or converter exists.
+- Runtime state flags encode active source at bits 8-9: `1 = H8LR`, `2 = Babel fallback`, `3 = Vault mock`. The black-box ring packs stream state in the low byte and source/canvas bits above it.
+- `Data/Lore/Encyclopedia.h8bin` is now claimed by SHINOBU_130 through the narrow H8LR reader. The older Narrative `LoreMmfEncyclopedia` still expects H8LE and is not treated as an H8LR reader.
 
 Failure evidence:
 - On invalid UTF-8/fault detection the streamer dumps the fixed telemetry ring to both `Docs/AgentLogs/Dump_SHINOBU_130.bin` and `Docs/AgentLogs/Dump_PDA_STREAMER.bin`.

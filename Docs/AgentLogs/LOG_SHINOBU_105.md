@@ -276,3 +276,344 @@ Build result:
   <BUILD_RESULT status="BLOCKED_BY_EXTERNAL_DEPENDENCY">`Hecton8.Core.csproj` cannot compile because an unrelated generated-project source file is missing.</BUILD_RESULT>
   <SHINOBU_COMPILE_PROOF status="PENDING">The compiler did not reach a SHINOBU-specific diagnostic because it failed on the missing world-source file first.</SHINOBU_COMPILE_PROOF>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 14 GPU ABI And Job-Fence Polish
+
+What was wrong:
+- The indirect args row was indexed-style and 32B even though the SHINOBU draw route is `Graphics.DrawProceduralIndirect`, which consumes a four-uint procedural ABI.
+- The GPU route had upload/draw helper seams but no domain-owned double-buffered upload dispatcher.
+- `LotkaVolterraMacroJob.Run()` was a synchronous job execution in `ColdTick`.
+- Single-thread `IJob` counter fields carried unnecessary `NativeDisableParallelForRestriction`.
+- Emergency flow mock still read as a triangle-only fake instead of a Perlin-style deterministic current field.
+
+What was done:
+- Replaced `BoidIndirectArgsDTO` with a 16B explicit procedural row: `VertexCountPerInstance`, `InstanceCount`, `StartVertex`, `StartInstance`.
+- Changed indirect upload helpers to map `BoidIndirectArgsDTO` directly; removed `GraphicsBuffer.IndirectDrawIndexedArgs` from the SHINOBU file.
+- Added `ShinobuBoidGpuUploadDispatcher`, owning double-buffered matrix, custom-data, and procedural-args `GraphicsBuffer` pairs and publishing `_H8ShinobuBoidMatrices`, `_H8ShinobuBoidCustomData`, and `_H8ShinobuBoidActiveCount`.
+- Replaced macro `.Run()` with scheduled `LotkaVolterraMacroJob` completion through the existing late-frame job fence.
+- Moved DataVault discovery to cold activation; `Tick`/`ColdTick` now use cached `_dataVault` only.
+- Removed unnecessary `NativeDisableParallelForRestriction` from single jobs.
+- Blended deterministic trilinear value-noise into `SampleEmergencyMockFlow()` via `GlobalQualityWeight`.
+
+Cinematic Cheats used:
+- Flow remains a deterministic visual fake: coarse triangle current at low quality, Perlin-style value-noise enrichment at high quality. No Navier-Stokes, no texture dependency, no GameObject route.
+
+Exact Microseconds saved:
+- No measured microsecond claim. Structural savings: 16B procedural args row instead of 32B indexed-style row; no managed argument arrays; no immediate macro `.Run()` stall. Compile/profiler proof remains blocked by the missing external world source discovered in Loop 13.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="14">
+  <TASK_05_RECONCILIATION status="PASS">Emergency flow mock now blends deterministic Perlin-style value noise into the triangle/curl base through `GlobalQualityWeight`.</TASK_05_RECONCILIATION>
+  <TASK_14_RECONCILIATION status="PASS">`BoidIndirectArgsDTO` is now a 16B `DrawProceduralIndirect` ABI row and is backed by a double-buffered GPU upload dispatcher.</TASK_14_RECONCILIATION>
+  <STRUCT_LAYOUT status="PASS">`BoidIndirectArgsDTO`: offset 0 `VertexCountPerInstance` u32, offset 4 `InstanceCount` u32, offset 8 `StartVertex` u32, offset 12 `StartInstance` u32, total 16B.</STRUCT_LAYOUT>
+  <JOB_FENCE status="PASS">`LotkaVolterraMacroJob` no longer uses `.Run()`; it is scheduled and completed through the late-frame fence.</JOB_FENCE>
+  <REGISTRY_HOT_PATH status="PASS">DataVault discovery is cold activation/hot-swap only; runtime tick paths operate on cached `_dataVault`.</REGISTRY_HOT_PATH>
+  <POINTER_SAFETY status="PASS">Unnecessary `NativeDisableParallelForRestriction` attributes were removed from single jobs.</POINTER_SAFETY>
+  <BUILD_RESULT status="BLOCKED_BY_EXTERNAL_DEPENDENCY">No new build launched; Loop 13 already proved current `Hecton8.Core.csproj` fails first on missing `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` outside SHINOBU_105 ownership.</BUILD_RESULT>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 15 Static Verify And CPU-Gated Build Probe
+
+What was wrong:
+- The status still named the old missing-source build failure as the active blocker after the generated `Hecton8.Core.csproj` no longer exposed that include.
+- Loop 14 needed a current source-level scan after the ABI and job-fence changes.
+
+What was done:
+- Re-extracted the full `<AGENT_PROMPT id="SHINOBU_105">` block from `Docs/Tasks/CURRENT_BATCH.md`.
+- Re-scanned SHINOBU runtime/editor files for old indexed indirect args, `.Run()`, `Instantiate`, `new GameObject`, `Time.frameCount`, `UnityEngine.Random`, `Pack=1`, hot native collection allocation, and property-backed DTO patterns.
+- Verified all SHINOBU job structs still carry `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]`.
+- Ran `git diff --check` on touched SHINOBU/log files; only CRLF normalization warnings were reported.
+- Probed build gate: CPU=100, compiler_count=0, so `dotnet build` was skipped under the explicit CPU rule.
+
+Cinematic Cheats used:
+- No new runtime cheat added in this loop; previous deterministic value-noise current fake and SDF cross-product wall swirl remain the current Dear Lie route.
+
+Exact Microseconds saved:
+- Build load avoided under saturated CPU: compile-time only, not a runtime microsecond claim.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="15">
+  <STATIC_SCAN status="PASS">Touched SHINOBU runtime/editor files contain no old indexed indirect ABI, `.Run()`, `Instantiate`, `new GameObject`, `Time.frameCount`, `UnityEngine.Random`, `Pack=1`, hot `new NativeArray`, or DTO property pattern.</STATIC_SCAN>
+  <BURST_DIRECTIVES status="PASS">Nine SHINOBU jobs were found and nine `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]` attributes were present.</BURST_DIRECTIVES>
+  <BUILD_STATUS status="CPU_GATED">Build probe skipped `dotnet build`: CPU=100, compiler_count=0.</BUILD_STATUS>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 16 Vault Boot Gate And Failure Path
+
+What was wrong:
+- `EnsureVaultState()` still called `GlobalDataVault.GetBufferHandle` from runtime `Tick`/`ColdTick` after handles were already created.
+- Existing Vault handle reacquisition sanitizes finite payloads for existing buffers, so the readiness path could silently become O(N) over 100,000-row buffers.
+- Schedule-path `catch (Exception)` blocks unlocked buffers and then rethrew, turning a domain scheduling failure into a gameplay crash without SHINOBU telemetry.
+
+What was done:
+- Added `_vaultBuffersReady`.
+- Added `AreVaultHandlesCreated()` with creation and minimum-length checks for all SHINOBU Vault handles.
+- Changed `EnsureVaultState()` to short-circuit through the ready flag before any `GetBufferHandle` call.
+- Cleared `_vaultBuffersReady` on handle reset and cached-state clear.
+- Replaced frame and macro schedule rethrows with numeric `GlobalTelemetryBus.PublishPerformanceWarning` calls after unlock.
+
+Cinematic Cheats used:
+- None added in this loop. This was ownership and failure-path hardening. Existing Dear Lie routes remain SDF cross-product wall swirl and deterministic triangle/value-noise current.
+
+Exact Microseconds saved:
+- No measured number claimed. Structural saving: normal `Tick`/`ColdTick` no longer risk repeated large-buffer sanitize scans during Vault readiness checks.
+- Burst directive scan: 9 SHINOBU job types, 9 required Burst directives.
+- Build probe: skipped correctly at CPU=64.3%, compiler_count=0.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="16">
+  <VAULT_BOOT_STATUS status="PASS">`GetBufferHandle` is now boot/hot-swap/recovery only after `_vaultBuffersReady` is set; normal ticks validate handles and lengths without reacquiring Vault buffers.</VAULT_BOOT_STATUS>
+  <FAILURE_PATH status="PASS">Schedule failures unlock job buffers and publish numeric telemetry warnings instead of rethrowing into gameplay.</FAILURE_PATH>
+  <ZERO_GC_HOT_PATH status="PASS">Patch adds no managed runtime collections, no LINQ, no formatted strings, and no local persistent NativeArrays.</ZERO_GC_HOT_PATH>
+  <BUILD_STATUS status="CPU_GATED">Build verification skipped: CPU=64.3, compiler_count=0.</BUILD_STATUS>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 17 Procedural Args Target Hardening
+
+What was wrong:
+- The GPU args buffer used `GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw` with a 16B `BoidIndirectArgsDTO` stride.
+- Raw buffer semantics can imply 4B lanes on Unity backends, creating avoidable validation risk for the procedural indirect path.
+
+What was done:
+- Changed `CreateIndirectArgsBuffer()` to use `GraphicsBuffer.Target.IndirectArguments` only.
+- Kept the explicit 16B `BoidIndirectArgsDTO` ABI and direct mapped upload route.
+- Re-scanned touched SHINOBU files for `Target.Raw`, old indexed args API, and critical forbidden patterns.
+- Re-ran guarded build probe; it skipped correctly at CPU=98.9%, compiler_count=0.
+
+Cinematic Cheats used:
+- None added. This loop only corrected GPU buffer ABI.
+
+Exact Microseconds saved:
+- None claimed. This avoids a platform-specific indirect-buffer validation failure; performance remains tied to the mapped upload and single draw submission already implemented.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="17">
+  <GPU_ABI status="PASS">Indirect args buffer target is now `GraphicsBuffer.Target.IndirectArguments` only, with one 16B `BoidIndirectArgsDTO` row.</GPU_ABI>
+  <STATIC_SCAN status="PASS">No `Target.Raw`, `GraphicsBuffer.IndirectDrawIndexedArgs`, `throw;`, `.Run()`, `Time.frameCount`, `UnityEngine.Random`, `Pack=1`, or hot `new NativeArray` remains in touched SHINOBU files.</STATIC_SCAN>
+  <BUILD_STATUS status="CPU_GATED">Build verification skipped: CPU=98.9, compiler_count=0.</BUILD_STATUS>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 18 Schedule Failure Ownership
+
+What was wrong:
+- Schedule catch blocks no longer rethrew, but they could still unlock Vault buffers if an exception occurred after a job was scheduled and before the runtime published `_jobScheduled/_jobLocksHeld`.
+- That edge can allow a running Burst job to mutate buffers that another system believes are unlocked.
+
+What was done:
+- Added `scheduledHandle`/`scheduledWork` tracking to the frame schedule path.
+- Added the same ownership tracking to the macro biomass schedule path.
+- After every successful `Schedule()` call, the latest `JobHandle` is retained.
+- On exception after scheduled work exists, SHINOBU preserves `_activeJobHandle`, `_jobScheduled`, and `_jobLocksHeld` for late-frame recovery; only pre-schedule failures unlock immediately.
+
+Cinematic Cheats used:
+- None added. This loop is concurrency hygiene.
+
+Exact Microseconds saved:
+- None claimed. The value is preventing a Vault unlock/use-after-schedule race, not reducing normal-frame ALU.
+- Verification: critical static scan found no forbidden SHINOBU patterns; Burst scan found 9 job types and 9 required directives; `git diff --check` reported CRLF normalization warnings only; build probe skipped at CPU=100%, compiler_count=0.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="18">
+  <SCHEDULE_OWNERSHIP status="PASS">Post-schedule failures now retain the job handle and Vault locks until dispatcher late-frame recovery.</SCHEDULE_OWNERSHIP>
+  <NO_FORCED_COMPLETE status="PASS">The catch path does not call `Complete()`; it preserves ownership for the existing `DispatcherJobSwap` recovery lane.</NO_FORCED_COMPLETE>
+  <ZERO_GC_HOT_PATH status="PASS">Patch adds only stack locals and control flow; no managed collections or runtime allocations.</ZERO_GC_HOT_PATH>
+  <BUILD_STATUS status="CPU_GATED">Build verification skipped: CPU=100, compiler_count=0.</BUILD_STATUS>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 19 GPU Upload Route Wiring
+
+What was wrong:
+- `ShinobuBoidGpuUploadDispatcher` existed but was not owned or called by the runtime.
+- Frame jobs produced Vault matrices/custom data/indirect args, but the active system did not publish them to GPU buffers after job completion.
+
+What was done:
+- Added one cold-owned `ShinobuBoidGpuUploadDispatcher` to `ShinobuEcosystemBalancer`.
+- Prewarmed GPU matrix, custom-data, and indirect-args buffers in `EnsureVaultState()` when not running in batch/headless mode.
+- Added `UploadCompletedFrameToGpu()` after dispatcher job recovery and before telemetry write.
+- Published `_H8ShinobuBoidMatrices`, `_H8ShinobuBoidCustomData`, and `_H8ShinobuBoidActiveCount` through the dispatcher upload path.
+- Recorded matrix upload milliseconds into the existing telemetry ring.
+
+Cinematic Cheats used:
+- No new fake added. This wires the presentation route for the existing data-only fish school.
+
+Exact Microseconds saved:
+- No measured saving claimed. The route removes the remaining helper-only gap and avoids managed matrix arrays; upload timing is now recorded for future profiler proof.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="19">
+  <GPU_UPLOAD status="PASS">Completed frame payloads are uploaded from Vault to double-buffered GPU buffers after `DispatcherJobSwap` recovery.</GPU_UPLOAD>
+  <HEADLESS_GUARD status="PASS">GPU buffer prewarm/upload is skipped when `Application.isBatchMode` is true.</HEADLESS_GUARD>
+  <ZERO_GC_HOT_PATH status="PASS">No managed matrix arrays or GameObject route were introduced; GPU buffers are cold-owned and prewarmed.</ZERO_GC_HOT_PATH>
+  <STATIC_SCAN status="PASS">No critical forbidden SHINOBU pattern was found; 9 job types still have 9 required Burst directives.</STATIC_SCAN>
+  <BUILD_STATUS status="CPU_GATED">Build verification skipped: CPU=96.3, compiler_count=0.</BUILD_STATUS>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 20 GPU Buffer Lock Safety
+
+What was wrong:
+- SHINOBU upload helpers and dispatcher upload code called `GraphicsBuffer.LockBufferForWrite` without a `finally` unlock guard.
+- A failure after a successful lock could leave a matrix/custom/indirect args buffer mapped.
+
+What was done:
+- Wrapped render-matrix upload lock/unlock in `try/finally`.
+- Wrapped indirect args upload lock/unlock in `try/finally`.
+- Wrapped dispatcher matrix, custom-data, and args uploads in independent `try/finally` blocks.
+
+Cinematic Cheats used:
+- None added. This loop is GPU resource ownership hardening.
+
+Exact Microseconds saved:
+- None claimed. Normal route is the same mapped write path; failure-path resource safety is the objective.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="20">
+  <GPU_LOCK_SAFETY status="PASS">Every successful SHINOBU `LockBufferForWrite` now has a `finally`-guarded `UnlockBufferAfterWrite`.</GPU_LOCK_SAFETY>
+  <STATIC_SCAN status="PASS">No critical forbidden SHINOBU pattern was found; 9 job types still have 9 required Burst directives.</STATIC_SCAN>
+  <BUILD_STATUS status="CPU_GATED">Build verification skipped: CPU=56.6, compiler_count=0.</BUILD_STATUS>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 21 Procedural Shader Consumer
+
+What was wrong:
+- SHINOBU runtime published matrix/custom GPU buffers, but no SHINOBU-owned shader consumed those exact global buffers.
+- The old boid shader path consumes `_BoidsBuffer`, which is not the SHINOBU_105 matrix DTO route.
+
+What was done:
+- Added `Assets/_Project/Art/Shaders/Hecton_AbyssalSwarmProcedural.shader`.
+- Added its `.meta` file with a stable GUID.
+- The shader reads `_H8ShinobuBoidMatrices`, `_H8ShinobuBoidCustomData`, and `_H8ShinobuBoidActiveCount`.
+- It uses `SV_VertexID`/`SV_InstanceID` and draws a three-vertex fish silhouette per instance.
+- It declares no `multi_compile` or `shader_feature` variants.
+
+Cinematic Cheats used:
+- Fish are procedural triangle silhouettes driven by matrix/custom buffers. This is the Dear Lie fallback for distant swarm density: three vertices per visible fish instead of skinned meshes, Animators, or per-fish GameObjects.
+
+Exact Microseconds saved:
+- No measured number claimed. Structural reduction: the fallback visual path is 3 vertices per fish and one indirect procedural route.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="21">
+  <SHADER_CONSUMER status="PASS">A SHINOBU-owned shader now consumes the exact global buffers published by `ShinobuBoidGpuUploadDispatcher`.</SHADER_CONSUMER>
+  <VARIANT_STATUS status="PASS">The shader introduces no `multi_compile` or `shader_feature` variants.</VARIANT_STATUS>
+  <DEAR_LIE status="PASS">Fallback fish are procedural three-vertex silhouettes, not skinned meshes or GameObjects.</DEAR_LIE>
+  <BUILD_STATUS status="CPU_GATED">Build verification skipped: CPU=100, compiler_count=0.</BUILD_STATUS>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 22 Procedural Material Asset
+
+What was wrong:
+- The procedural shader had no stable material asset.
+- Leaving the material undefined would push integration toward runtime `new Material(shader)`, `Resources.Load`, or an undocumented render-owner guess.
+
+What was done:
+- Added `Assets/_Project/Art/Materials/MAT_AbyssalSwarmProcedural.mat`.
+- Added its `.meta` file with a stable material GUID.
+- Bound the material to `Hecton_AbyssalSwarmProcedural.shader` via shader GUID `7b6d4f2c9a2f4b94a2a9f7b9e8a10511`.
+- Kept shader keywords empty and instancing variants enabled.
+- Verified shader/material symbol alignment and scanned touched SHINOBU files for critical forbidden patterns.
+
+Cinematic Cheats used:
+- Same Dear Lie visual route as Loop 21: one procedural triangle silhouette per fish, consuming matrix/custom buffers instead of meshes, Animators, or GameObjects.
+
+Exact Microseconds saved:
+- No measured runtime number claimed. This prevents a future cold/hot material allocation and first-use shader ambiguity; Unity import/warmup proof remains pending.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="22">
+  <MATERIAL_ASSET status="PASS">`MAT_AbyssalSwarmProcedural.mat` exists as a cold asset bound to the SHINOBU procedural shader GUID.</MATERIAL_ASSET>
+  <VARIANT_STATUS status="PASS">Material keyword lists are empty; no new shader keyword surface was introduced.</VARIANT_STATUS>
+  <ZERO_GC_ROUTE status="PASS">The render integration now has a stable asset handle instead of requiring runtime material creation.</ZERO_GC_ROUTE>
+  <STATIC_SCAN status="PASS">Forbidden-pattern scan returned no hits; `git diff --check` reported CRLF normalization warnings only.</STATIC_SCAN>
+  <BUILD_STATUS status="CPU_GATED">Build verification skipped: CPU=100, compiler_count=0.</BUILD_STATUS>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 23 Render Dispatch Seam
+
+What was wrong:
+- The GPU upload dispatcher could upload and publish buffers, but `ShinobuEcosystemBalancer` did not expose a first-class render-dispatch route.
+- Without a seam, integration would drift toward duplicate GPU owners, runtime material creation, or direct private-field coupling.
+
+What was done:
+- `ShinobuEcosystemBalancer` now implements `IRenderable`.
+- Added `BindProceduralRenderMaterial(Material, Bounds, int)` for cold caller-owned material binding.
+- Added `Render(float)` to submit one `Graphics.DrawProceduralIndirect` through the existing double-buffered dispatcher when a material is bound.
+- Added `TryDrawUploadedSwarm()` and `TryGetUploadedSwarmBuffers()` for explicit non-alloc render-owner integration.
+- Added render-dispatch hot-swap handling so binding can recover when `GlobalRegistryServiceSlot.RenderDispatcher` appears.
+
+Cinematic Cheats used:
+- The same procedural silhouette Dear Lie now has a real render-dispatch submission seam: one indirect procedural triangle path for dense distant fish, not per-fish meshes or GameObjects.
+
+Exact Microseconds saved:
+- No measured number claimed. Architectural saving is prevention of duplicate buffer ownership and runtime material allocation; frame proof remains pending until Unity import and profiler capture are legal.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="23">
+  <DRAW_ROUTE status="PASS">`ShinobuEcosystemBalancer` can now submit uploaded swarm buffers through `GlobalRegistry.Renderables` with a cold-bound material asset.</DRAW_ROUTE>
+  <ZERO_GC_ROUTE status="PASS">No `new Material`, `Shader.Find`, `Resources.Load`, GameObject, managed matrix array, or material clone was introduced.</ZERO_GC_ROUTE>
+  <COMPILE_WALL status="PASS">No asmdef or Contracts change was made; the seam stays in the SHINOBU domain file.</COMPILE_WALL>
+  <STATIC_SCAN status="PASS">Forbidden-pattern scan returned no hits; job/Burst parity remained 9/9; `git diff --check` reported CRLF normalization warnings only.</STATIC_SCAN>
+  <BUILD_STATUS status="CPU_AND_COMPILER_GATED">Build verification skipped: CPU=100, compiler_count=1; follow-up process check showed active `dotnet` and `csc`.</BUILD_STATUS>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 24 Compile Gate Attempt
+
+What was wrong:
+- Compile verification was still pending after render-dispatch seam work.
+- The CPU/compiler gate opened, so a guarded build was permitted.
+
+What was done:
+- Ran `dotnet build Hecton8.Core.csproj --no-restore --verbosity:minimal` only after CPU=40.2 and compiler_count=0.
+- Build failed outside SHINOBU on missing Visor/Equipment/Editor DTOs and vault IDs.
+- No compiler error referenced the SHINOBU runtime file, H8Memory buffer IDs, shader, or material asset.
+
+Cinematic Cheats used:
+- None added. This loop is verification and dependency forensics only.
+
+Exact Microseconds saved:
+- None claimed. This build attempt establishes the current compile wall is external to SHINOBU_105.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="24">
+  <BUILD_GATE status="RAN">Build was launched only when CPU=40.2 and compiler_count=0.</BUILD_GATE>
+  <BUILD_RESULT status="BLOCKED_BY_DEPENDENCY">Build failed on non-SHINOBU missing DTO/type dependencies in Visor, Equipment, DeferredDecal, GlobalRegistryContracts, and Somatic editor code.</BUILD_RESULT>
+  <SHINOBU_ERROR_SCAN status="PASS">No emitted compiler error referenced `ShinobuEcosystemBalancer.cs`, `H8Memory.cs`, `Hecton_AbyssalSwarmProcedural.shader`, or `MAT_AbyssalSwarmProcedural.mat`.</SHINOBU_ERROR_SCAN>
+  <NEXT_PROOF status="PENDING_VERIFICATION">Unity import, Play Mode, shader import, Frame Debugger, GCMonitor, and profiler proof remain blocked until the project compile wall is cleared.</NEXT_PROOF>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 25 Cinematic Cheat Ledger
+
+What was wrong:
+- The SHINOBU shader/material route was not recorded in the stable cinematic cheat ledger.
+- Static scan found no populated Addressables data or authored VFX prewarm manifest that would prove material retention or shader warmup.
+
+What was done:
+- Scanned content retention surfaces for `ShaderVariantCollection`, `ContentVfxPrewarmManifest`, Addressables data, and SHINOBU material/shader references.
+- Updated `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md` with the abyssal swarm procedural silhouette entry.
+- The ledger explicitly states material binding, shader warmup/retention, Unity import, Frame Debugger, GCMonitor, and profiler proof remain pending.
+
+Cinematic Cheats used:
+- Procedural silhouette fish: three vertices per fish from uploaded matrix/custom buffers instead of per-fish objects or skinned meshes.
+
+Exact Microseconds saved:
+- Documentation-only, 0us. The value is preventing false readiness and shader-stutter claims.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="25">
+  <LEDGER_STATUS status="PASS">`CINEMATIC_CHEATS_LEDGER.md` now records the SHINOBU_105 procedural swarm Dear Lie.</LEDGER_STATUS>
+  <ASSET_RETENTION status="PENDING_VERIFICATION">No populated Addressables data or authored `ContentVfxPrewarmManifest` asset was found for this material.</ASSET_RETENTION>
+  <RUNTIME_PROOF status="PENDING_VERIFICATION">Unity import, material binding, shader warmup, Frame Debugger, GCMonitor, profiler, and player-build proof remain absent.</RUNTIME_PROOF>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-19 Loop 26 Static Validation Forensics
+
+What was wrong:
+- Broad forbidden scans included existing core `H8Memory.cs` allocation/telemetry internals and unrelated ledger text, producing non-SHINOBU false positives.
+- The project compile wall is still external, so static validation must be exact about what it proves and what it does not.
+
+What was done:
+- Re-ran forbidden-pattern scans against SHINOBU runtime/shader/material paths only.
+- Re-ran zero-context diff scan to verify the matched forbidden lines are removed, not added.
+- Re-ran Burst directive parity: 9 job structs and 9 required `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]` attributes.
+- Re-ran `git diff --check` across touched paths; it reports CRLF normalization warnings only.
+
+Cinematic Cheats used:
+- No new cheat added. The verified active cheat remains procedural silhouette fish: one indirect draw route, three vertices per fish, matrix/custom data from Vault/GPU buffers.
+
+Exact Microseconds saved:
+- No measured number claimed. Validation loop is 0us runtime; it prevents a false-positive scan from corrupting the proof record.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_105" loop="26">
+  <FORBIDDEN_SCAN status="PASS">SHINOBU runtime/shader/material scan returned no `throw;`, `.Run(`, `Time.frameCount`, `UnityEngine.Random`, `Pack=1`, hot `new NativeArray`, indexed indirect args, `Target.Raw`, `Instantiate`, `new GameObject`, `new Material`, `Resources.Load`, `Shader.Find`, or `renderer.material` hit.</FORBIDDEN_SCAN>
+  <DIFF_SCAN status="PASS">Zero-context diff scan matched only removed lines for old `throw;`, `job.Run()`, and `GraphicsBuffer.IndirectDrawIndexedArgs` code.</DIFF_SCAN>
+  <BURST_PARITY status="PASS">9 SHINOBU job structs, 9 required Burst directive attributes.</BURST_PARITY>
+  <BUILD_STATUS status="BLOCKED_BY_DEPENDENCY">Last legal build failed outside SHINOBU on missing Visor/Equipment/Comfort DTOs; no SHINOBU compiler errors were emitted.</BUILD_STATUS>
+  <RUNTIME_PROOF status="PENDING_VERIFICATION">Unity import, material retention/warmup, Frame Debugger, GCMonitor, profiler, and player-build validation remain pending after the external compile wall is cleared.</RUNTIME_PROOF>
+</SELF_AUDIT_DELTA>

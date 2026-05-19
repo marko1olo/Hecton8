@@ -175,6 +175,34 @@ Use these only in communities that permit developer posts or critique requests.
 19. HECTON-8 is not about swimming fast. It is about coming back.
 20. Salvage is a route decision, not a loot sparkle.
 
+## 2026-05-19 Pre-Asset Quiet Account Content Pack V0
+
+Use only after official handles are owner-controlled. These posts are optional and low-frequency. They are meant to make a reserved account look intentional without pretending screenshots exist.
+
+Do not post more than 1-2 of these per week before real screenshots.
+
+| ID | Platform | Copy | Use when | Kill if |
+|---|---|---|---|---|
+| PRE-001 | X/Bluesky | `HECTON-8 is being built around one constraint: underwater survival should feel like pressure, machinery, salvage, and black water, not a clean aquarium.` | Account needs first public identity line. | People ask for screenshots and none are close. |
+| PRE-002 | X/Bluesky | `No co-op promise. No "killer" pitch. We are keeping HECTON-8 single-player-first until the build proves what it can actually do.` | Scope boundary needs to be visible. | Replies become mostly feature begging. |
+| PRE-003 | X/Bluesky | `A good screenshot should show what the player can do. If a deep-sea frame needs a paragraph, it is not marketing-ready.` | Before capture work begins. | It sounds like an excuse for no assets. |
+| PRE-004 | X/Bluesky | `The base should read like a pressure machine with rooms inside, not a cozy underwater apartment.` | Base direction needs a public thesis. | No base visual exists within the next asset beat. |
+| PRE-005 | X/Bluesky | `Performance claims will come with build, hardware, settings, and measurement context. Until then, no empty FPS promises.` | Performance questions appear. | It invites performance debate before footage. |
+| PRE-006 | X/Bluesky | `HECTON-8 visual target: salt, oil, scratched glass, warning lights, hard metal, and water that always feels heavier than the player.` | Visual identity needs a text-only cue. | It reads as concept-only art direction for too long. |
+| PRE-007 | YouTube Community | `This channel is reserved for HECTON-8 clips, trailers, and dev updates. First gameplay posts will wait until the footage can show pressure, machinery, salvage, and black-water route risk honestly.` | YouTube handle exists but no trailer yet. | YouTube account has no visual identity/avatar. |
+| PRE-008 | Reddit profile only | `Developer account for HECTON-8. Posts will disclose dev status. No fake discovery posts, no co-op promise, no performance claims without receipts.` | Reddit account reserved. | Do not post to subreddits from this yet. |
+| PRE-009 | Bluesky | `Deep-sea survival works when the player trusts the machine more than the ocean, and then the machine starts losing.` | Need one atmospheric thesis. | People ask "where game?" repeatedly. |
+| PRE-010 | X/Bluesky | `The first public asset pack has a simple pass/fail: can a stranger identify pressure, machinery, a player verb, and the next risk in five seconds?` | Before first screenshot drop. | First asset pack is not imminent. |
+
+### Pre-Asset Posting Rules
+
+- Never pretend assets are ready.
+- Never ask for wishlists.
+- Never compare directly to Subnautica in the post body.
+- Never post lore without showing or promising a gameplay route.
+- Stop text-only posts after two weeks if no screenshots are near.
+- Every text-only post must make a future asset easier to judge.
+
 ## TikTok / Shorts Captions
 
 1. The sonar saw it before I did.
@@ -400,6 +428,8 @@ Status: draft-ready / asset-gated / do not post without matching real capture.
 
 Use this table as the first operating queue once screenshots or clips exist. Every row must be linked to an actual file in the asset library before publication.
 
+Creator utility rule: any row used for creator warmup or micro-feedback must also pass `QA/MARKETING_ASSET_QA_CHECKLIST.md` creator utility 3/4+, name the matching CRM rows from `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, and preserve the normal screenshot/clip QA threshold. Public social posts can run from visual QA alone; creator sends cannot.
+
 | Queue ID | Required asset | Primary platform | Draft copy | CTA | Kill if |
 |---|---|---|---|---|---|
 | POST-001 | Identity hero screenshot: black water, industrial silhouette, player light | X/Bluesky | `One floodlight, too much water. HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and the cost of coming back.` | `Does the identity read without a caption?` | Viewers read it as empty water or generic Subnautica-like scenery. |
@@ -444,7 +474,7 @@ Never follow a signal into black water.
 
 ### First Five Creator Warmup Lines
 
-Use only for creators already in `Data/CREATOR_VERIFICATION_TEMPLATE.csv` and only after the matching asset exists.
+Use only for creators already in `Data/CREATOR_VERIFICATION_TEMPLATE.csv` and only after the matching asset exists, creator utility is 3/4+, and the exact contact route is verified. Do not use these from public comments alone.
 
 ```text
 Pressure/salvage angle:
@@ -473,8 +503,8 @@ Do not run this if the screenshot pack fails QA.
 | Hour 4 | Internal comment read | POST-001 | Record clone/readability/co-op/performance confusion. |
 | Hour 12 | Reddit critique in one allowed community | POST-002 or POST-004 | Developer disclosure required. No tracking link unless allowed. |
 | Hour 24 | Post salvage or machinery asset | POST-003 or POST-011 | Pick the asset that answers the biggest confusion from Hour 0. |
-| Hour 36 | Update CRM pitch notes for matching creator segment | CRM rows only | No outreach if comments exposed unreadable player verb. |
-| Hour 48 | Steam/news draft if Steam page exists | Bundle A | Otherwise keep as devlog draft. |
+| Hour 36 | Update CRM pitch notes for matching creator segment | CRM rows only | No outreach if comments exposed unreadable player verb or creator utility is below 3/4. |
+| Hour 48 | Creator micro-feedback or Steam/news draft | Campaign 01 Wave A or Bundle A | Creator path requires utility 3/4+, named CRM row, exact contact route, and no asset mismatch; otherwise keep as devlog draft. |
 | Hour 72 | Decide proceed/revise/kill | All first-pack posts | Proceed only if viewers understand genre, pressure, machinery, and player verb. |
 
 ## Thirty-Day Pre-Screenshot Posting Plan

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -23,6 +24,7 @@ namespace Hecton8.Thermodynamics
         public const int CsvScratchBytes = 8192;
 
         private const int DefaultBatchSize = 64;
+        private const float ResolutionHysteresisSeconds = 3f;
         private const float DefaultCellSizeMeters = 8f;
         private const float DefaultAmbientTemperatureCelsius = 2f;
         private const float DefaultWaterConductivity = 0.18f;
@@ -33,6 +35,7 @@ namespace Hecton8.Thermodynamics
         private const float DefaultMockVolcanoIntensity = 180f;
         private const float DefaultMockVolcanoRadiusMeters = 42f;
         private const uint BlackSmokerHash = 0xA4D4E638u;
+        private const uint TransientSourceTtlFrames = 6u;
         private const byte PendingFrontBufferCurrent = 0;
         private const byte PendingFrontBufferBack = 1;
         private const byte PendingFrontBufferScratch = 2;
@@ -40,8 +43,6 @@ namespace Hecton8.Thermodynamics
         private static readonly int ThermalCellsBufferId = Shader.PropertyToID("_H8AbyssalThermalCells");
         private static readonly int ThermalGridMetaId = Shader.PropertyToID("_H8AbyssalThermalGridMeta");
         private static readonly int ThermalGridOriginId = Shader.PropertyToID("_H8AbyssalThermalGridOrigin");
-
-        private static GlobalDataVault _standaloneVault;
 
         [Header("Grid")]
         [SerializeField, Min(1f)] private float cellSizeMeters = DefaultCellSizeMeters;
@@ -104,7 +105,12 @@ namespace Hecton8.Thermodynamics
         private long _lastProfileWriteTicks;
         private float _lastSolverMicroseconds;
         private double3 _gridOriginAup;
-        private GraphicsBuffer _thermalCellsBuffer;
+        private GraphicsBuffer _thermalCellsBufferA;
+        private GraphicsBuffer _thermalCellsBufferB;
+        private int _thermalCellsUploadParity;
+        private int _desiredResolution = MaxResolution;
+        private float _resolutionSwitchTimer;
+        private bool _resolutionInitialized;
 
         public static AbyssalThermodynamicsSolver ActiveRuntimeInstance { get; private set; }
         public bool IsInitialized => _nativeReady;
@@ -144,8 +150,7 @@ namespace Hecton8.Thermodynamics
             _registeredLate = false;
             _registeredOrigin = false;
 
-            _thermalCellsBuffer?.Release();
-            _thermalCellsBuffer = null;
+            ReleaseVisualBuffers();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -172,9 +177,12 @@ namespace Hecton8.Thermodynamics
             if (front == null || back == null || injection == null || scratch == null || sources == null || sourceCount == null || telemetry == null || tuningPtr == null)
                 return;
 
-            ThermalGridTuningDTO tuning = BuildTuning();
+            ThermalGridTuningDTO tuning = BuildTuning(deltaTime);
             *tuningPtr = tuning;
             _frame = tuning.Frame;
+            CullExpiredTransientSources(sources, sourceCount, tuning.Frame);
+            TryIngestThermalSourceSignals(sources, sourceCount, tuning.Frame);
+            _hasRealSources = HasNonMockSources(sources, sourceCount);
 
             JobHandle dependency = default;
             uint telemetryFlags = 0u;
@@ -231,6 +239,8 @@ namespace Hecton8.Thermodynamics
             injectionJob.SourceCount = sourceCount;
             injectionJob.Tuning = tuning;
             injectionJob.DeltaTime = math.max(0f, deltaTime);
+            injectionJob.Frame = tuning.Frame;
+            injectionJob.SourceTtlFrames = TransientSourceTtlFrames;
             dependency = injectionJob.Schedule(dependency);
 
             int jacobiPasses = math.max(1, tuning.JacobiIterations);
@@ -365,14 +375,15 @@ namespace Hecton8.Thermodynamics
             source.FalloffExponent = 1.5f;
             source.ProfileHash = profileHash;
             source.SourceId = sourceId;
-            source.Flags = 0u;
+            source.Flags = HeatSourceDTO.FlagPersistent;
             source.ConductivityOverride = waterThermalConductivity;
             source.ConvectionGain = 1f;
             source.Phase01 = 0f;
-            source._pad0 = 0u;
+            source.LastTouchedFrame = _frame;
             sources[target] = source;
             *countPtr = count;
-            _hasRealSources = count > 0;
+            RemoveMockSources(sources, countPtr);
+            _hasRealSources = HasNonMockSources(sources, countPtr);
             return true;
         }
 
@@ -398,11 +409,152 @@ namespace Hecton8.Thermodynamics
 
                 sources[i] = sources[count - 1];
                 *countPtr = count - 1;
-                _hasRealSources = *countPtr > 0;
+                _hasRealSources = HasNonMockSources(sources, countPtr);
                 return true;
             }
 
             return false;
+        }
+
+        private static void CullExpiredTransientSources(HeatSourceDTO* sources, int* countPtr, uint frame)
+        {
+            int count = math.clamp(*countPtr, 0, MaxSourceCount);
+            int write = 0;
+            for (int i = 0; i < count; i++)
+            {
+                HeatSourceDTO source = sources[i];
+                if (source.RadiusMeters <= 0f || source.IntensityCelsiusPerSecond <= 0f)
+                    continue;
+
+                bool persistent = (source.Flags & HeatSourceDTO.FlagPersistent) != 0u;
+                if (!persistent && frame - source.LastTouchedFrame > TransientSourceTtlFrames)
+                    continue;
+
+                if (write != i)
+                    sources[write] = source;
+
+                write++;
+            }
+
+            *countPtr = write;
+        }
+
+        private static bool TryIngestThermalSourceSignals(HeatSourceDTO* sources, int* countPtr, uint frame)
+        {
+            ReadOnlySpan<ThermalSourceSignal> signals = SignalBus<ThermalSourceSignal>.GetFrameSnapshot();
+            if (signals.Length == 0)
+                return false;
+
+            RemoveMockSources(sources, countPtr);
+            int count = math.clamp(*countPtr, 0, MaxSourceCount);
+            bool wrote = false;
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ThermalSourceSignal signal = signals[i];
+                if (signal.RadiusMeters <= 0f || signal.IntensityCelsiusPerSecond <= 0f)
+                    continue;
+
+                uint sourceId = signal.SourceId != 0u ? signal.SourceId : BuildThermalSourceId(in signal);
+                int target = FindSourceIndex(sources, count, sourceId);
+                if (target < 0)
+                {
+                    if (count >= MaxSourceCount)
+                        continue;
+
+                    target = count;
+                    count++;
+                }
+
+                HeatSourceDTO source;
+                source.Aup = signal.PositionAup.ToAbsoluteDouble3();
+                source.IntensityCelsiusPerSecond = math.max(0f, signal.IntensityCelsiusPerSecond);
+                source.RadiusMeters = math.max(0f, signal.RadiusMeters);
+                source.FalloffExponent = 1.5f;
+                source.ProfileHash = BlackSmokerHash;
+                source.SourceId = sourceId;
+                source.Flags = 0u;
+                source.ConductivityOverride = 0f;
+                source.ConvectionGain = 1f;
+                source.Phase01 = 0f;
+                source.LastTouchedFrame = frame;
+                sources[target] = source;
+                wrote = true;
+            }
+
+            *countPtr = count;
+            return wrote;
+        }
+
+        private static void RemoveMockSources(HeatSourceDTO* sources, int* countPtr)
+        {
+            int count = math.clamp(*countPtr, 0, MaxSourceCount);
+            int write = 0;
+            for (int i = 0; i < count; i++)
+            {
+                HeatSourceDTO source = sources[i];
+                if ((source.Flags & HeatSourceDTO.FlagMock) != 0u)
+                    continue;
+
+                if (write != i)
+                    sources[write] = source;
+
+                write++;
+            }
+
+            *countPtr = write;
+        }
+
+        private static bool HasNonMockSources(HeatSourceDTO* sources, int* countPtr)
+        {
+            int count = math.clamp(*countPtr, 0, MaxSourceCount);
+            for (int i = 0; i < count; i++)
+            {
+                HeatSourceDTO source = sources[i];
+                if ((source.Flags & HeatSourceDTO.FlagMock) == 0u &&
+                    source.RadiusMeters > 0f &&
+                    source.IntensityCelsiusPerSecond > 0f)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static int FindSourceIndex(HeatSourceDTO* sources, int count, uint sourceId)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (sources[i].SourceId == sourceId)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static uint BuildThermalSourceId(in ThermalSourceSignal signal)
+        {
+            const uint fnvOffset = 2166136261u;
+            const uint fnvPrime = 16777619u;
+            uint hash = fnvOffset;
+            hash = FoldHash(hash, (uint)signal.PositionAup.GridX, fnvPrime);
+            hash = FoldHash(hash, (uint)(signal.PositionAup.GridX >> 32), fnvPrime);
+            hash = FoldHash(hash, (uint)signal.PositionAup.GridY, fnvPrime);
+            hash = FoldHash(hash, (uint)(signal.PositionAup.GridY >> 32), fnvPrime);
+            hash = FoldHash(hash, (uint)signal.PositionAup.GridZ, fnvPrime);
+            hash = FoldHash(hash, (uint)(signal.PositionAup.GridZ >> 32), fnvPrime);
+            hash = FoldHash(hash, math.asuint(signal.PositionAup.LocalX), fnvPrime);
+            hash = FoldHash(hash, math.asuint(signal.PositionAup.LocalY), fnvPrime);
+            hash = FoldHash(hash, math.asuint(signal.PositionAup.LocalZ), fnvPrime);
+            hash = FoldHash(hash, math.asuint(signal.RadiusMeters), fnvPrime);
+            return hash == 0u ? 1u : hash;
+        }
+
+        private static uint FoldHash(uint hash, uint value, uint prime)
+        {
+            hash ^= value;
+            hash *= prime;
+            return hash;
         }
 
         public bool TryScheduleSample(NativeArray<double3> sampleAups, NativeArray<ThermalSampleResultDTO> results, JobHandle dependency, out JobHandle handle)
@@ -541,7 +693,7 @@ namespace Hecton8.Thermodynamics
             _profiles = Acquire<HeatSourceProfileDTO>(BufferID.AbyssalThermalProfiles, MaxProfileCount);
             _profileCount = Acquire<int>(BufferID.AbyssalThermalProfileCount, 1);
 
-            ThermalGridTuningDTO tuning = BuildTuning();
+            ThermalGridTuningDTO tuning = BuildTuning(0f);
             ThermalGridTuningDTO* tuningPtr = (ThermalGridTuningDTO*)_tuning.ResolvePointer(_vault);
             int* sourceCount = (int*)_sourceCount.ResolvePointer(_vault);
             int* profileCount = (int*)_profileCount.ResolvePointer(_vault);
@@ -607,15 +759,13 @@ namespace Hecton8.Thermodynamics
                 return _vault;
             }
 
-            _standaloneVault ??= GlobalDataVault.Create(64);
-            _vault = _standaloneVault;
-            return _vault;
+            throw new InvalidOperationException("Abyssal thermodynamics requires GlobalDataVault before boot.");
         }
 
-        private ThermalGridTuningDTO BuildTuning()
+        private ThermalGridTuningDTO BuildTuning(float deltaTime)
         {
             float quality = ResolveQualityWeight();
-            _activeResolution = AbyssalThermalMath.ResolveActiveResolution(quality, MinResolution, MaxResolution);
+            _activeResolution = ResolveStableResolution(quality, deltaTime);
             _activeCellCount = _activeResolution * _activeResolution * _activeResolution;
             float safeCellSize = math.max(0.001f, cellSizeMeters);
             double3 anchorAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(transform.position);
@@ -676,6 +826,39 @@ namespace Hecton8.Thermodynamics
 
             float weight = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.isfinite(weight) ? weight : 1f);
+        }
+
+        private int ResolveStableResolution(float quality, float deltaTime)
+        {
+            int resolved = AbyssalThermalMath.ResolveActiveResolution(quality, MinResolution, MaxResolution);
+            if (!_resolutionInitialized)
+            {
+                _resolutionInitialized = true;
+                _desiredResolution = resolved;
+                _resolutionSwitchTimer = 0f;
+                return resolved;
+            }
+
+            if (resolved == _activeResolution)
+            {
+                _desiredResolution = resolved;
+                _resolutionSwitchTimer = 0f;
+                return _activeResolution;
+            }
+
+            if (resolved != _desiredResolution)
+            {
+                _desiredResolution = resolved;
+                _resolutionSwitchTimer = 0f;
+                return _activeResolution;
+            }
+
+            _resolutionSwitchTimer += math.max(0f, deltaTime);
+            if (_resolutionSwitchTimer < ResolutionHysteresisSeconds)
+                return _activeResolution;
+
+            _resolutionSwitchTimer = 0f;
+            return _desiredResolution;
         }
 
         private static uint ComputeStateHash(int resolution, int iterations, float quality)
@@ -794,14 +977,29 @@ namespace Hecton8.Thermodynamics
             }
         }
 
-        private void EnsureVisualBuffer()
+        private void EnsureVisualBuffers()
         {
             int stride = UnsafeUtility.SizeOf<ThermalCellDTO>();
-            if (_thermalCellsBuffer != null && _thermalCellsBuffer.count == MaxCellCount && _thermalCellsBuffer.stride == stride)
+            if (IsUsableVisualBuffer(_thermalCellsBufferA, stride) && IsUsableVisualBuffer(_thermalCellsBufferB, stride))
                 return;
 
-            _thermalCellsBuffer?.Release();
-            _thermalCellsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxCellCount, stride);
+            ReleaseVisualBuffers();
+            _thermalCellsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxCellCount, stride);
+            _thermalCellsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxCellCount, stride);
+            _thermalCellsUploadParity = 0;
+        }
+
+        private static bool IsUsableVisualBuffer(GraphicsBuffer buffer, int stride)
+        {
+            return buffer != null && buffer.count == MaxCellCount && buffer.stride == stride;
+        }
+
+        private void ReleaseVisualBuffers()
+        {
+            _thermalCellsBufferA?.Release();
+            _thermalCellsBufferB?.Release();
+            _thermalCellsBufferA = null;
+            _thermalCellsBufferB = null;
         }
 
         private void UploadVisualBuffer()
@@ -809,7 +1007,7 @@ namespace Hecton8.Thermodynamics
             if (!_visualDirty)
                 return;
 
-            EnsureVisualBuffer();
+            EnsureVisualBuffers();
             IDataVault vault = _vault;
             if (vault == null)
                 return;
@@ -818,8 +1016,16 @@ namespace Hecton8.Thermodynamics
             if (!front.IsCreated)
                 return;
 
-            _thermalCellsBuffer.SetData(front, 0, 0, _activeCellCount);
-            Shader.SetGlobalBuffer(ThermalCellsBufferId, _thermalCellsBuffer);
+            GraphicsBuffer uploadBuffer = (_thermalCellsUploadParity & 1) == 0 ? _thermalCellsBufferA : _thermalCellsBufferB;
+            int stride = UnsafeUtility.SizeOf<ThermalCellDTO>();
+            NativeArray<ThermalCellDTO> writeWindow = uploadBuffer.LockBufferForWrite<ThermalCellDTO>(0, _activeCellCount);
+            UnsafeUtility.MemCpy(
+                NativeArrayUnsafeUtility.GetUnsafePtr(writeWindow),
+                NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(front),
+                (long)_activeCellCount * stride);
+            uploadBuffer.UnlockBufferAfterWrite(_activeCellCount);
+
+            Shader.SetGlobalBuffer(ThermalCellsBufferId, uploadBuffer);
             Shader.SetGlobalVector(ThermalGridMetaId, new Vector4(_activeResolution, cellSizeMeters, ambientTemperatureCelsius, ResolveQualityWeight()));
             ThermalGridTuningDTO* tuning = (ThermalGridTuningDTO*)_tuning.ResolvePointer(vault);
             if (tuning != null)
@@ -828,6 +1034,7 @@ namespace Hecton8.Thermodynamics
                 Shader.SetGlobalVector(ThermalGridOriginId, new Vector4((float)origin.x, (float)origin.y, (float)origin.z, tuning->ConvectionSpeed));
             }
 
+            _thermalCellsUploadParity ^= 1;
             _visualDirty = false;
         }
 

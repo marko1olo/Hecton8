@@ -16,11 +16,12 @@ namespace Hecton8.Modding
     /// <summary>
     /// Projects selected first-party native signal snapshots into managed mod callbacks without exposing native ownership.
     /// </summary>
-    internal sealed class ModEventProjectionBridge : IModdingBridge, ILateFrameTickable, IHectonEventChannel
+    internal sealed class ModEventProjectionBridge : IModdingBridge, ILateFrameTickable, IHectonEventChannel, IGlobalRegistryHotSwapListener
     {
         private const string NativeMemoryOwner = nameof(ModEventProjectionBridge);
         private const int HighTierProjectionCap = 50;
         private const int LowTierProjectionCap = 10;
+        private const float LowProjectionQualityFlagThreshold01 = 0.3f;
         private const int BlackboxCapacity = 300;
         private const long PerFrameManagedAllocationLimitBytes = 1L * 1024L * 1024L;
         private const string TimeoutCullMessage = "[MOD CULLED: TIMEOUT]";
@@ -44,6 +45,7 @@ namespace Hecton8.Modding
         private NativeQueue<ModEventDto> _projectedEvents;
         private NativeArray<ModCullTelemetryEntry> _cullTelemetry;
         private JobHandle _projectionHandle;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private int _activeSubscriptionCount;
         private int _nextSubscriptionId = 1;
         private int _dispatchDepth;
@@ -53,6 +55,7 @@ namespace Hecton8.Modding
         private bool _projectionScheduled;
         private bool _needsCompaction;
         private bool _lateFrameRegistered;
+        private bool _hotSwapRegistered;
 
         public bool IsInitialized { get; private set; }
 
@@ -141,6 +144,7 @@ namespace Hecton8.Modding
             _queuedProjectedEventCount = 0;
             _projectionScheduled = false;
             _tickCount = 0;
+            _playerRuntimeContext = GlobalRegistry.Player;
 
             HectonEventBus.InstallNativeQueueBindings();
             GlobalRegistry.RegisterModdingBridgeRuntime(this);
@@ -150,9 +154,11 @@ namespace Hecton8.Modding
                 GlobalRegistry.UnregisterModdingBridgeRuntime(this);
                 HectonEventBus.UninstallNativeQueueBindings();
                 ReleaseNativeState();
+                _playerRuntimeContext = null;
                 return;
             }
 
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
             SystemDispatcher.SetModdingBridgeProjectionRuntime(this);
             IsInitialized = true;
         }
@@ -164,10 +170,14 @@ namespace Hecton8.Modding
 
             if (_lateFrameRegistered)
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            if (_hotSwapRegistered)
+                GlobalRegistry.UnregisterHotSwapListener(this);
             GlobalRegistry.UnregisterModdingBridgeRuntime(this);
             SystemDispatcher.ClearModdingBridgeProjectionRuntime(this);
             HectonEventBus.UninstallNativeQueueBindings();
             _lateFrameRegistered = false;
+            _hotSwapRegistered = false;
+            _playerRuntimeContext = null;
 
             if (_projectionScheduled)
                 DispatcherJobSwap.TryComplete(ref _projectionHandle, forceComplete: true);
@@ -220,7 +230,7 @@ namespace Hecton8.Modding
             float3 playerRuntimePosition = ResolvePlayerRuntimePosition();
             double3 playerAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(
                 new Vector3(playerRuntimePosition.x, playerRuntimePosition.y, playerRuntimePosition.z));
-            bool lowTier = GlobalRegistry.ScalabilityTierProfileByte == 0;
+            float projectionQualityWeight01 = ResolveProjectionQualityWeight01();
             JobHandle handle = default;
             if (damageCount > 0)
             {
@@ -230,7 +240,7 @@ namespace Hecton8.Modding
                     Output = _projectedEvents.AsParallelWriter(),
                     PlayerAbsolutePosition = playerAbsolutePosition,
                     Limit = damageCount,
-                    LowTier = lowTier ? (byte)1 : (byte)0
+                    QualityWeight01 = projectionQualityWeight01
                 }.Schedule();
             }
 
@@ -241,7 +251,7 @@ namespace Hecton8.Modding
                     Signals = SignalBus<WeatherChangedSignal>.GetFrameSnapshotArray(),
                     Output = _projectedEvents.AsParallelWriter(),
                     Limit = weatherCount,
-                    LowTier = lowTier ? (byte)1 : (byte)0
+                    QualityWeight01 = projectionQualityWeight01
                 }.Schedule(handle);
             }
 
@@ -435,12 +445,21 @@ namespace Hecton8.Modding
 
         private static int ResolveProjectionCap()
         {
-            return GlobalRegistry.ScalabilityTierProfileByte == 0 ? LowTierProjectionCap : HighTierProjectionCap;
+            float qualityWeight01 = ResolveProjectionQualityWeight01();
+            float curve = qualityWeight01 * qualityWeight01 * (3f - (2f * qualityWeight01));
+            int cap = (int)math.round(math.lerp(LowTierProjectionCap, HighTierProjectionCap, curve));
+            return math.clamp(cap, LowTierProjectionCap, HighTierProjectionCap);
         }
 
-        private static float3 ResolvePlayerRuntimePosition()
+        private static float ResolveProjectionQualityWeight01()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            float qualityWeight01 = SignalBusRegistry.GlobalQualityWeight01;
+            return math.isfinite(qualityWeight01) ? math.saturate(qualityWeight01) : 0f;
+        }
+
+        private float3 ResolvePlayerRuntimePosition()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null &&
                 playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
                 math.all(math.isfinite(snapshot.RuntimePosition)))
@@ -543,6 +562,15 @@ namespace Hecton8.Modding
             };
         }
 
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+        }
+
         private struct SubscriptionEntry
         {
             public int Id;
@@ -579,12 +607,13 @@ namespace Hecton8.Modding
             [NoAlias] public NativeQueue<ModEventDto>.ParallelWriter Output;
             public double3 PlayerAbsolutePosition;
             public int Limit;
-            public byte LowTier;
+            public float QualityWeight01;
 
             public void Execute()
             {
                 int count = math.min(Limit, Signals.Length);
-                ushort sampleFlags = LowTier != 0 ? ModEventDto.LowTierSampleFlag : (ushort)0;
+                ushort sampleFlags = (ushort)(ModEventDto.LowTierSampleFlag *
+                    (int)math.step(QualityWeight01, LowProjectionQualityFlagThreshold01));
                 for (int i = 0; i < count; i++)
                 {
                     CombatDamageSignal signal = Signals[i];
@@ -622,12 +651,13 @@ namespace Hecton8.Modding
             [ReadOnly, NoAlias] public NativeArray<WeatherChangedSignal>.ReadOnly Signals;
             [NoAlias] public NativeQueue<ModEventDto>.ParallelWriter Output;
             public int Limit;
-            public byte LowTier;
+            public float QualityWeight01;
 
             public void Execute()
             {
                 int count = math.min(Limit, Signals.Length);
-                ushort sampleFlags = LowTier != 0 ? ModEventDto.LowTierSampleFlag : (ushort)0;
+                ushort sampleFlags = (ushort)(ModEventDto.LowTierSampleFlag *
+                    (int)math.step(QualityWeight01, LowProjectionQualityFlagThreshold01));
                 for (int i = 0; i < count; i++)
                 {
                     WeatherChangedSignal signal = Signals[i];

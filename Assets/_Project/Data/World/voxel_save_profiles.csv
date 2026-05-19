@@ -1,4 +1,7 @@
 # key,value
+biome,default_open_water
+depth_min_m,0
+depth_max_m,1200
 prune_threshold01,0.0001
 lz4_min_effort01,0.12
 lz4_max_effort01,0.92

@@ -121,6 +121,7 @@ namespace Hecton8.Audio.Editor
             EditorGUILayout.LabelField("Hydrated Voices", _stats.ActivePhysicalVoices.ToString());
             EditorGUILayout.LabelField("Culled Voices", _stats.CulledVoices.ToString());
             EditorGUILayout.LabelField("Average Sort Time ms", _stats.SortTimeMs.ToString("0.000"));
+            EditorGUILayout.LabelField("SDF Occlusion Time ms", _stats.AcousticOcclusionTimeMs.ToString("0.000"));
             EditorGUILayout.LabelField("Average RT60 s", _stats.AverageRt60Seconds.ToString("0.000"));
             EditorGUILayout.LabelField("Average LPF Hz", _stats.AverageLowPassHertz.ToString("0"));
             EditorGUILayout.LabelField("Max Delay s", _stats.MaximumDelaySeconds.ToString("0.000"));

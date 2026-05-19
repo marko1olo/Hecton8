@@ -149,6 +149,7 @@ namespace Hecton8.Physics
             RefreshColdDependencyCache();
             PrewarmTetherPool(InitialPooledTetherInstances);
             EnsureTelemetry();
+            EnsureShinobu143AupBootstrap();
         }
 
         private void OnEnable()
@@ -727,6 +728,7 @@ namespace Hecton8.Physics
         public void SlowTick()
         {
             RefreshColdDependencyCache();
+            EnsureShinobu143AupBootstrap();
         }
 
         private void RefreshColdDependencyCache()
@@ -737,6 +739,21 @@ namespace Hecton8.Physics
             _cachedWeatherService = GlobalRegistry.Weather;
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
+        }
+
+        private void EnsureShinobu143AupBootstrap()
+        {
+            if (_dataVault == null)
+                return;
+
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            if (!math.isfinite(qualityWeight))
+                qualityWeight = 1f;
+
+            TetherAupVaultBootstrap.EnsureMockBuffers(
+                _dataVault,
+                math.saturate(qualityWeight),
+                CurrentFixedFrameIndex);
         }
 
         internal static HectonQualityTier SanitizeQualityTier(HectonQualityTier tier)

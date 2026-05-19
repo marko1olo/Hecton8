@@ -2,12 +2,13 @@ using System.Runtime.InteropServices;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.VFX.Wakes
 {
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct WakeSource
     {
         [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
@@ -22,9 +23,14 @@ namespace Hecton8.VFX.Wakes
         [FieldOffset(104)] public byte SourceKind;
         [FieldOffset(105)] public byte Active;
         [FieldOffset(106)] public ushort Flags;
+        [FieldOffset(108)] public uint Padding0;
+        [FieldOffset(112)] public uint Padding1;
+        [FieldOffset(116)] public uint Padding2;
+        [FieldOffset(120)] public uint Padding3;
+        [FieldOffset(124)] public uint Padding4;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct WakeTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;
@@ -39,13 +45,13 @@ namespace Hecton8.VFX.Wakes
         [FieldOffset(48)] public uint DataVaultGeneration;
         [FieldOffset(52)] public uint AupShiftSequence;
         [FieldOffset(56)] public float SystemStress01;
-        [FieldOffset(60)] public float LowTier01;
+        [FieldOffset(60)] public float BudgetPressure01;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct WakeDecayJob : IJobParallelFor
     {
-        public NativeArray<WakeSource> WakeSources;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<WakeSource> WakeSources;
         public float DeltaTime;
         public float DecayRate;
         public int SlotLimit;

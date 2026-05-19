@@ -134,3 +134,73 @@ Solution: Compute a presentation-only visual phase in C# from `Time.frameCount`,
 Rejected Alternatives: Keeping `_Time.y` was rejected because it bypassed the SHINOBU DTO/frame-param route. A gameplay simulation tick route was rejected because this fog remains rollback-excluded presentation.
 Scalability potential: Low quality advances visual drift less frequently while proxy fog bypasses raymarching; high/ultra update every frame with 64-step overkill available.
 Hardware Impact: Low-end shader temporal work now naturally freezes between quantized phase updates instead of changing every frame. Exact microseconds PENDING PROFILER.
+
+## Decision 020 - Compile-Wall Honesty
+Problem: A legal narrow Core build was finally attempted after the CPU/process guard cleared, but compilation failed before SHINOBU code could be validated because `Hecton8.Core.csproj` references missing `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`.
+Solution: Record the failure as compile-wall strike 1 and leave the World/csproj dependency untouched. SHINOBU_120 does not own the World bridge file or the project-file inclusion route, so changing it here would violate domain boundary and could hide another agent's dependency problem.
+Rejected Alternatives: Restoring a guessed World source file, deleting the compile include, or editing the project file from the VFX fog domain were rejected. Those would be cross-domain repairs without owner proof.
+Scalability potential: No runtime scalability change. The decision preserves the compile wall so SHINOBU remains a RenderGraph/VFX facade instead of absorbing World integration authority.
+Hardware Impact: No runtime impact. Build validation is blocked by dependency; profiler microseconds remain PENDING PROFILER.
+
+## Decision 021 - CBuffer Dirty Gate and Dead Variant Removal
+Problem: The render path still repeated native-layout reflection through `Marshal.OffsetOf`, uploaded the 64B fog constant buffer every frame even when the DTO page was bit-identical, and carried `_MATH_LOD_LOW/_MATH_LOD_HIGH` compute variants that the SHINOBU shader never actually branched on.
+Solution: Cache the layout proof after static initialization, add a hash/equality dirty gate around `LockBufferForWrite<VolumetricFogParamsDTO>`, and remove the unused compute `multi_compile` line. The shader still scales through the continuous `GlobalQualityWeight` DTO fields: ray step count, proxy blend, dither weight, internal scale, and point-light count.
+Rejected Alternatives: Keeping reflection in `RecordRenderGraph`, uploading constants blindly because the payload is only 64B, or adding fake `_MATH_LOD_LOW` shader branches were rejected. The project mandate is page-level dirtiness and continuous quality, not dead keyword surface.
+Scalability potential: Low devices keep the analytic dither proxy and avoid redundant CPU/GPU buffer map work on static cameras/settings; middle/high/ultra keep 64-step overkill available without shader variant stalls from SHINOBU-specific unused keywords.
+Hardware Impact: Expected i3/MX350 gain is small but deterministic: zero repeated layout reflection and skipped 64B CBuffer map/unmap on unchanged frames. Exact microseconds remain PENDING PROFILER because the current Core compile is blocked by a missing World file.
+
+## Decision 022 - Point-Light Page Dirty Hash
+Problem: The scheduled mock light job can produce identical `PointLightDTO` pages while low quality quantizes visual phase to about 5Hz, but the prior path uploaded the inactive structured GraphicsBuffer every time a job completed.
+Solution: Hash the completed point-light page from active count plus up to eight `PositionRadius`/`ColorIntensity` float4 lanes, skip `LockBufferForWrite` and active-buffer flip when the page hash/count matches the last uploaded page, and reset the dirty state on resource recreation and teardown.
+Rejected Alternatives: Storing point lights in managed arrays for equality, uploading blindly because the buffer is small, or stopping the scheduled job entirely were rejected. The job remains the deterministic producer; the upload path now respects page-level dirtiness.
+Scalability potential: Low quality benefits most because visual phase cadence can hold steady for multiple frames; middle/high/ultra still upload when the generated light page actually changes.
+Hardware Impact: Expected i3/MX350 gain is avoiding redundant structured-buffer map/unmap and GPU upload on unchanged frames. Exact microseconds remain PENDING PROFILER.
+
+## Decision 023 - AUP-Local Camera Route Without World Dependency
+Problem: The render facade used `camera.transform.position` and `camera.transform.forward` directly for fog depth-band selection, wrapped noise offset, telemetry, and mock-light generation. `AbsoluteUniversePosition` is in the World namespace, so importing it into Visor would violate compile-wall routing even though the AUP mandate is real.
+Solution: Use the Core-owned `HectonFloatingOrigin.CurrentTotalOffsetDouble` as the authority snapshot, derive a camera AUP double3, subtract the same offset immediately, and narrow only the local result to float3 for presentation math. Camera forward is finite-normalized before it enters the Burst job. This preserves the AUP/localization discipline without taking a direct World dependency.
+Rejected Alternatives: Direct `using Hecton8.World` from the Visor render feature, continuing raw transform reads, or sending absolute double coordinates into the shader were rejected. The render facade may consume Core origin authority but cannot own World AUP truth.
+Scalability potential: Low/middle/high/ultra all use the same local camera DTO route; quality still only changes scalar cost, not coordinate truth.
+Hardware Impact: One double3 add/subtract and one forward normalization per rendered camera frame. Expected cost is below profiler noise; benefit is avoiding large-world coordinate drift and NaN propagation. Exact microseconds remain PENDING PROFILER.
+
+## Decision 024 - Unity.Mathematics Quality Continuum
+Problem: SHINOBU's quality response was continuous, but the C# control surface still mixed `Mathf.Clamp01`, `Mathf.Lerp`, and implicit clamps for the same scalar that architecture documents define as `GlobalQualityWeight`. That weakens auditability and made the low-end survival floor less explicit than the mandate requires.
+Solution: Add one `ResolveQualityCurve` cubic polynomial helper and route ray steps, internal render scale, proxy blend, point-light count, visual phase cadence, setup clamping, and estimate scaling through `math.saturate`, `math.lerp`, and `math.step`. The proxy path now has an explicit `math.step(0.12, quality)` survival floor before the smooth polynomial fade releases toward raymarching.
+Rejected Alternatives: Keeping mixed `Mathf` quality code, adding binary low/high quality branches, or reintroducing shader keywords for SHINOBU-specific variants were rejected. Continuous math is the owner route; variants are not needed for this fog facade.
+Scalability potential: Low stays analytic/dithered with slow visual phase cadence and minimum ray cost; middle smoothly increases internal scale, light count, and ray count; high/ultra spend the scalar on 64-step scattering without changing gameplay truth or adding variant churn.
+Hardware Impact: Expected i3/MX350 benefit is not a raw ALU reduction from this patch alone; the gain is deterministic load-shed correctness and easier audit of the low-quality collapse. Exact microseconds remain PENDING PROFILER.
+
+## Decision 025 - Finite-Saturated Quality Gate
+Problem: `math.saturate` clamps finite values but is not a complete NaN vaccination strategy. If `HomeostasisBrain.GlobalQualityWeight` or an editor-injected render scale became NaN/infinite, SHINOBU could feed invalid values into ray-step rounding, visual cadence, estimate math, or RTHandle dimension calculation.
+Solution: Add `ResolveFiniteSaturated`: finite values clamp to 0..1, invalid values collapse to `0.0`. Apply it to the public quality scalar, quality curve, proxy blend, point-light count, visual phase cadence, and estimate scale. Add explicit finite fallback endpoints for `minimumInternalScale` and `maximumInternalScale` before interpolation.
+Rejected Alternatives: Assuming upstream systems never publish NaN, relying on `math.saturate` alone, or clamping after render-target dimensions are computed were rejected. The render facade must fail toward minimum survival cost before values reach GPU/resource sizing.
+Scalability potential: Low/middle/high/ultra behavior is unchanged for valid scalars. Invalid scalar state now degrades to the low-cost dithered proxy rather than allocating invalid targets or producing undefined shader parameters.
+Hardware Impact: Two finite checks on settings and finite guards around scalar curves; expected cost is below profiler noise. Benefit is preventing catastrophic NaN propagation. Exact microseconds remain PENDING PROFILER.
+
+## Decision 026 - Shader FBM Detail Gate
+Problem: The shader exposed a continuous octave count, but after proxy mode released it always evaluated both coarse and fine FBM paths. That meant low/middle quality paid extra noise work even when the quality scalar was supposed to shed ALU smoothly.
+Solution: Make `ResolveFogDensity` compute the coarse FBM first, then derive a continuous `fineBlend` from quality above 0.35. The fine FBM is only evaluated when the blend is non-zero, and its contribution is lerped into the coarse density without a visual pop.
+Rejected Alternatives: Keeping the unconditional second FBM, adding hardware-tier shader keywords, or removing fine detail entirely were rejected. The scalar must buy extra particulate richness only when the device has budget.
+Scalability potential: Low stays proxy or single-FBM reduced raymarch; middle gradually introduces fine suspended silt; high/ultra pay the fine-detail branch while still capped by 64 steps and opacity early-out.
+Hardware Impact: Expected i3/MX350 gain is avoiding one FBM call per ray step in the low/middle raymarch band. Exact microseconds remain PENDING PROFILER.
+
+## Decision 027 - External Shader-Global Snapshot Consolidation
+Problem: `RecordTelemetry` repeated global shader queries for MarineSnow density and AbyssalFlow activity even though `RecordRenderGraph` already needs the same producer globals for RenderGraph texture import and compute binding.
+Solution: Read the MarineSnow/AbyssalFlow producer globals once per RenderGraph record, before vault/GPU state update, and pass immutable booleans into telemetry. Telemetry now records flags from the same snapshot used for resource binding instead of touching global shader state again.
+Rejected Alternatives: Leaving duplicate `Shader.GetGlobalTexture`/`Shader.GetGlobalFloat` reads in telemetry or adding a direct MarineSnow owner reference were rejected. The route remains a shader/global-producer bridge, but the render feature samples it once.
+Scalability potential: Low/middle/high/ultra behavior is unchanged. The change reduces hot-path bookkeeping and keeps external resource truth consistent for both graph binding and black-box flags.
+Hardware Impact: Expected i3/MX350 gain is tiny but deterministic: two global shader queries removed from telemetry per camera frame. Exact microseconds remain PENDING PROFILER.
+
+## Decision 028 - Editor Facade NaN Quarantine
+Problem: The UI Toolkit tuner writes directly into vault-backed `VolumetricFogParamsDTO`, but its slider paths used raw `math.clamp` or `math.saturate`. Invalid editor input could therefore write NaN into the same DTO read by the runtime RenderGraph feature.
+Solution: Add `ClampFinite` in the editor facade and route default quality seeding, slider display, and all slider-to-DTO writes through finite fallback clamps. Invalid density/scattering/extinction/anisotropy/flow/quality values collapse to conservative SHINOBU defaults.
+Rejected Alternatives: Leaving the editor facade unsanitized because it is cold-only, or duplicating runtime repair after every editor mutation, were rejected. The human-control surface must not be able to poison the runtime DTO.
+Scalability potential: Valid low/middle/high/ultra tuning remains unchanged. Invalid tuner state now fails toward low-cost, visible defaults rather than breaking quality curves or shader parameters.
+Hardware Impact: Editor-only finite checks; no player hot-path cost. Runtime benefit is preventing invalid DTO state before Play Mode profiling. Exact microseconds remain PENDING PROFILER.
+
+## Decision 029 - Runtime DTO Boundary Sanitization And Local Noise Coordinates
+Problem: Runtime serialized settings, vault overrides, and CSV extinction profiles still had a path to feed NaN/infinity into `VolumetricFogParamsDTO` through raw `Mathf` clamps or unchecked color/profile lanes. The compute shader also derived FBM coordinates from `samplePositionWS`, which weakens the AUP-local noise guarantee if Unity world floats ever become large before an origin shift.
+Solution: Add finite fallback clamps at the runtime DTO boundary for fog color, density, scattering, extinction, anisotropy, opacity break, flow strength, ray distance, silt strength, bilateral scale, profile depth ranges, profile absorption/scatter, and telemetry debug values. Invalid estimated GPU time is flagged in telemetry and stored as finite `0` before dump. In `Hecton_VolumetricFog.compute`, derive volumetric FBM coordinates from `samplePositionLocal + wrappedCameraNoiseOffset`, while still sampling the owner-provided AbyssalFlow field with the world/sample coordinate.
+Rejected Alternatives: Trusting inspector ranges, assuming CSV/editor paths are harmless, or relying only on shader write-barrier sanitization were rejected. A shader output clamp stops visible NaN propagation too late; the DTO and black-box records must be finite before they become frame evidence.
+Scalability potential: Low stays on the dithered analytic proxy when upstream values are invalid; middle/high/ultra keep the same visual paths for valid data, with camera-relative noise precision preserved across large-world motion.
+Hardware Impact: Adds bounded scalar finite checks on the CPU presentation path and removes no GPU features. Expected cost is below profiler noise. Precision benefit is preventing large-coordinate FBM shimmer and invalid DTO poisoning. Exact microseconds remain PENDING PROFILER.

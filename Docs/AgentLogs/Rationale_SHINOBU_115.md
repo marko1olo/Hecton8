@@ -2,7 +2,7 @@
 
 Date: 2026-05-19
 Agent: SHINOBU_115
-Status: SOURCE_HARDENED_NOALIAS / COMPILE_BLOCKED_BY_CPU_LOAD / RUNTIME_PENDING
+Status: SOURCE_HARDENED_VISUAL_LOCKS_EDGE_CASCADE_AUDITED / COMPILE_BLOCKED_BY_CPU_LOAD / RUNTIME_PENDING
 
 ## Decision 001: Structural Collapse Must Be Scalar Truth Plus Presentation Lie
 
@@ -123,3 +123,99 @@ Rejected Alternatives: Hand-authoring a generated binary table was rejected beca
 Scalability potential: Low/Middle/High/Ultra all hydrate the same aligned runtime DTO contract; future binary promotion must go through an owner baker and ledger update.
 
 Hardware Impact: Runtime hot-path impact is 0. Cold CSV parsing remains outside gameplay solver cadence and uses Vault scratch to avoid managed split allocation.
+
+## Decision 011: Solver Jobs Must Hold Vault Relocation Locks
+
+Problem: The solver resolves `NativeArray` aliases from Vault handles and then schedules Burst jobs that hold those pointers beyond the scheduling call. Without Vault locks, another owner or compaction path could relocate a buffer while the job fence is alive.
+
+Solution: Before scheduling, lock every Vault buffer captured by the solver job chain: structural states, node AUPs, CSR offsets/destinations, edge flags, telemetry ring, telemetry cursor, tuning, and optional `VoxelSdfTexture3D`. Unlock only after `_scheduledHandle.Complete()` in `LateFrameTick()`, or immediately on pre-schedule validation failure.
+
+Rejected Alternatives: Resolving handles without locks was rejected because it relies on a global no-relocation assumption not present in `GlobalDataVault`. Calling `Complete()` from editor or cold reload paths was rejected because it would serialize worker jobs outside the visual-sync fence.
+
+Scalability potential: Low, Middle, High, and Ultra use the same lock discipline; cadence changes reduce how often locks are acquired on weak devices, while high-tier visual richness still consumes the same stable DTO contract.
+
+Hardware Impact: Control-path lock/unlock calls add negligible model cost compared with the solver. The value is preventing use-after-relocation crashes and nondeterministic corrupt state on long-running QA sessions.
+
+## Decision 012: Editor Facade Reads Telemetry, Not Live Truth During Jobs
+
+Problem: The original editor graph sampled live node state, which proves current stress but not the required 300-frame Black Box telemetry path. It could also read while the solver job was writing.
+
+Solution: Add `TryGetTelemetrySample(int framesBack, out StructuralTelemetryEntry)` and make `Hull Integrity Tuner` draw from the telemetry ring. Public editor-facing state/tuning/telemetry reads and tuning writes now return while `_jobScheduled != 0`. A literal runtime `OnDrawGizmos` hook was added for Task 19; it reads Vault state only after the solver fence is down.
+
+Rejected Alternatives: Keeping only a `SceneView.duringSceneGui` delegate was rejected because the XML explicitly asks for `OnDrawGizmos`. Completing the solver from editor UI was rejected because editor tooling must not become a hidden synchronization point.
+
+Scalability potential: Low devices still record sparse telemetry at the solver cadence; Middle/High/Ultra give denser graph history as cadence rises. Editor graph richness does not alter runtime truth.
+
+Hardware Impact: Editor-only visualization cost is outside gameplay. Runtime safety improves by avoiding active-job Vault reads from editor calls.
+
+## Decision 013: GPU Upload And SDF Quality Must Match The Actual Contracts
+
+Problem: `LockBufferForWrite` on a `GraphicsBuffer` constructed without `UsageFlags.LockBufferForWrite` is a latent upload failure. SDF anchoring also needed explicit continuous quality math, not a fixed tap count pretending to scale.
+
+Solution: Construct structural state buffers with `GraphicsBuffer.UsageFlags.LockBufferForWrite`. SDF anchoring now collapses to nearest-sample math below the quality threshold and smoothly blends six-neighbor cross taps using `math.step(0.3f, quality)` and a polynomial quality curve.
+
+Rejected Alternatives: Using MaterialPropertyBlock was rejected by AGENTS because it breaks SRP Batcher on standard geometry. Always evaluating high-tap SDF was rejected because low-tier hardware pays the same per-node memory load for no gameplay-critical improvement.
+
+Scalability potential: Low uses one SDF sample and sparse solver cadence; Middle blends into cross-tap anchoring; High and Ultra spend the saved CPU on shader buckling, audio groans, leaks, and richer designer overlays.
+
+Hardware Impact: Low tier saves five SDF byte samples per node in the anchor job. GPU upload now uses the correct lockable buffer path; measured frame and driver proof remain pending.
+
+## Decision 014: Cold And Editor Writers Must Not Become Hidden Fences
+
+Problem: `RegenerateMockGraph()` still called `CompleteScheduled()`, which let an editor button steal the simulation fence. Cold boot/mock/CSV paths also scheduled immediate jobs or wrote directly into Vault scratch/material buffers without explicit relocation locks, relying on "no active solver" instead of proving pointer ownership.
+
+Solution: Remove the editor-forced completion; `RegenerateMockGraph()` now returns while `_jobScheduled != 0`. Boot clear and mock graph generation acquire Vault locks before scheduling immediate cold jobs. `SetTuning()` and default tuning writes lock `StructuralIntegrityTuning`. CSV reload locks `StructuralIntegrityCsvScratch` during direct `FileStream.Read(Span<byte>)`, locks `StructuralIntegrityMaterialStrengths` during parse/upsert, and locks states/materials while the cold material-apply job owns those pointers.
+
+Rejected Alternatives: Completing scheduled simulation work from an editor/mock command was rejected because it serializes worker jobs outside `LateFrameTick()`. Managed `byte[]` CSV staging was rejected because it would reintroduce cold allocation pressure and duplicate the Vault scratch path. Leaving cold jobs unlocked was rejected because Vault compaction/relocation safety must not depend on the caller's intent.
+
+Scalability potential: Low avoids cold reload or editor stalls colliding with sparse solver cadence; Middle keeps designer reloads deterministic; High and Ultra keep the same scalar truth while using saved frame budget for richer shader/audio/VFX response.
+
+Hardware Impact: Runtime hot-path cost is 0 us for the editor no-fence change. Cold-path lock/unlock calls are control-path overhead only. The material and scratch locks prevent relocation corruption rather than claiming measurable frame-time savings; build/profiler proof remains pending because CPU gate is still closed.
+
+## Decision 015: Cold Writers Need Fail-Fast State And A Fixed Vault Hash Table
+
+Problem: The lock patch made cold/editor paths safer, but several helpers still returned silently on lock failure while `TryInitialize()` continued. That could leave `NativeArrayOptions.UninitializedMemory` buffers partially dirty. Task 18 also asked for `NativeHashMap` material lookup, while the actual Vault contract exposes generation-checked `NativeArray` buffers, not persistent `NativeHashMap` ownership.
+
+Solution: Convert boot clear, default material write, default tuning write, mock generation, and material apply into bool-returning fail-fast helpers. `TryInitialize()` now aborts on critical cold failure. Add `StructuralMutationGuardMask = 1UL << 45` around cold/editor writer paths. Convert `StructuralIntegrityMaterialStrengths` into a fixed 32-slot open-addressed Vault hash table: CSV upsert hashes directly to a slot and jobs resolve by hash probing with power-of-two wrapping.
+
+Rejected Alternatives: Continuing boot after a lock failure was rejected because deterministic rollback state cannot start from unknown bytes. A persistent `NativeHashMap` field was rejected because it would violate the Vault law and introduce allocator ownership outside `GlobalDataVault`. A linear material list was rejected because it only pretended to satisfy the hash-map requirement.
+
+Scalability potential: Low keeps the same 32-slot table and sparse cadence; Middle/High/Ultra resolve material strength with the same hash-addressed table while spending saved CPU on stronger shader buckling, groans, breach VFX, and editor telemetry.
+
+Hardware Impact: Runtime solver hot path is unchanged for structural graph pressure. Mock/material cold jobs now get average O(1) material lookup instead of linear 32-entry scans; measured proof is absent because `dotnet` remained blocked by CPU/process gates.
+
+## Decision 016: AUP Namespace Is Not A Sibling Runtime Reference
+
+Problem: `StructuralIntegrityCalculatorTypes.cs` imports `Hecton8.World` for `AbsoluteUniversePosition`, and the ultra mandate requires deleting direct sibling Runtime dependencies. A namespace match alone is insufficient proof; assembly ownership must be checked.
+
+Solution: Resolve the type definition and asmdef boundary. `AbsoluteUniversePosition` is declared in `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`, which is under the parent `Assets/_Project/Scripts/Hecton8.Core.asmdef` because there is no enclosing `World` asmdef at that folder level. `Hecton8.Habitat.Deformation.asmdef` already routes through `Hecton8.Core`, `Hecton8.Core.Contracts`, `Hecton8.Core.Memory`, local deformation contracts, and Unity packages. No direct World/Flood/Construction/Netcode/Audio/VFX runtime reference was introduced.
+
+Rejected Alternatives: Creating a SHINOBU-local AUP clone was rejected because `FluidIncursionSignal.LeakAup` already uses the Core-owned AUP payload; duplicating it would fork signal truth and add conversion risk. Moving AUP to contracts was rejected because that would edit a core/global boundary outside this task and could destabilize other agents.
+
+Scalability potential: Low, Middle, High, and Ultra all keep the same 48-byte AUP signal payload. No quality tier gains a second coordinate truth route.
+
+Hardware Impact: Runtime cost is 0 us. The gain is compile-wall proof: no sibling runtime assembly invalidation is added by SHINOBU_115.
+
+## Decision 017: Signal Profile Bytes And Layout Reflection Must Respect Their Actual Contracts
+
+Problem: `BaseModuleCompromisedSignal.QualityTier` is a Core signal byte whose documented profile values are `ScalabilityTierProfiles.LowMx350 = 0` and `HighRtx = 1`. SHINOBU_115 was writing a rounded `0..4` value derived from `GlobalQualityWeight`, which polluted a binary downstream contract. `StructuralIntegrityLayout.Validate()` also used `System.Reflection.FieldInfo` during runtime boot, which violates the zero-GC/reflection discipline for player code.
+
+Solution: Add a narrow bridge function in the collapse signal job: continuous `GlobalQualityWeight` is clamped and mapped with `math.step(0.5f, q)` into the existing Core profile byte range for `BaseModuleCompromisedSignal` only. The solver still consumes continuous quality for cadence, SDF anchoring, telemetry, and shader scalar intensity. Move offset reflection behind `#if UNITY_EDITOR`; player/runtime validation now uses `UnsafeUtility.SizeOf` only.
+
+Rejected Alternatives: Widening `BaseModuleCompromisedSignal.QualityTier` or adding new Core signal fields was rejected because this domain must not mutate a global contract to hide a local misuse. Leaving `0..4` was rejected because downstream owners can legally normalize or branch on `0/1`. Removing offset proof entirely was rejected because the editor audit remains useful; keeping reflection in runtime was rejected because boot must not allocate or invoke metadata paths.
+
+Scalability potential: Low-to-Ultra still breathe through `GlobalQualityWeight` in the structural math. The only binary step is the unavoidable bridge into an already-binary Core signal profile. Low keeps sparse cadence and nearest SDF, Middle blends SDF taps, High and Ultra keep denser cadence and stronger shader buckling while emitting valid downstream profile bytes.
+
+Hardware Impact: Breach emission adds one finite clamp and one `math.step` on a rare signal path. Player boot avoids runtime reflection/metadata calls; exact microseconds are pending profiler proof, but the architectural gain is contract correctness and zero-GC compliance.
+
+## Decision 018: Visual Sync Must Still Own Vault Aliases And Cascade Must Cut Connected Edges
+
+Problem: The scheduled solver correctly locked Vault buffers while jobs were alive, but the first visual-sync fence released those locks before `AfterSolverComplete()` uploaded the shader buffer and checked telemetry for fault dumps. That left a narrow relocation window while visual sync still held resolved Vault arrays. The cascade edge pass also only severed outgoing edges from collapsed sources, which was weaker than the task's connected-edge requirement when CSR ownership is one-sided. Cold CSV input still used `File.OpenRead`, which is a poor fit for designer hot reload.
+
+Solution: Keep solver locks through `CompleteScheduled(false)` and `AfterSolverComplete()`, then release in `LateFrameTick()` `finally`. Add `CsrDestinations` to `StructuralEdgeSeverJob` and sever each owned edge if its source is collapsed or its destination points at a collapsed node. Change material CSV reload to `FileStream(FileMode.Open, FileAccess.Read, FileShare.ReadWrite, CsvScratchBytes, FileOptions.SequentialScan)` while retaining the structural mutation guard and Vault locks.
+
+Rejected Alternatives: Unlocking before visual sync was rejected because GPU upload and Black Box dump still resolve Vault-backed arrays. Expanding cascade into recursive neighbor mutation was rejected because that would reintroduce nondeterministic destruction semantics. Keeping `File.OpenRead` was rejected because it can contend with external CSV writers during editor tuning.
+
+Scalability potential: Low keeps sparse cadence and cheap O(E) edge severing; Middle and High get denser structural propagation without new object truth; Ultra spends the same scalar state on richer shader buckling and downstream signal consumers. The CSV change is cold-only and does not create a low/ultra branch.
+
+Hardware Impact: Visual lock retention is correctness, not a claimed frame-time win. Destination-aware sever adds one bounded read per edge only when the edge owner is processed, still deterministic O(E). CSV `FileShare.ReadWrite` and sequential scan avoid editor reload contention; gameplay hot-path impact is 0 us.

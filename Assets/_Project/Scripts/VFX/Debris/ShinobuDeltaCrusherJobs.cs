@@ -25,18 +25,20 @@ namespace Hecton8.VFX.Debris
         public uint MaterialHash;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct DeltaCrusherMockLaserFireSignal : ISignal
     {
-        public double3 AupPosition;
-        public float Radius;
-        public sbyte DeltaDensity;
-        public byte ChunkState;
-        public ushort Reserved0;
-        public uint MaterialHash;
-        public uint Frame;
-        private uint _pad0;
-        private uint _pad1;
+        [FieldOffset(0)] public double3 AupPosition;
+        [FieldOffset(24)] public float Radius;
+        [FieldOffset(28)] public sbyte DeltaDensity;
+        [FieldOffset(29)] public byte ChunkState;
+        [FieldOffset(30)] public ushort Reserved0;
+        [FieldOffset(32)] public uint MaterialHash;
+        [FieldOffset(36)] public uint Frame;
+        [FieldOffset(40)] public uint _pad0;
+        [FieldOffset(44)] public uint _pad1;
+        [FieldOffset(48)] public ulong _pad2;
+        [FieldOffset(56)] public ulong _pad3;
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 32)]

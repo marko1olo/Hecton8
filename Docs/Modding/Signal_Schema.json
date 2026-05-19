@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "schemaRevision": 15,
+  "schemaRevision": 16,
   "schemaId": "hecton8.modding.signal_schema.v1",
   "status": "MOD_API_DEFINED_STATIC_SOURCE_RUNTIME_PENDING",
   "generatedBy": "MODDING_API_SCHEMA_BUILDER",
@@ -54,9 +54,9 @@
     "auditPath": "Docs/Modding/Signal_Audit_Matrix.md",
     "sourceFile": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
     "extractionCommand": "rg -o \"public struct [A-Za-z0-9_]+ : ISignal\" Assets/_Project/Scripts/Core/GlobalSignals.cs",
-    "uniqueISignalStructCount": 161,
+    "uniqueISignalStructCount": 162,
     "modProjectedISignalCount": 2,
-    "deniedByDefaultISignalCount": 159,
+    "deniedByDefaultISignalCount": 160,
     "projectedISignals": [
       "CombatDamageSignal",
       "WeatherChangedSignal"
@@ -614,9 +614,9 @@
       "date": "2026-05-19",
       "evidenceClass": "STATIC_SOURCE_VALIDATION",
       "runtimeProof": "PENDING_VERIFICATION",
-      "sourceSignals": 161,
+      "sourceSignals": 162,
       "allowedProjectedSignals": 2,
-      "deniedByDefaultSignals": 159,
+      "deniedByDefaultSignals": 160,
       "acceptedCommandOpcodes": 8,
       "commandRejectReasons": 19,
       "publicApiSurfaces": 16,

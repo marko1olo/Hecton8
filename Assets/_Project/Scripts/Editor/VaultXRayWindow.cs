@@ -1,5 +1,7 @@
 #if UNITY_EDITOR
 using System.IO;
+using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
