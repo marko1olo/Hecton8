@@ -284,6 +284,7 @@ def scan_source() -> dict[str, object]:
         cached_files = {}
     changed_paths = git_changed_paths(("Assets", "Packages"))
     new_cache_files: dict[str, object] = {}
+    existing_source_files = 0
     first_party_files = 0
     total_lines = 0
     first_party_lines = 0
@@ -291,8 +292,6 @@ def scan_source() -> dict[str, object]:
     for path in source_files:
         path_rel = rel(path)
         first_party = path_rel.startswith("Assets/_Project/Scripts/")
-        if first_party:
-            first_party_files += 1
 
         cached = cached_files.get(path_rel)
         cache_entry_valid = isinstance(cached, dict) and cached.get("first_party") == first_party
@@ -300,6 +299,10 @@ def scan_source() -> dict[str, object]:
             stat = path.stat()
         except OSError:
             continue
+
+        existing_source_files += 1
+        if first_party:
+            first_party_files += 1
 
         cache_metadata_valid = (
             cache_entry_valid
@@ -374,7 +377,7 @@ def scan_source() -> dict[str, object]:
 
     all_signal_names = sorted(set(signals) | set(signal_uses))
     return {
-        "source_file_count": len(source_files),
+        "source_file_count": existing_source_files,
         "first_party_file_count": first_party_files,
         "total_lines": total_lines,
         "first_party_lines": first_party_lines,
@@ -837,6 +840,7 @@ def build_markdown(data: dict[str, object] | None = None, generated_at: datetime
     out.append("- `python Tools/AtlasCheck.py`")
     out.append("- `python -m py_compile Tools/BuildArchitectureAtlas.py Tools/AtlasCheck.py`")
     out.append("- C# compile verification is outside this atlas; run Unity import/Console and serial CLI builds as separate evidence.")
+    out.append("- Current DOC_GLOBAL R27 blocker: `python Tools/AtlasCheck.py` still exits `1` on `57` RealtimeCSG vendor icon/readme image references until the references are restored or the atlas check excludes that vendor evidence class deliberately.")
     out.append("- This generated atlas is not `VERIFIED` unless `Tools/AtlasCheck.py` exits `0` after generation.")
     out.append("")
 
@@ -942,6 +946,7 @@ def build_json_payload(data: dict[str, object], generated_at: datetime | None = 
             "generator": "Tools/BuildArchitectureAtlas.py",
             "validator": "Tools/AtlasCheck.py",
             "tests": "Tools/test_architecture_atlas.py",
+            "atlas_check_status": "RED: Tools/AtlasCheck.py exits 1 on 57 RealtimeCSG vendor icon/readme image references; generated atlas is STATIC_SOURCE only until AtlasCheck exits 0.",
         },
         "residual_risk": [
             "Unity import, runtime wiring, actual VRAM residency, profiler frame time, GC, build, and Play Mode remain PENDING VERIFICATION.",

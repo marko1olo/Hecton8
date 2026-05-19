@@ -110,6 +110,8 @@ namespace Hecton8.Editor.Build
             SetBool(serialized, "m_PrefilterNativeRenderPass", true);
             SetInt(serialized, "m_MSAA", 4);
             SetFloat(serialized, "m_RenderScale", 1f);
+            SetInt(serialized, "m_UpscalingFilter", 1);
+            SetBool(serialized, "m_FsrOverrideSharpness", false);
             SetInt(serialized, "m_StoreActionsOptimization", 1);
             SetObjectInFirstArraySlot(serialized, "m_RendererDataList", rendererData);
             SetInt(serialized, "m_DefaultRendererIndex", 0);

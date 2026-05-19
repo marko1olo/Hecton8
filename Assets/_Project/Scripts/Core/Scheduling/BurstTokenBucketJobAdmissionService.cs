@@ -761,7 +761,7 @@ namespace Hecton8.Core.Scheduling
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = BlackboxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Sequential, Size = BlackboxEntrySizeBytes)]
         private struct JobAdmissionBlackboxEntry
         {
             public uint FrameSequence;
@@ -780,7 +780,7 @@ namespace Hecton8.Core.Scheduling
     /// <summary>
     /// Burst-visible EWMA math kernel. Kept separate so compiler can validate math without managed service fields.
     /// </summary>
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public static class JobAdmissionMath
     {
         private const float DefaultCostMs = 0.025f;

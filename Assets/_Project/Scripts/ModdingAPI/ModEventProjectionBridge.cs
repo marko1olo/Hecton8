@@ -28,14 +28,15 @@ namespace Hecton8.Modding
         private const string TimeoutDisableReason = "Projected event callback exceeded 2.0ms watchdog.";
         private const string GcDisableReason = "Projected event callback exceeded 1MB managed allocation frame quota.";
         private const string ExceptionDisableReason = "Projected event callback exception.";
+        private const string EnvelopeOnlyProjectionDisabledMessage = "Projected managed mod events are disabled in FutureCommandEnvelope-only mode.";
         private const uint GcCullEventHash = 0x4743414Cu; // GCAL
         private const uint ExceptionCullEventHash = 0x45584350u; // EXCP
         private const uint ProjectionJobOverrunWarningHash = 0x4D504A4Fu; // MPJO
         private const uint ProjectionBridgeContextHash = 0x4D504252u; // MPBR
         private static readonly long _watchdogTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.002d));
         private static readonly float _stopwatchTicksToMilliseconds = (float)(1000.0d / Stopwatch.Frequency);
-        // COLD ALLOC: ModEventProjectionBridge[1] - registry-owned mod event projection service - owner: ModEventProjectionBridge
-        private static readonly ModEventProjectionBridge _globalBridge = new ModEventProjectionBridge();
+        // COLD ALLOC: ModEventProjectionBridge[1] - registry-owned mod event projection service - owner: ModEventProjectionBridge, lazy so envelope-only UGC does not instantiate the bridge.
+        private static ModEventProjectionBridge _globalBridge;
 
         // COLD ALLOC: List<SubscriptionEntry>[16] - mod projected-event delegate registry - owner: ModEventProjectionBridge
         private readonly List<SubscriptionEntry> _subscriptions = new List<SubscriptionEntry>(16);
@@ -59,6 +60,9 @@ namespace Hecton8.Modding
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            if (_globalBridge == null)
+                return;
+
             ShutdownGlobal();
             _globalBridge._subscriptions.Clear();
             _globalBridge._nextSubscriptionId = 1;
@@ -70,24 +74,33 @@ namespace Hecton8.Modding
 
         internal static void InstallGlobal()
         {
-            _globalBridge.Install();
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                return;
+
+            GetOrCreateGlobalBridge().Install();
         }
 
         internal static void ShutdownGlobal()
         {
+            if (_globalBridge == null)
+                return;
+
             _globalBridge.Shutdown();
         }
 
         internal static HectonEventSubscription SubscribeProjected(Action<ModEventDto> handler, string subscriberId)
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                throw new IllegalContractException(EnvelopeOnlyProjectionDisabledMessage);
+
             if (handler == null)
                 throw new IllegalContractException("Cannot subscribe a null projected mod event handler.");
 
             ModEventProjectionBridge bridge = GlobalRegistry.ModdingBridge as ModEventProjectionBridge;
             if (bridge == null)
             {
-                _globalBridge.Install();
-                bridge = _globalBridge;
+                bridge = GetOrCreateGlobalBridge();
+                bridge.Install();
             }
 
             return bridge.Subscribe(handler, subscriberId);
@@ -95,11 +108,25 @@ namespace Hecton8.Modding
 
         internal static void DisableProjectedSubscriber(string subscriberId)
         {
+            if (_globalBridge == null)
+                return;
+
             _globalBridge.DisableSubscriber(subscriberId);
+        }
+
+        private static ModEventProjectionBridge GetOrCreateGlobalBridge()
+        {
+            if (_globalBridge == null)
+                _globalBridge = new ModEventProjectionBridge();
+
+            return _globalBridge;
         }
 
         public void Install()
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                return;
+
             if (IsInitialized)
                 return;
 

@@ -988,10 +988,13 @@ namespace Hecton8.QA.Headless
             if (state.DistanceTraveled < _targetDistanceMeters)
                 return false;
 
-            if (_qualityWallSeconds < MinimumQualityAuditSeconds)
-                return false;
+            return HasQualityAuditObserved(vault.Flags);
+        }
 
-            return (vault.Flags & VaultFlagStressRecoveryObserved) != 0u;
+        private bool HasQualityAuditObserved(uint vaultFlags)
+        {
+            return _qualityWallSeconds >= MinimumQualityAuditSeconds &&
+                   (vaultFlags & VaultFlagStressRecoveryObserved) != 0u;
         }
 
         private uint BuildTelemetryFlags(in Shinobu38MockVaultDTO vault)
@@ -1259,7 +1262,7 @@ namespace Hecton8.QA.Headless
             writer.AppendAscii(",\"wallSeconds\":");
             writer.AppendFloat(_qualityWallSeconds);
             writer.AppendAscii(",\"qualityAuditObserved\":");
-            writer.AppendUInt(_qualityWallSeconds >= MinimumQualityAuditSeconds ? 1u : 0u);
+            writer.AppendUInt(HasQualityAuditObserved(vault.Flags) ? 1u : 0u);
             writer.AppendAscii(",\"catastrophicAupDeltaFrame\":");
             writer.AppendUInt(_catastrophicAupDeltaFrame);
             writer.AppendAscii(",\"lastEventHash\":");

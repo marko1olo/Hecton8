@@ -32,9 +32,9 @@ This file answers four operational questions:
 It is a navigation and completeness tool.
 It is not runtime proof.
 
-## 2026-05-18 Current Override
+## 2026-05-19 Current Override
 
-Current DOC_GLOBAL root/architecture/navigation/status override starts at `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`. Use compact content read order R24 -> R23 -> R22 -> R21 -> R20 -> R19 -> R18 -> R17 -> R16 -> R15 -> R14 -> R13 -> R11 -> R10 -> R9 for DOC_GLOBAL correction layers.
+Current DOC_GLOBAL root/architecture/navigation/status override starts at `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`. Use compact content read order R27 -> R26 -> R25 -> R24 -> R23 -> R22 -> R21 -> R20 -> R19 -> R18 -> R17 -> R16 -> R15 -> R14 -> R13 -> R11 -> R10 -> R9 for DOC_GLOBAL correction layers.
 The May 13 X-Ray, May 15 root cleanup, May 11 manifest/continuation, and May 4 actuality sweep remain historical evidence unless a later static or runtime proof file explicitly revalidates their counters.
 
 ## Coverage Model
@@ -64,7 +64,7 @@ Correction:
 - The current source-backed coverage map includes `PLAYER_GAMEPLAY_CORE_MAP.md`, `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`, and `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`.
 - Patch artifacts are evidence files, not independent current-state authority.
 - `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is still the first conceptual current-state entry point outside this Archivarius folder.
-- `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, and the R15/R14/R13/R11/R10/R9 DOC_GLOBAL reports are the current DOC_GLOBAL correction starting points. May 13/15 and May 4 reports are historical broad read-passes unless rerun.
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R26_ROOT_ARCHITECTURE_HFI_PROMOTION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R25_ROOT_ARCHITECTURE_LONGTAIL_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, and the R15/R14/R13/R11/R10/R9 DOC_GLOBAL reports are the current DOC_GLOBAL correction starting points. May 13/15 and May 4 reports are historical broad read-passes unless rerun.
 
 ## Domain Coverage
 
@@ -148,9 +148,12 @@ Correction:
 
 For current-source truth, prefer in this order:
 
-1. `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`
-2. `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`
-3. `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`
+1. `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`
+2. `Docs/Reports/2026-05-19_DOCUMENTATION_R26_ROOT_ARCHITECTURE_HFI_PROMOTION_LOCAL.md`
+3. `Docs/Reports/2026-05-19_DOCUMENTATION_R25_ROOT_ARCHITECTURE_LONGTAIL_LOCAL.md`
+4. `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`
+5. `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`
+6. `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`
 3. `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`
 4. `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`
 5. `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`
@@ -232,7 +235,7 @@ New high-authority May 1 report inputs:
 
 Coverage corrections:
 
-- The older trust boundary remains valid only as a read-order policy. For current risk framing, read the R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9 DOC_GLOBAL reports first, then May 13/15 historical baselines, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, then the relevant dated subsystem report. This is still not runtime proof.
+- The older trust boundary remains valid only as a read-order policy. For current risk framing, read the R27/R26/R25/R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9 DOC_GLOBAL reports first, then May 13/15 historical baselines, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, then the relevant dated subsystem report. This is still not runtime proof.
 - `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md` remains current on late-frame dispatch budgeting, but current risk is no proven same-frame generation split for all event cascade paths. `HectonEventBus.MaxDispatchDepth = 4` exists by May 2 source grep.
 - `PROJECT_CONTENT_LEDGER.md` remains the content ledger, but validator execution proof is still not a live runtime proof.
 - `DEAD_CODE_GRAVEYARD.md` remains the deletion ledger. Its conclusions must be cross-checked before deleting additional code because the worktree is currently heavily modified by multiple agents.

@@ -869,7 +869,6 @@ namespace Hecton8.SaveSystem
                 AssetPriorityTier.Tier2Proximity,
                 AssetResidencyKind.Addressable,
                 0L,
-                Vector3.zero,
                 false,
                 out handle,
                 out _);
@@ -891,7 +890,6 @@ namespace Hecton8.SaveSystem
                 runtimeRecord.Handle,
                 runtimeRecord.Handle.Result,
                 0L,
-                Vector3.zero,
                 false);
         }
 

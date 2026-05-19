@@ -17,7 +17,7 @@ This document is active only where it agrees with:
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
-Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
+Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HÐ¤; ÐÑˆ-Ð¤Ð¸; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 Purpose: stable index for `Docs/ARCHITECTURE`. These files are long-lived system contracts. They are not dated progress reports.
 
@@ -34,7 +34,7 @@ Purpose: stable index for `Docs/ARCHITECTURE`. These files are long-lived system
 
 Start with `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` when touching save versions, DataMonolith, ContentAuthority, Addressables, Subnautica/Subnautica 2 comparison, modding, or co-op state contracts. Use `HECTON8_P0_FOUNDATION_PROOF_MATRIX.md`, `SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md`, and `SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md` as clean-room production pressure references, not runtime proof.
 
-Use `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` before wiring, deleting, rebaking, or packaging generated `.h8bin`, `.bin`, `.h8qdag.bin`, or binary `.bytes` payloads. Current Batch008 static truth: 47 product/generated target files, broad hygiene verifier scope 65 `.bin` / `.h8bin` files, 16 total misalignments, only `Data/Audio/Acoustic_LUT.bin` and `Data/Visuals/Water_Extinction_Matrix.bin` statically proven main-runtime wired, and `Data/Balance/Baked/Babel_Dictionary.h8bin` as the only misaligned product payload.
+Use `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` before wiring, deleting, rebaking, or packaging generated `.h8bin`, `.bin`, `.h8qdag.bin`, or binary `.bytes` payloads. Batch008/R25 static snapshot: 47 product/generated target files, broad hygiene verifier scope 65 `.bin` / `.h8bin` files, 16 total misalignments, `Data/Audio/Acoustic_LUT.bin`, `Data/Visuals/Water_Extinction_Matrix.bin`, and `Data/Visuals/Biolum_Profiles.bin` statically proven main-runtime wired, and `Data/Balance/Baked/Babel_Dictionary.h8bin` as the only misaligned product payload. Recapture before current packaging use. Runtime load, shader import, profiler, Frame Debugger, and player-build proof remain absent.
 
 Use `UNCLAIMED_FUTURE_SYSTEM_SEAMS.md` only for contract-only preparation in batch slots with no visible Status/LOG/Rationale trail. It does not authorize runtime edits in dirty or occupied domains.
 
@@ -48,9 +48,9 @@ Current hard corrections:
 
 ## Current DOC_GLOBAL Boundary
 
-Current root/architecture correction: `../Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`.
+Current root/architecture correction: `../Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`, superseding the R28/R27/R26/R25/R24 root/architecture actuality passes where R29 differs.
 
-R23 remains the proof-language/navigation residue boundary, and R22 remains a prior explicit source-counter boundary. `Tools/AtlasCheck.py` remains red on `57` missing RealtimeCSG vendor icon/readme references.
+R28 remains the prior interior-boundary correction. R27 remains the latest source-counter/index correction. R26, R25, and R24 remain prior root/architecture source-counter corrections, R23 remains the proof-language/navigation residue boundary, and R22 remains a prior explicit source-counter boundary. R29 static-gate state: scoped stale Mod API blocker scans are clean for active root/architecture/report docs; `Tools/AtlasCheck.py` remains red on `57` RealtimeCSG vendor icon/readme references; `Docs\Modding\Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`).
 
 Historical DOC_AUDIT override: `../Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
 
@@ -66,16 +66,23 @@ Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCM
 2. `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` - generated binary payload ownership, runtime wiring status, and dead-weight classification.
 3. `SYSTEM_INTERCONNECT_MATRIX.md` - cross-system ownership and AUP-sensitive edges.
 4. `HECTON_PHI_STATIC_METRIC.md` - static H-Phi definition, formulas, graph debt gate, and evidence boundary.
-5. `DISPATCH_PIPELINE.md` - runtime dispatch, tick ownership, and update boundaries.
-6. `AUP_PRECISION_STANDARDS.md` and `KINEMATICS_AUP_INTEGRATION.md` - floating-origin and movement correctness.
-7. `ZERO_GC_FABRICATION.md` and `ZERO_GC_UI_PIPELINE.md` - allocation discipline for fabrication and UI.
-8. `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, `CONTENT_SAVE_SLOT_TOPOLOGY.md`, then `SAVE_V8_BINARY_SPEC.md` and `SAVE_PAGING_PROTOCOL.md` as legacy indexed-sector references - persistence architecture.
-9. `HECTON8_P0_FOUNDATION_PROOF_MATRIX.md`, `SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md`, and `SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md` - clean-room production pressure and gap framing.
-10. Domain docs such as `FLOW_FIELD_MATH.md`, `AUDIO_DSP_PIPELINE.md`, `HABITAT_LOGISTICS_GRAPH.md`, `SUBMARINE_OS_MANUAL.md`, and `URP_SCREENSHOT_PIPELINE.md` as needed by the task.
+5. `GLOBAL_AUTHORITY_BOUNDARIES.md` - GlobalRegistry, SignalBus, HectonEventBus, GlobalSignals, and GlobalDataVault anti-monolith guardrails.
+6. `GLOBAL_AUTHORITY_OPERATING_MODEL.md` - AAA-style route-card/lifecycle model for using global authority tools without creating a global monolith.
+7. `GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md` - practical subsystem setup sequence and scenario recipes for global authority tools.
+8. `GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md` - copy/paste route-card and review template for any new or changed global route.
+9. `GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md` - reviewer disposition checklist for accepting, blocking, rejecting, or killing global routes.
+10. `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md` - review queues, audit commands, and migration stop conditions for global authority debt.
+10. `DISPATCH_PIPELINE.md` - runtime dispatch, tick ownership, and update boundaries.
+11. `AUP_PRECISION_STANDARDS.md` and `KINEMATICS_AUP_INTEGRATION.md` - floating-origin and movement correctness.
+12. `ZERO_GC_FABRICATION.md` and `ZERO_GC_UI_PIPELINE.md` - allocation discipline for fabrication and UI.
+13. `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, `CONTENT_SAVE_SLOT_TOPOLOGY.md`, then `SAVE_V8_BINARY_SPEC.md` and `SAVE_PAGING_PROTOCOL.md` as legacy indexed-sector references - persistence architecture.
+14. `HECTON8_P0_FOUNDATION_PROOF_MATRIX.md`, `SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md`, and `SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md` - clean-room production pressure and gap framing.
+15. Domain docs such as `FLOW_FIELD_MATH.md`, `AUDIO_DSP_PIPELINE.md`, `HABITAT_LOGISTICS_GRAPH.md`, `SUBMARINE_OS_MANUAL.md`, and `URP_SCREENSHOT_PIPELINE.md` as needed by the task.
 
 ## Complete Contract Inventory
 
 - [AI_POTENTIAL_FIELD_NAVIGATION.md](AI_POTENTIAL_FIELD_NAVIGATION.md)
+- [AI_PACING_MODEL.md](AI_PACING_MODEL.md)
 - [ARENA_ALLOCATOR_2_0.md](ARENA_ALLOCATOR_2_0.md)
 - [AUDIO_DSP_PIPELINE.md](AUDIO_DSP_PIPELINE.md)
 - [BINARY_PAYLOAD_INTEGRATION_LEDGER.md](BINARY_PAYLOAD_INTEGRATION_LEDGER.md)
@@ -91,6 +98,12 @@ Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCM
 - [EQUIPMENT_SOA_LAYOUT.md](EQUIPMENT_SOA_LAYOUT.md)
 - [FLOW_FIELD_MATH.md](FLOW_FIELD_MATH.md)
 - [GLOBAL_REGISTRY_SERVICE_LOCATOR.md](GLOBAL_REGISTRY_SERVICE_LOCATOR.md)
+- [GLOBAL_AUTHORITY_BOUNDARIES.md](GLOBAL_AUTHORITY_BOUNDARIES.md)
+- [GLOBAL_AUTHORITY_OPERATING_MODEL.md](GLOBAL_AUTHORITY_OPERATING_MODEL.md)
+- [GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md](GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md)
+- [GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md](GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md)
+- [GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md](GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md)
+- [GLOBAL_AUTHORITY_MIGRATION_LEDGER.md](GLOBAL_AUTHORITY_MIGRATION_LEDGER.md)
 - [GLOBAL_SIGNAL_CORRIDOR.md](GLOBAL_SIGNAL_CORRIDOR.md)
 - [HABITAT_LOGISTICS_GRAPH.md](HABITAT_LOGISTICS_GRAPH.md)
 - [HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md](HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md)

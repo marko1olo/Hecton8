@@ -29,6 +29,36 @@ The Steam page must convert a cold viewer from "underwater survival?" to "this h
 | SD-09 | A deep-sea noir survival game about machines, corrosion, salvage, and the thing broadcasting from 5km down. | Seed Ship hook, verify lore. |
 | SD-10 | Keep the base alive. Keep the lights alive. Keep yourself alive. The ocean only needs one failure. | Punchy, less descriptive. |
 
+## 2026-05-19 Execution Candidates
+
+Use these three first once real screenshots exist. Do not keep adding variants until these fail a cold-read test.
+
+| Candidate | Copy | Pair with first asset | Why it exists | Kill if |
+|---|---|---|---|---|
+| A - Pressure/Salvage | Survive below the light in a single-player underwater survival game about pressure, salvage, machinery, and the cost of keeping a base alive. | Exterior screenshot: industrial base or wreck route under black water, one readable objective. | Safest Steam baseline. It says genre, player verb, and identity without overpromising. | Viewers only read it as Subnautica clone, or cannot name the minute-to-minute action. |
+| B - Machine/Base | Build where the ocean wants every seal to fail. Salvage wrecks, power pressure-rated habitats, and keep failing machines alive in black water. | Interior/base screenshot: leak, gauge, tool, power conduit, repairable object. | Converts base-building players who want systems and readable failure. | The build cannot show base failure/repair honestly in the first screenshot pack. |
+| C - Seed Ship/Anomaly | Follow a corrupted signal into industrial black water where machines, wildlife, and instruments stop obeying clean rules. | Anomaly/Seed Ship screenshot with instrument corruption and a route cue. | Strongest mystery hook; useful for horror/atmosphere creators. | The Seed Ship/anomaly is only lore text and has no visible systemic proof. |
+
+Current default: `A - Pressure/Salvage`.
+
+Reason: HECTON-8 has no public proof assets yet. The first Steam copy must not depend on unproven base failure, vehicle scope, co-op, large world, or performance claims.
+
+### Short Description Cold-Test Script
+
+Show copy A/B/C with one screenshot for five seconds. Ask:
+
+1. What do you do in this game?
+2. What makes it different from other underwater survival games?
+3. Does it imply co-op or multiplayer?
+4. Does it feel like a real game or a mood pitch?
+5. What would make you click away?
+
+Decision:
+
+- If A wins clarity, use A for first Steam draft.
+- If B wins wishlist intent and the screenshot proves base machinery, use B.
+- If C wins only because it sounds mysterious but viewers cannot name gameplay, do not use it as the short description.
+
 ## Capsule Message Options
 
 Capsule must be simple. One visual idea.

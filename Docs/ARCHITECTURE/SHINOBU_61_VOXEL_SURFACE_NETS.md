@@ -5,7 +5,7 @@ Date: 2026-05-19
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-18 R4 Interior Actuality Boundary
 
-This document is active only where it agrees with current source, fresh verification artifacts, R24 root/architecture correction, R23 proof-language/navigation boundary, and R22 prior source-count boundary. `Tools/AtlasCheck.py` still has the known RealtimeCSG missing-reference blocker.
+This document is active only where it agrees with current source, fresh verification artifacts, and the R28 root/architecture correction. R28 static gates: AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`).
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, mesh visual proof, or runtime performance proof is implied unless this document links a fresh evidence artifact. Static scan/pass wording is source-orientation only.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
@@ -37,10 +37,11 @@ Local-cast BufferID range: `70780-70797`.
 
 1. Density owner or mock job writes SDF samples into `Density`.
 2. `SurfaceNetExtractionJob` scans sign-crossing cells, computes one centroid vertex per cell, samples tetrahedral SDF gradients, packs normals/tangents/material blend, and writes indices.
-3. `SurfaceNetExtractionJob` writes indirect draw args into vault memory.
-4. Caller owns the returned `JobHandle`; this module does not call `Complete()`.
-5. A boot-prewarmed `VoxelSurfaceNetsGpuUploadDispatcher` starts upload with `TryBeginUpload`: it locks vertex/index/indirect `GraphicsBuffer` objects with `LockBufferForWrite` and schedules `VoxelSurfaceGpuUploadCopyJob` to copy vault vertices, indices, and indirect args directly into the mapped buffer views.
-6. The caller chains the upload `JobHandle` through the frame graph. `TryFinalizeUpload` only unlocks and publishes the buffer after the caller-supplied dependency is already completed. The dispatcher does not perform a caller-thread bulk copy and does not call `JobHandle.Complete()`.
+3. Quad emission is edge-gated: an index quad is emitted only when the corresponding X/Y/Z grid-edge crosses the iso-surface. Edge signs drive winding, and raw debug triangles mirror the exact final index order.
+4. `SurfaceNetExtractionJob` writes indirect draw args into vault memory.
+5. Caller owns the returned `JobHandle`; this module does not call `Complete()`.
+6. A boot-prewarmed `VoxelSurfaceNetsGpuUploadDispatcher` starts upload with `TryBeginUpload`: it locks vertex/index/indirect `GraphicsBuffer` objects with `LockBufferForWrite` and schedules `VoxelSurfaceGpuUploadCopyJob` to copy vault vertices, indices, and indirect args directly into the mapped buffer views.
+7. The caller chains the upload `JobHandle` through the frame graph. `TryFinalizeUpload` only unlocks and publishes the buffer after the caller-supplied dependency is already completed. The dispatcher does not perform a caller-thread bulk copy and does not call `JobHandle.Complete()`.
 
 ## Quality Curve
 
@@ -54,4 +55,4 @@ Interior rock cells do not exist geometrically: fully solid or fully empty cells
 
 Static scans are reported for forbidden Mesh APIs, properties in new hot DTOs, `Pack=1`, `LayoutKind.Sequential`, direct sibling domain references, `foreach`, `Time.deltaTime`, `UnityEngine.Random`, private runtime native container ownership, and arbitrary `JobHandle.Complete`; link the command output before treating this as current proof.
 
-Static forbidden API scan after the mapped-buffer copy pass found no managed Mesh API, `Pack=1`, `LayoutKind.Sequential`, hot DTO properties, `JobHandle.Complete`, LINQ/`foreach`, Physics casts, runtime private native collection ownership, binary hardware switches, or sibling runtime domain references. Burst scan found 8 jobs and 8 mandated BurstCompile flag sets. Compiler proof is pending because the latest CPU sample was 100%, above the allowed 50% threshold. No `dotnet build` was launched.
+A static forbidden-API scan was reported after the mapped-buffer copy pass for managed Mesh API, `Pack=1`, `LayoutKind.Sequential`, hot DTO properties, `JobHandle.Complete`, LINQ/`foreach`, Physics casts, runtime private native collection ownership, binary hardware switches, sibling runtime domain references, Burst jobs, and BurstCompile flags. The command output is not linked here, so treat this as source-orientation only until artifact-backed. Compiler proof is pending because the latest CPU sample was 100%, above the allowed 50% threshold. No `dotnet build` was launched.

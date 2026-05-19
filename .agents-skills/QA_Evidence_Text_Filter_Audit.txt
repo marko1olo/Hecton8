@@ -32,6 +32,7 @@ Date: 2026-05-11
 [FORBID] Claiming compile health when another log or current console reports duplicate signals, duplicate structs, missing methods, or unresolved generated-project errors.
 [FORBID] Reporting a task as done while `Status_[ID].md` remains unchecked or `LOG_[ID].md` is missing.
 [FORBID] Reporting hot-path purity while source still contains a private `Update()` fallback outside the dispatcher exception list.
+[FORBID] Claiming global-authority improvement from more `SignalBus<T>`, `GlobalRegistry`, `GlobalSignals`, `HectonEventBus`, or `GlobalDataVault` text hits without owner, phase, capacity, overflow, BufferID/SystemID, generation, and runtime proof as applicable.
 
 ## Batch 007 Inquisition Rules
 
@@ -39,6 +40,8 @@ Date: 2026-05-11
 [RULE] Contract expansion during an active batch requires a legacy wrapper and a rationale entry. Mutating an existing public signature is rejected.
 [RULE] Any binary/native DTO or signal payload used across save, Burst, native collections, telemetry, or platform boundaries must declare explicit layout or documented unmanaged field order.
 [RULE] `GlobalDataVault` is a memory/data owner. Reports claiming DataVault integration must list BufferID, SystemID, generation handling, and disposal/relocation behavior.
+[RULE] Reports claiming global-authority cleanup must state which surface changed: `GlobalRegistry`, `SignalBus<T>`, `GlobalSignals`, `HectonEventBus`, or `GlobalDataVault`, and must cite `GLOBAL_AUTHORITY_BOUNDARIES.md` / `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md` when the change affects policy or review queues.
+[RULE] Reports claiming a new or changed global route is acceptable must include or link the owner-local setup decision from `GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md` and the route-card fields from `GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`.
 [RULE] Microsecond savings and `0 B GC` claims are static estimates unless backed by profiler or GCMonitor artifact paths.
 [RULE] Platform hardening claims require the platform build command, artifact path, timestamp, and unresolved error list.
 
@@ -75,3 +78,4 @@ This pass scanned active TECH_SCOUT logs/status and broad `Docs/Tasks` / `Docs/A
 | MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
 | Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
 | Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |
+| Global authority | Boundary decision, setup decision, route card, review disposition, migration ledger impact, owner/proof fields | `GLOBAL_AUTHORITY_BOUNDARIES.md`, `GLOBAL_AUTHORITY_OPERATING_MODEL.md`, `GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`, `GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`, `GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`, `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`, source/rationale |

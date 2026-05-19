@@ -2544,7 +2544,6 @@ namespace Hecton8.World
                             predictive ? AssetPriorityTier.Tier6Speculative : AssetPriorityTier.Tier2Proximity,
                             AssetResidencyKind.Addressable,
                             0L,
-                            definition.absoluteCenterMeters,
                             true,
                             out AsyncOperationHandle<GameObject> acquiredHandle,
                             out _))
@@ -2750,7 +2749,6 @@ namespace Hecton8.World
                 handle,
                 handle.Result,
                 EstimateAddressableChunkBytes(index),
-                definition.absoluteCenterMeters,
                 true);
         }
 

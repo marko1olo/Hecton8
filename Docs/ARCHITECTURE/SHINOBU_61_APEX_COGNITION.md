@@ -2,7 +2,7 @@
 
 Date: 2026-05-19
 Owner: SHINOBU_61 / Predictive Apex Aggression Director
-Status: LOOP 17 STATIC SOURCE NOTES / ROSLYN RECHECK SKIPPED BY CPU GUARD / UNITY RUNTIME PENDING. Unity import, Play Mode, Burst Inspector, and profiler proof pending.
+Status: LOOP 23 STATIC SOURCE NOTES / HISTORICAL ROSLYN RECHECK TEXT / UNITY RUNTIME PENDING. Unity import, Play Mode, Burst Inspector, profiler, and current compile proof are pending unless a fresh artifact is linked.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-18 R4 Interior Actuality Boundary
@@ -17,6 +17,10 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, Burst Inspector, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+## 2026-05-19 DOC_GLOBAL R28 Interior Note
+
+R28 reread confirmed this file remains static source notes plus historical Roslyn text, not current compile, Burst Inspector, fauna runtime, profiler, or player-build proof. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`, with R27 source counters retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `57` RealtimeCSG vendor references; `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). Unity/runtime/profiler/player-build proof remains absent.
 
 ## Runtime Authority
 
@@ -85,6 +89,18 @@ The allocation-locked vault path performs the same existing-handle validation an
 Rollback-relevant jobs use `FloatMode.Deterministic` with `FloatPrecision.Standard`. Dormant and faulted rows clear their 16-slot ambush scratch/influence span so stale predator intent cannot leak into gizmos, animation bridges, or downstream consumers.
 
 Loop 16 hardened NaN vaccination for non-finite inputs: non-finite state/target AUP or velocity writes a fault row and returns before AUP delta downcast, SDF sampling, dot-product LOS, or spatial hashing. Loop 17 applies the same quarantine to computed SDF/LOS faults, returning before biome, aggro, ambush nodes, signals, telemetry construction, or `HashSpatial(interceptLocal)` can consume poisoned scalars. Optional NativeQueue signal writers are still gated by `EnableSignalQueueWrites`, now with inline three-paragraph safety justifications at each `NativeDisableContainerSafetyRestriction` declaration.
+
+Loop 18 moves more bad-data cases out of the fault path by sanitizing cold tuning and sampler inputs before authority math: head/mid/tail offsets, emergency stat `float4` rows, sampler origin/floor/ceiling/canyon bias, target noise, and fallback target acoustic magnitude. The computed finite gate also checks pursuit vectors and intermediate LOS scalars.
+
+Loop 19 hardens the blind mock target generator used when Player Kinematics is absent. Non-finite mock AUP resets before movement, invalid deltas fall back to deterministic `1/30f`, velocity is clamped to 120 m/s, and forward vectors must normalize to finite output.
+
+Loop 20 bounds all authority-critical tuning and sampler scalars before node/SDF math. This prevents huge finite CSV or binary values from overflowing ambush candidates before `HashSpatial(candidate)`.
+
+Loop 21 applies those same design envelopes to cold vault/CSV/editor tuning ingress. `ApexBrainVault.SanitizeTuning()` now caps the unmanaged tuning row before any future cold consumer or editor view can observe absurd positive values; the hot job clamp remains as a second-line authority guard.
+
+Loop 22 expands the zero-GC CSV bridge from a partial slider-adjacent surface to the gameplay-relevant `ApexBrainTuning` float surface. `apex_predator_stats.csv` can now tune damage, deterministic tick delta, head/mid/tail SDF offsets, noise aggression, stamina recovery/cost, sweet-lie shadow/view-dot weights, ambush radius, visual-overkill gain, bite offset, and quality in addition to the original aggression/acoustic/turn/stalk/speed/radius/biome/strike fields. Simulation time, source hash, flags, and CSV metadata are not CSV-owned. Accepted values are still bounded by the vault sanitizer before any cold consumer reads them and by the job sanitizer before authority math.
+
+Loop 23 removes a sustained low-quality memory-write tax in the ambush scratch hygiene. The sweet-lie midpoint SDF probe was already genuinely gated, but low-quality ambush evaluation still walked all 16 lanes to clear 14 unevaluated rows every active frame. The resolver now reads the previous output row's `EvaluatedNodeCount`, evaluates only the current node count, and clears only the stale range when quality drops. Dormant/fault rows still erase all 16 lanes because those state transitions must remove predator intent immediately.
 
 ## Forensics
 

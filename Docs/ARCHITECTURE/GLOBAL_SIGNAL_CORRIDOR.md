@@ -21,17 +21,16 @@ Owner Source: `Assets/_Project/Scripts/Core/GlobalSignals.cs`
 
 ## Authority
 
-`GlobalSignals` is the current first-party signal corridor. It is not the old five-bus prose model.
+`GlobalSignals` is the retained direct-queue bridge and `SignalBus<T>` initialization surface. First-party broadcasts use typed `SignalBus<T>` lanes unless a direct `NativeQueue` lane is explicitly documented with owner, capacity, overflow policy, layout, and telemetry. It is not the old five-bus prose model and not a catch-all event bus.
 
-Source scan:
+R27 source-counter snapshot, retained until a newer counter pass reruns it:
 
 | Fact | Value |
 |---|---:|
 | Direct `CreateQueue(...)` native queue slots in `InitializeAllQueues()` | 73 |
-| Typed `SignalBus<T>.EnsureInitialized()` lanes in `InitializeCategorySignalLanes()` | 133 |
-| Debug lane | `DebugSignal` via `ConfigureDebugSignalLane()` |
-| Modding validator source `ISignal` structs | 160 |
-| signal struct sizes | source-validated by `ValidateSignalSize` / `ValidateSignalPayload`; not profiler proof |
+| Typed `SignalBus<T>.EnsureInitialized()` lanes in the `GlobalSignals` initialization surface | 133 including `DebugSignal` via `ConfigureDebugSignalLane()` |
+| Modding validator source `ISignal` structs | current static validator pass reports `Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, and `ModCommandSizeBytes=64`; this is static schema/input-surface proof only, not runtime-lane, profiler, or mod smoke proof |
+| signal struct sizes | validator source exists via `ValidateSignalSize` / `ValidateSignalPayload`; current static validator pass covers Mod API schema only and is not compile, runtime-lane, profiler, or mod smoke proof |
 | fallback SPSC container | `SpscSignalRingBuffer<T>` |
 
 ## Lane Table
@@ -113,5 +112,36 @@ Development/editor validation in `GlobalSignals` rejects managed-reference paylo
 - Cross-domain C# `event`, `Action`, `Func`, or `UnityEvent` as architecture authority.
 - Signal structs above 64 bytes unless a source comment documents the cold-lane exception.
 - Managed allocations in hot signal production or drain code.
+
+## 2026-05-19 EventBus Boundary
+
+`SignalBus<T>` is the first-party runtime broadcast path.
+
+`HectonEventBus` is not that path. It is a mod/API/cold boundary with managed
+callback isolation. It may protect external extensions; it must not become the
+hot gameplay bus.
+
+Rules:
+
+- New first-party hot gameplay traffic uses typed `SignalBus<T>` lanes.
+- New mod/API traffic may use `HectonEventBus` only when it remains outside the
+  gameplay hot path and has watchdog/failure isolation.
+- `GlobalSignals.Publish` is legacy bridge traffic unless the payload is already
+  owned by a documented direct queue lane.
+- New direct `NativeQueue` surfaces in `GlobalSignals.cs` are rejected unless the
+  task is explicitly a bridge/migration task.
+- A lane is incomplete until owner, producer phase, consumer phase, capacity,
+  overflow policy, retention policy, payload layout, and telemetry are recorded.
+
+Failure classification:
+
+| Symptom | Classification | Required Fix |
+|---|---|---|
+| First-party `HectonEventBus.Publish` in gameplay loop | Hot managed bus leak | Move to `SignalBus<T>` or owner interface |
+| New `GlobalSignals.Publish` for unrelated traffic | Legacy corridor growth | Add/route through typed lane |
+| One giant enum/switch signal | Monolithic lane | Split by owner/domain and phase |
+| No overflow telemetry | Unbounded failure mode | Add drop/coalesce/fail-fast counter |
+
+See `GLOBAL_AUTHORITY_BOUNDARIES.md` for cross-surface rules.
 
 STATUS: STATIC_SOURCE REVIEWED / RUNTIME PENDING

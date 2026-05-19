@@ -51,6 +51,21 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RadialGridLod_ExportsWrappedCameraAupForShaderPhase()
+        {
+            double3 cameraAup = new double3(50000.0, 12.0, -23000.0);
+            OceanSurfaceLodDTO lod = HectonOceanSurfaceMath.ResolveRadialGridLod(cameraAup, 1f);
+
+            Assert.AreEqual((float)HectonOceanSurfaceMath.WrapMeters(cameraAup.x, 4096.0), lod.CameraAupLocalXZ.x, 0.0001f);
+            Assert.AreEqual((float)HectonOceanSurfaceMath.WrapMeters(cameraAup.z, 4096.0), lod.CameraAupLocalXZ.y, 0.0001f);
+
+            double3 rebasedCameraAup = cameraAup + new double3(4096.0 * 17.0, 0.0, -4096.0 * 5.0);
+            OceanSurfaceLodDTO rebasedLod = HectonOceanSurfaceMath.ResolveRadialGridLod(rebasedCameraAup, 1f);
+            Assert.AreEqual(lod.CameraAupLocalXZ.x, rebasedLod.CameraAupLocalXZ.x, 0.0001f);
+            Assert.AreEqual(lod.CameraAupLocalXZ.y, rebasedLod.CameraAupLocalXZ.y, 0.0001f);
+        }
+
+        [Test]
         public void GlobalQualityWeight_FadesWaveBudgetContinuously()
         {
             Assert.AreEqual(4f, HectonOceanSurfaceMath.ResolveDesiredWaveCount(0.1f, 16), 0.0001f);

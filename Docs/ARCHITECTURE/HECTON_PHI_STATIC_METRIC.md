@@ -139,6 +139,35 @@ The tool uses regex-based static counters. Important surfaces:
 Because this is static text analysis, a score is a trend and tripwire, not proof
 that a hot path is allocation-free or fast.
 
+## 2026-05-19 Global Authority Anti-Gaming Overlay
+
+H-Phi can be gamed. Do not do that.
+
+The metric rewards visible `SignalBus<T>` and DataVault/access surfaces because
+those are usually better than hidden direct coupling and scattered native buffer
+ownership. It does not prove the new global route is the right route.
+
+Additional interpretation rules:
+
+- A `SignalBusPush` increase is valid only when the lane has owner, phase,
+  capacity, overflow policy, retention policy, payload layout, and telemetry.
+- A `DataVaultRefs` increase is valid only when the buffer has `BufferID`,
+  `SystemID`, generation handling, lifetime, disposal/release behavior, and
+  stale-handle behavior.
+- A `GlobalRegistrySurface` decrease is valid only when dependencies moved to
+  cached interfaces, typed signals, or owned snapshots, not to hidden singletons.
+- A `HectonEventBus` decrease matters only when first-party hot traffic moved to
+  typed lanes or direct owner interfaces. Moving mod/API events into gameplay
+  signals is not an improvement.
+- A high H-Phi score with no runtime/profiler/GC proof is still `PENDING
+  VERIFICATION`.
+
+Cross-reference:
+
+- `GLOBAL_AUTHORITY_BOUNDARIES.md`
+- `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
+- `QUALITY_GATES.md`
+
 ## Core Graph H-Phi
 
 The same tool also audits the Core dependency graph:
@@ -243,7 +272,7 @@ Unity's player loop into the project dispatcher. The audit reports them as
 `FixedUpdate` methods must fail `-MaxUnityUpdateMethods 0` unless the integrator
 updates this contract with a bounded dispatcher-shell justification.
 
-## 2026-05-15 Current Static Baseline
+## 2026-05-15 Archived Static Baseline
 
 Artifact: `../Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json`
 with exit summary
@@ -251,14 +280,14 @@ with exit summary
 Result: `EXIT=0` on a full source summary JSON budget run at
 `2026-05-15 22:46:22 +04:00`.
 
-Current score floors passed:
+Archived 2026-05-15 score floors passed at capture time; rerun H-Phi on the active R27 workspace before treating these as current:
 
 - `DataSovereignty=0.021306032`
 - `MemoryAlignment=0.506309148`
 - `RuntimeHPhiRisk=0.000636091`
 - `RiskIntegration=0.058965935`
 
-Current static counters passed:
+Archived 2026-05-15 static counters passed at capture time; these are not current compile, Unity, profiler, GC, player-build, or R27 source-counter proof:
 
 - `GlobalRegistrySurface=5060/5060`
 - `GetComponentCalls=321/321`
@@ -286,6 +315,30 @@ Pair it with
 `../Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log`
 for CLI compile evidence. It is not Unity import proof, Play Mode proof,
 profiler proof, GC proof, player-build proof, or visual quality proof.
+
+## 2026-05-19 HFI Static Artifact Orientation
+
+Latest static numeric orientation comes from `../Archive/Batch009/AgentLogs/HPhi_SHINOBU_02_current2.json`
+and is summarized by `../Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md`.
+This is static-source evidence only. It is not compile, Unity import, Play Mode,
+profiler, GCMonitor, player-build, scene-wiring, save/load, or visual proof.
+
+Captured at `2026-05-18 18:15:42 +04:00`:
+
+- `NarrowIntegration=1.0`
+- `RiskIntegration=0.077054795`
+- `ArchitecturalPurity=1.0`
+- `DataSovereignty=0.203977518`
+- `MemoryAlignment=0.586269524`
+- `AupPrecisionIntegrity=1.0`
+- `HPhiStaticNarrow=0.119585803`
+- `HPhiStaticRisk=0.009214659`
+
+Interpretation: the latest static HFI snapshot improves data-sovereignty and
+memory-alignment orientation versus the archived 2026-05-15 baseline, but the
+global-authority surface is still a migration risk. Use
+`GLOBAL_AUTHORITY_BOUNDARIES.md` and `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
+before treating H-Phi movement as architectural acceptance.
 
 ## 2026-05-15 DOC_HONEST_ANALYSIS R3 Core Graph Prune
 
@@ -354,6 +407,11 @@ Invalid improvements:
 - Adding `[BinaryBlittableSafe]` to managed/reference DTOs as metric theater.
 - Removing asmdef references while Core source still directly uses leaf-owned
   types.
+- Adding new global signals, registry slots, or Vault buffers only to raise the
+  static score.
+- Moving local scratch/native state into `GlobalDataVault` without a cross-domain
+  ownership reason.
+- Moving first-party hot traffic through `HectonEventBus` because it is convenient.
 - Treating static H-Phi as Unity runtime, profiler, GC, player-build, or visual
   quality evidence.
 

@@ -979,7 +979,18 @@ namespace Hecton8.Core
 
                 _lastPostShiftUnloadUnusedAssetsFrame = Time.frameCount;
                 AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
-                governor?.ForceDrainPendingReleaseQueue();
+                if (governor != null)
+                {
+                    governor.SetHeapSanitizerBlindFrameWindow(true, 0f);
+                    try
+                    {
+                        governor.ForceDrainPendingReleaseQueue();
+                    }
+                    finally
+                    {
+                        governor.SetHeapSanitizerBlindFrameWindow(false, 0f);
+                    }
+                }
 
                 RenderTexturePool pool = GlobalRegistry.RenderTexturePool;
                 pool?.ClearAllPools();

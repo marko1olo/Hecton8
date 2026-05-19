@@ -225,28 +225,28 @@ namespace Hecton8.World.VoxelSurfaceNets
                         if (current < 0)
                             continue;
 
-                        if (x >= stride && y >= stride)
+                        if (x >= stride && y >= stride && TryResolveEdgeWinding(x, y, z, x, y, z + stride, iso, out bool reverseZ))
                         {
                             int a = TryGetCellVertex(x - stride, y, z);
                             int b = TryGetCellVertex(x - stride, y - stride, z);
                             int c = TryGetCellVertex(x, y - stride, z);
-                            indexCapacityClamped |= !TryEmitQuad(current, a, b, c, ref indexCount, ref rawDebugCount, rawCaptureGate);
+                            indexCapacityClamped |= !TryEmitQuad(current, a, b, c, reverseZ, ref indexCount, ref rawDebugCount, rawCaptureGate);
                         }
 
-                        if (x >= stride && z >= stride)
+                        if (x >= stride && z >= stride && TryResolveEdgeWinding(x, y, z, x, y + stride, z, iso, out bool reverseY))
                         {
                             int a = TryGetCellVertex(x - stride, y, z);
                             int b = TryGetCellVertex(x - stride, y, z - stride);
                             int c = TryGetCellVertex(x, y, z - stride);
-                            indexCapacityClamped |= !TryEmitQuad(current, c, b, a, ref indexCount, ref rawDebugCount, rawCaptureGate);
+                            indexCapacityClamped |= !TryEmitQuad(current, c, b, a, reverseY, ref indexCount, ref rawDebugCount, rawCaptureGate);
                         }
 
-                        if (y >= stride && z >= stride)
+                        if (y >= stride && z >= stride && TryResolveEdgeWinding(x, y, z, x + stride, y, z, iso, out bool reverseX))
                         {
                             int a = TryGetCellVertex(x, y - stride, z);
                             int b = TryGetCellVertex(x, y - stride, z - stride);
                             int c = TryGetCellVertex(x, y, z - stride);
-                            indexCapacityClamped |= !TryEmitQuad(current, a, b, c, ref indexCount, ref rawDebugCount, rawCaptureGate);
+                            indexCapacityClamped |= !TryEmitQuad(current, a, b, c, reverseX, ref indexCount, ref rawDebugCount, rawCaptureGate);
                         }
                     }
                 }
@@ -404,6 +404,23 @@ namespace Hecton8.World.VoxelSurfaceNets
             return CellVertexMap[cellIndex];
         }
 
+        private bool TryResolveEdgeWinding(
+            int ax,
+            int ay,
+            int az,
+            int bx,
+            int by,
+            int bz,
+            float iso,
+            out bool reverse)
+        {
+            float a = SampleCellDensity(ax, ay, az) - iso;
+            float b = SampleCellDensity(bx, by, bz) - iso;
+            bool crosses = (a < 0f && b >= 0f) || (a >= 0f && b < 0f);
+            reverse = a < b;
+            return crosses;
+        }
+
         private static int CellIndex(int x, int y, int z)
         {
             return x + (VoxelSurfaceNetsConstants.ChunkResolution * (y + (VoxelSurfaceNetsConstants.ChunkResolution * z)));
@@ -444,6 +461,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             int b,
             int c,
             int d,
+            bool reverse,
             ref int indexCount,
             ref int rawDebugCount,
             float rawCaptureGate)
@@ -454,22 +472,32 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (indexCount + 6 > Indices.Length || indexCount + 6 > VoxelSurfaceNetsConstants.MaxIndices)
                 return false;
 
-            Indices[indexCount++] = (uint)a;
-            Indices[indexCount++] = (uint)b;
-            Indices[indexCount++] = (uint)c;
-            Indices[indexCount++] = (uint)a;
-            Indices[indexCount++] = (uint)c;
-            Indices[indexCount++] = (uint)d;
+            int firstIndex = indexCount;
+            if (reverse)
+            {
+                Indices[indexCount++] = (uint)a;
+                Indices[indexCount++] = (uint)c;
+                Indices[indexCount++] = (uint)b;
+                Indices[indexCount++] = (uint)a;
+                Indices[indexCount++] = (uint)d;
+                Indices[indexCount++] = (uint)c;
+            }
+            else
+            {
+                Indices[indexCount++] = (uint)a;
+                Indices[indexCount++] = (uint)b;
+                Indices[indexCount++] = (uint)c;
+                Indices[indexCount++] = (uint)a;
+                Indices[indexCount++] = (uint)c;
+                Indices[indexCount++] = (uint)d;
+            }
 
             if (rawCaptureGate < 0.5f || !RawDebugVertices.IsCreated || rawDebugCount + 6 > RawDebugVertices.Length)
                 return true;
 
-            RawDebugVertices[rawDebugCount++] = Vertices[a].Position;
-            RawDebugVertices[rawDebugCount++] = Vertices[b].Position;
-            RawDebugVertices[rawDebugCount++] = Vertices[c].Position;
-            RawDebugVertices[rawDebugCount++] = Vertices[a].Position;
-            RawDebugVertices[rawDebugCount++] = Vertices[c].Position;
-            RawDebugVertices[rawDebugCount++] = Vertices[d].Position;
+            for (int i = 0; i < 6; i++)
+                RawDebugVertices[rawDebugCount++] = Vertices[(int)Indices[firstIndex + i]].Position;
+
             return true;
         }
 

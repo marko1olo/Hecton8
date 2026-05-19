@@ -18,6 +18,27 @@ This report file is a snapshot/provenance document. It is active only where it a
 
 Historical `PASS`, `VERIFIED`, `current`, `latest`, counter, compile, runtime, 0-GC, frame-time, cost, and performance statements inside this report are not current proof unless the exact claim links a fresh artifact path, command/tool, timestamp, evidence class, and unresolved-error list. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied by this file alone.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+## 2026-05-19 Global Authority / Anti-Gaming Override
+
+This report is a historical H-Phi snapshot. Current interpretation of registry,
+signal, event, and global-storage counters is governed by:
+
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
+- `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md`
+
+H-Phi movement is not proof of runtime readiness. `SignalBus<T>` growth counts as
+progress only with lane owner/phase/capacity/overflow/telemetry proof.
+`GlobalDataVault` growth counts as progress only with buffer owner, `BufferID`,
+`SystemID`, generation/lifetime/disposal, stale-handle, and black-box telemetry
+proof. Lower `GlobalRegistry` or `HectonEventBus` surface counts only when the
+route moved to cached owner interfaces, typed SignalBus lanes, documented
+NativeQueue bridges, or valid DataVault snapshots.
 Evidence Class: STATIC_SOURCE + STATIC_DOC + CLI_COMPILE
 Date: 2026-05-13
 
@@ -2022,8 +2043,8 @@ Comparison:
 - Data sovereignty is unchanged in this closeout because the remaining native-memory backlog is owner-blocked and cannot be migrated without BufferID/SystemID/generation/disposal proof.
 
 Build and gate artifacts:
-- `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current_retry1.log`: Core build passed with `0 Warning(s)`, `0 Error(s)`.
-- `Docs/AgentLogs/HPhiGate_HECTON_PHI_MONITOR_current.json`: tightened static H-Phi gate passed at `2026-05-15 22:25:52 +04:00`.
+- Historical report text claims `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current_retry1.log` passed Core build with `0 Warning(s)`, `0 Error(s)`, but that active artifact path is absent in this checkout. Do not use it as proof unless restored or relinked to an archived artifact with command, timestamp, and environment.
+- Archived H-Phi gate artifact: `Docs/Archive/Batch006/AgentLogs/HPhiGate_HECTON_PHI_MONITOR_current.json`; historical `STATIC_SOURCE` only, superseded for current orientation by R25/R24 unless rerun.
 - `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current.log`: failed on stale/concurrent RenderGraph source snapshot; superseded by current-disk retry.
 
 Residual risks:

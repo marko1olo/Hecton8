@@ -1,0 +1,116 @@
+#pragma kernel ResolveDiegeticVisorLensMask
+
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+RWTexture2D<float4> _HectonDiegeticVisorLensMask;
+
+CBUFFER_START(HectonDiegeticVisorLensComputeGlobals)
+    float4 _HectonDiegeticVisorLensState;
+    float4 _HectonDiegeticVisorLensParams0;
+    float4 _HectonDiegeticVisorLensParams1;
+    float4 _HectonDiegeticVisorLensParams2;
+    float4 _HectonDiegeticVisorLensComputeParams;
+CBUFFER_END
+
+float Safe01(float value)
+{
+    return isfinite(value) ? saturate(value) : 0.0;
+}
+
+float SafeNonNegative(float value)
+{
+    return isfinite(value) ? max(0.0, value) : 0.0;
+}
+
+float Hash21(float2 p)
+{
+    p = frac(p * float2(123.34, 456.21));
+    p += dot(p, p + 34.45);
+    return frac(p.x * p.y);
+}
+
+float ValueNoise(float2 p)
+{
+    float2 i = floor(p);
+    float2 f = frac(p);
+    float2 u = f * f * (3.0 - 2.0 * f);
+    float a = Hash21(i);
+    float b = Hash21(i + float2(1.0, 0.0));
+    float c = Hash21(i + float2(0.0, 1.0));
+    float d = Hash21(i + float2(1.0, 1.0));
+    return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
+}
+
+float VisorEdgeMask(float2 uv)
+{
+    float2 centered = uv * 2.0 - 1.0;
+    float radial = saturate(dot(centered, centered));
+    float smoothRadial = radial * radial * (3.0 - 2.0 * radial);
+    return saturate(0.28 + smoothRadial * 0.72);
+}
+
+[numthreads(8, 8, 1)]
+void ResolveDiegeticVisorLensMask(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint outputWidth;
+    uint outputHeight;
+    _HectonDiegeticVisorLensMask.GetDimensions(outputWidth, outputHeight);
+    if (outputWidth == 0u || outputHeight == 0u || dispatchThreadId.x >= outputWidth || dispatchThreadId.y >= outputHeight)
+        return;
+
+    float2 outputSize = max(float2((float)outputWidth, (float)outputHeight), float2(1.0, 1.0));
+    float2 uv = (float2((float)dispatchThreadId.x, (float)dispatchThreadId.y) + 0.5) / outputSize;
+    float time = isfinite(_HectonDiegeticVisorLensComputeParams.x) ? _HectonDiegeticVisorLensComputeParams.x : 0.0;
+    float maskBlend = Safe01(_HectonDiegeticVisorLensComputeParams.y);
+    float lowTier = Safe01(_HectonDiegeticVisorLensComputeParams.z);
+    float overkill = Safe01(_HectonDiegeticVisorLensComputeParams.w);
+
+    float condensationScalar = Safe01(_HectonDiegeticVisorLensState.x);
+    float dropletScalar = Safe01(_HectonDiegeticVisorLensState.y);
+    float crackScalar = Safe01(_HectonDiegeticVisorLensState.z);
+    float dirtScalar = Safe01(_HectonDiegeticVisorLensState.w);
+    float2 dropletGravity = clamp(_HectonDiegeticVisorLensParams0.xy, float2(-1.0, -1.0), float2(1.0, 1.0));
+    float quality = Safe01(_HectonDiegeticVisorLensParams1.x);
+    float anomaly = Safe01(_HectonDiegeticVisorLensParams1.y);
+    float surfaceWash = Safe01(_HectonDiegeticVisorLensParams1.z);
+    float darkness = Safe01(_HectonDiegeticVisorLensParams1.w);
+    float pressure = Safe01(_HectonDiegeticVisorLensParams2.x);
+    float silt = Safe01(_HectonDiegeticVisorLensParams2.y);
+    float headSpeed = SafeNonNegative(_HectonDiegeticVisorLensParams2.z);
+
+    float edge = VisorEdgeMask(uv);
+    float dynamicWeight = saturate(maskBlend * ((1.0 - lowTier) * (0.36 + quality * 0.64) + overkill * 0.2));
+    float2 flow = float2(dropletGravity.x * 0.21 + headSpeed * 0.012, -0.035 - abs(dropletGravity.y) * 0.09);
+    float fogNoise = ValueNoise(uv * lerp(float2(9.0, 15.0), float2(17.0, 27.0), overkill) + flow * time);
+    float condensationMask = Safe01(condensationScalar * (0.46 + edge * 0.54) * (0.58 + fogNoise * 0.42));
+
+    float dropletGridScale = lerp(34.0, 86.0, dynamicWeight);
+    float2 dropletGrid = uv * float2(dropletGridScale, dropletGridScale * 1.75);
+    dropletGrid += float2(dropletGravity.x * time * 0.55, -time * (0.18 + dropletScalar * 0.62 + surfaceWash * 0.45));
+    float dropletSeed = Hash21(floor(dropletGrid));
+    float dropletLane = abs(frac(dropletGrid.x + dropletSeed * 0.31) - 0.5);
+    float dropletTail = abs(frac(dropletGrid.y + dropletSeed) - 0.18);
+    float dropletMask = (1.0 - smoothstep(0.045, 0.19, dropletLane)) * (1.0 - smoothstep(0.04, 0.36, dropletTail));
+    dropletMask *= step(0.52 - dropletScalar * 0.18 - surfaceWash * 0.22, dropletSeed) * dropletScalar * dynamicWeight;
+    condensationMask = Safe01(max(condensationMask, dropletMask * (0.42 + condensationScalar * 0.36)));
+
+    float crackNoise = ValueNoise(uv * float2(38.0, 22.0) + float2(crackScalar * 2.1 + pressure, anomaly * 1.7));
+    float diagonal = abs(frac((uv.x + uv.y * 0.73) * (13.0 + crackScalar * 19.0)) - 0.5);
+    float crackRidge = 1.0 - smoothstep(0.018, 0.082, diagonal);
+    float crackMask = Safe01((smoothstep(0.76 - crackScalar * 0.28, 0.98, crackNoise) * 0.58 + crackRidge * 0.42) * crackScalar);
+
+    float dirtDrive = max(dirtScalar, silt * (0.42 + dropletScalar * 0.58));
+    float dirtGridScale = lerp(42.0, 120.0, overkill);
+    float dirtSeed = Hash21(floor(uv * outputSize * lerp(0.055, 0.125, overkill)) + floor(time * 1.7));
+    float scratchSeed = Hash21(floor(uv * dirtGridScale) + float2(17.0, 43.0));
+    float dirtMask = (smoothstep(0.74, 0.97, dirtSeed) * (0.38 + edge * 0.62) + smoothstep(0.83, 0.99, scratchSeed) * 0.36) * dirtDrive;
+
+    float glitchNoise = ValueNoise(uv * float2(91.0, 47.0) + time * (2.4 + anomaly * 5.0));
+    float glitchMask = Safe01(saturate(glitchNoise - 0.68) * (anomaly + crackScalar * darkness * 0.35));
+
+    _HectonDiegeticVisorLensMask[dispatchThreadId.xy] = float4(
+        Safe01(condensationMask),
+        Safe01(crackMask),
+        Safe01(dirtMask),
+        Safe01(glitchMask));
+}

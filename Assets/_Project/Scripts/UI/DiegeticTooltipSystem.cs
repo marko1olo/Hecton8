@@ -1328,6 +1328,7 @@ namespace Hecton8.UI
                 BlackBoxCapacity,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_blackBox, nameof(DiegeticTooltipSystem), nameof(_blackBox), NativeAllocationLifetime.Scene);
         }
 
         private void RecordBlackBox(Vector3 anchor, Vector4 tint, byte tierFlags)
@@ -1465,7 +1466,11 @@ namespace Hecton8.UI
             }
 
             if (_blackBox.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_blackBox);
                 _blackBox.Dispose();
+            }
+            _blackBox = default;
 
             _blackBoxCursor = 0;
             _blackBoxWrittenCount = 0;

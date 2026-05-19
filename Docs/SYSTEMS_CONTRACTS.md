@@ -20,12 +20,12 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 Verification: not runtime-measured in this pass
 Scope: Save, Steam, Audio, Telemetry, CI, Accessibility, Endgame
 
-Current-state boundary, 2026-05-15:
+Current-state boundary, 2026-05-19:
 
-- 2026-05-14 DOC_AUDIT override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` found the cited May 11 build artifacts absent from the current filesystem. Treat those compile-success references as dated report claims. Current R43 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; it is not Unity runtime proof.
+- 2026-05-14 DOC_AUDIT override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` found the cited May 11 build artifacts absent from the current filesystem. Treat those compile-success references as dated report claims. Historical R43 external root `Hecton8*.csproj` no-restore CLI output is CLI evidence only and not current dirty-workspace proof unless rerun with artifact path, command, timestamp, environment, and output; it is not Unity runtime proof.
 - This stable file is the non-asset systems contract authority. Dated reports are evidence/counter snapshots only.
 - This file is a contracts and target-behavior document, not a proof that every listed file/class exists or is production-ready.
-- Current source-backed system ownership starts from `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older evidence reports.
+- Current source-backed system ownership starts from `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, then DOC_GLOBAL R29 -> R28 -> R27 -> R26 -> R25 -> R24 -> R23 -> R22 -> subordinate correction reports before May 13 or older evidence.
 - Current save implementation authority is `SaveManager.cs` / `SaveBinaryStorage.cs`; versioning and migration requirements below remain contractual.
 - Current audio service authority is `SpatialAudioManager` plus procedural audio owners; older `UnderwaterAudioProcessor.cs` naming below is a target contract unless source confirms a concrete owner.
 - No line in this document is a zero-GC, Steam, CI, accessibility, or Play Mode verification claim without a fresh runtime/log artifact. May 11 report text claimed a completed Core dependency build at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player build, import, scene wiring, frame-time, memory, and visual quality proof remain absent.
@@ -52,8 +52,12 @@ These absent file names remain target-contract labels only. They must not be cit
 | Contract | Required Behavior |
 |---|---|
 | hot path allocation | `0` managed allocations; cold allocations must be tagged `COLD ALLOC` in source |
-| event traffic | `GlobalSignals` typed `NativeQueue<T>` lanes or local SPSC ring only |
-| cross-domain calls | `GlobalRegistry` interface/service slot or signal packet |
+| event traffic | first-party hot broadcasts use typed `SignalBus<T>` or documented NativeQueue bridge lanes; `HectonEventBus` is mod/API/cold only |
+| cross-domain calls | cold `GlobalRegistry` interface/service injection, cached owner interface, typed signal packet, or DataVault snapshot; no live registry polling in hot paths |
+| global storage | `GlobalDataVault` only for cross-domain/persistent/job-visible/relocation-relevant native state with BufferID/SystemID/generation/lifetime/disposal proof |
+| global setup | new subsystem work starts owner-local and follows `GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md` before adding global surface |
+| global route governance | new or changed global routes require a `GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md` route card before acceptance |
+| global route review | new or changed global routes require a `GREEN` result from `GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`; `YELLOW`, `RED`, and `KILL` block merge |
 | payload shape | unmanaged structs, usually 32 or 64 bytes |
 | I/O | FileStream/native-window source truth; MMF claims require current source proof |
 | replay/black box | fixed-size circular buffers; no unbounded logs in frame lane |
@@ -67,6 +71,12 @@ Burst compliance rules:
 - no Unity object access from worker jobs
 - no `Complete()` in frame-critical dehydration/simulation lanes unless a documented emergency gate owns the stall
 - no direct singleton reads from Burst-facing systems; consume copied scalars, native arrays, registry snapshots, or signal packets
+- no first-party hot gameplay propagation through `HectonEventBus`
+- no global surface before the owner-local first sequence in `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`
+- no new global authority route without passing `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`
+- no new or changed global route without satisfying `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`
+- no new or changed global route without a completed `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md` card
+- no new or changed global route without a `GREEN` result from `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`
 
 Visual-realistic-fake doctrine:
 

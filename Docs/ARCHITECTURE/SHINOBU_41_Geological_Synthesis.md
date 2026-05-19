@@ -1,11 +1,11 @@
 # SHINOBU_41 Geological Synthesis
 
-Status: STATIC SOURCE ORIENTATION / DATAVAULT SCRATCH+BLACKBOX SOURCE NOTES / REFLECTION ABI DEBT ISOLATED / CORE BUILD BLOCKED OUTSIDE SHINOBU / UNITY RUNTIME PENDING
+Status: STATIC SOURCE ORIENTATION / DATAVAULT SCRATCH+BLACKBOX SOURCE NOTES / REFLECTION ABI BLOCKED BY STALE TERRAIN ASSEMBLY / CORE BUILD BLOCKED OUTSIDE SHINOBU / UNITY RUNTIME PENDING
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## R4 Interior Actuality Boundary
 
-This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, R24 root/architecture correction, R23 proof-language/navigation boundary, and R22 prior source-count boundary.
+This document is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the R28 root/architecture correction. R28 static gates: AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`).
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
@@ -78,7 +78,7 @@ The Unity Terrain seam bridge no longer owns native seam allocations. `WorldGene
 - Hybrid seam projection is terrain-local. The applier subtracts terrain absolute AUP from plan/contact/voxel AUP in double space before casting local deltas to float. The job no longer compares absolute 100km runtime floats inside distance/raymarch math.
 - Fallback patch deformation, voxel snap, trench deformation, and plan/trench rect selection follow the same local-AUP rule.
 - Raymarch steps resolve from 1 to 16 through a polynomial curve. Below 0.3 quality the expensive deformation raymarch collapses; above 0.3 it smoothly returns; above 0.7 the mask-detail job fades in slope boost.
-- The old byte field is retained only as a stale generated-csproj fallback. A direct-field purge was attempted and failed with CS0117 because the generated Core compile lane still resolves stale `Hecton8.World.Terrain.dll` metadata. Until Unity regenerates that assembly or a contracts-level facade replaces the stale ABI, the applier uses cold reflection to inject continuous quality into newer source jobs. This is explicit integration debt, not a clean compile-wall pass.
+- The old byte field is retained only as a stale generated-csproj fallback. Direct-field purge attempts failed because the generated Core compile lane still resolves stale terrain job metadata without `GlobalQualityWeight` and `GlobalQualityWeightValid`. Until Unity regenerates that assembly or a contracts-level facade replaces the stale ABI, the applier uses cold reflection to inject continuous quality into newer source jobs. This is explicit integration debt, not a clean compile-wall pass.
 - `VoxelChunkModifiedEvent.Frame` and `TerrainSeamTelemetryEntry.Frame` now use a local monotonic seam frame counter instead of `Time.frameCount`.
 - `TerrainSeamTelemetryEntry` is a natural sequential 64-byte row with explicit `Reserved4` tail padding; no manual `Pack` is used.
 - The seam black-box ring, hybrid scratch buffers, and baseline height cache are vault-owned rather than private `NativeArray` allocations.
@@ -89,8 +89,8 @@ The Unity Terrain seam bridge no longer owns native seam allocations. `WorldGene
 
 ## Verification
 
-- Forbidden-pattern grep on `GlobalWorldSampler.cs` and `HybridTerrainSeamJobs.cs`: latest run found no Physics/MeshCollider/Terrain.GetHeights/Raycast/UnityEngine.Random/ReadAllLines/Split/Pack=1/low Burst precision/Time.deltaTime/property hot-path patterns.
+- Forbidden-pattern grep on `GlobalWorldSampler.cs` and `HybridTerrainSeamJobs.cs`: local grep text reported no Physics/MeshCollider/Terrain.GetHeights/Raycast/UnityEngine.Random/ReadAllLines/Split/Pack=1/low Burst precision/Time.deltaTime/property hot-path patterns, but no artifact tuple is linked. Rerun with command, timestamp, environment, and output before using it as current proof.
 - Seam quality grep: `WorldGenerativeGeologyTerrainSeamApplier.cs` no longer contains `GlobalRegistry.ScalabilityTier`, `ScalabilityTierProfileByte`, or tier resolver methods for seam quality. The only remaining `ForceMathLodLow` text in SHINOBU terrain code is the documented legacy ABI enum bit in `GlobalWorldSamplerConfigFlags`.
-- Direct-field reflection purge attempt: failed with CS0117 because the local generated Core project resolves stale `Hecton8.World.Terrain.dll` job metadata without `GlobalQualityWeight` fields. The direct-field chunk was reverted under fail-fast rules.
-- `dotnet build Hecton8.Core.csproj --no-restore /clp:ErrorsOnly`: latest local run failed outside SHINOBU_41 on `SaveBinaryPayloadCodec.cs` missing `IndustrialLoreBitMask`, `VolcanicUpdraftDirector.cs` missing `fixedDeltaTime`/`_jobPending`, and Visor features missing `HectonDrsRenderFeatureGate`. No compiler error references SHINOBU_41 terrain files.
+- Direct-field reflection purge re-probe: failed with CS1061 because the local generated Core project resolves stale terrain job metadata without `GlobalQualityWeight` / `GlobalQualityWeightValid`. The direct-field chunk was reverted under fail-fast rules.
+- `dotnet build Hecton8.Core.csproj --no-restore /clp:ErrorsOnly`: latest post-revert local run failed outside SHINOBU_41 on `HomeostasisBrain.ScalabilityDictator.cs` unassigned `sanitizedWeight`, `SaveBinaryPayloadCodec.cs` missing `IndustrialLoreBitMask`, Visor features missing `HectonDrsRenderFeatureGate`, and `ShinobuFloraFaunaSymbiosisSolver.cs` invalid `math.reversebytes`. No compiler error references SHINOBU_41 terrain files after the revert.
 - `Assembly-CSharp.csproj`: attempted, timed out after 129.7s; no pass claimed.

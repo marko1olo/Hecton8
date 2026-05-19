@@ -25,6 +25,7 @@ Minimum examples:
 - rendering, fog, light, particles: `REND_URP_Graphics_HotPath_Optimization_HLOD.txt`, `REND_Shader_Noir_Aesthetics_Dithering_Fog.txt`, `REND_Abyssal_Lighting_Voxel_Occlusion_Shadows.txt`, `REND_VFX_Fluid_Aesthetics_Compute_Particles.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
 - save, streaming, persistence: `DATA_Save_Persistence_Binary_Delta_Checksum.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `STRM_Persistent_Object_Registry.txt`
 - runtime DTOs, binary payloads, signal payloads: `DATA_Runtime_Struct_Layout_ARM64.txt`, `QA_Evidence_Text_Filter_Audit.txt`, `ARCH_Signal_Lane_Segregation.txt`
+- global authority, registry, event/signal split, DataVault ownership: `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `ARCH_Signal_Lane_Segregation.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `QA_Evidence_Text_Filter_Audit.txt`
 - UI/audio/presentation: `UI_Data_Streaming_ZeroGC_Optimization.txt`, `UI_Diegetic_Physical_Interfaces.txt`, `AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC.txt`, `AUDIO_Hrtf_Binaural_Spatialization.txt`
 - tooling/procedural/world/designer bridges: `TOOL_Procedural_Wreckage_Generator.txt`, `TOOL_Designer_Facades_CSV_Binary_Bridge.txt`, `VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`, `VOX_Voxel_World_Logic_Carving_Persistence.txt`
 
@@ -35,6 +36,7 @@ Minimum examples:
 - No per-proton, per-droplet, per-bubble, per-cable-segment, or per-flora-blade truth by default.
 - Zero GC in hot paths remains non-negotiable.
 - Native runtime buffers are DataVault-owned. Local persistent NativeArray ownership is banned outside the vault owner.
+- Global authority is bounded: `GlobalRegistry` is cold service discovery, `SignalBus<T>` is first-party runtime broadcast, `HectonEventBus` is mod/API/cold isolation, `GlobalSignals` direct queues are legacy/bridge only, and `GlobalDataVault` is not a mutable global heap. New subsystem setup starts owner-local and follows `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`; new global routes require the route-card/lifecycle model in `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`, the copy/paste template in `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`, and a `GREEN` review disposition from `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`.
 - Runtime DTOs, SignalBus payloads, telemetry entries, save staging records, and GPU upload records must be ARM64-safe: no runtime `Pack=1`, no runtime `bool`, 8-byte fields first, explicit padding, and total size multiple of 8.
 - Systems execute through named phases: PRE_SIMULATION, SIMULATION, POST_SIMULATION, VISUAL_SYNC.
 - New gameplay broadcasts use typed SignalBus lanes and ReadOnlySpan-style snapshots. A monolithic EventBus is not a gameplay transport.
@@ -63,11 +65,13 @@ When mandate text conflicts:
 5. `OPT_Zero_GC_Policy_AllocFree_Mandate.txt` wins on allocation policy.
 6. `ARCH_Execution_Phases.txt` wins on runtime phase ownership.
 7. `ARCH_Signal_Lane_Segregation.txt` wins on broadcast topology.
-8. `MATH_AUP_Determinism_Sync.txt` wins on rebase Sync-Fence and AUP drift proof.
-9. `DATA_Runtime_Struct_Layout_ARM64.txt` wins on runtime struct layout, runtime padding, and ARM64 DTO alignment.
-10. `TOOL_Designer_Facades_CSV_Binary_Bridge.txt` wins on designer-facing bridges for unmanaged/binary data.
-11. `QA_Evidence_Text_Filter_Audit.txt` wins on verification language and proof labels.
-12. Current source/log evidence wins over undocumented assumptions.
+8. `ARCH_Global_Registry_ServiceLocator_DI_Init.txt` plus `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`, and `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md` wins on registry/service/global-authority ownership, setup order, route-card practice, and review disposition.
+9. `OPT_Native_Memory_Collections_JobSystem_Protocol.txt` wins on native allocation ownership and DataVault boundaries.
+10. `MATH_AUP_Determinism_Sync.txt` wins on rebase Sync-Fence and AUP drift proof.
+11. `DATA_Runtime_Struct_Layout_ARM64.txt` wins on runtime struct layout, runtime padding, and ARM64 DTO alignment.
+12. `TOOL_Designer_Facades_CSV_Binary_Bridge.txt` wins on designer-facing bridges for unmanaged/binary data.
+13. `QA_Evidence_Text_Filter_Audit.txt` wins on verification language and proof labels.
+14. Current source/log evidence wins over undocumented assumptions.
 
 ## Registry Buckets
 
@@ -98,8 +102,10 @@ When mandate text conflicts:
 [RULE] Binary/native DTOs and signal payloads crossing native, Burst, persistence, or platform boundaries require explicit layout proof or documented unmanaged field order.
 [RULE] Contract expansion during a batch is API debt unless legacy wrappers are preserved and compile evidence exists.
 [RULE] Duplicate signal names across assemblies are build-blocking architecture debt.
+[RULE] Global authority changes must cite `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`; new or changed global routes must satisfy `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`, and `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`; changes to review queues or stop conditions must update `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`.
 
 [FORBID] False verification language.
 [FORBID] Microsecond tables without profiler context.
 [FORBID] Claiming platform readiness from `link.xml` text alone.
 [FORBID] Claiming data sovereignty while NativeArray references bypass GlobalDataVault.
+[FORBID] Using H-Phi score movement as proof that new global Registry/Signal/Event/Vault surface is architecturally correct.

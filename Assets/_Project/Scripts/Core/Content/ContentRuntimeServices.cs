@@ -1005,8 +1005,16 @@ namespace Hecton8.Core.Content
             AssetLifecycleGovernor governor = _assetLifecycle;
             if (governor != null)
             {
-                governor.ForceDrainPendingReleaseQueue();
-                governor.EvictLowestPriorityUnusedAssets(2, AssetPriorityTier.Tier5DistantHlod);
+                governor.SetHeapSanitizerBlindFrameWindow(true, 0f);
+                try
+                {
+                    governor.ForceDrainPendingReleaseQueue();
+                    governor.EvictLowestPriorityUnusedAssets(2, AssetPriorityTier.Tier5DistantHlod);
+                }
+                finally
+                {
+                    governor.SetHeapSanitizerBlindFrameWindow(false, 0f);
+                }
             }
 
             flags |= AupCleanupFlag;
@@ -1035,8 +1043,16 @@ namespace Hecton8.Core.Content
 
             if (governor != null)
             {
-                governor.ForceDrainPendingReleaseQueue();
-                governor.EvictLowestPriorityUnusedAssets(1, AssetPriorityTier.Tier5DistantHlod);
+                governor.SetHeapSanitizerVramPanicWindow(true, 0f);
+                try
+                {
+                    governor.ForceDrainPendingReleaseQueue();
+                    governor.EvictLowestPriorityUnusedAssets(1, AssetPriorityTier.Tier5DistantHlod);
+                }
+                finally
+                {
+                    governor.SetHeapSanitizerVramPanicWindow(false, 0f);
+                }
             }
 
             flags |= VramInterceptFlag;

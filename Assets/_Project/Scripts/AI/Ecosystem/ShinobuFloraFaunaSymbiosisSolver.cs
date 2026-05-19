@@ -248,6 +248,11 @@ namespace Hecton8.AI.Ecosystem
                 float quality = ResolveGlobalQualityWeight(vault);
                 uint frame = AdvanceSimulationFrame(counters);
                 uint seed = ResolveFrameSectorSeed(in _centerAup, frame);
+                SymbiosisTuningDTO activeTuning = tuning.IsCreated && tuning.Length > 0
+                    ? SymbiosisTuningDTO.Sanitize(tuning[0])
+                    : SymbiosisTuningDTO.Default();
+                activeTuning.GlobalQualityWeight = quality;
+                bool requiresSpatialHash = math.step(quality, activeTuning.MacroThreshold) <= 0.5f;
 
                 JobHandle handle = default;
                 if (counters.Length > 0 && counters[0].Initialized == 0)
@@ -272,17 +277,20 @@ namespace Hecton8.AI.Ecosystem
                     _runtimeFlags |= TuningFlagEmergencyMock;
                 }
 
-                var hashJob = new BuildSymbiosisFloraSpatialHashJob
+                if (requiresSpatialHash)
                 {
-                    Flora = flora,
-                    FloraAups = floraAups,
-                    BucketHeads = floraBucketHeads,
-                    BucketNext = floraBucketNext,
-                    CenterAup = _centerAup,
-                    CellSizeMeters = DefaultCellSizeMeters,
-                    Count = floraCount
-                };
-                handle = hashJob.Schedule(handle);
+                    var hashJob = new BuildSymbiosisFloraSpatialHashJob
+                    {
+                        Flora = flora,
+                        FloraAups = floraAups,
+                        BucketHeads = floraBucketHeads,
+                        BucketNext = floraBucketNext,
+                        CenterAup = _centerAup,
+                        CellSizeMeters = DefaultCellSizeMeters,
+                        Count = floraCount
+                    };
+                    handle = hashJob.Schedule(handle);
+                }
 
                 var solveJob = new SymbiosisExchangeKernelJob
                 {
@@ -1352,7 +1360,16 @@ namespace Hecton8.AI.Ecosystem
                               (bytes[offset + 1] << 8) |
                               (bytes[offset + 2] << 16) |
                               (bytes[offset + 3] << 24));
-            return bigEndian ? math.reversebytes(raw) : raw;
+            return bigEndian ? ReverseUInt32(raw) : raw;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ReverseUInt32(uint value)
+        {
+            return ((value & 0x000000FFu) << 24) |
+                   ((value & 0x0000FF00u) << 8) |
+                   ((value & 0x00FF0000u) >> 8) |
+                   ((value & 0xFF000000u) >> 24);
         }
 
         private static float ReadFloat32(NativeArray<byte> bytes, int offset, bool bigEndian, float fallback)
@@ -2178,7 +2195,8 @@ namespace Hecton8.AI.Ecosystem
         {
             float totalBiomass = 0f;
             int active = 0;
-            for (int i = 0; i < floraCount; i++)
+            int floraStride = math.max(1, (int)math.round(math.lerp(16f, 1f, qualityCurve)));
+            for (int i = 0; i < floraCount; i += floraStride)
             {
                 SymbiosisFloraDTO flora = Flora[i];
                 if ((flora.Flags & ShinobuFloraFaunaSymbiosisSolver.FloraFlagActive) == 0u)
@@ -2193,7 +2211,7 @@ namespace Hecton8.AI.Ecosystem
             ProcessMacroMockFish(ref counter, macroRate, stride);
 
             float floraLoss = macroRate * 0.015f;
-            for (int i = 0; i < floraCount; i += stride)
+            for (int i = 0; i < floraCount; i += floraStride)
             {
                 SymbiosisFloraDTO flora = Flora[i];
                 if ((flora.Flags & ShinobuFloraFaunaSymbiosisSolver.FloraFlagActive) == 0u)
@@ -2338,7 +2356,8 @@ namespace Hecton8.AI.Ecosystem
 
             SymbiosisFloraDTO best = Flora[bestIndex];
             float radius = math.max(0.25f, math.max(tuning.FeedingRadius, best.FeedingRadius));
-            float atten = 1f - math.saturate(math.sqrt(math.max(0f, bestDistSq)) / radius);
+            float radiusSq = math.max(0.0001f, radius * radius);
+            float atten = 1f - math.saturate(bestDistSq / radiusSq);
             float transfer = math.min(best.Biomass, tuning.FeedingRate * bestRate * SimulationTickDelta * math.max(0.05f, atten));
             if (!math.isfinite(transfer) || transfer <= 0f)
                 return;
@@ -2394,8 +2413,11 @@ namespace Hecton8.AI.Ecosystem
 
             AbsoluteUniversePosition anomalyAup = ShinobuFloraFaunaSymbiosisSolver.FromAbsoluteDouble3(field.EpicenterAUP);
             float3 delta = ShinobuFloraFaunaSymbiosisSolver.AupToLocal(in floraAup, in anomalyAup);
-            float dist = math.sqrt(math.max(0f, math.lengthsq(delta)));
-            return math.saturate((1f - (dist / math.max(1f, field.Radius))) * field.CorruptionLevel);
+            float distSq = math.lengthsq(delta);
+            float radiusSq = math.max(1f, field.Radius * field.Radius);
+            return math.isfinite(distSq)
+                ? math.saturate((1f - (distSq / radiusSq)) * field.CorruptionLevel)
+                : 0f;
         }
 
         private float ResolveCorruption01(in SymbiosisAup48 floraAup)
@@ -2409,8 +2431,11 @@ namespace Hecton8.AI.Ecosystem
 
             AbsoluteUniversePosition anomalyAup = ShinobuFloraFaunaSymbiosisSolver.FromAbsoluteDouble3(field.EpicenterAUP);
             float3 delta = ShinobuFloraFaunaSymbiosisSolver.AupToLocal(in floraAup, in anomalyAup);
-            float dist = math.sqrt(math.max(0f, math.lengthsq(delta)));
-            return math.saturate((1f - (dist / math.max(1f, field.Radius))) * field.CorruptionLevel);
+            float distSq = math.lengthsq(delta);
+            float radiusSq = math.max(1f, field.Radius * field.Radius);
+            return math.isfinite(distSq)
+                ? math.saturate((1f - (distSq / radiusSq)) * field.CorruptionLevel)
+                : 0f;
         }
 
         private void WriteExchange(ref SymbiosisCounterDTO counter, uint floraHash, uint faunaHash, float transfer)

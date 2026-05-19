@@ -115,6 +115,7 @@ namespace Hecton8.Modding
         private const string ModStallWarningMessage = "[HectonEventBus] STALL_WARNING: mod callback exceeded 2.0ms.";
         private const string ModStallDisableReason = "Event callback exceeded 2.0ms watchdog for 3 consecutive frames.";
         private const string ModCallbackExceptionDisableReason = "Event callback exception.";
+        private const string EnvelopeOnlyEventSurfaceDisabledMessage = "Managed mod event surfaces are disabled. Submit 64-byte FutureCommandEnvelope packets through HectonAPI.Commands.RequestFuture.";
         private static readonly long _modCallbackWatchdogTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.002d));
         // COLD ALLOC: List<IResettableEventChannel>[32] — typed event channel registry for play-session resets — owner: HectonEventBus
         private static readonly List<IResettableEventChannel> _channels = new List<IResettableEventChannel>(32);
@@ -153,6 +154,9 @@ namespace Hecton8.Modding
         internal static HectonEventSubscription Subscribe<TEvent>(Action<TEvent> handler, string subscriberId = null)
             where TEvent : HectonEvent
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                throw new IllegalContractException(EnvelopeOnlyEventSurfaceDisabledMessage);
+
             if (ModExecutionScope.HasActiveMod)
                 throw new IllegalContractException("Managed HectonEvent subscriptions are forbidden for mods. Use unmanaged payload subscriptions or SubscribeNative.");
 
@@ -183,6 +187,9 @@ namespace Hecton8.Modding
             string subscriberId = null)
             where TPayload : unmanaged
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                throw new IllegalContractException(EnvelopeOnlyEventSurfaceDisabledMessage);
+
             if (handler == null)
                 throw new IllegalContractException("Cannot subscribe a null unmanaged payload handler.");
 
@@ -201,6 +208,9 @@ namespace Hecton8.Modding
         /// <returns>Subscription token, or null when the handler is invalid.</returns>
         public static HectonEventSubscription SubscribeNative(HectonNativeEventHandler handler, string subscriberId = null)
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                throw new IllegalContractException(EnvelopeOnlyEventSurfaceDisabledMessage);
+
             if (handler == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -225,6 +235,9 @@ namespace Hecton8.Modding
         /// <returns>Subscription token, or null when the handler is invalid.</returns>
         public static HectonEventSubscription SubscribeProjected(Action<ModEventDto> handler, string subscriberId = null)
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                throw new IllegalContractException(EnvelopeOnlyEventSurfaceDisabledMessage);
+
             if (handler == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -250,8 +263,11 @@ namespace Hecton8.Modding
         internal static TEvent Publish<TEvent>(TEvent evt)
             where TEvent : HectonEvent
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                return evt;
+
             if (ModExecutionScope.HasActiveMod)
-                throw new IllegalContractException("Managed HectonEvent publishing is forbidden for mods. Use ModCommandDispatcher.Request.");
+                throw new IllegalContractException("Managed HectonEvent publishing is forbidden for mods. Submit a FutureCommandEnvelope through HectonAPI.Commands.RequestFuture.");
 
             if (evt == null)
             {
@@ -273,6 +289,9 @@ namespace Hecton8.Modding
         public static void Publish<TPayload>(in TPayload payload)
             where TPayload : unmanaged
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                return;
+
             UnmanagedEventChannelCache<TPayload>.Instance.Publish(in payload);
         }
 
@@ -281,6 +300,9 @@ namespace Hecton8.Modding
         /// </summary>
         internal static void InstallNativeQueueBindings()
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                return;
+
             if (_nativeQueueBindingsInstalled)
                 return;
 
@@ -328,7 +350,8 @@ namespace Hecton8.Modding
             }
 
             _nativePayloadChannel.DisableSubscriber(subscriberId);
-            ModEventProjectionBridge.DisableProjectedSubscriber(subscriberId);
+            if (!ModLoader.GetIsFutureCommandEnvelopeOnly())
+                ModEventProjectionBridge.DisableProjectedSubscriber(subscriberId);
         }
 
         private static bool TryEnterDispatch(uint eventHash)

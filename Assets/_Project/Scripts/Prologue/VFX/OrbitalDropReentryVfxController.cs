@@ -195,7 +195,10 @@ namespace Hecton8.Prologue.VFX
         private void OnDestroy()
         {
             if (_telemetry.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_telemetry);
                 _telemetry.Dispose();
+            }
             _telemetry = default;
         }
 
@@ -230,6 +233,7 @@ namespace Hecton8.Prologue.VFX
                 return;
 
             _telemetry = new NativeArray<ReentryVfxTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ReentryVfxTelemetryEntry>[300] - fixed re-entry VFX blackbox ring - owner: OrbitalDropReentryVfxController
+            NativeMemorySentinel.RegisterNativeArray(_telemetry, nameof(OrbitalDropReentryVfxController), nameof(_telemetry), NativeAllocationLifetime.Scene);
         }
 
         private void ResetTransientState()

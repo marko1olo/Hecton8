@@ -1,6 +1,3 @@
-using System.Runtime.InteropServices;
-using Hecton8.World;
-
 namespace Hecton8.Core.Contracts.Signals
 {
     /// <summary>

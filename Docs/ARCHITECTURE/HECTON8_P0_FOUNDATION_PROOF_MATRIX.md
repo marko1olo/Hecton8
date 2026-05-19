@@ -17,6 +17,10 @@ This document is active only where it agrees with:
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
+## 2026-05-19 DOC_GLOBAL R28 Interior Note
+
+R28 reread confirmed this matrix remains static proof-orientation only. No row becomes Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, player-build, or scene-wiring proof unless it links a fresh artifact. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`, with R27 source counters retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `57` RealtimeCSG vendor references; `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`).
+
 Lane: SUBNAUTICA_RESEARCHER
 Scope: clean-room comparison against local HECTON-8 source, local Subnautica file taxonomy, and public Subnautica ecosystem sources.
 
@@ -46,7 +50,7 @@ HECTON-8 already has serious scaffolding: ContentAuthority build validators, a D
 
 The gap is proof. Multiple systems have strong source-level contracts but no populated production payloads, no generated artifacts, or only menu-time validation. The next batch should not rewrite the architecture. It should convert scaffolds into hard artifacts and build gates.
 
-## Current Proof Matrix
+## Current Static Evidence Matrix
 
 | Area | What is real | What is not proven | P0 action |
 | --- | --- | --- | --- |

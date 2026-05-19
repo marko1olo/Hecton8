@@ -63,6 +63,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             #define _HectonVisorFluidAmbientLight _HectonVisorFluidParams4.w
             #define _HectonVisorFluidDustStrength _HectonVisorFluidParams5.x
             #define _HectonVisorFluidAmbientDustResponse _HectonVisorFluidParams5.y
+            #define _HectonVisorFluidLensMaskActive _HectonVisorFluidParams5.z
+            #define _HectonVisorFluidLensMaskBlend _HectonVisorFluidParams5.w
 
             CBUFFER_START(HectonDiegeticVisorLensGlobals)
                 float4 _HectonDiegeticVisorLensState;
@@ -87,6 +89,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             #define _HectonDiegeticVisorHeadSpeed _HectonDiegeticVisorLensParams2.z
 
             TEXTURE2D_X(_BlitTexture);
+            TEXTURE2D(_HectonDiegeticVisorLensMaskTex);
             float4 _BlitTexture_TexelSize;
             float4 _GlobalWind;
             float4 _HectonScreenSpaceRainParams;
@@ -370,6 +373,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                float2 visorMaskUV = saturate(HectonFinite2(input.screenUV, float2(0.5, 0.5)));
                 float2 screenUV = saturate(HectonFinite2(ResolveXRStereoScreenUV(input.screenUV), float2(0.5, 0.5)));
                 float2 screenParams = max(HectonFinite4(_ScreenParams, float4(1.0, 1.0, 1.0, 1.0)).xy, float2(1.0, 1.0));
                 float4 zBufferParams = HectonFinite4(_ZBufferParams, float4(1.0, 1.0, 1.0, 1.0));
@@ -392,6 +396,15 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float lensSurfaceWash = HectonFinite01(lensParams1.z);
                 float lensDarkness = HectonFinite01(lensParams1.w);
                 float lensSilt = HectonFinite01(lensParams2.y);
+                float lensMaskBlend = HectonFinite01(_HectonVisorFluidLensMaskActive) * HectonFinite01(_HectonVisorFluidLensMaskBlend);
+                float4 lensComputeMask = float4(0.0, 0.0, 0.0, 0.0);
+                [branch]
+                if (lensMaskBlend > 0.001)
+                {
+                    lensComputeMask = saturate(HectonFinite4(
+                        SAMPLE_TEXTURE2D(_HectonDiegeticVisorLensMaskTex, sampler_LinearClamp, visorMaskUV),
+                        float4(0.0, 0.0, 0.0, 0.0)));
+                }
                 float lowTierMode = max(HectonFinite01(_HectonVisorFluidLowTier), HectonFinite01(_HectonVisorFluidHomeostasisFallback));
                 lowTierMode = max(lowTierMode, HectonFinite01(1.0 - lensRefractionScale));
                 float dynamicVisorWeight = saturate(1.0 - lowTierMode);
@@ -401,6 +414,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 intensity = HectonFinite01(max(intensity, max(max(lensCondensation, lensDroplets), max(lensCrack, lensDirt))));
                 float glitchAmount = saturate((hullStress - 0.52) * 2.08);
                 glitchAmount = max(glitchAmount, lensAnomaly * (0.18 + lensCrack * 0.42));
+                glitchAmount = max(glitchAmount, lensComputeMask.w * lensMaskBlend);
                 float edgeMask = 0.0;
                 float edgeMaskResolved = 0.0;
                 float dustMask = 0.0;
@@ -450,6 +464,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                             localVelocity.x * lateralStreakStrength,
                             -1.0 - abs(localVelocity.z) * forwardStretchStrength);
                         float dropletMask = ComputeDropletMask(screenUV, flowDirection, wetness, hullStress, localVelocity);
+                        float computeFluidMask = HectonFinite01(max(lensComputeMask.x, lensComputeMask.y) * intensity);
+                        dropletMask = lerp(dropletMask, max(dropletMask, computeFluidMask), lensMaskBlend);
                         combinedMask = saturate(lerp(staticFilmMask, dropletMask, dynamicVisorWeight) * edgeMask * intensity * (1.0 - thermalMotionCull));
                     }
                 }
@@ -460,6 +476,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     if (edgeMaskResolved < 0.5)
                         edgeMask = ComputeVisorEdgeMask(screenUV);
                     dustMask = ComputeDustMask(screenUV, edgeMask, dustReveal);
+                    dustMask = max(dustMask, lensComputeMask.z * lensMaskBlend);
                 }
 
                 float2 refractionOffset = float2(0.0, 0.0);
@@ -530,7 +547,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                         edgeMask = ComputeVisorEdgeMask(screenUV);
 
                     float fogNoise = ValueNoise(screenUV * float2(13.0, 21.0) + float2(0.0, _Time.y * 0.035));
-                    float condensationMask = HectonFinite01(lensCondensation * (0.46 + edgeMask * 0.54) * (0.62 + fogNoise * 0.38));
+                    float proceduralCondensationMask = HectonFinite01(lensCondensation * (0.46 + edgeMask * 0.54) * (0.62 + fogNoise * 0.38));
+                    float condensationMask = lerp(proceduralCondensationMask, max(proceduralCondensationMask, lensComputeMask.x), lensMaskBlend);
                     half luminance = dot(color.rgb, half3(0.299h, 0.587h, 0.114h));
                     color.rgb = lerp(color.rgb, max(color.rgb, half3(0.105h, 0.125h, 0.135h)), (half)(condensationMask * 0.34));
                     color.rgb = lerp(color.rgb, half3(luminance, luminance, luminance), (half)(condensationMask * 0.13));
@@ -542,6 +560,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     float diagonal = abs(frac((screenUV.x + screenUV.y * 0.73) * (13.0 + lensCrack * 19.0)) - 0.5);
                     float crackRidge = 1.0 - smoothstep(0.018, 0.082, diagonal);
                     float crackMask = HectonFinite01((smoothstep(0.76 - lensCrack * 0.28, 0.98, crackNoise) * 0.58 + crackRidge * 0.42) * lensCrack);
+                    crackMask = lerp(crackMask, max(crackMask, lensComputeMask.y), lensMaskBlend);
                     color.rgb += half3(0.08h, 0.11h, 0.12h) * (half)(crackMask * (0.22 + lensDarkness * 0.18));
                     color.rgb = lerp(color.rgb, color.rgb * half3(0.82h, 0.88h, 0.92h), (half)(crackMask * 0.18));
                 }

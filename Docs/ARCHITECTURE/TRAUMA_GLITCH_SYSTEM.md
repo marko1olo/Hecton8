@@ -26,7 +26,7 @@ Verification: PENDING VERIFICATION
 - Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 - Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- May 14 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat that May 11 compile-success line as stale report text. R43 rechecked the current external root `Hecton8*.csproj` no-restore CLI compile surface at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; full restore graphs still carry vendor/package warnings, and shared `Temp\obj` locks can create transient evidence noise. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
+- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current R28 static/tool boundary: AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 ## Historical 2026-05-04 Boundary
@@ -244,21 +244,19 @@ UI wiring:
 
 ## GC and Hot-Path Notes
 
-- No new managed collections are created in tick paths.
-- No coroutine-based trauma logic is used.
-- No `GC.Collect()` call exists in live runtime hot paths after the sweep.
-- The only `GC.Collect()` hit in the repository scope was a commented line in a third-party editor script, which is not a runtime hot-path owner.
+Static source sweep reported no new managed collections, coroutine trauma logic, or live hot-path `GC.Collect()` sites in the scanned scope. The only `GC.Collect()` hit in that repository scope was a commented line in a third-party editor script. This is source-orientation only, not GCMonitor or profiler proof.
 
 ## Verification Boundary
 
-Code-level validation can prove:
+Code-level validation can orient:
 
-- compile cleanliness for touched scripts
-- console cleanliness at validation time
 - formula ownership and event ownership
 
 It cannot prove:
 
+- compile cleanliness without a linked CLI or Unity compile artifact
+- Unity Console cleanliness without a fresh Unity Console readback artifact
+- GC cleanliness without a fresh GCMonitor or profiler capture
 - final gameplay feel
 - mutation balance
 - BIOS readability under live combat conditions

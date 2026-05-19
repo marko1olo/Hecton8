@@ -6,8 +6,8 @@ using UnityEngine;
 namespace Hecton8.Modding
 {
     /// <summary>
-    /// Runtime owner for mod content assets loaded from on-disk AssetBundles and selected raw file fallbacks.
-    /// Bundle loading is cold-path only and cached for the process lifetime.
+    /// Legacy owner for mod content assets loaded from on-disk AssetBundles and selected raw file fallbacks.
+    /// Envelope-only UGC mode disables registration and loading; active assets must pass the FutureCommandEnvelope CRC gate.
     /// </summary>
     internal static class ModAssetManager
     {
@@ -15,7 +15,7 @@ namespace Hecton8.Modding
         private static readonly Dictionary<uint, string> _bundlePaths = new Dictionary<uint, string>(32);
         // COLD ALLOC: Dictionary<uint,AssetBundle>[32] - cached loaded mod bundles by mod hash - owner: ModAssetManager
         private static readonly Dictionary<uint, AssetBundle> _loadedBundles = new Dictionary<uint, AssetBundle>(32);
-        // COLD ALLOC: Dictionary<uint,Texture2D>[32] - cached raw PNG textures by asset hash - owner: ModAssetManager
+        // COLD ALLOC: Dictionary<uint,Texture2D>[32] - legacy cached raw PNG textures by asset hash - owner: ModAssetManager
         private static readonly Dictionary<uint, Texture2D> _rawTextures = new Dictionary<uint, Texture2D>(32);
         // COLD ALLOC: HashSet<uint>[128] - FNV-hashed MOD_COMPATIBLE ledger prefab references - owner: ModAssetManager
         private static readonly HashSet<uint> _modCompatibleAssetHashes = new HashSet<uint>(128);
@@ -47,6 +47,12 @@ namespace Hecton8.Modding
                 return;
 
             uint modHash = ModCommandDispatcher.ComputeModHash(modId);
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+            {
+                _bundlePaths.Remove(modHash);
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(bundlePath))
             {
                 _bundlePaths.Remove(modHash);
@@ -57,7 +63,7 @@ namespace Hecton8.Modding
         }
 
         /// <summary>
-        /// Loads a prefab from the mod's registered AssetBundle.
+        /// Legacy load from a registered AssetBundle; returns null while envelope-only UGC is enforced.
         /// </summary>
         internal static GameObject LoadPrefab(string modId, string assetName)
         {
@@ -65,7 +71,7 @@ namespace Hecton8.Modding
         }
 
         /// <summary>
-        /// Loads an audio clip from the mod's registered AssetBundle.
+        /// Legacy load from a registered AssetBundle; returns null while envelope-only UGC is enforced.
         /// </summary>
         internal static AudioClip LoadAudioClip(string modId, string assetName)
         {
@@ -73,8 +79,7 @@ namespace Hecton8.Modding
         }
 
         /// <summary>
-        /// Loads a texture from the mod's registered AssetBundle.
-        /// Falls back to raw PNG disk loading when the requested asset name points to a file inside the mod directory.
+        /// Legacy load from a registered AssetBundle or raw PNG fallback; returns null while envelope-only UGC is enforced.
         /// </summary>
         internal static Texture2D LoadTexture(string modId, string assetName)
         {
@@ -88,6 +93,9 @@ namespace Hecton8.Modding
         private static TAsset LoadAsset<TAsset>(string modId, string assetName)
             where TAsset : UnityEngine.Object
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                return null;
+
             if (string.IsNullOrWhiteSpace(modId) || string.IsNullOrWhiteSpace(assetName))
                 return null;
 
@@ -155,6 +163,9 @@ namespace Hecton8.Modding
 
         private static Texture2D LoadRawTexture(string modId, string assetName)
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                return null;
+
             if (string.IsNullOrWhiteSpace(assetName) || !assetName.EndsWith(".png", System.StringComparison.OrdinalIgnoreCase))
                 return null;
 
@@ -188,7 +199,7 @@ namespace Hecton8.Modding
             Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, true, false)
             {
                 name = Path.GetFileNameWithoutExtension(filePath)
-            }; // COLD ALLOC: Texture2D[1] — raw PNG fallback for mod texture loading — owner: ModAssetManager
+            }; // COLD ALLOC: Texture2D[1] - legacy raw PNG fallback for mod texture loading - owner: ModAssetManager
 
             if (!ImageConversion.LoadImage(texture, pngBytes, false))
             {

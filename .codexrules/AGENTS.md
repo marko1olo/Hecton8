@@ -18,6 +18,7 @@ NOT a creative director — execute within existing architecture.
 [RULE] NO OPTIMISM — status always "PENDING VERIFICATION". Only user-provided logs confirm fix.
 [WARN] If unsure about side effects: "WARNING: Regression risk in [X]".
 AA commercial product — Master Grade, enterprise-level, visually premium.
+[RULE] Global authority: owner-local first; one fact -> one owner -> one route -> one proof; route card + `GREEN` review before merge; H-Phi never justifies new global surface.
 
 ---
 
@@ -74,6 +75,7 @@ NASAPunk.Visor
 
 ### GlobalRegistry (Service Locator Pattern)
 [FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry (e.g., GlobalRegistry.Audio). Explicit init via GameBootstrapper.Initialize() only.
+[REQ] Registry access obeys `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`: cold discovery/injection only; hot paths use cached interfaces, typed signals, or snapshots.
 
 ### Key Interfaces
 ITickable     { Tick(float dt) }
@@ -116,6 +118,7 @@ PDAEvents       : OnOpened, OnClosed, OnTabChanged
 ModuleStatusEvents : OnModuleEnter, OnModuleExit
 ScanEvents      : OnScanTriggered, OnNodeFound, OnEntryDiscovered
 [REQ] EventBus is backed by NativeQueue<T>. Publish() is O(1) and SAFE from Burst Jobs. Subscribe() is Awake-only. Main thread flushes queue in LateUpdate. [FORBID] String RPCs / Event names (use uint EventID).
+[REQ] First-party hot broadcasts use typed `SignalBus<T>` lanes. `HectonEventBus` is mod/API/cold only. Legacy `GlobalSignals` direct queues must be documented bridge lanes.
 
 ### Third-Party
 MapMagic (terrain, via MapMagicBridge) · Crest (ocean, URP) · Odin Inspector (editor only) · Feel/MMFeedbacks (juice)
@@ -138,11 +141,21 @@ Current static reality (2026-05-13 DOC_AUDIT): forbidden UPM IDs are absent, but
 7. `Docs/SYSTEMS_CONTRACTS.md`
 8. `Docs/QUALITY_GATES.md`
 9. `Docs/ARCHITECTURE/README.md`
-10. `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
-11. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`
-12. `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md`
+10. `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`
+11. `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`
+12. `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`
+13. `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`
+14. `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`
+15. `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
+16. `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`
+17. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`
+18. `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md`
 
 [RULE] Dated reports under `Docs/Reports/YYYY-MM-DD_*` are evidence snapshots, counters, and audit trails. They do not become the permanent project brain. If a dated report changes policy, promote the policy into `AGENTS.md`, `.agents-skills`, or a stable `Docs/*.md` authority file.
+
+[RULE] New or changed global authority routes require the route card from `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`. Missing owner, phase, cadence, failure mode, telemetry, shutdown, or proof field = reject.
+[RULE] New subsystem setup involving global authority starts owner-local and follows `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md` before adding Registry/Signal/Vault/EventBus surface.
+[RULE] New or changed global authority routes require a review disposition from `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`: `GREEN`, `YELLOW`, `RED`, or `KILL`. Only `GREEN` can merge without further fixes.
 
 [RULE] Cinematic Cheat Protocol: any physical simulation of water, light, deformation, pressure, flow, ambience, cable sag, particles, flora motion, or distant motion must first prove that a deterministic visual/audio/haptic/UI/proxy fake cannot preserve player belief and gameplay correctness.
 [RULE] Default path is visual-realistic fake. Physical simulation is allowed only for player-critical collision/control, save-affecting state, combat/damage truth, or gameplay-critical hazards.
@@ -451,7 +464,7 @@ MEMORY SENTINEL: Use H8Memory.Allocate(size, SystemID). Native allocations witho
 
 ## WORKFLOW
 ### [RULE] PARALLEL EXECUTION & DECOUPLING
-40+ agents operate simultaneously. You must assume other systems are currently being rewritten.[REQ] Cross-domain communication is strictly limited to `EventBus` (NativeQueue) or `GlobalRegistry.Get<IInterface>()`. 
+40+ agents operate simultaneously. You must assume other systems are currently being rewritten.[REQ] Cross-domain communication is strictly limited to typed `SignalBus<T>` lanes, documented NativeQueue bridge lanes, cold `GlobalRegistry` interface injection, owner interfaces, or DataVault snapshots.
 [FORBID] Do not write concrete class references to systems outside your immediate domain.
 [CRITICAL]: You are FORBIDDEN from calling GlobalRegistry.Get<T>() inside Update, Tick, or Burst jobs. You MUST use a 2-stage initialization: Register in OnRegister(), cache all dependencies to readonly fields in OnDependencyInject().
 ### [RULE] STATE MACHINE CHECKLISTS & LOGGING
@@ -645,7 +658,7 @@ Response format: What was wrong → What I did → In-game result → What was v
 [REQ] Double-buffering for all GPU data is MANDATORY. While the GPU reads Buffer A, the CPU writes to Buffer B.
 [FORBID] Uploading data that hasn't changed. Use dirty-flags at the page level. If you waste PCIe bandwidth, you are killing the MX350.
 [RULE] INTERFACE IMMUTABILITY: During a batch run, changing existing public method signatures in Hecton8.Core.Contracts is FORBIDDEN. If a signature change is vital, you must mark it in Rationale.md and implement a Legacy Wrapper. Interfaces can only be expanded, not mutated, until the next batch.
-[RULE] SIGNAL DISCIPLINE: You are FORBIDDEN from creating a new EventID for a single-use interaction. Use GlobalRegistry for direct queries. EventBus is for decoupled BROADCASTS (e.g., "Submarine Exploded", "World Rebased") only.
+[RULE] SIGNAL DISCIPLINE: You are FORBIDDEN from creating a new EventID for a single-use interaction. Use owner interfaces/cached GlobalRegistry dependency for direct queries. Typed SignalBus lanes are for first-party decoupled BROADCASTS. HectonEventBus is mod/API/cold only.
 [RULE] ATOMIC FILE DELETION
 [REQ] If you delete a .cs, .shader, or .asset file, you are MANDATED to delete its corresponding .meta file in the same command.
 [REQ] After any file deletion, run a directory scan to ensure no "orphaned" .meta files exist.

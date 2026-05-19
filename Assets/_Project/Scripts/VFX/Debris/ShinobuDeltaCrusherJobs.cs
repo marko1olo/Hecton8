@@ -26,7 +26,7 @@ namespace Hecton8.VFX.Debris
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 48)]
-    public struct MockLaserFireSignal : ISignal
+    public struct DeltaCrusherMockLaserFireSignal : ISignal
     {
         public double3 AupPosition;
         public float Radius;
@@ -151,10 +151,10 @@ namespace Hecton8.VFX.Debris
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct MockLaserCarveGateJob : IJob
     {
-        public MockLaserFireSignal Signal;
+        public DeltaCrusherMockLaserFireSignal Signal;
         public NativeArray<int> Accepted;
         public NativeArray<uint> TelemetryRing;
         public NativeArray<int> TelemetryCursor;

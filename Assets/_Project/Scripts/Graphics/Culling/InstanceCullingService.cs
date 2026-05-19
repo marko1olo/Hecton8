@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -318,12 +319,14 @@ namespace Hecton8.Graphics.Culling
 
             if (_indirectArgsReadback.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_indirectArgsReadback);
                 _indirectArgsReadback.Dispose();
                 _indirectArgsReadback = default;
             }
 
             if (_telemetryRing.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
                 _telemetryRing.Dispose();
                 _telemetryRing = default;
             }
@@ -393,10 +396,16 @@ namespace Hecton8.Graphics.Culling
                 _indirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, IndirectArgsCount, sizeof(uint)); // COLD ALLOC: GraphicsBuffer[5] - indirect args written by CopyCount - owner: InstanceCullingService
 
             if (!_indirectArgsReadback.IsCreated)
+            {
                 _indirectArgsReadback = new NativeArray<uint>(IndirectArgsCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[5] - delayed indirect args telemetry readback - owner: InstanceCullingService
+                NativeMemorySentinel.RegisterNativeArray(_indirectArgsReadback, nameof(InstanceCullingService), nameof(_indirectArgsReadback), NativeAllocationLifetime.Scene);
+            }
 
             if (!_telemetryRing.IsCreated)
+            {
                 _telemetryRing = new NativeArray<InstanceCullingTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<InstanceCullingTelemetryEntry>[300] - culling black-box ring - owner: InstanceCullingService
+                NativeMemorySentinel.RegisterNativeArray(_telemetryRing, nameof(InstanceCullingService), nameof(_telemetryRing), NativeAllocationLifetime.Scene);
+            }
         }
 
         private void EnsureIndirectArgs(in InstanceCullingIndirectArgs args)

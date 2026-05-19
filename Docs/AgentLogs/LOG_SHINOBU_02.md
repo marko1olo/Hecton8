@@ -765,6 +765,261 @@ Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE / STATIC_SOURCE_CLAS
 
 ---
 
+## 2026-05-19 Current17 Core Layout Warning Prune + Current19 Classifier Root-Owner Patch
+
+Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE_CLASSIFIED / CLI_COMPILE / STATIC_SOURCE_HISTORY for Current17 and Current18. Unity import, Unity Console, Play Mode, Profiler, GCMonitor, IL2CPP/ARM64 player build, and runtime frame-time proof are still not executed.
+
+### What Was Wrong
+
+- Current16 had zero Full audit hard errors but still had 492 warnings.
+- The audit `Pack=1` detector matched `Pack = 16`, polluting the Pack=1 review inventory.
+- Several Core utility/runtime DTOs still carried exact `Pack = 1` where explicit offsets or natural layout made it unnecessary.
+- A private `HardwareThermalService.ThermalTelemetryEntry` name collided with other telemetry entry names in duplicate signal-like review.
+- The audit still treated H8Memory/GlobalDataVault root-owner telemetry arrays as downstream non-vault warning debt.
+
+### What Was Done
+
+- Tightened the audit regex to `Pack\s*=\s*1(?!\d)`.
+- Removed exact `Pack = 1` from safe Core utility/runtime DTOs in `BurstCallback`, `JobFenceManager`, `NativeQuery`, `NativeRingBuffer`, `StackQueue`, and `UnsafeArenaAllocator`.
+- Added explicit/manual padding for runtime layouts that needed 8-byte multiples.
+- Patched safe Core contract DTOs in `GlobalRegistry` and `GlobalRegistryContracts`.
+- Renamed private `ThermalTelemetryEntry` to `HardwareThermalTelemetryEntry` inside `HardwareThermalService`.
+- Added Current18 classifier patch and Current19 correction: H8Memory/GlobalDataVault root-owner telemetry rings now classify as `LOCAL_NATIVE_TELEMETRY_RING_ROOT_OWNER` info instead of downstream non-vault warning, but only inside `Core/Memory/H8Memory.cs` and `Core/Memory/GlobalDataVault.cs`.
+
+### Struct Layout Evidence
+
+- `StackQueue<T>`: fixed byte buffer 256; metadata/padding total 16; expected total 272 bytes, multiple of 8.
+- `UnsafeArenaAllocator.ArenaBlock`: explicit 16 bytes; offset 0 `Ptr`, offset 8 `ByteCount`, offset 12 `_pad0`.
+- `ForceOverrideToken`: explicit 8 bytes; offset 0 `Value`, offset 4 `_pad0`.
+- `SeismicRuntimeSnapshot`: 56 bytes after explicit tail padding.
+- `NarrativeSpatialTriggerAuthoring`: 88 bytes after explicit tail padding.
+- `PlayerRuntimePoseSnapshot`: 80 bytes after explicit tail padding.
+- `ToxicitySignal`: 32 bytes with named ushort/uint tail padding.
+- `RegistryEventPayload`: 24 bytes with named tail padding.
+
+### Verification
+
+- Audit CLI build before Current18 root-owner patch: 0 errors, 0 warnings.
+- Full current17 audit: files 1761, shaders 62, errors 0, warnings 463, infos 461, confirmedErrors 0.
+- SignalCritical current17 audit: files 7, shaders 62, errors 0, warnings 0, infos 10, confirmedErrors 0.
+- Core build guard opened at CPU avg `49.7`.
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies -v:minimal /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1`: 0 errors, 8 known CS0649 warnings in `GlobalPhysicsStateManager.PhysicsDistanceCullingJob`.
+- H-Phi trend current17: 123 artifacts, 393 metric series. Recent artifacts include Full/SignalCritical current17 audit JSON.
+- Current18 CLI build was initially blocked by CPU averages `67.2`, `67.6`, and `68.8`; guard later opened at CPU avg `27.1`; build was green.
+- Current19 correction build guard opened at CPU avg `19.3`.
+- `dotnet build Tools\SignalBusContractAuditCli\SignalBusContractAuditCli.csproj -v:minimal /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1`: 0 errors, 0 warnings after Current19.
+- Full current19 audit: files 1761, shaders 62, errors 0, warnings 460, infos 464, confirmedErrors 0.
+- SignalCritical current19 audit: files 7, shaders 62, errors 0, warnings 0, infos 10, confirmedErrors 0.
+- H-Phi trend current19: 127 artifacts, 393 metric series.
+- `git diff --check -- Tools/SignalBusContractAuditCli/Program.cs`: exit 0; line-ending warning only.
+
+### Cinematic Cheats
+
+- No new simulation was added.
+- No CPU physics replaced or introduced in this pass.
+- This pass spends engineering effort on structural correctness and audit truthfulness, not visual code.
+
+### Microseconds Saved
+
+- Measured saved time: `0 us`.
+- Runtime path measured: no.
+- Static warning reduction current16 -> current19: `492 -> 460` (-32 warnings).
+- Expected value: lower ARM64 misalignment risk and cleaner H-Phi/static-audit triage, not claimed frame-time improvement.
+
+<SELF_AUDIT_UPDATE current="17_18">
+  <task id="01" status="UNCHANGED">Legacy binary fallback unchanged.</task>
+  <task id="02" status="PARTIAL">Registered non-vault telemetry remains migration debt; Current18 only corrects root-owner classifier noise.</task>
+  <task id="03" status="PASS_IMPROVED">Additional Core runtime DTOs no longer use Pack=1; SignalCritical audit remains 0 warnings.</task>
+  <task id="04" status="UNCHANGED">Queue cleanup unchanged.</task>
+  <task id="05" status="UNCHANGED">Fallback mocks unchanged.</task>
+  <task id="06" status="UNCHANGED">ParallelWriter unchanged.</task>
+  <task id="07" status="UNCHANGED">Frame dispatch unchanged.</task>
+  <task id="08" status="UNCHANGED">Load shedding unchanged.</task>
+  <task id="09" status="UNCHANGED">Aggregation unchanged.</task>
+  <task id="10" status="UNCHANGED">ReadOnlySpan API unchanged.</task>
+  <task id="11" status="UNCHANGED">Fatal interrupt unchanged.</task>
+  <task id="12" status="UNCHANGED">Ghost filtering unchanged.</task>
+  <task id="13" status="UNCHANGED">NaN payload sanitation unchanged.</task>
+  <task id="14" status="PASS">No new sibling runtime dependency was added; Core build remains green after Current17.</task>
+  <task id="15" status="UNCHANGED">AOT preserve unchanged; no IL2CPP proof.</task>
+  <task id="16" status="PASS_STATIC">Blackbox ring hard errors remain zero in current17 Full audit.</task>
+  <task id="17" status="UNCHANGED">No managed runtime string signal payload introduced.</task>
+  <task id="18" status="UNCHANGED">Editor dashboard unchanged.</task>
+  <task id="19" status="UNCHANGED">Injection facade unchanged.</task>
+  <task id="20" status="UNCHANGED">CSV hot swap unchanged.</task>
+  <arm64 status="PASS_STATIC">Primary Current17 DTO examples align to 8-byte multiples: StackQueue 272, ArenaBlock 16, ForceOverrideToken 8, SeismicRuntimeSnapshot 56, ToxicitySignal 32.</arm64>
+  <zero_gc status="PASS_STATIC">No Tick/Update/LateUpdate/FixedUpdate path, allocation, closure, LINQ, boxing, or string formatting was added.</zero_gc>
+  <aup status="UNCHANGED_SAFE">No absolute AUP-to-float cast path was introduced.</aup>
+  <dear_lie status="UNCHANGED">No physical simulation added; no visual fake changed.</dear_lie>
+  <hphi status="IMPROVED_STATIC">Full warnings dropped to 460; Current19 root-owner classifier removes warning noise only for H8Memory/GlobalDataVault root telemetry and keeps downstream H8Memory-owned rings visible.</hphi>
+  <blackbox status="PASS_STATIC">Full audit hard blackbox errors remain 0; registered non-vault warnings remain migration debt.</blackbox>
+  <compile_guard status="PASS_CLI">Core build green after Current17; Current18 audit CLI build green. Unity/runtime/IL2CPP still pending.</compile_guard>
+</SELF_AUDIT_UPDATE>
+
+## 2026-05-19 Current14 Signal Dependency Prune
+
+Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE / PROCESS_GUARD.
+
+### What Was Wrong
+
+- `Assets/_Project/Scripts/Core/Signals/PrologueReentrySignals.cs` had a stale `using Hecton8.World` despite using no World symbol.
+- The same file also carried an unused `System.Runtime.InteropServices` import.
+- Broader compile-wall risk remains in `Hecton8.Core.asmdef` and `Core/GlobalSignals.cs`, but that is not safe for blind local removal.
+
+### What Was Done
+
+- Removed the unused `Hecton8.World` and `System.Runtime.InteropServices` imports from `PrologueReentrySignals.cs`.
+- Left `PlayerMovementPresentationSignals.cs` unchanged because it legitimately uses `AbsoluteUniversePosition`.
+- Left Core asmdef sibling references and Audio DTO coupling untouched pending Integrator/Core contract extraction work.
+
+### Verification
+
+- STATIC_SOURCE: `rg` confirms no stale World or Interop using remains in `PrologueReentrySignals.cs`.
+- STATIC_SOURCE: `git diff --check` over the edited file and SHINOBU ledgers exited 0; only line-ending warnings were printed.
+- PROCESS_GUARD: no build/full audit launched because CPU samples were `13.4, 85, 99.6`.
+
+### Microseconds Saved
+
+- Measured saved time: `0 us`.
+- Expected benefit: reduced compile-wall coupling risk in one signal warmup source file, not a runtime speed claim.
+
+<SELF_AUDIT_UPDATE current="14">
+  <dependency status="SOURCE_PASS_AUDIT_PENDING">Removed one unused direct `Hecton8.World` import from a Core signal file. Broader Core asmdef sibling references are deferred.</dependency>
+  <zero_gc status="PASS">Using-only patch; no runtime path or allocation introduced.</zero_gc>
+  <compile_guard status="BLOCKED">Core build/full audit deferred by CPU guard.</compile_guard>
+</SELF_AUDIT_UPDATE>
+
+## 2026-05-19 Current13 Safe Core Blackbox/GPU/Content Pack1 Patch
+
+Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE / PROCESS_GUARD. No Unity import, profiler, IL2CPP, Core compile, or full audit proof is claimed.
+
+### What Was Wrong
+
+- Active SHINOBU_02 ledgers were deleted by a concurrent archive move during this pass, which broke the anti-amnesia protocol.
+- Remaining Core `Pack = 1` findings were mixed-risk: some were safe runtime/GPU/content DTOs, others were file/wire/replay/bridge/generic native-container surfaces.
+- The previous local source counter used `Pack\s*=\s*1`, which also matched `Pack = 16` and inflated the Core count.
+- Several touched Burst job/math surfaces still used bare or incomplete `[BurstCompile]` attributes.
+
+### What Was Done
+
+- Restored only SHINOBU_02 active ledgers from `Docs/Archive/Batch009/...`.
+- Spawned read-only sidecar `Godel`; applied only its 85%+ confidence safe candidates.
+- Removed runtime-forbidden `Pack = 1` from:
+  - `FlexiblePipeInstanceGpuData`
+  - `ObjectBatchInstance`
+  - `ObjectBatchChunk`
+  - `SimulationBucketBlackBoxEntry`
+  - `JobAdmissionBlackboxEntry`
+  - `FoveatedSimulationTelemetryEntry`
+  - `NativeAllocationSnapshotSource`
+  - `NativeAllocationRecord`
+  - `PersistentReallocationRecord`
+- Changed `SimulationBucketRebalanceResult` from 20 to 24 bytes with private `_pad0` because it is a Vault-owned runtime single-result DTO, not a file/wire record.
+- Added exact Burst flags to `LoadBalancingJob`, `JobAdmissionMath`, `ImportanceScoringJob`, and `VisualInterpolationJob`.
+
+### Struct Layout
+
+- `FlexiblePipeInstanceGpuData`: 0-15 `P0Radius`, 16-31 `P1Flags`, 32-47 `P2`, 48-63 `P3`, total 64.
+- `ObjectBatchInstance`: 0-63 `LocalToWorld`, 64-67 `AssetHash`, 68-71 `Flags`, 72-75 `MeshIndex`, 76-79 `MaterialIndex`, total 80.
+- `ObjectBatchChunk`: `Bounds` plus `StartIndex`, `Count`, `ChunkHash`, `LodLevel`, explicit total 40, existing content validator asserts 40.
+- `SimulationBucketRebalanceResult`: 0-3 `MaxBucketLoadMs`, 4-7 `MeanBucketLoadMs`, 8-11 `TotalLoadMs`, 12-15 `FramePacingFlags`, 16-19 `ActiveEntityCount`, 20-23 `_pad0`, total 24.
+- `SimulationBucketBlackBoxEntry`: fixed 64-byte blackbox entry, existing reserved padding retained.
+- `JobAdmissionBlackboxEntry`: fixed 32-byte blackbox entry, existing reserved padding retained.
+- `FoveatedSimulationTelemetryEntry`: fixed 64-byte telemetry entry.
+- `NativeAllocationSnapshotSource`: fixed 32-byte snapshot descriptor.
+
+### Verification
+
+- STATIC_SOURCE: `rg -P "Pack\s*=\s*1(?!\d)"` over the six touched source files returned no hits.
+- STATIC_SOURCE: precise counters now report `SIGNALCRITICAL_PACK1_TOTAL=0`, `CORE_EXPLICIT_PACK1_TOTAL=0`, `CORE_PACK1_TOTAL=68`, `PROJECT_EXPLICIT_PACK1_TOTAL=43`.
+- STATIC_SOURCE: no bare `[BurstCompile]` remains in the three touched Burst files.
+- STATIC_SOURCE: `git diff --check` over touched source files exited 0; only line-ending warnings were printed.
+- PROCESS_GUARD: Core build and full audit were not launched because CPU samples were `70.8, 47.5, 75.5`.
+
+### Remaining Risk
+
+- Remaining 68 exact Core `Pack = 1` hits are intentionally deferred: bridge ABI, replay/file records, macro database records, generic native containers, `BatteryRuntimeSnapshot` bool ABI, and owner-domain global snapshots.
+- Current10-13 full-audit claims remain source-light until the CPU guard allows a fresh audit run.
+- H-Phi dynamics after archived Current3 remain stale until the trend tool is rerun.
+
+### Cinematic Cheats
+
+- No new gameplay simulation was added. This pass keeps transport/render payloads aligned so presentation systems can spend budget on shader/GPU visual fakes instead of CPU-side truth expansion.
+
+### Microseconds Saved
+
+- Measured saved time: `0 us`.
+- Expected benefit: lower ARM64 misalignment risk and clearer Burst compile directives, not a measured frame-time win.
+
+<SELF_AUDIT_UPDATE current="13">
+  <task id="03" status="PASS">Additional Core runtime/GPU/content DTOs no longer use runtime Pack=1; primary changed layout `SimulationBucketRebalanceResult` is now 24 bytes with explicit padding.</task>
+  <task id="14" status="UNCHANGED">No new sibling runtime assembly reference added.</task>
+  <arm64 status="SOURCE_PASS_AUDIT_PENDING">Touched runtime DTO totals are 24, 32, 40, 64, or 80 bytes; remaining Pack=1 surfaces are deferred ABI/owner risks.</arm64>
+  <zero_gc status="PASS">No Tick allocation, LINQ, closure, boxing, or managed string path introduced.</zero_gc>
+  <hphi status="UNCHANGED">No new private NativeArray ownership was added; existing foveated telemetry ring ownership remains a separate H-Phi caveat.</hphi>
+  <blackbox status="PASS_STATIC_SOURCE">Blackbox entry DTOs remain fixed 32/64-byte records and no longer use Pack=1.</blackbox>
+  <compile_guard status="BLOCKED">Core build/full audit deferred by CPU guard; no dotnet build launched.</compile_guard>
+</SELF_AUDIT_UPDATE>
+
+---
+
+## 2026-05-19 Current12 Safe Core Sequential Pack1 Cleanup
+
+Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE / SIDE_AGENT_CLASSIFICATION / PROCESS_GUARD.
+
+### What Was Wrong
+
+- After Core explicit-layout cleanup, sequential runtime DTOs still used `Pack = 1`.
+- Some were safe to patch because natural layout preserves offsets and size.
+- Others are binary/file/native-container surfaces and remain unsafe for blind edits.
+
+### What Was Done
+
+- Used read-only sidecar `Sagan` to classify remaining Core sequential `Pack = 1` candidates.
+- Patched the safe slice:
+  - `InventoryCost`: natural 8-byte two-int layout.
+  - `HectonAabb`: fixed 32-byte float layout.
+  - `HectonSphere`: fixed 16-byte float layout.
+  - `NativeBitmask256`: fixed 32-byte four-ulong layout.
+  - `ContentBundleRefState`: fixed 24-byte content ref DTO.
+  - `ContentAuthorityTelemetryEntry`: fixed 64-byte telemetry DTO.
+  - `ContentPendingLoadState`: fixed 16-byte pending-load DTO.
+  - `ContentVisualFeatureBudget`: fixed 16-byte visual budget DTO.
+  - `SimulationBucketFrameState`: fixed 64-byte bucketing blackbox DTO.
+  - `AudioEvent`: fixed 32-byte central audio queue DTO.
+  - `PlayerMovementRuntimeState`: padded to 128 bytes.
+  - `PlayerLookState`: padded to 32 bytes.
+  - `PlayerSurvivalRuntimeState`: padded to 88 bytes.
+  - `PlayerInteractionRuntimeState`: kept 32 bytes without `Pack = 1`.
+  - `UIStateData`: padded to 32 bytes.
+  - `UIValueSlot`: padded to 24 bytes.
+- Left high-risk sequential `Pack = 1` surfaces untouched: bridge binary records, replay/file records, generic native containers, macro database records, and the power snapshot bool ABI.
+
+### Verification
+
+- STATIC_SOURCE: patched files now show no `Pack = 1` on the targeted structs.
+- STATIC_SOURCE: Core explicit `Pack = 1` scan remains zero.
+- STATIC_SOURCE: light counters after patch: `SIGNALCRITICAL_PACK1_TOTAL=0`, `CORE_EXPLICIT_PACK1_TOTAL=0`, `CORE_PACK1_TOTAL=82`, `PROJECT_EXPLICIT_PACK1_TOTAL=43`.
+- PROCESS_GUARD: no build or heavy full audit was launched; CPU samples were `74.5, 98.6, 100`.
+
+### Microseconds Saved
+
+- Measured saved time: `0 us`.
+- Runtime path measured: no.
+- Benefit is ARM64 layout-risk reduction and smaller static warning surface, not proven frame time.
+
+<SELF_AUDIT_UPDATE current="12">
+  <task id="03" status="PASS_SOURCE">Safe Core runtime sequential Pack=1 slice patched. Remaining Pack=1 hits are explicitly deferred ABI-risk surfaces.</task>
+  <task id="14" status="UNCHANGED">No new sibling runtime assembly reference added. No public method signature changed.</task>
+  <arm64 status="SOURCE_PASS_AUDIT_PENDING">Player/UI runtime snapshots now have 8-byte-multiple sizes: 128, 32, 88, 32, 32, 24.</arm64>
+  <zero_gc status="PASS">Layout-only patch; no Tick allocation, closure, LINQ, boxing, string path, or NativeArray ownership change introduced.</zero_gc>
+  <hphi status="UNCHANGED">No new private native containers. Existing UIStateStore native arrays and SignalBus queue caveats remain documented.</hphi>
+  <blackbox status="UNCHANGED">Simulation bucket and content telemetry DTO layouts changed only by removing Pack=1; blackbox write logic unchanged.</blackbox>
+  <compile_guard status="BLOCKED">No dotnet build launched under high CPU guard.</compile_guard>
+</SELF_AUDIT_UPDATE>
+
+---
+
 ## 2026-05-19 Current11 Core Explicit Pack1 Cleanup
 
 Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE / PROCESS_GUARD. No Core build, full audit, Unity import, Play Mode, profiler, GCMonitor, or IL2CPP proof.
@@ -877,4 +1132,90 @@ Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE / PROCESS_GUARD. Ful
   <hphi status="UNCHANGED">No native allocation ownership changed.</hphi>
   <blackbox status="UNCHANGED">No telemetry ring code changed; BinaryLayoutManifest failure path still emits compliance signal and dump.</blackbox>
   <compile_guard status="BLOCKED">Core build deferred by CPU guard; no dotnet build launched.</compile_guard>
+</SELF_AUDIT_UPDATE>
+
+---
+
+## 2026-05-19 Current16 Full Audit Hard-Gate Repair
+
+Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE_CLASSIFIED / CLI_COMPILE / STATIC_SOURCE_HISTORY. Unity import, Play Mode, Profiler, GCMonitor, IL2CPP/ARM64 player build, and runtime frame-time proof are still not executed.
+
+### What Was Wrong
+
+- Core compile was previously blocked by four mechanical compile-wall defects: `sanitizedWeight` definite assignment, missing source-backed include for `HectonDrsRenderFeatureGate.cs`, missing `Hecton8.Narrative` import for `IndustrialLoreBitMask`, and unavailable `math.reversebytes` calls.
+- Full current15 audit reported 16 hard errors:
+  - 5 unowned 300-frame native telemetry rings.
+  - 11 duplicate runtime signal-name collisions across incompatible DTOs.
+
+### What Was Done
+
+- Fixed the Core compile-wall defects without editing generated `.csproj` files.
+- Renamed incompatible duplicate signal DTOs:
+  - `VFX.Debris.MockLaserFireSignal` -> `DeltaCrusherMockLaserFireSignal`
+  - `Fauna.MockAcousticSignal` -> `PredatorMockAcousticSignal`
+  - `Thermodynamics.MockDamageSignal` -> `ThermodynamicsMockDamageSignal`
+  - `AI.Cognition.AcousticEchoTap` -> `ApexBrainAcousticEchoTap`
+  - `AI.Cognition.GlobalPanicSignal` -> `ApexPanicSignal`
+  - `Physics.Exosuit.AcousticEchoTap` -> `ExosuitAcousticEchoTap`
+  - `VFX.PlasmaBeam.AcousticEchoTap` -> `PlasmaBeamAcousticEchoTap`
+- Registered/unregistered native blackbox/readback arrays with `NativeMemorySentinel`:
+  - `DiegeticTooltipSystem._blackBox`
+  - `InternalFloodWaterlineRuntime._telemetry`
+  - `InstanceCullingService._telemetryRing`
+  - `InstanceCullingService._indirectArgsReadback`
+  - `AwaitableDropSequenceDirector._blackBox`
+  - `OrbitalDropReentryVfxController._telemetry`
+
+### Struct Layout Evidence
+
+- `ApexBrainAcousticEchoTap`: explicit 64 bytes; offsets 0 `AUP` double3, 24 `Magnitude01`, 28 `AgeSeconds`, 32 `SourceHash`, 36 `Frame`, 40 `AcousticMemoryHash`, 44 `Flags`, 48/56 padding.
+- `ApexPanicSignal`: explicit 64 bytes; offsets 0 `SourceAup`, 24 `Direction`, 36 `RadiusMeters`, 40 `Intensity01`, 44 `SourceHash`, 48 `Frame`, 52 `Slot`, 54 `Flags`, 55/56 padding.
+- `ExosuitAcousticEchoTap`: sequential 32 bytes; double3 AUP 0-23, `Intensity01` 24-27, `EchoHash` 28-31.
+- `PlasmaBeamAcousticEchoTap`: explicit 32 bytes; offsets 0 `Position`, 12 `Intensity01`, 16 `BeamId`, 20 `Frame`, 24 `NoiseSeed`, 28 `Flags`.
+- `ThermodynamicsMockDamageSignal`: sequential 48 bytes; double3 AUP 0-23, float3 normal 24-35, `Damage` 36-39, `EntityId` 40-43, `Flags` 44-47.
+- `DeltaCrusherMockLaserFireSignal`: sequential 48 bytes; double3 AUP 0-23, `Radius` 24-27, `DeltaDensity` 28, `ChunkState` 29, `Reserved0` 30-31, `MaterialHash` 32-35, `Frame` 36-39, padding 40-47.
+
+### Verification
+
+- `git diff --check` on touched source files: exit 0; line-ending warnings only.
+- Full current16 audit: files 1761, shaders 62, errors 0, warnings 492, infos 467, confirmedErrors 0.
+- SignalCritical current16 audit: files 7, shaders 62, errors 0, warnings 0, infos 10, confirmedErrors 0.
+- Core build guard: no compiler processes, CPU avg `25.9`.
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies -v:minimal /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1`: 0 errors, 8 warnings. Warnings are pre-existing CS0649 fields in `GlobalPhysicsStateManager.PhysicsDistanceCullingJob`.
+- H-Phi trend: 120 artifacts, 393 metric series; latest signal-audit series includes Full current16 with 0 confirmed errors.
+
+### Microseconds Saved
+
+- Measured saved time: `0 us`.
+- Runtime path measured: no.
+- This pass removed static hard errors and compile-wall blockers. It does not claim frame-time savings.
+
+<SELF_AUDIT_UPDATE current="16">
+  <task id="01" status="UNCHANGED">Legacy binary event audit unchanged.</task>
+  <task id="02" status="PARTIAL_IMPROVED">Five local 300-frame rings are now Sentinel-tracked; Full audit hard ownership errors are zero. Vault migration remains owner-route-card work.</task>
+  <task id="03" status="PASS">SignalCritical direct/transitive Pack=1 remains zero; duplicate hard-gate signal names are now unique in active runtime hard rows.</task>
+  <task id="04" status="UNCHANGED">Queue cleanup unchanged.</task>
+  <task id="05" status="UNCHANGED">Mock/fallback lanes retained.</task>
+  <task id="06" status="UNCHANGED">ParallelWriter surfaces unchanged.</task>
+  <task id="07" status="UNCHANGED">Frame snapshot dispatch unchanged.</task>
+  <task id="08" status="UNCHANGED">Load shedding unchanged.</task>
+  <task id="09" status="UNCHANGED">Aggregation kernel unchanged.</task>
+  <task id="10" status="UNCHANGED">ReadOnlySpan consumer API unchanged.</task>
+  <task id="11" status="UNCHANGED">Fatal interrupt bypass unchanged.</task>
+  <task id="12" status="UNCHANGED">Ghost filtering unchanged.</task>
+  <task id="13" status="UNCHANGED">NaN payload sanitation unchanged.</task>
+  <task id="14" status="PASS_IMPROVED">Core compile-wall defects fixed; source-backed DRS helper include added; no generated `.csproj` edit.</task>
+  <task id="15" status="UNCHANGED">IL2CPP stripping protection unchanged; no player build proof.</task>
+  <task id="16" status="PASS_IMPROVED">Five blackbox rings now register with Sentinel; Full audit hard telemetry ownership errors are zero.</task>
+  <task id="17" status="UNCHANGED">Managed string signal payload hard gate remains zero in SignalCritical.</task>
+  <task id="18" status="UNCHANGED">Editor dashboard unchanged.</task>
+  <task id="19" status="UNCHANGED">Live signal injection facade unchanged.</task>
+  <task id="20" status="UNCHANGED">CSV priority hot swap unchanged.</task>
+  <arm64 status="PASS_STATIC">Touched runtime signal DTOs are 32/48/64 byte multiples of 8; no Pack=1 was added.</arm64>
+  <zero_gc status="PASS_STATIC">No Tick allocation, LINQ, foreach hot-loop, closure, boxing, or string formatting was added by the rename/Sentinel patches.</zero_gc>
+  <aup status="UNCHANGED_SAFE">No absolute AUP-to-float cast path was introduced; existing AUP local-delta rules remain.</aup>
+  <dear_lie status="UNCHANGED">No new physics simulation was added; VFX/prologue signals remain presentation/domain-local fakes.</dear_lie>
+  <hphi status="IMPROVED_NOT_COMPLETE">Hard unowned telemetry rings are now Sentinel-tracked; 55 registered-non-vault warnings remain as explicit Vault migration debt.</hphi>
+  <blackbox status="PASS_STATIC">The five 300-frame blackbox rings are still active and now Sentinel-registered.</blackbox>
+  <compile_guard status="PASS">Core build green under CPU/process guard; 0 errors, 8 known warnings.</compile_guard>
 </SELF_AUDIT_UPDATE>

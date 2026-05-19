@@ -30,6 +30,7 @@ Each lane declares:
 
 - payload struct
 - owner assembly
+- route card link or rationale when the lane is new global authority surface
 - producer phase
 - consumer phase
 - max events per frame
@@ -131,3 +132,30 @@ Middle: consume full frame snapshots for nearby gameplay truth.
 High: keep richer telemetry fields for debugging and cinematic responses.
 
 Ultra: add visual overkill consumers only in `VISUAL_SYNC`; never increase gameplay broadcast cost without budget proof.
+
+---
+
+## 7. HectonEventBus Boundary
+
+[RULE] `HectonEventBus` is a mod/API/cold-event isolation surface, not the first-party gameplay bus.
+[RULE] First-party hot gameplay broadcasts use typed `SignalBus<T>` lanes.
+[RULE] Managed callback isolation may exist for mod-facing events only when the event is outside the hot frame lane or explicitly budgeted.
+
+[FORBID] New first-party `HectonEventBus.Publish` call sites in Tick, FixedTick, LateUpdate, dispatcher phases, UI refresh, physics solve, AI solve, audio render, or render upload paths.
+[FORBID] Using `HectonEventBus` to avoid defining an unmanaged payload, owner, capacity, and overflow policy.
+[FORBID] Reporting `HectonEventBus` traffic as SignalBus hygiene.
+
+---
+
+## 8. Legacy GlobalSignals Migration
+
+[RULE] `GlobalSignals` direct `NativeQueue<T>` surfaces are legacy or bridge infrastructure unless a current owner contract says otherwise.
+[RULE] New gameplay traffic must prefer `SignalBus<T>.Push/TryPush` with frame snapshot consumption.
+[RULE] Every retained direct queue must have an owner, drain phase, max frame budget, overflow policy, and telemetry counter.
+[RULE] New lanes follow `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`: owner-local first, owner interface second, SignalBus only for real fan-out or phase crossing.
+[RULE] New or changed first-party signal/global queue routes must satisfy the route-card template in `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`.
+[RULE] New or changed signal/global queue routes require a `GREEN` review result from `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md` before merge.
+
+[FORBID] Adding a catch-all `RuntimeSignal`, `GameplaySignal`, or enum/switch payload to hide unrelated traffic in one lane.
+[FORBID] Expanding `GlobalSignals.Publish` usage when a typed lane or owner interface can carry the same information.
+[FORBID] Keeping two authoritative lanes for the same state change.

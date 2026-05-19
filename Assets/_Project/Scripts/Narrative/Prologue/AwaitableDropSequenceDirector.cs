@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -177,7 +178,9 @@ namespace Hecton8.Narrative.Prologue
             _disposed = true;
             if (_blackBox.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_blackBox);
                 _blackBox.Dispose();
+                _blackBox = default;
                 _blackBoxCursor = 0;
             }
         }
@@ -446,6 +449,7 @@ namespace Hecton8.Narrative.Prologue
                 TelemetryCapacity,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PrologueSequenceTelemetryEntry>[300] - prologue sequence black-box ring - owner: AwaitableDropSequenceDirector
+            NativeMemorySentinel.RegisterNativeArray(_blackBox, nameof(AwaitableDropSequenceDirector), nameof(_blackBox), NativeAllocationLifetime.Scene);
         }
 
         private void RecordStage(PrologueStage stage, uint stateHash, byte flags)

@@ -49,7 +49,11 @@ namespace Hecton8.Editor
         {
             EditorApplication.update -= OnEditorUpdate;
             if (EditorApplication.isPlaying)
+            {
                 HomeostasisBrain.SetForcedGlobalQualityWeightForTuner(0f, false);
+                HomeostasisBrain.SetMockHeavyLoadForTuner(0f, 0f, false);
+                HomeostasisBrain.SetHardwareDictatorGcSafeBaseMenu(false);
+            }
         }
 
         private void OnEditorUpdate()

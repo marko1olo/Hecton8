@@ -33,14 +33,14 @@ Read `../../ROOT_DOCS_REFERENCE.md` and `../../DOC_GOVERNANCE.md` for the May 15
 
 Current static corrections:
 
-- first-party asmdefs under `Assets/_Project`: R24 volatile static snapshot `119`
+- first-party asmdefs under `Assets/_Project`: R27 volatile static snapshot `123`
 - previously unindexed current asmdefs include `Assets/_Project/Scripts/Core/Memory/Hecton8.Core.Memory.asmdef` and `Assets/_Project/Scripts/Physics/Determinism/Hecton8.Physics.Determinism.asmdef`
 - former root `PROJECT_ATLAS.md` was moved to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`; `Docs/PROJECT_ATLAS.md` is the current detailed asmdef atlas
 - cited May 11 build artifacts `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` and `.log` are absent from the current filesystem
 - source counts are volatile in the active multi-agent workspace and must be rerun before use
-- latest R24 capture-time static source counters: `1814` project C# files, `1758` script C# files, `1794` non-test C# files excluding `Assets/_Project/Tests*`, `1198173` project physical lines, `1178627` script physical lines, `1193454` non-test physical lines, `62` direct public interfaces in `GlobalRegistryContracts.cs`, and `119` first-party asmdefs
+- latest R27 capture-time static source counters: `1818` project C# files, `1761` script C# files, `1797` non-test C# files excluding `Assets/_Project/Tests*`, `1204221` project physical lines, `1184559` script physical lines, `1199376` non-test physical lines, `342` broad interface token hits, `267` direct interface declaration lines, `62` direct public interfaces in `GlobalRegistryContracts.cs`, `123` first-party asmdefs, `73` direct queue slots, and `133` typed signal lanes
 - R18/R11 snapshots remain historical volatile orientation only; rerun exact source counts under concurrent agents before use
-- latest DOC_GLOBAL correction: R24 root/architecture actuality and source-counter correction; R23 remains the proof-language/navigation/status-JSON correction; compact navigation boundary continues through R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9, with R14 demoting pre-Batch008 binary hygiene PASS rows against `Docs/Archive/Batch008/AgentLogs/BinaryHygiene_H8BIN_GRAVEYARD_AUDITOR_RECHECK2.json`
+- latest DOC_GLOBAL correction: R27 root/architecture index/counter correction; R26 remains prior root/architecture HFI promotion and source-counter correction; R25/R24 remain prior root/architecture actuality corrections; `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` is the current static HFI/H-Phi/global-authority risk snapshot; R23 remains the proof-language/navigation/status-JSON correction; compact navigation boundary continues through R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9, with R14 demoting pre-Batch008 binary hygiene PASS rows against `Docs/Archive/Batch008/AgentLogs/BinaryHygiene_H8BIN_GRAVEYARD_AUDITOR_RECHECK2.json`
 - latest R5 package/config correction: forbidden DOTween/MasterAudio/Easy Save/Astar UPM IDs are absent, but physical legacy Astar/Easy Save/DOTween/MasterAudio asset folders remain in `Assets` and are not proof of approved runtime usage
 
 It answers four narrow questions:
@@ -52,22 +52,22 @@ It answers four narrow questions:
 
 ## 2. Workspace Snapshot
 
-2026-05-19 DOC_GLOBAL_DOCS_REFRESH R24 static source snapshot:
+2026-05-19 DOC_GLOBAL_DOCS_REFRESH R27 static source snapshot:
 
-| Surface | R24 Capture-Time Static Value (Volatile; Rerun Before Use) |
+| Surface | R27 Capture-Time Static Value (Volatile; Rerun Before Use) |
 |---|---:|
-| first-party C# files under `Assets/_Project` | 1,814 |
-| first-party C# physical lines under `Assets/_Project` | 1,198,173 |
-| first-party non-test C# files excluding `Assets/_Project/Tests*` | 1,794 |
-| first-party non-test C# physical lines | 1,193,454 |
-| interface declaration hits under `Assets/_Project` | 342 broad token hits / 267 declaration lines |
+| first-party C# files under `Assets/_Project` | 1,818 |
+| first-party C# physical lines under `Assets/_Project` | 1,203,657 |
+| first-party non-test C# files excluding `Assets/_Project/Tests*` | 1,797 |
+| first-party non-test C# physical lines | 1,198,812 |
+| interface declaration hits under `Assets/_Project` | 342 broad token hits / 268 declaration lines |
 | direct public interfaces in `GlobalRegistryContracts.cs` | 62 |
 | source/domain ids in `Docs/Actual Domains of Project.txt` | 85 |
-| first-party asmdefs under `Assets/_Project` | 119 |
+| first-party asmdefs under `Assets/_Project` | 123 |
 
 Previously enumerated first-party asmdefs from the older atlas slice:
 
-The latest R24 volatile count is `119`; the list below is a retained partial orientation sample, not the current complete asmdef inventory. Rerun `rg --files Assets/_Project -g '*.asmdef'` before making assembly-boundary claims.
+The latest R27 volatile count is `123`; the list below is a retained partial orientation sample, not the current complete asmdef inventory. Rerun `rg --files Assets/_Project -g '*.asmdef'` before making assembly-boundary claims.
 
 - `Assets/_Project/Input/Hecton8.Input.Generated.asmdef`
 - `Assets/_Project/Scripts/Cartography/Hecton8.Cartography.asmdef`
@@ -131,13 +131,13 @@ Primary first-party code still lives under:
 - `Assets/_Project/Art`
 - UI runtime code is under `Assets/_Project/Scripts/UI`; no direct `Assets/_Project/UI` folder exists in the R4 scan
 
-Latest captured May 19 R24 volatile static snapshot records first-party C# file count under `Assets/_Project`: `1814`; rerun before treating exact values as current.
-Observed first-party C# physical line count under `Assets/_Project`: `1198173`
-Observed first-party C# file count under `Assets/_Project/Scripts`: `1758`
-Observed first-party C# physical line count under `Assets/_Project/Scripts`: `1178627`
-Line-count method: PowerShell `Get-Content | Measure-Object -Line` summed over every matched `.cs` file.
+Latest captured May 19 R27 volatile static snapshot records first-party C# file count under `Assets/_Project`: `1818`; rerun before treating exact values as current.
+Observed first-party C# physical line count under `Assets/_Project`: `1204221`
+Observed first-party C# file count under `Assets/_Project/Scripts`: `1761`
+Observed first-party C# physical line count under `Assets/_Project/Scripts`: `1184559`
+Line-count method: PowerShell `[System.IO.File]::ReadLines(...)` summed over every matched `.cs` file.
 
-SOURCE DRIFT DETECTED: previous R186 Atlas scan recorded `1292` / `1248` C# files and `742892` script physical lines; May 11 documentation continuation recorded `1306` / `1262`; May 13 DOC_AUDIT R4 recorded `1411` / `1365` C# files and `852315` script physical lines; May 17 R5 recorded `1653` / `1602` C# files and `1047015` script physical lines; May 17 R8 recorded `1716` / `1663` C# files and `1097400` script physical lines; May 18 R9 recorded `1729` / `1676` C# files and `1108505` script physical lines; May 18 R10 recorded `1739` / `1686` C# files and `1115245` script physical lines; May 18 R11 volatile static snapshot recorded `1742` / `1689` C# files and `1119546` script physical lines; R18 recorded `1743` / `1690` C# files and `974162` PowerShell-counted script physical lines; R19 recorded `1781` / `1726` C# files and `1147077` script physical lines; R21 recorded `1807` / `1750` C# files and `1170223` script physical lines; R22 recorded `1811` / `1755` C# files and `1176132` script physical lines. R24 records `1814` / `1758` C# files and `1178627` script physical lines; rerun before treating exact values as current.
+SOURCE DRIFT DETECTED: previous R186 Atlas scan recorded `1292` / `1248` C# files and `742892` script physical lines; May 11 documentation continuation recorded `1306` / `1262`; May 13 DOC_AUDIT R4 recorded `1411` / `1365` C# files and `852315` script physical lines; May 17 R5 recorded `1653` / `1602` C# files and `1047015` script physical lines; May 17 R8 recorded `1716` / `1663` C# files and `1097400` script physical lines; May 18 R9 recorded `1729` / `1676` C# files and `1108505` script physical lines; May 18 R10 recorded `1739` / `1686` C# files and `1115245` script physical lines; May 18 R11 volatile static snapshot recorded `1742` / `1689` C# files and `1119546` script physical lines; R18 recorded `1743` / `1690` C# files and `974162` PowerShell-counted script physical lines; R19 recorded `1781` / `1726` C# files and `1147077` script physical lines; R21 recorded `1807` / `1750` C# files and `1170223` script physical lines; R22 recorded `1811` / `1755` C# files and `1176132` script physical lines; R24 recorded `1815` / `1759` C# files and `1180569` script physical lines; R25 recorded `1818` / `1761` C# files and `1183533` script physical lines; R26 recorded `1818` / `1761` C# files and `1183995` script physical lines. R27 records `1818` / `1761` C# files and `1184559` script physical lines; rerun before treating exact values as current.
 
 MASSIVE REFACTOR DETECTED: same-day script line-count delta exceeds `500` lines. Treat all earlier May 7 source-count claims as superseded by this timestamped snapshot unless a newer report states otherwise.
 
@@ -150,7 +150,7 @@ Current build-master compile state:
 - The previously cited May 11 build artifact `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` is absent from the current filesystem, as is the matching raw log.
 - Treat the May 11 compile-success line as dated report text. May 14 R43 evidence is historical external root `Hecton8*.csproj` no-restore CLI evidence, not Unity runtime proof and not a current dirty-workspace Unity Console/Play Mode/profiler/player-build certificate.
 - Unity MCP proof was not run in the May 11 continuation or DOC_AUDIT R5; do not use prior MCP-clean wording as current evidence.
-- Latest current-state overrides: `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`, plus historical baselines `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` and `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
+- Latest current-state overrides: `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R26_ROOT_ARCHITECTURE_HFI_PROMOTION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R25_ROOT_ARCHITECTURE_LONGTAIL_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`, plus historical baselines `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` and `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
 - Official Unity release-page check on 2026-05-11 found `6000.4.6f1` released on `2026-05-05`; local project evidence still pins `6000.4.1f1`. This is version drift, not upgrade approval.
 
 ## 4. External / Package Surface
@@ -278,7 +278,7 @@ Canonical entry files inside this bundle:
 
 ### 6.3 Current Live Console Truth
 
-Latest current documentation/status overrides are `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, and `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`; May 13/15 reports remain historical baselines.
+Latest current documentation/status overrides are `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R26_ROOT_ARCHITECTURE_HFI_PROMOTION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R25_ROOT_ARCHITECTURE_LONGTAIL_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, and `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`; May 13/15 reports remain historical baselines.
 `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` is historical May 11 evidence unless a later report explicitly revalidates a field.
 Fresh Unity MCP/Console proof was not captured in the May 11 documentation continuation. Older MCP readbacks from May 4-May 8 are historical snapshots only and must not be used as current Unity Console, Play Mode, profiler, GCMonitor, player-build, scene-wiring, or memory-retention proof.
 

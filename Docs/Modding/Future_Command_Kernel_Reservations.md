@@ -1,7 +1,7 @@
 # Future Command Kernel Reservations
 
-Date: 2026-05-17
-Status: CONTRACT RESERVATION / NOT PUBLIC API / PENDING RUNTIME VERIFICATION
+Date: 2026-05-19
+Status: CONTRACT RESERVATION / NOT PUBLIC API / ENVELOPE-ONLY / PENDING RUNTIME VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -23,6 +23,8 @@ This file reserves future mod command-kernel seams for systems that are not curr
 It prevents ad hoc enum expansion, direct gameplay mutation, and string-event shortcuts.
 
 Nothing in this file changes runtime behavior.
+
+SDK note: reserved kernels may be visible in Workbench previews as "unsupported future seams", but the SDK must route them to validation errors or DevNull simulation until a source owner implements the runtime kernel and the runtime playbook passes. A graph node for a reserved kernel is not a public opcode.
 
 ## Hard Boundary
 

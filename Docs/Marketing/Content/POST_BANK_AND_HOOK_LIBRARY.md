@@ -240,6 +240,160 @@ Keep text short. Use only if the image supports it.
 - ROUTE LOST
 - NOT SAFE
 
+## 2026-05-19 Ready Scenario Bundles
+
+Use these as first executable bundles once the matching asset exists. Do not post all variants. Pick one platform wave, run it, measure response, then revise.
+
+### Bundle A - First Screenshot Pack
+
+Required asset: 6-10 in-game screenshots that pass `QA/MARKETING_ASSET_QA_CHECKLIST.md` at 10/12 for Steam or 9/12 for critique posts.
+
+Steam news title:
+
+```text
+First Screenshots From Below The Light
+```
+
+Steam/news body:
+
+```text
+These are the first in-game screenshots for HECTON-8.
+
+The target is single-player deep-sea survival where pressure, salvage, machinery, and black water are the first read. We are not showing co-op, not making performance claims, and not asking the screenshots to carry features the build does not prove yet.
+
+What we are checking now:
+- does the base read as a pressure machine, not a cozy room;
+- does the player action read without a paragraph;
+- does the frame feel industrial instead of clean sci-fi;
+- does the darkness stay readable.
+```
+
+Reddit critique post:
+
+```text
+Title: Does this read as industrial underwater survival, or just generic sci-fi?
+
+I am working on HECTON-8, a single-player deep-sea survival game about pressure, salvage, machinery, and black water.
+
+I am not asking for wishlists here. I need the harsher read: in the first 5 seconds, do these screenshots communicate a playable survival loop, or are they just dark mood shots?
+
+Specific question: which frame best sells "pressure-rated machinery"?
+```
+
+X/Bluesky:
+
+```text
+First in-game HECTON-8 screenshots.
+
+Goal: pressure, salvage, machinery, black water.
+No co-op promise. No performance claim yet. Just checking whether the visual identity reads in one glance.
+```
+
+Creator warmup note:
+
+```text
+I am not sending builds yet. I am checking whether the first HECTON-8 screenshots read as industrial deep-sea survival rather than generic underwater sci-fi. If this matches your survival/horror audience, I can send the Steam page or demo later when it is ready.
+```
+
+Kill if:
+
+- comments mostly say "Subnautica clone";
+- viewers cannot identify the player verb;
+- dark frames are called unreadable more than atmospheric;
+- people assume co-op/multiplayer.
+
+### Bundle B - Steam Page Live
+
+Required asset: public Steam Coming Soon page, capsule, screenshot order, UTM tags, no co-op language, no fake performance claims.
+
+Steam/news title:
+
+```text
+HECTON-8 Steam Page Is Live
+```
+
+Steam/news body:
+
+```text
+The HECTON-8 Steam page is live.
+
+HECTON-8 is single-player-first deep-sea survival about pressure, salvage, machinery, and the cost of keeping a base alive below the light.
+
+Current page focus:
+- readable survival pressure;
+- industrial base and salvage identity;
+- black-water atmosphere;
+- Seed Ship anomaly hints where the build can show them honestly.
+
+We will publish performance details only with build, hardware, settings, and measurement context.
+```
+
+Creator email intro:
+
+```text
+Subject: HECTON-8 Steam page - single-player deep-sea survival
+
+Hi [Name],
+
+I am reaching out because your audience has shown clear interest in [creator-specific survival/horror/base-building fit].
+
+HECTON-8 is a single-player deep-sea survival game about pressure, salvage, machinery, and keeping a base alive below the light. The Steam page is now live, but I am not pretending this is a finished build and I am not selling a co-op promise.
+
+Best fit for your channel: [one specific angle].
+
+Steam: [URL]
+Screenshots/presskit: [URL]
+
+If the angle fits, I can send a short demo/preview build later when the route is stable.
+```
+
+Reddit/organic boundary:
+
+```text
+Do not post "Steam page is live" into critique communities unless self-promo is explicitly allowed.
+Use critique framing only when the post gives the community something to judge without clicking out.
+```
+
+Kill if:
+
+- Steam page visit-to-wishlist baseline is below threshold after enough data;
+- creator replies ask "what do you actually do?";
+- first screenshot does not match the short description.
+
+### Bundle C - Private Playtest Recruitment
+
+Required asset: first route complete internally, known issues list, private feedback form, no public demo promise.
+
+Public post:
+
+```text
+We are preparing a small private HECTON-8 playtest.
+
+This is not a launch, not a public demo, and not a co-op test. We need survival players who can give blunt feedback on first-route clarity, pressure/machinery readability, base systems, and performance/readability on real PCs.
+
+If selected, expect unfinished systems and a short feedback form.
+```
+
+Screening CTA:
+
+```text
+Apply only if you are comfortable testing unfinished builds and sending concrete feedback.
+```
+
+Creator/community note:
+
+```text
+I am looking for a small number of survival/base-building/horror players for a private feedback wave. No coverage expectation, no review request, no reward-for-positive-feedback structure. The goal is to find friction before public demo damage.
+```
+
+Reject applicants who:
+
+- expect co-op;
+- want streaming rights before public permission;
+- refuse feedback forms;
+- cannot provide hardware specs;
+- only want free early access.
+
 ## Thirty-Day Pre-Screenshot Posting Plan
 
 No screenshots yet means no broad public campaign. Use these as prep drafts and internal tests:

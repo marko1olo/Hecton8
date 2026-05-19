@@ -1,7 +1,7 @@
 # HECTON-8 Mod API Specification
 
-Date: 2026-05-17
-Status: MOD API DEFINED / STATIC VALIDATOR PASSING / PENDING RUNTIME VERIFICATION
+Date: 2026-05-19
+Status: ENVELOPE-ONLY MOD API SPEC / STATIC DOC UPDATE / PENDING RUNTIME VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -21,11 +21,24 @@ Evidence class: STATIC_SOURCE / STATIC_DOC
 Owner prompt: MODDING_API_SCHEMA_BUILDER  
 Companion schema: `Docs/Modding/Signal_Schema.json`
 
+## 2026-05-19 Current Runtime Authority
+
+This specification contains older source-audit material for the managed mod API. The active runtime boundary is now narrower:
+
+- `HectonAPI.Commands.RequestFuture(in FutureCommandEnvelope envelope)` is the only current command ingress for UGC.
+- `HectonAPI.Commands.Request`, `RequestAup`, and `RequestRenderInstance` return `false` while envelope-only mode is enforced.
+- Managed mod entry points, managed factories, projected managed events, direct resource proxy registration, filesystem content discovery, localization file injection, and direct asset loading are quarantined in envelope-only mode.
+- Runtime UGC packages must not rely on `.dll`, `.bundle`, `lang_*.json`, raw PNG, prefab, material, mesh, texture, audio clip, `GameObject`, `Transform`, `NativeArray`, `NativeQueue`, `GlobalDataVault`, or first-party `SignalBus<T>` access.
+- Assets are referenced by approved hashes and CRC-checked envelope opcodes, not by loose files or Unity object handles.
+- Human-friendly modder work happens in the SDK authoring layer described in [SDK_Authoring_Interface_Plan.md](SDK_Authoring_Interface_Plan.md).
+
+Any section below that describes `IHectonMod` callbacks, `SubscribeProjected`, `SubscribeNative`, cold content overlays, resource proxy resolution, or legacy command lanes is legacy/source-audit context until the runtime owner explicitly re-enables it and the verification playbook is rewritten around the envelope-only boundary.
+
 ## Source Reality
 
-The current public mod event surface is not direct access to first-party simulation lanes.
+The historical public mod event surface was not direct access to first-party simulation lanes. In the current envelope-only authority, this managed event surface is quarantined for runtime UGC.
 
-Source-backed mod surfaces:
+Legacy source-backed mod surfaces:
 
 - `HectonAPI.Events.SubscribeProjected(Action<ModEventDto>)` for selected `SignalBus<T>` projections.
 - `HectonAPI.Events.SubscribeNative(HectonNativeEventHandler)` for immutable byte copies from approved NativeQueue event lanes.
@@ -99,14 +112,45 @@ Event lifetime rules:
 
 ## Command Writes
 
-Mods request writes. They do not mutate simulation truth.
+Mods request writes. They do not mutate simulation truth. In the active envelope-only boundary, requests are fixed 64-byte `FutureCommandEnvelope` packets; legacy command APIs remain listed for source-audit continuity only.
 
-Allowed command APIs:
+Current allowed command API:
 
 - `RequestFuture(in FutureCommandEnvelope envelope)`
+
+Legacy command APIs, currently quarantined:
+
 - `Request(in ModCommand command)`
 - `RequestAup(in ModAupCommand command)`
 - `RequestRenderInstance(in ModRenderInstanceCommand command)`
+
+## SDK Authoring Contract
+
+The SDK must hide the binary envelope from casual creators without weakening the runtime boundary.
+
+Required SDK surfaces:
+
+- project/workspace creator;
+- manifest editor that emits `RequiredAPIVersion` and `ModPriority`;
+- capability selection mapped to opcode families;
+- command graph or preset authoring that proves max envelopes per frame;
+- CRC asset importer and approved asset manifest writer;
+- local 300-frame sandbox simulator with quality, thermal, rollback, quota, and rejection modeling;
+- envelope inspector for advanced authors;
+- package validator and CLI packer;
+- readable rejection reports.
+
+Forbidden SDK promises:
+
+- "drop a DLL into Mods and run it";
+- "patch any game method";
+- "subscribe to any engine event";
+- "load any bundle directly";
+- "get a GameObject";
+- "write player oxygen/inventory/save truth directly";
+- "ignore low-end thermal throttling".
+
+The SDK can offer friendly APIs in editor scripts, CLI tools, or generated packers. Those APIs must compile to package metadata, `.h8bin` tables, approved asset manifests, and `FutureCommandEnvelope` streams. The runtime still validates every envelope and may reject packets under quality, thermal, rollback, or quota pressure.
 
 Current accepted opcodes:
 
@@ -308,12 +352,13 @@ SDK builder drift: `Assets/_Project/Scripts/Editor/ModdingSDK/ModBuilderWindow.c
 
 Implementation-facing field contracts:
 
-Full payload audit: [Payload_Layout_Audit_Matrix.md](Payload_Layout_Audit_Matrix.md) records fixed sizes, `ModEventDto` offsets, event hash constants, and sequential command/result payload fields.
+Full payload audit: [Payload_Layout_Audit_Matrix.md](Payload_Layout_Audit_Matrix.md) records fixed sizes, `FutureCommandEnvelope` offsets, `ModEventDto` offsets, event hash constants, and legacy command/result payload fields.
 
 | Payload | Layout | Size | Use |
 |---|---|---:|---|
 | `ModEventDto` | explicit | 64 bytes | Projected `CombatDamage` and `WeatherChanged` event metadata. |
-| `ModCommand` | sequential | 64 bytes | Base command packet; `Payload0` packs `ModHash` low 32 bits and `RequestId` high 32 bits. |
+| `FutureCommandEnvelope` | explicit | 64 bytes | Active UGC runtime packet; opcode hash, mod signature, AUP, payload lanes, integrity hash, and padding. |
+| `ModCommand` | explicit | 64 bytes | Dormant legacy command packet; `Payload0` overlays `ModHash` low 32 bits and `RequestId` high 32 bits. |
 | `ModAupCommand` | sequential | source-defined | Position-changing command wrapper; dispatcher rebases AUP at drain time. |
 | `ModAupResponse` | sequential | 64 bytes | Async response for flow, voxel, and acoustic AUP requests. |
 | `ModRenderInstanceCommand` | sequential | source-defined | One mod instancing matrix request. |

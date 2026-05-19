@@ -123,6 +123,7 @@ namespace Hecton8.Editor
 
             EditorGUILayout.LabelField("Current Scale", state.CurrentRenderScale01.ToString("0.000"));
             EditorGUILayout.LabelField("Target Scale", state.TargetRenderScale01.ToString("0.000"));
+            EditorGUILayout.LabelField("Global Quality Weight", state.GlobalQualityWeight01.ToString("0.000"));
             EditorGUILayout.LabelField("Sharpen", state.SharpenIntensity01.ToString("0.000"));
             EditorGUILayout.LabelField("Stress EWMA", state.SystemStressEwma01.ToString("0.000"));
         }

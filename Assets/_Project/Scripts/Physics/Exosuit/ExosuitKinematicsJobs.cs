@@ -26,7 +26,7 @@ namespace Hecton8.Physics.Exosuit
         [NoAlias] public NativeArray<float> FootstepAccumulator;
         [NoAlias] public NativeArray<MechHapticSignalDTO> HapticSignals;
         [NoAlias] public NativeArray<SiltExplosionSignal> SiltSignals;
-        [NoAlias] public NativeArray<AcousticEchoTap> AcousticTaps;
+        [NoAlias] public NativeArray<ExosuitAcousticEchoTap> AcousticTaps;
 
         public float DeltaTime;
         public uint Frame;
@@ -74,7 +74,7 @@ namespace Hecton8.Physics.Exosuit
             float quality = math.saturate(math.min(inputQuality, tuningQuality));
             float2 moveAxis = SanitizeFloat2(input.MoveAxis, float2.zero);
             float verticalAxis = math.clamp(SanitizeFloat(input.VerticalAxis, 0.0f), -1.0f, 1.0f);
-            float desiredYaw = SanitizeFloat(input.DesiredYawRadians, 0.0f);
+            float desiredYaw = WrapRadians(SanitizeFloat(input.DesiredYawRadians, 0.0f));
             bool jumpRequested = (input.ActionMask & ExosuitInputActions.Jump) != 0u;
             verticalAxis = math.max(verticalAxis, math.select(0.0f, 1.0f, jumpRequested));
 
@@ -160,9 +160,10 @@ namespace Hecton8.Physics.Exosuit
                 if (midPenetration > 0.0f)
                 {
                     float sweepPush = midPenetration * ccdWeight;
-                    localPosition += midSdf.Normal * sweepPush;
+                    float3 midNormal = NormalizeWithFallback(midSdf.Normal, pushNormal);
+                    localPosition += midNormal * sweepPush;
                     pushMagnitude = math.max(pushMagnitude, sweepPush);
-                    pushNormal = midSdf.Normal;
+                    pushNormal = midNormal;
                 }
             }
 
@@ -286,7 +287,9 @@ namespace Hecton8.Physics.Exosuit
 
             bool badMath = !math.all(math.isfinite(localPosition)) ||
                            !math.all(math.isfinite(velocity)) ||
-                           !math.isfinite(pressure);
+                           !math.isfinite(pressure) ||
+                           !math.all(math.isfinite(pushNormal)) ||
+                           !math.isfinite(postPushSdf.Distance);
             if (badMath)
             {
                 localPosition = float3.zero;
@@ -305,6 +308,7 @@ namespace Hecton8.Physics.Exosuit
             state.AUP = cameraAup + new double3(snappedLocalPosition);
             state.Velocity = snappedVelocity;
             state.HydraulicPressure = math.saturate(pressure);
+            state.AnchorNormal = NormalizeWithFallback(state.AnchorNormal, pushNormal);
             state.StateMask = mask | (tuning.Flags & ExosuitStateFlags.EmergencyMockData);
             State[0] = state;
             Tuning[0] = tuning;
@@ -356,7 +360,7 @@ namespace Hecton8.Physics.Exosuit
             FootstepAccumulator[0] = accumulated - stride;
             if (AcousticTaps.IsCreated && AcousticTaps.Length > 0)
             {
-                AcousticEchoTap tap = default;
+                ExosuitAcousticEchoTap tap = default;
                 tap.AUP = aup;
                 tap.Intensity01 = 1.0f;
                 tap.EchoHash = StompHash;
@@ -434,7 +438,7 @@ namespace Hecton8.Physics.Exosuit
 
             ExoScreenDTO screen = default;
             screen.HydraulicPressure = state.HydraulicPressure;
-            screen.DepthMeters = math.max(0.0f, crush.DepthMeters);
+            screen.DepthMeters = SanitizeNonNegative(crush.DepthMeters);
             screen.StateMask = state.StateMask;
             screen.Frame = Frame;
             Screen[0] = screen;
@@ -546,9 +550,10 @@ namespace Hecton8.Physics.Exosuit
             ref float strongestPush)
         {
             float probePenetration = probeRadius - sample.Distance;
-            if (probePenetration <= 0.0f)
+            if (!math.isfinite(probePenetration) || probePenetration <= 0.0f)
                 return;
 
+            probePenetration = math.min(probePenetration, math.max(0.001f, probeRadius * 2.0f));
             float3 safeNormal = NormalizeWithFallback(sample.Normal, strongestNormal);
             correction += safeNormal * probePenetration;
             if (probePenetration > strongestPush)
@@ -562,8 +567,11 @@ namespace Hecton8.Physics.Exosuit
         private static SdfSample SampleCaveSdf(float3 localPosition, in MockTerrainSDF terrain)
         {
             float radius = math.max(1.0f, SanitizeNonNegative(terrain.CaveRadius));
-            float floorY = math.min(terrain.FloorY, terrain.CeilingY - 2.0f);
-            float ceilingY = math.max(terrain.CeilingY, floorY + 2.0f);
+            float rawFloorY = SanitizeFloat(terrain.FloorY, -2.0f);
+            float rawCeilingY = SanitizeFloat(terrain.CeilingY, rawFloorY + 2.0f);
+            float floorY = math.min(rawFloorY, rawCeilingY - 2.0f);
+            float ceilingY = math.max(rawCeilingY, floorY + 2.0f);
+            float cornerSoftness = math.clamp(SanitizeNonNegative(terrain.WallSoftnessMeters), 0.0f, 0.5f);
             float3 center = SanitizeFloat3(terrain.CaveCenterLocal, float3.zero);
             float2 radial = localPosition.xz - center.xz;
             float radialLength = math.sqrt(math.max(0.0f, math.lengthsq(radial)));
@@ -572,9 +580,10 @@ namespace Hecton8.Physics.Exosuit
             float ceilingDistance = ceilingY - localPosition.y;
 
             float distance = wallDistance;
-            float3 normal = radialLength > 0.0001f
+            float3 wallNormal = radialLength > 0.0001f
                 ? new float3(-radial.x, 0.0f, -radial.y) * math.rsqrt(math.max(radialLength * radialLength, 0.0001f))
                 : new float3(1.0f, 0.0f, 0.0f);
+            float3 normal = wallNormal;
 
             if (floorDistance < distance)
             {
@@ -586,6 +595,18 @@ namespace Hecton8.Physics.Exosuit
             {
                 distance = ceilingDistance;
                 normal = new float3(0.0f, -1.0f, 0.0f);
+            }
+
+            if (cornerSoftness > 0.0001f)
+            {
+                float wallWeight = 1.0f - Smooth01(0.0f, cornerSoftness, wallDistance - distance);
+                float floorWeight = 1.0f - Smooth01(0.0f, cornerSoftness, floorDistance - distance);
+                float ceilingWeight = 1.0f - Smooth01(0.0f, cornerSoftness, ceilingDistance - distance);
+                float3 blendedNormal =
+                    wallNormal * wallWeight +
+                    new float3(0.0f, 1.0f, 0.0f) * floorWeight +
+                    new float3(0.0f, -1.0f, 0.0f) * ceilingWeight;
+                normal = NormalizeWithFallback(blendedNormal, normal);
             }
 
             SdfSample sample;
@@ -627,6 +648,17 @@ namespace Hecton8.Physics.Exosuit
                 return target;
 
             return current + delta * (safeMaxDelta * math.rsqrt(math.max(distanceSq, 0.0001f)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float WrapRadians(float value)
+        {
+            const float TwoPi = 6.2831853071795864769f;
+            const float InvTwoPi = 0.1591549430918953358f;
+            if (!math.isfinite(value))
+                return 0.0f;
+
+            return value - math.round(value * InvTwoPi) * TwoPi;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

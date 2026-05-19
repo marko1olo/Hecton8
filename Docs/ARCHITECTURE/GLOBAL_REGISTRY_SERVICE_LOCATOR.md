@@ -17,6 +17,10 @@ This document is active only where it agrees with:
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
+## 2026-05-19 DOC_GLOBAL R28 Interior Note
+
+R28 reread confirmed this file remains static source orientation for the service-locator boundary, not proof that global authority is healthy at runtime. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`, with R27 source counters retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `57` RealtimeCSG vendor references; `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). Unity/runtime/profiler/player-build proof remains absent.
+
 Owner Source: `Assets/_Project/Scripts/Core/GlobalRegistry.cs`
 
 ## What It Is
@@ -69,6 +73,35 @@ FindObjectOfType<Foo>()
 DontDestroyOnLoad self-sovereign service
 cross-domain direct serialized field as authority
 ```
+
+## 2026-05-19 Anti-Monolith Boundary
+
+`GlobalRegistry` is allowed only as the cold authority spine. It is not the
+project brain.
+
+Rules:
+
+- Runtime systems cache service dependencies during bootstrap, `OnEnable`, or
+  explicit dependency injection.
+- Hot paths consume cached fields, cached snapshots, DataVault handles, or signal
+  snapshots.
+- A new registry service slot requires an existing owner, a shutdown path, and a
+  reason it cannot remain local to its domain.
+- Registry growth must reduce concrete coupling. Adding a concrete leaf-domain
+  type to Core is architectural debt unless an interface boundary is impossible.
+- Service changes after bootstrap use a typed ready/changed/shutdown signal so
+  consumers refresh cached fields without polling registry slots.
+
+Forbidden:
+
+- Treating `GlobalRegistry` as a live settings bus.
+- Reading `GlobalRegistry.*` every `Tick`, `FixedTick`, UI refresh, physics solve,
+  AI solve, render upload, or logistics pass.
+- Adding slots for future/absent services.
+- Hiding registry polls inside `Resolve*`, `Refresh*`, `Prepare*`, `Try*`, or
+  helper methods called by hot paths.
+
+See `GLOBAL_AUTHORITY_BOUNDARIES.md` for the cross-surface decision table.
 
 ## Singleton Terminal Offense
 

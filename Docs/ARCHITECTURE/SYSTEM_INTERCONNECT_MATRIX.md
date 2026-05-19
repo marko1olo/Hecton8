@@ -17,6 +17,10 @@ This document is active only where it agrees with:
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
+## 2026-05-19 DOC_GLOBAL R28 Interior Note
+
+R28 reread confirmed this matrix remains static interconnect/source orientation, not proof that every lane is runtime-clean, overflow-safe, GC-clean, or scene-wired. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`, with R27 source counters retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `57` RealtimeCSG vendor references; `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). Unity/runtime/profiler/player-build proof remains absent.
+
 Mandates followed:
 
 - `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
@@ -43,10 +47,20 @@ Current-state boundary:
 - This matrix maps lane ownership and flush order.
 - It is not runtime profiler proof. Code-validator status requires a linked artifact path, command, timestamp, and edited-script list; until then this matrix is `STATIC_DOC / STATIC_SOURCE` only.
 - `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` remains the historic risk authority for event cascade/depth concerns.
+- `GLOBAL_AUTHORITY_BOUNDARIES.md` is the current authority for deciding whether a route belongs in `GlobalRegistry`, `SignalBus<T>`, `GlobalSignals`, `HectonEventBus`, or `GlobalDataVault`.
+- `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md` owns the current review queues for registry breadth, EventBus/signal split, legacy direct queues, and DataVault/native ownership migration.
 
 ## Typed Signal-Lane Orientation
 
 The old five-bucket bus summary is legacy shorthand only. Current ownership uses the 9-echelon / 85-domain map plus typed `SignalBus<T>` and `NativeQueue` lanes; Core/Env/Player/Base/AI are local reading buckets, not complete architecture coverage or exclusive cross-domain authority.
+
+2026-05-19 authority correction:
+
+- `HectonEventBus` is a mod/API/cold boundary, not the first-party gameplay bus.
+- `SignalBus<T>` is the default first-party broadcast path for hot or cross-domain state.
+- `GlobalSignals` direct queues are retained bridge infrastructure until each lane is either documented as owned or migrated.
+- `GlobalRegistry` service rebound events are lifecycle notifications only; the registry is not a state-change bus.
+- `GlobalDataVault` owns shared native state only when the buffer has `BufferID`, `SystemID`, generation, lifetime, disposal, and stale-handle behavior.
 
 | Legacy bucket | Runtime scope | Representative lanes |
 |---|---|---|

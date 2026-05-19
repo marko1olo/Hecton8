@@ -92,7 +92,7 @@ namespace Hecton8.AI
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 24)]
-    internal partial struct MockAcousticSignal
+    internal partial struct PredatorMockAcousticSignal
     {
         public float3 Position;
         public float Timestamp;
@@ -3409,7 +3409,7 @@ namespace Hecton8.AI
 
         internal static JobHandle ScheduleMockStimulusProbe(
             NativeArray<PredatorCognitionDTO> dtos,
-            NativeQueue<MockAcousticSignal>.ParallelWriter acousticSignals,
+            NativeQueue<PredatorMockAcousticSignal>.ParallelWriter acousticSignals,
             NativeArray<MockLightSource> lightSources,
             NativeArray<SignalWardenMockDamageSignal> damageSignals,
             uint seed,
@@ -3435,7 +3435,7 @@ namespace Hecton8.AI
         private unsafe struct MockPredatorStimulusJob : IJobParallelFor
         {
             [NativeDisableParallelForRestriction] public NativeArray<PredatorCognitionDTO> Dtos;
-            public NativeQueue<MockAcousticSignal>.ParallelWriter AcousticSignals;
+            public NativeQueue<PredatorMockAcousticSignal>.ParallelWriter AcousticSignals;
             [NativeDisableParallelForRestriction] public NativeArray<MockLightSource> LightSources;
             [NativeDisableParallelForRestriction] public NativeArray<SignalWardenMockDamageSignal> DamageSignals;
             public uint Seed;
@@ -3453,7 +3453,7 @@ namespace Hecton8.AI
                 if (random.NextFloat() < 0.25f)
                 {
                     float3 noiseOffset = ResolveDominantAxis(new float3(random.NextFloat(-1f, 1f), random.NextFloat(-0.4f, 0.4f), random.NextFloat(-1f, 1f)), forward);
-                    MockAcousticSignal acoustic = default;
+                    PredatorMockAcousticSignal acoustic = default;
                     acoustic.Position = current + (noiseOffset * random.NextFloat(4f, 24f));
                     acoustic.Timestamp = CurrentTime;
                     acoustic.Intensity = random.NextFloat(0.35f, 1f);

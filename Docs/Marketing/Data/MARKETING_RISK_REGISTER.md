@@ -1,0 +1,70 @@
+# HECTON-8 Marketing Risk Register
+
+Status: living risk table
+Owner lane: SHINOBU_81 / risk control
+Runtime impact: none
+
+## Purpose
+
+This file lists the ways HECTON-8 marketing can fail before and after first screenshots. Every risk needs a prevention action and a response owner.
+
+## Risk Table
+
+| ID | Risk | Severity | Likelihood | Prevention | Response |
+|---|---|---:|---:|---|---|
+| RISK-001 | Public copy implies co-op. | High | Medium | No-coop QA on every asset. | Correct copy publicly and update FAQ. |
+| RISK-002 | Looks like a Subnautica clone. | High | Medium | Lead with machinery, pressure, grime, Seed Ship, not colorful fish. | Shift asset order and copy. |
+| RISK-003 | Screenshots look like concept art/AI. | High | Medium | Use real gameplay, UI/action, build labels. | Replace assets; clarify capture source. |
+| RISK-004 | Paid ads burn budget before Steam page converts. | High | Medium | Spend gates and micro-tests. | Stop spend and analyze UTM. |
+| RISK-005 | Creator spam damages reputation. | High | Medium | Verification batches, personalization, no mass send. | Apologize once, stop batch, revise workflow. |
+| RISK-006 | Fake curator/key scam. | High | High | Curator Connect first, key log, deny raw requests. | Deny, log, revoke/ban if needed. |
+| RISK-007 | Performance claims unsupported. | High | Medium | Ban FPS/zero-stutter copy without receipts. | Remove claim, publish measured context later. |
+| RISK-008 | Demo too thin, reviews call it empty. | High | Medium | Demo gate, content scope honesty. | Patch/clarify/store copy; do not argue. |
+| RISK-009 | Resource loop called tedious. | Medium | Medium | Scarcity/bounty curve, demo survey. | Product escalation to economy loop. |
+| RISK-010 | Base builder shown before polished. | Medium | Medium | Screenshot/clip QA. | Delay base marketing. |
+| RISK-011 | Reddit post removed or called spam. | Medium | High | Same-day rule read, disclose dev status. | Do not repost; log mod guidance. |
+| RISK-012 | Press pitch sent without assets. | Medium | Medium | Presskit gate. | Pause press beat. |
+| RISK-013 | Early Access copy overpromises. | High | Medium | EA questionnaire/copy review. | Rewrite page; public clarification. |
+| RISK-014 | Discord opens too early and dies. | Medium | Medium | Discord gate. | Keep quiet/read-only or delay public invite. |
+| RISK-015 | Localization mistranslates promises. | Medium | Medium | Native/fluent review before public use. | Correct localized copy. |
+| RISK-016 | Steam tags imply missing features. | High | Medium | Tag QA and weekly drift check. | Update tags and FAQ. |
+| RISK-017 | Showcase fee produces no conversion. | Medium | Medium | Event fit scoring and UTM. | Kill venue; document loss. |
+| RISK-018 | Developer review responses amplify negativity. | High | Medium | Review response playbook. | Stop responding; issue factual pinned update. |
+| RISK-019 | Asset library uses outdated screenshots. | Medium | Medium | Status/version metadata. | Deprecate and replace. |
+| RISK-020 | Trailer has no gameplay verb. | High | Medium | Trailer beat sheet. | Recut before publish. |
+| RISK-021 | SN2 launch momentum makes HECTON-8 look like a late derivative. | Critical | High | Never lead with competitor comparison; first assets must show pressure, machinery, corrosion, and industrial black-water identity in 5 seconds. | Reorder Steam screenshots/copy toward machinery and salvage; kill generic underwater shots. |
+| RISK-022 | Agents keep producing docs instead of executable rows/assets. | High | High | Control tower anti-sprawl rule; every task ends in verified row, scored asset, revised copy, source update, risk update, or proceed/revise/kill decision. | Stop new docs and assign current backlog rows only. |
+| RISK-023 | First creator batch goes to high-value creators before the asset matches their format. | High | Medium | CRM status `NEEDS_ASSET` blocks send; require screenshot/clip/demo per lead. | Pause outreach, move rows back to `VERIFY_BEFORE_CONTACT`, and rebuild asset-fit notes. |
+| RISK-024 | Public posts mine SN2 complaints and look petty. | High | Medium | Monitoring file labels SN2 pain as internal research only; public copy cannot mention competitor failures. | Delete/rewrite post, issue neutral correction if needed. |
+| RISK-025 | Steam short description sells mood but not gameplay. | High | Medium | Cold-test A/B/C copy against screenshot; require viewers to name minute-to-minute action. | Use pressure/salvage baseline until base/anomaly proof exists. |
+
+## Severity Definitions
+
+| Severity | Meaning |
+|---|---|
+| Low | Annoying, limited damage. |
+| Medium | Wastes time or weakens conversion. |
+| High | Can damage trust, reviews, or budget. |
+| Critical | Can materially harm launch viability. |
+
+## Weekly Risk Review
+
+```text
+Week:
+New risks:
+Closed risks:
+Top 3 active risks:
+Prevention actions:
+Owner:
+Escalation:
+```
+
+## Current Top Risks
+
+1. No real screenshots yet means all public marketing must remain gated.
+2. SN2 is live and strong; HECTON-8 must not rely on competitor weakness.
+3. Co-op hallucinations must stay out of copy.
+4. Raw creator leads must not become spam.
+5. Performance claims must wait for proof.
+6. HECTON-8 must look industrial/pressure-driven, not derivative underwater survival.
+7. Agent output must become verified rows and scored assets, not more disconnected docs.

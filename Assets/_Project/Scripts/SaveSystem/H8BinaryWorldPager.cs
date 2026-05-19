@@ -110,6 +110,7 @@ namespace Hecton8.Core.Persistence.Paging
         private CacheLineInt _walCorruptCount;
         private CacheLineInt _walAppendFailureCount;
         private CacheLineInt _walMicroStallCount;
+        private CacheLineInt _workerFlushRequestCount;
         private int _hotStateBytes;
         private uint _hotStateSchemaHash;
         private uint _hotStateFrame;
@@ -604,30 +605,10 @@ namespace Hecton8.Core.Persistence.Paging
 
         public void Flush()
         {
-            FileStream stream = _stream;
-            if (stream == null)
+            if (!IsInitialized)
                 return;
 
-            try
-            {
-                lock (_streamLock)
-                {
-                    stream.Flush(true);
-                }
-
-                FileStream walStream = _walStream;
-                if (walStream != null)
-                {
-                    lock (_walLock)
-                    {
-                        walStream.Flush(true);
-                    }
-                }
-            }
-            catch
-            {
-                Interlocked.Increment(ref _ioErrorCount.Value);
-            }
+            Interlocked.Exchange(ref _workerFlushRequestCount.Value, 1);
         }
 
         public void Dispose()
@@ -840,6 +821,7 @@ namespace Hecton8.Core.Persistence.Paging
             _readQueueHead = 0;
             _readQueueTail = 0;
             _readQueueCount.Value = 0;
+            _workerFlushRequestCount.Value = 0;
         }
 
         private void ClearPagerTransientBuffers()
@@ -959,6 +941,12 @@ namespace Hecton8.Core.Persistence.Paging
                             break;
                     }
 
+                    if (TryConsumeWorkerFlushRequest())
+                    {
+                        didWork = true;
+                        FlushStreamsOnWorker();
+                    }
+
                     if (!didWork)
                         Thread.Sleep(WorkerIdleSleepMilliseconds);
                 }
@@ -1054,8 +1042,42 @@ namespace Hecton8.Core.Persistence.Paging
             Volatile.Write(ref _pendingReadCount.Value, 0);
             Volatile.Write(ref _writeQueueCount.Value, 0);
             Volatile.Write(ref _readQueueCount.Value, 0);
+            Volatile.Write(ref _workerFlushRequestCount.Value, 0);
             Interlocked.Increment(ref _ioErrorCount.Value);
             DumpBlackBox();
+        }
+
+        private bool TryConsumeWorkerFlushRequest()
+        {
+            return Interlocked.Exchange(ref _workerFlushRequestCount.Value, 0) != 0;
+        }
+
+        private void FlushStreamsOnWorker()
+        {
+            try
+            {
+                FileStream stream = _stream;
+                if (stream != null)
+                {
+                    lock (_streamLock)
+                    {
+                        stream.Flush(true);
+                    }
+                }
+
+                FileStream walStream = _walStream;
+                if (walStream != null)
+                {
+                    lock (_walLock)
+                    {
+                        walStream.Flush(true);
+                    }
+                }
+            }
+            catch
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
         }
 
         private bool TryDequeueWrite(out PageWriteCommand command)
@@ -1659,7 +1681,7 @@ namespace Hecton8.Core.Persistence.Paging
                             hotStateBytes,
                             hotStateCrc,
                             hotStateSchemaHash,
-                            unchecked((ulong)DateTime.UtcNow.Ticks));
+                            frame);
 
                         uint recordCrc = ComputeCrc32Pair(walHeaderPtr, WalHeaderBytes, storedPayload, storedBytes);
                         if (hotStateBytes > 0)

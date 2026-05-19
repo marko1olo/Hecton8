@@ -1,7 +1,7 @@
 # HECTON-8 Mod API Surface Audit Matrix
 
-Date: 2026-05-17
-Status: STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION  
+Date: 2026-05-19
+Status: ENVELOPE-ONLY STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -20,6 +20,17 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 Owner prompt: MODDING_API_SCHEMA_BUILDER  
 Source file: `Assets/_Project/Scripts/ModdingAPI/HectonAPI.cs`  
 Companion schema: `Docs/Modding/Signal_Schema.json`
+
+## 2026-05-19 Envelope-Only Override
+
+The public facade inventory below records source shape, not current runtime permission. While envelope-only mode is active:
+
+- `Commands.RequestFuture` is the active UGC ingress;
+- `Commands.Request`, `RequestAup`, and `RequestRenderInstance` are legacy/quarantined and return `false`;
+- `Events`, `Resources`, `Localization`, content overlay, and managed callback surfaces must not be treated as public runtime mod rights;
+- SDK tools may expose friendly authoring APIs, but runtime packets still cross only as 64-byte `FutureCommandEnvelope` records.
+
+Use [Mod_API_Sandbox_Quarantine.md](Mod_API_Sandbox_Quarantine.md) for runtime authority and [SDK_Authoring_Interface_Plan.md](SDK_Authoring_Interface_Plan.md) for modder-facing tool design.
 
 ## Extraction Evidence
 

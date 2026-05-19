@@ -1,7 +1,7 @@
 # Sample Mod Spec - Infinite O2
 
-Date: 2026-05-17
-Status: SAMPLE_SPEC / NO_RUNTIME_AUTHORITY
+Date: 2026-05-19
+Status: ENVELOPE-ONLY SAMPLE_SPEC / NO_RUNTIME_AUTHORITY
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -18,6 +18,20 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Owner prompt: MODDING_API_SCHEMA_BUILDER
+
+## 2026-05-19 Envelope-Only Override
+
+The managed sample below is retained only as a historical source-audit pattern. In current envelope-only UGC mode, this package shape is rejected because it declares `EntryAssembly` and `EntryType`.
+
+The current SDK-safe Infinite O2 sample is:
+
+- author a setting in the Workbench;
+- persist the setting in package/mod-owned metadata when a safe save path is approved;
+- emit no gameplay mutation until an engine-owned `SurvivalOverride` envelope opcode exists;
+- if the future opcode exists, emit a bounded TTL `FutureCommandEnvelope`;
+- accept rejection and show the mod as inactive when the engine refuses the packet.
+
+There is still no public oxygen mutation authority.
 
 ## Source-Backed Boundary
 

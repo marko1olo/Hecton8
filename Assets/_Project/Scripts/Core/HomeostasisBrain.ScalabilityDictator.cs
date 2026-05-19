@@ -127,6 +127,7 @@ namespace Hecton8.Core
         private const float QualityShaderEpsilon = 0.0005f;
         private const float MaxGcFreezePulseSeconds = 5f;
         private const uint DictatorReasonHash = 0x53484933u; // SHI3
+        private const uint ScalabilityTelemetryFlagSanitized = 1u << 31;
         private const string ScalabilityDumpFileName = "Dump_SCALABILITY_DICTATOR.bin";
         private const string ScalabilityH8DumpFileName = "Dump_SCALABILITY_DICTATOR.h8dump";
         private const string ScalabilityCsvFileName = "scalability_curves.csv";
@@ -198,26 +199,26 @@ namespace Hecton8.Core
         private static int _scalabilityTelemetrySampleCount;
 
         /// <summary>Current culling multiplier written by the dictator.</summary>
-        public static float CullingMultiplier => _cullingMultiplier;
+        public static float CullingMultiplier => SanitizeCullingMultiplier(_cullingMultiplier);
 
         /// <summary>Continuous scalar: 1.0 means visual overkill, 0.0 means minimum survival.</summary>
-        public static float GlobalQualityWeight => _globalQualityWeight;
+        public static float GlobalQualityWeight => SanitizeQualityWeight01(_globalQualityWeight, 0f);
 
         /// <summary>Continuous update-budget scalar for time-sliced systems.</summary>
-        public static float FractionalTimeSlice => _fractionalTimeSlice;
+        public static float FractionalTimeSlice => ResolveFractionalTimeSliceFromWeight(GlobalQualityWeight);
 
         /// <summary>Continuous render-scale scalar derived from the global quality weight.</summary>
-        public static float TargetRenderScale01 => _targetRenderScale01;
+        public static float TargetRenderScale01 => ResolveRenderScaleFromWeight(GlobalQualityWeight);
 
         /// <summary>Probability threshold for deterministic stochastic decimation callers.</summary>
-        public static float StochasticDecimationThreshold => math.saturate(_globalQualityWeight);
+        public static float StochasticDecimationThreshold => SanitizeQualityWeight01(_globalQualityWeight, 0f);
 
         /// <summary>
         /// Deterministic probability gate for callers that need smooth work decimation.
         /// </summary>
         public static bool ShouldExecuteStochasticUpdate(uint stableHash)
         {
-            float weight = math.saturate(_globalQualityWeight);
+            float weight = SanitizeQualityWeight01(_globalQualityWeight, 0f);
             if (weight <= 0f)
                 return false;
             if (weight >= 1f)
@@ -267,9 +268,9 @@ namespace Hecton8.Core
             _lastMockTerrainScheduleFrame = -MockTerrainSamplerCadenceFrames;
             _lastMockTerrainQualityBucket = -1;
             _lastMockTerrainFlags = 0u;
-            _globalQualityWeight = math.clamp(_hardwareMaxQualityWeight, 0f, 1f);
-            _fractionalTimeSlice = 1f;
-            _targetRenderScale01 = 1f;
+            _globalQualityWeight = SanitizeQualityWeight01(_hardwareMaxQualityWeight, LowHardwareMaxQualityWeight);
+            _fractionalTimeSlice = ResolveFractionalTimeSliceFromWeight(_globalQualityWeight);
+            _targetRenderScale01 = ResolveRenderScaleFromWeight(_globalQualityWeight);
             _lastPublishedGlobalQualityWeight = ForcedQualityWeightDisabled;
             _lastAppliedRenderScale01 = ForcedQualityWeightDisabled;
             _lastAppliedRenderPressureLevel = 0;
@@ -283,17 +284,23 @@ namespace Hecton8.Core
             _scalabilityTelemetrySampleCount = 0;
             hardwareMetrics[(int)HardwareMetricSlot.VramPressure01] = 0f;
 
-            TryResolveScalabilityDictatorBuffers(
-                out NativeArray<SystemHealthDTO> health,
-                out NativeArray<ScalabilityStateDTO> state,
-                out NativeArray<MockHeavyLoadSignal> heavyLoad,
-                out NativeArray<MockTerrainSamplerStatus> terrainSampler,
-                out NativeArray<byte> csvScratch);
-            MemClearIfCreated(health);
-            MemClearIfCreated(state);
-            MemClearIfCreated(heavyLoad);
-            MemClearIfCreated(terrainSampler);
-            MemClearIfCreated(csvScratch);
+            IDataVault vault = _dataVault;
+            if (EnsureScalabilityStateHandles(vault))
+            {
+                MemClearIfCreated(_systemHealthDtoHandle.Resolve(vault));
+                MemClearIfCreated(_scalabilityStateHandle.Resolve(vault));
+            }
+
+            if (EnsureMockHeavyLoadHandle(vault))
+                MemClearIfCreated(_mockHeavyLoadHandle.Resolve(vault));
+
+            if (EnsureMockTerrainSamplerStatusHandle(vault))
+                MemClearIfCreated(_mockTerrainSamplerStatusHandle.Resolve(vault));
+
+#if UNITY_EDITOR
+            if (TryResolveCsvScratch(out NativeArray<byte> csvScratch))
+                MemClearIfCreated(csvScratch);
+#endif
             if (TryResolveScalabilityTelemetry(out NativeArray<ScalabilityTelemetryEntry> telemetry))
                 MemClearIfCreated(telemetry);
             GenerateEmergencyMockProfiles();
@@ -408,6 +415,51 @@ namespace Hecton8.Core
             return true;
         }
 
+        private static float SanitizeQualityWeight01(float qualityWeight, float fallback)
+        {
+            if (math.isfinite(qualityWeight))
+                return math.saturate(qualityWeight);
+
+            return math.isfinite(fallback) ? math.saturate(fallback) : 0f;
+        }
+
+        private static float SanitizePressure01(float pressure, float fallback)
+        {
+            if (math.isfinite(pressure))
+                return math.saturate(pressure);
+
+            return math.isfinite(fallback) ? math.saturate(fallback) : 1f;
+        }
+
+        private static float SanitizePositiveFrameMs(float frameMs)
+        {
+            return math.isfinite(frameMs) && frameMs > 0f
+                ? frameMs
+                : ResolveTargetFrameMs(ResolveTargetFrameRate());
+        }
+
+        private static float ResolveFractionalTimeSliceFromWeight(float qualityWeight)
+        {
+            float weight = SanitizeQualityWeight01(qualityWeight, 0f);
+            return math.lerp(MinimumFractionalTimeSlice, 1f, weight);
+        }
+
+        private static float ResolveRenderScaleFromWeight(float qualityWeight)
+        {
+            float weight = SanitizeQualityWeight01(qualityWeight, 0f);
+            return math.lerp(MinimumRenderScale01, 1f, weight);
+        }
+
+        private static float SanitizeCullingMultiplier(float multiplier)
+        {
+            return math.isfinite(multiplier) ? math.clamp(multiplier, 0.4f, 1f) : 1f;
+        }
+
+        private static float SanitizeLowCullingMultiplier(float multiplier)
+        {
+            return math.isfinite(multiplier) ? math.clamp(multiplier, 0.4f, 1f) : DefaultLowCullingMultiplier;
+        }
+
         private static float SampleStopwatchFrameMilliseconds(float fallbackDeltaTime, float targetFps)
         {
             long now = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -440,7 +492,7 @@ namespace Hecton8.Core
             if (TryReadMockHeavyLoad(out MockHeavyLoadSignal mock) &&
                 (mock.Flags & MockHeavyLoadSignal.FlagEnabled) != 0u)
             {
-                pressure = math.max(pressure, math.saturate(mock.VramPressure01));
+                pressure = math.max(pressure, SanitizePressure01(mock.VramPressure01, 0f));
             }
 
             pressure = math.isfinite(pressure) ? math.saturate(pressure) : 1f;
@@ -476,22 +528,27 @@ namespace Hecton8.Core
         {
             TryPollCsvOverrides(frame);
 
-            float effectiveFrameMs = frameMs;
-            float effectiveVramPressure01 = vramPressure01;
+            float safeTargetFrameMs = math.isfinite(targetFrameMs) && targetFrameMs > 0f
+                ? targetFrameMs
+                : ResolveTargetFrameMs(ResolveTargetFrameRate());
+            float effectiveFrameMs = math.isfinite(frameMs) && frameMs > 0f ? frameMs : safeTargetFrameMs;
+            float effectiveVramPressure01 = SanitizePressure01(vramPressure01, 1f);
+            float safeCpuTempC = math.isfinite(cpuTempC) ? cpuTempC : 85f;
+            float safeJitterSigmaMs = math.isfinite(jitterSigmaMs) && jitterSigmaMs > 0f ? jitterSigmaMs : 0f;
             _mockHeavyLoadActive = false;
             if (TryReadMockHeavyLoad(out MockHeavyLoadSignal mock) &&
                 (mock.Flags & MockHeavyLoadSignal.FlagEnabled) != 0u)
             {
-                effectiveVramPressure01 = math.max(effectiveVramPressure01, math.saturate(mock.VramPressure01));
+                effectiveVramPressure01 = math.max(effectiveVramPressure01, SanitizePressure01(mock.VramPressure01, 0f));
                 _mockHeavyLoadActive = true;
             }
 
-            float frameOverTarget01 = math.saturate((effectiveFrameMs - targetFrameMs) * math.rcp(math.max(0.001f, targetFrameMs)));
+            float frameOverTarget01 = math.saturate((effectiveFrameMs - safeTargetFrameMs) * math.rcp(math.max(0.001f, safeTargetFrameMs)));
             float frameCurve = frameOverTarget01 * frameOverTarget01;
             float vramGuard01 = math.saturate((effectiveVramPressure01 - VramSpikeThreshold) * math.rcp(math.max(0.001f, 1f - VramSpikeThreshold)));
             float vramCurve = vramGuard01 * vramGuard01 * (3f - 2f * vramGuard01);
-            float thermal01 = math.saturate((cpuTempC - 55f) * math.rcp(30f));
-            float jitter01 = math.saturate(jitterSigmaMs * 0.5f);
+            float thermal01 = math.saturate((safeCpuTempC - 55f) * math.rcp(30f));
+            float jitter01 = math.saturate(safeJitterSigmaMs * 0.5f);
             float polynomial = math.saturate(frameCurve * 0.35f + vramCurve * 0.45f + thermal01 * 0.15f + jitter01 * 0.05f);
             float raw = math.max(math.saturate(baseRawShi), polynomial);
 
@@ -500,7 +557,7 @@ namespace Hecton8.Core
             if (effectiveFrameMs > CriticalFrameDumpThresholdMs)
                 raw = math.max(raw, 0.92f);
             if (lowTier)
-                raw = math.max(raw, _hardwareShiFloor);
+                raw = math.max(raw, SanitizePressure01(_hardwareShiFloor, 0f));
 
             hardwareMetrics[(int)HardwareMetricSlot.VramPressure01] = effectiveVramPressure01;
 
@@ -510,7 +567,8 @@ namespace Hecton8.Core
         private static float ApplyHardwareShiFloor(float shi)
         {
             float clamped = math.isfinite(shi) ? math.saturate(shi) : 1f;
-            return _hardwareShiFloor > 0f ? math.max(clamped, _hardwareShiFloor) : clamped;
+            float hardwareFloor = SanitizePressure01(_hardwareShiFloor, 0f);
+            return hardwareFloor > 0f ? math.max(clamped, hardwareFloor) : clamped;
         }
 
         private static ulong ApplyDictatorPressurePolicy(
@@ -521,18 +579,21 @@ namespace Hecton8.Core
             ref ushort flags,
             NativeArray<float> hardwareMetrics)
         {
-            float vramPressure01 = hardwareMetrics[(int)HardwareMetricSlot.VramPressure01];
-            float thermalIndex = math.saturate((hardwareMetrics[(int)HardwareMetricSlot.CpuTempC] - 55f) * math.rcp(30f));
-            float emergencyThreshold = math.clamp(_emergencyThresholdOverride, 0.01f, 1f);
+            float vramPressure01 = SanitizePressure01(hardwareMetrics[(int)HardwareMetricSlot.VramPressure01], 1f);
+            float cpuTempC = hardwareMetrics[(int)HardwareMetricSlot.CpuTempC];
+            float thermalIndex = math.isfinite(cpuTempC) ? math.saturate((cpuTempC - 55f) * math.rcp(30f)) : 1f;
+            float systemHealth = SanitizePressure01(_systemHealthIndex01, 1f);
+            float safeFrameMs = SanitizePositiveFrameMs(frameMs);
+            float emergencyThreshold = SanitizeTunerEmergencyThreshold(_emergencyThresholdOverride);
 
-            if (_systemHealthIndex01 >= emergencyThreshold)
+            if (systemHealth >= emergencyThreshold)
             {
                 _lowTierEmergencyActive = true;
                 _emergencyReleaseCounter = 0;
             }
             else if (_lowTierEmergencyActive)
             {
-                if (_systemHealthIndex01 < EmergencyReleaseThreshold)
+                if (systemHealth < EmergencyReleaseThreshold)
                 {
                     if (_emergencyReleaseCounter < int.MaxValue)
                         _emergencyReleaseCounter++;
@@ -542,7 +603,7 @@ namespace Hecton8.Core
                     _emergencyReleaseCounter = 0;
                 }
 
-                int releaseFrames = math.max(1, _hysteresisReleaseFrames);
+                int releaseFrames = SanitizeTunerHysteresisFrames(_hysteresisReleaseFrames);
                 if (_emergencyReleaseCounter >= releaseFrames)
                 {
                     _lowTierEmergencyActive = false;
@@ -550,7 +611,7 @@ namespace Hecton8.Core
                 }
             }
 
-            bool mathLodLow = _systemHealthIndex01 > MathLodLowThreshold ||
+            bool mathLodLow = systemHealth > MathLodLowThreshold ||
                               vramPressure01 > VramOomThreshold ||
                               _lowTierEmergencyActive ||
                               _hardwareLowTierLocked;
@@ -590,10 +651,10 @@ namespace Hecton8.Core
                 targetMask &= ~(ulong)SystemBit.VramShedding;
             }
 
-            bool squeezeCulling = _systemHealthIndex01 > MathLodLowThreshold || _lowTierEmergencyActive;
+            bool squeezeCulling = systemHealth > MathLodLowThreshold || _lowTierEmergencyActive;
             if (squeezeCulling)
                 targetMask |= (ulong)SystemBit.CullingDistanceSqueeze;
-            else if (_systemHealthIndex01 < EmergencyReleaseThreshold)
+            else if (systemHealth < EmergencyReleaseThreshold)
                 targetMask &= ~(ulong)SystemBit.CullingDistanceSqueeze;
 
             if (_mockHeavyLoadActive)
@@ -601,23 +662,23 @@ namespace Hecton8.Core
             else
                 targetMask &= ~(ulong)SystemBit.MockHeavyLoad;
 
-            if (_systemHealthIndex01 > 0.95f)
+            if (systemHealth > 0.95f)
             {
                 targetMask |= (ulong)SystemBit.AiOneHz;
                 if (targetLevel < 3)
                     targetLevel = 3;
             }
 
-            ApplyVisualOverkillPolicy(ref targetMask);
-            ApplyGarbageCollectorPolicy(frameMs, ref targetMask);
+            ApplyVisualOverkillPolicy(systemHealth, ref targetMask);
+            ApplyGarbageCollectorPolicy(safeFrameMs, ref targetMask);
             SetMathLodLowLease(mathLodLow);
-            UpdateCullingMultiplier(math.lerp(1f, _lowCullingMultiplier, ResolveMathLodLowWeight()));
+            UpdateCullingMultiplier(math.lerp(1f, SanitizeLowCullingMultiplier(_lowCullingMultiplier), ResolveMathLodLowWeight()));
             UpdateRegistryKillMask(targetMask);
-            WriteDictatorState(frameMs, vramPressure01, thermalIndex, targetMask);
+            WriteDictatorState(safeFrameMs, vramPressure01, thermalIndex, targetMask);
             ScheduleMockTerrainSamplerJob(frame, targetMask);
 
-            bool survivalFailure = frameMs > ScalabilityHardFailFrameMs && _globalQualityWeight <= 0.0001f;
-            bool emergencyFailure = frameMs > CriticalFrameDumpThresholdMs &&
+            bool survivalFailure = safeFrameMs > ScalabilityHardFailFrameMs && GlobalQualityWeight <= 0.0001f;
+            bool emergencyFailure = safeFrameMs > CriticalFrameDumpThresholdMs &&
                                     (targetMask & (ulong)SystemBit.LowTierEmergency) != 0UL;
             if (!_scalabilityDumped && (survivalFailure || emergencyFailure))
             {
@@ -633,7 +694,7 @@ namespace Hecton8.Core
             return targetMask;
         }
 
-        private static void ApplyVisualOverkillPolicy(ref ulong targetMask)
+        private static void ApplyVisualOverkillPolicy(float systemHealth, ref ulong targetMask)
         {
             if (_hardwareLowTierLocked)
             {
@@ -647,14 +708,14 @@ namespace Hecton8.Core
             {
                 _visualOverkillActive = true;
             }
-            else if (_systemHealthIndex01 < VisualOverkillEnableThreshold)
+            else if (systemHealth < VisualOverkillEnableThreshold)
             {
                 if (_visualOverkillCounter < int.MaxValue)
                     _visualOverkillCounter++;
                 if (_visualOverkillCounter >= DefaultVisualOverkillFrames)
                     _visualOverkillActive = true;
             }
-            else if (_systemHealthIndex01 > VisualOverkillRevokeThreshold)
+            else if (systemHealth > VisualOverkillRevokeThreshold)
             {
                 _visualOverkillActive = false;
                 _visualOverkillCounter = 0;
@@ -682,7 +743,8 @@ namespace Hecton8.Core
             _gcSafeBaseMenuArmed = false;
             return;
 #else
-            if ((gen0Spike || heapSpike) && _systemHealthIndex01 > MathLodLowThreshold)
+            float systemHealth = SanitizePressure01(_systemHealthIndex01, 1f);
+            if ((gen0Spike || heapSpike) && systemHealth > MathLodLowThreshold)
             {
                 targetMask |= (ulong)SystemBit.GcFreeze;
                 if (!_gcFrozenByDictator && GarbageCollector.GCMode != GarbageCollector.Mode.Disabled)
@@ -700,9 +762,10 @@ namespace Hecton8.Core
                 if (_gcFreezeFramesRemaining > 0)
                     _gcFreezeFramesRemaining--;
 
+                float safeFrameMs = SanitizePositiveFrameMs(frameMs);
                 bool safeBaseMenu = _gcSafeBaseMenuArmed &&
-                                    _systemHealthIndex01 < 0.35f &&
-                                    frameMs < ResolveTargetFrameMs(ResolveTargetFrameRate());
+                                    systemHealth < 0.35f &&
+                                    safeFrameMs < ResolveTargetFrameMs(ResolveTargetFrameRate());
                 bool pulseExpired = _gcFreezeFramesRemaining <= 0;
                 if (safeBaseMenu || pulseExpired)
                 {
@@ -738,17 +801,19 @@ namespace Hecton8.Core
 
         private static float ResolveMathLodLowWeight()
         {
+            float qualityWeight = SanitizeQualityWeight01(_globalQualityWeight, 0f);
+            float systemHealth = SanitizePressure01(_systemHealthIndex01, 1f);
             float qualityPressure = math.saturate(
-                (MathLodLowThreshold - _globalQualityWeight) *
+                (MathLodLowThreshold - qualityWeight) *
                 math.rcp(math.max(0.0001f, MathLodLowThreshold - MathLodFullQualityFloor)));
             qualityPressure = qualityPressure * qualityPressure * (3f - 2f * qualityPressure);
 
             float healthPressure = math.saturate(
-                (_systemHealthIndex01 - MathLodHealthSoftStart) *
+                (systemHealth - MathLodHealthSoftStart) *
                 math.rcp(math.max(0.0001f, MathLodLowThreshold - MathLodHealthSoftStart)));
             healthPressure = healthPressure * healthPressure * (3f - 2f * healthPressure);
 
-            float survivalFloor = 1f - math.step(MathLodSurvivalStep, _globalQualityWeight);
+            float survivalFloor = 1f - math.step(MathLodSurvivalStep, qualityWeight);
             return math.saturate(math.max(math.max(qualityPressure, healthPressure), survivalFloor));
         }
 
@@ -765,7 +830,7 @@ namespace Hecton8.Core
 
         private static void UpdateCullingMultiplier(float multiplier)
         {
-            float safeMultiplier = math.clamp(multiplier, 0.4f, 1f);
+            float safeMultiplier = SanitizeCullingMultiplier(multiplier);
             if (math.abs(_cullingMultiplier - safeMultiplier) < 0.001f)
                 return;
 
@@ -777,6 +842,12 @@ namespace Hecton8.Core
         {
             float targetFrameMs = ResolveTargetFrameMs(ResolveTargetFrameRate());
             float safeFrameMs = math.isfinite(frameMs) && frameMs > 0f ? frameMs : targetFrameMs;
+            float safeSystemHealth = SanitizePressure01(_systemHealthIndex01, 1f);
+            float safeVramPressure = SanitizePressure01(vramPressure01, 1f);
+            float safeThermalIndex = SanitizePressure01(thermalIndex, 1f);
+            float hardwareCeiling = math.isfinite(_hardwareMaxQualityWeight)
+                ? math.saturate(_hardwareMaxQualityWeight)
+                : LowHardwareMaxQualityWeight;
             float frameSeconds = math.max(0.000001f, safeFrameMs * 0.001f);
             float frameError01 = math.saturate((safeFrameMs - targetFrameMs) * math.rcp(math.max(0.0001f, targetFrameMs)));
             if (frameError01 > 0.0001f)
@@ -790,11 +861,11 @@ namespace Hecton8.Core
                 frameError01 * QualityPidProportionalGain +
                 _qualityPidIntegral * QualityPidIntegralGain +
                 derivative01 * QualityPidDerivativeGain);
-            float stress = math.max(math.saturate(_systemHealthIndex01), math.max(math.max(vramPressure01, thermalIndex), pidStress));
+            float stress = math.max(safeSystemHealth, math.max(math.max(safeVramPressure, safeThermalIndex), pidStress));
             float desired = math.saturate(1f - stress);
-            desired = math.min(desired, math.clamp(_hardwareMaxQualityWeight, 0f, 1f));
+            desired = math.min(desired, hardwareCeiling);
             if (_forceGlobalQualityWeightOverride)
-                desired = math.min(math.saturate(_forcedGlobalQualityWeight), math.clamp(_hardwareMaxQualityWeight, 0f, 1f));
+                desired = math.min(SanitizeQualityWeight01(_forcedGlobalQualityWeight, 0f), hardwareCeiling);
 
             if (!_globalQualityWeightSeeded)
             {
@@ -811,9 +882,9 @@ namespace Hecton8.Core
                 _globalQualityWeight = math.min(desired, _globalQualityWeight + recoveryStep);
             }
 
-            _globalQualityWeight = math.saturate(_globalQualityWeight);
-            _fractionalTimeSlice = math.lerp(MinimumFractionalTimeSlice, 1f, _globalQualityWeight);
-            _targetRenderScale01 = math.lerp(MinimumRenderScale01, 1f, _globalQualityWeight);
+            _globalQualityWeight = SanitizeQualityWeight01(_globalQualityWeight, desired);
+            _fractionalTimeSlice = ResolveFractionalTimeSliceFromWeight(_globalQualityWeight);
+            _targetRenderScale01 = ResolveRenderScaleFromWeight(_globalQualityWeight);
         }
 
         private static void ApplyDictatorRenderScale(float frameMs, float thermalIndex)
@@ -843,12 +914,13 @@ namespace Hecton8.Core
 
         private static void PublishQualityShaderGlobals(bool force)
         {
-            if (!force && math.abs(_lastPublishedGlobalQualityWeight - _globalQualityWeight) < QualityShaderEpsilon)
+            float qualityWeight = GlobalQualityWeight;
+            if (!force && math.abs(_lastPublishedGlobalQualityWeight - qualityWeight) < QualityShaderEpsilon)
                 return;
 
-            Shader.SetGlobalFloat(_globalQualityWeightId, _globalQualityWeight);
-            Shader.SetGlobalFloat(_h8GlobalQualityWeightId, _globalQualityWeight);
-            _lastPublishedGlobalQualityWeight = _globalQualityWeight;
+            Shader.SetGlobalFloat(_globalQualityWeightId, qualityWeight);
+            Shader.SetGlobalFloat(_h8GlobalQualityWeightId, qualityWeight);
+            _lastPublishedGlobalQualityWeight = qualityWeight;
         }
 
         private static void UpdateRegistryKillMask(ulong targetMask)
@@ -877,9 +949,9 @@ namespace Hecton8.Core
 
             uint foldedMask = FoldMaskToUInt(activeMask);
             ref SystemHealthDTO health = ref _systemHealthDtoHandle.GetElementAsRef(vault, 0);
-            health.FrameTimeMs = math.isfinite(frameMs) && frameMs > 0f ? frameMs : ResolveTargetFrameMs(ResolveTargetFrameRate());
-            health.VramPressure = math.isfinite(vramPressure01) ? math.saturate(vramPressure01) : 1f;
-            health.ThermalIndex = math.isfinite(thermalIndex) ? math.saturate(thermalIndex) : 1f;
+            health.FrameTimeMs = SanitizePositiveFrameMs(frameMs);
+            health.VramPressure = SanitizePressure01(vramPressure01, 1f);
+            health.ThermalIndex = SanitizePressure01(thermalIndex, 1f);
             health.ActiveThrottlesMask = foldedMask;
 
             UpdateGlobalQualityState(frameMs, health.VramPressure, health.ThermalIndex);
@@ -900,20 +972,18 @@ namespace Hecton8.Core
                 return;
 
             IDataVault vault = _dataVault;
-            if (vault == null || !TryResolveScalabilityDictatorBuffers(
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out _))
+            if (vault == null ||
+                !EnsureScalabilityStateHandles(vault) ||
+                !EnsureMockHeavyLoadHandle(vault) ||
+                !EnsureMockTerrainSamplerStatusHandle(vault))
             {
                 return;
             }
 
-            float weight = math.saturate(_globalQualityWeight);
+            float weight = SanitizeQualityWeight01(_globalQualityWeight, 0f);
             ref ScalabilityStateDTO state = ref _scalabilityStateHandle.GetElementAsRef(vault, 0);
             state.GlobalQualityWeight = weight;
-            state.FractionalTimeSlice = math.lerp(MinimumFractionalTimeSlice, 1f, weight);
+            state.FractionalTimeSlice = ResolveFractionalTimeSliceFromWeight(weight);
             state.VramPressure = 0f;
             state.ThermalIndex = 0f;
 
@@ -1096,6 +1166,9 @@ namespace Hecton8.Core
         private static bool TryResolveCsvScratch(out NativeArray<byte> csvScratch)
         {
             csvScratch = default;
+#if !UNITY_EDITOR
+            return false;
+#else
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
@@ -1116,105 +1189,7 @@ namespace Hecton8.Core
                 MemClearIfCreated(csvScratch);
 
             return csvScratch.IsCreated && csvScratch.Length >= ScalabilityCsvScratchBytes;
-        }
-
-        private static bool TryResolveScalabilityDictatorBuffers(
-            out NativeArray<SystemHealthDTO> health,
-            out NativeArray<ScalabilityStateDTO> state,
-            out NativeArray<MockHeavyLoadSignal> heavyLoad,
-            out NativeArray<MockTerrainSamplerStatus> terrainSampler,
-            out NativeArray<byte> csvScratch)
-        {
-            health = default;
-            state = default;
-            heavyLoad = default;
-            terrainSampler = default;
-            csvScratch = default;
-
-            IDataVault vault = _dataVault;
-            if (vault == null)
-                return false;
-
-            bool healthCreated = false;
-            bool stateCreated = false;
-            bool heavyLoadCreated = false;
-            bool terrainCreated = false;
-            bool csvScratchCreated = false;
-            if (!_systemHealthDtoHandle.IsCreated || !vault.ResolveBuffer(ref _systemHealthDtoHandle))
-            {
-                _systemHealthDtoHandle = vault.GetBufferHandle<SystemHealthDTO>(
-                    BufferID.ShinobuScalabilitySystemHealth,
-                    DictatorSingletonLength,
-                    SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.UninitializedMemory);
-                healthCreated = true;
-            }
-
-            if (!_scalabilityStateHandle.IsCreated || !vault.ResolveBuffer(ref _scalabilityStateHandle))
-            {
-                _scalabilityStateHandle = vault.GetBufferHandle<ScalabilityStateDTO>(
-                    BufferID.ShinobuScalabilityState,
-                    DictatorSingletonLength,
-                    SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.UninitializedMemory);
-                stateCreated = true;
-            }
-
-            if (!_mockHeavyLoadHandle.IsCreated || !vault.ResolveBuffer(ref _mockHeavyLoadHandle))
-            {
-                _mockHeavyLoadHandle = vault.GetBufferHandle<MockHeavyLoadSignal>(
-                    BufferID.ShinobuScalabilityMockHeavyLoad,
-                    DictatorSingletonLength,
-                    SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.UninitializedMemory);
-                heavyLoadCreated = true;
-            }
-
-            if (!_mockTerrainSamplerStatusHandle.IsCreated || !vault.ResolveBuffer(ref _mockTerrainSamplerStatusHandle))
-            {
-                _mockTerrainSamplerStatusHandle = vault.GetBufferHandle<MockTerrainSamplerStatus>(
-                    BufferID.ShinobuScalabilityMockScatterDensity,
-                    DictatorSingletonLength,
-                    SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.UninitializedMemory);
-                terrainCreated = true;
-            }
-
-            if (!_csvScratchHandle.IsCreated || !vault.ResolveBuffer(ref _csvScratchHandle))
-            {
-                _csvScratchHandle = vault.GetBufferHandle<byte>(
-                    BufferID.ShinobuScalabilityCsvScratch,
-                    ScalabilityCsvScratchBytes,
-                    SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.UninitializedMemory);
-                csvScratchCreated = true;
-            }
-
-            health = _systemHealthDtoHandle.Resolve(vault);
-            state = _scalabilityStateHandle.Resolve(vault);
-            heavyLoad = _mockHeavyLoadHandle.Resolve(vault);
-            terrainSampler = _mockTerrainSamplerStatusHandle.Resolve(vault);
-            csvScratch = _csvScratchHandle.Resolve(vault);
-            if (healthCreated)
-                MemClearIfCreated(health);
-            if (stateCreated)
-                MemClearIfCreated(state);
-            if (heavyLoadCreated)
-                MemClearIfCreated(heavyLoad);
-            if (terrainCreated)
-                MemClearIfCreated(terrainSampler);
-            if (csvScratchCreated)
-                MemClearIfCreated(csvScratch);
-            return health.IsCreated &&
-                   health.Length >= DictatorSingletonLength &&
-                   state.IsCreated &&
-                   state.Length >= DictatorSingletonLength &&
-                   heavyLoad.IsCreated &&
-                   heavyLoad.Length >= DictatorSingletonLength &&
-                   terrainSampler.IsCreated &&
-                   terrainSampler.Length >= DictatorSingletonLength &&
-                   csvScratch.IsCreated &&
-                   csvScratch.Length >= ScalabilityCsvScratchBytes;
+#endif
         }
 
         private static bool EnsureScalabilityTelemetryHandle(IDataVault vault)
@@ -1266,9 +1241,7 @@ namespace Hecton8.Core
             if ((uint)index >= ScalabilityTelemetryCapacity)
                 index = 0;
 
-            float safeRawFrameMs = math.isfinite(rawFrameMs) && rawFrameMs > 0f
-                ? rawFrameMs
-                : ResolveTargetFrameMs(ResolveTargetFrameRate());
+            float safeRawFrameMs = SanitizePositiveFrameMs(rawFrameMs);
             float smoothedFrameMs = _fpsEwma > 0f
                 ? 1000f * math.rcp(math.max(1f, _fpsEwma))
                 : safeRawFrameMs;
@@ -1276,8 +1249,8 @@ namespace Hecton8.Core
             entry.Timestamp = unchecked((ulong)_lastStopwatchTimestamp);
             entry.RawFrameMs = safeRawFrameMs;
             entry.SmoothedFrameMs = math.isfinite(smoothedFrameMs) && smoothedFrameMs > 0f ? smoothedFrameMs : safeRawFrameMs;
-            entry.GlobalQualityWeight = math.saturate(_globalQualityWeight);
-            entry.VramPressure = math.saturate(vramPressure01);
+            entry.GlobalQualityWeight = SanitizeQualityWeight01(_globalQualityWeight, 0f);
+            entry.VramPressure = SanitizePressure01(vramPressure01, 1f);
             entry.Flags = flags;
             entry._pad0 = 0u;
 
@@ -1304,7 +1277,16 @@ namespace Hecton8.Core
                    UnsafeUtility.SizeOf<MockTerrainSamplerStatus>() +
                    UnsafeUtility.SizeOf<ScalabilityTuningDTO>() +
                    ((long)ScalabilityTelemetryCapacity * UnsafeUtility.SizeOf<ScalabilityTelemetryEntry>()) +
-                   ScalabilityCsvScratchBytes;
+                   ResolveScalabilityCsvScratchRequestedBytes();
+        }
+
+        private static int ResolveScalabilityCsvScratchRequestedBytes()
+        {
+#if UNITY_EDITOR
+            return ScalabilityCsvScratchBytes;
+#else
+            return 0;
+#endif
         }
 
         private static void ScheduleMockTerrainSamplerJob(int frame, ulong targetMask)
@@ -1314,7 +1296,8 @@ namespace Hecton8.Core
                 return;
 
             uint foldedFlags = FoldMaskToUInt(targetMask);
-            int qualityBucket = (int)math.round(math.saturate(_globalQualityWeight) * 100f);
+            float safeGlobalQualityWeight = SanitizeQualityWeight01(_globalQualityWeight, 0f);
+            int qualityBucket = (int)math.round(safeGlobalQualityWeight * 100f);
             int framesSinceLast = frame - _lastMockTerrainScheduleFrame;
             bool cadenceDue = framesSinceLast < 0 || framesSinceLast >= MockTerrainSamplerCadenceFrames;
             if (!cadenceDue &&
@@ -1331,7 +1314,7 @@ namespace Hecton8.Core
 
             MockTerrainSamplerStatusJob job = default;
             job.Signal = terrainSampler;
-            job.GlobalQualityWeight = _globalQualityWeight;
+            job.GlobalQualityWeight = safeGlobalQualityWeight;
             job.Frame = unchecked((uint)frame);
 #if UNITY_EDITOR
             job.Run();
@@ -1366,7 +1349,7 @@ namespace Hecton8.Core
 
             public void Execute()
             {
-                float weight = math.saturate(GlobalQualityWeight);
+                float weight = SanitizeQualityWeight01(GlobalQualityWeight, 0f);
                 MockTerrainSamplerStatus status = default;
                 status.GlobalQualityWeight = weight;
                 status.TrilinearSampleProbability01 = weight;
@@ -1453,17 +1436,21 @@ namespace Hecton8.Core
 
         private static string ResolveScalabilityCsvPath()
         {
+#if UNITY_EDITOR
             string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
             string rootProfile = Path.Combine(projectRoot, ScalabilityCsvFileName);
             if (File.Exists(rootProfile))
                 return rootProfile;
 
             return Path.Combine(projectRoot, "Assets", "_Project", "Data", ScalabilityCsvFileName);
+#else
+            return null;
+#endif
         }
 
         private static void TryPollCsvOverrides(int frame)
         {
-#if !(UNITY_EDITOR || DEVELOPMENT_BUILD)
+#if !UNITY_EDITOR
             return;
 #else
             if (_csvPollCountdown > 0)
@@ -1599,7 +1586,7 @@ namespace Hecton8.Core
             if (EqualsAscii(bytes, keyStart, keyEnd, "culling_multiplier_low") &&
                 TryParseFloatAscii(bytes, valueStart, valueEnd, out float culling))
             {
-                _lowCullingMultiplier = math.clamp(culling, 0.4f, 1f);
+                _lowCullingMultiplier = SanitizeLowCullingMultiplier(culling);
                 return;
             }
 
@@ -1817,13 +1804,14 @@ namespace Hecton8.Core
                 stream.Write(header);
 
                 Span<byte> entryBytes = stackalloc byte[32];
+                float fallbackFrameMs = ResolveTargetFrameMs(ResolveTargetFrameRate());
                 for (int i = 0; i < ScalabilityTelemetryCapacity; i++)
                 {
                     int index = _scalabilityTelemetryCursor + i;
                     if (index >= ScalabilityTelemetryCapacity)
                         index -= ScalabilityTelemetryCapacity;
 
-                    ScalabilityTelemetryEntry entry = telemetry[index];
+                    ScalabilityTelemetryEntry entry = SanitizeTelemetryEntryForDump(telemetry[index], fallbackFrameMs);
                     entryBytes.Clear();
                     BinaryPrimitives.WriteUInt64LittleEndian(entryBytes.Slice(0, 8), entry.Timestamp);
                     WriteFloatLittleEndian(entryBytes.Slice(8, 4), entry.RawFrameMs);
@@ -1835,6 +1823,52 @@ namespace Hecton8.Core
                     stream.Write(entryBytes);
                 }
             }
+        }
+
+        private static ScalabilityTelemetryEntry SanitizeTelemetryEntryForDump(
+            ScalabilityTelemetryEntry entry,
+            float fallbackFrameMs)
+        {
+            float safeFallbackFrameMs = math.isfinite(fallbackFrameMs) && fallbackFrameMs > 0f
+                ? fallbackFrameMs
+                : ScalabilityContract.TargetFrameMilliseconds;
+            bool sanitized = false;
+            if (!math.isfinite(entry.RawFrameMs) || entry.RawFrameMs <= 0f)
+            {
+                entry.RawFrameMs = safeFallbackFrameMs;
+                sanitized = true;
+            }
+
+            if (!math.isfinite(entry.SmoothedFrameMs) || entry.SmoothedFrameMs <= 0f)
+            {
+                entry.SmoothedFrameMs = entry.RawFrameMs;
+                sanitized = true;
+            }
+
+            if (!math.isfinite(entry.GlobalQualityWeight))
+            {
+                entry.GlobalQualityWeight = 0f;
+                sanitized = true;
+            }
+            else
+            {
+                entry.GlobalQualityWeight = math.saturate(entry.GlobalQualityWeight);
+            }
+
+            if (!math.isfinite(entry.VramPressure))
+            {
+                entry.VramPressure = 1f;
+                sanitized = true;
+            }
+            else
+            {
+                entry.VramPressure = math.saturate(entry.VramPressure);
+            }
+
+            if (sanitized)
+                entry.Flags |= ScalabilityTelemetryFlagSanitized;
+            entry._pad0 = 0u;
+            return entry;
         }
 
         private static void WriteScalabilityDictatorBlackBoxFile(
@@ -1861,7 +1895,9 @@ namespace Hecton8.Core
                     HomeostasisBlackBoxEntry entry = blackBox[index];
                     float qualityWeight = math.asfloat(entry.Reserved2);
                     if (!math.isfinite(qualityWeight))
-                        qualityWeight = math.saturate(1f - entry.SystemHealthIndex01);
+                        qualityWeight = SanitizeQualityWeight01(1f - entry.SystemHealthIndex01, 0f);
+                    else
+                        qualityWeight = SanitizeQualityWeight01(qualityWeight, 0f);
                     entryBytes.Clear();
                     BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(0, 4), entry.Frame);
                     WriteFloatLittleEndian(entryBytes.Slice(4, 4), qualityWeight);
@@ -1936,7 +1972,8 @@ namespace Hecton8.Core
         /// </summary>
         public static void SetForcedGlobalQualityWeightForTuner(float qualityWeight, bool enabled)
         {
-            bool validOverride = enabled && TrySanitizeForcedQualityWeight(qualityWeight, out float sanitizedWeight);
+            float sanitizedWeight = ForcedQualityWeightDisabled;
+            bool validOverride = enabled && TrySanitizeForcedQualityWeight(qualityWeight, out sanitizedWeight);
             _forceGlobalQualityWeightOverride = validOverride;
             _forcedGlobalQualityWeight = validOverride ? sanitizedWeight : ForcedQualityWeightDisabled;
             if (validOverride)
@@ -2012,8 +2049,17 @@ namespace Hecton8.Core
                 return false;
             }
 
-            health = _systemHealthDtoHandle.GetElementAsRef(vault, 0);
-            state = _scalabilityStateHandle.GetElementAsRef(vault, 0);
+            ref SystemHealthDTO vaultHealth = ref _systemHealthDtoHandle.GetElementAsRef(vault, 0);
+            ref ScalabilityStateDTO vaultState = ref _scalabilityStateHandle.GetElementAsRef(vault, 0);
+            vaultHealth.FrameTimeMs = SanitizePositiveFrameMs(vaultHealth.FrameTimeMs);
+            vaultHealth.VramPressure = SanitizePressure01(vaultHealth.VramPressure, 1f);
+            vaultHealth.ThermalIndex = SanitizePressure01(vaultHealth.ThermalIndex, 1f);
+            vaultState.GlobalQualityWeight = SanitizeQualityWeight01(vaultState.GlobalQualityWeight, GlobalQualityWeight);
+            vaultState.FractionalTimeSlice = ResolveFractionalTimeSliceFromWeight(vaultState.GlobalQualityWeight);
+            vaultState.VramPressure = vaultHealth.VramPressure;
+            vaultState.ThermalIndex = vaultHealth.ThermalIndex;
+            health = vaultHealth;
+            state = vaultState;
             return true;
         }
 
@@ -2029,7 +2075,12 @@ namespace Hecton8.Core
                 return false;
             }
 
-            status = _mockTerrainSamplerStatusHandle.GetElementAsRef(vault, 0);
+            ref MockTerrainSamplerStatus vaultStatus = ref _mockTerrainSamplerStatusHandle.GetElementAsRef(vault, 0);
+            float weight = SanitizeQualityWeight01(vaultStatus.GlobalQualityWeight, GlobalQualityWeight);
+            vaultStatus.GlobalQualityWeight = weight;
+            vaultStatus.TrilinearSampleProbability01 = weight;
+            vaultStatus.SkippedTrilinearPercent01 = 1f - weight;
+            status = vaultStatus;
             return true;
         }
 
@@ -2057,7 +2108,7 @@ namespace Hecton8.Core
 
                     ScalabilityTelemetryEntry entry = telemetry[index];
                     qualityWeightSamples[i] = math.isfinite(entry.GlobalQualityWeight)
-                        ? math.saturate(entry.GlobalQualityWeight)
+                        ? SanitizeQualityWeight01(entry.GlobalQualityWeight, 0f)
                         : 0f;
                     float frameMs = math.isfinite(entry.RawFrameMs) && entry.RawFrameMs > 0f
                         ? entry.RawFrameMs
@@ -2092,8 +2143,8 @@ namespace Hecton8.Core
                 HomeostasisBlackBoxEntry entry = blackBox[index];
                 float qualityWeight = math.asfloat(entry.Reserved2);
                 qualityWeightSamples[i] = math.isfinite(qualityWeight)
-                    ? math.saturate(qualityWeight)
-                    : math.saturate(1f - entry.SystemHealthIndex01);
+                    ? SanitizeQualityWeight01(qualityWeight, 0f)
+                    : SanitizeQualityWeight01(1f - entry.SystemHealthIndex01, 0f);
                 float rawFrameMs = math.asfloat(entry.Reserved0);
                 float frameMs = math.isfinite(rawFrameMs) && rawFrameMs > 0f
                     ? rawFrameMs

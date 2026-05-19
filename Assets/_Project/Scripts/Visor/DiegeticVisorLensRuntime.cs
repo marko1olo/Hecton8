@@ -95,6 +95,7 @@ namespace Hecton8.Visor
         private bool _hasPendingExternalPressure;
         private bool _hasPendingEnvironment;
         private bool _pendingMockReset;
+        private bool _pendingTuningVersionIncrement;
 
         private ref VisorStateDTO GetStateRefUnsafe()
         {
@@ -203,6 +204,7 @@ namespace Hecton8.Visor
             }
 
             ApplyPendingMockResetIfNeeded();
+            ApplyPendingTuningVersionIfNeeded();
             IngestCoreSignals(safeDelta);
             UpdateHeadAngularVelocity(safeDelta);
             float qualityWeight = ResolveQualityWeight();
@@ -230,9 +232,16 @@ namespace Hecton8.Visor
                 EnsureNativeState();
             }
 
-            ref VisorLensTuningDTO tuning = ref _tuningHandle.GetElementAsRef(EnsureVault(), 0);
-            tuning.Version++;
             _playerContext ??= GlobalRegistry.Player;
+            if (_hasScheduledWork)
+            {
+                _pendingTuningVersionIncrement = true;
+                _forceImmediateSimulation = true;
+                return;
+            }
+
+            IncrementTuningVersionUnsafe();
+            _forceImmediateSimulation = true;
         }
 
         public void GenerateEmergencyMockVisorData()
@@ -720,6 +729,21 @@ namespace Hecton8.Visor
             ApplyEmergencyMockVisorData();
         }
 
+        private void ApplyPendingTuningVersionIfNeeded()
+        {
+            if (!_pendingTuningVersionIncrement)
+                return;
+
+            _pendingTuningVersionIncrement = false;
+            IncrementTuningVersionUnsafe();
+        }
+
+        private void IncrementTuningVersionUnsafe()
+        {
+            ref VisorLensTuningDTO tuning = ref _tuningHandle.GetElementAsRef(EnsureVault(), 0);
+            tuning.Version++;
+        }
+
         private void ApplyPendingExternalInputs(ref MockPhysiologySignal physiology, ref MockVisorEnvironmentSignal environment)
         {
             bool applied = false;
@@ -787,6 +811,7 @@ namespace Hecton8.Visor
             _hasPendingExternalPressure = false;
             _hasPendingEnvironment = false;
             _pendingMockReset = false;
+            _pendingTuningVersionIncrement = false;
         }
 
         private void UpdateHeadAngularVelocity(float deltaTime)

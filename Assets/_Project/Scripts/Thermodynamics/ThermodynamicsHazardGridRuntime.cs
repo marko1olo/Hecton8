@@ -109,7 +109,7 @@ namespace Hecton8.Thermodynamics
         private VaultBufferHandle<uint> _entityIds;
         private VaultBufferHandle<float> _entityDamageTimers;
         private VaultBufferHandle<float> _entityDamageAccumulators;
-        private VaultBufferHandle<MockDamageSignal> _mockDamageSignals;
+        private VaultBufferHandle<ThermodynamicsMockDamageSignal> _mockDamageSignals;
         private VaultBufferHandle<ThermodynamicsCombatDamageSignal> _combatDamageSignals;
         private VaultBufferHandle<ThermalUpdraftSignal> _updraftSignals;
         private VaultBufferHandle<int> _signalCounters;
@@ -506,7 +506,7 @@ namespace Hecton8.Thermodynamics
             _entityIds = AcquireBuffer<uint>(VaultEntityIdsBuffer, MaxEntityCount);
             _entityDamageTimers = AcquireBuffer<float>(VaultEntityDamageTimersBuffer, MaxEntityCount);
             _entityDamageAccumulators = AcquireBuffer<float>(VaultEntityDamageAccumulatorsBuffer, MaxEntityCount);
-            _mockDamageSignals = AcquireBuffer<MockDamageSignal>(VaultMockDamageSignalsBuffer, MaxSignalsPerFrame);
+            _mockDamageSignals = AcquireBuffer<ThermodynamicsMockDamageSignal>(VaultMockDamageSignalsBuffer, MaxSignalsPerFrame);
             _combatDamageSignals = AcquireBuffer<ThermodynamicsCombatDamageSignal>(VaultCombatDamageSignalsBuffer, MaxSignalsPerFrame);
             _updraftSignals = AcquireBuffer<ThermalUpdraftSignal>(VaultUpdraftSignalsBuffer, MaxSignalsPerFrame);
             _signalCounters = AcquireBuffer<int>(VaultSignalCountersBuffer, 4);
@@ -826,7 +826,7 @@ namespace Hecton8.Thermodynamics
             NativeArray<uint> entityIds = ResolveArray(ref _entityIds);
             NativeArray<float> entityDamageTimers = ResolveArray(ref _entityDamageTimers);
             NativeArray<float> entityDamageAccumulators = ResolveArray(ref _entityDamageAccumulators);
-            NativeArray<MockDamageSignal> mockDamageSignals = ResolveArray(ref _mockDamageSignals);
+            NativeArray<ThermodynamicsMockDamageSignal> mockDamageSignals = ResolveArray(ref _mockDamageSignals);
             NativeArray<ThermodynamicsCombatDamageSignal> combatDamageSignals = ResolveArray(ref _combatDamageSignals);
             NativeArray<ThermalUpdraftSignal> updraftSignals = ResolveArray(ref _updraftSignals);
             NativeArray<int> signalCounters = ResolveArray(ref _signalCounters);
@@ -905,7 +905,7 @@ namespace Hecton8.Thermodynamics
                     EntityIds = (uint*)NativeArrayUnsafeUtility.GetUnsafePtr(entityIds),
                     EntityDamageTimers = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(entityDamageTimers),
                     EntityDamageAccumulators = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(entityDamageAccumulators),
-                    MockSignals = (MockDamageSignal*)NativeArrayUnsafeUtility.GetUnsafePtr(mockDamageSignals),
+                    MockSignals = (ThermodynamicsMockDamageSignal*)NativeArrayUnsafeUtility.GetUnsafePtr(mockDamageSignals),
                     CombatSignals = (ThermodynamicsCombatDamageSignal*)NativeArrayUnsafeUtility.GetUnsafePtr(combatDamageSignals),
                     Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(signalCounters),
                     EntityCount = _entityCount,
@@ -956,7 +956,7 @@ namespace Hecton8.Thermodynamics
         {
             NativeArray<int> signalCounters = ResolveArray(ref _signalCounters);
             NativeArray<ThermalUpdraftSignal> updraftSignals = ResolveArray(ref _updraftSignals);
-            NativeArray<MockDamageSignal> mockDamageSignals = ResolveArray(ref _mockDamageSignals);
+            NativeArray<ThermodynamicsMockDamageSignal> mockDamageSignals = ResolveArray(ref _mockDamageSignals);
             NativeArray<ThermodynamicsCombatDamageSignal> combatDamageSignals = ResolveArray(ref _combatDamageSignals);
             int updraftCount = math.min(MaxSignalsPerFrame, math.max(0, signalCounters[0]));
             for (int i = 0; i < updraftCount; i++)
@@ -969,9 +969,9 @@ namespace Hecton8.Thermodynamics
             int mockDamageCount = math.min(MaxSignalsPerFrame, math.max(0, signalCounters[1]));
             for (int i = 0; i < mockDamageCount; i++)
             {
-                MockDamageSignal signal = mockDamageSignals[i];
+                ThermodynamicsMockDamageSignal signal = mockDamageSignals[i];
                 if (math.isfinite(signal.Damage) && signal.Damage > 0f)
-                    SignalBus<MockDamageSignal>.Push(in signal);
+                    SignalBus<ThermodynamicsMockDamageSignal>.Push(in signal);
             }
 
             int combatDamageCount = math.min(MaxSignalsPerFrame, math.max(0, signalCounters[2]));
@@ -1602,7 +1602,7 @@ namespace Hecton8.Thermodynamics
             [NativeDisableUnsafePtrRestriction] public uint* EntityIds;
             [NativeDisableUnsafePtrRestriction] public float* EntityDamageTimers;
             [NativeDisableUnsafePtrRestriction] public float* EntityDamageAccumulators;
-            [NativeDisableUnsafePtrRestriction] public MockDamageSignal* MockSignals;
+            [NativeDisableUnsafePtrRestriction] public ThermodynamicsMockDamageSignal* MockSignals;
             [NativeDisableUnsafePtrRestriction] public ThermodynamicsCombatDamageSignal* CombatSignals;
             [NativeDisableUnsafePtrRestriction] public int* Counters;
             public ThermodynamicsHazardConstants Constants;
@@ -1650,7 +1650,7 @@ namespace Hecton8.Thermodynamics
                     int mockIndex = IncrementCounter(Counters, 1, MaxSignalsPerFrame);
                     if (mockIndex >= 0)
                     {
-                        MockSignals[mockIndex] = new MockDamageSignal
+                        MockSignals[mockIndex] = new ThermodynamicsMockDamageSignal
                         {
                             Aup = EntityAups[index],
                             Normal = new float3(0f, 1f, 0f),

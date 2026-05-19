@@ -1,7 +1,7 @@
 # HECTON-8 Modding API Contract Index
 
-Date: 2026-05-17
-Status: MOD API DEFINED / STATIC VALIDATOR PASSING / RUNTIME_PENDING
+Date: 2026-05-19
+Status: ENVELOPE-ONLY MODDING AUTHORITY / SDK PLAN ADDED / RUNTIME_PENDING
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -18,6 +18,18 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Owner prompt: MODDING_API_SCHEMA_BUILDER
+
+## 2026-05-19 Envelope-Only Authority
+
+Current UGC runtime authority is envelope-only:
+
+- modders do not run Harmony patches, BepInEx patches, arbitrary managed callbacks, or gameplay `.dll` code in the frame;
+- modder-facing SDK tools may be rich, friendly, and managed, but they are authoring/offline surfaces;
+- the game runtime accepts fixed 64-byte `FutureCommandEnvelope` packets through the sandbox validator;
+- legacy `IHectonMod`, `HectonAPI.Events`, resource proxy, localization injection, asset bundle discovery, `Request`, `RequestAup`, and `RequestRenderInstance` sections are historical/source-audit references unless they explicitly agree with `Mod_API_Sandbox_Quarantine.md`;
+- filesystem content ingress is not a runtime mod right in envelope-only mode; assets must be CRC-approved and referenced by envelope asset opcodes.
+
+The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.md](SDK_Authoring_Interface_Plan.md). The short version: yes, modders need interfaces, but those interfaces are SDK/workbench/CLI/graph/manifest tools, not runtime C# interfaces inside the game.
 
 ## Current Contract Snapshot
 
@@ -41,6 +53,9 @@ Owner prompt: MODDING_API_SCHEMA_BUILDER
 - `Change_Control_Checklist.md` - required edit checklist for any mod API contract change.
 - `Sample_InfiniteO2_Mod.md` - safe sample mod spec with no current survival mutation authority.
 - `Future_Command_Kernel_Reservations.md` - non-public reservations for future engine-owned command kernels; no enum/runtime expansion by itself.
+- `Mod_API_Sandbox_Quarantine.md` - current envelope-only runtime quarantine and validator boundary.
+- `SDK_Authoring_Interface_Plan.md` - planned human SDK/workbench/CLI/graph workflow for modders.
+- `SDK_Product_Blueprint.md` - product-level SDK screens, CLI, package format, graph compiler rules, Workshop/moderation model, and MVP backlog.
 
 ## Audit Matrices
 

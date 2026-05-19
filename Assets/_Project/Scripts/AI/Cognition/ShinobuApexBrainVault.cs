@@ -37,14 +37,14 @@ namespace Hecton8.AI.Cognition
     {
         public VaultBufferHandle<ApexStateDTO> States;
         public VaultBufferHandle<MockPlayerAUP> MockTargets;
-        public VaultBufferHandle<AcousticEchoTap> AcousticTaps;
+        public VaultBufferHandle<ApexBrainAcousticEchoTap> AcousticTaps;
         public VaultBufferHandle<ApexBrainTuning> Tuning;
         public VaultBufferHandle<ApexEmergencyStats> EmergencyStats;
         public VaultBufferHandle<MockWorldSampler> WorldSampler;
         public VaultBufferHandle<ApexBrainOutputDTO> Outputs;
         public VaultBufferHandle<ApexProximitySignal> ProximitySignals;
         public VaultBufferHandle<MockCombatDamageSignal> CombatDamageSignals;
-        public VaultBufferHandle<GlobalPanicSignal> PanicSignals;
+        public VaultBufferHandle<ApexPanicSignal> PanicSignals;
         public VaultBufferHandle<ApexInfluenceNode> InfluenceNodes;
         public VaultBufferHandle<float3> AmbushNodeScratch;
         public VaultBufferHandle<ApexTelemetryEntry> TelemetryRing;
@@ -78,14 +78,14 @@ namespace Hecton8.AI.Cognition
     {
         public NativeArray<ApexStateDTO> States;
         public NativeArray<MockPlayerAUP> MockTargets;
-        public NativeArray<AcousticEchoTap> AcousticTaps;
+        public NativeArray<ApexBrainAcousticEchoTap> AcousticTaps;
         public NativeArray<ApexBrainTuning> Tuning;
         public NativeArray<ApexEmergencyStats> EmergencyStats;
         public NativeArray<MockWorldSampler> WorldSampler;
         public NativeArray<ApexBrainOutputDTO> Outputs;
         public NativeArray<ApexProximitySignal> ProximitySignals;
         public NativeArray<MockCombatDamageSignal> CombatDamageSignals;
-        public NativeArray<GlobalPanicSignal> PanicSignals;
+        public NativeArray<ApexPanicSignal> PanicSignals;
         public NativeArray<ApexInfluenceNode> InfluenceNodes;
         public NativeArray<float3> AmbushNodeScratch;
         public NativeArray<ApexTelemetryEntry> TelemetryRing;
@@ -129,8 +129,21 @@ namespace Hecton8.AI.Cognition
         private static readonly uint _stalkingDistanceHash = HashAscii("stalking_distance");
         private static readonly uint _leviathanSpeedHash = HashAscii("leviathan_speed");
         private static readonly uint _terrorRadiusHash = HashAscii("terror_radius");
+        private static readonly uint _baseDamageMagnitudeHash = HashAscii("base_damage_magnitude");
         private static readonly uint _biomeAggressionHash = HashAscii("biome_aggression_multiplier");
+        private static readonly uint _simulationTickDeltaHash = HashAscii("simulation_tick_delta");
         private static readonly uint _strikeDistanceHash = HashAscii("strike_distance");
+        private static readonly uint _headOffsetMetersHash = HashAscii("head_offset_meters");
+        private static readonly uint _midOffsetMetersHash = HashAscii("mid_offset_meters");
+        private static readonly uint _tailOffsetMetersHash = HashAscii("tail_offset_meters");
+        private static readonly uint _noiseAggroGainHash = HashAscii("noise_aggro_gain");
+        private static readonly uint _staminaRecoveryPerSecondHash = HashAscii("stamina_recovery_per_second");
+        private static readonly uint _staminaStrikeCostHash = HashAscii("stamina_strike_cost");
+        private static readonly uint _sweetLieShadowGainHash = HashAscii("sweet_lie_shadow_gain");
+        private static readonly uint _sweetLieViewDotThresholdHash = HashAscii("sweet_lie_view_dot_threshold");
+        private static readonly uint _ambushNodeRadiusMetersHash = HashAscii("ambush_node_radius_meters");
+        private static readonly uint _visualOverkillGainHash = HashAscii("visual_overkill_gain");
+        private static readonly uint _biteHeadLocalOffsetHash = HashAscii("bite_head_local_offset");
         private static readonly uint _globalQualityHash = HashAscii("global_quality_weight");
 
         /// <summary>
@@ -163,7 +176,7 @@ namespace Hecton8.AI.Cognition
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.AcousticTaps = vault.GetBufferHandle<AcousticEchoTap>(
+            handles.AcousticTaps = vault.GetBufferHandle<ApexBrainAcousticEchoTap>(
                 ApexBrainVaultBufferIds.AcousticEchoTap,
                 ApexBrainConstants.MaxAcousticTaps,
                 SystemID.AICognition,
@@ -198,7 +211,7 @@ namespace Hecton8.AI.Cognition
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.PanicSignals = vault.GetBufferHandle<GlobalPanicSignal>(
+            handles.PanicSignals = vault.GetBufferHandle<ApexPanicSignal>(
                 ApexBrainVaultBufferIds.PanicSignal,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
@@ -348,7 +361,7 @@ namespace Hecton8.AI.Cognition
             JobHandle inputDependency,
             NativeQueue<ApexProximitySignal>.ParallelWriter proximityWriter,
             NativeQueue<MockCombatDamageSignal>.ParallelWriter combatWriter,
-            NativeQueue<GlobalPanicSignal>.ParallelWriter panicWriter,
+            NativeQueue<ApexPanicSignal>.ParallelWriter panicWriter,
             out JobHandle outputDependency)
         {
             outputDependency = inputDependency;
@@ -409,7 +422,7 @@ namespace Hecton8.AI.Cognition
             ref ApexBrainJob job,
             NativeQueue<ApexProximitySignal>.ParallelWriter proximityWriter,
             NativeQueue<MockCombatDamageSignal>.ParallelWriter combatWriter,
-            NativeQueue<GlobalPanicSignal>.ParallelWriter panicWriter)
+            NativeQueue<ApexPanicSignal>.ParallelWriter panicWriter)
         {
             job.ProximitySignalWriter = proximityWriter;
             job.CombatDamageSignalWriter = combatWriter;
@@ -601,7 +614,7 @@ namespace Hecton8.AI.Cognition
         {
             return UnsafeUtility.SizeOf<ApexStateDTO>() == 64 &&
                    UnsafeUtility.SizeOf<MockPlayerAUP>() == 128 &&
-                   UnsafeUtility.SizeOf<AcousticEchoTap>() == 64 &&
+                   UnsafeUtility.SizeOf<ApexBrainAcousticEchoTap>() == 64 &&
                    UnsafeUtility.SizeOf<MockWorldSampler>() == 64 &&
                    UnsafeUtility.SizeOf<ApexBrainTuning>() == 128 &&
                    UnsafeUtility.SizeOf<ApexEmergencyStats>() == 64 &&
@@ -610,7 +623,7 @@ namespace Hecton8.AI.Cognition
                    UnsafeUtility.SizeOf<ApexTelemetryEntry>() == 128 &&
                    UnsafeUtility.SizeOf<ApexProximitySignal>() == 64 &&
                    UnsafeUtility.SizeOf<MockCombatDamageSignal>() == 64 &&
-                   UnsafeUtility.SizeOf<GlobalPanicSignal>() == 64;
+                   UnsafeUtility.SizeOf<ApexPanicSignal>() == 64;
         }
 
         public static ApexBrainTuning BuildEmergencyMockTuning()
@@ -712,28 +725,28 @@ namespace Hecton8.AI.Cognition
         {
             ApexBrainTuning fallback = BuildEmergencyMockTuning();
             ApexBrainTuning tuning = input;
-            tuning.AggressionMultiplier = SanitizePositive(tuning.AggressionMultiplier, fallback.AggressionMultiplier);
-            tuning.AcousticSensitivity = SanitizePositive(tuning.AcousticSensitivity, fallback.AcousticSensitivity);
-            tuning.TurnRate = SanitizePositive(tuning.TurnRate, fallback.TurnRate);
-            tuning.StalkingDistance = SanitizePositive(tuning.StalkingDistance, fallback.StalkingDistance);
-            tuning.LeviathanSpeed = SanitizePositive(tuning.LeviathanSpeed, fallback.LeviathanSpeed);
-            tuning.TerrorRadius = SanitizePositive(tuning.TerrorRadius, fallback.TerrorRadius);
-            tuning.BaseDamageMagnitude = SanitizePositive(tuning.BaseDamageMagnitude, fallback.BaseDamageMagnitude);
-            tuning.BiomeAggressionMultiplier = SanitizePositive(tuning.BiomeAggressionMultiplier, fallback.BiomeAggressionMultiplier);
+            tuning.AggressionMultiplier = SanitizeRange(tuning.AggressionMultiplier, fallback.AggressionMultiplier, 0.01f, 8f);
+            tuning.AcousticSensitivity = SanitizeRange(tuning.AcousticSensitivity, fallback.AcousticSensitivity, 0.01f, 8f);
+            tuning.TurnRate = SanitizeRange(tuning.TurnRate, fallback.TurnRate, 0.01f, 4f);
+            tuning.StalkingDistance = SanitizeRange(tuning.StalkingDistance, fallback.StalkingDistance, 8f, 600f);
+            tuning.LeviathanSpeed = SanitizeRange(tuning.LeviathanSpeed, fallback.LeviathanSpeed, 1f, 120f);
+            tuning.TerrorRadius = SanitizeRange(tuning.TerrorRadius, fallback.TerrorRadius, 16f, 1200f);
+            tuning.BaseDamageMagnitude = SanitizeRange(tuning.BaseDamageMagnitude, fallback.BaseDamageMagnitude, 1f, 10000f);
+            tuning.BiomeAggressionMultiplier = SanitizeRange(tuning.BiomeAggressionMultiplier, fallback.BiomeAggressionMultiplier, 1f, 8f);
             tuning.GlobalQualityWeight = math.saturate(math.select(fallback.GlobalQualityWeight, tuning.GlobalQualityWeight, math.isfinite(tuning.GlobalQualityWeight)));
-            tuning.SimulationTickDelta = SanitizePositive(tuning.SimulationTickDelta, fallback.SimulationTickDelta);
-            tuning.StrikeDistance = SanitizePositive(tuning.StrikeDistance, fallback.StrikeDistance);
-            tuning.HeadOffsetMeters = SanitizePositive(tuning.HeadOffsetMeters, fallback.HeadOffsetMeters);
-            tuning.MidOffsetMeters = SanitizePositive(tuning.MidOffsetMeters, fallback.MidOffsetMeters);
-            tuning.TailOffsetMeters = SanitizePositive(tuning.TailOffsetMeters, fallback.TailOffsetMeters);
-            tuning.NoiseAggroGain = SanitizePositive(tuning.NoiseAggroGain, fallback.NoiseAggroGain);
-            tuning.StaminaRecoveryPerSecond = SanitizePositive(tuning.StaminaRecoveryPerSecond, fallback.StaminaRecoveryPerSecond);
+            tuning.SimulationTickDelta = SanitizeRange(tuning.SimulationTickDelta, fallback.SimulationTickDelta, 1f / 120f, 0.25f);
+            tuning.StrikeDistance = SanitizeRange(tuning.StrikeDistance, fallback.StrikeDistance, 4f, 240f);
+            tuning.HeadOffsetMeters = SanitizeRange(tuning.HeadOffsetMeters, fallback.HeadOffsetMeters, 1f, 160f);
+            tuning.MidOffsetMeters = SanitizeRange(tuning.MidOffsetMeters, fallback.MidOffsetMeters, 1f, 160f);
+            tuning.TailOffsetMeters = SanitizeRange(tuning.TailOffsetMeters, fallback.TailOffsetMeters, 1f, 220f);
+            tuning.NoiseAggroGain = SanitizeRange(tuning.NoiseAggroGain, fallback.NoiseAggroGain, 0f, 8f);
+            tuning.StaminaRecoveryPerSecond = SanitizeRange(tuning.StaminaRecoveryPerSecond, fallback.StaminaRecoveryPerSecond, 0f, 4f);
             tuning.StaminaStrikeCost = math.saturate(math.select(fallback.StaminaStrikeCost, tuning.StaminaStrikeCost, math.isfinite(tuning.StaminaStrikeCost)));
-            tuning.SweetLieShadowGain = SanitizePositive(tuning.SweetLieShadowGain, fallback.SweetLieShadowGain);
+            tuning.SweetLieShadowGain = SanitizeRange(tuning.SweetLieShadowGain, fallback.SweetLieShadowGain, 0f, 8f);
             tuning.SweetLieViewDotThreshold = math.saturate(math.select(fallback.SweetLieViewDotThreshold, tuning.SweetLieViewDotThreshold, math.isfinite(tuning.SweetLieViewDotThreshold)));
-            tuning.AmbushNodeRadiusMeters = SanitizePositive(tuning.AmbushNodeRadiusMeters, fallback.AmbushNodeRadiusMeters);
-            tuning.VisualOverkillGain = SanitizePositive(tuning.VisualOverkillGain, fallback.VisualOverkillGain);
-            tuning.BiteHeadLocalOffset = SanitizePositive(tuning.BiteHeadLocalOffset, fallback.BiteHeadLocalOffset);
+            tuning.AmbushNodeRadiusMeters = SanitizeRange(tuning.AmbushNodeRadiusMeters, fallback.AmbushNodeRadiusMeters, 2f, 512f);
+            tuning.VisualOverkillGain = SanitizeRange(tuning.VisualOverkillGain, fallback.VisualOverkillGain, 0f, 8f);
+            tuning.BiteHeadLocalOffset = SanitizeRange(tuning.BiteHeadLocalOffset, fallback.BiteHeadLocalOffset, 0f, 80f);
             if (tuning.PreferredBiomeHash == 0u)
                 tuning.PreferredBiomeHash = fallback.PreferredBiomeHash;
             if (tuning.SourceHash == 0u)
@@ -758,10 +771,36 @@ namespace Hecton8.AI.Cognition
                 tuning.LeviathanSpeed = value;
             else if (keyHash == _terrorRadiusHash)
                 tuning.TerrorRadius = value;
+            else if (keyHash == _baseDamageMagnitudeHash)
+                tuning.BaseDamageMagnitude = value;
             else if (keyHash == _biomeAggressionHash)
                 tuning.BiomeAggressionMultiplier = value;
+            else if (keyHash == _simulationTickDeltaHash)
+                tuning.SimulationTickDelta = value;
             else if (keyHash == _strikeDistanceHash)
                 tuning.StrikeDistance = value;
+            else if (keyHash == _headOffsetMetersHash)
+                tuning.HeadOffsetMeters = value;
+            else if (keyHash == _midOffsetMetersHash)
+                tuning.MidOffsetMeters = value;
+            else if (keyHash == _tailOffsetMetersHash)
+                tuning.TailOffsetMeters = value;
+            else if (keyHash == _noiseAggroGainHash)
+                tuning.NoiseAggroGain = value;
+            else if (keyHash == _staminaRecoveryPerSecondHash)
+                tuning.StaminaRecoveryPerSecond = value;
+            else if (keyHash == _staminaStrikeCostHash)
+                tuning.StaminaStrikeCost = math.saturate(value);
+            else if (keyHash == _sweetLieShadowGainHash)
+                tuning.SweetLieShadowGain = value;
+            else if (keyHash == _sweetLieViewDotThresholdHash)
+                tuning.SweetLieViewDotThreshold = math.saturate(value);
+            else if (keyHash == _ambushNodeRadiusMetersHash)
+                tuning.AmbushNodeRadiusMeters = value;
+            else if (keyHash == _visualOverkillGainHash)
+                tuning.VisualOverkillGain = value;
+            else if (keyHash == _biteHeadLocalOffsetHash)
+                tuning.BiteHeadLocalOffset = value;
             else if (keyHash == _globalQualityHash)
                 tuning.GlobalQualityWeight = math.saturate(value);
             else
@@ -944,9 +983,10 @@ namespace Hecton8.AI.Cognition
             return value * value * (3f - (2f * value));
         }
 
-        private static float SanitizePositive(float value, float fallback)
+        private static float SanitizeRange(float value, float fallback, float min, float max)
         {
-            return math.select(fallback, value, math.isfinite(value) & value > ApexBrainConstants.Epsilon);
+            float selected = math.select(fallback, value, math.isfinite(value));
+            return math.clamp(selected, min, math.max(min, max));
         }
 
         private static bool TryWriteDump(string path, in ApexBrainVaultBuffers buffers)

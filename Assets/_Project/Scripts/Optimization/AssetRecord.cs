@@ -53,7 +53,6 @@ namespace Hecton8.Optimization
         public bool IsFallback;
         public bool OwnsAssetInstance;
         public bool IsChunkAsset;
-        public bool HasAbsoluteUniversePosition;
 #if UNITY_ADDRESSABLES_EXIST
         public bool HasAddressableHandle;
         public AsyncOperationHandle AddressableHandle;
@@ -65,8 +64,6 @@ namespace Hecton8.Optimization
         public long SizeBytes;
         public int ActiveRequestId;
         public float NextRetryTime;
-        public Hecton8.World.AbsoluteUniversePosition AbsoluteUniverseAup;
-        public Vector3 AbsoluteUniversePosition;
     }
 
     internal struct AssetDispatchTicket

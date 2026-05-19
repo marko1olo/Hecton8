@@ -1,7 +1,7 @@
 # Reports
 
 Date: 2026-05-19
-Status: PENDING VERIFICATION (DOC_AUDIT R29-R45 STATIC/CLI EVIDENCE + DOC_GLOBAL R24 STATIC DOC/FILESYSTEM/SOURCE EVIDENCE / RUNTIME PROOF ABSENT)
+Status: PENDING VERIFICATION (DOC_AUDIT R29-R45 STATIC/CLI EVIDENCE + DOC_GLOBAL R29 STATIC DOC/FILESYSTEM/SOURCE EVIDENCE / RUNTIME PROOF ABSENT)
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -19,11 +19,28 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 
 Purpose: canonical drop zone for reports, audits, counters, and validation writeups.
 
-Dated reports and generic report files in this folder are evidence snapshots. Durable project policy belongs in `AGENTS.md`, `.agents-skills/README.md`, task-relevant `.agents-skills/*`, and stable docs such as `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`.
+Dated reports and generic report files in this folder are evidence snapshots. Durable project policy belongs in `AGENTS.md`, `.agents-skills/README.md`, task-relevant `.agents-skills/*`, and stable docs such as `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`.
+
+## 2026-05-19 HFI / Global Authority Boundary
+
+`2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` records the static H-Phi trend, non-compile risk review, and the initial global-authority warning. Durable policy from that report was promoted to:
+
+- `../ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`
+- `../ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`
+- `../ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`
+- `../ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`
+- `../ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`
+- `../ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
+- `../ARCHITECTURE/GLOBAL_REGISTRY_SERVICE_LOCATOR.md`
+- `../ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md`
+- `../QUALITY_GATES.md`
+- `../../.agents-skills/ARCH_Signal_Lane_Segregation.txt`
+
+Report status remains `STATIC_ANALYSIS_ONLY / RUNTIME PENDING VERIFICATION`.
 
 ## 2026-05-17 Documentation Global Refresh
 
-`2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md` is the initial broad documentation currency report for this refresh sequence. R2-R24 supersede its counters and root-drift facts where they conflict. R24 is the latest DOC_GLOBAL disk-backed static root/architecture/source-counter boundary. R23 remains the proof-language/navigation and status-JSON correction boundary; R22 is a prior source-counter boundary; R21, R20, and R19 remain prior static evidence snapshots.
+`2026-05-17_DOCUMENTATION_GLOBAL_REFRESH.md` is the initial broad documentation currency report for this refresh sequence. R2-R29 supersede its counters and root-drift facts where they conflict. R29 is the latest DOC_GLOBAL disk-backed static root/architecture stale-gate/global-authority correction. R28 remains the prior root/architecture interior-boundary correction. R27 remains the latest root/architecture/source-counter/index boundary. R26 remains the prior root/architecture HFI/blocker/source-counter boundary; R25 and R24 remain prior root/architecture boundaries; R23 remains the proof-language/navigation and status-JSON correction boundary; R22 is a prior source-counter boundary; R21, R20, and R19 remain prior static evidence snapshots.
 
 It is not Unity import, Unity Console, Play Mode, profiler, GCMonitor, player-build, scene-wiring, save/load, frame-time, memory, or visual proof.
 
@@ -42,16 +59,21 @@ R2/R3 continuation:
 - `2026-05-18_DOCUMENTATION_RESIDUE_SCAN_R12_LOCAL.md` records the local-only R12 residue pass over active proof-language leaks, absent Omega/UI/Unity artifacts, and current-truth wording after R11.
 - `2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md` records the local-only R13 generic report pass: `72` direct generic report boundaries, top-level status demotions, internal data-truth/network proof-label cleanup, absent artifact corrections, and the unchanged RealtimeCSG `AtlasCheck` blocker.
 - `2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md` records the local-only R14 Batch008 pass: archived H8BIN evidence routing, binary-hygiene PASS demotion, current `BINARY_HYGIENE_FAILED` boundary, and active-index correction for pre-Batch008 `unaligned=0` rows.
-- `2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md` records the local-only R15 active entrypoint pass; R16/R17/R18/R19/R20/R21/R22/R23/R24 then corrected remaining entrypoint, report-vault, R4, Archivarius, forensic, Marketing, EventBus, counter, Design/SpaceEngine proof-residue, source-counter, active Marketing-boundary, validation, status-JSON, root/architecture, and navigation drift so read-order lines now start at R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9 instead of stale R9/R10/R11-only boundaries.
+- `2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md` records the local-only R15 active entrypoint pass; R16/R17/R18/R19/R20/R21/R22/R23/R24/R25/R26/R27/R28/R29 then corrected remaining entrypoint, report-vault, R4, Archivarius, forensic, Marketing, EventBus, counter, Design/SpaceEngine proof-residue, source-counter, active Marketing-boundary, validation, status-JSON, root/architecture, HFI/H-Phi, blocker, index, navigation, architecture interior-boundary, stale-gate, and global-authority proof-plan drift so read-order lines now start at R29/R28/R27/R26/R25/R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9 instead of stale R9/R10/R11-only boundaries.
 - `2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md` records the local-only R16 navigation pass: remaining R9/R10/R11-only and R14-current entrypoint language was corrected after R15 became the newest disk-backed DOC_GLOBAL boundary.
 - `2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md` records the local-only R17 report-vault pass: proof-like status lines, absent artifacts, MaterialAudit/DataVault/SpaceEngine path drift, Archivarius navigation residue, and legacy five-bucket signal wording were corrected.
 - `2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md` records the local-only R18 long-tail pass: active stable R4 coverage reached `252 / 252` after concurrent Marketing doc churn, Archivarius/forensic stale counts were demoted, Modding signal schema was resynced to `160 / 2 / 158`, and SHINOBU_41/Marketing documentation was boundary-marked.
 - `2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md` records the local-only R19 pass: Marketing KPI/forecast caveats, Steam wishlist/key-policy wording, creator lead verification boundary, localized-pitch review flags, EventBus lane-count supersession, and R19 volatile source counters.
 - `2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md` records the local-only R20 pass: Archivarius R20/R19/R18/R17 read-order correction, Design/TechArt/SpaceEngine proof-status demotion, absent forensic/lore/economy artifacts, and historical JSON PASS/VERIFIED reclassification.
 - `2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md` records the local-only R21 pass: volatile source-counter refresh, report/Archivarius read-order supersession, active Marketing R4 boundary closure, and proof-residue demotion for platform/SHINOBU/co-op/SpaceEngine docs.
-- `2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md` records the local-only R22 pass: post-R21 source-counter drift, active authority count refresh, stale-current scan, atlas/Modding/JSON/R4 validation, and the unchanged RealtimeCSG AtlasCheck blocker.
+- `2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md` records the local-only R22 pass: post-R21 source-counter drift, active authority count refresh, stale-current scan, and atlas/Modding/JSON/R4 validation boundaries. Later R25/R26/R27 saw the Mod API static validator blocked by missing `ModCommand` sequential size declaration; R28/R29 supersede that red gate with `Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, and `ModCommandSizeBytes=64`. AtlasCheck remains blocked by `57` RealtimeCSG vendor refs.
 - `2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md` records the local-only R23 pass: read-only subagent residue integration, R23 read-order promotion, SpaceEngine/Omega status-JSON demotion, and JSON validation.
 - `2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md` records the local-only R24 root/architecture pass: root authority and architecture entrypoint read-order promotion, R24 source-counter recapture, atlas regeneration, architecture proof-language demotion, and the unchanged RealtimeCSG AtlasCheck blocker.
+- `2026-05-19_DOCUMENTATION_R25_ROOT_ARCHITECTURE_LONGTAIL_LOCAL.md` records the local-only R25 root/architecture long-tail pass: R25 source-counter recapture, root authority refresh, architecture proof-language demotion, generated atlas refresh, missing `AI_PACING_MODEL.md` reference closure, binary-payload ledger correction, and the unchanged RealtimeCSG AtlasCheck blocker.
+- `2026-05-19_DOCUMENTATION_R26_ROOT_ARCHITECTURE_HFI_PROMOTION_LOCAL.md` records the local-only R26 root/architecture pass: R26 source-counter recapture, HFI/H-Phi/global-authority promotion, blocker wording correction, Mod API/AtlasCheck red-gate propagation, and proof-language demotion.
+- `2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md` records the local-only R27 root/architecture/index pass: R27 source-counter recapture, root/architecture/Archivarius read-order correction, generated atlas red-gate metadata propagation, global-authority count correction, and proof-language demotion.
+- `2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md` records the local-only R28 root/architecture interior-boundary pass: 25 active architecture documents received explicit current-boundary notes, root/architecture/report indexes were promoted to R28, local links were checked, and proof-language stayed below runtime evidence.
+- `2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md` records the local-only R29 root/architecture pass: stale Mod API red-gate wording was removed from active root/architecture surfaces, global-authority R27 boundary headings were promoted to R28/R29 context, proof-plan language was tightened so runtime-facing `GREEN` requires evidence artifacts, and static proof-language overclaims were demoted.
 - `2026-05-17` R3 moved the concise compute brief to `2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md`, restoring the three-anchor root documentation target.
 
 ## 2026-05-17 Subnautica / Actuality Overlay
@@ -70,7 +92,7 @@ Related clean-room reference:
 
 ## 2026-05-13 Evidence Override
 
-`2026-05-13_DOC_AUDIT_XRAY.md` is a historical broad documentation-reality override baseline, superseded by later DOC_GLOBAL R9-R24 boundaries where they conflict.
+`2026-05-13_DOC_AUDIT_XRAY.md` is a historical broad documentation-reality override baseline, superseded by later DOC_GLOBAL R9-R28 boundaries where they conflict.
 It found the May 11 build artifacts cited by stable docs absent from the current filesystem:
 
 - `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`

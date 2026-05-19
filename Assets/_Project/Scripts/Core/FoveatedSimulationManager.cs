@@ -71,7 +71,7 @@ namespace Hecton8.Core
         private const double SlowJobCompleteWarningMilliseconds = 100.0;
         private const string SlowJobCompleteWarningMessage = "[SystemDispatcher] JobHandle.Complete slow in foveated simulation swap window.";
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct ImportanceScoringJob : IJobParallelFor
         {
@@ -123,7 +123,7 @@ namespace Hecton8.Core
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct VisualInterpolationJob : IJobParallelForTransform
         {
@@ -142,7 +142,7 @@ namespace Hecton8.Core
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct FoveatedSimulationTelemetryEntry
         {
             public int Frame;

@@ -47,59 +47,65 @@ Scope: developer-facing answers for recurring architecture questions. Runtime cl
 
    String events allocate, collide, and hide payload layout. Typed signal lanes use unmanaged payloads, bounded capacity, explicit overflow policy, and predictable consumption snapshots.
 
-7. Why does HECTON-8 use AUP instead of `Transform.position` as truth?
+   Signal boundary note: first-party hot broadcasts use typed `SignalBus<T>` lanes or documented NativeQueue bridge lanes. `HectonEventBus` is for mod/API/cold/internal-meta traffic, not default gameplay broadcast.
+
+7. How should GlobalRegistry, SignalBus, HectonEventBus, GlobalSignals, GlobalDataVault, telemetry, and H-Phi be used together?
+
+   Use `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`, and `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`: owner-local first, then one fact, one owner, one route, one proof artifact. A new global route needs owner, instrument, phase, cadence, capacity, failure mode, telemetry, shutdown, proof fields, and a `GREEN` review result before acceptance.
+
+8. Why does HECTON-8 use AUP instead of `Transform.position` as truth?
 
    `Transform.position` is float presentation space. AUP stores large-world location as integer grid plus local float offset, preserving precision across origin shifts and keeping save/runtime math deterministic.
 
-8. Why are LINQ and `foreach` on interface/dictionary surfaces rejected in Tick?
+9. Why are LINQ and `foreach` on interface/dictionary surfaces rejected in Tick?
 
    They can allocate, box, or hide virtual iteration. Hot paths use arrays, `NativeArray<T>`, `NativeList<T>`, or index-based loops over flat registry buffers.
 
-9. Why are coroutines rejected for repeated gameplay behavior?
+10. Why are coroutines rejected for repeated gameplay behavior?
 
    Coroutines allocate iterator state and hide scheduling. Repeated gameplay uses explicit state machines driven by dispatcher ticks, with timers stored as fields.
 
-10. Why is `MaterialPropertyBlock` restricted?
+11. Why is `MaterialPropertyBlock` restricted?
 
     MPB can break SRP Batcher for standard geometry. Per-material data belongs in shader CBUFFERs, instanced data, BRG/GraphicsBuffer pages, or approved UI/particle exceptions.
 
-11. Why are Addressables handles tracked and released explicitly?
+12. Why are Addressables handles tracked and released explicitly?
 
     Fire-and-forget asset loads leak memory and hide ownership. Every async asset handle needs an owner, release path, and unload behavior tied to despawn, shutdown, or scene transition.
 
-12. Why is JSON or Easy Save 3 rejected for production save data?
+13. Why is JSON or Easy Save 3 rejected for production save data?
 
     Save authority is binary delta persistence with checksums, backups, and migration. Text or third-party save paths are too slow, too broad, and not compatible with deterministic world-seed deltas.
 
-13. Why is scene flow fixed to `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`?
+14. Why is scene flow fixed to `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`?
 
     Bootstrap owns service initialization and loading discipline. Main menu owns shell UX. World owns gameplay. Loading heavy terrain/ocean/cave payloads outside that flow risks main-thread stalls and cross-scene references.
 
-14. Why is `Resources.UnloadUnusedAssets()` forbidden after scene unload?
+15. Why is `Resources.UnloadUnusedAssets()` forbidden after scene unload?
 
     It can stall and force broad managed/native cleanup at the wrong time. Release queues, Addressables ownership, and controlled low-frame-time GC windows are the accepted cleanup model.
 
-15. Why is Bloom forbidden on MX350/MINIMAL?
+16. Why is Bloom forbidden on MX350/MINIMAL?
 
     The minimum GPU budget is strict. Bloom is not necessary to preserve underwater readability on the target tier and competes with fog, silhouettes, and UI clarity.
 
-16. Why are shader keywords treated as architecture changes?
+17. Why are shader keywords treated as architecture changes?
 
     Keywords multiply variants. A new keyword without a warmed and stripped variant path causes shader hitching, memory growth, and build-size bloat.
 
-17. Why does HUD text use char buffers instead of assigning strings?
+18. Why does HUD text use char buffers instead of assigning strings?
 
     `TMP_Text.text = ...` allocates strings. Hot HUD paths write into preallocated `char[]` or span-backed buffers and use allocation-free TextMeshPro APIs.
 
-18. Why must persistent native buffers come from the DataVault?
+19. Why must persistent native buffers come from the DataVault?
 
     Local native allocation fragments ownership and makes relocation, generation checks, disposal, and telemetry unreliable. DataVault handles centralize lifetime, owner id, capacity, generation, and relocation rules.
 
-19. Why are raw prefab, scene, or asset YAML edits restricted?
+20. Why are raw prefab, scene, or asset YAML edits restricted?
 
     Unity YAML has FileID/GUID/property alignment rules. Blind text edits can corrupt assets. Use Unity editor APIs for mutation unless the structure is mathematically certain and then validate it.
 
-20. Why do many docs say `PENDING VERIFICATION` even after source work exists?
+21. Why do many docs say `PENDING VERIFICATION` even after source work exists?
 
     Static source and docs prove text presence only. Runtime readiness needs Unity import, Console, Play Mode, profiler, GCMonitor, player build, memory, frame-time, scene wiring, and visual artifacts.
 

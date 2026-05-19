@@ -7,7 +7,8 @@ using UnityEngine;
 namespace Hecton8.Modding
 {
     /// <summary>
-    /// Cold-path bridge that discovers mod localization files and injects them into the first-party localization owner.
+    /// Legacy cold-path bridge for mod localization files.
+    /// Envelope-only UGC mode disables filesystem language injection; text-facing mods must use approved future seams.
     /// </summary>
     internal static class ModLocalizationBridge
     {
@@ -64,6 +65,9 @@ namespace Hecton8.Modding
         /// </summary>
         internal static void RegisterLocalizationFiles(string modId, string[] filePaths)
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                return;
+
             if (string.IsNullOrWhiteSpace(modId) || filePaths == null || filePaths.Length == 0)
                 return;
 
@@ -96,6 +100,9 @@ namespace Hecton8.Modding
         /// </summary>
         internal static void FlushPendingInjections()
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                return;
+
             LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             if (localization == null || _pendingTables.Count == 0)
                 return;

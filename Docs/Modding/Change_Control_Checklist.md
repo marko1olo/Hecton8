@@ -1,7 +1,7 @@
 # Mod API Change Control Checklist
 
-Date: 2026-05-17
-Status: STATIC_CHANGE_GATE / RUNTIME_PENDING
+Date: 2026-05-19
+Status: ENVELOPE-ONLY STATIC_CHANGE_GATE / RUNTIME_PENDING
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -22,6 +22,8 @@ Owner prompt: MODDING_API_SCHEMA_BUILDER
 ## Rule
 
 No mod API contract change is complete until the source, schema, audit matrix, runtime playbook, and static validator agree. A public C# type or method is not automatically a mod API right.
+
+Current envelope-only rule: a modder-friendly SDK interface is not a runtime permission. Workbench screens, graph nodes, CLI commands, generated packers, and package manifests must still compile down to validated `FutureCommandEnvelope` streams and approved binary/package records. Any source or doc change that implies managed runtime mod execution must explicitly update `Mod_API_Sandbox_Quarantine.md` and pass runtime verification.
 
 ## Required Static Gate
 
@@ -49,6 +51,10 @@ Required result: `Status = PASS`.
 | Change mod save payload boundary | `Loader_Save_Audit_Matrix.md`, `Signal_Schema.json.loaderSaveAudit`, runtime playbook, save storage source | Payload cap, namespace prefix, active scope, no first-party save-owner mutation. |
 | Change runtime verification criteria | `Runtime_Verification_Playbook.md`, `Signal_Schema.json.staticValidation`, this checklist | Exact Unity steps, GC/profiler evidence format, failure handling. |
 | Change sample mod spec | `Sample_InfiniteO2_Mod.md`, `Mod_API_Specification.md`, `Signal_Schema.json.sampleModSpecs`, validator source | Public facade signatures, no direct gameplay authority, future kernel requirements. |
+| Change SDK authoring model | `SDK_Authoring_Interface_Plan.md`, `SDK_Product_Blueprint.md`, `README.md`, `Mod_API_Specification.md`, `Runtime_Verification_Playbook.md` | Prove the SDK emits packages/envelopes only; no runtime C# callback promise. |
+| Change envelope-only quarantine | `Mod_API_Sandbox_Quarantine.md`, `Mod_API_Specification.md`, `Runtime_Verification_Playbook.md`, relevant audit matrices, validator source | Legacy surface state, allowed ingress, rejection behavior, GC/profiler proof path. |
+| Change package manifest or packer output | `SDK_Authoring_Interface_Plan.md`, `Loader_Save_Audit_Matrix.md`, `Runtime_Verification_Playbook.md`, static validator or SDK validator | Required fields, capability mapping, package hash, no loose runtime ingress. |
+| Change asset ingress for mods | `SDK_Authoring_Interface_Plan.md`, `Resource_Content_Audit_Matrix.md`, `Mod_API_Sandbox_Quarantine.md`, runtime playbook | CRC manifest, byte caps, no runtime `.bundle` or raw loose file bypass. |
 
 ## Hard Stops
 
@@ -57,6 +63,8 @@ Required result: `Status = PASS`.
 - Runtime-verified status is invalid without Unity Console, GCMonitor, and profiler evidence.
 - New event or command strings are invalid; use numeric hashes/enums.
 - Direct `SignalBus<T>`, `NativeQueue`, `NativeArray`, DataVault, `GameObject`, `Transform`, prefab, material, texture, or audio clip exposure to mods is invalid.
+- "SDK supports mods" is invalid if it means runtime `.dll` callbacks, Harmony patches, loose asset ingestion, or direct Unity object access.
+- Hand-authored envelopes are acceptable for advanced tooling, but normal public modding must have SDK validation and readable rejection reports.
 
 ## Audit Files
 

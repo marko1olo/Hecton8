@@ -24,8 +24,10 @@ namespace Hecton8.AI.Cognition
                 return;
 
             MockPlayerAUP target = Targets[index];
+            if (!math.all(math.isfinite(target.AUP)))
+                target.AUP = default;
             float dt = SanitizePositive(SimulationTickDelta, target.SimulationTickDelta);
-            float3 velocity = SanitizeFinite(target.Velocity, float3.zero);
+            float3 velocity = ClampMagnitude(SanitizeFinite(target.Velocity, float3.zero), 120f);
             target.AUP += new double3(velocity.x, velocity.y, velocity.z) * dt;
             target.Forward = NormalizeSafe(target.Forward, NormalizeSafe(velocity, new float3(0f, 0f, 1f)));
             target.SimulationTickDelta = dt;
@@ -38,6 +40,7 @@ namespace Hecton8.AI.Cognition
         private static float SanitizePositive(float primary, float fallback)
         {
             float selected = math.select(fallback, primary, math.isfinite(primary) & primary > 0f);
+            selected = math.select(1f / 30f, selected, math.isfinite(selected) & selected > 0f);
             return math.min(math.max(selected, ApexBrainConstants.Epsilon), 0.25f);
         }
 
@@ -53,7 +56,18 @@ namespace Hecton8.AI.Cognition
             value = SanitizeFinite(value, fallback);
             float lengthSq = math.lengthsq(value);
             bool valid = lengthSq > ApexBrainConstants.Epsilon;
-            return math.select(fallback, value * math.rsqrt(math.max(lengthSq, ApexBrainConstants.Epsilon)), valid);
+            float3 normalized = value * math.rsqrt(math.max(lengthSq, ApexBrainConstants.Epsilon));
+            return math.select(fallback, normalized, valid & math.all(math.isfinite(normalized)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ClampMagnitude(float3 value, float maxLength)
+        {
+            float lengthSq = math.lengthsq(value);
+            float maxSq = maxLength * maxLength;
+            bool clamp = (lengthSq > maxSq) | !math.isfinite(lengthSq);
+            float3 clamped = value * (maxLength * math.rsqrt(math.max(lengthSq, ApexBrainConstants.Epsilon)));
+            return math.select(value, clamped, clamp & math.all(math.isfinite(clamped)));
         }
     }
 
@@ -65,14 +79,14 @@ namespace Hecton8.AI.Cognition
     {
         [NoAlias] public NativeArray<ApexStateDTO> States;
         [ReadOnly, NoAlias] public NativeArray<MockPlayerAUP> MockTargets;
-        [ReadOnly, NoAlias] public NativeArray<AcousticEchoTap> AcousticTaps;
+        [ReadOnly, NoAlias] public NativeArray<ApexBrainAcousticEchoTap> AcousticTaps;
         [ReadOnly, NoAlias] public NativeArray<ApexBrainTuning> Tuning;
         [ReadOnly, NoAlias] public NativeArray<ApexEmergencyStats> EmergencyStats;
         [ReadOnly, NoAlias] public NativeArray<MockWorldSampler> WorldSampler;
         [NoAlias] public NativeArray<ApexBrainOutputDTO> Outputs;
         [NoAlias] public NativeArray<ApexProximitySignal> ProximitySignals;
         [NoAlias] public NativeArray<MockCombatDamageSignal> CombatDamageSignals;
-        [NoAlias] public NativeArray<GlobalPanicSignal> PanicSignals;
+        [NoAlias] public NativeArray<ApexPanicSignal> PanicSignals;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<ApexInfluenceNode> InfluenceNodes;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<float3> AmbushNodeScratch;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<ApexTelemetryEntry> TelemetryRing;
@@ -123,7 +137,7 @@ namespace Hecton8.AI.Cognition
         // Invariant: the queue writer is used only inside WriteSignals after the vault panic row is populated, and
         // only when EnableSignalQueueWrites!=0. The caller owns the NativeQueue and must chain the returned
         // JobHandle before draining or disposing it.
-        [NativeDisableContainerSafetyRestriction] public NativeQueue<GlobalPanicSignal>.ParallelWriter PanicSignalWriter;
+        [NativeDisableContainerSafetyRestriction] public NativeQueue<ApexPanicSignal>.ParallelWriter PanicSignalWriter;
         public int TargetCount;
         public int AcousticTapCount;
         public uint Frame;
@@ -231,10 +245,18 @@ namespace Hecton8.AI.Cognition
             bool computedFinite =
                 math.all(math.isfinite(targetLocal)) &
                 math.all(math.isfinite(interceptLocal)) &
+                math.all(math.isfinite(pursuitLocal)) &
+                math.all(math.isfinite(pursuitDirection)) &
                 math.all(math.isfinite(wallRepulsion)) &
                 math.isfinite(centerSample.Distance) &
                 math.isfinite(headSample.Distance) &
                 math.isfinite(lineSample.Distance) &
+                math.isfinite(viewDot) &
+                math.isfinite(distanceVisibility) &
+                math.isfinite(wallShadow) &
+                math.isfinite(lineShadow) &
+                math.isfinite(sdfShadow) &
+                math.isfinite(sweetLieShadow) &
                 math.isfinite(sweetLieLos01);
             if (!computedFinite)
             {
@@ -245,8 +267,9 @@ namespace Hecton8.AI.Cognition
 
             float biomeMultiplier = ResolveBiomeMultiplier(target, tuning);
             float dt = ResolveDeltaTime(tuning, target);
+            float targetNoise01 = math.saturate(math.select(0f, target.Noise01, math.isfinite(target.Noise01)));
             float acousticAggro = acoustic.Score01 * tuning.AcousticSensitivity;
-            float noiseAggro = math.saturate(target.Noise01) * tuning.NoiseAggroGain;
+            float noiseAggro = targetNoise01 * tuning.NoiseAggroGain;
             float lineOfSightRestraint = math.lerp(1.15f, 0.35f, sweetLieLos01);
             float aggressionDelta = dt * tuning.AggressionMultiplier * biomeMultiplier * lineOfSightRestraint * (noiseAggro + acousticAggro + 0.05f);
             float aggression = math.saturate(math.select(0f, state.AggressionLevel, math.isfinite(state.AggressionLevel)) + aggressionDelta);
@@ -255,7 +278,9 @@ namespace Hecton8.AI.Cognition
             int fullNodeCount = math.clamp((int)math.floor(nodeFloat), ApexBrainConstants.MinAmbushNodes, ApexBrainConstants.MaxAmbushNodes);
             float fractionalNode = math.saturate(nodeFloat - fullNodeCount);
             int evaluatedNodeCount = math.min(ApexBrainConstants.MaxAmbushNodes, fullNodeCount + math.select(0, 1, fractionalNode > ApexBrainConstants.Epsilon));
-            AmbushSelection ambush = ResolveAmbushNodes(index, pursuitLocal, pursuitDirection, sampler, tuning, quality, sweetLieShadow, fullNodeCount, evaluatedNodeCount, fractionalNode);
+            int previousEvaluatedNodeCount = ResolvePreviousEvaluatedNodeCount(index);
+            int staleNodeClearCount = math.max(0, previousEvaluatedNodeCount - evaluatedNodeCount);
+            AmbushSelection ambush = ResolveAmbushNodes(index, pursuitLocal, pursuitDirection, sampler, tuning, quality, sweetLieShadow, fullNodeCount, evaluatedNodeCount, fractionalNode, previousEvaluatedNodeCount);
 
             float stalkUtility = math.saturate(sweetLieLos01 + (sweetLieShadow * 0.35f) + (acoustic.Score01 * 0.2f));
             float ambushUtility = math.saturate(ambush.Score01 * math.lerp(0.6f, 1.25f, quality));
@@ -318,7 +343,7 @@ namespace Hecton8.AI.Cognition
             Outputs[index] = output;
 
             WriteSignals(index, slot, state, target, output, tuning, (byte)phase, flags, smoothedDirection);
-            WriteTelemetry(index, slot, output, target, tuning, (byte)phase, flags, stateHash, 0u, acousticTapLimit);
+            WriteTelemetry(index, slot, output, target, tuning, (byte)phase, flags, stateHash, 0u, acousticTapLimit, staleNodeClearCount);
         }
 
         private bool CanExecute(int index)
@@ -337,6 +362,14 @@ namespace Hecton8.AI.Cognition
             return math.select(0, index % count, count > 1);
         }
 
+        private int ResolvePreviousEvaluatedNodeCount(int index)
+        {
+            if (!Outputs.IsCreated || (uint)index >= (uint)Outputs.Length)
+                return 0;
+
+            return math.clamp((int)Outputs[index].EvaluatedNodeCount, 0, ApexBrainConstants.MaxAmbushNodes);
+        }
+
         private ApexBrainTuning ResolveTuning()
         {
             ApexBrainTuning tuning = ApexBrainDefaults.BuildEmergencyMockTuning();
@@ -347,32 +380,40 @@ namespace Hecton8.AI.Cognition
                     tuning = candidate;
             }
 
-            tuning.AggressionMultiplier = SanitizePositive(tuning.AggressionMultiplier, 1f);
-            tuning.AcousticSensitivity = SanitizePositive(tuning.AcousticSensitivity, 1f);
-            tuning.TurnRate = SanitizePositive(tuning.TurnRate, 0.18f);
-            tuning.StalkingDistance = SanitizePositive(tuning.StalkingDistance, 90f);
-            tuning.LeviathanSpeed = SanitizePositive(tuning.LeviathanSpeed, 26f);
-            tuning.TerrorRadius = SanitizePositive(tuning.TerrorRadius, 160f);
-            tuning.BaseDamageMagnitude = SanitizePositive(tuning.BaseDamageMagnitude, 500f);
-            tuning.BiomeAggressionMultiplier = SanitizePositive(tuning.BiomeAggressionMultiplier, 2f);
-            tuning.SimulationTickDelta = SanitizePositive(tuning.SimulationTickDelta, 1f / 30f);
-            tuning.StrikeDistance = SanitizePositive(tuning.StrikeDistance, 24f);
-            tuning.NoiseAggroGain = SanitizePositive(tuning.NoiseAggroGain, 0.35f);
-            tuning.StaminaRecoveryPerSecond = SanitizePositive(tuning.StaminaRecoveryPerSecond, 0.12f);
+            tuning.AggressionMultiplier = SanitizeRange(tuning.AggressionMultiplier, 1f, 0.01f, 8f);
+            tuning.AcousticSensitivity = SanitizeRange(tuning.AcousticSensitivity, 1f, 0.01f, 8f);
+            tuning.TurnRate = SanitizeRange(tuning.TurnRate, 0.18f, 0.01f, 4f);
+            tuning.StalkingDistance = SanitizeRange(tuning.StalkingDistance, 90f, 8f, 600f);
+            tuning.LeviathanSpeed = SanitizeRange(tuning.LeviathanSpeed, 26f, 1f, 120f);
+            tuning.TerrorRadius = SanitizeRange(tuning.TerrorRadius, 160f, 16f, 1200f);
+            tuning.BaseDamageMagnitude = SanitizeRange(tuning.BaseDamageMagnitude, 500f, 1f, 10000f);
+            tuning.BiomeAggressionMultiplier = SanitizeRange(tuning.BiomeAggressionMultiplier, 2f, 1f, 8f);
+            tuning.SimulationTickDelta = SanitizeRange(tuning.SimulationTickDelta, 1f / 30f, 1f / 120f, 0.25f);
+            tuning.StrikeDistance = SanitizeRange(tuning.StrikeDistance, 24f, 4f, 240f);
+            tuning.HeadOffsetMeters = SanitizeRange(tuning.HeadOffsetMeters, 28f, 1f, 160f);
+            tuning.MidOffsetMeters = SanitizeRange(tuning.MidOffsetMeters, 18f, 1f, 160f);
+            tuning.TailOffsetMeters = SanitizeRange(tuning.TailOffsetMeters, 42f, 1f, 220f);
+            tuning.NoiseAggroGain = SanitizeRange(tuning.NoiseAggroGain, 0.35f, 0f, 8f);
+            tuning.StaminaRecoveryPerSecond = SanitizeRange(tuning.StaminaRecoveryPerSecond, 0.12f, 0f, 4f);
             tuning.StaminaStrikeCost = math.saturate(math.select(0.16f, tuning.StaminaStrikeCost, math.isfinite(tuning.StaminaStrikeCost)));
-            tuning.SweetLieShadowGain = SanitizePositive(tuning.SweetLieShadowGain, 0.85f);
+            tuning.SweetLieShadowGain = SanitizeRange(tuning.SweetLieShadowGain, 0.85f, 0f, 8f);
             tuning.SweetLieViewDotThreshold = math.saturate(math.select(0.58f, tuning.SweetLieViewDotThreshold, math.isfinite(tuning.SweetLieViewDotThreshold)));
-            tuning.AmbushNodeRadiusMeters = SanitizePositive(tuning.AmbushNodeRadiusMeters, 38f);
-            tuning.VisualOverkillGain = SanitizePositive(tuning.VisualOverkillGain, 1f);
-            tuning.BiteHeadLocalOffset = SanitizePositive(tuning.BiteHeadLocalOffset, 9f);
+            tuning.AmbushNodeRadiusMeters = SanitizeRange(tuning.AmbushNodeRadiusMeters, 38f, 2f, 512f);
+            tuning.VisualOverkillGain = SanitizeRange(tuning.VisualOverkillGain, 1f, 0f, 8f);
+            tuning.BiteHeadLocalOffset = SanitizeRange(tuning.BiteHeadLocalOffset, 9f, 0f, 80f);
             return tuning;
         }
 
         private ApexEmergencyStats ResolveEmergencyStats()
         {
-            ApexEmergencyStats stats = ApexBrainDefaults.BuildEmergencyMockStats();
+            ApexEmergencyStats fallback = ApexBrainDefaults.BuildEmergencyMockStats();
+            ApexEmergencyStats stats = fallback;
             if (EmergencyStats.IsCreated && EmergencyStats.Length > 0)
                 stats = EmergencyStats[0];
+            stats.AggressionBuildSeconds = SanitizeFinite(stats.AggressionBuildSeconds, fallback.AggressionBuildSeconds);
+            stats.TurnRadiiMeters = SanitizeFinite(stats.TurnRadiiMeters, fallback.TurnRadiiMeters);
+            stats.StrikeWindowsSeconds = SanitizeFinite(stats.StrikeWindowsSeconds, fallback.StrikeWindowsSeconds);
+            stats.VisualOverkillScalars = SanitizeFinite(stats.VisualOverkillScalars, fallback.VisualOverkillScalars);
             return stats;
         }
 
@@ -382,14 +423,23 @@ namespace Hecton8.AI.Cognition
             if (WorldSampler.IsCreated && WorldSampler.Length > 0)
                 sampler = WorldSampler[0];
 
-            sampler.CaveRadiusMeters = SanitizePositive(sampler.CaveRadiusMeters, 36f);
-            sampler.GradientProbeMeters = SanitizePositive(sampler.GradientProbeMeters, 2f);
-            sampler.SpatialCellSizeMeters = SanitizePositive(sampler.SpatialCellSizeMeters, 16f);
-            sampler.WallRepulsionGain = SanitizePositive(sampler.WallRepulsionGain, 0.85f);
-            sampler.SdfSoftMarginMeters = SanitizePositive(sampler.SdfSoftMarginMeters, 6f);
-            sampler.HeadOffsetMeters = SanitizePositive(sampler.HeadOffsetMeters, tuning.HeadOffsetMeters);
-            sampler.MidOffsetMeters = SanitizePositive(sampler.MidOffsetMeters, tuning.MidOffsetMeters);
-            sampler.TailOffsetMeters = SanitizePositive(sampler.TailOffsetMeters, tuning.TailOffsetMeters);
+            sampler.OriginLocal = SanitizeFinite(sampler.OriginLocal, float3.zero);
+            sampler.FloorY = SanitizeRange(sampler.FloorY, -32f, -1000f, 999f);
+            sampler.CeilingY = SanitizeRange(sampler.CeilingY, 32f, -999f, 1000f);
+            if (sampler.CeilingY - sampler.FloorY < 1f)
+            {
+                sampler.FloorY = -32f;
+                sampler.CeilingY = 32f;
+            }
+            sampler.CaveRadiusMeters = SanitizeRange(sampler.CaveRadiusMeters, 36f, 1f, 1000f);
+            sampler.GradientProbeMeters = SanitizeRange(sampler.GradientProbeMeters, 2f, 0.1f, 32f);
+            sampler.SpatialCellSizeMeters = SanitizeRange(sampler.SpatialCellSizeMeters, 16f, 1f, 256f);
+            sampler.CanyonBias01 = math.saturate(math.select(0.25f, sampler.CanyonBias01, math.isfinite(sampler.CanyonBias01)));
+            sampler.WallRepulsionGain = SanitizeRange(sampler.WallRepulsionGain, 0.85f, 0f, 16f);
+            sampler.SdfSoftMarginMeters = SanitizeRange(sampler.SdfSoftMarginMeters, 6f, 0.25f, 128f);
+            sampler.HeadOffsetMeters = SanitizeRange(sampler.HeadOffsetMeters, tuning.HeadOffsetMeters, 1f, 160f);
+            sampler.MidOffsetMeters = SanitizeRange(sampler.MidOffsetMeters, tuning.MidOffsetMeters, 1f, 160f);
+            sampler.TailOffsetMeters = SanitizeRange(sampler.TailOffsetMeters, tuning.TailOffsetMeters, 1f, 220f);
             return sampler;
         }
 
@@ -400,7 +450,7 @@ namespace Hecton8.AI.Cognition
             int limit = AcousticTaps.IsCreated ? math.min(math.max(0, acousticTapLimit), AcousticTaps.Length) : 0;
             for (int i = 0; i < limit; i++)
             {
-                AcousticEchoTap tap = AcousticTaps[i];
+                ApexBrainAcousticEchoTap tap = AcousticTaps[i];
                 if (!math.all(math.isfinite(tap.AUP)) || !math.isfinite(tap.Magnitude01) || !math.isfinite(tap.AgeSeconds))
                     continue;
 
@@ -415,9 +465,10 @@ namespace Hecton8.AI.Cognition
                 result.Hash = math.select(tap.SourceHash ^ 0xAC0511u, tap.AcousticMemoryHash, tap.AcousticMemoryHash != 0u);
             }
 
-            if (result.Score01 <= ApexBrainConstants.Epsilon && target.AcousticMagnitude01 > ApexBrainConstants.Epsilon)
+            float targetAcoustic01 = math.saturate(math.select(0f, target.AcousticMagnitude01, math.isfinite(target.AcousticMagnitude01)));
+            if (result.Score01 <= ApexBrainConstants.Epsilon && targetAcoustic01 > ApexBrainConstants.Epsilon)
             {
-                result.Score01 = math.saturate(target.AcousticMagnitude01 * tuning.AcousticSensitivity);
+                result.Score01 = math.saturate(targetAcoustic01 * tuning.AcousticSensitivity);
                 result.LocalPosition = DowncastAupDelta(target.AUP - selfAup);
                 result.Hash = target.TargetHash ^ 0xAC0511u;
             }
@@ -435,7 +486,8 @@ namespace Hecton8.AI.Cognition
             float sweetLieShadow,
             int fullNodeCount,
             int evaluatedNodeCount,
-            float fractionalNode)
+            float fractionalNode,
+            int previousEvaluatedNodeCount)
         {
             AmbushSelection best = default;
             best.Direction = pursuitDirection;
@@ -445,19 +497,11 @@ namespace Hecton8.AI.Cognition
             float3 vertical = NormalizeSafe(math.cross(pursuitDirection, lateral), up);
             float radius = tuning.AmbushNodeRadiusMeters * math.lerp(0.45f, 1.25f, quality);
             int baseIndex = slot * ApexBrainConstants.MaxAmbushNodes;
+            int evaluatedCount = math.clamp(evaluatedNodeCount, 0, ApexBrainConstants.MaxAmbushNodes);
+            int staleClearEnd = math.clamp(math.max(previousEvaluatedNodeCount, evaluatedCount), 0, ApexBrainConstants.MaxAmbushNodes);
 
-            for (int i = 0; i < ApexBrainConstants.MaxAmbushNodes; i++)
+            for (int i = 0; i < evaluatedCount; i++)
             {
-                if (i >= evaluatedNodeCount)
-                {
-                    int staleRow = baseIndex + i;
-                    if (AmbushNodeScratch.IsCreated && (uint)staleRow < (uint)AmbushNodeScratch.Length)
-                        AmbushNodeScratch[staleRow] = float3.zero;
-                    if (InfluenceNodes.IsCreated && (uint)staleRow < (uint)InfluenceNodes.Length)
-                        InfluenceNodes[staleRow] = default;
-                    continue;
-                }
-
                 float fractionalWeight = math.select(1f, fractionalNode, i >= fullNodeCount);
                 uint nodeSeed = ((uint)slot * 73856093u) ^ ((uint)i * 19349663u);
                 float2 ring = ResolveOctantUnit(i);
@@ -503,6 +547,15 @@ namespace Hecton8.AI.Cognition
                 }
             }
 
+            for (int i = evaluatedCount; i < staleClearEnd; i++)
+            {
+                int staleRow = baseIndex + i;
+                if (AmbushNodeScratch.IsCreated && (uint)staleRow < (uint)AmbushNodeScratch.Length)
+                    AmbushNodeScratch[staleRow] = float3.zero;
+                if (InfluenceNodes.IsCreated && (uint)staleRow < (uint)InfluenceNodes.Length)
+                    InfluenceNodes[staleRow] = default;
+            }
+
             return best;
         }
 
@@ -533,7 +586,7 @@ namespace Hecton8.AI.Cognition
                 PanicSignals[index] = default;
             ClearAmbushRows(index);
 
-            WriteTelemetry(index, slot, output, target, tuning, ApexBrainPhase.Dormant, 0, output.StateHash, 0u, 0);
+            WriteTelemetry(index, slot, output, target, tuning, ApexBrainPhase.Dormant, 0, output.StateHash, 0u, 0, 0);
         }
 
         private void WriteFaultRow(
@@ -572,7 +625,7 @@ namespace Hecton8.AI.Cognition
                 PanicSignals[index] = default;
             ClearAmbushRows(index);
 
-            WriteTelemetry(index, slot, output, target, tuning, ApexBrainPhase.Dormant, flags, stateHash, faultCode, 0);
+            WriteTelemetry(index, slot, output, target, tuning, ApexBrainPhase.Dormant, flags, stateHash, faultCode, 0, 0);
         }
 
         private void ClearAmbushRows(int slot)
@@ -639,7 +692,7 @@ namespace Hecton8.AI.Cognition
 
             if (PanicSignals.IsCreated && (uint)index < (uint)PanicSignals.Length)
             {
-                GlobalPanicSignal panic = new GlobalPanicSignal
+                ApexPanicSignal panic = new ApexPanicSignal
                 {
                     SourceAup = state.AUP,
                     Direction = desiredDirection,
@@ -666,7 +719,8 @@ namespace Hecton8.AI.Cognition
             byte flags,
             uint stateHash,
             uint faultCode,
-            int evaluatedAcousticTapCount)
+            int evaluatedAcousticTapCount,
+            int staleNodeClearCount)
         {
             if (!TelemetryRing.IsCreated || TelemetryRing.Length <= 0)
                 return;
@@ -695,7 +749,7 @@ namespace Hecton8.AI.Cognition
                 EvaluatedNodeCount = output.EvaluatedNodeCount,
                 GlobalQualityWeight = resolvedQuality,
                 ActiveLeviathans = math.select(0f, 1f, (flags & ApexBrainFlags.Active) != 0),
-                InterceptComputeTimeMs = EstimateComputeTimeMs(output.EvaluatedNodeCount, evaluatedAcousticTapCount, resolvedQuality, flags),
+                InterceptComputeTimeMs = EstimateComputeTimeMs(output.EvaluatedNodeCount, evaluatedAcousticTapCount, resolvedQuality, flags, staleNodeClearCount),
                 Slot = slot,
                 Phase = phase,
                 Flags = flags,
@@ -778,7 +832,20 @@ namespace Hecton8.AI.Cognition
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeRange(float value, float fallback, float min, float max)
+        {
+            float selected = math.select(fallback, value, math.isfinite(value));
+            return math.clamp(selected, min, math.max(min, max));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 SanitizeFinite(float3 value, float3 fallback)
+        {
+            return math.select(fallback, value, math.all(math.isfinite(value)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float4 SanitizeFinite(float4 value, float4 fallback)
         {
             return math.select(fallback, value, math.all(math.isfinite(value)));
         }
@@ -807,15 +874,16 @@ namespace Hecton8.AI.Cognition
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float EstimateComputeTimeMs(uint evaluatedNodeCount, int acousticTapCount, float quality, byte flags)
+        private static float EstimateComputeTimeMs(uint evaluatedNodeCount, int acousticTapCount, float quality, byte flags, int staleNodeClearCount)
         {
             float nodeUs = math.min(evaluatedNodeCount, ApexBrainConstants.MaxAmbushNodes) * 0.72f;
             float acousticUs = math.min(math.max(0, acousticTapCount), ApexBrainConstants.MaxAcousticTaps) * 0.22f;
+            float staleClearUs = math.min(math.max(0, staleNodeClearCount), ApexBrainConstants.MaxAmbushNodes) * 0.06f;
             float losProbeUs = math.step(0.28f, quality) * 0.38f;
             float midSampleUs = math.step(ApexBrainConstants.SdfMidsectionStartQuality, quality) * 0.75f;
             float tailSampleUs = ((flags & ApexBrainFlags.TailSdfSampled) != 0 ? 0.9f : 0f);
             float baseUs = 5.4f + (quality * 1.8f);
-            return (baseUs + nodeUs + acousticUs + losProbeUs + midSampleUs + tailSampleUs) * 0.001f;
+            return (baseUs + nodeUs + acousticUs + staleClearUs + losProbeUs + midSampleUs + tailSampleUs) * 0.001f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,0 +1,2136 @@
+﻿[
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\BinaryHygiene_SHINOBU_50.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\BinaryHygiene_SHINOBU_50.json",
+        "Name":  "BinaryHygiene_SHINOBU_50.json",
+        "Length":  14350,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:36:38.1053709Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\BinaryHygiene_SHINOBU_50_Latest.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\BinaryHygiene_SHINOBU_50_Latest.json",
+        "Name":  "BinaryHygiene_SHINOBU_50_Latest.json",
+        "Length":  14350,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:54:45.2400388Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\BinaryHygiene_SHINOBU_50_Loop09.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\BinaryHygiene_SHINOBU_50_Loop09.json",
+        "Name":  "BinaryHygiene_SHINOBU_50_Loop09.json",
+        "Length":  14350,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:36:00.4074174Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\BinaryHygiene_SHINOBU_50_Loop12.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\BinaryHygiene_SHINOBU_50_Loop12.json",
+        "Name":  "BinaryHygiene_SHINOBU_50_Loop12.json",
+        "Length":  14350,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:47:01.5977138Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\BinaryHygiene_SHINOBU_50_Loop13.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\BinaryHygiene_SHINOBU_50_Loop13.json",
+        "Name":  "BinaryHygiene_SHINOBU_50_Loop13.json",
+        "Length":  14350,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:40:59.4330779Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\BinaryHygiene_SHINOBU_50_Loop14.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\BinaryHygiene_SHINOBU_50_Loop14.json",
+        "Name":  "BinaryHygiene_SHINOBU_50_Loop14.json",
+        "Length":  14350,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:03:30.3771566Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\BinaryHygiene_SHINOBU_77.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\BinaryHygiene_SHINOBU_77.json",
+        "Name":  "BinaryHygiene_SHINOBU_77.json",
+        "Length":  14350,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:21:23.3862471Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_SHINOBU_47_CoreLoop9.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Build_SHINOBU_47_CoreLoop9.log",
+        "Name":  "Build_SHINOBU_47_CoreLoop9.log",
+        "Length":  117588,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:04:14.4465672Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_SHINOBU_50_Core_Latest.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Build_SHINOBU_50_Core_Latest.log",
+        "Name":  "Build_SHINOBU_50_Core_Latest.log",
+        "Length":  11012,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:04:17.2045457Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Crafting_SourceContract_Audit.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Crafting_SourceContract_Audit.json",
+        "Name":  "Crafting_SourceContract_Audit.json",
+        "Length":  1195,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T11:56:21.2203488Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\DotnetBuild_SHINOBU_50_Core.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\DotnetBuild_SHINOBU_50_Core.log",
+        "Name":  "DotnetBuild_SHINOBU_50_Core.log",
+        "Length":  10066,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T14:11:56.3703468Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\DotnetBuild_SHINOBU_76_diag.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\DotnetBuild_SHINOBU_76_diag.log",
+        "Name":  "DotnetBuild_SHINOBU_76_diag.log",
+        "Length":  9409092,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T14:09:00.8405822Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Hecton8.Editor.DynamicResolutionTuner_SHINOBU_66.dll",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Hecton8.Editor.DynamicResolutionTuner_SHINOBU_66.dll",
+        "Name":  "Hecton8.Editor.DynamicResolutionTuner_SHINOBU_66.dll",
+        "Length":  10240,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T17:11:51.6263743Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Hecton8.Editor.DynamicResolutionTuner_SHINOBU_66.pdb",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Hecton8.Editor.DynamicResolutionTuner_SHINOBU_66.pdb",
+        "Name":  "Hecton8.Editor.DynamicResolutionTuner_SHINOBU_66.pdb",
+        "Length":  26132,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T17:11:51.5992850Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Hecton8.Editor.DynamicResolutionTuner_SHINOBU_66.ref.dll",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Hecton8.Editor.DynamicResolutionTuner_SHINOBU_66.ref.dll",
+        "Name":  "Hecton8.Editor.DynamicResolutionTuner_SHINOBU_66.ref.dll",
+        "Length":  5632,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T17:11:51.6271651Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Hecton8.Editor.DynamicResolutionTuner_SHINOBU_66.rsp",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Hecton8.Editor.DynamicResolutionTuner_SHINOBU_66.rsp",
+        "Name":  "Hecton8.Editor.DynamicResolutionTuner_SHINOBU_66.rsp",
+        "Length":  46090,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:51:30.1684805Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhiTrend_SHINOBU_02.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhiTrend_SHINOBU_02.json",
+        "Name":  "HPhiTrend_SHINOBU_02.json",
+        "Length":  385865,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:36:28.3373960Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhiTrend_SHINOBU_02.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhiTrend_SHINOBU_02.md",
+        "Name":  "HPhiTrend_SHINOBU_02.md",
+        "Length":  8575,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:36:28.4116128Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhiTrend_SHINOBU_02_current2.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhiTrend_SHINOBU_02_current2.json",
+        "Name":  "HPhiTrend_SHINOBU_02_current2.json",
+        "Length":  386075,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T14:14:47.6479292Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhiTrend_SHINOBU_02_current2.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhiTrend_SHINOBU_02_current2.md",
+        "Name":  "HPhiTrend_SHINOBU_02_current2.md",
+        "Length":  8090,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T14:14:47.6910527Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhiTrend_SHINOBU_02_current3.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhiTrend_SHINOBU_02_current3.json",
+        "Name":  "HPhiTrend_SHINOBU_02_current3.json",
+        "Length":  378813,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:36:23.7786796Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhiTrend_SHINOBU_02_current3.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhiTrend_SHINOBU_02_current3.md",
+        "Name":  "HPhiTrend_SHINOBU_02_current3.md",
+        "Length":  7777,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:36:23.9692129Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhi_SHINOBU_02_coregraph_budget_after_bridge_prune.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_coregraph_budget_after_bridge_prune.json",
+        "Name":  "HPhi_SHINOBU_02_coregraph_budget_after_bridge_prune.json",
+        "Length":  10352,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:27:10.8342787Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhi_SHINOBU_02_coregraph_current.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_coregraph_current.json",
+        "Name":  "HPhi_SHINOBU_02_coregraph_current.json",
+        "Length":  10453,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:10:15.8568770Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhi_SHINOBU_02_current.err.txt",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_current.err.txt",
+        "Name":  "HPhi_SHINOBU_02_current.err.txt",
+        "Length":  0,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:12:33.0221357Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhi_SHINOBU_02_current.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_current.json",
+        "Name":  "HPhi_SHINOBU_02_current.json",
+        "Length":  157493,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:13:49.0680030Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhi_SHINOBU_02_current2.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_current2.json",
+        "Name":  "HPhi_SHINOBU_02_current2.json",
+        "Length":  553608,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T14:15:42.6952671Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhi_SHINOBU_02_current_after_bridge_prune.err.txt",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_current_after_bridge_prune.err.txt",
+        "Name":  "HPhi_SHINOBU_02_current_after_bridge_prune.err.txt",
+        "Length":  0,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:28:40.8833360Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HPhi_SHINOBU_02_current_after_bridge_prune.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_current_after_bridge_prune.json",
+        "Name":  "HPhi_SHINOBU_02_current_after_bridge_prune.json",
+        "Length":  158118,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:31:11.8973401Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Name":  "LOG_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Length":  25402,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:53:21.1223341Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_HFI_AUDIT.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_HFI_AUDIT.md",
+        "Name":  "LOG_HFI_AUDIT.md",
+        "Length":  15112,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:56:26.9227351Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_02.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_02.md",
+        "Name":  "LOG_SHINOBU_02.md",
+        "Length":  51753,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:41:37.1446207Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_19.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_19.md",
+        "Name":  "LOG_SHINOBU_19.md",
+        "Length":  22559,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T11:57:44.7640108Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_31.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_31.md",
+        "Name":  "LOG_SHINOBU_31.md",
+        "Length":  89786,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:06:03.1052749Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_41.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_41.md",
+        "Name":  "LOG_SHINOBU_41.md",
+        "Length":  31114,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:45:29.3680500Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_42.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_42.md",
+        "Name":  "LOG_SHINOBU_42.md",
+        "Length":  48171,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:55:24.0051003Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_43.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_43.md",
+        "Name":  "LOG_SHINOBU_43.md",
+        "Length":  44116,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:14:22.7815868Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_44.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_44.md",
+        "Name":  "LOG_SHINOBU_44.md",
+        "Length":  35132,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:38:30.0652373Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_45.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_45.md",
+        "Name":  "LOG_SHINOBU_45.md",
+        "Length":  26903,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:33:50.7515973Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_46.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_46.md",
+        "Name":  "LOG_SHINOBU_46.md",
+        "Length":  24394,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:51:50.9327194Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_47.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_47.md",
+        "Name":  "LOG_SHINOBU_47.md",
+        "Length":  38607,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:52:25.7197899Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_48.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_48.md",
+        "Name":  "LOG_SHINOBU_48.md",
+        "Length":  11547,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:47:15.1189805Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_49.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_49.md",
+        "Name":  "LOG_SHINOBU_49.md",
+        "Length":  27067,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:43:21.6782283Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_50.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_50.md",
+        "Name":  "LOG_SHINOBU_50.md",
+        "Length":  78339,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:19:10.7272121Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_61.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_61.md",
+        "Name":  "LOG_SHINOBU_61.md",
+        "Length":  34503,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:23:35.8682621Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_61_APEX_CONFLICT_20260519_surface_rebind.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_61_APEX_CONFLICT_20260519_surface_rebind.md",
+        "Name":  "LOG_SHINOBU_61_APEX_CONFLICT_20260519_surface_rebind.md",
+        "Length":  26706,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:42:26.5676850Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_61_APEX_LEVIATHAN_ARCHIVE_20260518.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_61_APEX_LEVIATHAN_ARCHIVE_20260518.md",
+        "Name":  "LOG_SHINOBU_61_APEX_LEVIATHAN_ARCHIVE_20260518.md",
+        "Length":  34503,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:23:35.8682621Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_61_VOXEL_SURFACE_NETS_ARCHIVE_20260518.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_61_VOXEL_SURFACE_NETS_ARCHIVE_20260518.md",
+        "Name":  "LOG_SHINOBU_61_VOXEL_SURFACE_NETS_ARCHIVE_20260518.md",
+        "Length":  8143,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:55:46.7184161Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_61_VOXEL_SURFACE_NETS_CONFLICT_20260519_0135.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_61_VOXEL_SURFACE_NETS_CONFLICT_20260519_0135.md",
+        "Name":  "LOG_SHINOBU_61_VOXEL_SURFACE_NETS_CONFLICT_20260519_0135.md",
+        "Length":  3974,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:35:32.1441421Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_62.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_62.md",
+        "Name":  "LOG_SHINOBU_62.md",
+        "Length":  48145,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:54:28.3983483Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_63.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_63.md",
+        "Name":  "LOG_SHINOBU_63.md",
+        "Length":  39858,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:35:53.9508896Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_64.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_64.md",
+        "Name":  "LOG_SHINOBU_64.md",
+        "Length":  134360,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:56:59.0586752Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_65.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_65.md",
+        "Name":  "LOG_SHINOBU_65.md",
+        "Length":  54592,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:47:47.2878208Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_66.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_66.md",
+        "Name":  "LOG_SHINOBU_66.md",
+        "Length":  95919,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:59:00.3250999Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_67.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_67.md",
+        "Name":  "LOG_SHINOBU_67.md",
+        "Length":  48649,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:54:31.2262274Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_68.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_68.md",
+        "Name":  "LOG_SHINOBU_68.md",
+        "Length":  339303,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:53:49.8027691Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_69.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_69.md",
+        "Name":  "LOG_SHINOBU_69.md",
+        "Length":  8102,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:51:27.7045838Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_71.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_71.md",
+        "Name":  "LOG_SHINOBU_71.md",
+        "Length":  8353,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:28:41.0506078Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_72.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_72.md",
+        "Name":  "LOG_SHINOBU_72.md",
+        "Length":  12677,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T23:00:41.3830268Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_73.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_73.md",
+        "Name":  "LOG_SHINOBU_73.md",
+        "Length":  26946,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:16:34.6963520Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_74.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_74.md",
+        "Name":  "LOG_SHINOBU_74.md",
+        "Length":  36140,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:57:30.9319680Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_75.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_75.md",
+        "Name":  "LOG_SHINOBU_75.md",
+        "Length":  15932,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:15:40.7361107Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_76.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_76.md",
+        "Name":  "LOG_SHINOBU_76.md",
+        "Length":  60030,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:43:28.9129256Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_77.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_77.md",
+        "Name":  "LOG_SHINOBU_77.md",
+        "Length":  10118,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:40:58.2552394Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_78.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_78.md",
+        "Name":  "LOG_SHINOBU_78.md",
+        "Length":  11278,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:54:32.8275301Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_79.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_79.md",
+        "Name":  "LOG_SHINOBU_79.md",
+        "Length":  9453,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:40:06.6630456Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_81.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_SHINOBU_81.md",
+        "Name":  "LOG_SHINOBU_81.md",
+        "Length":  28396,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:51:08.3993202Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_TOKEN_LEDGER_AUDIT.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_TOKEN_LEDGER_AUDIT.md",
+        "Name":  "LOG_TOKEN_LEDGER_AUDIT.md",
+        "Length":  1219,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:38:10.3798426Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_UNASSIGNED_GIT_OPERATOR.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_UNASSIGNED_GIT_OPERATOR.md",
+        "Name":  "LOG_UNASSIGNED_GIT_OPERATOR.md",
+        "Length":  15103,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:41:19.2958774Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_VisorIntegrationExplorer.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\LOG_VisorIntegrationExplorer.md",
+        "Name":  "LOG_VisorIntegrationExplorer.md",
+        "Length":  1339,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:45:58.2411801Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\QA_Endurance_Log.csv",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\QA_Endurance_Log.csv.locked_snapshot",
+        "Name":  "QA_Endurance_Log.csv",
+        "Length":  0,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T08:18:53.1311984Z",
+        "Status":  "LockedSnapshotCopied_SourceLeftActive",
+        "Error":  "The process cannot access the file because it is being used by another process."
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Name":  "Rationale_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Length":  32102,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:54:22.8174794Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_HFI_AUDIT.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_HFI_AUDIT.md",
+        "Name":  "Rationale_HFI_AUDIT.md",
+        "Length":  14000,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:56:26.9214718Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_02.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_02.md",
+        "Name":  "Rationale_SHINOBU_02.md",
+        "Length":  54240,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:41:24.8326154Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_19.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_19.md",
+        "Name":  "Rationale_SHINOBU_19.md",
+        "Length":  10228,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T11:57:04.0103999Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_31.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_31.md",
+        "Name":  "Rationale_SHINOBU_31.md",
+        "Length":  52009,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:03:13.9692816Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_41.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_41.md",
+        "Name":  "Rationale_SHINOBU_41.md",
+        "Length":  52481,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:45:10.2478650Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_41_EXPLORE_CODE.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_41_EXPLORE_CODE.md",
+        "Name":  "Rationale_SHINOBU_41_EXPLORE_CODE.md",
+        "Length":  2496,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T12:19:32.4860388Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_42.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_42.md",
+        "Name":  "Rationale_SHINOBU_42.md",
+        "Length":  38692,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:53:53.1411593Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_43.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_43.md",
+        "Name":  "Rationale_SHINOBU_43.md",
+        "Length":  18479,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:13:03.9534658Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_44.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_44.md",
+        "Name":  "Rationale_SHINOBU_44.md",
+        "Length":  36441,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:38:18.6918460Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_45.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_45.md",
+        "Name":  "Rationale_SHINOBU_45.md",
+        "Length":  66537,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:33:44.4223070Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_46.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_46.md",
+        "Name":  "Rationale_SHINOBU_46.md",
+        "Length":  25316,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:51:10.5960842Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_47.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_47.md",
+        "Name":  "Rationale_SHINOBU_47.md",
+        "Length":  47810,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:52:12.5921320Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_48.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_48.md",
+        "Name":  "Rationale_SHINOBU_48.md",
+        "Length":  29456,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:46:38.7630306Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_49.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_49.md",
+        "Name":  "Rationale_SHINOBU_49.md",
+        "Length":  45745,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:42:59.4961423Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_50.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_50.md",
+        "Name":  "Rationale_SHINOBU_50.md",
+        "Length":  24646,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:17:20.0274660Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_61.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_61.md",
+        "Name":  "Rationale_SHINOBU_61.md",
+        "Length":  44338,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:23:28.3844503Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_61_APEX_CONFLICT_20260519_surface_rebind.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_61_APEX_CONFLICT_20260519_surface_rebind.md",
+        "Name":  "Rationale_SHINOBU_61_APEX_CONFLICT_20260519_surface_rebind.md",
+        "Length":  34516,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:42:16.2182577Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_61_APEX_LEVIATHAN_ARCHIVE_20260518.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_61_APEX_LEVIATHAN_ARCHIVE_20260518.md",
+        "Name":  "Rationale_SHINOBU_61_APEX_LEVIATHAN_ARCHIVE_20260518.md",
+        "Length":  44338,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:23:28.3844503Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_61_VOXEL_SURFACE_NETS_ARCHIVE_20260518.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_61_VOXEL_SURFACE_NETS_ARCHIVE_20260518.md",
+        "Name":  "Rationale_SHINOBU_61_VOXEL_SURFACE_NETS_ARCHIVE_20260518.md",
+        "Length":  20874,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:55:46.7169105Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_61_VOXEL_SURFACE_NETS_CONFLICT_20260519_0135.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_61_VOXEL_SURFACE_NETS_CONFLICT_20260519_0135.md",
+        "Name":  "Rationale_SHINOBU_61_VOXEL_SURFACE_NETS_CONFLICT_20260519_0135.md",
+        "Length":  8674,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:35:32.1431601Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_62.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_62.md",
+        "Name":  "Rationale_SHINOBU_62.md",
+        "Length":  2429,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:56:15.8580882Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_63.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_63.md",
+        "Name":  "Rationale_SHINOBU_63.md",
+        "Length":  59592,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:35:46.0042937Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_64.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_64.md",
+        "Name":  "Rationale_SHINOBU_64.md",
+        "Length":  23967,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:57:20.6256535Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_64_VOLCANIC_UPDRAFT.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_64_VOLCANIC_UPDRAFT.md",
+        "Name":  "Rationale_SHINOBU_64_VOLCANIC_UPDRAFT.md",
+        "Length":  12432,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:57:10.9891639Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_65.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_65.md",
+        "Name":  "Rationale_SHINOBU_65.md",
+        "Length":  30953,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:47:47.2838964Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_66.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_66.md",
+        "Name":  "Rationale_SHINOBU_66.md",
+        "Length":  32210,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:59:41.5598921Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_67.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_67.md",
+        "Name":  "Rationale_SHINOBU_67.md",
+        "Length":  74423,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:54:23.1561704Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_68.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_68.md",
+        "Name":  "Rationale_SHINOBU_68.md",
+        "Length":  12732,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:50:07.3104610Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_69.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_69.md",
+        "Name":  "Rationale_SHINOBU_69.md",
+        "Length":  16810,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:51:01.4742667Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_71.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_71.md",
+        "Name":  "Rationale_SHINOBU_71.md",
+        "Length":  11951,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:28:41.0485994Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_72.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_72.md",
+        "Name":  "Rationale_SHINOBU_72.md",
+        "Length":  17887,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T23:00:34.2214906Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_73.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_73.md",
+        "Name":  "Rationale_SHINOBU_73.md",
+        "Length":  22958,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:16:24.1327653Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_74.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_74.md",
+        "Name":  "Rationale_SHINOBU_74.md",
+        "Length":  33715,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:57:30.9262977Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_75.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_75.md",
+        "Name":  "Rationale_SHINOBU_75.md",
+        "Length":  16875,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:15:06.9834970Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_76.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_76.md",
+        "Name":  "Rationale_SHINOBU_76.md",
+        "Length":  29713,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:43:28.8882412Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_77.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_77.md",
+        "Name":  "Rationale_SHINOBU_77.md",
+        "Length":  7021,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:32:01.4722610Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_78.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_78.md",
+        "Name":  "Rationale_SHINOBU_78.md",
+        "Length":  17094,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:52:44.4987194Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_79.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_79.md",
+        "Name":  "Rationale_SHINOBU_79.md",
+        "Length":  19098,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:40:16.8148525Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_81.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_SHINOBU_81.md",
+        "Name":  "Rationale_SHINOBU_81.md",
+        "Length":  32884,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:51:08.3913656Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_TOKEN_LEDGER_AUDIT.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_TOKEN_LEDGER_AUDIT.md",
+        "Name":  "Rationale_TOKEN_LEDGER_AUDIT.md",
+        "Length":  2778,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:38:10.3798426Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_UNASSIGNED_GIT_OPERATOR.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_UNASSIGNED_GIT_OPERATOR.md",
+        "Name":  "Rationale_UNASSIGNED_GIT_OPERATOR.md",
+        "Length":  19170,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:37:07.9455496Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_VisorIntegrationExplorer.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Rationale_VisorIntegrationExplorer.md",
+        "Name":  "Rationale_VisorIntegrationExplorer.md",
+        "Length":  2215,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:45:58.2406683Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SelfAudit_SHINOBU_47.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SelfAudit_SHINOBU_47.xml",
+        "Name":  "SelfAudit_SHINOBU_47.xml",
+        "Length":  19619,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:52:20.6979799Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SelfAudit_SHINOBU_63.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SelfAudit_SHINOBU_63.xml",
+        "Name":  "SelfAudit_SHINOBU_63.xml",
+        "Length":  13766,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:27:31.1325757Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SelfAudit_SHINOBU_63_GI.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SelfAudit_SHINOBU_63_GI.xml",
+        "Name":  "SelfAudit_SHINOBU_63_GI.xml",
+        "Length":  12017,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:35:25.6137017Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SelfAudit_SHINOBU_67.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SelfAudit_SHINOBU_67.xml",
+        "Name":  "SelfAudit_SHINOBU_67.xml",
+        "Length":  15710,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:42:18.7675276Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SelfAudit_SHINOBU_67_Addressables.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SelfAudit_SHINOBU_67_Addressables.xml",
+        "Name":  "SelfAudit_SHINOBU_67_Addressables.xml",
+        "Length":  15627,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:54:43.8748447Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SelfAudit_SHINOBU_69.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SelfAudit_SHINOBU_69.xml",
+        "Name":  "SelfAudit_SHINOBU_69.xml",
+        "Length":  11585,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:51:13.3060509Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SelfAudit_SHINOBU_71.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SelfAudit_SHINOBU_71.xml",
+        "Name":  "SelfAudit_SHINOBU_71.xml",
+        "Length":  8621,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:28:41.0516091Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SelfAudit_SHINOBU_72.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SelfAudit_SHINOBU_72.xml",
+        "Name":  "SelfAudit_SHINOBU_72.xml",
+        "Length":  18112,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T23:00:59.4677974Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SelfAudit_SHINOBU_75.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SelfAudit_SHINOBU_75.md",
+        "Name":  "SelfAudit_SHINOBU_75.md",
+        "Length":  15433,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:15:18.1040855Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SelfAudit_SHINOBU_77.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SelfAudit_SHINOBU_77.xml",
+        "Name":  "SelfAudit_SHINOBU_77.xml",
+        "Length":  10489,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:33:54.0949818Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SelfAudit_SHINOBU_79.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SelfAudit_SHINOBU_79.xml",
+        "Name":  "SelfAudit_SHINOBU_79.xml",
+        "Length":  10681,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:40:00.0094325Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SELF_AUDIT_SHINOBU_61.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SELF_AUDIT_SHINOBU_61.xml",
+        "Name":  "SELF_AUDIT_SHINOBU_61.xml",
+        "Length":  12822,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:23:52.2617902Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SELF_AUDIT_SHINOBU_61_APEX_CONFLICT_20260519_surface_rebind.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SELF_AUDIT_SHINOBU_61_APEX_CONFLICT_20260519_surface_rebind.xml",
+        "Name":  "SELF_AUDIT_SHINOBU_61_APEX_CONFLICT_20260519_surface_rebind.xml",
+        "Length":  10914,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:42:47.5724460Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SELF_AUDIT_SHINOBU_61_APEX_LEVIATHAN_ARCHIVE_20260518.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SELF_AUDIT_SHINOBU_61_APEX_LEVIATHAN_ARCHIVE_20260518.xml",
+        "Name":  "SELF_AUDIT_SHINOBU_61_APEX_LEVIATHAN_ARCHIVE_20260518.xml",
+        "Length":  12822,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:23:52.2617902Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SELF_AUDIT_SHINOBU_61_VOXEL_SURFACE_NETS_ARCHIVE_20260518.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SELF_AUDIT_SHINOBU_61_VOXEL_SURFACE_NETS_ARCHIVE_20260518.xml",
+        "Name":  "SELF_AUDIT_SHINOBU_61_VOXEL_SURFACE_NETS_ARCHIVE_20260518.xml",
+        "Length":  11574,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:55:46.7254905Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SELF_AUDIT_SHINOBU_61_VOXEL_SURFACE_NETS_CONFLICT_20260519_0135.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SELF_AUDIT_SHINOBU_61_VOXEL_SURFACE_NETS_CONFLICT_20260519_0135.xml",
+        "Name":  "SELF_AUDIT_SHINOBU_61_VOXEL_SURFACE_NETS_CONFLICT_20260519_0135.xml",
+        "Length":  7566,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:35:32.1461428Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SELF_AUDIT_SHINOBU_62.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SELF_AUDIT_SHINOBU_62.xml",
+        "Name":  "SELF_AUDIT_SHINOBU_62.xml",
+        "Length":  4528,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:56:15.8603055Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SELF_AUDIT_SHINOBU_65.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SELF_AUDIT_SHINOBU_65.xml",
+        "Name":  "SELF_AUDIT_SHINOBU_65.xml",
+        "Length":  14946,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:47:47.2866007Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SELF_AUDIT_SHINOBU_74.xml",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SELF_AUDIT_SHINOBU_74.xml",
+        "Name":  "SELF_AUDIT_SHINOBU_74.xml",
+        "Length":  21807,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:57:30.9299209Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusAudit_SHINOBU_02_current3_full.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusAudit_SHINOBU_02_current3_full.json",
+        "Name":  "SignalBusAudit_SHINOBU_02_current3_full.json",
+        "Length":  749742,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:35:43.2792835Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusAudit_SHINOBU_02_current3_signalcritical.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusAudit_SHINOBU_02_current3_signalcritical.json",
+        "Name":  "SignalBusAudit_SHINOBU_02_current3_signalcritical.json",
+        "Length":  8962,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:35:23.5853650Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusAudit_SHINOBU_02_current8_full.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusAudit_SHINOBU_02_current8_full.json",
+        "Name":  "SignalBusAudit_SHINOBU_02_current8_full.json",
+        "Length":  856195,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:25:41.5682640Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusAudit_SHINOBU_02_current8_full.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusAudit_SHINOBU_02_current8_full.md",
+        "Name":  "SignalBusAudit_SHINOBU_02_current8_full.md",
+        "Length":  495124,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:25:41.5820879Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusAudit_SHINOBU_02_current8_signalcritical.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusAudit_SHINOBU_02_current8_signalcritical.json",
+        "Name":  "SignalBusAudit_SHINOBU_02_current8_signalcritical.json",
+        "Length":  81027,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:23:35.4339536Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusAudit_SHINOBU_02_current8_signalcritical.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusAudit_SHINOBU_02_current8_signalcritical.md",
+        "Name":  "SignalBusAudit_SHINOBU_02_current8_signalcritical.md",
+        "Length":  38708,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:23:35.4828289Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusAudit_SHINOBU_02_current9_full.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusAudit_SHINOBU_02_current9_full.json",
+        "Name":  "SignalBusAudit_SHINOBU_02_current9_full.json",
+        "Length":  768548,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:59:21.4427155Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusAudit_SHINOBU_02_current9_full.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusAudit_SHINOBU_02_current9_full.md",
+        "Name":  "SignalBusAudit_SHINOBU_02_current9_full.md",
+        "Length":  455250,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:59:21.4573150Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusAudit_SHINOBU_02_current9_signalcritical.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusAudit_SHINOBU_02_current9_signalcritical.json",
+        "Name":  "SignalBusAudit_SHINOBU_02_current9_signalcritical.json",
+        "Length":  8996,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:38:47.7418544Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusAudit_SHINOBU_02_current9_signalcritical.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusAudit_SHINOBU_02_current9_signalcritical.md",
+        "Name":  "SignalBusAudit_SHINOBU_02_current9_signalcritical.md",
+        "Length":  6215,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:38:47.7749473Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full.json",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full.json",
+        "Length":  710888,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T12:46:51.8994169Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full.md",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full.md",
+        "Length":  420099,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T12:46:51.9531549Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_after_hphi.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_after_hphi.json",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_after_hphi.json",
+        "Length":  705953,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:29:14.3134553Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_after_hphi.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_after_hphi.md",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_after_hphi.md",
+        "Length":  417267,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:29:14.3550792Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current.json",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current.json",
+        "Length":  717989,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:52:59.7871341Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current.md",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current.md",
+        "Length":  424560,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:52:59.8874552Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current2.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current2.json",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current2.json",
+        "Length":  726447,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T14:13:44.1450957Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current2.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current2.md",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current2.md",
+        "Length":  429232,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T14:13:44.1780812Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath.json",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_hotpath.json",
+        "Length":  863691,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T12:46:53.7084659Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath.md",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_hotpath.md",
+        "Length":  512552,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T12:46:53.8973024Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath_after_hphi.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath_after_hphi.json",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_hotpath_after_hphi.json",
+        "Length":  868021,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:51:41.6154377Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath_after_hphi.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath_after_hphi.md",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_hotpath_after_hphi.md",
+        "Length":  515288,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:51:41.6682906Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath_current2.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath_current2.json",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_hotpath_current2.json",
+        "Length":  879250,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T14:16:17.4007460Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath_current2.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath_current2.md",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_hotpath_current2.md",
+        "Length":  521685,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T14:16:17.4377528Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
+        "Length":  8962,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T12:45:33.2173516Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.md",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical.md",
+        "Length":  6165,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T12:45:33.2320280Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_after_hphi.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_after_hphi.json",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_after_hphi.json",
+        "Length":  8962,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:28:59.5922486Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_after_hphi.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_after_hphi.md",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_after_hphi.md",
+        "Length":  6165,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:28:59.6274007Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current.json",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current.json",
+        "Length":  8962,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:53:35.7277742Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current.md",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current.md",
+        "Length":  6165,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:53:35.9119223Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current2.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current2.json",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current2.json",
+        "Length":  8962,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T14:13:28.5573406Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current2.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current2.md",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current2.md",
+        "Length":  6165,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T14:13:28.6381273Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\UnityBatch_SHINOBU_66.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\UnityBatch_SHINOBU_66.log",
+        "Name":  "UnityBatch_SHINOBU_66.log",
+        "Length":  956,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:32:42.0522901Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Unity_SHINOBU_38_Run_final_exitprocess.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Unity_SHINOBU_38_Run_final_exitprocess.log.locked_snapshot",
+        "Name":  "Unity_SHINOBU_38_Run_final_exitprocess.log",
+        "Length":  67907,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T08:18:57.1195939Z",
+        "Status":  "LockedSnapshotCopied_SourceLeftActive",
+        "Error":  "The process cannot access the file because it is being used by another process."
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Unity_SHINOBU_45_compile.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Unity_SHINOBU_45_compile.log",
+        "Name":  "Unity_SHINOBU_45_compile.log",
+        "Length":  993,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:33:50.6660658Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Name":  "Status_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Length":  52833,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:52:47.0072099Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_HFI_AUDIT.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_HFI_AUDIT.md",
+        "Name":  "Status_HFI_AUDIT.md",
+        "Length":  8618,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:56:26.9201827Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_02.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_02.md",
+        "Name":  "Status_SHINOBU_02.md",
+        "Length":  28668,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:41:15.5136020Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_19.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_19.md",
+        "Name":  "Status_SHINOBU_19.md",
+        "Length":  9452,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T11:56:47.2797883Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_31.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_31.md",
+        "Name":  "Status_SHINOBU_31.md",
+        "Length":  31489,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:03:04.4379944Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_41.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_41.md",
+        "Name":  "Status_SHINOBU_41.md",
+        "Length":  16235,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:44:36.4705835Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_41_EXPLORE_CODE.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_41_EXPLORE_CODE.md",
+        "Name":  "Status_SHINOBU_41_EXPLORE_CODE.md",
+        "Length":  1900,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T12:19:32.4849741Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_42.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_42.md",
+        "Name":  "Status_SHINOBU_42.md",
+        "Length":  26218,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:53:34.7762308Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_43.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_43.md",
+        "Name":  "Status_SHINOBU_43.md",
+        "Length":  21192,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:12:34.3400012Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_44.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_44.md",
+        "Name":  "Status_SHINOBU_44.md",
+        "Length":  27559,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:38:07.3944301Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_45.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_45.md",
+        "Name":  "Status_SHINOBU_45.md",
+        "Length":  22209,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:33:24.5981237Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_46.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_46.md",
+        "Name":  "Status_SHINOBU_46.md",
+        "Length":  18452,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:50:51.2873561Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_47.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_47.md",
+        "Name":  "Status_SHINOBU_47.md",
+        "Length":  20189,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:52:04.2179263Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_48.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_48.md",
+        "Name":  "Status_SHINOBU_48.md",
+        "Length":  17860,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:46:13.1657849Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_49.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_49.md",
+        "Name":  "Status_SHINOBU_49.md",
+        "Length":  29571,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:42:42.5426486Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_50.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_50.md",
+        "Name":  "Status_SHINOBU_50.md",
+        "Length":  23815,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:17:07.7967389Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_61.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_61.md",
+        "Name":  "Status_SHINOBU_61.md",
+        "Length":  32349,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:23:17.3042813Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_61_APEX_CONFLICT_20260519_surface_rebind.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_61_APEX_CONFLICT_20260519_surface_rebind.md",
+        "Name":  "Status_SHINOBU_61_APEX_CONFLICT_20260519_surface_rebind.md",
+        "Length":  25424,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:41:36.9581257Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_61_APEX_LEVIATHAN_ARCHIVE_20260518.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_61_APEX_LEVIATHAN_ARCHIVE_20260518.md",
+        "Name":  "Status_SHINOBU_61_APEX_LEVIATHAN_ARCHIVE_20260518.md",
+        "Length":  32349,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:23:17.3042813Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_61_VOXEL_SURFACE_NETS_ARCHIVE_20260518.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_61_VOXEL_SURFACE_NETS_ARCHIVE_20260518.md",
+        "Name":  "Status_SHINOBU_61_VOXEL_SURFACE_NETS_ARCHIVE_20260518.md",
+        "Length":  15627,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:55:46.7153893Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_61_VOXEL_SURFACE_NETS_CONFLICT_20260519_0135.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_61_VOXEL_SURFACE_NETS_CONFLICT_20260519_0135.md",
+        "Name":  "Status_SHINOBU_61_VOXEL_SURFACE_NETS_CONFLICT_20260519_0135.md",
+        "Length":  10516,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:35:32.1421548Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_62.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_62.md",
+        "Name":  "Status_SHINOBU_62.md",
+        "Length":  3535,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:56:15.8553164Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_63.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_63.md",
+        "Name":  "Status_SHINOBU_63.md",
+        "Length":  28679,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:35:34.9440690Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_64.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_64.md",
+        "Name":  "Status_SHINOBU_64.md",
+        "Length":  17242,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:57:16.1310812Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_64_VOLCANIC_UPDRAFT.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_64_VOLCANIC_UPDRAFT.md",
+        "Name":  "Status_SHINOBU_64_VOLCANIC_UPDRAFT.md",
+        "Length":  4629,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:57:06.1662272Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_65.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_65.md",
+        "Name":  "Status_SHINOBU_65.md",
+        "Length":  23913,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:47:47.2826949Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_66.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_66.md",
+        "Name":  "Status_SHINOBU_66.md",
+        "Length":  19732,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:58:21.1529204Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_67.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_67.md",
+        "Name":  "Status_SHINOBU_67.md",
+        "Length":  36467,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:54:11.6923338Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_68.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_68.md",
+        "Name":  "Status_SHINOBU_68.md",
+        "Length":  12292,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:50:44.3712083Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_69.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_69.md",
+        "Name":  "Status_SHINOBU_69.md",
+        "Length":  14266,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:50:52.1457000Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_71.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_71.md",
+        "Name":  "Status_SHINOBU_71.md",
+        "Length":  11091,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:28:41.0485994Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_72.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_72.md",
+        "Name":  "Status_SHINOBU_72.md",
+        "Length":  12315,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T23:01:04.6142284Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_73.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_73.md",
+        "Name":  "Status_SHINOBU_73.md",
+        "Length":  21031,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:16:07.1297806Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_74.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_74.md",
+        "Name":  "Status_SHINOBU_74.md",
+        "Length":  23126,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:57:30.9222648Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_75.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_75.md",
+        "Name":  "Status_SHINOBU_75.md",
+        "Length":  16466,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T20:14:49.8693979Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_76.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_76.md",
+        "Name":  "Status_SHINOBU_76.md",
+        "Length":  31311,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:43:28.8807335Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_77.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_77.md",
+        "Name":  "Status_SHINOBU_77.md",
+        "Length":  9140,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:40:33.3678330Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_78.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_78.md",
+        "Name":  "Status_SHINOBU_78.md",
+        "Length":  12145,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T19:53:47.5284283Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_79.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_79.md",
+        "Name":  "Status_SHINOBU_79.md",
+        "Length":  12314,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:41:02.4663853Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_81.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_SHINOBU_81.md",
+        "Name":  "Status_SHINOBU_81.md",
+        "Length":  36605,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T22:51:08.3888324Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_TOKEN_LEDGER_AUDIT.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_TOKEN_LEDGER_AUDIT.md",
+        "Name":  "Status_TOKEN_LEDGER_AUDIT.md",
+        "Length":  2273,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T13:38:10.3788417Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_UNASSIGNED_GIT_OPERATOR.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_UNASSIGNED_GIT_OPERATOR.md",
+        "Name":  "Status_UNASSIGNED_GIT_OPERATOR.md",
+        "Length":  7957,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T21:41:10.1142969Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_VisorIntegrationExplorer.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks\\Status_VisorIntegrationExplorer.md",
+        "Name":  "Status_VisorIntegrationExplorer.md",
+        "Length":  1218,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T18:45:58.0735412Z",
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs_LateSweep",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\QA_Endurance_Log.csv",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\QA_Endurance_Log.csv.locked_snapshot.collision_20260519_030735_7944_1",
+        "Name":  "QA_Endurance_Log.csv",
+        "Length":  0,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T08:18:53.1311984Z",
+        "Status":  "LockedSnapshotCopied_SourceLeftActive",
+        "Error":  "The process cannot access the file because it is being used by another process."
+    },
+    {
+        "Bucket":  "AgentLogs_LateSweep",
+        "Source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Unity_SHINOBU_38_Run_final_exitprocess.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs\\Unity_SHINOBU_38_Run_final_exitprocess.log.locked_snapshot.collision_20260519_030735_7944_1",
+        "Name":  "Unity_SHINOBU_38_Run_final_exitprocess.log",
+        "Length":  67907,
+        "WasDirectory":  false,
+        "LastWriteUtc":  "2026-05-18T08:18:57.1195939Z",
+        "Status":  "LockedSnapshotCopied_SourceLeftActive",
+        "Error":  "The process cannot access the file because it is being used by another process."
+    }
+]

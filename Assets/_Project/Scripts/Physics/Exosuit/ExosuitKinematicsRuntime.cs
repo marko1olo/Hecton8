@@ -126,7 +126,7 @@ namespace Hecton8.Physics.Exosuit
         private VaultBufferHandle<float> _footstepAccumulatorHandle;
         private VaultBufferHandle<MechHapticSignalDTO> _hapticHandle;
         private VaultBufferHandle<SiltExplosionSignal> _siltHandle;
-        private VaultBufferHandle<AcousticEchoTap> _acousticHandle;
+        private VaultBufferHandle<ExosuitAcousticEchoTap> _acousticHandle;
         private VaultBufferHandle<byte> _csvScratchHandle;
 
         private JobHandle _jobHandle;
@@ -343,7 +343,7 @@ namespace Hecton8.Physics.Exosuit
             _footstepAccumulatorHandle = vault.GetBufferHandle<float>(BufferID.ShinobuExosuitFootstepAccumulator, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
             _hapticHandle = vault.GetBufferHandle<MechHapticSignalDTO>(BufferID.ShinobuExosuitHapticSignals, 1, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory);
             _siltHandle = vault.GetBufferHandle<SiltExplosionSignal>(BufferID.ShinobuExosuitSiltSignals, 1, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory);
-            _acousticHandle = vault.GetBufferHandle<AcousticEchoTap>(BufferID.ShinobuExosuitAcousticTaps, 1, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory);
+            _acousticHandle = vault.GetBufferHandle<ExosuitAcousticEchoTap>(BufferID.ShinobuExosuitAcousticTaps, 1, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory);
             _csvScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuExosuitCsvScratch, CsvScratchCapacity, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory);
         }
 
@@ -358,7 +358,15 @@ namespace Hecton8.Physics.Exosuit
             double3 aup = originAup + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
 
             ref ExosuitStateDTO state = ref _stateHandle.GetElementAsRef(vault, 0);
-            if ((state.StateMask & ExosuitStateFlags.Active) == 0u || !math.all(math.isfinite(state.AUP)))
+            ref ExosuitTuningDTO tuning = ref _tuningHandle.GetElementAsRef(vault, 0);
+            bool tuningBootstrapped = IsManagedTuningBootstrapped(tuning);
+            if (!tuningBootstrapped)
+            {
+                tuning = BuildSerializedTuning();
+                tuning.Flags = ExosuitStateFlags.EmergencyMockData;
+            }
+
+            if (!tuningBootstrapped || !IsStateBootstrapped(in state))
             {
                 state = default;
                 state.AUP = aup;
@@ -366,13 +374,6 @@ namespace Hecton8.Physics.Exosuit
                 state.HydraulicPressure = 0.0f;
                 state.AnchorNormal = new float3(0.0f, 1.0f, 0.0f);
                 state.StateMask = ExosuitStateFlags.Active | ExosuitStateFlags.EmergencyMockData;
-            }
-
-            ref ExosuitTuningDTO tuning = ref _tuningHandle.GetElementAsRef(vault, 0);
-            if (tuning.BaseMass <= 0.0f || !math.isfinite(tuning.BaseMass))
-            {
-                tuning = BuildSerializedTuning();
-                tuning.Flags = ExosuitStateFlags.EmergencyMockData;
             }
 
             _inputHandle.GetElementAsRef(vault, 0) = default;
@@ -447,7 +448,7 @@ namespace Hecton8.Physics.Exosuit
                     out NativeArray<float> footstepAccumulator,
                     out NativeArray<MechHapticSignalDTO> haptics,
                     out NativeArray<SiltExplosionSignal> silt,
-                    out NativeArray<AcousticEchoTap> acoustic))
+                    out NativeArray<ExosuitAcousticEchoTap> acoustic))
             {
                 UnlockJobBuffers();
                 return;
@@ -605,16 +606,16 @@ namespace Hecton8.Physics.Exosuit
 
         private void EmitAcoustic()
         {
-            NativeArray<AcousticEchoTap> acousticBuffer = _acousticHandle.Resolve(_dataVault);
+            NativeArray<ExosuitAcousticEchoTap> acousticBuffer = _acousticHandle.Resolve(_dataVault);
             if (acousticBuffer.IsCreated && acousticBuffer.Length > 0 && acousticBuffer[0].Intensity01 > 0.0f)
             {
-                AcousticEchoTap tap = acousticBuffer[0];
+                ExosuitAcousticEchoTap tap = acousticBuffer[0];
                 if (!math.all(math.isfinite(tap.AUP)))
                     return;
                 tap.Intensity01 = math.isfinite(tap.Intensity01) ? math.saturate(tap.Intensity01) : 0.0f;
                 if (tap.Intensity01 <= 0.0f)
                     return;
-                SignalBus<AcousticEchoTap>.Push(in tap);
+                SignalBus<ExosuitAcousticEchoTap>.Push(in tap);
             }
         }
 
@@ -632,7 +633,7 @@ namespace Hecton8.Physics.Exosuit
             out NativeArray<float> footstepAccumulator,
             out NativeArray<MechHapticSignalDTO> haptics,
             out NativeArray<SiltExplosionSignal> silt,
-            out NativeArray<AcousticEchoTap> acoustic)
+            out NativeArray<ExosuitAcousticEchoTap> acoustic)
         {
             state = _stateHandle.Resolve(_dataVault);
             input = _inputHandle.Resolve(_dataVault);
@@ -1056,7 +1057,7 @@ namespace Hecton8.Physics.Exosuit
 
             SignalBus<MechHapticSignalDTO>.Configure(8, maxFrameSignals: 16, lowTierFrameSignals: 4, laneHash: 0x4D484558u);
             SignalBus<SiltExplosionSignal>.Configure(4, maxFrameSignals: 8, lowTierFrameSignals: 2, laneHash: 0x4558494Cu);
-            SignalBus<AcousticEchoTap>.Configure(8, maxFrameSignals: 16, lowTierFrameSignals: 4, laneHash: 0x45584F41u);
+            SignalBus<ExosuitAcousticEchoTap>.Configure(8, maxFrameSignals: 16, lowTierFrameSignals: 4, laneHash: 0x45584F41u);
             SignalBus<HapticRequest>.EnsureInitialized();
             _signalLanesReady = true;
         }
@@ -1064,18 +1065,19 @@ namespace Hecton8.Physics.Exosuit
         private ExosuitTuningDTO BuildSerializedTuning()
         {
             ExosuitTuningDTO tuning = default;
-            tuning.BaseMass = math.max(1f, _baseMassKg);
+            tuning.BaseMass = math.max(1f, math.isfinite(_baseMassKg) ? _baseMassKg : 8000f);
             tuning.CurrentMass = tuning.BaseMass;
-            tuning.Drag = math.clamp(_drag, 0f, 8f);
-            tuning.ThrusterForce = math.max(0f, _thrusterForceNewtons);
-            tuning.Radius = math.clamp(_radiusMeters, 0.25f, 5f);
-            tuning.ClampRange = math.max(tuning.Radius, _magneticClampRangeMeters);
-            tuning.HydraulicLatencySeconds = math.clamp(_hydraulicLatencySeconds, 0.05f, 3f);
-            tuning.PurgeImpulse = math.max(0f, _purgeImpulseMetersPerSecond);
-            tuning.GlobalQualityWeight = math.saturate(_globalQualityWeight);
-            tuning.FootstepStrideMeters = math.max(0.25f, _footstepStrideMeters);
-            tuning.MaxSpeedMetersPerSecond = math.max(0.25f, _maxSpeedMetersPerSecond);
-            tuning.CrushDepthMeters = math.max(1f, _crushDepthMeters);
+            tuning.Drag = math.clamp(math.isfinite(_drag) ? _drag : 0.45f, 0f, 8f);
+            tuning.ThrusterForce = math.max(0f, math.isfinite(_thrusterForceNewtons) ? _thrusterForceNewtons : 42000f);
+            tuning.Radius = math.clamp(math.isfinite(_radiusMeters) ? _radiusMeters : 1.2f, 0.25f, 5f);
+            float clampRange = math.isfinite(_magneticClampRangeMeters) ? _magneticClampRangeMeters : 2f;
+            tuning.ClampRange = math.max(tuning.Radius, clampRange);
+            tuning.HydraulicLatencySeconds = math.clamp(math.isfinite(_hydraulicLatencySeconds) ? _hydraulicLatencySeconds : 0.5f, 0.05f, 3f);
+            tuning.PurgeImpulse = math.max(0f, math.isfinite(_purgeImpulseMetersPerSecond) ? _purgeImpulseMetersPerSecond : 14f);
+            tuning.GlobalQualityWeight = math.saturate(math.isfinite(_globalQualityWeight) ? _globalQualityWeight : 0.62f);
+            tuning.FootstepStrideMeters = math.max(0.25f, math.isfinite(_footstepStrideMeters) ? _footstepStrideMeters : 3f);
+            tuning.MaxSpeedMetersPerSecond = math.max(0.25f, math.isfinite(_maxSpeedMetersPerSecond) ? _maxSpeedMetersPerSecond : 9f);
+            tuning.CrushDepthMeters = math.max(1f, math.isfinite(_crushDepthMeters) ? _crushDepthMeters : 4000f);
             tuning.StateHash = ComputeManagedHash(tuning.BaseMass, tuning.ThrusterForce, tuning.ClampRange, tuning.GlobalQualityWeight);
             return tuning;
         }
@@ -1083,30 +1085,67 @@ namespace Hecton8.Physics.Exosuit
         private MockTerrainSDF BuildTerrain(double3 cameraAup)
         {
             MockTerrainSDF terrain = default;
-            terrain.CameraAup = cameraAup;
-            terrain.CaveRadius = math.max(1f, _caveRadiusMeters);
-            terrain.FloorY = math.min(_caveFloorY, _caveCeilingY - 2f);
-            terrain.CeilingY = math.max(_caveCeilingY, terrain.FloorY + 2f);
+            terrain.CameraAup = math.all(math.isfinite(cameraAup)) ? cameraAup : double3.zero;
+            terrain.CaveRadius = math.max(1f, math.isfinite(_caveRadiusMeters) ? _caveRadiusMeters : 6f);
+            float floorY = math.isfinite(_caveFloorY) ? _caveFloorY : -2f;
+            float ceilingY = math.isfinite(_caveCeilingY) ? _caveCeilingY : floorY + 16f;
+            terrain.FloorY = math.min(floorY, ceilingY - 2f);
+            terrain.CeilingY = math.max(ceilingY, terrain.FloorY + 2f);
             terrain.WallSoftnessMeters = 0.15f;
-            terrain.CaveCenterLocal = new float3(_caveCenterLocal.x, _caveCenterLocal.y, _caveCenterLocal.z);
+            terrain.CaveCenterLocal = SanitizeVector3(_caveCenterLocal);
             return terrain;
         }
 
         private MockFlowField BuildFlow()
         {
             MockFlowField flow = default;
-            flow.FlowVelocity = new float3(_mockFlowVelocity.x, _mockFlowVelocity.y, _mockFlowVelocity.z);
-            flow.Intensity01 = math.saturate(_mockFlowIntensity01);
+            flow.FlowVelocity = SanitizeVector3(_mockFlowVelocity);
+            flow.Intensity01 = math.saturate(math.isfinite(_mockFlowIntensity01) ? _mockFlowIntensity01 : 0.0f);
             return flow;
         }
 
         private MockCrushDepthSignal BuildCrushDepth(uint frame, float crushDepthMeters)
         {
             MockCrushDepthSignal crush = default;
-            crush.DepthMeters = math.max(0f, _mockDepthMeters);
+            crush.DepthMeters = math.max(0f, math.isfinite(_mockDepthMeters) ? _mockDepthMeters : 0.0f);
             crush.ExternalPressure01 = math.saturate(crush.DepthMeters * math.rcp(math.max(1f, crushDepthMeters)));
             crush.Frame = frame;
             return crush;
+        }
+
+        private static bool IsStateBootstrapped(in ExosuitStateDTO state)
+        {
+            return (state.StateMask & ExosuitStateFlags.Active) != 0u &&
+                   math.all(math.isfinite(state.AUP)) &&
+                   math.all(math.isfinite(state.Velocity)) &&
+                   math.isfinite(state.HydraulicPressure) &&
+                   math.all(math.isfinite(state.AnchorNormal));
+        }
+
+        private static bool IsManagedTuningBootstrapped(in ExosuitTuningDTO tuning)
+        {
+            if (!math.isfinite(tuning.BaseMass) ||
+                !math.isfinite(tuning.ThrusterForce) ||
+                !math.isfinite(tuning.ClampRange) ||
+                !math.isfinite(tuning.GlobalQualityWeight) ||
+                tuning.BaseMass <= 0.0f)
+            {
+                return false;
+            }
+
+            return tuning.StateHash == ComputeManagedHash(
+                tuning.BaseMass,
+                tuning.ThrusterForce,
+                tuning.ClampRange,
+                tuning.GlobalQualityWeight);
+        }
+
+        private static float3 SanitizeVector3(Vector3 value)
+        {
+            return new float3(
+                math.isfinite(value.x) ? value.x : 0.0f,
+                math.isfinite(value.y) ? value.y : 0.0f,
+                math.isfinite(value.z) ? value.z : 0.0f);
         }
 
         private static ExosuitTuningDTO SanitizeManagedTuning(ExosuitTuningDTO tuning)
@@ -1124,6 +1163,7 @@ namespace Hecton8.Physics.Exosuit
             tuning.FootstepStrideMeters = math.max(0.25f, math.isfinite(tuning.FootstepStrideMeters) ? tuning.FootstepStrideMeters : 3f);
             tuning.MaxSpeedMetersPerSecond = math.max(0.25f, math.isfinite(tuning.MaxSpeedMetersPerSecond) ? tuning.MaxSpeedMetersPerSecond : 9f);
             tuning.CrushDepthMeters = math.max(1f, math.isfinite(tuning.CrushDepthMeters) ? tuning.CrushDepthMeters : 4000f);
+            tuning.StateHash = ComputeManagedHash(tuning.BaseMass, tuning.ThrusterForce, tuning.ClampRange, tuning.GlobalQualityWeight);
             return tuning;
         }
 

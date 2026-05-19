@@ -69,6 +69,11 @@ float H8OceanWrappedPhase(float2 cameraLocalXZ, float2 direction, float waveleng
     return H8OceanWrapPhase(wrappedMeters * (H8_OCEAN_TWO_PI / safeWavelength) + phaseOffset + phaseSpeed * _H8OceanSurfaceTime);
 }
 
+float2 H8OceanResolveAupProjectedXZ(float2 cameraLocalXZ)
+{
+    return cameraLocalXZ + _H8OceanCameraAupLocalProjection.xy;
+}
+
 uint H8OceanHash(uint value)
 {
     value ^= value >> 16;
@@ -92,6 +97,7 @@ void H8EvaluateOceanSurface(float2 cameraLocalXZ, out float3 displacement, out f
     float dHeightDx = 0.0;
     float dHeightDz = 0.0;
     float minJacobian = 1.0;
+    float2 projectedAupXZ = H8OceanResolveAupProjectedXZ(cameraLocalXZ);
 
     [loop]
     for (int i = 0; i < 16; i++)
@@ -104,7 +110,7 @@ void H8EvaluateOceanSurface(float2 cameraLocalXZ, out float3 displacement, out f
         float2 direction = H8OceanNormalize2(wave.DirectionAndSteepness.xy, float2(1.0, 0.0));
         float wavelength = max(abs(wave.Wavelength), 0.25);
         float waveNumber = H8_OCEAN_TWO_PI / wavelength;
-        float phase = H8OceanWrappedPhase(cameraLocalXZ, direction, wavelength, wave.DirectionAndSteepness.z, wave.PhaseSpeed);
+        float phase = H8OceanWrappedPhase(projectedAupXZ, direction, wavelength, wave.DirectionAndSteepness.z, wave.PhaseSpeed);
         float sine;
         float cosine;
         sincos(phase, sine, cosine);

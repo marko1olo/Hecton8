@@ -73,7 +73,7 @@ namespace Hecton8.Core.Hardware
 
         private IDataVault _dataVault;
         private VaultBufferHandle<byte> _thermalSeverityHandle;
-        private VaultBufferHandle<ThermalTelemetryEntry> _blackBoxHandle;
+        private VaultBufferHandle<HardwareThermalTelemetryEntry> _blackBoxHandle;
         private HardwareThermalSnapshot _snapshot;
         private uint _sequence;
         private int _blackBoxCursor;
@@ -107,7 +107,7 @@ namespace Hecton8.Core.Hardware
             : default;
 
         [StructLayout(LayoutKind.Explicit, Size = 24)]
-        private struct ThermalTelemetryEntry
+        private struct HardwareThermalTelemetryEntry
         {
             [FieldOffset(0)]
             public uint Frame;
@@ -661,11 +661,11 @@ namespace Hecton8.Core.Hardware
 
         private void WriteBlackBox(uint frame)
         {
-            if (!TryResolveThermalBlackBox(out NativeArray<ThermalTelemetryEntry> blackBox))
+            if (!TryResolveThermalBlackBox(out NativeArray<HardwareThermalTelemetryEntry> blackBox))
                 return;
 
             int index = _blackBoxCursor;
-            blackBox[index] = new ThermalTelemetryEntry
+            blackBox[index] = new HardwareThermalTelemetryEntry
             {
                 Frame = frame,
                 Sequence = _sequence,
@@ -686,7 +686,7 @@ namespace Hecton8.Core.Hardware
 
         private void DumpBlackBoxCold()
         {
-            if (!TryResolveThermalBlackBox(out NativeArray<ThermalTelemetryEntry> blackBox))
+            if (!TryResolveThermalBlackBox(out NativeArray<HardwareThermalTelemetryEntry> blackBox))
                 return;
 
             try
@@ -715,7 +715,7 @@ namespace Hecton8.Core.Hardware
                         if (index >= BlackBoxFrameCount)
                             index -= BlackBoxFrameCount;
 
-                        ThermalTelemetryEntry entry = blackBox[index];
+                        HardwareThermalTelemetryEntry entry = blackBox[index];
                         entryBytes.Clear();
                         BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(0, 4), entry.Frame);
                         BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(4, 4), entry.Sequence);
@@ -789,7 +789,7 @@ namespace Hecton8.Core.Hardware
             return severity.IsCreated && severity.Length >= 1;
         }
 
-        private bool TryResolveThermalBlackBox(out NativeArray<ThermalTelemetryEntry> blackBox)
+        private bool TryResolveThermalBlackBox(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
         {
             blackBox = default;
             IDataVault vault = _dataVault;
@@ -798,7 +798,7 @@ namespace Hecton8.Core.Hardware
 
             if (!_blackBoxHandle.IsCreated || !vault.ResolveBuffer(ref _blackBoxHandle))
             {
-                _blackBoxHandle = vault.GetBufferHandle<ThermalTelemetryEntry>(
+                _blackBoxHandle = vault.GetBufferHandle<HardwareThermalTelemetryEntry>(
                     BufferID.HardwareThermalBlackBox,
                     BlackBoxFrameCount,
                     SystemID.HardwareHomeostasis,

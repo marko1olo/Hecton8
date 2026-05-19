@@ -43,10 +43,15 @@ namespace Hecton8.Editor
     internal sealed class CompileWallGraphScan
     {
         public const int MaxStoredPackViolations = 512;
+        public const int MaxStoredCycleAssemblies = 128;
+        public const int MaxStoredDomainHealthRows = 128;
 
         public readonly List<CompileWallAsmdefNode> Nodes = new List<CompileWallAsmdefNode>(128);
         public readonly List<CompileWallAsmdefEdge> Edges = new List<CompileWallAsmdefEdge>(256);
         public readonly List<CompileWallAsmdefEdge> IllegalRuntimeEdges = new List<CompileWallAsmdefEdge>(128);
+        public readonly List<string> CycleAssemblies = new List<string>(MaxStoredCycleAssemblies);
+        public readonly List<CompileWallDomainHealth> DomainHealth =
+            new List<CompileWallDomainHealth>(MaxStoredDomainHealthRows);
         public readonly List<CompileWallArtifactSkew> ArtifactSkews = new List<CompileWallArtifactSkew>(128);
         public readonly List<CompileWallPackViolation> PackViolations = new List<CompileWallPackViolation>(MaxStoredPackViolations);
         public readonly List<string> ArchaeologyFiles = new List<string>(16);
@@ -55,6 +60,30 @@ namespace Hecton8.Editor
         public int PackViolationTotal;
         public bool UsedEmergencyMockAtlas;
         public double ScanMilliseconds;
+
+        public CompileWallAsmdefNode FindNodeByName(string assemblyName)
+        {
+            if (string.IsNullOrEmpty(assemblyName))
+                return null;
+
+            for (int i = 0; i < Nodes.Count; i++)
+            {
+                CompileWallAsmdefNode node = Nodes[i];
+                if (node != null && string.Equals(node.Name, assemblyName, StringComparison.Ordinal))
+                    return node;
+            }
+
+            return null;
+        }
+    }
+
+    internal sealed class CompileWallDomainHealth
+    {
+        public string DomainName;
+        public int AssemblyCount;
+        public int RuntimeAssemblyCount;
+        public int IllegalRuntimeEdges;
+        public int CycleAssemblies;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32, Pack = 8)]
@@ -140,6 +169,9 @@ namespace Hecton8.Editor
         private const string ClassToken = "class ";
         private const int UnityGuidHexLength = 32;
         private const string PackOneSnippet = "forbidden runtime struct pack-one layout";
+        private const string LegacyGraphFilePrefix = "asmdef_graph_";
+        private const string LegacyGraphFileSuffix = ".h8bin";
+        private const string ProjectAtlasFileName = "project_atlas.json";
         private const string RefDllSuffix = ".ref.dll";
         private static readonly byte[] LegacyHeaderScratch = new byte[LegacyGraphHeaderBytes];
         private static readonly byte[] SourceScanScratch = new byte[SourceScanBufferBytes];
@@ -218,6 +250,8 @@ namespace Hecton8.Editor
                 }
             }
 
+            DetectCycles(scan);
+            BuildDomainHealth(scan);
             RunArchaeology(projectRoot, scan);
             ScanBeeArtifactSkews(projectRoot, scan);
             ScanRuntimePackViolations(projectRoot, scan);
@@ -583,6 +617,188 @@ namespace Hecton8.Editor
             return reference;
         }
 
+        private static void DetectCycles(CompileWallGraphScan scan)
+        {
+            int count = scan.Nodes.Count;
+            if (count <= 1)
+                return;
+
+            var indices = new Dictionary<string, int>(count);
+            for (int i = 0; i < count; i++)
+            {
+                CompileWallAsmdefNode node = scan.Nodes[i];
+                if (!string.IsNullOrEmpty(node.Name) && !indices.ContainsKey(node.Name))
+                    indices.Add(node.Name, i);
+            }
+
+            var adjacency = new List<int>[count];
+            for (int i = 0; i < scan.Edges.Count; i++)
+            {
+                CompileWallAsmdefEdge edge = scan.Edges[i];
+                if (edge.From == null || edge.To == null)
+                    continue;
+                if (string.IsNullOrEmpty(edge.From.Name) || string.IsNullOrEmpty(edge.To.Name))
+                    continue;
+                if (!indices.TryGetValue(edge.From.Name, out int fromIndex) ||
+                    !indices.TryGetValue(edge.To.Name, out int toIndex))
+                    continue;
+
+                if (adjacency[fromIndex] == null)
+                    adjacency[fromIndex] = new List<int>(4);
+                adjacency[fromIndex].Add(toIndex);
+            }
+
+            var state = new byte[count];
+            var stack = new int[count];
+            for (int i = 0; i < count; i++)
+            {
+                if (state[i] == 0)
+                    VisitCycleNode(scan, adjacency, state, stack, i, 0);
+                if (scan.CycleAssemblies.Count >= CompileWallGraphScan.MaxStoredCycleAssemblies)
+                    return;
+            }
+        }
+
+        private static void VisitCycleNode(
+            CompileWallGraphScan scan,
+            List<int>[] adjacency,
+            byte[] state,
+            int[] stack,
+            int nodeIndex,
+            int depth)
+        {
+            if (scan.CycleAssemblies.Count >= CompileWallGraphScan.MaxStoredCycleAssemblies)
+                return;
+
+            state[nodeIndex] = 1;
+            stack[depth] = nodeIndex;
+            List<int> targets = adjacency[nodeIndex];
+            if (targets != null)
+            {
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    int target = targets[i];
+                    if (state[target] == 0)
+                    {
+                        VisitCycleNode(scan, adjacency, state, stack, target, depth + 1);
+                    }
+                    else if (state[target] == 1)
+                    {
+                        RecordCycleAssemblies(scan, stack, depth, target);
+                    }
+
+                    if (scan.CycleAssemblies.Count >= CompileWallGraphScan.MaxStoredCycleAssemblies)
+                        return;
+                }
+            }
+
+            state[nodeIndex] = 2;
+        }
+
+        private static void RecordCycleAssemblies(
+            CompileWallGraphScan scan,
+            int[] stack,
+            int depth,
+            int target)
+        {
+            for (int i = 0; i <= depth; i++)
+            {
+                if (stack[i] != target)
+                    continue;
+
+                for (int c = i; c <= depth; c++)
+                    AddCycleAssembly(scan, scan.Nodes[stack[c]].Name);
+                AddCycleAssembly(scan, scan.Nodes[target].Name);
+                return;
+            }
+        }
+
+        private static void AddCycleAssembly(CompileWallGraphScan scan, string assemblyName)
+        {
+            if (string.IsNullOrEmpty(assemblyName) ||
+                scan.CycleAssemblies.Count >= CompileWallGraphScan.MaxStoredCycleAssemblies)
+                return;
+
+            for (int i = 0; i < scan.CycleAssemblies.Count; i++)
+            {
+                if (string.Equals(scan.CycleAssemblies[i], assemblyName, StringComparison.Ordinal))
+                    return;
+            }
+
+            scan.CycleAssemblies.Add(assemblyName);
+        }
+
+        private static void BuildDomainHealth(CompileWallGraphScan scan)
+        {
+            if (scan.Nodes.Count == 0)
+                return;
+
+            var byDomain = new Dictionary<string, CompileWallDomainHealth>(64);
+            for (int i = 0; i < scan.Nodes.Count; i++)
+            {
+                CompileWallAsmdefNode node = scan.Nodes[i];
+                CompileWallDomainHealth health = GetOrAddDomainHealth(scan, byDomain, node.Name);
+                if (health == null)
+                    continue;
+
+                health.AssemblyCount++;
+                if (node.Layer == CompileWallAssemblyLayer.Runtime)
+                    health.RuntimeAssemblyCount++;
+            }
+
+            for (int i = 0; i < scan.IllegalRuntimeEdges.Count; i++)
+            {
+                CompileWallAsmdefEdge edge = scan.IllegalRuntimeEdges[i];
+                if (edge.From == null)
+                    continue;
+
+                CompileWallDomainHealth health = GetOrAddDomainHealth(scan, byDomain, edge.From.Name);
+                if (health != null)
+                    health.IllegalRuntimeEdges++;
+            }
+
+            for (int i = 0; i < scan.CycleAssemblies.Count; i++)
+            {
+                CompileWallDomainHealth health = GetOrAddDomainHealth(scan, byDomain, scan.CycleAssemblies[i]);
+                if (health != null)
+                    health.CycleAssemblies++;
+            }
+        }
+
+        private static CompileWallDomainHealth GetOrAddDomainHealth(
+            CompileWallGraphScan scan,
+            Dictionary<string, CompileWallDomainHealth> byDomain,
+            string assemblyName)
+        {
+            string domainName = ExtractDomainName(assemblyName);
+            if (byDomain.TryGetValue(domainName, out CompileWallDomainHealth health))
+                return health;
+
+            if (scan.DomainHealth.Count >= CompileWallGraphScan.MaxStoredDomainHealthRows)
+                return null;
+
+            health = new CompileWallDomainHealth
+            {
+                DomainName = domainName
+            };
+            byDomain.Add(domainName, health);
+            scan.DomainHealth.Add(health);
+            return health;
+        }
+
+        private static string ExtractDomainName(string assemblyName)
+        {
+            if (string.IsNullOrEmpty(assemblyName))
+                return "UNKNOWN";
+
+            const string prefix = "Hecton8.";
+            int start = assemblyName.StartsWith(prefix, StringComparison.Ordinal) ? prefix.Length : 0;
+            int end = assemblyName.IndexOf('.', start);
+            if (end > start)
+                return assemblyName.Substring(start, end - start);
+            return start > 0 && start < assemblyName.Length ? assemblyName.Substring(start) : assemblyName;
+        }
+
         private static void RunArchaeology(string projectRoot, CompileWallGraphScan scan)
         {
             ScanArchaeologyFolder(projectRoot, Path.Combine(projectRoot, ArchiveRoot.Replace('/', Path.DirectorySeparatorChar)), scan);
@@ -607,15 +823,13 @@ namespace Hecton8.Editor
                 while (files.MoveNext())
                 {
                     string path = files.Current;
-                    string name = Path.GetFileName(path);
-                    if (name.StartsWith("asmdef_graph_", StringComparison.OrdinalIgnoreCase) &&
-                        name.EndsWith(".h8bin", StringComparison.OrdinalIgnoreCase))
+                    if (FileNameStartsWithAndEndsWith(path, LegacyGraphFilePrefix, LegacyGraphFileSuffix))
                     {
                         scan.ArchaeologyFiles.Add(ToProjectPath(projectRoot, path));
                         if (TryReadLegacyGraphHeader(path, out CompileWallLegacyGraphHeader header))
                             scan.LegacyGraphHeaders.Add(header);
                     }
-                    else if (string.Equals(name, "project_atlas.json", StringComparison.OrdinalIgnoreCase))
+                    else if (FileNameEquals(path, ProjectAtlasFileName))
                         scan.ArchaeologyFiles.Add(ToProjectPath(projectRoot, path));
                 }
             }
@@ -816,6 +1030,37 @@ namespace Hecton8.Editor
             }
 
             return -1;
+        }
+
+        private static bool FileNameEquals(string path, string expected)
+        {
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(expected))
+                return false;
+
+            int nameStart = LastIndexOfDirectorySeparator(path) + 1;
+            int nameLength = path.Length - nameStart;
+            return nameLength == expected.Length &&
+                   string.Compare(path, nameStart, expected, 0, expected.Length, StringComparison.OrdinalIgnoreCase) == 0;
+        }
+
+        private static bool FileNameStartsWithAndEndsWith(string path, string prefix, string suffix)
+        {
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(prefix) || string.IsNullOrEmpty(suffix))
+                return false;
+
+            int nameStart = LastIndexOfDirectorySeparator(path) + 1;
+            int nameLength = path.Length - nameStart;
+            if (nameLength < prefix.Length + suffix.Length)
+                return false;
+
+            return string.Compare(path, nameStart, prefix, 0, prefix.Length, StringComparison.OrdinalIgnoreCase) == 0 &&
+                   string.Compare(
+                       path,
+                       path.Length - suffix.Length,
+                       suffix,
+                       0,
+                       suffix.Length,
+                       StringComparison.OrdinalIgnoreCase) == 0;
         }
 
         private static void ScanRuntimePackViolations(string projectRoot, CompileWallGraphScan scan)
@@ -1136,12 +1381,57 @@ namespace Hecton8.Editor
 
         private static string ToProjectPath(string projectRoot, string absolutePath)
         {
-            string root = projectRoot.Replace('\\', '/').TrimEnd('/');
-            string path = absolutePath.Replace('\\', '/');
-            if (path.StartsWith(root + "/", StringComparison.OrdinalIgnoreCase))
-                return path.Substring(root.Length + 1);
+            int rootLength = TrimTrailingSeparators(projectRoot);
+            if (HasPathPrefix(absolutePath, projectRoot, rootLength))
+                return NormalizeRelativePath(absolutePath, rootLength + 1);
 
-            return path;
+            return NormalizeRelativePath(absolutePath, 0);
+        }
+
+        private static int TrimTrailingSeparators(string path)
+        {
+            int length = string.IsNullOrEmpty(path) ? 0 : path.Length;
+            while (length > 0 && IsDirectorySeparator(path[length - 1]))
+                length--;
+
+            return length;
+        }
+
+        private static bool HasPathPrefix(string path, string root, int rootLength)
+        {
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(root) || rootLength <= 0)
+                return false;
+            if (path.Length <= rootLength || !IsDirectorySeparator(path[rootLength]))
+                return false;
+
+            for (int i = 0; i < rootLength; i++)
+            {
+                char pathChar = path[i];
+                char rootChar = root[i];
+                if (IsDirectorySeparator(pathChar) && IsDirectorySeparator(rootChar))
+                    continue;
+                if (char.ToUpperInvariant(pathChar) != char.ToUpperInvariant(rootChar))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string NormalizeRelativePath(string path, int start)
+        {
+            if (string.IsNullOrEmpty(path))
+                return string.Empty;
+
+            int safeStart = start < 0 ? 0 : start;
+            if (safeStart > path.Length)
+                safeStart = path.Length;
+            string relative = path.Substring(safeStart);
+            return relative.IndexOf('\\') >= 0 ? relative.Replace('\\', '/') : relative;
+        }
+
+        private static bool IsDirectorySeparator(char value)
+        {
+            return value == '/' || value == '\\';
         }
     }
 
@@ -1153,27 +1443,51 @@ namespace Hecton8.Editor
         {
             CompileWallGeneratedArtifacts.EnsureGeneratedArtifacts();
             CompileWallGraphScan scan = CompileWallAssemblyGraphScanner.ScanProject();
-            if (scan.IllegalRuntimeEdges.Count == 0)
+            if (scan.IllegalRuntimeEdges.Count == 0 && scan.CycleAssemblies.Count == 0)
                 return;
 
             int limit = scan.IllegalRuntimeEdges.Count < 80 ? scan.IllegalRuntimeEdges.Count : 80;
-            Debug.LogError("[CompileWall] Build blocked: Runtime assembly references another Runtime assembly directly.");
-            for (int i = 0; i < limit; i++)
+            if (scan.IllegalRuntimeEdges.Count > 0)
             {
-                CompileWallAsmdefEdge edge = scan.IllegalRuntimeEdges[i];
-                Debug.LogError("[CompileWall] Runtime -> Runtime edge source assembly:");
-                Debug.LogError(edge.From.Name);
-                Debug.LogError("[CompileWall] Runtime -> Runtime edge target assembly:");
-                Debug.LogError(edge.To.Name);
-                Debug.LogError("[CompileWall] Runtime -> Runtime edge source path:");
-                Debug.LogError(edge.From.Path);
+                Debug.LogError("[CompileWall] Build blocked: Runtime assembly references another Runtime assembly directly.");
+                for (int i = 0; i < limit; i++)
+                {
+                    CompileWallAsmdefEdge edge = scan.IllegalRuntimeEdges[i];
+                    Debug.LogError("[CompileWall] Runtime -> Runtime edge source assembly:");
+                    Debug.LogError(edge.From.Name);
+                    Debug.LogError("[CompileWall] Runtime -> Runtime edge target assembly:");
+                    Debug.LogError(edge.To.Name);
+                    Debug.LogError("[CompileWall] Runtime -> Runtime edge source path:");
+                    Debug.LogError(edge.From.Path);
+                }
+
+                if (scan.IllegalRuntimeEdges.Count > limit)
+                    Debug.LogError("[CompileWall] Illegal edge list truncated. Open Compile Wall X-Ray for the complete graph.");
             }
 
-            if (scan.IllegalRuntimeEdges.Count > limit)
-                Debug.LogError("[CompileWall] Illegal edge list truncated. Open Compile Wall X-Ray for the complete graph.");
+            int cycleLimit = scan.CycleAssemblies.Count < 80 ? scan.CycleAssemblies.Count : 80;
+            if (scan.CycleAssemblies.Count > 0)
+            {
+                Debug.LogError("[CompileWall] Build blocked: asmdef dependency cycle detected.");
+                for (int i = 0; i < cycleLimit; i++)
+                {
+                    string assemblyName = scan.CycleAssemblies[i];
+                    CompileWallAsmdefNode node = scan.FindNodeByName(assemblyName);
+                    Debug.LogError("[CompileWall] Cycle assembly:");
+                    Debug.LogError(assemblyName);
+                    if (node != null)
+                    {
+                        Debug.LogError("[CompileWall] Cycle assembly path:");
+                        Debug.LogError(node.Path);
+                    }
+                }
 
-            CompileWallBlackBox.Dump("RuntimeToRuntimeAsmdefEdge", scan);
-            const string message = "[CompileWall] Build blocked: Runtime assembly references another Runtime assembly directly.";
+                if (scan.CycleAssemblies.Count > cycleLimit)
+                    Debug.LogError("[CompileWall] Cycle assembly list truncated. Open Compile Wall X-Ray for the stored rows.");
+            }
+
+            CompileWallBlackBox.Dump("AsmdefCompileWallBreach", scan);
+            const string message = "[CompileWall] Build blocked by asmdef compile-wall breach.";
             throw new BuildFailedException(message);
         }
     }
@@ -1263,25 +1577,30 @@ namespace Hecton8.Editor
 
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 40, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 64, Pack = 8)]
     internal struct CompileWallBlackBoxEntry
     {
-        public double Seconds;
-        public int Sequence;
-        public int NodeCount;
-        public int EdgeCount;
-        public int IllegalEdgeCount;
-        public int WarningCount;
-        public int ErrorCount;
-        public uint EventHash;
-        public uint Flags;
+        [FieldOffset(0)] public double Seconds;
+        [FieldOffset(8)] public int Sequence;
+        [FieldOffset(12)] public int NodeCount;
+        [FieldOffset(16)] public int EdgeCount;
+        [FieldOffset(20)] public int IllegalEdgeCount;
+        [FieldOffset(24)] public int WarningCount;
+        [FieldOffset(28)] public int ErrorCount;
+        [FieldOffset(32)] public uint EventHash;
+        [FieldOffset(36)] public uint Flags;
+        [FieldOffset(40)] public int DomainHealthRows;
+        [FieldOffset(44)] public int Reserved0;
+        [FieldOffset(48)] public long Reserved1;
+        [FieldOffset(56)] public long Reserved2;
     }
 
     [InitializeOnLoad]
     internal static class CompileWallBlackBox
     {
         private const int Capacity = 300;
-        private const int DumpVersion = 4;
+        private const int DumpVersion = 6;
+        private const int EntryBytes = 64;
         private const uint DumpMagic = 0x48384450u;
         private const uint EventGraphScan = 0x47524150u;
         private const uint EventCompileSample = 0x434F4D50u;
@@ -1289,6 +1608,7 @@ namespace Hecton8.Editor
         private const uint GraphFlagLegacyGraphHeaders = 2u;
         private const uint GraphFlagStaleContractArtifact = 4u;
         private const uint GraphFlagPackOneRuntimeStruct = 8u;
+        private const uint GraphFlagAsmdefCycle = 16u;
         private const string DumpAssetPath = "Docs/AgentLogs/Dump_SHINOBU_31.h8dump";
 
         private static NativeArray<CompileWallBlackBoxEntry> _entries;
@@ -1317,12 +1637,14 @@ namespace Hecton8.Editor
                 NodeCount = scan.Nodes.Count,
                 EdgeCount = scan.Edges.Count,
                 IllegalEdgeCount = scan.IllegalRuntimeEdges.Count,
-                WarningCount = scan.ArtifactSkews.Count + scan.PackViolationTotal,
+                WarningCount = scan.ArtifactSkews.Count + scan.PackViolationTotal + scan.CycleAssemblies.Count,
                 EventHash = EventGraphScan,
+                DomainHealthRows = scan.DomainHealth.Count,
                 Flags = (scan.UsedEmergencyMockAtlas ? GraphFlagEmergencyMockAtlas : 0u) |
                         (scan.LegacyGraphHeaders.Count > 0 ? GraphFlagLegacyGraphHeaders : 0u) |
                         (scan.ArtifactSkews.Count > 0 ? GraphFlagStaleContractArtifact : 0u) |
-                        (scan.PackViolationTotal > 0 ? GraphFlagPackOneRuntimeStruct : 0u)
+                        (scan.PackViolationTotal > 0 ? GraphFlagPackOneRuntimeStruct : 0u) |
+                        (scan.CycleAssemblies.Count > 0 ? GraphFlagAsmdefCycle : 0u)
             };
             Write(entry);
             if (double.IsNaN(entry.Seconds) || double.IsInfinity(entry.Seconds))
@@ -1363,9 +1685,11 @@ namespace Hecton8.Editor
                 writer.Write(reason ?? string.Empty);
                 writer.Write(_sequence);
                 writer.Write(Capacity);
+                writer.Write(EntryBytes);
                 writer.Write(scan != null ? scan.Nodes.Count : 0);
                 writer.Write(scan != null ? scan.Edges.Count : 0);
                 writer.Write(scan != null ? scan.IllegalRuntimeEdges.Count : 0);
+                writer.Write(scan != null ? scan.CycleAssemblies.Count : 0);
                 writer.Write(scan != null ? scan.ArtifactSkews.Count : 0);
                 writer.Write(scan != null ? scan.PackViolationTotal : 0);
                 writer.Write(scan != null ? scan.PackViolations.Count : 0);
@@ -1406,6 +1730,10 @@ namespace Hecton8.Editor
             writer.Write(entry.ErrorCount);
             writer.Write(entry.EventHash);
             writer.Write(entry.Flags);
+            writer.Write(entry.DomainHealthRows);
+            writer.Write(entry.Reserved0);
+            writer.Write(entry.Reserved1);
+            writer.Write(entry.Reserved2);
         }
 
         private static uint HashPath(string path)
@@ -2043,10 +2371,13 @@ namespace Hecton8.Editor
             {
                 EditorGUILayout.IntField("Asmdef count", _scan.Nodes.Count);
                 EditorGUILayout.IntField("Runtime -> Runtime illegal edges", _scan.IllegalRuntimeEdges.Count);
+                EditorGUILayout.IntField("Cycle assemblies", _scan.CycleAssemblies.Count);
+                EditorGUILayout.IntField("Domain health rows", _scan.DomainHealth.Count);
                 EditorGUILayout.IntField("Stale ref artifacts", _scan.ArtifactSkews.Count);
                 EditorGUILayout.IntField("ARM64 Pack=1 hits", _scan.PackViolationTotal);
                 EditorGUILayout.IntField("Legacy graph headers", _scan.LegacyGraphHeaders.Count);
                 EditorGUILayout.DoubleField("Scan ms", _scan.ScanMilliseconds);
+                EditorGUILayout.Toggle("Asmdef graph acyclic", _scan.CycleAssemblies.Count == 0);
                 EditorGUILayout.Toggle("Emergency mock atlas", _scan.UsedEmergencyMockAtlas);
             }
 
@@ -2054,7 +2385,9 @@ namespace Hecton8.Editor
             DrawGraph(graphRect);
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
+            DrawDomainHealth();
             DrawIllegalEdges();
+            DrawCycleAssemblies();
             DrawArtifactSkews();
             DrawPackViolations();
             DrawCompilationSamples();
@@ -2084,13 +2417,16 @@ namespace Hecton8.Editor
         private void ValidateNow()
         {
             RefreshScan();
-            if (_scan.IllegalRuntimeEdges.Count == 0)
+            if (_scan.IllegalRuntimeEdges.Count == 0 && _scan.CycleAssemblies.Count == 0)
             {
-                Debug.Log("[CompileWall] Asmdef graph passed Runtime -> Runtime guard.");
+                Debug.Log("[CompileWall] Asmdef graph passed Runtime -> Runtime and cycle guards.");
                 return;
             }
 
-            Debug.LogError("[CompileWall] Runtime -> Runtime illegal edges detected. Open Compile Wall X-Ray for count and paths.");
+            if (_scan.IllegalRuntimeEdges.Count > 0)
+                Debug.LogError("[CompileWall] Runtime -> Runtime illegal edges detected. Open Compile Wall X-Ray for count and paths.");
+            if (_scan.CycleAssemblies.Count > 0)
+                Debug.LogError("[CompileWall] Asmdef dependency cycles detected. Open Compile Wall X-Ray for count and paths.");
         }
 
         private static void NukeDomainReload()
@@ -2146,6 +2482,53 @@ namespace Hecton8.Editor
             Handles.EndGUI();
         }
 
+        private void DrawDomainHealth()
+        {
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.LabelField("Domain Assembly Health", EditorStyles.boldLabel);
+            int count = _scan.DomainHealth.Count;
+            if (count == 0)
+            {
+                EditorGUILayout.LabelField("none");
+                return;
+            }
+
+            using (new EditorGUI.DisabledScope(true))
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("Domain", GUILayout.MinWidth(160f));
+                EditorGUILayout.LabelField("Assemblies", GUILayout.Width(80f));
+                EditorGUILayout.LabelField("Runtime", GUILayout.Width(70f));
+                EditorGUILayout.LabelField("Illegal", GUILayout.Width(70f));
+                EditorGUILayout.LabelField("Cycles", GUILayout.Width(70f));
+                EditorGUILayout.LabelField("State", GUILayout.Width(70f));
+                EditorGUILayout.EndHorizontal();
+            }
+
+            int limit = count < CompileWallGraphScan.MaxStoredDomainHealthRows
+                ? count
+                : CompileWallGraphScan.MaxStoredDomainHealthRows;
+            for (int i = 0; i < limit; i++)
+            {
+                CompileWallDomainHealth health = _scan.DomainHealth[i];
+                bool pass = health.IllegalRuntimeEdges == 0 && health.CycleAssemblies == 0;
+                using (new EditorGUI.DisabledScope(true))
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField(health.DomainName, GUILayout.MinWidth(160f));
+                    EditorGUILayout.IntField(health.AssemblyCount, GUILayout.Width(80f));
+                    EditorGUILayout.IntField(health.RuntimeAssemblyCount, GUILayout.Width(70f));
+                    EditorGUILayout.IntField(health.IllegalRuntimeEdges, GUILayout.Width(70f));
+                    EditorGUILayout.IntField(health.CycleAssemblies, GUILayout.Width(70f));
+                    EditorGUILayout.LabelField(pass ? "PASS" : "FAIL", GUILayout.Width(70f));
+                    EditorGUILayout.EndHorizontal();
+                }
+            }
+
+            if (count > limit)
+                EditorGUILayout.LabelField("domain list truncated");
+        }
+
         private void DrawIllegalEdges()
         {
             EditorGUILayout.Space(8f);
@@ -2167,6 +2550,33 @@ namespace Hecton8.Editor
                 EditorGUILayout.LabelField(edge.From.Path);
                 EditorGUILayout.EndHorizontal();
             }
+        }
+
+        private void DrawCycleAssemblies()
+        {
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.LabelField("Asmdef Dependency Cycles", EditorStyles.boldLabel);
+            int count = _scan.CycleAssemblies.Count;
+            if (count == 0)
+            {
+                EditorGUILayout.LabelField("PASS: graph is acyclic");
+                return;
+            }
+
+            int limit = count < CompileWallGraphScan.MaxStoredCycleAssemblies
+                ? count
+                : CompileWallGraphScan.MaxStoredCycleAssemblies;
+            for (int i = 0; i < limit; i++)
+            {
+                string assemblyName = _scan.CycleAssemblies[i];
+                CompileWallAsmdefNode node = _scan.FindNodeByName(assemblyName);
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(assemblyName, GUILayout.MinWidth(180f));
+                EditorGUILayout.LabelField(node != null ? node.Path : string.Empty);
+                EditorGUILayout.EndHorizontal();
+            }
+            if (count > limit)
+                EditorGUILayout.LabelField("cycle list truncated");
         }
 
         private void DrawArtifactSkews()

@@ -1,0 +1,52 @@
+﻿{
+    "Batch":  "Batch009",
+    "Generated":  "2026-05-19 03:07:35 +04:00",
+    "MoveManifest":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Batch009_MoveManifest.json",
+    "MovedTotal":  209,
+    "BlockedTotal":  4,
+    "ActiveAgentLogs":  [
+                            "QA_Endurance_Log.csv",
+                            "Unity_SHINOBU_38_Run_final_exitprocess.log"
+                        ],
+    "ActiveTasks":  [
+                        "CURRENT_BATCH.md",
+                        "POLISH.txt",
+                        "НЕ ДВИГАТЬ! ИНСТРЫ.txt"
+                    ],
+    "Combined":  [
+                     {
+                         "Prefix":  "AgentLogs_Batch009",
+                         "SourceRoot":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs",
+                         "FileCount":  165,
+                         "MdPath":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs_Combined\\AgentLogs_Batch009_SLIM.md",
+                         "TxtPath":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs_Combined\\AgentLogs_Batch009_SLIM.txt",
+                         "ManifestPath":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\AgentLogs_Combined\\AgentLogs_Batch009_MANIFEST.json",
+                         "MdBytes":  1979235,
+                         "TxtBytes":  1978334
+                     },
+                     {
+                         "Prefix":  "Tasks_Batch009",
+                         "SourceRoot":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks",
+                         "FileCount":  44,
+                         "MdPath":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks_Combined\\Tasks_Batch009_SLIM.md",
+                         "TxtPath":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks_Combined\\Tasks_Batch009_SLIM.txt",
+                         "ManifestPath":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch009\\Tasks_Combined\\Tasks_Batch009_MANIFEST.json",
+                         "MdBytes":  693410,
+                         "TxtBytes":  693114
+                     },
+                     {
+                         "Prefix":  "Archive_ROOT_INDEX_Batch009",
+                         "FileCount":  13,
+                         "MdPath":  "C:\\hades\\Hecton8\\Docs\\Archive\\Archive_Combined\\Archive_ROOT_INDEX_Batch009_SLIM.md",
+                         "TxtPath":  "C:\\hades\\Hecton8\\Docs\\Archive\\Archive_Combined\\Archive_ROOT_INDEX_Batch009_SLIM.txt",
+                         "ManifestPath":  "C:\\hades\\Hecton8\\Docs\\Archive\\Archive_Combined\\Archive_ROOT_INDEX_Batch009_MANIFEST.json",
+                         "MdBytes":  1269,
+                         "TxtBytes":  1443
+                     }
+                 ],
+    "ProtectedTasks":  [
+                           "CURRENT_BATCH.md",
+                           "POLISH.txt",
+                           "НЕ ДВИГАТЬ! ИНСТРЫ.txt"
+                       ]
+}

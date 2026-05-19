@@ -5,7 +5,7 @@ Runtime owner: `Hecton8.AI.Ecosystem.ShinobuFloraFaunaSymbiosisSolver`
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-18 R4 Interior Actuality Boundary
 
-This document is active only where it agrees with current source, fresh verification artifacts, R24 root/architecture correction, R23 proof-language/navigation boundary, and R22 prior source-count boundary. `Tools/AtlasCheck.py` still has the known RealtimeCSG missing-reference blocker.
+This document is active only where it agrees with current source, fresh verification artifacts, and the R28 root/architecture correction. R28 static gates: AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`).
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, ecosystem runtime wiring, or visual proof is implied unless this document links a fresh evidence artifact. Static design claims are not fauna/flora runtime proof.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
@@ -18,6 +18,8 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 - SHINOBU-owned AUP DTO lanes use `SymbiosisAup48`, not the legacy packed `AbsoluteUniversePosition` field. The lane is 48 bytes, offsets 0/8/16 for grid longs, 24/28/32 for local floats, and manual padding to byte 48.
 - Default flora capacity is 50,000 and the flora spatial hash uses 65,536 buckets. This targets the prompt-scale ecosystem without nearest-neighbor allocation.
 - `GlobalQualityWeight` continuously shifts between micro exchange and macro biomass average. No binary low-end hardware switch is introduced.
+- When `GlobalQualityWeight` falls below `MacroThreshold`, the scheduler does not build the flora spatial hash; the macro solver uses strided biomass sampling instead.
+- Feeding attenuation and anomaly blight use guarded squared-distance scalar falloff. This is a deliberate Dear Lie to avoid hot sqrt cost in ecosystem chemistry.
 - Missing `symbiosis_chemical_links.h8bin` is handled by deterministic emergency mock records so CI and editor tools can prove biomass transfer.
 - Legacy `symbiosis_chemical_links.h8bin` accepts raw little-endian records or a 16-byte `S62L`/`S62B` header; `S62B` uses `math.reversebytes` before `math.asfloat`.
 - Emergency mock RNG is `Unity.Mathematics.Random` seeded from `ResolveFrameSectorSeed(centerAup, simulationFrame)`, mixing sector hash, solver frame, and a SHINOBU domain salt. Runtime telemetry also records the solver frame, not `Time.frameCount`.

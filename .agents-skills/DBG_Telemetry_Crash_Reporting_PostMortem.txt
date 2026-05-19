@@ -81,6 +81,34 @@ Export runs on a pre-owned export worker, `Awaitable.BackgroundThreadAsync`, or 
 System-specific dumps use `Docs/AgentLogs/Dump_[OWNER_ID].bin`. Examples: `Dump_PLAYER_KINEMATICS.bin`, `Dump_PIPE_LOGISTICS_ARCHITECT.bin`, `Dump_VOXEL_MESH_PIPELINE.bin`.
 Critical-system Black Boxes may add owner-specific fields, but capacity remains exactly 300 frames unless a larger capacity has explicit MX350 memory proof.
 
+### 1.2B Global Authority Fault Capture
+
+Critical global authority surfaces must emit enough telemetry to explain their
+last 300 frames of behavior:
+
+- `GlobalRegistry`: registry phase, service slot id, rebound count, failed lookup
+  count, hot-path lookup violation flag.
+- `SignalBus<T>` / `GlobalSignals`: lane id/hash, producer phase, snapshot count,
+  dropped/coalesced count, overflow policy, storm flag.
+- `HectonEventBus`: mod id/hash, payload id/hash, callback depth, watchdog trip,
+  disabled-mod flag. First-party hot gameplay traffic here is a fault.
+- `GlobalDataVault`: BufferID, SystemID, generation, stale-handle count,
+  relocation/defrag move count, release scene id.
+- Global route card: owner, instrument, producer phase, consumer phase, cadence,
+  capacity, failure mode, telemetry fields, shutdown/disposal rule, proof state.
+
+[FORBID] "Global bus failed" without lane id, owner, phase, and overflow state.
+[FORBID] "Vault handle stale" without BufferID/SystemID/generation data.
+[FORBID] "Registry was null" without service slot id and registry phase.
+
+Cross-reference:
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
+
 ### 1.3 State Snapshot: NaN / Error Recovery Flow
 
 FLOW: ErrorDetected

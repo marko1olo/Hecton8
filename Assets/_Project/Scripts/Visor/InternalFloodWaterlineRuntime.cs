@@ -267,7 +267,10 @@ namespace Hecton8.Visor
             _hasPendingGasSubmergedFraction = false;
             _pendingGasRoomId = -1;
             if (_telemetry.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_telemetry);
                 _telemetry.Dispose();
+            }
             _telemetry = default;
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -280,6 +283,7 @@ namespace Hecton8.Visor
                 return;
 
             _telemetry = new NativeArray<WaterlineTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<WaterlineTelemetryEntry>[300] - fixed internal flood blackbox ring - owner: InternalFloodWaterlineRuntime
+            NativeMemorySentinel.RegisterNativeArray(_telemetry, nameof(InternalFloodWaterlineRuntime), nameof(_telemetry), NativeAllocationLifetime.Scene);
         }
 
         private static bool TryResolveRuntimeContext(

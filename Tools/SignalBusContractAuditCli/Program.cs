@@ -9,7 +9,7 @@ internal static class Program
 {
     private const string Agent = "SHINOBU_02";
     private static readonly Regex StructDeclarationRegex = new(@"^\s*(?:(?:public|internal|private|protected)\s+)*(?:(?:readonly|partial|unsafe|ref)\s+)*struct\s+([A-Za-z_][A-Za-z0-9_]*)\b", RegexOptions.Compiled);
-    private static readonly Regex LayoutPack1Regex = new(@"\[StructLayout\([^\]]*Pack\s*=\s*1", RegexOptions.Compiled);
+    private static readonly Regex LayoutPack1Regex = new(@"\[StructLayout\([^\]]*Pack\s*=\s*1(?!\d)", RegexOptions.Compiled);
     private static readonly Regex ManagedEventRegex = new(@"\b(event\s+(System\.)?Action|UnityEvent|SendMessage\s*\(|BroadcastMessage\s*\(|SendMessageUpwards\s*\(|System\.Action|System\.Func|Action<|Func<)", RegexOptions.Compiled);
     private static readonly Regex StringFieldRegex = new(@"\b(string|System\.String)\s+[A-Za-z_][A-Za-z0-9_]*", RegexOptions.Compiled);
     private static readonly Regex TelemetryArrayRegex = new(@"\bprivate\s+(?:static\s+)?(?:readonly\s+)?NativeArray\s*<[^>]*(Telemetry|BlackBox|Signal)[^>]*>\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=[^;]*)?;", RegexOptions.Compiled);
@@ -628,6 +628,12 @@ internal static class Program
                 AddFinding("INFO", "LOCAL_NATIVE_TELEMETRY_RING_VAULT_ALIAS", 92, "CONFIRMED_VAULT_ALIAS_REVIEW", "FIELD_DECLARATION_PLUS_VAULT_ALIAS", relativePath, lineNumber, fieldName, rawLine, "This field is documented as a GlobalDataVault alias. Verify generation checks and dispose ownership stay in the vault; do not count it as a private owner breach.",
                     ownership.ToTags(isEditor));
             }
+            else if (ownership.IsH8MemoryRootAllocator || IsGlobalDataVaultRoot(relativePath))
+            {
+                _registeredLocalTelemetryCount++;
+                AddFinding("INFO", "LOCAL_NATIVE_TELEMETRY_RING_ROOT_OWNER", 91, "CONFIRMED_ROOT_ALLOCATOR_TELEMETRY", "FIELD_DECLARATION_PLUS_H8MEMORY_SCAN", relativePath, lineNumber, fieldName, rawLine, "This telemetry ring belongs to the H8Memory/GlobalDataVault root allocation layer. Keep dispose coverage, but do not classify the root owner itself as a downstream private non-vault breach.",
+                    ownership.ToTags(isEditor));
+            }
             else if (ownership.IsOwned)
             {
                 _registeredLocalTelemetryCount++;
@@ -672,6 +678,11 @@ internal static class Program
                 AddFinding("WARN", "POSSIBLE_ORPHANED_SIGNAL_QUEUE", 82, "PROBABLE_SIGNAL_CORRIDOR_BYPASS", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "Confirm this queue is registered as a typed lane or migrate producers to SignalBus<T>.",
                     ownership.ToTags(isEditor));
             }
+        }
+
+        private static bool IsGlobalDataVaultRoot(string relativePath)
+        {
+            return relativePath.EndsWith("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs", StringComparison.Ordinal);
         }
 
         private void ScanSyncRuntimeIo(string relativePath, string rawLine, string code, int lineNumber, bool isEditor, string methodName)

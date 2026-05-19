@@ -404,7 +404,7 @@ namespace Hecton8.SaveSystem
             return math.saturate(1f - ((float)compressedBytes / rawBytes));
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct EndianSwap32Job : IJobParallelFor
         {
             [NoAlias]
@@ -416,7 +416,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct ActiveRecordCompactionJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<byte> SourceRecords;
@@ -468,7 +468,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct MockSaveDataGeneratorJob : IJobParallelFor
         {
             [NoAlias]
@@ -505,7 +505,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct VoxelRleCompressionJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<byte> SourceDensityIds;
@@ -560,7 +560,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct Lz4BlockCompressionJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<byte> Source;

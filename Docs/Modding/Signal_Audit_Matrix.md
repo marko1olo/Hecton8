@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Mod Signal Audit Matrix
 
-Date: 2026-05-17
-Status: STATIC SOURCE AUDIT / STATIC VALIDATOR PASSING / PENDING RUNTIME VERIFICATION
+Date: 2026-05-19
+Status: ENVELOPE-ONLY STATIC SOURCE AUDIT / STATIC VALIDATOR PASSING / PENDING RUNTIME VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -20,6 +20,10 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 Owner prompt: MODDING_API_SCHEMA_BUILDER  
 Source file: `Assets/_Project/Scripts/Core/GlobalSignals.cs`  
 Companion schema: `Docs/Modding/Signal_Schema.json`
+
+## 2026-05-19 Envelope-Only Override
+
+The projection rows below are historical/source-audit context. Current public UGC runtime does not subscribe to first-party `SignalBus<T>` lanes through managed callbacks. If the SDK needs event-like behavior, it should provide authoring-time graph triggers, sampled/redacted fixtures, or future engine-owned unmanaged projections that still resolve to bounded envelope behavior. No `SignalBus<T>` snapshot is exposed to mods.
 
 ## Extraction Evidence
 

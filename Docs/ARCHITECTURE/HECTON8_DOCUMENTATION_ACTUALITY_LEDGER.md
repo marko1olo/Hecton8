@@ -2,7 +2,7 @@
 
 Date: 2026-05-19
 Owner lane: SUBNAUTICA_RESEARCHER
-Status: ACTIVE SOURCE-OF-TRUTH OVERLAY / R24 DOC_GLOBAL ROOT-ARCH BOUNDARY / STATIC_DOC + STATIC_SOURCE + WEB_REFERENCE
+Status: ACTIVE SOURCE-OF-TRUTH OVERLAY / R29 DOC_GLOBAL ROOT-ARCH BOUNDARY / STATIC_DOC + STATIC_SOURCE + WEB_REFERENCE
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -27,11 +27,27 @@ documents are legacy snapshots, and which claims require implementation or runti
 Use this file before trusting older save, content-pipeline, Subnautica, Subnautica 2, modding,
 or co-op reports.
 
+Use `GLOBAL_AUTHORITY_BOUNDARIES.md`, `GLOBAL_AUTHORITY_OPERATING_MODEL.md`,
+`GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`, `GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`,
+`GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`, and `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
+before trusting older wording about `GlobalRegistry`, event buses, signal buses,
+or global storage. Current truth: those systems are valid bounded authority
+surfaces, not generic convenience layers. New subsystem setup starts owner-local;
+new or changed global routes require the route-card template.
+
 Current DOC_GLOBAL boundary:
 
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R26_ROOT_ARCHITECTURE_HFI_PROMOTION_LOCAL.md`
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R25_ROOT_ARCHITECTURE_LONGTAIL_LOCAL.md`
 - `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`
+- `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md`
 - `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`
 - `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`
+
+Current R29 static gates: scoped stale Mod API blocker and proof-plan-overclaim scans are clean after validation; `Tools\AtlasCheck.py` is still red on `57` RealtimeCSG missing refs unless rerun cleanly; `Docs\Modding\Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). These are static/tool facts, not Unity runtime proof.
 
 Historical machine-readable R4 companion:
 
@@ -39,7 +55,7 @@ Historical machine-readable R4 companion:
 
 ## Inventory Boundary
 
-Historical 2026-05-17 PowerShell inventory of `Docs` with `*.md`, `*.txt`, and `*.json`; do not use these numbers as current R24 counts unless recaptured:
+Historical 2026-05-17 PowerShell inventory of `Docs` with `*.md`, `*.txt`, and `*.json`; do not use these numbers as current R28 counts unless recaptured:
 
 - Total scanned docs: 3032.
 - Live docs under active/reference locations: 414.
@@ -132,7 +148,7 @@ Current facts:
 - `Data/Balance/*.csv` uses `Id` columns; the monolith compiler's Balance CSV path requires hash-pair compatibility such as `hash32`.
 - `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` is the current generated-binary payload authority. Its 2026-05-18 recheck found 47 product/generated target binary files, while the broad hygiene verifier sees 65 `.bin` / `.h8bin` files because it also scans Bakery editor/plugin fixtures.
 - `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md` records the DOC_GLOBAL R14 documentation pass that demoted pre-Batch008 binary-hygiene PASS rows in active docs.
-- Statically proven main-runtime payloads are only `Data/Audio/Acoustic_LUT.bin` and `Data/Visuals/Water_Extinction_Matrix.bin`.
+- Statically proven main-runtime payloads are `Data/Audio/Acoustic_LUT.bin`, `Data/Visuals/Water_Extinction_Matrix.bin`, and `Data/Visuals/Biolum_Profiles.bin`; runtime load, shader import, profiler, Frame Debugger, and player-build proof remain absent.
 - `Data/Balance/Baked/Babel_Dictionary.h8bin` is the only misaligned product payload in the current recheck: 1295 bytes, 16-byte remainder 15.
 - `Data/Balance/Baked/H8StaticData.bin` and `Data/Balance/Baked/Babel_Dictionary.h8bin` are small balance-store artifacts. They are not the absent StreamingAssets DataMonolith `static_data.h8bin`.
 - `Data/Lore/Encyclopedia.h8bin` is an `H8LR` raw UTF-8 lore blob and is not read by current `LoreMmfEncyclopedia`, which expects an `H8LE` index plus separate payload stream.
@@ -205,7 +221,7 @@ Required next action:
 
 Evidence class: `WEB_REFERENCE` + `STATIC_DOC`.
 
-Verified 2026-05-17:
+Web-reference snapshot 2026-05-17:
 
 - Unknown Worlds announced Subnautica 2 Early Access on 2026-05-14.
 - Steam lists release and Early Access release date as 14 May 2026.

@@ -32,7 +32,7 @@ namespace Hecton8.Modding
     }
 
     /// <summary>
-    /// One 64-byte binary request from UGC. No managed references, properties, or pack=1.
+    /// One 64-byte binary request from UGC. No managed references, properties, or forced byte packing.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = FutureCommandSandboxConstants.EnvelopeSizeBytes)]
     public struct FutureCommandEnvelope
@@ -234,6 +234,7 @@ namespace Hecton8.Modding
         public const double MaxAupMagnitudeMeters = 50000.0d;
         public const uint DevNullReasonFutureSeam = 0x44564E4Cu;
         public const uint FaultHashInvalidAup = 0x414E414Eu;
+        public const uint FaultHashInvalidPayload = 0x5041594Cu;
         public const uint FaultHashMemoryViolation = 0x4D56494Fu;
         public const uint FaultHashLayout = 0x4C41594Fu;
     }
@@ -251,7 +252,8 @@ namespace Hecton8.Modding
         AssetCrcMismatch = 1u << 7,
         AssetTooLarge = 1u << 8,
         RollbackFrozen = 1u << 9,
-        LayoutInvalid = 1u << 10
+        LayoutInvalid = 1u << 10,
+        InvalidPayload = 1u << 11
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -838,7 +840,7 @@ namespace Hecton8.Modding
             NativeArray<FutureCommandEnvelope> devNullRing = ResolveBuffer(ref _devNullRingHandle);
             NativeArray<ModSandboxRingState> ringState = ResolveRingState();
             if (!staging.IsCreated ||
-                staging.Length == 0 ||
+                staging.Length < 2 ||
                 !statsBuffer.IsCreated ||
                 statsBuffer.Length == 0 ||
                 !opcodeRecords.IsCreated ||
@@ -853,19 +855,27 @@ namespace Hecton8.Modding
                 return false;
             }
 
-            FutureCommandEnvelope malicious = default;
-            malicious.OpcodeHash = FutureCommandOpcodes.SpawnItem;
-            malicious.ModderSignature = 0x51554152u;
-            malicious.TargetAUP = new double3(double.NaN, 0d, 0d);
-            malicious.PayloadData = new float4(1f, 2f, 3f, 4f);
-            malicious.IntegrityHash = ComputeIntegrityHash(in malicious);
+            FutureCommandEnvelope maliciousAup = default;
+            maliciousAup.OpcodeHash = FutureCommandOpcodes.SpawnItem;
+            maliciousAup.ModderSignature = 0x51554152u;
+            maliciousAup.TargetAUP = new double3(double.NaN, 0d, 0d);
+            maliciousAup.PayloadData = new float4(1f, 2f, 3f, 4f);
+            maliciousAup.IntegrityHash = ComputeIntegrityHash(in maliciousAup);
+
+            FutureCommandEnvelope maliciousPayload = default;
+            maliciousPayload.OpcodeHash = FutureCommandOpcodes.FaunaAcousticStimulus;
+            maliciousPayload.ModderSignature = 0x51554153u;
+            maliciousPayload.TargetAUP = new double3(0d, 0d, 0d);
+            maliciousPayload.PayloadData = new float4(float.NaN, 12f, 0f, 0f);
+            maliciousPayload.IntegrityHash = ComputeIntegrityHash(in maliciousPayload);
 
             float quality = ResolveGlobalQualityWeight();
             FutureCommandSandboxTuning tuning = ResolveTuning(quality);
             int maxPerSignature = ResolveScaledCommandBudget(tuning.MaxCommandsPerFrame, quality);
             ModSandboxRingState state = ringState[0];
             MemClearArray(statsBuffer);
-            staging[0] = malicious;
+            staging[0] = maliciousAup;
+            staging[1] = maliciousPayload;
 
             ValidateFutureCommandEnvelopeJob job = new ValidateFutureCommandEnvelopeJob
             {
@@ -883,7 +893,7 @@ namespace Hecton8.Modding
                 AcousticWriter = SignalBus<MockAcousticSignal>.ParallelWriter,
                 DamageWriter = SignalBus<MockDamageSignal>.ParallelWriter,
                 DevNullSignalWriter = SignalBus<ModFutureDevNullSignal>.ParallelWriter,
-                Count = 1,
+                Count = 2,
                 Frame = (uint)Time.frameCount,
                 OpcodeRecordCount = state.OpcodeCount,
                 MaxCommandsPerSignature = maxPerSignature,
@@ -893,11 +903,12 @@ namespace Hecton8.Modding
 
             job.Run();
             FutureCommandValidationStats stats = statsBuffer[0];
-            bool rejectedInvalidAup =
-                stats.Incoming == 1u &&
+            bool rejectedInvalidPackets =
+                stats.Incoming == 2u &&
                 stats.Valid == 0u &&
-                stats.Rejected == 1u &&
-                (stats.RejectionMask & (uint)FutureCommandRejectReason.InvalidAup) != 0u;
+                stats.Rejected == 2u &&
+                (stats.RejectionMask & (uint)FutureCommandRejectReason.InvalidAup) != 0u &&
+                (stats.RejectionMask & (uint)FutureCommandRejectReason.InvalidPayload) != 0u;
             RecordTelemetry(
                 (uint)Time.frameCount,
                 stats.Incoming,
@@ -908,14 +919,14 @@ namespace Hecton8.Modding
                 0UL,
                 quality,
                 stats.RejectionMask,
-                rejectedInvalidAup ? 0u : FutureCommandSandboxConstants.FaultHashInvalidAup,
+                rejectedInvalidPackets ? 0u : FutureCommandSandboxConstants.FaultHashInvalidPayload,
                 (uint)state.PendingCount,
                 stats.PeakCommandsForSignature,
                 (uint)maxPerSignature);
 
-            if (!rejectedInvalidAup)
-                DumpBlackbox(FutureCommandSandboxConstants.FaultHashInvalidAup);
-            return rejectedInvalidAup;
+            if (!rejectedInvalidPackets)
+                DumpBlackbox(FutureCommandSandboxConstants.FaultHashInvalidPayload);
+            return rejectedInvalidPackets;
         }
 
         public static ulong ComputeIntegrityHash(in FutureCommandEnvelope envelope)
@@ -1131,12 +1142,13 @@ namespace Hecton8.Modding
             NativeArray<FutureCommandSandboxTuning> tuningBuffer = ResolveBuffer(ref _tuningHandle);
             if (tuningBuffer.IsCreated && tuningBuffer.Length > 0)
             {
-                float overrideWeight = tuningBuffer[0].GlobalQualityWeightOverride;
+                FutureCommandSandboxTuning stored = tuningBuffer[0];
+                float overrideWeight = stored.GlobalQualityWeightOverride;
                 if (math.isfinite(overrideWeight) && overrideWeight >= 0f)
                     weight = overrideWeight;
 
-                float pressure = math.saturate(math.isfinite(tuningBuffer[0].CpuThermalPressure01)
-                    ? tuningBuffer[0].CpuThermalPressure01
+                float pressure = math.saturate(math.isfinite(stored.CpuThermalPressure01)
+                    ? stored.CpuThermalPressure01
                     : 1f);
                 float pressureCurve = pressure * pressure * (3f - 2f * pressure);
                 weight = math.lerp(weight, 0f, pressureCurve);
@@ -1508,8 +1520,10 @@ namespace Hecton8.Modding
                 return 0;
 
             float thermalShed01 = math.saturate((0.30f - math.saturate(quality)) * 3.3333333f);
-            if (thermalShed01 <= 0f)
+            float shedGate = math.step(0.0001f, thermalShed01);
+            if (shedGate <= 0f)
                 return 0;
+            thermalShed01 *= shedGate;
 
             int safeWindow = math.max(
                 FutureCommandSandboxConstants.LowTierMinCommandsPerSignature * 2,
@@ -1778,7 +1792,7 @@ namespace Hecton8.Modding
             [NoAlias] public NativeArray<ModderFrameCounter> PerModCounters;
             [NoAlias] [ReadOnly] public NativeArray<ModderMemoryLease> MemoryLeases;
             [NoAlias] [ReadOnly] public NativeArray<ApprovedAssetRecord> ApprovedAssetManifest;
-            [NoAlias] [NativeDisableParallelForRestriction] public NativeArray<byte> ModderBlackboxMemory;
+            [NoAlias] public NativeArray<byte> ModderBlackboxMemory;
             [NoAlias] public NativeArray<FutureCommandEnvelope> DevNullRing;
             [NoAlias] public NativeArray<ModSandboxRingState> RingState;
             public NativeQueue<ModSpawnRequestSignal>.ParallelWriter SpawnWriter;
@@ -1832,6 +1846,9 @@ namespace Hecton8.Modding
                     return false;
                 }
 
+                if (!TryValidatePayload(in envelope, ref stats))
+                    return false;
+
                 if (!TryAccount(in envelope, ref stats))
                     return false;
 
@@ -1850,7 +1867,7 @@ namespace Hecton8.Modding
                             OpcodeHash = envelope.OpcodeHash,
                             AssetHash = math.asuint(envelope.PayloadData.x),
                             TargetAUP = envelope.TargetAUP,
-                            PayloadData = envelope.PayloadData,
+                            PayloadData = SanitizeFinitePayload(envelope.PayloadData),
                             Flags = 0u,
                             Reserved = 0u
                         });
@@ -2082,11 +2099,37 @@ namespace Hecton8.Modding
                     OpcodeHash = envelope.OpcodeHash,
                     ReasonHash = FutureCommandSandboxConstants.DevNullReasonFutureSeam,
                     TargetAUP = envelope.TargetAUP,
-                    PayloadData = envelope.PayloadData,
+                    PayloadData = SanitizeFinitePayload(envelope.PayloadData),
                     Flags = 0u,
                     Reserved = 0u
                 });
                 stats.DevNull++;
+            }
+
+            private static bool TryValidatePayload(in FutureCommandEnvelope envelope, ref FutureCommandValidationStats stats)
+            {
+                switch (envelope.OpcodeHash)
+                {
+                    case FutureCommandOpcodes.SpawnItem:
+                        if (!math.all(math.isfinite(new float3(envelope.PayloadData.y, envelope.PayloadData.z, envelope.PayloadData.w))))
+                        {
+                            Reject(ref stats, FutureCommandRejectReason.InvalidPayload, FutureCommandSandboxConstants.FaultHashInvalidPayload);
+                            return false;
+                        }
+                        return true;
+
+                    case FutureCommandOpcodes.FaunaAcousticStimulus:
+                    case FutureCommandOpcodes.FaunaDamageStimulus:
+                        if (!math.all(math.isfinite(envelope.PayloadData)))
+                        {
+                            Reject(ref stats, FutureCommandRejectReason.InvalidPayload, FutureCommandSandboxConstants.FaultHashInvalidPayload);
+                            return false;
+                        }
+                        return true;
+
+                    default:
+                        return true;
+                }
             }
 
             private bool IsAllowedOpcode(uint opcodeHash)
@@ -2233,6 +2276,16 @@ namespace Hecton8.Modding
                 double3 abs = math.abs(aup);
                 return math.all(math.isfinite(aup)) &&
                        math.all(abs <= new double3(FutureCommandSandboxConstants.MaxAupMagnitudeMeters));
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float4 SanitizeFinitePayload(float4 payload)
+            {
+                return new float4(
+                    math.isfinite(payload.x) ? payload.x : 0f,
+                    math.isfinite(payload.y) ? payload.y : 0f,
+                    math.isfinite(payload.z) ? payload.z : 0f,
+                    math.isfinite(payload.w) ? payload.w : 0f);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

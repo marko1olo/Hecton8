@@ -26,7 +26,7 @@ Verification: PENDING VERIFICATION
 - Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 - Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- May 14 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat that May 11 compile-success line as stale report text. R43 rechecked the current external root `Hecton8*.csproj` no-restore CLI compile surface at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; full restore graphs still carry vendor/package warnings, and shared `Temp\obj` locks can create transient evidence noise. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
+- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current R28 static/tool boundary: AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 Historical 2026-05-04 boundary:
@@ -147,7 +147,7 @@ Hull stress synthesis is finalized in the procedural renderer and follows the st
 ```text
 modFreq = lerp(5 Hz, 80 Hz, stress^2)
 modIndex = lerp(0.1, 12.0, stress)
-carrierFreq = 80 Hz + sin(modPhase * 2ÃƒÂÃ¢â€šÂ¬) * modIndex * noise
+carrierFreq = 80 Hz + sin(modPhase * 2ÃƒÆ’Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬) * modIndex * noise
 output = tanh(raw * (1 + stress * 3))
 ```
 
@@ -194,14 +194,14 @@ Bubble chirps are generated as short decaying sine bursts while the plasma cutte
 
 ### Minnaert Frequency
 ```text
-f_bubble = (1 / (2ÃƒÂÃ¢â€šÂ¬R)) * sqrt((3 * ÃƒÅ½Ã‚Â³ * P_ambient) / ÃƒÂÃ‚Â_water)
+f_bubble = (1 / (2ÃƒÆ’Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬R)) * sqrt((3 * ÃƒÆ’Ã…Â½Ãƒâ€šÃ‚Â³ * P_ambient) / ÃƒÆ’Ã‚ÂÃƒâ€šÃ‚Â_water)
 ```
 
 Where:
 - `R` = bubble radius in meters
-- `ÃƒÅ½Ã‚Â³` = heat capacity ratio
-- `P_ambient = 101325 + ÃƒÂÃ‚Â_water * g * depth`
-- `ÃƒÂÃ‚Â_water` = water density
+- `ÃƒÆ’Ã…Â½Ãƒâ€šÃ‚Â³` = heat capacity ratio
+- `P_ambient = 101325 + ÃƒÆ’Ã‚ÂÃƒâ€šÃ‚Â_water * g * depth`
+- `ÃƒÆ’Ã‚ÂÃƒâ€šÃ‚Â_water` = water density
 
 ### Envelope
 Each spawned bubble uses:

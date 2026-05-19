@@ -38,6 +38,7 @@ using Hecton8.Building;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -2137,54 +2138,73 @@ namespace Hecton8.Building
             float gridSize = settings.GridSizeMeters > 0.001f ? settings.GridSizeMeters : ResolveConstructionGridSize();
             int moduleCount = modules.Count;
             uint frame = settings.Frame != 0u ? settings.Frame : unchecked((uint)Time.frameCount);
-            if (ModularBaseConstructionValidator.TryResolveOccupancyHashTable(
-                    GlobalRegistry.DataVault,
-                    out NativeArray<BaseModuleOccupancyDTO> occupancyTable))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault != null &&
+                ModularBaseConstructionValidator.TryResolveOccupancyHashTable(vault, out _) &&
+                vault.TryLockBuffer(BufferID.ConstructionBuilderOccupancy, SystemID.Construction))
             {
-                bool hydrated = true;
-                for (int i = 0; i < moduleCount; i++)
+                bool resolvedLockedTable = ModularBaseConstructionValidator.TryResolveOccupancyHashTable(
+                    vault,
+                    out NativeArray<BaseModuleOccupancyDTO> occupancyTable);
+                bool hydrated = resolvedLockedTable;
+                bool foundInVaultTable = false;
+                int vaultOccupiedCellHash = 0;
+                if (resolvedLockedTable)
                 {
-                    GameObject module = modules[i];
-                    if (module == null)
-                        continue;
-
-                    Transform moduleTransform = module.transform;
-                    if (moduleTransform == null)
-                        continue;
-
-                    double3 moduleAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(moduleTransform.position);
-                    if (!ModularBaseConstructionValidator.TryBuildRequestFromAup(
-                            request.RootAUP,
-                            moduleAup,
-                            0u,
-                            0u,
-                            gridSize,
-                            out ConstructionRequestDTO existing))
+                    for (int i = 0; i < moduleCount; i++)
                     {
-                        continue;
+                        GameObject module = modules[i];
+                        if (module == null)
+                            continue;
+
+                        Transform moduleTransform = module.transform;
+                        if (moduleTransform == null)
+                            continue;
+
+                        double3 moduleAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(moduleTransform.position);
+                        if (!ModularBaseConstructionValidator.TryBuildRequestFromAup(
+                                request.RootAUP,
+                                moduleAup,
+                                0u,
+                                0u,
+                                gridSize,
+                                out ConstructionRequestDTO existing))
+                        {
+                            continue;
+                        }
+
+                        BaseModuleOccupancyDTO entry;
+                        entry.GridPos = existing.GridPos;
+                        entry.ModuleHash = existing.ModuleHash;
+                        entry.PortMask = ConstructionPortMask.AllCardinal;
+                        entry.NodeIndex = 0;
+                        entry.Flags = 0u;
+                        entry._pad0 = 0u;
+                        hydrated &= ModularBaseConstructionValidator.TryInsertOccupancyCell(
+                            occupancyTable,
+                            in entry,
+                            frame);
                     }
 
-                    BaseModuleOccupancyDTO entry;
-                    entry.GridPos = existing.GridPos;
-                    entry.ModuleHash = existing.ModuleHash;
-                    entry.PortMask = ConstructionPortMask.AllCardinal;
-                    entry.NodeIndex = 0;
-                    entry.Flags = 0u;
-                    entry._pad0 = 0u;
-                    hydrated &= ModularBaseConstructionValidator.TryInsertOccupancyCell(
-                        occupancyTable,
-                        in entry,
-                        frame);
+                    if (hydrated)
+                    {
+                        foundInVaultTable = ModularBaseConstructionValidator.TryFindOccupiedCell(
+                            occupancyTable,
+                            request.GridPos,
+                            frame,
+                            out vaultOccupiedCellHash);
+                    }
+                }
+
+                vault.TryUnlockBuffer(BufferID.ConstructionBuilderOccupancy, SystemID.Construction);
+                if (foundInVaultTable)
+                {
+                    occupiedCellHash = vaultOccupiedCellHash;
+                    return true;
                 }
 
                 if (hydrated)
-                {
-                    return ModularBaseConstructionValidator.TryFindOccupiedCell(
-                        occupancyTable,
-                        request.GridPos,
-                        frame,
-                        out occupiedCellHash);
-                }
+                    return false;
             }
 
             for (int i = 0; i < moduleCount; i++)

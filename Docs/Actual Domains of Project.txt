@@ -160,7 +160,7 @@ MX350.
 68. Day/Night GI Relay: Changing ocean lighting and color (Cyan to Deep Blue).
 Affects predators.
 
-ELCHELON 8: PRESENTATION & UX (Interaction and Perception)
+ECHELON 8: PRESENTATION & UX (Interaction and Perception)
 
 69. Zero-GC Subtitles (Babel): ReadOnlySpan<char> + CharBufferPool. Localization
 without a single string allocation.

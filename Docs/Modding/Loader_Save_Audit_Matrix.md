@@ -1,7 +1,7 @@
 # Loader And Save Audit Matrix
 
-Date: 2026-05-17
-Status: STATIC_SOURCE_AUDIT / RUNTIME_PENDING
+Date: 2026-05-19
+Status: ENVELOPE-ONLY STATIC_SOURCE_AUDIT / RUNTIME_PENDING
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -18,6 +18,18 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Owner prompt: MODDING_API_SCHEMA_BUILDER
+
+## 2026-05-19 Envelope-Only Override
+
+This audit keeps the historical loader/save shape visible, but the active UGC runtime mode disables managed entry execution:
+
+- `EntryAssembly` or `EntryType` marks a package as managed-entry and is rejected/quarantined before gameplay execution;
+- boot-registered managed factories are rejected while envelope-only mode is active;
+- `IHectonMod.OnLoad`, `OnInitialize`, and `OnUnload` are legacy source-audit callbacks, not a current runtime promise for public UGC;
+- SDK packages should emit validated manifest/package metadata, binary tables, approved asset manifests, and `FutureCommandEnvelope` streams instead of a gameplay `.dll`;
+- mod-owned persistence remains a future/package metadata concern until an envelope-safe save path is explicitly reopened and verified.
+
+SDK/package authoring details are in [SDK_Authoring_Interface_Plan.md](SDK_Authoring_Interface_Plan.md).
 
 ## Source Files
 

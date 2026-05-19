@@ -81,7 +81,7 @@ namespace Hecton8.Thermodynamics
     /// Local blind damage proof signal. Size: 48 bytes.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Size = 48)]
-    public partial struct MockDamageSignal : ISignal
+    public partial struct ThermodynamicsMockDamageSignal : ISignal
     {
         public double3 Aup;
         public float3 Normal;

@@ -1,7 +1,7 @@
 # HECTON-8 Mod Command Audit Matrix
 
-Date: 2026-05-17
-Status: STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION  
+Date: 2026-05-19
+Status: ENVELOPE-ONLY STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -20,6 +20,17 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 Owner prompt: MODDING_API_SCHEMA_BUILDER  
 Source file: `Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs`  
 Companion schema: `Docs/Modding/Signal_Schema.json`
+
+## 2026-05-19 Envelope-Only Override
+
+The legacy `ModCommand` opcode matrix below is retained for source-audit continuity. Current UGC command execution is narrower:
+
+- public runtime mod writes use `HectonAPI.Commands.RequestFuture(in FutureCommandEnvelope envelope)`;
+- `Request`, `RequestAup`, and `RequestRenderInstance` return `false` while envelope-only mode is enforced;
+- legacy command queues and hash-map lanes are not allocated by `ModCommandDispatcher.Initialize()` while the legacy surface is disabled;
+- accepted runtime packets are validated by `FutureCommandSandboxValidator` against opcode hash, integrity hash, finite AUP, payload sanity, CRC asset manifest, quotas, thermal pressure, and rollback freeze.
+
+The active sandbox boundary is documented in [Mod_API_Sandbox_Quarantine.md](Mod_API_Sandbox_Quarantine.md). SDK authoring is documented in [SDK_Authoring_Interface_Plan.md](SDK_Authoring_Interface_Plan.md).
 
 ## Extraction Evidence
 

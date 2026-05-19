@@ -468,6 +468,23 @@ Batch 004/005 evidence: GlobalDataVault and cross-domain signal edits repeatedly
 
 ---
 
+### RULE-09E - Global Authority Boundary
+
+[RULE] Any new `GlobalRegistry` slot, global service access pattern, or registry rebound route must satisfy `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`.
+[RULE] New subsystem setup starts owner-local and follows `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md` before adding registry surface.
+[RULE] Any new or changed global authority route must include the route card required by `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`.
+[RULE] Any new or changed registry/global route must receive a `GREEN` review disposition from `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md` before merge.
+[RULE] Registry surface growth must be paired with either deleted direct coupling, an interface extraction, or a written exception explaining why the service cannot remain domain-local.
+[RULE] Registry migration work must update `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md` when it changes the review queues, top offenders, or stop conditions.
+
+[FORBID] Adding a registry slot for a future/absent service.
+[FORBID] Adding a registry slot before proving owner-local field, cached owner interface, or existing signal/vault route is insufficient.
+[FORBID] Adding registry slots to improve H-Phi or convenience without reducing actual coupling.
+[FORBID] Treating registry rebound events as general gameplay event transport.
+[FORBID] Approving registry access from a rationale that does not name owner, phase, cadence, failure mode, telemetry, and proof requirement.
+
+---
+
 ## RULE-10 - Forbidden Patterns - Runtime Tick Violations
 
 The following patterns are unconditionally forbidden in any method called per-frame.

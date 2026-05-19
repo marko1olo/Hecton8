@@ -760,9 +760,18 @@ namespace Hecton8.Atmosphere
                 ((uint)bytes[offset + 2] << 16) |
                 ((uint)bytes[offset + 3] << 24);
             if (!sourceLittleEndian)
-                raw = math.reversebytes(raw);
+                raw = ReverseUInt32(raw);
 
             return math.asfloat(raw);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ReverseUInt32(uint value)
+        {
+            return ((value & 0x000000FFu) << 24) |
+                   ((value & 0x0000FF00u) << 8) |
+                   ((value & 0x00FF0000u) >> 8) |
+                   ((value & 0xFF000000u) >> 24);
         }
 
         private void EvaluateCameraWaterline()

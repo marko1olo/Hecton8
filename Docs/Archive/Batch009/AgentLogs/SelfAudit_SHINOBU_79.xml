@@ -1,0 +1,72 @@
+<SELF_AUDIT agent_id="SHINOBU_79" date="2026-05-19">
+  <task_reconciliation>
+    <task id="01" status="PASS">Archive Batch005-007 targeted scan found no qa_waypoints.h8bin or endurance_profiles.bin payload; GenerateEmergencyMockRoute() provides aligned fallback waypoints.</task>
+    <task id="02" status="PASS">No AutoPlayer was found. Legacy QAEnduranceWatchdogBot is isolated behind explicit legacy flag/env so SHINOBU_79 is the sole H8_QA_ENDURANCE_10KM authority.</task>
+    <task id="03" status="PASS">WatchdogStateDTO uses fields only; BotNavigationJob mutates the NativeArray element by ref.</task>
+    <task id="04" status="PASS">TelemetrySnapshotDTO is 16 bytes: FrameTimeMs 0..3, GcAllocBytes 4..7, VramUsed 8..11, AupJitterError 12..15.</task>
+    <task id="05" status="PASS">MockRebaseSignal is 32 bytes and the navigation job offsets current and target AUP on deterministic synthetic rebase frames.</task>
+    <task id="06" status="PASS">Runtime only starts from H8_QA_ENDURANCE_10KM, Temp flag, or -h8qa family args.</task>
+    <task id="07" status="PASS">BotNavigationJob writes canonical Hecton8.Core.InputStateDTO bytes into BufferID.ShinobuInputCurrentDto and runtime mirrors the same values into PhysicsDeterminismSignals.PublishInputOverride.</task>
+    <task id="08" status="PASS">MockTerrainSdf distance steers the route with no NavMesh or physics queries. GlobalQualityWeight drives normal cost: below 0.3 the rich six-sample gradient collapses to an analytic normal; above threshold it lerps into the SDF gradient.</task>
+    <task id="09" status="PASS">ProfilerRecorder memory sampling and five-minute Stopwatch wall-clock reserved memory slope set VaultFlagMemoryLeakDetected; fast-forwarded simulation seconds cannot compress the leak window.</task>
+    <task id="10" status="PASS">AUP local double3 to float-downcast reconstruction records millimeter jitter above 1mm. Optional latest KCC BodyAup is audited against vault.CurrentAUP using the worst of actual local position delta and float reconstruction error. Inter-frame local delta above 500m without rebase sets fatal telemetry.</task>
+    <task id="11" status="PASS">CSV writes through preallocated NativeArray bytes and FileStream; QualityWeight and WallSeconds columns are emitted for forensic proof.</task>
+    <task id="12" status="PASS">SystemHealthIndexSignal critical pulses run for 10 wall-clock seconds per 60s cycle, low-tier emergency is cleared after the owned stress pulse, VaultFlagStressRecoveryObserved is latched, GlobalQualityWeight is forced to 0.1 for 300 wall-clock seconds then smoothstep-released to 1.0, and success is gated on the full 360s audit window.</task>
+    <task id="13" status="PASS">CSV records SHI, QualityWeight, thermal, IO, VRAM, hardware flags, and vault flags.</task>
+    <task id="14" status="PASS">PrimaryFire bit is asserted every 30 seconds for a 0.25 second test pulse.</task>
+    <task id="15" status="PASS">Fatal conditions dump the 300-frame ring, write result JSON, and quit batchmode with nonzero exit.</task>
+    <task id="16" status="PASS">All persistent watchdog buffers are VaultBufferHandle requests using NativeArrayOptions.UninitializedMemory plus cold Burst MemClear.</task>
+    <task id="17" status="PASS">300-frame 64B telemetry ring writes dump bytes to Dump_SHINOBU_79.bin and Dump_QA_WATCHDOG.bin.</task>
+    <task id="18" status="PASS">QA Bot Commander window exposes launch and tuning sliders.</task>
+    <task id="19" status="PASS">qa_bot_waypoints.csv is monitored into unmanaged bytes and parsed into waypoint DTOs without managed per-row strings.</task>
+    <task id="20" status="PASS">SceneView gizmo draws intended path and SDF avoidance vector from runtime debug DTOs.</task>
+  </task_reconciliation>
+  <struct_layout>
+    <WatchdogStateDTO size="40" alignment="8">
+      <field name="CurrentTargetAUP" offset="0" size="24" />
+      <field name="DistanceTraveled" offset="24" size="4" />
+      <field name="ErrorCount" offset="28" size="4" />
+      <field name="TestDuration" offset="32" size="4" />
+      <field name="_pad0" offset="36" size="4" />
+    </WatchdogStateDTO>
+    <TelemetrySnapshotDTO size="16" alignment="16">
+      <field name="FrameTimeMs" offset="0" size="4" />
+      <field name="GcAllocBytes" offset="4" size="4" />
+      <field name="VramUsed" offset="8" size="4" />
+      <field name="AupJitterError" offset="12" size="4" />
+    </TelemetrySnapshotDTO>
+  </struct_layout>
+  <zero_gc_check status="PASS">No string.Format, File.AppendAllText, StreamWriter, new List, foreach, Pack=1, or DTO get/set properties were found in the SHINOBU_79 runtime static scan.</zero_gc_check>
+  <input_contract status="PASS">BufferID.ShinobuInputCurrentDto is requested as Hecton8.Core.InputStateDTO, matching InputDispatcher's active DataVault contract. No local shadow DTO is used for the shared input buffer.</input_contract>
+  <aup_check status="PASS">Route targets and current position stay double3. Steering subtracts current from target before casting the local delta to float3. Telemetry stores local millimeters and sector hashes. Optional KCC output subtracts intended vault.CurrentAUP from BodyAup before float math, records the worst of actual position delta and float reconstruction error, and flags &gt;1mm. A separate last-AUP audit subtracts previous double3 before casting and flags &gt;500m local jumps unless the current frame carries MockRebaseSignal.</aup_check>
+  <scalability_curve status="PASS">GlobalQualityWeight is forced on a Stopwatch-measured wall-clock 600s loop: 300s at 0.1, 60s smoothstep recovery to 1.0, then full-quality dwell. CSV records the forced value plus WallSeconds for regression proof, and successful exit requires the first 360s audit window plus VaultFlagStressRecoveryObserved; result JSON qualityAuditObserved uses that same combined gate. SHI stress uses the same Stopwatch wall clock, not frame count or fast-forwarded simulation duration. BotNavigationJob consumes the same weight: below 0.3, math.step bypasses the rich SDF normal and uses one analytic approximation; above 0.3, polynomial smoothstep blends back into the high-quality SDF gradient.</scalability_curve>
+  <hphi_vault_status status="PASS">Persistent data is requested through VaultBufferHandle IDs 70580..70594 plus BufferID.ShinobuInputCurrentDto; no persistent private NativeArray allocations are owned by the MonoBehaviour.</hphi_vault_status>
+  <vault_handles>
+    <handle id="70580" type="WatchdogStateDTO" capacity="1" />
+    <handle id="70581" type="TelemetrySnapshotDTO" capacity="1" />
+    <handle id="70520" type="Hecton8.Core.InputStateDTO / BufferID.ShinobuInputCurrentDto" capacity="1" />
+    <handle id="70582" type="Shinobu38RouteWaypointDTO" capacity="16" />
+    <handle id="70583" type="MockRebaseSignal" capacity="1" />
+    <handle id="70584" type="Shinobu38TuningDTO" capacity="1" />
+    <handle id="70585" type="Shinobu38MockVaultDTO" capacity="1" />
+    <handle id="70586" type="Shinobu38WatchdogTelemetryEntry" capacity="300" />
+    <handle id="70587" type="CsvScratchBytes" capacity="1024" />
+    <handle id="70588" type="WaypointScratchBytes" capacity="8192" />
+    <handle id="70589" type="DumpScratchBytes" capacity="19216" />
+    <handle id="70590" type="Shinobu38FileWriteCommand" capacity="128" />
+    <handle id="70591" type="FileWritePayloadBytes" capacity="2097152" />
+    <handle id="70592" type="Shinobu38FileWriterStateDTO" capacity="1" />
+    <handle id="70593" type="Shinobu38FileWriterCursorDTO" capacity="1" />
+    <handle id="70594" type="Shinobu38WaypointIngestStateDTO" capacity="1" />
+  </vault_handles>
+  <pointer_aliasing_and_jobs status="PASS">
+    <job name="Shinobu38MemClearJob" burst="CompileSynchronously Fast Standard" noalias="Buffer" completion="cold init only before first watchdog frame" />
+    <job name="BotNavigationJob" burst="CompileSynchronously Fast Standard" noalias="State,Snapshot,InputBuffer,Waypoints,RebaseSignals,Tuning,MockVault" input_buffer_type="Hecton8.Core.InputStateDTO" input_handle="none" output_handle="_navigationHandle registered through H8Memory.RegisterActiveJob" completion="LateFrameTick only after completion or in batchmode because CSV/fatal decisions require the result" />
+  </pointer_aliasing_and_jobs>
+  <false_sharing status="PASS">Shinobu38WatchdogTelemetryEntry is 64B. FileWriterStateDTO, FileWriterCursorDTO, and WaypointIngestStateDTO are 128B, separating producer/consumer counters across cache-line-sized padded records.</false_sharing>
+  <dependency_graph status="PASS">Runtime assembly remains in QA Headless and references Core.Contracts, Core, Core.Memory, Unity.Burst, Unity.Collections, and Unity.Mathematics only. Hecton8.Physics resolves from the Core assembly because no asmdef exists at Assets/_Project/Scripts/Physics root; no sibling Physics runtime asmdef reference was added.</dependency_graph>
+  <time_source status="PASS_WITH_JUSTIFICATION">Simulation state uses FastTick delta. Wall-clock stress and memory leak windows use Stopwatch.GetTimestamp() deltas clamped to 1s per sample, so editor manual stepping cannot compress the five-minute quality soak or five-minute leak slope. Time.frameCount is used only as the required handshake frame for InputDispatcher.ApplyAutomationOverride, whose consumer also uses Time.frameCount; it is not used to integrate watchdog movement, memory windows, quality soak, or SHI pulse duration.</time_source>
+  <dear_lie status="PASS">Terrain avoidance is a trigonometric SDF cave probe, not NavMesh or Physics.Raycast. A real pathfinding/broadphase approach would scale with scene/query complexity and collider count; this watchdog uses O(1) direct mathematical samples per frame. At low quality, avoidance is one distance sample plus analytic normal. At high quality, it is still O(1) but pays a bounded rich normal path instead of a scene query.</dear_lie>
+  <blackbox status="PASS">Last 300 frames are stored in a fixed-size NativeArray ring and dumped as binary on fatal, slow CSV, or QA failure.</blackbox>
+  <compile_guard status="STATIC_ONLY">Build was not launched. Latest guard sample is CPU=100.00 percent with csc.exe count 0, so project policy still blocks compilation on CPU load. The generated project files also do not include a Hecton8.QA.Headless.csproj or sln target for these QA Headless files. Runtime asmdef references Core.Contracts, Core, Core.Memory, Unity.Burst, Unity.Collections, and Unity.Mathematics only; no direct sibling runtime asmdef reference was added. A broad dotnet build would not verify this assembly and the user explicitly ordered not to launch dotnet build until necessary.</compile_guard>
+</SELF_AUDIT>

@@ -18,6 +18,10 @@ This document is active only where it agrees with:
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
+## 2026-05-19 DOC_GLOBAL R28 Interior Note
+
+R28 reread confirmed this ledger remains static binary/documentation orientation, not runtime payload load, memory, or platform proof. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`, with R27 source counters retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `57` RealtimeCSG vendor references; `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). Unity/runtime/profiler/player-build proof remains absent.
+
 ## Purpose
 
 This file is the stable architecture ledger for generated HECTON binary payloads found under
@@ -80,17 +84,22 @@ scope was binary assets, not only the verifier's `.bin` / `.h8bin` extension set
   `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs`. SHINOBU_74 added a
   scene-local `RuntimeInitializeOnLoadMethod(AfterSceneLoad)` host fallback on 2026-05-18 and then
   removed the singleton/Awake self-registration guard in favor of an atomic process ownership claim.
+  On 2026-05-19 the runtime was moved behind
+  `Assets/_Project/Scripts/VFX/Bioluminescence/Hecton8.VFX.Bioluminescence.Runtime.asmdef`, with
+  the editor facade isolated under `Hecton8.VFX.Bioluminescence.Editor.asmdef`.
   The code path is now statically wired. The indirect vegetation shader consumes the packed
   `_BiolumGpuColorBuffer` by instance ID and guards reads by the exact published GPU page count.
-  The four-state Dear Lie fallback is selected by template/species group modulo four in the
-  indirect vegetation shader, packed into the existing spatial pulse TEXCOORD lane rather than a
-  new interpolator. Its runtime frame counter now advances once per dispatcher Tick rather than
+  The four-state Dear Lie fallback is published as `_GlobalBiolumDearLieGroups` float4x4, selected
+  by template/species group modulo four in the indirect vegetation shader, and packed into the
+  existing spatial pulse TEXCOORD lane rather than a new interpolator. Its runtime frame counter now advances once per dispatcher Tick rather than
   through blackbox telemetry writes, so fault dumps cannot perturb mock RNG or shader frame clock.
   The CPU oscillator Burst job now uses deterministic float mode for DTO phase/color mutation.
   The active 50,000-instance CPU path uses a smoothed triangle/hash waveform fake instead of
   per-instance trigonometric pulse evaluation, and squared-distance wavefront/falloff math instead
   of per-instance sqrt for presentation-only glow ripples. `GlobalQualityWeight` now also drives
-  update cadence from 5Hz low-quality scheduling to per-frame high-quality scheduling.
+  update cadence from 5Hz low-quality scheduling to per-frame high-quality scheduling. The managed
+  `Vector4[16]` global-state bridge and private `byte[16384]` CSV staging array were removed; CSV
+  hot reload now reads directly into vault-owned `BiolumCsvScratch`.
   Unity shader import, scene, profiler, and Frame Debugger proof are
   still pending.
 - `Data/Balance/Baked/H8StaticData.bin` and `Data/Balance/Baked/Babel_Dictionary.h8bin` are small
@@ -125,12 +134,12 @@ scope was binary assets, not only the verifier's `.bin` / `.h8bin` extension set
 |---|---|---|---|
 | `Data/Audio/Acoustic_LUT.bin` | `ACTIVE_RUNTIME_WIRED` | `SpatialAudioManager.cs` defines `AcousticLutRelativePath`, calls `TryLoadAcousticLutFallbackCold`, reads the file in a cold init path, and the audio manager is prefab/bootstrap wired. | Keep. This is a valid acoustic cinematic cheat: sampled Sabine/damping lookup instead of live acoustic solving. |
 | `Data/Visuals/Water_Extinction_Matrix.bin` | `ACTIVE_RUNTIME_WIRED` | `LutArrayResolver.EnsureLoadedAndBound` is marked `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]`, resolves `Data/Visuals/Water_Extinction_Matrix.bin`, and `GlobalShaderDispatcher` consumes the bound texture. | Keep. This is a valid Beer-Lambert visual LUT fake. Runtime proof still needs Unity/profiler evidence. |
+| `Data/Visuals/Biolum_Profiles.bin` | `ACTIVE_RUNTIME_WIRED`, shader/scene/profiler proof pending | `BiolumPulseSyncRuntime` owns a scene-local runtime host fallback, runtime/editor asmdef split, shader buffer publication, and deterministic CPU oscillator path. | Keep. Static boot/shader source wiring exists; verify with Unity shader import, Profiler, and Frame Debugger before claiming measured frame impact. |
 
 ## Candidate Payloads With Reader But Missing Wiring
 
 | File | Current status | Mechanic | Logical insertion point | Blocker |
 |---|---|---|---|---|
-| `Data/Visuals/Biolum_Profiles.bin` | `ACTIVE_RUNTIME_WIRED`, shader/scene/profiler proof pending | Bioluminescence pulse/color/profile table for global glow state and species tuning. | Keep the `BiolumPulseSyncRuntime` scene-local runtime host fallback and verify in Unity shader import, Profiler, and Frame Debugger. | Static boot hook exists with atomic ownership claim, no static runtime instance; `Hecton_IndirectVegetation.shader` now decodes `_BiolumGpuColorBuffer` by instance ID, clamps reads to `_publishedGpuColorCount`, and selects four global fallback states by template/species group; runtime capture still required. |
 | `Data/Balance/Baked/H8StaticData.bin` | `READER_PRESENT_NOT_WIRED` | Small static balance record table with `StaticDataStore.OpenDefault()`. | Either make it a dev-only section producer for the DataMonolith, or wire it as a temporary Core data service behind a stable interface. | Current production authority is the absent StreamingAssets DataMonolith, not this small file. |
 | `Data/Balance/Baked/Babel_Dictionary.h8bin` | `READER_PRESENT_NOT_WIRED`, `ALIGNED_PRODUCT_FILE` | Small Babel string pool paired with `H8StaticData.bin`. | Keep aligned through `H8DataBaker`, then wire only with the chosen static-data source of truth. | 1296 bytes, 16-byte aligned, payload CRC `0x199CAC7A`. |
 
@@ -183,7 +192,7 @@ scope was binary assets, not only the verifier's `.bin` / `.h8bin` extension set
 | 36 | `Data/UX/VR_Comfort_Profiles.h8bin` | 1472 | `SCRIPT_TOOL_ONLY` | VR comfort profile table. | Logical owner is UX/VR comfort runtime. No load found. |
 | 37 | `Data/UX/VR_Comfort_Profiles_Toaster.h8bin` | 1120 | `SCRIPT_TOOL_ONLY` | Low-tier VR comfort profile table. | Needs UX tier selector. |
 | 38 | `Data/UX/VR_Comfort_RTXOverkill.h8bin` | 560 | `SCRIPT_TOOL_ONLY` | High/overkill VR comfort supplement. | Needs UX tier selector and headset/platform guard. |
-| 39 | `Data/Visuals/Biolum_Profiles.bin` | 25936 | `ACTIVE_RUNTIME_WIRED`, shader/scene/profiler proof pending | Bioluminescence profile table. | SHINOBU_74 added the runtime host fallback, purged static-instance/Awake ownership, wired indirect vegetation packed-buffer shader consumption, guarded shader reads by actual published GPU page count, packed the Dear Lie sync group into the existing spatial pulse TEXCOORD lane, detached frame counter advancement from blackbox telemetry writes, moved the CPU oscillator Burst job to deterministic float mode, replaced per-instance trigonometric pulse work with a smoothed triangle/hash waveform fake, replaced active pulse/damage sqrt distance with squared-distance math, and made `GlobalQualityWeight` drive update cadence from 5Hz to per-frame; verify with Unity shader import, Profiler, and Frame Debugger before claiming measured frame impact. |
+| 39 | `Data/Visuals/Biolum_Profiles.bin` | 25936 | `ACTIVE_RUNTIME_WIRED`, shader/scene/profiler proof pending | Bioluminescence profile table. | SHINOBU_74 added the runtime host fallback, purged static-instance/Awake ownership, isolated runtime/editor asmdefs, wired indirect vegetation packed-buffer shader consumption, guarded shader reads by actual published GPU page count, replaced the 16-slot global vector-array bridge with `_GlobalBiolumDearLieGroups` float4x4, packed the Dear Lie sync group into the existing spatial pulse TEXCOORD lane, detached frame counter advancement from blackbox telemetry writes, moved the CPU oscillator Burst job to deterministic float mode, replaced per-instance trigonometric pulse work with a smoothed triangle/hash waveform fake, replaced active pulse/damage sqrt distance with squared-distance math, removed the private CSV `byte[]` staging path, and made `GlobalQualityWeight` drive update cadence from 5Hz to per-frame; verify with Unity shader import, Profiler, and Frame Debugger before claiming measured frame impact. |
 | 40 | `Data/Visuals/Refraction_LUT_RGBA16F.bin` | 524288 | `SCRIPT_TOOL_ONLY` | Base refraction LUT. | Logical owner is water/refraction shader path. No load found. |
 | 41 | `Data/Visuals/Refraction_LUT_RGBA16F_MINIMAL_128.bin` | 131072 | `SCRIPT_TOOL_ONLY` | Minimal low-tier refraction LUT. | Needs visual scalability selector. |
 | 42 | `Data/Visuals/Refraction_LUT_RGBA16F_ULTRA_512.bin` | 2097152 | `SCRIPT_TOOL_ONLY` | Ultra refraction LUT. | Needs visual scalability selector and VRAM budget gate. |
@@ -235,7 +244,7 @@ Other binary-like assets observed outside the product/generated target set:
 |---:|---|---|---|
 | 0 | Keep `Data/Balance/Baked/Babel_Dictionary.h8bin` rebaked through `H8DataBaker`. | Core data / baker owner | SHINOBU_50 repaired the 16-byte alignment failure; future drift must fail hygiene again. |
 | 1 | Decide one static-data source of truth: StreamingAssets DataMonolith or small `Data/Balance/Baked` stores. | Core data / bootstrap | Parallel static-data contracts will produce false reads and stale payloads. |
-| 2 | Verify `BiolumPulseSyncRuntime` host in Unity scene/profiler. | VFX | Runtime host fallback is statically wired through an atomic ownership claim and latest narrow Assembly-CSharp build passes; Unity import, Frame Debugger, and Profiler proof are still missing. |
+| 2 | Verify `BiolumPulseSyncRuntime` host in Unity scene/profiler. | VFX | Runtime host fallback is statically wired through an atomic ownership claim and now isolated behind SHINOBU asmdefs; latest narrow Assembly-CSharp build predates the asmdef/H-PHI patch, so Unity import, fresh build, Frame Debugger, and Profiler proof are still missing. |
 | 3 | Add H8LR reader or convert `Encyclopedia.h8bin` to H8LE index+payload. | Narrative/PDA | Current generated lore blob is not consumed by the current C# MMF reader. |
 | 4 | Promote PDA `H8PT` reader if PDA technical logs are intended for runtime. | PDA/UI/Narrative | Binary has good lookup contract but no runtime reader found. |
 | 5 | Build a visual scalability selector for refraction, water-extinction variants, VFX budgets, VR comfort, tide, and Dalton variants. | Rendering/UX/Environment | Tier binaries are useless without hysteresis and platform gates. |

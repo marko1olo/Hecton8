@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using UnityEngine;
 
 namespace Hecton8.Visor
 {
@@ -12,6 +13,12 @@ namespace Hecton8.Visor
         private const float SurvivalScaleThreshold = 0.6001f;
 
         private static IResolutionScalerService s_cachedScaler;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_cachedScaler = null;
+        }
 
         internal static bool ShouldCullForSurvivalScale()
         {

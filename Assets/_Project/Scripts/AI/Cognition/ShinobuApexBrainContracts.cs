@@ -191,7 +191,7 @@ namespace Hecton8.AI.Cognition
     /// Decoupled acoustic tap consumed by the apex cortex without referencing the audio runtime. Size: 64 bytes.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public partial struct AcousticEchoTap : ISignal
+    public partial struct ApexBrainAcousticEchoTap : ISignal
     {
         [FieldOffset(0)] public double3 AUP;
         [FieldOffset(24)] public float Magnitude01;
@@ -404,7 +404,7 @@ namespace Hecton8.AI.Cognition
     /// Fauna panic broadcast emitted before apex arrival. Size: 64 bytes.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public partial struct GlobalPanicSignal : ISignal
+    public partial struct ApexPanicSignal : ISignal
     {
         [FieldOffset(0)] public double3 SourceAup;
         [FieldOffset(24)] public float3 Direction;

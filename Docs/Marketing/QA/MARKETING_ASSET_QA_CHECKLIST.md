@@ -51,6 +51,30 @@ Score 0-2 each.
 Minimum publish score: 9/12.
 Minimum Steam screenshot score: 10/12.
 
+### First Screenshot Pack Capture Gate
+
+Before capture, assign every planned shot one job. If a shot has no job, do not capture it.
+
+| Shot job | Must show | Reject if |
+|---|---|---|
+| Identity hero | black water, industrial silhouette, pressure/machinery cue | it is just pretty dark water or a generic underwater vista |
+| Player verb | tool, salvage target, repair, scan, build, pilot, or route decision | player action needs a caption to understand |
+| Base system | gauge, leak, power conduit, pump, seal, pressure door, alarm, or maintenance surface | base reads as cozy room or clean sci-fi corridor |
+| Threat/scale | sonar mark, huge silhouette, unsafe route, hull warning, depth/pressure implication | threat is only a monster pose with no player decision |
+| Seed Ship/anomaly | instrument corruption, impossible structure, environmental distortion, route pull | anomaly is only abstract color/glow |
+| Low-spec proof | same identity readable without overkill effects | used as public performance claim without measured build data |
+
+Mandatory first pack composition:
+
+- 2 identity/gameplay exterior shots;
+- 2 base/interior machinery shots;
+- 1 salvage/player-action shot;
+- 1 threat/scale shot;
+- 1 Seed Ship/anomaly shot only if the build can show it honestly;
+- 1 optional low-spec proof shot only for internal QA until profiler evidence exists.
+
+Hard reject the pack if more than half the shots need captions to explain the player verb.
+
 ## Clip QA
 
 For 10-30 second clips:

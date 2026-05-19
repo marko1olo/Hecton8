@@ -16,6 +16,25 @@ This report file is a snapshot/provenance document. It is active only where it a
 
 Historical `PASS`, `VERIFIED`, `current`, `latest`, counter, compile, runtime, 0-GC, frame-time, cost, and performance statements inside this report are not current proof unless the exact claim links a fresh artifact path, command/tool, timestamp, evidence class, and unresolved-error list. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied by this file alone.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+## 2026-05-19 Global Authority Override
+
+Current signal/event policy is governed by:
+
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
+- `Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md`
+
+First-party hot broadcasts use typed `SignalBus<T>` lanes. Direct `GlobalSignals`
+queues are documented bridge/migration surface. `HectonEventBus` is mod/API/cold
+boundary infrastructure and must not be expanded as the first-party gameplay bus.
+New signal routes start owner-local first, then interface, then typed lane only
+when the setup playbook, route card, and review checklist prove
+fan-out/cross-domain need.
 Owner: ARCHITECTURAL_SIGNAL_STANDARDIZER
 Evidence class: STATIC_SOURCE until compile/profiler/Unity Console artifacts exist.
 
@@ -30,7 +49,7 @@ rg "Action<|UnityEvent|EventBus\.Publish|NativeQueue<"
 Result summary:
 - Large third-party/vendor noise exists under `Packages`, package caches, node modules, and imported assets.
 - First-party hits include `Assets/_Project/Scripts/Core/GlobalSignals.cs`, `Gameplay/BaseAirlockEvents.cs`, `Gameplay/BaseAirlock.cs`, `EntityChangeDetector.cs`, `Economy/ScrapManager.cs`, `Economy/ResourceRecyclerModule.cs`, `Fauna/FaunaBrain.cs`, `Fabricator.cs`, and multiple editor harnesses.
-- Current authority doc `Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md` says `GlobalSignals` owns 33 first-party NativeQueue lanes and `Publish(in T)` is enqueue-only, not callback dispatch.
+- Historical report snapshot. Current R25/R24 `Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md` orientation is `73` direct `CreateQueue(...)` native queue slots and `133` typed `SignalBus<T>.EnsureInitialized()` lanes in the `GlobalSignals` initialization surface. Rerun before exact use.
 
 ## Audit Scope
 

@@ -153,6 +153,7 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
         self.assertIn("## Phi-Resonance Connectivity Model", text)
         self.assertIn("Tools/BuildArchitectureAtlas.py", text)
         self.assertIn("Docs/DEPENDENCY_GRAPH.json", text)
+        self.assertIn("Current DOC_GLOBAL R27 blocker", text)
 
 
 if __name__ == "__main__":

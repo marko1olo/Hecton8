@@ -1,0 +1,11 @@
+target_id,name,segment,official_url,contact_route,status,fit_score,last_checked,best_angle,asset_required,risk_notes,next_action,owner
+PRESS-001,PC Gamer,PC press,https://www.pcgamer.com/about-pc-gamer/,Official about/contact page,RAW_SEED,TBD,2026-05-19,PC-first deep-sea survival,Steam page + trailer,High inbound volume,Verify current editor/contact route,TBD
+PRESS-002,Rock Paper Shotgun,PC press,https://www.rockpapershotgun.com/,UNKNOWN,RAW_SEED,TBD,2026-05-19,NASA-punk survival systems,Steam page + screenshots,Selective and UK tone,Verify current submissions/contact,TBD
+PRESS-003,Alpha Beta Gamer,Indie/demo press,https://www.alphabetagamer.com/,UNKNOWN,RAW_SEED,TBD,2026-05-19,Playable demo discovery,Public/private demo,Demo quality critical,Verify submission route,TBD
+PRESS-004,The Indie Game Website,Indie press,https://www.indiegamewebsite.com/contact/,Contact page,RAW_SEED,TBD,2026-05-19,Indie deep-sea survival,Presskit + screenshots,Do not spam generic pitch,Verify current contact page,TBD
+PRESS-005,Rely on Horror,Horror press,https://www.relyonhorror.com/,UNKNOWN,RAW_SEED,TBD,2026-05-19,Pressure dread survival horror,Horror-forward clip,Genre standards high,Verify contact route,TBD
+PRESS-006,Bloody Disgusting Games,Horror press,https://bloody-disgusting.com/video-games/,UNKNOWN,RAW_SEED,TBD,2026-05-19,Deep sea pressure horror,Strong trailer,Needs horror hook not craft-only,Verify current games editor/contact,TBD
+PRESS-007,GameDiscoverCo,Industry newsletter,https://newsletter.gamediscover.co/,UNKNOWN,RAW_SEED,TBD,2026-05-19,Steam discovery/process story,Real metrics only,B2B not consumer,Do not pitch until metrics exist,TBD
+PRESS-008,How To Market A Game,Industry newsletter,https://howtomarketagame.com/,UNKNOWN,RAW_SEED,TBD,2026-05-19,Learning/marketing process,Real campaign data,Not a review outlet,Use as learning source first,TBD
+PRESS-009,PC Gaming Show,Showcase,https://www.pcgamingshow.com/,Developer connect route,RAW_SEED,TBD,2026-05-19,PC-first trailer/demo,Trailer + Steam CTA,Competitive,Prepare asset pack before contact,TBD
+PRESS-010,Future Games Show,Showcase,https://www.futuregamesshow.com/,Be Part of the Show route,RAW_SEED,TBD,2026-05-19,World-premiere trailer/demo,Strong trailer,Competitive broad audience,Prepare submission pack,TBD

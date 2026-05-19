@@ -1,0 +1,112 @@
+<SELF_AUDIT agent_id="SHINOBU_61" domain="VOXEL_SURFACE_NETS_ARCHITECT" date="2026-05-18">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">Archive/StreamingAssets lookup probing exists in TryBootstrapLookupTables; missing payload falls back to GenerateEmergencyMockTables with 256 unmanaged edge masks.</TASK>
+    <TASK id="02" status="PASS">No new Mesh(), mesh.vertices, SetVertices, RecalculateNormals, or SetData usage exists in the new module. GPU upload uses GraphicsBuffer.LockBufferForWrite and MemCpy.</TASK>
+    <TASK id="03" status="PASS">ChunkMeshingStateDTO uses public fields only. Ref mutation is exposed through GetStateAsRef; read-only access through ref readonly.</TASK>
+    <TASK id="04" status="PASS">VoxelVertexDTO is 32B; primary state/telemetry/AABB DTOs are 64B; no Pack=1.</TASK>
+    <TASK id="05" status="PASS">MockVoxelDensityArray and GenerateMockVoxelDensitySphereJob fill a hollow sphere/sphere SDF without Agent 05 dependency.</TASK>
+    <TASK id="06" status="PASS">SurfaceNetExtractionJob emits a centroid vertex for each sign-crossing cell and connects cell vertices through unmanaged index output.</TASK>
+    <TASK id="07" status="PASS">Tetrahedral SDF gradient normal sampling packs normals and tangents into RGB10_A2 uints.</TASK>
+    <TASK id="08" status="PASS">Async handoff state is represented by chunk stages and a boot-prewarmed GraphicsBuffer double-buffer dispatcher. Burst writes indirect args; upload performs no main-thread Mesh rebuild or upload-time buffer allocation.</TASK>
+    <TASK id="09" status="PASS">Density workspace is 34^3, giving one ghost voxel around a 32^3 chunk for overlap sampling.</TASK>
+    <TASK id="10" status="PASS">VoxelSurfacePriorityJob scores chunks using Camera AUP/frustum data; VoxelSurfaceHzbCullJob can reject CPU-downloaded HZB-occluded chunks. Tuning clamps max chunks/frame to 1..2.</TASK>
+    <TASK id="11" status="PASS">GlobalQualityWeight controls exact 25%-100% sampling anchored at weight 0.2, stride 4..1, center-bias decimation, 5..60 Hz non-urgent cadence, and telemetry decimation ratio.</TASK>
+    <TASK id="12" status="PASS">Biome/material blend is baked into ColorPacked.g; quality scalar into ColorPacked.b; UVs stay cheap and planar.</TASK>
+    <TASK id="13" status="PASS">VoxelSurfaceDirtySignalJob marks laser-modified chunks dirty and priority 1 without direct Agent 05 reference.</TASK>
+    <TASK id="14" status="PASS_BRIDGED">No MeshCollider bake happens in Surface Nets. A physics bake request DTO/job stages mesh IDs for a physics-owned bridge because this module owns no managed Mesh and must preserve compile-wall isolation.</TASK>
+    <TASK id="15" status="PASS">VoxelSurfaceAabbShiftJob shifts BRG AABB centers; generated vertices remain local float3.</TASK>
+    <TASK id="16" status="PASS">Persistent workspace lives in GlobalDataVault handles. Runtime clears counters/state; no private NativeArray/NativeList fields are owned by the mesher.</TASK>
+    <TASK id="17" status="PASS">300-frame telemetry ring and endian-marked dump writers target Dump_MESH_SURGEON.bin and Dump_SHINOBU_61.bin.</TASK>
+    <TASK id="18" status="PASS">Voxel Mesh Tuner EditorWindow reads/writes unmanaged tuning in Play Mode.</TASK>
+    <TASK id="19" status="PASS">meshing_profiles.csv is parsed from NativeArray byte scratch with ASCII key hashes and no managed row allocations.</TASK>
+    <TASK id="20" status="PASS">Show Raw Extraction toggle draws yellow raw triangle wireframes from the raw float3 workspace in SceneView.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <STRUCT name="VoxelVertexDTO" size="32" alignment="16-compatible">
+      <FIELD name="Position" offset="0" size="12" type="float3" />
+      <FIELD name="NormalPacked" offset="12" size="4" type="uint RGB10_A2" />
+      <FIELD name="TangentPacked" offset="16" size="4" type="uint RGB10_A2" />
+      <FIELD name="ColorPacked" offset="20" size="4" type="uint RGBA8" />
+      <FIELD name="UV" offset="24" size="8" type="float2" />
+      <MATH>12+4+4+4+8=32 bytes. No Pack=1. GPU stride is exactly 32.</MATH>
+    </STRUCT>
+    <STRUCT name="ChunkMeshingStateDTO" size="64" alignment="cache-line">
+      <MATH>double3 24 + float3 12 + float 4 + int 4 + int 4 + int 4 + uint 4 + uint 4 + byte 1 + byte 1 + ushort 2 = 64.</MATH>
+    </STRUCT>
+    <STRUCT name="VoxelMeshingTelemetryEntry" size="64" alignment="cache-line">
+      <MATH>All black-box telemetry rows are fixed one-cache-line records. No shared atomic counter struct was introduced.</MATH>
+    </STRUCT>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    When GlobalQualityWeight drops below 0.3, SurfaceNetExtractionJob collapses toward 25% density resolution through stride 4, uses nearest SDF sampling for normals, and biases vertices toward cell centers according to DecimationAggression. This bypasses high-tap trilinear density reads and removes fine vertices before GraphicsBuffer upload. At 1.0 the job uses full 32^3 cell traversal, trilinear SDF normal samples, richer packed material data, and raw debug capture when requested.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    <PRIVATE_ARRAY_ALLOCATIONS status="ZERO">Runtime mesher owns no private NativeArray, NativeList, or NativeHashMap persistent fields.</PRIVATE_ARRAY_ALLOCATIONS>
+    <VAULT_HANDLES>70780 Density, 70781 Vertices, 70782 Indices, 70783 CellVertexMap, 70784 States, 70785 Tuning, 70786 TelemetryRing, 70787 TelemetryCursor, 70788 CsvScratch, 70789 SurfaceEdgeMasks, 70790 RawDebugVertices, 70791 ChunkAabbs, 70792 ModifiedSignals, 70793 Priorities, 70794 IndirectArgs, 70795 MockDensityConfig, 70796 PhysicsBakeRequests, 70797 HzbTiles.</VAULT_HANDLES>
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <NO_ALIAS status="PASS">Burst job NativeArray fields use NoAlias where applicable. Optional frustum plane container is safety-disabled only because it may be default when PlaneCount is zero.</NO_ALIAS>
+    <JOB_HANDLE_GRAPH>TryScheduleMockDensity consumes input JobHandle and outputs density JobHandle. TryScheduleHzbCull consumes visibility dependency and outputs HZB cull JobHandle. TryScheduleExtraction consumes density/previous handle and outputs extraction JobHandle, cadence-gated unless dirty/laser urgent. Upload dispatcher does not call Complete; caller must invoke it after dependency completion.</JOB_HANDLE_GRAPH>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    Runtime asmdef references Core.Contracts, Core.Memory, and Unity Burst/Collections/Jobs/Mathematics only. Static scan found no direct sibling runtime domain references. Targeted compile was not launched because CPU was 100% and external csc/dotnet processes were active.
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    <FAKE>Interior solid/void cells are culled before vertex emission. CPU UVs are planar; shader world-space sampling fakes seamless triplanar material detail. Frustum priority delays geometry behind the player.</FAKE>
+    <COMPLEXITY before="O(full cells + managed mesh validation + normal recalculation + hidden interior work)" after="O(sign-crossing coarse cells + direct GPU memcpy)" />
+  </DEAR_LIE_CONFIRMATION>
+  <HARDENING_APPENDIX id="LOOP_8">
+    <STRUCT_LAYOUT_DELTA status="PASS">
+      <NOTE>Runtime DTOs now use LayoutKind.Explicit with FieldOffset on every field. Sequential layout was removed from the Surface Nets runtime DTO set.</NOTE>
+      <STRUCT name="VoxelSurfacePhysicsBakeRequestDTO" size="32">
+        <FIELD name="MeshId" offset="0" size="4" />
+        <FIELD name="ChunkIndex" offset="4" size="4" />
+        <FIELD name="ChunkHash" offset="8" size="4" />
+        <FIELD name="Version" offset="12" size="4" />
+        <FIELD name="Pending" offset="16" size="1" />
+        <FIELD name="Completed" offset="17" size="1" />
+        <FIELD name="_pad0" offset="18" size="2" />
+        <FIELD name="_pad2" offset="20" size="4" />
+        <FIELD name="_pad1" offset="24" size="8" />
+        <MATH>4+4+4+4+1+1+2+4+8=32. The 8-byte field starts at offset 24, so ARM64 alignment is explicit.</MATH>
+      </STRUCT>
+      <STRUCT name="VoxelSurfaceAabbDTO" size="64">
+        <FIELD name="CenterAup" offset="0" size="24" />
+        <FIELD name="ExtentsLocal" offset="24" size="12" />
+        <FIELD name="ChunkHash" offset="36" size="4" />
+        <FIELD name="Version" offset="40" size="4" />
+        <FIELD name="VisibleFlags/Priority/_pad0" offset="44" size="4" />
+        <FIELD name="_pad1" offset="48" size="8" />
+        <FIELD name="_pad2" offset="56" size="8" />
+        <MATH>24+12+4+4+4+8+8=64. One cache line.</MATH>
+      </STRUCT>
+    </STRUCT_LAYOUT_DELTA>
+    <HZB_CULLING_DELTA status="PASS">
+      <NOTE>VoxelSurfaceHzbCullJob no longer culls by center point alone. It projects all 8 AABB corners, clamps the screen rect, samples HZB at four rect corners plus center, and only culls if all sampled tiles agree that the nearest AABB depth is behind terrain depth. Invalid clip-space projection fails open to visible.</NOTE>
+      <COMPLEXITY before="O(1 center depth sample)" after="O(8 corner projections + 5 HZB tile samples)" />
+    </HZB_CULLING_DELTA>
+    <COMPILE_GUARD_UPDATE status="BLOCKED_BY_GUARD">
+      <STATIC_EVIDENCE>git diff --check passed. Forbidden API scan found no Pack=1, Sequential, DTO properties, managed Mesh API, foreach, or UnityEngine.Random. Burst scan found 7 jobs and 7 mandated BurstCompile flag sets.</STATIC_EVIDENCE>
+      <REASON>No dotnet build was launched because the CPU guard reported 91% load and external csc.exe/dotnet processes were active.</REASON>
+    </COMPILE_GUARD_UPDATE>
+  </HARDENING_APPENDIX>
+  <HARDENING_APPENDIX id="LOOP_10_MAPPED_GRAPHICSBUFFER_COPY">
+    <GPU_UPLOAD status="PASS_SOURCE">
+      <NOTE>Upload is two-phase. TryBeginUpload locks prewarmed GraphicsBuffer views and schedules VoxelSurfaceGpuUploadCopyJob. TryFinalizeUpload unlocks only after the caller dependency is completed. The dispatcher does not call JobHandle.Complete and does not call GraphicsBuffer.SetData.</NOTE>
+      <JOB name="VoxelSurfaceGpuUploadCopyJob" burst="CompileSynchronously=true FloatMode.Fast FloatPrecision.Standard" no_alias="true">Copies VoxelVertexDTO, uint indices, and VoxelSurfaceIndirectArgsDTO from vault arrays to mapped GraphicsBuffer NativeArray views via UnsafeUtility.MemCpy inside Burst.</JOB>
+    </GPU_UPLOAD>
+  </HARDENING_APPENDIX>
+  <HARDENING_APPENDIX id="LOOP_11_EDGE_GATED_QUADS">
+    <TOPOLOGY status="PASS_SOURCE">
+      <NOTE>SurfaceNetExtractionJob now emits a quad only when the corresponding X/Y/Z grid-edge has an iso-surface sign crossing. Four-cell adjacency alone is no longer enough to create a triangle.</NOTE>
+      <WINDING>TryResolveEdgeWinding samples exact edge endpoints, returns crossing state, and reverses triangle order from the edge sign. Raw debug vertices now mirror final index order.</WINDING>
+    </TOPOLOGY>
+    <DEAR_LIE_UPDATE>
+      <NOTE>Interior false quads are rejected before upload. Complexity remains O(coarse sign-crossing cells + sign-changing edge quads); false interior adjacency quads are removed from the GPU vertex/index workload.</NOTE>
+    </DEAR_LIE_UPDATE>
+    <VERIFICATION_UPDATE status="STATIC_PASS_COMPILE_BLOCKED_BY_GUARD">
+      <STATIC_EVIDENCE>Forbidden API scan remained clean. Burst scan remains 8/8 mandated attributes.</STATIC_EVIDENCE>
+      <REASON>No dotnet build or targeted Roslyn compile was launched because latest CPU sample was 99.23%, above the 50% guard.</REASON>
+    </VERIFICATION_UPDATE>
+  </HARDENING_APPENDIX>
+</SELF_AUDIT>

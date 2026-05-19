@@ -332,14 +332,19 @@ namespace Hecton8.Core
         private static int _currentDomain = (int)Domain.Unknown;
         private static object _currentDomainOwner;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         public readonly struct ForceOverrideToken
         {
+            [FieldOffset(0)]
             internal readonly uint Value;
+
+            [FieldOffset(4)]
+            private readonly uint _pad0;
 
             internal ForceOverrideToken(uint value)
             {
                 Value = value;
+                _pad0 = 0u;
             }
 
             internal bool IsValid => Value == ForceOverrideTokenValue;

@@ -227,13 +227,13 @@ namespace Hecton8.Core
             AssertOffset<MerkleNodeDTO>(nameof(MerkleNodeDTO.ChildMask), 20);
             AssertOffset<MerkleNodeDTO>(nameof(MerkleNodeDTO._pad0), 24);
 
-            AssertSize<SectorEntry>(32);
-            AssertOffset<SectorEntry>(nameof(SectorEntry.SectorHash), 0);
-            AssertOffset<SectorEntry>(nameof(SectorEntry.ByteOffset), 8);
-            AssertOffset<SectorEntry>(nameof(SectorEntry.CompressedSize), 16);
-            AssertOffset<SectorEntry>(nameof(SectorEntry.DecompressedSize), 20);
-            AssertOffset<SectorEntry>(nameof(SectorEntry.Checksum), 24);
-            AssertOffset<SectorEntry>(nameof(SectorEntry._pad0), 28);
+            AssertSize<SectorEntryDTO>(32);
+            AssertOffset<SectorEntryDTO>(nameof(SectorEntryDTO.SectorHash), 0);
+            AssertOffset<SectorEntryDTO>(nameof(SectorEntryDTO.ByteOffset), 8);
+            AssertOffset<SectorEntryDTO>(nameof(SectorEntryDTO.CompressedSize), 16);
+            AssertOffset<SectorEntryDTO>(nameof(SectorEntryDTO.DecompressedSize), 20);
+            AssertOffset<SectorEntryDTO>(nameof(SectorEntryDTO.Checksum), 24);
+            AssertOffset<SectorEntryDTO>(nameof(SectorEntryDTO._pad0), 28);
 
             AssertSize<StateDeltaRecordDTO>(64);
             AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.PreviousHashLo), 0);
@@ -241,9 +241,13 @@ namespace Hecton8.Core
             AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.NewHashLo), 16);
             AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.NewHashHi), 24);
             AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.SourceOffsetBytes), 32);
+            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.DataLength), 36);
             AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.DeltaPayloadOffset), 40);
+            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.CompressedOffset), 44);
             AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.SectorKey), 48);
+            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.Flags), 52);
             AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.Crc32), 56);
+            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO._pad0), 60);
 
             AssertSize<StateLeafDescriptor>(32);
             AssertOffset<StateLeafDescriptor>(nameof(StateLeafDescriptor.SectorKey), 0);
@@ -253,9 +257,12 @@ namespace Hecton8.Core
             AssertSize<Lz4SubBlockHeader>(32);
             AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.Magic), 0);
             AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.RawBytes), 4);
+            AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.StoredBytes), 8);
             AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.SourceOffsetBytes), 12);
             AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.Crc32), 16);
+            AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.Flags), 20);
             AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.Version), 24);
+            AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.HeaderBytes), 26);
             AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader._pad0), 28);
 
             AssertSize<SaveMerkleWalAppendHeader>(64);
@@ -264,9 +271,14 @@ namespace Hecton8.Core
             AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.RootHashLo), 16);
             AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.RootHashHi), 24);
             AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.RawBytes), 32);
+            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.StoredBytes), 36);
             AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.Magic), 40);
+            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.Flags), 44);
+            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.BlockCount), 48);
+            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.Frame), 52);
             AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.RecordCrc32), 56);
             AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.Version), 60);
+            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.HeaderBytes), 62);
 
             AssertSize<SaveMerkleTelemetryEntry>(64);
             AssertOffset<SaveMerkleTelemetryEntry>(nameof(SaveMerkleTelemetryEntry.RootHashLo), 0);
@@ -293,10 +305,16 @@ namespace Hecton8.Core
             AssertSize<SaveMerkleEmergencyHeader64>(64);
             AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.TimestampTicks), 0);
             AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.RootHashLo), 8);
+            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.RootHashHi), 16);
             AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64._pad0), 24);
+            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64._pad1), 32);
             AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.Magic), 40);
             AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.SectorEntryBytes), 44);
+            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.MerkleNodeBytes), 48);
+            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.Flags), 52);
+            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.Checksum), 56);
             AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.Version), 60);
+            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.HeaderBytes), 62);
 
             AssertSize<HabitatFloodStateDTO>(32);
             AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.moduleHashId), 0);

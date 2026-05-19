@@ -1,4 +1,4 @@
-# PROJECT_ATLAS
+﻿# PROJECT_ATLAS
 
 Date: 2026-05-19
 Status: PENDING VERIFICATION
@@ -25,14 +25,18 @@ Scope: first-party `Assets/_Project/**/*.asmdef` only. Third-party and package a
 
 This atlas maps the current shattered assembly surface. It is not runtime proof.
 
+Current DOC_GLOBAL root/architecture boundary starts at `Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`; R28 remains the prior interior-boundary correction and R27 remains the latest source-counter/index snapshot.
+
 [RULE] Contract assemblies are the intended cross-domain seam.
 [RULE] Domain assemblies must depend on contracts, DataVault handles, and typed signal lanes before depending on `Hecton8.Core`.
 [RULE] `Hecton8.Core` remains a gravity well. Do not add new domain dependencies to it without Integrator approval.
+[RULE] Global authority routes must obey `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`; setup order lives in `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`; route proof uses `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`; migration/review order lives in `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`.
+[RULE] New assembly edges do not justify new `GlobalRegistry`, direct `GlobalSignals`, `HectonEventBus`, or `GlobalDataVault` surface without owner/proof fields.
 [FORBID] Claiming assembly health from this atlas alone.
 
 ## Static Assembly Count
 
-2026-05-19 R24 static scan found `119` first-party `.asmdef` files under `Assets/_Project`; earlier R9/R11/R18/R19/R21/R22 spot checks found `106` / `107` / `107` / `109` / `112` / `117`. Evidence class: STATIC_SOURCE; this is not compile or runtime proof.
+2026-05-19 R27 static scan found `123` first-party `.asmdef` files under `Assets/_Project`; earlier R9/R11/R18/R19/R21/R22/R24/R25/R26 spot checks found `106` / `107` / `107` / `109` / `112` / `117` / `121` / `121` / `123`. Evidence class: STATIC_SOURCE; this is not compile or runtime proof.
 
 The structure map below is a current orientation layer, not a complete generated inventory. Rerun `rg --files -g '*.asmdef' Assets/_Project` before using exact assembly counts for implementation or build repair.
 
@@ -175,7 +179,7 @@ Interpretation:
 - Static asmdef scan: last captured; rerun before using exact counts.
 - H-Phi formula: documented.
 - Unity import: not verified.
-- Compile: not run in this R24 documentation pass; no current compile proof is claimed from this atlas.
+- Compile: not run in the R27/R28 documentation passes; no current compile proof is claimed from this atlas.
 - Runtime/profile/GC/player-build proof: absent.
 
 <!-- HECTON_PHI_DOMAIN_INDEX_START -->
@@ -185,7 +189,7 @@ Generated: `2026-05-17T02:46:03`
 Status: `PHI CALCULATED`
 Evidence class: `STATIC_SOURCE/STATIC_DOC/PY_TOOL`
 
-Static H-Phi changed or was recalculated. Runtime quality remains `PENDING VERIFICATION`.
+This generated H-Phi block is a historical 2026-05-17 static metric slice. Runtime quality remains `PENDING VERIFICATION`, and exact source counters inside this block are not current R27/R28 source-count truth unless the H-Phi generator is rerun.
 
 ### Final H-Phi Scores
 

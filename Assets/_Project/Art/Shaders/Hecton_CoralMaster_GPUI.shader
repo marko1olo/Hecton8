@@ -141,7 +141,7 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
             float _GlobalBiolumPhase;
             float4 _BiolumMasterPhase; // x phase, y sine01, z flow frequency scale, w eclipse mask
             float4 _BiolumIntensity; // x master intensity, y predator dim, z daylight mask, w active ripple count
-            float4 _GlobalBiolumStates[16];
+            float4x4 _GlobalBiolumDearLieGroups;
             float4 _GlobalBiolumParams;
             float4 _GlobalBiolumClock;
             float4 _GlobalBiolumAupOffset;
@@ -245,19 +245,19 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
 
             half4 ResolveCoralGlobalBiolum(float3 positionWS)
             {
-                int activeCount = min(max((int)_GlobalBiolumParams.x, 0), 16);
+                int activeCount = min(max((int)_GlobalBiolumParams.x, 0), 4);
                 if (activeCount <= 0)
                     return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
                 float selector = frac(abs(positionWS.x * 0.021 + positionWS.z * 0.059 + _GlobalBiolumAupOffset.x * 0.0014 + _GlobalBiolumAupOffset.z * 0.0016));
                 int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
-                float4 state = _GlobalBiolumStates[stateIndex];
+                float4 state = _GlobalBiolumDearLieGroups[stateIndex];
                 half strobe = saturate((half)_GlobalBiolumParams.z);
                 half highTier = step(4.0h, (half)_GlobalBiolumParams.y);
                 int secondaryIndex = stateIndex + 1;
                 if (secondaryIndex >= activeCount)
                     secondaryIndex = 0;
-                float4 secondaryState = _GlobalBiolumStates[secondaryIndex];
+                float4 secondaryState = _GlobalBiolumDearLieGroups[secondaryIndex];
                 half overdrive = 0.0h;
                 half godSpark = 0.0h;
                 half godHaze = 0.0h;

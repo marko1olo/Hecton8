@@ -162,6 +162,58 @@ RULE_ARCH_05: All persistent allocations use Allocator.Persistent.
 
 ---
 
+### 2.3 GlobalDataVault Boundary - No Fake Data Sovereignty
+
+RULE_ARCH_06: `GlobalDataVault` is required for native state that crosses domain,
+              scene, job-owner, save, replay, telemetry, crash-dump, or relocation
+              boundaries.
+
+RULE_ARCH_07: Local single-owner scratch stays local when lifetime, disposal, and
+              job fences are self-contained. Do not move local scratch into
+              `GlobalDataVault` to inflate H-Phi or data-sovereignty counters.
+
+RULE_ARCH_08: Every Vault buffer must declare `BufferID`, `SystemID`, capacity,
+              generation handling, release/disposal path, stale-handle behavior,
+              and crash/telemetry responsibility.
+
+RULE_ARCH_09: A Vault handle exposed to another system is a contract. The owner
+              remains responsible for relocation, generation invalidation, and
+              reader fencing.
+
+RULE_ARCH_10: New or changed DataVault/global native-memory routes must satisfy
+              the route-card template in
+              `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`.
+
+RULE_ARCH_11: DataVault adoption follows
+              `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`: owner-local
+              scratch remains local; only real cross-domain/job/scene/save/replay/
+              crash/relocation data becomes Vault-owned.
+
+RULE_ARCH_12: New or changed DataVault/global native-memory routes require a
+              `GREEN` review disposition from
+              `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md` before
+              merge.
+
+[FORBID] Creating `GlobalDataVault` buffers for absent systems.
+[FORBID] Sharing raw `NativeArray<T>`/`NativeList<T>` references across domains
+         when a `VaultBufferHandle<T>` or read-only snapshot contract is required.
+[FORBID] Claiming DataVault integration without BufferID/SystemID/generation/
+         disposal evidence in the report or source rationale.
+[FORBID] Treating `GlobalDataVault` as a mutable global heap.
+[FORBID] Approving a Vault handle exposed across domains without owner, phase,
+         cadence, failure mode, telemetry, shutdown, and proof fields.
+
+See:
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`
+- `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
+- `Docs/QUALITY_GATES.md` DataVault sovereignty gate
+
+---
+
 ## SECTION 3 - DOUBLE-BUFFERING PATTERN (MANDATORY)
 
 ### 3.1 Rationale

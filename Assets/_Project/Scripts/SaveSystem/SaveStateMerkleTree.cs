@@ -234,7 +234,7 @@ namespace Hecton8.SaveSystem
         internal const uint Lz4BlockFlagCompressed = 1u;
         internal const uint Lz4BlockFlagRaw = 1u << 1;
         internal const uint Lz4BlockFlagModPayload = 1u << 2;
-        internal const uint Lz4BlockFlagRle = 1u << 3;
+        internal const uint Lz4BlockFlagRle = 1u << 8;
         internal const uint TelemetryFlagHashOverBudget = 1u << 0;
         internal const uint TelemetryFlagIoException = 1u << 1;
         internal const uint TelemetryFlagCrcFailure = 1u << 2;
@@ -244,6 +244,7 @@ namespace Hecton8.SaveSystem
         private const ulong LeafSeed = 0x48485341564C4546UL; // FLEVS HH
         private const ulong NodeSeed = 0x48485341564E4F44UL; // DONVS HH
         private const ulong CommittedTreeSentinel = 0x534156454D524B4CUL; // LKRMEVAS
+        private const uint Lz4BlockFlagRleLegacy = 1u << 3;
         private const int CounterRecords = 0;
         private const int CounterBytes = 1;
         private const int CounterChangedLeaves = 2;
@@ -511,8 +512,18 @@ namespace Hecton8.SaveSystem
                 _pad1 = 0UL
             };
 
-            header.Checksum = ComputeCrc32((byte*)&header, UnsafeUtility.SizeOf<SaveMerkleEmergencyHeader64>());
-            UnsafeUtility.MemCpy(destination, &header, UnsafeUtility.SizeOf<SaveMerkleEmergencyHeader64>());
+            int headerByteCount = UnsafeUtility.SizeOf<SaveMerkleEmergencyHeader64>();
+            Span<byte> headerBytes = stackalloc byte[64];
+            if (headerByteCount > headerBytes.Length)
+                return;
+
+            fixed (byte* headerPtr = headerBytes)
+            {
+                WriteEmergencyHeaderLittleEndian(headerPtr, in header);
+                header.Checksum = ComputeCrc32(headerPtr, headerByteCount);
+                WriteEmergencyHeaderLittleEndian(headerPtr, in header);
+                UnsafeUtility.MemCpy(destination, headerPtr, headerByteCount);
+            }
         }
 
         internal static JobHandle ScheduleMerkleBuild(
@@ -812,7 +823,8 @@ namespace Hecton8.SaveSystem
             int rawBytes,
             int storedBytes,
             uint blockCount,
-            uint flags)
+            uint flags,
+            long timestampTicks = 0L)
         {
             return new SaveMerkleWalAppendHeader
             {
@@ -828,7 +840,7 @@ namespace Hecton8.SaveSystem
                 RootHashHi = rootHashHi,
                 Frame = frame,
                 RecordCrc32 = 0u,
-                TimestampTicks = DateTime.UtcNow.Ticks
+                TimestampTicks = timestampTicks < 0L ? 0L : timestampTicks
             };
         }
 
@@ -865,64 +877,77 @@ namespace Hecton8.SaveSystem
 
                 byte* payload = (byte*)compressedBytes.GetUnsafeReadOnlyPtr();
                 long appendOffset = stream.Length;
+                int headerByteCount = UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>();
+                Span<byte> headerBytes = stackalloc byte[64];
+                if (headerByteCount > headerBytes.Length)
+                {
+                    error = "Merkle WAL header exceeds stack serialization budget.";
+                    return false;
+                }
+
                 header.StoredBytes = byteCount;
                 header.LogicalOffset = appendOffset;
                 header.RecordCrc32 = 0u;
-                uint crc = UpdateCrc32(0xFFFFFFFFu, (byte*)&header, UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>());
-                crc = UpdateCrc32(crc, payload, byteCount);
-                header.RecordCrc32 = FinalizeCrc32(crc);
 
-                int headerBytes = UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>();
-                long appendBytes = headerBytes + (long)byteCount;
-                long endOffset = appendOffset + appendBytes;
+                fixed (byte* headerPtr = headerBytes)
+                {
+                    WriteWalAppendHeaderLittleEndian(headerPtr, in header);
+                    uint crc = UpdateCrc32(0xFFFFFFFFu, headerPtr, headerByteCount);
+                    crc = UpdateCrc32(crc, payload, byteCount);
+                    header.RecordCrc32 = FinalizeCrc32(crc);
+                    WriteWalAppendHeaderLittleEndian(headerPtr, in header);
+
+                    long appendBytes = headerByteCount + (long)byteCount;
+                    long endOffset = appendOffset + appendBytes;
 
 #if UNITY_EDITOR || UNITY_STANDALONE || HECTON8_MMF_AVAILABLE
-                try
-                {
-                    stream.SetLength(endOffset);
-                    using MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
-                        stream,
-                        null,
-                        endOffset,
-                        MemoryMappedFileAccess.ReadWrite,
-                        HandleInheritability.None,
-                        false);
-                    using MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(
-                        appendOffset,
-                        appendBytes,
-                        MemoryMappedFileAccess.Write);
-                    byte* mappedPtr = null;
                     try
                     {
-                        accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPtr);
-                        byte* target = mappedPtr + (int)accessor.PointerOffset;
-                        UnsafeUtility.MemCpy(target, &header, headerBytes);
-                        UnsafeUtility.MemCpy(target + headerBytes, payload, byteCount);
-                        accessor.Flush();
-                        stream.Flush(true);
-                        return true;
+                        stream.SetLength(endOffset);
+                        using MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
+                            stream,
+                            null,
+                            endOffset,
+                            MemoryMappedFileAccess.ReadWrite,
+                            HandleInheritability.None,
+                            false);
+                        using MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(
+                            appendOffset,
+                            appendBytes,
+                            MemoryMappedFileAccess.Write);
+                        byte* mappedPtr = null;
+                        try
+                        {
+                            accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPtr);
+                            byte* target = mappedPtr + (int)accessor.PointerOffset;
+                            UnsafeUtility.MemCpy(target, headerPtr, headerByteCount);
+                            UnsafeUtility.MemCpy(target + headerByteCount, payload, byteCount);
+                            accessor.Flush();
+                            stream.Flush(true);
+                            return true;
+                        }
+                        finally
+                        {
+                            if (mappedPtr != null)
+                                accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                        }
                     }
-                    finally
+                    catch (PlatformNotSupportedException)
                     {
-                        if (mappedPtr != null)
-                            accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                        stream.SetLength(appendOffset);
                     }
-                }
-                catch (PlatformNotSupportedException)
-                {
-                    stream.SetLength(appendOffset);
-                }
-                catch (Exception)
-                {
-                    stream.SetLength(appendOffset);
-                }
+                    catch (Exception)
+                    {
+                        stream.SetLength(appendOffset);
+                    }
 #endif
 
-                stream.Position = appendOffset;
-                stream.Write(new ReadOnlySpan<byte>(&header, headerBytes));
-                stream.Write(new ReadOnlySpan<byte>(payload, byteCount));
-                stream.Flush(true);
-                return true;
+                    stream.Position = appendOffset;
+                    stream.Write(headerBytes.Slice(0, headerByteCount));
+                    stream.Write(new ReadOnlySpan<byte>(payload, byteCount));
+                    stream.Flush(true);
+                    return true;
+                }
             }
             catch (Exception exception)
             {
@@ -940,11 +965,23 @@ namespace Hecton8.SaveSystem
             try
             {
                 using FileStream stream = new FileStream(walPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan);
+                int headerByteCount = UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>();
+                Span<byte> headerBytes = stackalloc byte[64];
+                if (headerByteCount > headerBytes.Length)
+                    return TryRestoreBackup(walPath, backupPath, "Merkle WAL header size exceeds stack parser budget.", out error);
+
                 while (stream.Position < stream.Length)
                 {
-                    SaveMerkleWalAppendHeader header;
-                    if (!TryReadStruct(stream, &header, UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>()))
+                    if (!TryReadExact(stream, headerBytes.Slice(0, headerByteCount)))
+                    {
                         return TryRestoreBackup(walPath, backupPath, "Merkle WAL header truncated.", out error);
+                    }
+
+                    SaveMerkleWalAppendHeader header;
+                    fixed (byte* headerPtr = headerBytes)
+                    {
+                        header = ReadWalAppendHeaderLittleEndian(headerPtr);
+                    }
 
                     if (header.Magic != MerkleWalMagic ||
                         header.Version != MerkleWalVersion ||
@@ -969,10 +1006,15 @@ namespace Hecton8.SaveSystem
 
                     stream.Position = payloadStart;
                     uint expected = header.RecordCrc32;
-                    header.RecordCrc32 = 0u;
-                    uint crc = UpdateCrc32(0xFFFFFFFFu, (byte*)&header, UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>());
-                    if (!TryUpdateCrcFromStream(stream, header.StoredBytes, ref crc) ||
-                        FinalizeCrc32(crc) != expected)
+                    uint recordCrc;
+                    fixed (byte* headerPtr = headerBytes)
+                    {
+                        WriteUIntLittleEndian(headerPtr, 56, 0u);
+                        recordCrc = UpdateCrc32(0xFFFFFFFFu, headerPtr, headerByteCount);
+                    }
+
+                    if (!TryUpdateCrcFromStream(stream, header.StoredBytes, ref recordCrc) ||
+                        FinalizeCrc32(recordCrc) != expected)
                     {
                         if ((header.Flags & LeafFlagModPayload) != 0u)
                         {
@@ -989,6 +1031,143 @@ namespace Hecton8.SaveSystem
             catch (Exception exception)
             {
                 return TryRestoreBackup(walPath, backupPath, exception.GetType().Name + ": " + exception.Message, out error);
+            }
+        }
+
+        internal static bool TryReplayWalToDeltaArena(
+            string walPath,
+            NativeArray<byte> destinationDeltaBytes,
+            NativeArray<byte> compressedScratchBytes,
+            NativeArray<int> counters,
+            out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(walPath) || !File.Exists(walPath))
+                return true;
+
+            if (!destinationDeltaBytes.IsCreated || !compressedScratchBytes.IsCreated)
+            {
+                error = "Merkle WAL replay buffers are not allocated.";
+                return false;
+            }
+
+            try
+            {
+                using FileStream stream = new FileStream(walPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan);
+                int headerByteCount = UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>();
+                Span<byte> headerBytes = stackalloc byte[64];
+                if (headerByteCount > headerBytes.Length)
+                {
+                    error = "Merkle WAL header size exceeds stack parser budget.";
+                    return false;
+                }
+
+                int write = 0;
+                int records = 0;
+                int blocks = 0;
+                int corruptBlocks = 0;
+                int storedBytesTotal = 0;
+                byte* scratchPtr = (byte*)compressedScratchBytes.GetUnsafePtr();
+                byte* destinationPtr = (byte*)destinationDeltaBytes.GetUnsafePtr();
+                if (PointerRangesOverlap(scratchPtr, compressedScratchBytes.Length, destinationPtr, destinationDeltaBytes.Length))
+                {
+                    error = "Merkle WAL replay destination and scratch buffers overlap.";
+                    WriteReplayCounters(counters, 0, 0, 0, 0, 0, failed: true);
+                    return false;
+                }
+
+                while (stream.Position < stream.Length)
+                {
+                    if (!TryReadExact(stream, headerBytes.Slice(0, headerByteCount)))
+                    {
+                        error = "Merkle WAL replay header truncated.";
+                        WriteReplayCounters(counters, records, write, blocks, corruptBlocks, storedBytesTotal, failed: true);
+                        return false;
+                    }
+
+                    SaveMerkleWalAppendHeader header;
+                    fixed (byte* headerPtr = headerBytes)
+                    {
+                        header = ReadWalAppendHeaderLittleEndian(headerPtr);
+                    }
+
+                    if (header.Magic != MerkleWalMagic ||
+                        header.Version != MerkleWalVersion ||
+                        header.HeaderBytes != headerByteCount ||
+                        header.RawBytes <= 0 ||
+                        header.StoredBytes <= 0 ||
+                        header.StoredBytes > compressedScratchBytes.Length ||
+                        header.StoredBytes > stream.Length - stream.Position)
+                    {
+                        error = "Merkle WAL replay header invalid.";
+                        WriteReplayCounters(counters, records, write, blocks, corruptBlocks, storedBytesTotal, failed: true);
+                        return false;
+                    }
+
+                    if (write > destinationDeltaBytes.Length - header.RawBytes)
+                    {
+                        error = "Merkle WAL replay destination arena overflow.";
+                        WriteReplayCounters(counters, records, write, blocks, corruptBlocks, storedBytesTotal, failed: true);
+                        return false;
+                    }
+
+                    if (!TryReadExact(stream, new Span<byte>(scratchPtr, header.StoredBytes)))
+                    {
+                        error = "Merkle WAL replay payload truncated.";
+                        WriteReplayCounters(counters, records, write, blocks, corruptBlocks, storedBytesTotal, failed: true);
+                        return false;
+                    }
+
+                    uint expected = header.RecordCrc32;
+                    uint recordCrc;
+                    fixed (byte* headerPtr = headerBytes)
+                    {
+                        WriteUIntLittleEndian(headerPtr, 56, 0u);
+                        recordCrc = UpdateCrc32(0xFFFFFFFFu, headerPtr, headerByteCount);
+                    }
+
+                    recordCrc = UpdateCrc32(recordCrc, scratchPtr, header.StoredBytes);
+                    if (FinalizeCrc32(recordCrc) != expected)
+                    {
+                        corruptBlocks++;
+                        if ((header.Flags & LeafFlagModPayload) != 0u)
+                            continue;
+
+                        error = "Merkle WAL replay record CRC failed.";
+                        WriteReplayCounters(counters, records, write, blocks, corruptBlocks, storedBytesTotal, failed: true);
+                        return false;
+                    }
+
+                    if (!TryDecodeStoredSubBlocks(
+                            scratchPtr,
+                            header.StoredBytes,
+                            destinationPtr + write,
+                            header.RawBytes,
+                            out int decodedBlocks))
+                    {
+                        corruptBlocks++;
+                        if ((header.Flags & LeafFlagModPayload) != 0u)
+                            continue;
+
+                        error = "Merkle WAL replay sub-block decode failed.";
+                        WriteReplayCounters(counters, records, write, blocks, corruptBlocks, storedBytesTotal, failed: true);
+                        return false;
+                    }
+
+                    write += header.RawBytes;
+                    records++;
+                    blocks += decodedBlocks;
+                    storedBytesTotal += header.StoredBytes;
+                }
+
+                WriteReplayCounters(counters, records, write, blocks, corruptBlocks, storedBytesTotal, failed: false);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = exception.GetType().Name + ": " + exception.Message;
+                WriteReplayCounters(counters, 0, 0, 0, 0, 0, failed: true);
+                return false;
             }
         }
 
@@ -1081,25 +1260,16 @@ namespace Hecton8.SaveSystem
             return false;
         }
 
-        private static bool TryReadStruct(FileStream stream, void* destination, int byteCount)
+        private static bool TryReadExact(FileStream stream, Span<byte> destination)
         {
-            Span<byte> scratch = stackalloc byte[64];
-            if (byteCount > scratch.Length)
-                return false;
-
             int total = 0;
-            while (total < byteCount)
+            while (total < destination.Length)
             {
-                int read = stream.Read(scratch.Slice(total, byteCount - total));
+                int read = stream.Read(destination.Slice(total));
                 if (read <= 0)
                     return false;
 
                 total += read;
-            }
-
-            fixed (byte* scratchPtr = scratch)
-            {
-                UnsafeUtility.MemCpy(destination, scratchPtr, byteCount);
             }
 
             return true;
@@ -1108,14 +1278,26 @@ namespace Hecton8.SaveSystem
         private static bool TryValidateStoredSubBlocks(FileStream stream, int storedBytes)
         {
             long payloadEnd = stream.Position + storedBytes;
+            int headerByteCount = UnsafeUtility.SizeOf<Lz4SubBlockHeader>();
+            Span<byte> headerBytes = stackalloc byte[32];
+            if (headerByteCount > headerBytes.Length)
+                return false;
+
             while (stream.Position < payloadEnd)
             {
-                if (payloadEnd - stream.Position < UnsafeUtility.SizeOf<Lz4SubBlockHeader>())
+                if (payloadEnd - stream.Position < headerByteCount)
                     return false;
 
-                Lz4SubBlockHeader header;
-                if (!TryReadStruct(stream, &header, UnsafeUtility.SizeOf<Lz4SubBlockHeader>()))
+                if (!TryReadExact(stream, headerBytes.Slice(0, headerByteCount)))
+                {
                     return false;
+                }
+
+                Lz4SubBlockHeader header;
+                fixed (byte* headerPtr = headerBytes)
+                {
+                    header = ReadLz4SubBlockHeaderLittleEndian(headerPtr);
+                }
 
                 if (header.Magic != Lz4BlockMagic ||
                     header.Version != Lz4BlockVersion ||
@@ -1128,10 +1310,11 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                uint storageFlags = header.Flags & (Lz4BlockFlagRaw | Lz4BlockFlagCompressed | Lz4BlockFlagRle);
+                uint storageFlags = header.Flags & (Lz4BlockFlagRaw | Lz4BlockFlagCompressed | Lz4BlockFlagRle | Lz4BlockFlagRleLegacy);
                 if (storageFlags != Lz4BlockFlagRaw &&
                     storageFlags != Lz4BlockFlagCompressed &&
-                    storageFlags != Lz4BlockFlagRle)
+                    storageFlags != Lz4BlockFlagRle &&
+                    storageFlags != Lz4BlockFlagRleLegacy)
                     return false;
 
                 uint crc = 0xFFFFFFFFu;
@@ -1149,6 +1332,202 @@ namespace Hecton8.SaveSystem
             }
 
             return stream.Position == payloadEnd;
+        }
+
+        private static unsafe bool TryDecodeStoredSubBlocks(
+            byte* source,
+            int storedBytes,
+            byte* destination,
+            int expectedRawBytes,
+            out int decodedBlocks)
+        {
+            decodedBlocks = 0;
+            if (source == null || destination == null || storedBytes <= 0 || expectedRawBytes <= 0)
+                return false;
+
+            int read = 0;
+            int rawWrite = 0;
+            int headerByteCount = UnsafeUtility.SizeOf<Lz4SubBlockHeader>();
+            while (read < storedBytes)
+            {
+                if (storedBytes - read < headerByteCount)
+                    return false;
+
+                Lz4SubBlockHeader header = ReadLz4SubBlockHeaderLittleEndian(source + read);
+                read += headerByteCount;
+                if (header.Magic != Lz4BlockMagic ||
+                    header.Version != Lz4BlockVersion ||
+                    header.HeaderBytes != headerByteCount ||
+                    header.RawBytes <= 0 ||
+                    header.StoredBytes <= 0 ||
+                    header.StoredBytes > header.RawBytes ||
+                    header.SourceOffsetBytes != rawWrite ||
+                    read > storedBytes - header.StoredBytes ||
+                    rawWrite > expectedRawBytes - header.RawBytes)
+                {
+                    return false;
+                }
+
+                byte* payload = source + read;
+                if (ComputeCrc32(payload, header.StoredBytes) != header.Crc32)
+                    return false;
+
+                uint storageFlags = header.Flags & (Lz4BlockFlagRaw | Lz4BlockFlagCompressed | Lz4BlockFlagRle | Lz4BlockFlagRleLegacy);
+                byte* blockDestination = destination + header.SourceOffsetBytes;
+                if (storageFlags == Lz4BlockFlagRaw)
+                {
+                    if (header.StoredBytes != header.RawBytes)
+                        return false;
+
+                    UnsafeUtility.MemCpy(blockDestination, payload, header.RawBytes);
+                }
+                else if (storageFlags == Lz4BlockFlagRle || storageFlags == Lz4BlockFlagRleLegacy)
+                {
+                    if (!TryDecodeRleBlock(payload, header.StoredBytes, blockDestination, header.RawBytes))
+                        return false;
+                }
+                else if (storageFlags == Lz4BlockFlagCompressed)
+                {
+                    if (!TryDecodeLz4Block(payload, header.StoredBytes, blockDestination, header.RawBytes))
+                        return false;
+                }
+                else
+                {
+                    return false;
+                }
+
+                read = Align16(read + header.StoredBytes);
+                if (read > storedBytes)
+                    return false;
+
+                rawWrite += header.RawBytes;
+                decodedBlocks++;
+            }
+
+            return read == storedBytes && rawWrite == expectedRawBytes;
+        }
+
+        private static unsafe bool TryDecodeRleBlock(byte* input, int inputBytes, byte* output, int expectedOutputBytes)
+        {
+            int read = 0;
+            int write = 0;
+            while (read < inputBytes)
+            {
+                if (inputBytes - read < 3)
+                    return false;
+
+                byte value = input[read++];
+                int run = input[read] | (input[read + 1] << 8);
+                read += 2;
+                if (run <= 0 || write > expectedOutputBytes - run)
+                    return false;
+
+                for (int i = 0; i < run; i++)
+                    output[write++] = value;
+            }
+
+            return read == inputBytes && write == expectedOutputBytes;
+        }
+
+        private static unsafe bool TryDecodeLz4Block(byte* input, int inputBytes, byte* output, int expectedOutputBytes)
+        {
+            int read = 0;
+            int write = 0;
+            while (read < inputBytes)
+            {
+                byte token = input[read++];
+                int literalLength = token >> 4;
+                if (!TryReadLz4Length(input, inputBytes, ref read, ref literalLength))
+                    return false;
+
+                if (literalLength < 0 || write > expectedOutputBytes - literalLength || read > inputBytes - literalLength)
+                    return false;
+
+                for (int i = 0; i < literalLength; i++)
+                    output[write++] = input[read++];
+
+                if (read == inputBytes)
+                    break;
+
+                if (inputBytes - read < 2)
+                    return false;
+
+                int offset = input[read] | (input[read + 1] << 8);
+                read += 2;
+                if (offset <= 0 || offset > write)
+                    return false;
+
+                int matchLength = token & 0x0F;
+                if (!TryReadLz4Length(input, inputBytes, ref read, ref matchLength))
+                    return false;
+
+                matchLength += 4;
+                if (write > expectedOutputBytes - matchLength)
+                    return false;
+
+                int match = write - offset;
+                for (int i = 0; i < matchLength; i++)
+                    output[write++] = output[match + i];
+            }
+
+            return read == inputBytes && write == expectedOutputBytes;
+        }
+
+        private static unsafe bool PointerRangesOverlap(byte* left, int leftBytes, byte* right, int rightBytes)
+        {
+            if (left == null || right == null || leftBytes <= 0 || rightBytes <= 0)
+                return false;
+
+            ulong leftStart = (ulong)left;
+            ulong rightStart = (ulong)right;
+            ulong leftEnd = leftStart + (ulong)leftBytes;
+            ulong rightEnd = rightStart + (ulong)rightBytes;
+            return leftStart < rightEnd && rightStart < leftEnd;
+        }
+
+        private static unsafe bool TryReadLz4Length(byte* input, int inputBytes, ref int read, ref int length)
+        {
+            if (length < 15)
+                return true;
+
+            int value;
+            do
+            {
+                if (read >= inputBytes || length > int.MaxValue - 255)
+                    return false;
+
+                value = input[read++];
+                length += value;
+            }
+            while (value == 255);
+
+            return true;
+        }
+
+        private static void WriteReplayCounters(
+            NativeArray<int> counters,
+            int records,
+            int bytes,
+            int blocks,
+            int corruptBlocks,
+            int storedBytes,
+            bool failed)
+        {
+            if (!counters.IsCreated)
+                return;
+
+            if (counters.Length > CounterRecords)
+                counters[CounterRecords] = records;
+            if (counters.Length > CounterBytes)
+                counters[CounterBytes] = bytes;
+            if (counters.Length > CounterBlockCount)
+                counters[CounterBlockCount] = blocks;
+            if (counters.Length > CounterFailure)
+                counters[CounterFailure] = failed ? 1 : 0;
+            if (counters.Length > CounterStoredBytes)
+                counters[CounterStoredBytes] = storedBytes;
+            if (counters.Length > CounterDroppedCosmeticRecords)
+                counters[CounterDroppedCosmeticRecords] = corruptBlocks;
         }
 
         private static bool TryUpdateCrcFromStream(FileStream stream, int byteCount, ref uint crc)
@@ -1178,6 +1557,198 @@ namespace Hecton8.SaveSystem
             }
 
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteWalAppendHeaderLittleEndian(byte* destination, in SaveMerkleWalAppendHeader header)
+        {
+            WriteLongLittleEndian(destination, 0, header.LogicalOffset);
+            WriteLongLittleEndian(destination, 8, header.TimestampTicks);
+            WriteULongLittleEndian(destination, 16, header.RootHashLo);
+            WriteULongLittleEndian(destination, 24, header.RootHashHi);
+            WriteIntLittleEndian(destination, 32, header.RawBytes);
+            WriteIntLittleEndian(destination, 36, header.StoredBytes);
+            WriteUIntLittleEndian(destination, 40, header.Magic);
+            WriteUIntLittleEndian(destination, 44, header.Flags);
+            WriteUIntLittleEndian(destination, 48, header.BlockCount);
+            WriteUIntLittleEndian(destination, 52, header.Frame);
+            WriteUIntLittleEndian(destination, 56, header.RecordCrc32);
+            WriteUShortLittleEndian(destination, 60, header.Version);
+            WriteUShortLittleEndian(destination, 62, header.HeaderBytes);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteEmergencyHeaderLittleEndian(byte* destination, in SaveMerkleEmergencyHeader64 header)
+        {
+            WriteULongLittleEndian(destination, 0, header.TimestampTicks);
+            WriteULongLittleEndian(destination, 8, header.RootHashLo);
+            WriteULongLittleEndian(destination, 16, header.RootHashHi);
+            WriteULongLittleEndian(destination, 24, header._pad0);
+            WriteULongLittleEndian(destination, 32, header._pad1);
+            WriteUIntLittleEndian(destination, 40, header.Magic);
+            WriteUIntLittleEndian(destination, 44, header.SectorEntryBytes);
+            WriteUIntLittleEndian(destination, 48, header.MerkleNodeBytes);
+            WriteUIntLittleEndian(destination, 52, header.Flags);
+            WriteUIntLittleEndian(destination, 56, header.Checksum);
+            WriteUShortLittleEndian(destination, 60, header.Version);
+            WriteUShortLittleEndian(destination, 62, header.HeaderBytes);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe SaveMerkleWalAppendHeader ReadWalAppendHeaderLittleEndian(byte* source)
+        {
+            return new SaveMerkleWalAppendHeader
+            {
+                LogicalOffset = ReadLongLittleEndian(source, 0),
+                TimestampTicks = ReadLongLittleEndian(source, 8),
+                RootHashLo = ReadULongLittleEndian(source, 16),
+                RootHashHi = ReadULongLittleEndian(source, 24),
+                RawBytes = ReadIntLittleEndian(source, 32),
+                StoredBytes = ReadIntLittleEndian(source, 36),
+                Magic = ReadUIntLittleEndian(source, 40),
+                Flags = ReadUIntLittleEndian(source, 44),
+                BlockCount = ReadUIntLittleEndian(source, 48),
+                Frame = ReadUIntLittleEndian(source, 52),
+                RecordCrc32 = ReadUIntLittleEndian(source, 56),
+                Version = ReadUShortLittleEndian(source, 60),
+                HeaderBytes = ReadUShortLittleEndian(source, 62)
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteLz4SubBlockHeaderLittleEndian(byte* destination, Lz4SubBlockHeader header)
+        {
+            WriteUIntLittleEndian(destination, 0, header.Magic);
+            WriteIntLittleEndian(destination, 4, header.RawBytes);
+            WriteIntLittleEndian(destination, 8, header.StoredBytes);
+            WriteIntLittleEndian(destination, 12, header.SourceOffsetBytes);
+            WriteUIntLittleEndian(destination, 16, header.Crc32);
+            WriteUIntLittleEndian(destination, 20, header.Flags);
+            WriteUShortLittleEndian(destination, 24, header.Version);
+            WriteUShortLittleEndian(destination, 26, header.HeaderBytes);
+            WriteUIntLittleEndian(destination, 28, header._pad0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe Lz4SubBlockHeader ReadLz4SubBlockHeaderLittleEndian(byte* source)
+        {
+            return new Lz4SubBlockHeader
+            {
+                Magic = ReadUIntLittleEndian(source, 0),
+                RawBytes = ReadIntLittleEndian(source, 4),
+                StoredBytes = ReadIntLittleEndian(source, 8),
+                SourceOffsetBytes = ReadIntLittleEndian(source, 12),
+                Crc32 = ReadUIntLittleEndian(source, 16),
+                Flags = ReadUIntLittleEndian(source, 20),
+                Version = ReadUShortLittleEndian(source, 24),
+                HeaderBytes = ReadUShortLittleEndian(source, 26),
+                _pad0 = ReadUIntLittleEndian(source, 28)
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteStateDeltaRecordLittleEndian(byte* destination, in StateDeltaRecordDTO record)
+        {
+            WriteULongLittleEndian(destination, 0, record.PreviousHashLo);
+            WriteULongLittleEndian(destination, 8, record.PreviousHashHi);
+            WriteULongLittleEndian(destination, 16, record.NewHashLo);
+            WriteULongLittleEndian(destination, 24, record.NewHashHi);
+            WriteIntLittleEndian(destination, 32, record.SourceOffsetBytes);
+            WriteIntLittleEndian(destination, 36, record.DataLength);
+            WriteIntLittleEndian(destination, 40, record.DeltaPayloadOffset);
+            WriteIntLittleEndian(destination, 44, record.CompressedOffset);
+            WriteUIntLittleEndian(destination, 48, record.SectorKey);
+            WriteUIntLittleEndian(destination, 52, record.Flags);
+            WriteUIntLittleEndian(destination, 56, record.Crc32);
+            WriteUIntLittleEndian(destination, 60, record._pad0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe StateDeltaRecordDTO ReadStateDeltaRecordLittleEndian(byte* source)
+        {
+            return new StateDeltaRecordDTO
+            {
+                PreviousHashLo = ReadULongLittleEndian(source, 0),
+                PreviousHashHi = ReadULongLittleEndian(source, 8),
+                NewHashLo = ReadULongLittleEndian(source, 16),
+                NewHashHi = ReadULongLittleEndian(source, 24),
+                SourceOffsetBytes = ReadIntLittleEndian(source, 32),
+                DataLength = ReadIntLittleEndian(source, 36),
+                DeltaPayloadOffset = ReadIntLittleEndian(source, 40),
+                CompressedOffset = ReadIntLittleEndian(source, 44),
+                SectorKey = ReadUIntLittleEndian(source, 48),
+                Flags = ReadUIntLittleEndian(source, 52),
+                Crc32 = ReadUIntLittleEndian(source, 56),
+                _pad0 = ReadUIntLittleEndian(source, 60)
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteULongLittleEndian(byte* ptr, int offset, ulong value)
+        {
+            WriteUIntLittleEndian(ptr, offset, unchecked((uint)value));
+            WriteUIntLittleEndian(ptr, offset + 4, unchecked((uint)(value >> 32)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteLongLittleEndian(byte* ptr, int offset, long value)
+        {
+            WriteULongLittleEndian(ptr, offset, unchecked((ulong)value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteUIntLittleEndian(byte* ptr, int offset, uint value)
+        {
+            ptr[offset] = unchecked((byte)value);
+            ptr[offset + 1] = unchecked((byte)(value >> 8));
+            ptr[offset + 2] = unchecked((byte)(value >> 16));
+            ptr[offset + 3] = unchecked((byte)(value >> 24));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteIntLittleEndian(byte* ptr, int offset, int value)
+        {
+            WriteUIntLittleEndian(ptr, offset, unchecked((uint)value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteUShortLittleEndian(byte* ptr, int offset, ushort value)
+        {
+            ptr[offset] = unchecked((byte)value);
+            ptr[offset + 1] = unchecked((byte)(value >> 8));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe ulong ReadULongLittleEndian(byte* ptr, int offset)
+        {
+            return ReadUIntLittleEndian(ptr, offset) | ((ulong)ReadUIntLittleEndian(ptr, offset + 4) << 32);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe long ReadLongLittleEndian(byte* ptr, int offset)
+        {
+            return unchecked((long)ReadULongLittleEndian(ptr, offset));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe uint ReadUIntLittleEndian(byte* ptr, int offset)
+        {
+            return ptr[offset] |
+                   ((uint)ptr[offset + 1] << 8) |
+                   ((uint)ptr[offset + 2] << 16) |
+                   ((uint)ptr[offset + 3] << 24);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe int ReadIntLittleEndian(byte* ptr, int offset)
+        {
+            return unchecked((int)ReadUIntLittleEndian(ptr, offset));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe ushort ReadUShortLittleEndian(byte* ptr, int offset)
+        {
+            return (ushort)(ptr[offset] | (ptr[offset + 1] << 8));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1217,7 +1788,7 @@ namespace Hecton8.SaveSystem
             return ~crc;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct MockInventoryDataGeneratorJob : IJobParallelFor
         {
             [NoAlias]
@@ -1256,7 +1827,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct MockInventoryMutationJob : IJob
         {
             [NoAlias]
@@ -1279,7 +1850,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct MockInventoryLeafDescriptorJob : IJobParallelFor
         {
             [NoAlias]
@@ -1310,7 +1881,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct DearLieDehydrationJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<double3> AbsoluteUniverseMeters;
@@ -1367,7 +1938,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct MerkleLeafHashJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<byte> SourceBytes;
@@ -1403,7 +1974,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct MerkleBranchReductionJob : IJob
         {
             [NoAlias]
@@ -1447,7 +2018,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct MerkleChangedLeafExtractionJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<byte> SourceBytes;
@@ -1536,7 +2107,7 @@ namespace Hecton8.SaveSystem
                     };
 
                     DeltaRecords[recordCount] = record;
-                    UnsafeUtility.MemCpy(deltaPtr + byteCursor, &record, headerBytes);
+                    WriteStateDeltaRecordLittleEndian(deltaPtr + byteCursor, record);
                     UnsafeUtility.MemCpy(deltaPtr + byteCursor + headerBytes, sourcePtr + descriptor.SourceOffsetBytes, descriptor.ByteLength);
                     byteCursor += required;
                     recordCount++;
@@ -1549,7 +2120,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct CopyMerkleTreeJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<MerkleNodeDTO> Source;
@@ -1569,7 +2140,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct EnsureCommittedBaselineJob : IJob
         {
             [NoAlias]
@@ -1593,7 +2164,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct TombstonePruneJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<byte> SourceRecords;
@@ -1645,7 +2216,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct Lz4SubBlockCompressionJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<byte> Source;
@@ -1762,7 +2333,7 @@ namespace Hecton8.SaveSystem
                     };
 
                     BlockHeaders[blockIndex] = header;
-                    UnsafeUtility.MemCpy(destinationPtr + headerOffset, &header, headerBytes);
+                    WriteLz4SubBlockHeaderLittleEndian(destinationPtr + headerOffset, header);
                     write = Align16(payloadOffset + storedBytes);
                     if (write > Destination.Length)
                     {
@@ -1975,7 +2546,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct CosmeticDeltaPayloadPruneJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<byte> SourceDeltaBytes;
@@ -2037,7 +2608,7 @@ namespace Hecton8.SaveSystem
                         break;
                     }
 
-                    StateDeltaRecordDTO record = UnsafeUtility.ReadArrayElement<StateDeltaRecordDTO>(sourcePtr + read, 0);
+                    StateDeltaRecordDTO record = ReadStateDeltaRecordLittleEndian(sourcePtr + read);
                     int payloadStart = record.DeltaPayloadOffset;
                     int payloadLength = record.DataLength;
                     if (payloadLength < 0 ||
@@ -2075,7 +2646,7 @@ namespace Hecton8.SaveSystem
                     int newPayloadStart = write + headerGapBytes;
                     record.DeltaPayloadOffset = newPayloadStart;
                     record.CompressedOffset = -1;
-                    UnsafeUtility.WriteArrayElement(destinationPtr + write, 0, record);
+                    WriteStateDeltaRecordLittleEndian(destinationPtr + write, record);
                     if (headerGapBytes > headerBytes)
                     {
                         UnsafeUtility.MemMove(
@@ -2103,7 +2674,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct TelemetryWriteJob : IJob
         {
             [NoAlias]

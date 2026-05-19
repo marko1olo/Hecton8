@@ -24,7 +24,7 @@ Current-state boundary:
 
 - This document defines the required dispatch contract.
 - It is not proof that all current sources comply.
-- `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` supersedes the older literal `.Complete()` call-site list. Current strict grep finds dispatcher request completion callbacks in `ItemCatalog.cs` / `AssetLifecycleGovernor.cs` and one explicit `JobHandle.Complete()` in `World/DispatcherJobSwap.cs`.
+- `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` supersedes the older literal `.Complete()` call-site list. Last documented strict grep reported dispatcher request completion callbacks in `ItemCatalog.cs` / `AssetLifecycleGovernor.cs` and explicit `JobHandle.Complete()` calls inside `World/DispatcherJobSwap.cs`; rerun and link command output, timestamp, and environment before calling that inventory current.
 - Any future edit must keep job barriers inside explicit dispatcher-owned swap windows or document why the owner is a permitted end-window.
 
 ## 2026-05-18 SHINOBU_40 Master Dispatcher Addendum
@@ -42,7 +42,7 @@ Evidence class: STATIC_SOURCE / CLI_COMPILE_BLOCKED_BY_EXTERNAL_DEPENDENCY.
 - A 300-frame dispatcher pipeline ring records PreSim, SimWait, PostSim, and VisualSync timings and dumps `Docs/AgentLogs/Dump_SYSTEM_DISPATCHER.bin` when SimWait exceeds 8 ms.
 - `Execution Pipeline X-Ray` is an Editor-only facade for phase bars and the 64-cell bucket grid.
 
-Current verification boundary: focused `Hecton8.Core.csproj` compile is blocked by external `GlobalPhysicsStateManager.cs` missing `WakeRequestSignal`; no SHINOBU_40 file appeared in the compiler errors. This is not Play Mode, profiler, GC, or runtime proof.
+Current verification boundary: R27 static source recheck preserves the R26 finding that `WakeRequestSignal`, `GlobalPhysicsStateManager.WakeRequests.cs`, and the `SignalBus<WakeRequestSignal>` lane in `GlobalSignals.cs` exist, so the older missing-symbol blocker is historical. Current static gates: `Tools\AtlasCheck.py` remains red on `57` RealtimeCSG refs; `Docs\Modding\Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). No current compile, Play Mode, profiler, GC, or runtime proof is claimed until a fresh artifact links command, timestamp, environment, and output.
 
 ## Core Rule
 `Tick()` and `FixedTick()` may schedule jobs and read already-published front buffers.
@@ -51,6 +51,29 @@ Barrier recovery happens only inside explicit swap windows:
 
 - `SystemDispatcher.LateUpdate()` for frame jobs and other end-of-frame readers.
 - `SystemDispatcher` post-fixed lane for systems that need a fixed-step swap window.
+
+## 2026-05-19 Global Authority Dispatch Boundary
+
+Dispatcher phases are not a license to query global state live.
+
+Rules:
+
+- Systems registered with `SystemDispatcher` must cache `GlobalRegistry`
+  dependencies before hot dispatch.
+- If a dispatcher system needs live configuration, it consumes a cached
+  DataVault snapshot or typed changed signal, not a per-frame registry poll.
+- First-party cross-domain broadcasts raised by dispatcher phases use typed
+  `SignalBus<T>` lanes or documented NativeQueue bridge lanes.
+- `HectonEventBus` traffic inside dispatcher phases is allowed only for mod/API
+  results after `ModCommandDispatcher` isolation. It is not a gameplay bus.
+- Dispatcher-owned completion windows are the only accepted place for job
+  ownership recovery unless a cold teardown path is explicitly annotated.
+
+Cross-reference:
+
+- `GLOBAL_AUTHORITY_BOUNDARIES.md`
+- `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
+- `SYSTEM_INTERCONNECT_MATRIX.md`
 
 ## Frame Order
 The current runtime order is:
@@ -134,7 +157,7 @@ May 3 source guard:
 
 `.Run(` sites are not automatic violations. Treat them as migration candidates only after the owner has a front/back buffer, a late-frame or post-fixed publication window, and profiler evidence that synchronous execution is a real frame-time problem.
 
-`.Complete(` text hits are not all `JobHandle.Complete()`. Current source inventory still separates `dispatcher.Complete(...)` request callbacks from the explicit `handle.Complete()` inside `DispatcherJobSwap.TryComplete(...)`.
+`.Complete(` text hits are not all `JobHandle.Complete()`. The R27 source-counter inventory still separates `dispatcher.Complete(...)` request callbacks from the explicit `handle.Complete()` inside `DispatcherJobSwap.TryComplete(...)`; rerun before using the count as current source truth.
 
 ## ThreadSafeCommandQueue
 `ThreadSafeCommandQueue` exists for structural intent only.

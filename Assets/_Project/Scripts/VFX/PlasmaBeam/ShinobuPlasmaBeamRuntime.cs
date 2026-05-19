@@ -89,7 +89,7 @@ namespace Hecton8.VFX.PlasmaBeam
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public partial struct AcousticEchoTap : ISignal
+    public partial struct PlasmaBeamAcousticEchoTap : ISignal
     {
         [FieldOffset(0)] public float3 Position;
         [FieldOffset(12)] public float Intensity01;
@@ -201,7 +201,7 @@ namespace Hecton8.VFX.PlasmaBeam
         private VaultBufferHandle<PlasmaBeamIndirectArgsDTO> _argsHandle;
         private VaultBufferHandle<PlasmaBeamTelemetryEntry> _telemetryHandle;
         private VaultBufferHandle<MockLaserFireSignal> _mockSignalsHandle;
-        private VaultBufferHandle<AcousticEchoTap> _acousticTapsHandle;
+        private VaultBufferHandle<PlasmaBeamAcousticEchoTap> _acousticTapsHandle;
         private VaultBufferHandle<byte> _csvScratchHandle;
 
         private PreSimulationPhaseSystem _preSimulationPhase;
@@ -373,8 +373,8 @@ namespace Hecton8.VFX.PlasmaBeam
         {
             _shutdown = false;
             _vault = GlobalRegistry.DataVault;
-            SignalBus<AcousticEchoTap>.Configure(MaxBeamCount, maxFrameSignals: MaxBeamCount, lowTierFrameSignals: 4, laneHash: 0x504C4153u);
-            SignalBus<AcousticEchoTap>.EnsureInitialized();
+            SignalBus<PlasmaBeamAcousticEchoTap>.Configure(MaxBeamCount, maxFrameSignals: MaxBeamCount, lowTierFrameSignals: 4, laneHash: 0x504C4153u);
+            SignalBus<PlasmaBeamAcousticEchoTap>.EnsureInitialized();
             EnsureGraphicsResources(allowAllocation: true);
             RegisterDispatcherPhases();
             Application.quitting -= ShutdownActive;
@@ -480,7 +480,7 @@ namespace Hecton8.VFX.PlasmaBeam
             NativeArray<PlasmaBeamIndirectArgsDTO> args = _argsHandle.Resolve(vault);
             NativeArray<PlasmaBeamTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
             NativeArray<MockLaserFireSignal> mockSignals = _mockSignalsHandle.Resolve(vault);
-            NativeArray<AcousticEchoTap> acousticTaps = _acousticTapsHandle.Resolve(vault);
+            NativeArray<PlasmaBeamAcousticEchoTap> acousticTaps = _acousticTapsHandle.Resolve(vault);
 
             if (!states.IsCreated || !vertices.IsCreated || !trig.IsCreated || !scalars.IsCreated ||
                 !args.IsCreated || !telemetry.IsCreated || !mockSignals.IsCreated || !acousticTaps.IsCreated)
@@ -555,7 +555,7 @@ namespace Hecton8.VFX.PlasmaBeam
 
             NativeArray<PlasmaBeamIndirectArgsDTO> args = _argsHandle.Resolve(vault);
             NativeArray<PlasmaBeamTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            NativeArray<AcousticEchoTap> taps = _acousticTapsHandle.Resolve(vault);
+            NativeArray<PlasmaBeamAcousticEchoTap> taps = _acousticTapsHandle.Resolve(vault);
             if (args.IsCreated && args.Length > 0)
                 _lastVertexCount = (int)math.min(args[0].VertexCountPerInstance, (uint)MaxVertexCount);
 
@@ -579,9 +579,9 @@ namespace Hecton8.VFX.PlasmaBeam
                 int tapCount = math.min(_lastActiveBeamCount, taps.Length);
                 for (int i = 0; i < tapCount; i++)
                 {
-                    AcousticEchoTap tap = taps[i];
+                    PlasmaBeamAcousticEchoTap tap = taps[i];
                     if (tap.Intensity01 > 0.001f)
-                        SignalBus<AcousticEchoTap>.TryPush(in tap);
+                        SignalBus<PlasmaBeamAcousticEchoTap>.TryPush(in tap);
                 }
             }
 
@@ -643,7 +643,7 @@ namespace Hecton8.VFX.PlasmaBeam
             _argsHandle = vault.GetBufferHandle<PlasmaBeamIndirectArgsDTO>(BufferID.ShinobuPlasmaBeamIndirectArgs, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _telemetryHandle = vault.GetBufferHandle<PlasmaBeamTelemetryEntry>(BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
             _mockSignalsHandle = vault.GetBufferHandle<MockLaserFireSignal>(BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _acousticTapsHandle = vault.GetBufferHandle<AcousticEchoTap>(BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _acousticTapsHandle = vault.GetBufferHandle<PlasmaBeamAcousticEchoTap>(BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _csvScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuPlasmaBeamCsvScratch, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
 
             _vaultInitialized = _statesHandle.IsCreated &&
@@ -1101,7 +1101,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 UnsafeUtility.SizeOf<BeamTrigLutEntry>() == 8 &&
                 UnsafeUtility.SizeOf<PlasmaBeamRuntimeScalarsDTO>() == 64 &&
                 UnsafeUtility.SizeOf<MockLaserFireSignal>() == 64 &&
-                UnsafeUtility.SizeOf<AcousticEchoTap>() == 32 &&
+                UnsafeUtility.SizeOf<PlasmaBeamAcousticEchoTap>() == 32 &&
                 UnsafeUtility.SizeOf<PlasmaBeamIndirectArgsDTO>() == 16 &&
                 UnsafeUtility.SizeOf<PlasmaBeamTelemetryEntry>() == 64;
         }
@@ -1490,7 +1490,7 @@ namespace Hecton8.VFX.PlasmaBeam
         [NoAlias] public NativeArray<PlasmaBeamRuntimeScalarsDTO> Scalars;
         [NoAlias] public NativeArray<PlasmaBeamIndirectArgsDTO> Args;
         [NoAlias] public NativeArray<PlasmaBeamTelemetryEntry> TelemetryRing;
-        [NoAlias] public NativeArray<AcousticEchoTap> AcousticTaps;
+        [NoAlias] public NativeArray<PlasmaBeamAcousticEchoTap> AcousticTaps;
         public uint Frame;
         public int TelemetryFrameCountValue;
 
@@ -1546,7 +1546,7 @@ namespace Hecton8.VFX.PlasmaBeam
 
                 if (AcousticTaps.IsCreated && i < AcousticTaps.Length)
                 {
-                    AcousticEchoTap tap = default;
+                    PlasmaBeamAcousticEchoTap tap = default;
                     tap.Position = end;
                     tap.Intensity01 = math.saturate(state.NoiseAmplitude * math.lerp(4.0f, 22.0f, q) * math.saturate(state.HeatLevel));
                     tap.BeamId = state.BeamId;

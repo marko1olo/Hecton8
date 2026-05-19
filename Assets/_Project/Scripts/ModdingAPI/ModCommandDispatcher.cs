@@ -103,55 +103,60 @@ namespace Hecton8.Modding
     /// Header: 8 bytes. Payload: seven 64-bit words = 56 bytes. Total: 64 bytes.
     /// Payload0 packs ModHash in bits 0..31 and RequestId in bits 32..63.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ModCommand
     {
         /// <summary>16-bit command opcode.</summary>
+        [FieldOffset(0)]
         public ushort Opcode;
 
         /// <summary>16-bit target system identifier.</summary>
+        [FieldOffset(2)]
         public ushort TargetSystem;
 
         /// <summary>16-bit command flags.</summary>
+        [FieldOffset(4)]
         public ushort Flags;
 
         /// <summary>16-bit mod API version captured at enqueue time.</summary>
+        [FieldOffset(6)]
         public ushort ApiVersion;
 
         /// <summary>Payload word 0. Low 32 bits = mod hash. High 32 bits = request id.</summary>
+        [FieldOffset(8)]
         public ulong Payload0;
 
+        /// <summary>Stable hash of the mod that requested this command.</summary>
+        [FieldOffset(8)]
+        public uint ModHash;
+
+        /// <summary>Mod-local request identifier.</summary>
+        [FieldOffset(12)]
+        public uint RequestId;
+
         /// <summary>Payload word 1.</summary>
+        [FieldOffset(16)]
         public ulong Payload1;
 
         /// <summary>Payload word 2.</summary>
+        [FieldOffset(24)]
         public ulong Payload2;
 
         /// <summary>Payload word 3.</summary>
+        [FieldOffset(32)]
         public ulong Payload3;
 
         /// <summary>Payload word 4.</summary>
+        [FieldOffset(40)]
         public ulong Payload4;
 
         /// <summary>Payload word 5.</summary>
+        [FieldOffset(48)]
         public ulong Payload5;
 
         /// <summary>Payload word 6.</summary>
+        [FieldOffset(56)]
         public ulong Payload6;
-
-        /// <summary>Stable hash of the mod that requested this command.</summary>
-        public uint ModHash
-        {
-            readonly get => unchecked((uint)(Payload0 & 0xFFFFFFFFUL));
-            set => Payload0 = (Payload0 & 0xFFFFFFFF00000000UL) | value;
-        }
-
-        /// <summary>Mod-local request identifier.</summary>
-        public uint RequestId
-        {
-            readonly get => unchecked((uint)(Payload0 >> 32));
-            set => Payload0 = (Payload0 & 0x00000000FFFFFFFFUL) | ((ulong)value << 32);
-        }
     }
 
     /// <summary>
@@ -209,6 +214,7 @@ namespace Hecton8.Modding
         private const ushort FutureKernelReservedTargetMax = 0x78FF;
         private const uint MemorySentinelModMaskLaneHash = 0x4D4D534Bu; // MMSK
         private const uint MemorySentinelModMaskSourceHash = 0x53483738u; // SH78
+        private static readonly bool LegacyCommandSurfaceEnabled = false;
         private const int AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
         private const double SpawnConflictEpsilonSq = 0.25d;
         private const long ModHeapQuotaBytes = 16L * 1024L * 1024L;
@@ -292,6 +298,10 @@ namespace Hecton8.Modding
 
         internal static void Initialize()
         {
+            FutureCommandSandboxValidator.Initialize();
+            if (!LegacyCommandSurfaceEnabled)
+                return;
+
             if (!_pendingCommands.IsCreated)
             {
                 _pendingCommands = new NativeQueue<ModCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModCommand>[4096] - sandboxed mod command ring buffer - owner: ModCommandDispatcher
@@ -352,7 +362,6 @@ namespace Hecton8.Modding
                 NativeMemorySentinel.RegisterNativeHashMap(_kernelIndexByCommandKey, nameof(ModCommandDispatcher), nameof(_kernelIndexByCommandKey), NativeAllocationLifetime.Session);
             }
 
-            FutureCommandSandboxValidator.Initialize();
         }
 
         internal static void Shutdown()
@@ -430,6 +439,9 @@ namespace Hecton8.Modding
 
         internal static void RegisterMod(string modId, int apiVersion, int priority)
         {
+            if (!LegacyCommandSurfaceEnabled)
+                return;
+
             uint modHash = ComputeModHash(modId);
             if (modHash == 0u)
                 return;
@@ -545,6 +557,9 @@ namespace Hecton8.Modding
 
         internal static void ReportModManagedAllocation(uint modHash, long allocatedBytes)
         {
+            if (!LegacyCommandSurfaceEnabled)
+                return;
+
             if (modHash == 0u || allocatedBytes <= 0L || !_modStatesByHash.IsCreated)
                 return;
 
@@ -590,6 +605,9 @@ namespace Hecton8.Modding
             ModCommandTargetSystem targetSystem,
             IModCommandKernel kernel)
         {
+            if (!LegacyCommandSurfaceEnabled)
+                return false;
+
             if (kernel == null ||
                 opcode == ModCommandOpcode.None ||
                 targetSystem == ModCommandTargetSystem.None ||
@@ -620,6 +638,9 @@ namespace Hecton8.Modding
         /// <returns>True when the command entered the queue.</returns>
         public static bool Request(in ModCommand command)
         {
+            if (!LegacyCommandSurfaceEnabled)
+                return false;
+
             if (!ModExecutionScope.HasActiveMod)
                 throw new IllegalContractException("Mod commands must be requested from an active mod execution scope.");
 
@@ -666,6 +687,9 @@ namespace Hecton8.Modding
         /// <returns>True when queued.</returns>
         public static bool RequestAup(in ModAupCommand command)
         {
+            if (!LegacyCommandSurfaceEnabled)
+                return false;
+
             if (!ModExecutionScope.HasActiveMod)
                 throw new IllegalContractException("AUP mod commands must be requested from an active mod execution scope.");
 
@@ -706,6 +730,9 @@ namespace Hecton8.Modding
         /// <returns>True when queued.</returns>
         public static bool RequestRenderInstance(in ModRenderInstanceCommand command)
         {
+            if (!LegacyCommandSurfaceEnabled)
+                return false;
+
             if (!ModExecutionScope.HasActiveMod)
                 throw new IllegalContractException("Mod render commands must be requested from an active mod execution scope.");
 
@@ -740,6 +767,12 @@ namespace Hecton8.Modding
         /// </summary>
         internal static void DrainLateFrame()
         {
+            if (!LegacyCommandSurfaceEnabled)
+            {
+                FutureCommandSandboxValidator.DrainLateFrame();
+                return;
+            }
+
             FlushDeferredEventQueues();
             DrainRenderCommands();
             FutureCommandSandboxValidator.DrainLateFrame();
@@ -751,6 +784,9 @@ namespace Hecton8.Modding
         internal static void DrainPreSimulation()
         {
             FutureCommandSandboxValidator.DrainPreSimulation();
+            if (!LegacyCommandSurfaceEnabled)
+                return;
+
             DrainAupCommands();
             DrainStandardCommands();
         }

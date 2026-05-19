@@ -17,6 +17,10 @@ This document is active only where it agrees with:
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
+## 2026-05-19 DOC_GLOBAL R28 Interior Note
+
+R28 reread confirmed this matrix remains static scalability-policy orientation, not profiler, device, VRAM, or frame-time proof. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`, with R27 source counters retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `57` RealtimeCSG vendor references; `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). Unity/runtime/profiler/player-build proof remains absent.
+
 Owners: `DistanceMath`, `GlobalRegistry`, `GameBootstrapper`, shader keywords
 
 ## Continuous Scalability Contract
@@ -160,6 +164,8 @@ The human tuning facade is backed by `BufferID.ShinobuScalabilityTunerState`, no
 
 Tuner values are finite-sanitized at every facade boundary. Invalid target frame time falls back to the contract target, invalid emergency threshold falls back to the default threshold, and invalid forced quality disables the override instead of feeding NaN into `GlobalQualityWeight`.
 
+Public scalar and snapshot reads are also finite-sanitized. `FractionalTimeSlice` and render scale are derived from the repaired `GlobalQualityWeight` at readback time, not accepted as stale cached scalars. `TryGetHardwareDictatorSnapshot` read-repairs `SystemHealthDTO` and `ScalabilityStateDTO` in `GlobalDataVault`; `TryGetMockTerrainSamplerStatus` read-repairs the mock proof to the canonical `weight` / `1 - weight` pair. Crash dump serialization clamps invalid telemetry rows to finite fallback values and marks them with the high bit of the existing `Flags` lane (`ScalabilityTelemetryFlagSanitized`) instead of writing NaN into `.bin` / `.h8dump` evidence.
+
 Frame-time samples that are not finite and positive are not accepted as proof of headroom. The dictator falls back to target frame time for controller, DTO, and DRS publication rather than allowing cleared `0ms` state to accelerate recovery.
 
 Deterministic stochastic decimation has exact endpoints: `GlobalQualityWeight <= 0` executes no optional stochastic work, `>= 1` executes all optional stochastic work, and intermediate weights use strict probability comparison.
@@ -169,6 +175,12 @@ The exported stochastic threshold is saturated at the public boundary. Consumers
 The 300-frame telemetry ring stores only finite positive frame samples. Invalid, zero, or negative frame-time input is replaced with the current target frame time before persistence, keeping blackbox evidence useful during boot, reset, and editor-forced transitions.
 
 The global culling multiplier is continuous as well: it lerps from `1.0` toward the configured low multiplier using the same low-pressure curve that drives `_MATH_LOD_LOW`. Binary culling mask bits are compatibility/telemetry only.
+
+Pressure-policy branches consume repaired scalars, not raw vault/static floats. `ApplyDictatorPressurePolicy` derives finite-safe system health and positive frame time once, then feeds emergency hysteresis, math-LOD pressure, visual-overkill promotion/revoke, culling squeeze, GC pulse policy, state DTO writes, and blackbox dump triggers from those values. Low culling multiplier and hardware SHI floor are sanitized before entering the continuous curves, so corrupt data fails toward conservative load shedding instead of false headroom.
+
+CSV curve hot reload is an editor control surface only. Player builds do not reserve `ShinobuScalabilityCsvScratch`, do not resolve the CSV scratch buffer, and do not perform frame-path file probing for `scalability_curves.csv`. The editor facade still parses into vault-owned scratch memory, preserving designer control without importing file I/O cadence into runtime scalability decisions.
+
+The editor tuner owns its transient leases. Closing `Continuous Scalability Tuner` during Play Mode clears forced quality, mock heavy load, and GC safe-base flags so hidden editor state cannot keep the 20 ms synthetic load active after the control surface is gone.
 
 ## Rule
 

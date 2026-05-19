@@ -1,10 +1,10 @@
 namespace Hecton8.Modding
 {
     /// <summary>
-    /// Entry contract for a managed HECTON-8 code mod.
-    /// The loader creates one instance of the implementing type, calls <see cref="OnLoad"/>,
-    /// later calls <see cref="OnInitialize"/> once gameplay bootstrap is ready, and finally
-    /// calls <see cref="OnUnload"/> during shutdown or domain reset.
+    /// Legacy managed HECTON-8 code mod contract retained for source compatibility.
+    /// Runtime UGC execution is quarantined; the loader disables managed entries while
+    /// envelope-only mode is enforced, and live commands must use 64-byte
+    /// <see cref="FutureCommandEnvelope"/> packets.
     /// </summary>
     public interface IHectonMod
     {
@@ -27,9 +27,8 @@ namespace Hecton8.Modding
     }
 
     /// <summary>
-    /// Required contract for managed code mods.
-    /// Loader rejects mods whose required API is newer than the engine facade.
-    /// Older API versions are accepted only through registered compatibility shims.
+    /// Legacy version marker for managed code mods.
+    /// It is ignored by the runtime UGC path while envelope-only mode is enforced.
     /// </summary>
     public interface IHectonVersionedMod : IHectonMod
     {

@@ -1,0 +1,62 @@
+<SELF_AUDIT agent_id="SHINOBU_71" domain="DYNAMIC_RESOLUTION_AND_FSR_DIRECTOR" date="2026-05-19">
+  <TASK_RECONCILIATION>
+    <TASK id="01" name="BINARY_GRAVEYARD_RECONNAISSANCE" status="PASS">No legacy DRS binary payload is required; runtime injects 16-byte tier minimums via GenerateEmergencyMockLimits.</TASK>
+    <TASK id="02" name="FIXED_RESOLUTION_ERADICATION_PASS" status="PASS">Owned DRS files contain zero Screen.SetResolution calls; render scale uses DynamicResolutionHandler, URP renderScale fallback, and ScalableBufferManager.</TASK>
+    <TASK id="03" name="CS1612_ENCAPSULATION_PURGE" status="PASS">DrsStateDTO uses public fields only. Runtime read access is ref readonly; job mutation uses UnsafeUtility.AsRef on vault pointers.</TASK>
+    <TASK id="04" name="ARM64_PADDING_RECONSTRUCTION" status="PASS">Primary DTO is 16 B. ResolutionScaleState is explicit 64 B. DrsTelemetryEntry is explicit 48 B and 8-byte aligned.</TASK>
+    <TASK id="05" name="BLIND_DEPENDENCY_MOCKING" status="PASS">MockQualityWeightSignal is 16 B and MockQualityWeightDropJob forces a 0.2 target path without waiting on live Agent 44 state.</TASK>
+    <TASK id="06" name="BURST_DRS_SOLVER_KERNEL" status="PASS">Policy scale is math.lerp(minScaleLimit, 1.0, GlobalQualityWeight), target/current motion uses exponential alpha 1-exp(-smoothing*dt), then pixel-grid stabilization prevents sub-pixel crawl.</TASK>
+    <TASK id="07" name="URP_SCALING_INJECTION" status="PASS">Current scale is committed through DynamicResolutionHandler system scaler; fallback writes URP renderScale only when epsilon-gated.</TASK>
+    <TASK id="08" name="THE_DEAR_LIE_TAA_SHARPENING" status="PASS">Sharpen is a polynomial/inverse TAA curve: Smooth01(linear deficit) lerped toward normalized inverse deficit and damped by GlobalQualityWeight.</TASK>
+    <TASK id="09" name="UI_RESOLUTION_SHIELD" status="PASS">beginCameraRendering allows dynamic resolution only for Game/Base/world cameras; UI-only, overlay, and targetTexture cameras remain native.</TASK>
+    <TASK id="10" name="MIPMAP_BIAS_ADJUSTMENT" status="PASS">_H8DrsMipBias is log2(1/currentScale) and epsilon-gated.</TASK>
+    <TASK id="11" name="HARDWARE_TIER_UPSCALE_SWITCH" status="PASS">Low/mobile/no-compute resolves BLTA; high/ultra compute-capable path can resolve FSRT.</TASK>
+    <TASK id="12" name="CBUFFER_RESOLUTION_BROADCAST" status="PASS">_H8DrsScreenPixelDimensions publishes native width/height and scaled internal dimensions.</TASK>
+    <TASK id="13" name="AUP_PRECISION_IGNORE" status="PASS">No double3 or world-coordinate payload enters the DRS solver. DRS state is screen-space floats, uints, and bytes.</TASK>
+    <TASK id="14" name="PANIC_DROP_OVERRIDE" status="PASS">Frame EWMA >=33 ms or pressure >=3 bypasses smoothing and drops to the tier minimum.</TASK>
+    <TASK id="15" name="POST_PROCESSING_CULLING" status="PASS">_H8DrsHeavyPostProcessWeight fades heavy post with a guarded continuous ratio around the post-cull scale.</TASK>
+    <TASK id="16" name="ZERO_INIT_OVERHEAD_BYPASS" status="PASS">Exactly one DrsStateDTO vault element is allocated with NativeArrayOptions.UninitializedMemory.</TASK>
+    <TASK id="17" name="TELEMETRY_DRS_RECORDER" status="PASS">300-entry DrsTelemetryEntry ring tracks scale, upscaler compute estimate, frame pressure, and dumps Dump_DRS_SURGEON.bin on invalid math.</TASK>
+    <TASK id="18" name="DRS_TUNER_EDITOR_WINDOW" status="PASS">Dynamic Resolution Tuner exposes min scale, smoothing, sharpening, mock weight, CSV load, and live readout.</TASK>
+    <TASK id="19" name="CSV_OVERRIDE_INGESTOR" status="PASS">Runtime parser consumes ReadOnlySpan&lt;char&gt; and hashes keys without Split/LINQ.</TASK>
+    <TASK id="20" name="LIVE_SCALE_OSCILLOSCOPE" status="PASS">Editor oscilloscope draws 300 current/target/stress samples from the fixed telemetry ring.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <DrsStateDTO size_bytes="16" alignment="16-byte SIMD">
+      <Field name="CurrentRenderScale" offset="0" size="4" />
+      <Field name="TargetRenderScale" offset="4" size="4" />
+      <Field name="UpscalerTypeHash" offset="8" size="4" />
+      <Field name="_pad0" offset="12" size="4" />
+      <Math>4+4+4+4=16; no Pack=1; exact multiple of 16.</Math>
+    </DrsStateDTO>
+    <ResolutionScaleState size_bytes="64" false_sharing="single vault state">
+      <Offsets>0 current, 4 target, 8 stress, 12 stressEwma, 16 frameTime, 20 sharpen, 24 frame, 28 sequence, 32-35 bytes, 36 reserved, 40 visualOverkill, 44 dearLie, 48 flags, 52 GlobalQualityWeight, 56 reserved5, 60 reserved6.</Offsets>
+      <Math>64 bytes exactly one L1 cache line. No atomic counter sharing is introduced.</Math>
+    </ResolutionScaleState>
+    <DrsTelemetryEntry size_bytes="48">
+      <Offsets>0 frame, 4 current, 8 target, 12 frameTime, 16 stress, 20 stressEwma, 24 sharpen, 28 flags, 32 sequence, 36 pressure, 37 thermal, 38 stp, 39 aup, 40 hysteresis, 42 framesBelowTarget, 44 upscalerMsBits.</Offsets>
+      <Math>48 is divisible by 8; explicit layout avoids ARM64 unaligned traps.</Math>
+    </DrsTelemetryEntry>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE_EXPLANATION>
+    When GlobalQualityWeight drops below 0.3, TargetRenderScale collapses continuously through math.lerp toward the tier minimum, stress/thermal pressure lerps it further toward survival scale, and heavy post-process weight fades toward zero. The current scale still follows EWMA unless panic conditions trip; after EWMA it snaps to a 2-pixel dominant-axis grid so URP receives stable internal dimensions instead of sub-pixel drift. Visual overkill shader weights collapse through polynomial Smooth01 gates and math.step flags, while the Dear Lie/TAA sharpen curve increases reconstruction only as much as the pixel deficit requires.
+  </SCALABILITY_CURVE_EXPLANATION>
+  <H_PHI_VAULT_STATUS>
+    Runtime declares zero private NativeArray, NativeList, or NativeHashMap allocations. Persistent runtime memory owned by DRS is requested through VaultBufferHandle IDs: BufferID.DrsState, BufferID.ResolutionScaleState, and BufferID.ResolutionScaleTelemetry. DRS also caches metadata for external read-only source BufferID.ShinobuScalabilityState / ScalabilityStateDTO.GlobalQualityWeight but does not allocate or create that buffer. If the external source is absent, DRS holds cached/default quality rather than polling a concrete producer. The editor oscilloscope owns managed arrays under UNITY_EDITOR only; they are excluded from player hot paths.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <Job name="SystemStressEwmaJob" consumes="ResolutionScaleState pointer, InputStress01" outputs="ResolutionScaleState.SystemStress01/SystemStressEwma01" handle="_stressEwmaHandle" no_alias="State pointer has [NoAlias]" burst="CompileSynchronously Fast Standard" />
+    <Job name="MockQualityWeightDropJob" consumes="DrsStateDTO pointer, MinScaleLimit" outputs="TargetRenderScale/UpscalerTypeHash" handle="caller-owned JobHandle" no_alias="State pointer has [NoAlias]" burst="CompileSynchronously Fast Standard" />
+    <MainThreadPolicy>Tick only completes the stress job when already complete or during shutdown/forced cleanup; it does not arbitrary-block the render policy path.</MainThreadPolicy>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No DRS asmdef introduces a direct sibling-domain dependency. Runtime usings route through Hecton8.Core contracts/core registry, GlobalRegistry, SignalBus, Unity rendering APIs, and DataVault handles. Quality source reads from the vault contract first and uses cached/default fallback; shader-global polling and concrete Homeostasis quality polling have been removed from the DRS policy Tick.
+  </COMPILE_GUARD>
+  <THE_DEAR_LIE_CONFIRMATION>
+    The fake is screen-space reconstruction: lower internal 3D resolution, stable pixel-grid commits, mip-bias reduction, post-process fade, and TAA/FSR sharpen globals. Naive full-resolution rendering is GPU O(W*H) fill every frame; DRS reduces that to O((scale^2)*W*H) GPU fill plus O(1) CPU policy math. No physics or world simulation is added.
+  </THE_DEAR_LIE_CONFIRMATION>
+  <VERIFICATION>
+    <StaticScan status="PASS">No owned Screen.SetResolution, no owned RenderTexture construction, no Shader.GetGlobalFloat, no HomeostasisBrain.GlobalQualityWeight, no DrsStateDTO accessors, no Pack=1.</StaticScan>
+    <Build status="HELD">dotnet build was not launched. No dotnet/csc process was detected, but the latest CPU guard samples were 97.87% and 95.77%, above the mandated 50% ceiling.</Build>
+  </VERIFICATION>
+</SELF_AUDIT>

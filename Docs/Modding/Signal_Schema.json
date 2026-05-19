@@ -324,21 +324,37 @@
       ]
     },
     {
+      "payload": "FutureCommandEnvelope",
+      "layout": "Explicit",
+      "sizeBytes": 64,
+      "status": "active envelope-only UGC runtime packet",
+      "fields": [
+        { "name": "OpcodeHash", "offset": 0, "type": "uint" },
+        { "name": "ModderSignature", "offset": 4, "type": "uint" },
+        { "name": "TargetAUP", "offset": 8, "type": "double3" },
+        { "name": "PayloadData", "offset": 32, "type": "float4" },
+        { "name": "IntegrityHash", "offset": 48, "type": "ulong" },
+        { "name": "_pad0", "offset": 56, "type": "ulong" }
+      ]
+    },
+    {
       "payload": "ModCommand",
-      "layout": "Sequential",
+      "layout": "Explicit",
       "sizeBytes": 64,
       "fields": [
-        { "name": "Opcode", "type": "ushort" },
-        { "name": "TargetSystem", "type": "ushort" },
-        { "name": "Flags", "type": "ushort" },
-        { "name": "ApiVersion", "type": "ushort" },
-        { "name": "Payload0", "type": "ulong", "packing": "low32 ModHash, high32 RequestId" },
-        { "name": "Payload1", "type": "ulong" },
-        { "name": "Payload2", "type": "ulong" },
-        { "name": "Payload3", "type": "ulong" },
-        { "name": "Payload4", "type": "ulong" },
-        { "name": "Payload5", "type": "ulong" },
-        { "name": "Payload6", "type": "ulong" }
+        { "name": "Opcode", "offset": 0, "type": "ushort" },
+        { "name": "TargetSystem", "offset": 2, "type": "ushort" },
+        { "name": "Flags", "offset": 4, "type": "ushort" },
+        { "name": "ApiVersion", "offset": 6, "type": "ushort" },
+        { "name": "Payload0", "offset": 8, "type": "ulong", "packing": "low32 ModHash, high32 RequestId" },
+        { "name": "ModHash", "offset": 8, "type": "uint", "packing": "Payload0 low32 overlay" },
+        { "name": "RequestId", "offset": 12, "type": "uint", "packing": "Payload0 high32 overlay" },
+        { "name": "Payload1", "offset": 16, "type": "ulong" },
+        { "name": "Payload2", "offset": 24, "type": "ulong" },
+        { "name": "Payload3", "offset": 32, "type": "ulong" },
+        { "name": "Payload4", "offset": 40, "type": "ulong" },
+        { "name": "Payload5", "offset": 48, "type": "ulong" },
+        { "name": "Payload6", "offset": 56, "type": "ulong" }
       ]
     },
     {

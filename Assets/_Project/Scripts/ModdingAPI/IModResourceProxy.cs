@@ -53,16 +53,34 @@ namespace Hecton8.Modding
 
         public bool TryResolvePrefab(string assetName, out uint hashId)
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+            {
+                hashId = 0u;
+                return false;
+            }
+
             return ModResourceRegistry.TryRegister(ModExecutionScope.CurrentModId, assetName, ModResourceKind.Prefab, out hashId);
         }
 
         public bool TryResolveAudioClip(string assetName, out uint hashId)
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+            {
+                hashId = 0u;
+                return false;
+            }
+
             return ModResourceRegistry.TryRegister(ModExecutionScope.CurrentModId, assetName, ModResourceKind.AudioClip, out hashId);
         }
 
         public bool TryResolveTexture(string assetName, out uint hashId)
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+            {
+                hashId = 0u;
+                return false;
+            }
+
             return ModResourceRegistry.TryRegister(ModExecutionScope.CurrentModId, assetName, ModResourceKind.Texture, out hashId);
         }
     }
@@ -91,6 +109,9 @@ namespace Hecton8.Modding
 
         internal static void Initialize()
         {
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                return;
+
             if (!_resourceIndexByHash.IsCreated)
             {
                 _resourceIndexByHash = new NativeHashMap<uint, int>(ResourceCapacity, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[256] - O(1) resource hash to sidecar index - owner: ModResourceRegistry
@@ -120,6 +141,9 @@ namespace Hecton8.Modding
             out uint hashId)
         {
             hashId = 0u;
+
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                return false;
 
             if (!ModExecutionScope.HasActiveMod)
                 throw new IllegalContractException("Resource proxy calls must originate from an active mod execution scope.");
@@ -182,6 +206,9 @@ namespace Hecton8.Modding
         private static bool TryResolve(uint hashId, ModResourceKind expectedKind, out ResourceRecord record)
         {
             record = default;
+            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                return false;
+
             if (hashId == 0u || !_resourceIndexByHash.IsCreated)
                 return false;
 

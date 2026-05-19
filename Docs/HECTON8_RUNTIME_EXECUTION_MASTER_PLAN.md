@@ -24,9 +24,10 @@ This is the working execution plan for getting HECTON-8 to a stable, optimized, 
 Current-state boundary:
 
 - 2026-05-14 DOC_AUDIT override: read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before treating May 11 counters or build-artifact paths as current evidence.
-- The May 11 compile artifact paths cited below are absent from the current filesystem. They are stale report text, not current artifact-backed proof. Current R43 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; it is not Unity runtime proof.
+- The May 11 compile artifact paths cited below are absent from the current filesystem. They are stale report text, not current artifact-backed proof. Historical R43 external root `Hecton8*.csproj` no-restore CLI output is CLI evidence only and not current dirty-workspace proof unless rerun with artifact path, command, timestamp, environment, and output; it is not Unity runtime proof.
 - This stable plan is the runtime execution authority. Dated reports are evidence/counter snapshots only.
-- Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, current source, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older evidence reports before using this plan as execution guidance.
+- Read `Docs\README.md`, `.agents-skills\README.md`, `Docs\ARCHITECTURE\README.md`, current source, then DOC_GLOBAL R29 -> R28 -> R27 -> R26 -> R25 -> R24 -> R23 -> R22 -> subordinate correction reports before May 13 or older evidence.
+- Read `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`, and `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md` before adding or modifying `GlobalRegistry`, `SignalBus<T>`, `GlobalSignals`, `HectonEventBus`, or `GlobalDataVault` routes.
 - This plan is still directionally valid, but it is not a runtime verification report.
 - May 11 report text claimed current compile evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. Treat it as stale report text.
 - Current Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player build, import, scene wiring, visual quality, zero-GC, frame time, and memory retention remain `PENDING VERIFICATION`.
@@ -78,6 +79,11 @@ No step is considered complete without logs, profiler captures, or Unity verific
 - Apply `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` before adding any water, light, flow, pressure, deformation, tether, ambience, particle, or distant-motion simulation.
 - Reject simulation when shader/VFX/audio/haptic/proxy presentation can preserve player belief.
 - Promote durable policy changes into `AGENTS.md`, `.agents-skills`, or stable `Docs/*.md` files. Do not leave project rules buried only in dated reports.
+- Do not add new global authority surface without passing the `GLOBAL_AUTHORITY_BOUNDARIES.md` decision table.
+- Do not skip owner-local first setup from `GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`.
+- Do not add or change a global route without a route card from `GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`.
+- Do not merge a new or changed global route without a `GREEN` review disposition from `GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`.
+- Do not treat H-Phi increases as runtime readiness or as permission to add global references.
 - Any single runtime system cost above `0.1ms` is suspicious until profiler proof and load-shed behavior exist.
 - Do not create a second scatter runtime owner.
 - Do not create a separate coral/rock/ruin runtime stack.
@@ -114,6 +120,7 @@ Tasks:
 - Forbid any new ECS expansion outside scatter until scatter owner cleanup is finished.
 - Forbid migration of save, UI, player, bootstrap, active fauna, or pooled physics gameplay into ECS.
 - Stop adding new scatter-side ad-hoc fields to `WorldProceduralScatterDirector`.
+- Freeze net-new global authority growth: no new hot-path registry polls, first-party hot `HectonEventBus` traffic, undocumented `GlobalSignals.Publish` expansion, or DataVault buffer without owner proof.
 
 Exit criteria:
 

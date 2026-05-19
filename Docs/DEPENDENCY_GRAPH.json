@@ -2,19 +2,19 @@
   "schema_version": 1,
   "status": "ATLAS GENERATED STATIC SOURCE / ATLASCHECK SEPARATE GATE REQUIRED / RUNTIME PENDING",
   "evidence_class": "STATIC_SOURCE/STATIC_DOC/FILESYSTEM/PY_TOOL",
-  "generated": "2026-05-19 01:36:40",
+  "generated": "2026-05-19 03:18:54",
   "summary": {
-    "source_file_count": 5081,
-    "source_line_count": 1855334,
-    "first_party_source_file_count": 1760,
-    "first_party_source_line_count": 1182412,
-    "asmdef_count": 181,
-    "first_party_asmdef_count": 121,
-    "exact_core_dependent_count": 56,
-    "core_family_dependent_count": 86,
+    "source_file_count": 5083,
+    "source_line_count": 1859300,
+    "first_party_source_file_count": 1761,
+    "first_party_source_line_count": 1186328,
+    "asmdef_count": 183,
+    "first_party_asmdef_count": 123,
+    "exact_core_dependent_count": 57,
+    "core_family_dependent_count": 87,
     "signal_count": 254,
     "queue_lane_count": 56,
-    "sherst_hit_count": 8,
+    "sherst_hit_count": 0,
     "phi_exact_rationale_present": false
   },
   "assemblies": {
@@ -669,6 +669,20 @@
           "Hecton8.Core.Memory",
           "Unity.Collections",
           "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.VFX.PlasmaBeam.Runtime",
+        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/Hecton8.VFX.PlasmaBeam.Runtime.asmdef",
+        "refs": [
+          "Hecton8.Core.Contracts",
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics",
+          "Unity.Profiling.Core"
         ]
       },
       {
@@ -1675,6 +1689,20 @@
           "Hecton8.Core.Memory",
           "Unity.Collections",
           "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.VFX.PlasmaBeam.Runtime",
+        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/Hecton8.VFX.PlasmaBeam.Runtime.asmdef",
+        "refs": [
+          "Hecton8.Core.Contracts",
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics",
+          "Unity.Profiling.Core"
         ]
       },
       {
@@ -3102,6 +3130,29 @@
         ]
       },
       {
+        "name": "Hecton8.VFX.PlasmaBeam.Editor",
+        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/Editor/Hecton8.VFX.PlasmaBeam.Editor.asmdef",
+        "refs": [
+          "Hecton8.VFX.PlasmaBeam.Runtime",
+          "Unity.Collections",
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.VFX.PlasmaBeam.Runtime",
+        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/Hecton8.VFX.PlasmaBeam.Runtime.asmdef",
+        "refs": [
+          "Hecton8.Core.Contracts",
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics",
+          "Unity.Profiling.Core"
+        ]
+      },
+      {
         "name": "Hecton8.VFX.Sonar",
         "path": "Assets/_Project/Scripts/VFX/Sonar/Hecton8.VFX.Sonar.asmdef",
         "refs": [
@@ -3681,7 +3732,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:617"
+        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:618"
       ],
       "consumers": []
     },
@@ -3866,7 +3917,7 @@
         "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1039",
         "Assets/_Project/Scripts/Core/GlobalSignals.cs:5993",
         "Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:1325",
-        "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:807",
+        "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:820",
         "Assets/_Project/Scripts/HectonFluidEngine.cs:3235",
         "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:545",
         "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs:489",
@@ -3878,7 +3929,7 @@
         "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:667",
         "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs:558",
         "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs:851",
-        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:3846"
+        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:3844"
       ]
     },
     {
@@ -4062,7 +4113,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1075",
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:587",
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:595",
         "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1008"
       ]
     },
@@ -4088,7 +4139,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4599"
+        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4597"
       ],
       "consumers": []
     },
@@ -4920,7 +4971,7 @@
       "producers": [
         "Assets/_Project/Scripts/Core/GlobalSignals.cs:4902",
         "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1462",
-        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:588",
+        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:589",
         "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:371"
       ],
       "consumers": []
@@ -5361,7 +5412,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:577"
+        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:578"
       ],
       "consumers": []
     },
@@ -5416,7 +5467,7 @@
       "consumers": [
         "Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:700",
         "Assets/_Project/Scripts/UI/PDAShellChrome.cs:480",
-        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:3983"
+        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:3981"
       ]
     },
     {
@@ -5827,7 +5878,7 @@
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:847",
+        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:856",
         "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:810"
       ]
     },
@@ -6023,7 +6074,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs:6071",
-        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:678",
+        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:687",
         "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs:318"
       ]
     },
@@ -6043,7 +6094,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/UI/HectonOSBootManager.cs:215",
-        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:699"
+        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:708"
       ]
     },
     {
@@ -6089,8 +6140,8 @@
         "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:331",
         "Assets/_Project/Scripts/MainMenuController.cs:897",
         "Assets/_Project/Scripts/MainMenuController.cs:913",
-        "Assets/_Project/Scripts/PlayerBuilder.cs:669",
-        "Assets/_Project/Scripts/PlayerBuilder.cs:686",
+        "Assets/_Project/Scripts/PlayerBuilder.cs:670",
+        "Assets/_Project/Scripts/PlayerBuilder.cs:687",
         "Assets/_Project/Scripts/PlayerFlashlight.cs:882",
         "Assets/_Project/Scripts/PlayerFlashlight.cs:899",
         "Assets/_Project/Scripts/PlayerPDA.cs:1606",
@@ -6153,7 +6204,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1064",
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:579",
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:587",
         "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2030",
         "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2483",
         "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2584",
@@ -6213,7 +6264,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs:1024",
-        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:686"
+        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:695"
       ]
     },
     {
@@ -6397,11 +6448,11 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4589"
+        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4587"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4014",
-        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4643"
+        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4012",
+        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4641"
       ]
     },
     {
@@ -6412,10 +6463,10 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4573"
+        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4571"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4648"
+        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4646"
       ]
     },
     {
@@ -6430,7 +6481,7 @@
       ],
       "producers": [
         "Assets/_Project/Scripts/Core/GlobalSignals.cs:5160",
-        "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:1481"
+        "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:1498"
       ],
       "consumers": []
     },
@@ -6703,7 +6754,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:602"
+        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:603"
       ],
       "consumers": []
     },
@@ -6891,7 +6942,7 @@
         "Assets/_Project/Scripts/Core/GlobalSignals.cs:5678"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:600",
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:608",
         "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:2431",
         "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:4221"
       ]
@@ -6982,7 +7033,7 @@
         "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:1082"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:706"
+        "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:715"
       ]
     },
     {
@@ -6999,7 +7050,7 @@
       "producers": [
         "Assets/_Project/Scripts/Core/GlobalSignals.cs:5167",
         "Assets/_Project/Scripts/Core/HomeostasisBrain.cs:892",
-        "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs:1070"
+        "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs:1073"
       ],
       "consumers": [
         "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1133",
@@ -7014,12 +7065,12 @@
         "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:989",
         "Assets/_Project/Scripts/LaserCutter.cs:1615",
         "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:387",
-        "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs:1661",
+        "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs:1664",
         "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:736",
         "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:263",
         "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs:784",
         "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:1406",
-        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:3991"
+        "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:3989"
       ]
     },
     {
@@ -7038,7 +7089,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1229",
-        "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:770",
+        "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:783",
         "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:403",
         "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:842",
         "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs:1536",
@@ -7172,7 +7223,7 @@
         "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs:618"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:800",
+        "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:813",
         "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:425"
       ]
     },
@@ -7501,7 +7552,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:804"
+        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:813"
       ],
       "consumers": []
     },
@@ -24574,71 +24625,10 @@
       }
     ]
   },
-  "sherst": [
-    {
-      "path": "Docs/AgentLogs/LOG_SHINOBU_48.md",
-      "line": 16,
-      "text": "- Added typed signals: `RadarJamSignal`, `CoreHackedSignal`, `MockAupRebaseSignal`, `MockHudSignal`; reused anomaly, radiation and system glitch lanes."
-    },
-    {
-      "path": "Docs/AgentLogs/LOG_SHINOBU_64.md",
-      "line": 575,
-      "text": "What was wrong: `HectonNetworkManager` was a placeholder with debug logging and transform/message-oriented TODOs. There was no rollback state ring, no input mismatch detector, n..."
-    },
-    {
-      "path": "Docs/AgentLogs/Rationale_SHINOBU_48.md",
-      "line": 114,
-      "text": "Problem: Narrative hacking must heal the world mathematically."
-    },
-    {
-      "path": "Docs/AgentLogs/Rationale_SHINOBU_48.md",
-      "line": 115,
-      "text": "Solution: `CoreHackedSignal` with the accepted code starts a 10-second scalar decay; gravity, shaders, predator frenzy and radiation converge as corruption falls."
-    },
-    {
-      "path": "Docs/AgentLogs/Rationale_SHINOBU_48.md",
-      "line": 135,
-      "text": "Solution: `SeedShipAnomalyTunerWindow` reads/writes Vault handles for field/tuning/global rows in Play Mode and can inject `CoreHackedSignal`."
-    },
-    {
-      "path": "Docs/AgentLogs/Rationale_SHINOBU_48.md",
-      "line": 175,
-      "text": "Solution: Added `_simulationFrameCounter`, incremented from dispatcher `Tick`, and fed it to Burst jobs, CSV override records and core-hack runtime signals. The only remaining `..."
-    },
-    {
-      "path": "Docs/AgentLogs/Rationale_SHINOBU_48.md",
-      "line": 187,
-      "text": "Solution: Moved `GlitchCommandDTO`, `MockAupRebaseSignal`, `RadarJamSignal`, `CoreHackedSignal`, and `MockHudSignal` into `Hecton8.Core.Contracts.Signals` via `Assets/_Project/S..."
-    },
-    {
-      "path": "Docs/AgentLogs/Rationale_SHINOBU_48.md",
-      "line": 252,
-      "text": "<task id=\"15\" name=\"NARRATIVE_HACKING_STATE_LINK\" status=\"PASS\">Accepted `CoreHackedSignal` starts deterministic 10s corruption decay.</task>"
-    }
-  ],
+  "sherst": [],
   "phi": {
     "exact_rationale_present": false,
-    "near_match_logs": [
-      "Docs/AgentLogs/HPhi_SHINOBU_02_coregraph_budget_after_bridge_prune.json",
-      "Docs/AgentLogs/HPhi_SHINOBU_02_coregraph_current.json",
-      "Docs/AgentLogs/HPhi_SHINOBU_02_current.err.txt",
-      "Docs/AgentLogs/HPhi_SHINOBU_02_current.json",
-      "Docs/AgentLogs/HPhi_SHINOBU_02_current2.json",
-      "Docs/AgentLogs/HPhi_SHINOBU_02_current_after_bridge_prune.err.txt",
-      "Docs/AgentLogs/HPhi_SHINOBU_02_current_after_bridge_prune.json",
-      "Docs/AgentLogs/HPhiTrend_SHINOBU_02.json",
-      "Docs/AgentLogs/HPhiTrend_SHINOBU_02.md",
-      "Docs/AgentLogs/HPhiTrend_SHINOBU_02_current2.json",
-      "Docs/AgentLogs/HPhiTrend_SHINOBU_02_current2.md",
-      "Docs/AgentLogs/HPhiTrend_SHINOBU_02_current3.json",
-      "Docs/AgentLogs/HPhiTrend_SHINOBU_02_current3.md",
-      "Docs/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_full_after_hphi.json",
-      "Docs/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_full_after_hphi.md",
-      "Docs/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_full_hotpath_after_hphi.json",
-      "Docs/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_full_hotpath_after_hphi.md",
-      "Docs/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_signalcritical_after_hphi.json",
-      "Docs/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_signalcritical_after_hphi.md"
-    ]
+    "near_match_logs": []
   },
   "artifacts": {
     "markdown": "Docs/DEPENDENCY_GRAPH.md",
@@ -24646,7 +24636,8 @@
     "source_cache": "Docs/DEPENDENCY_GRAPH.cache.json",
     "generator": "Tools/BuildArchitectureAtlas.py",
     "validator": "Tools/AtlasCheck.py",
-    "tests": "Tools/test_architecture_atlas.py"
+    "tests": "Tools/test_architecture_atlas.py",
+    "atlas_check_status": "RED: Tools/AtlasCheck.py exits 1 on 57 RealtimeCSG vendor icon/readme image references; generated atlas is STATIC_SOURCE only until AtlasCheck exits 0."
   },
   "residual_risk": [
     "Unity import, runtime wiring, actual VRAM residency, profiler frame time, GC, build, and Play Mode remain PENDING VERIFICATION.",

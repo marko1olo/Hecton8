@@ -68,7 +68,7 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(48)]
         public uint VisualFeatureFlags;
         [FieldOffset(52)]
-        public int Reserved4;
+        public float GlobalQualityWeight01;
         [FieldOffset(56)]
         public int Reserved5;
         [FieldOffset(60)]

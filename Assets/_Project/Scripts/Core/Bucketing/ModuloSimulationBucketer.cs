@@ -857,7 +857,7 @@ namespace Hecton8.Core.Bucketing
             return activeSlowBucketCount >= SimulationBucketConstants.HighTierActiveSlowBucketCount ? 1 : 0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 20)]
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         internal struct SimulationBucketRebalanceResult
         {
             public float MaxBucketLoadMs;
@@ -865,9 +865,10 @@ namespace Hecton8.Core.Bucketing
             public float TotalLoadMs;
             public uint FramePacingFlags;
             public int ActiveEntityCount;
+            private uint _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = BlackBoxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Sequential, Size = BlackBoxEntrySizeBytes)]
         internal struct SimulationBucketBlackBoxEntry
         {
             public int CurrentFrameCount;
@@ -890,7 +891,7 @@ namespace Hecton8.Core.Bucketing
             public uint StateHash;
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct LoadBalancingJob : IJob
         {
             [ReadOnly] public NativeArray<float> EntityCostsMs;

@@ -376,3 +376,138 @@ Evidence:
 - Full-project explicit Pack=1 scan still reports owner-domain hits outside SHINOBU_02, including Animation/Fauna/Gameplay/VFX/World/Physics/Construction. These are not claimed fixed.
 - Remaining Core sequential Pack=1 scan still reports blackbox/file/bridge/native DTOs. Read-only sidecar `Sagan` was spawned to classify which are safe next candidates; no edits from that classification have been applied yet.
 - Build/audit guard: no compiler process output was returned in the sampled window, but CPU counter samples were `100, 100, 100`; no dotnet build or heavy full audit was launched.
+
+## Current12 Safe Core Sequential Pack1 Cleanup
+
+Problem: After explicit-layout cleanup, the broader Core scan still had many sequential `Pack = 1` structs. Some were clearly runtime/native DTOs with naturally aligned fields; others were binary bridge/file/native-container surfaces where blindly removing `Pack = 1` could change ABI or semantics.
+Solution: Delegated a read-only classifier to sidecar `Sagan`, then applied only the candidates in the 85-99% confidence safe band. Removed `Pack = 1` from simple naturally aligned DTOs and added explicit tail padding/size where the existing runtime snapshot size was not an 8-byte multiple. Patched structs: `InventoryCost`, `HectonAabb`, `HectonSphere`, `NativeBitmask256`, `ContentBundleRefState`, `ContentAuthorityTelemetryEntry`, `ContentPendingLoadState`, `ContentVisualFeatureBudget`, `SimulationBucketFrameState`, `AudioEvent`, `PlayerMovementRuntimeState`, `PlayerLookState`, `PlayerSurvivalRuntimeState`, `PlayerInteractionRuntimeState`, `UIStateData`, and `UIValueSlot`.
+Rejected Alternatives: Bulk-editing every sequential Core `Pack = 1` was rejected because `Bridge/H8BridgeContracts.cs`, `DodReplayRecorder.cs`, macro database records, generic native containers, replay/file records, and `BatteryRuntimeSnapshot` can be binary ABI or API mutation traps. The sidecar also flagged those as high-risk or below threshold. Running a build or full audit under high CPU was rejected by the hardware guard.
+Scalability potential: Low/ARM64 = removes packed runtime DTO markers from player snapshot, UI state, spatial primitive, content telemetry, simulation bucketing, and audio queue surfaces. Middle = smaller static warning surface for owner audits. High/Ultra = presentation systems can consume player/UI/content snapshots without dragging packed runtime strides through native arrays or queue payloads.
+Hardware Impact: 0 measured us. This is static layout and stride hygiene; no profiler or IL2CPP proof exists.
+
+Evidence:
+- `Sagan` read-only classifier completed and was closed. It marked simple DTO removals at 94-99% confidence and `UIStateData`/`UIValueSlot` at 88-90% with named padding.
+- Source inspection after patch: patched files show `StructLayout(LayoutKind.Sequential, Size = ...)` or plain sequential layout without `Pack = 1`.
+- Runtime snapshot sizes after patch: `PlayerMovementRuntimeState` 128, `PlayerLookState` 32, `PlayerSurvivalRuntimeState` 88, `PlayerInteractionRuntimeState` 32.
+- UI state sizes after patch: `UIStateData` 32 and `UIValueSlot` 24.
+- Content/runtime sizes after patch: `ContentBundleRefState` 24, `ContentAuthorityTelemetryEntry` 64, `ContentPendingLoadState` 16, `ContentVisualFeatureBudget` 16.
+- Spatial/bitmask sizes after patch: `HectonAabb` 32, `HectonSphere` 16, `NativeBitmask256` 32.
+- Post-patch light counters: `SIGNALCRITICAL_PACK1_TOTAL=0`, `CORE_EXPLICIT_PACK1_TOTAL=0`, `CORE_PACK1_TOTAL=82`, `PROJECT_EXPLICIT_PACK1_TOTAL=43`.
+- Remaining Core `Pack = 1` hits are deliberately deferred owner-risk surfaces: bridge records, replay/file records, generic native containers, macro database records, power bool snapshot, and similar ABI-sensitive DTOs.
+- Guard after patch: no build or full audit; CPU counter samples were `74.5, 98.6, 100`.
+
+## Current13 Safe Core Blackbox/GPU/Content Pack1 Cleanup
+
+Problem: After Current12, exact Core `Pack = 1` source hits remained. A naive search was also over-counting `Pack = 16` as `Pack = 1`, making the status less precise. The remaining list mixed safe runtime/GPU/content DTOs with high-risk file/wire records, generic native containers, macro database records, bridge contracts, and owner-domain global snapshots.
+Solution: Restored the active SHINOBU_02 ledgers from `Docs/Archive/Batch009` after a concurrent archive move deleted the active files, then delegated a read-only residual classifier to `Godel`. Applied only the 85%+ confidence candidates: removed `Pack = 1` from pure runtime/GPU/content records and preserved or improved declared sizes. Added `_pad0` to `SimulationBucketRebalanceResult` to move the Vault single-result DTO from 20 to 24 bytes. Added exact Burst flags to the touched Burst job/math surfaces that still had bare or incomplete `[BurstCompile]`.
+Rejected Alternatives: Bulk-editing the remaining 68 Core exact `Pack = 1` hits was rejected. `Bridge/H8BridgeContracts.cs`, `DodReplayRecorder.cs`, `ContentAssetBinaryRecord`, macro database DTOs, generic native containers, and global owner-domain snapshots can encode file, wire, replay, pointer, shader, or bool ABI. Running Core build or full audit was rejected because CPU guard remained over the AGENTS.md threshold.
+Scalability potential: Low/ARM64 = removes packed markers from blackbox rings, foveated telemetry, object batch rendering payloads, pipe GPU uploads, and native allocation snapshot descriptors. Middle = precise counters separate true Pack=1 from Pack=16 job packing. High/Ultra = GPU/BRG and visual-sync payloads keep stable strides while presentation layers can spend saved safety budget on visual richness without polluting gameplay truth.
+Hardware Impact: 0 measured us. This is static layout hygiene and Burst directive hardening; no profiler, Unity import, IL2CPP, or Core compile proof exists.
+
+Evidence:
+- Active ledger restore: active SHINOBU_02 status/rationale/log were missing after a concurrent archive move; restored from `Docs/Archive/Batch009/...` before writing this entry.
+- Sidecar `Godel` classified `FlexiblePipeInstanceGpuData`, `ObjectBatchInstance`, `ObjectBatchChunk`, and simulation/job blackbox records as safe 85%+ patches. It deferred bridge/replay/macro/generic/native-container/global-owner surfaces.
+- Patched structs: `FlexiblePipeInstanceGpuData`, `ObjectBatchInstance`, `ObjectBatchChunk`, `SimulationBucketRebalanceResult`, `SimulationBucketBlackBoxEntry`, `JobAdmissionBlackboxEntry`, `FoveatedSimulationTelemetryEntry`, `NativeAllocationSnapshotSource`, `NativeAllocationRecord`, `PersistentReallocationRecord`.
+- Layout maps: `FlexiblePipeInstanceGpuData` is four `float4` lanes = 64 bytes; `ObjectBatchInstance` remains explicit 80; `ObjectBatchChunk` remains explicit 40; `SimulationBucketRebalanceResult` is 0-3 `MaxBucketLoadMs`, 4-7 `MeanBucketLoadMs`, 8-11 `TotalLoadMs`, 12-15 `FramePacingFlags`, 16-19 `ActiveEntityCount`, 20-23 `_pad0`, total 24; `SimulationBucketBlackBoxEntry` remains 64; `JobAdmissionBlackboxEntry` remains 32; `FoveatedSimulationTelemetryEntry` remains 64; `NativeAllocationSnapshotSource` is explicit 32.
+- Burst directives: `LoadBalancingJob`, `JobAdmissionMath`, `ImportanceScoringJob`, and `VisualInterpolationJob` now include `CompileSynchronously = true`, `FloatMode.Fast`, and `FloatPrecision.Standard`.
+- Precise source counters use `Pack\s*=\s*1(?!\d)` to exclude `Pack = 16`: `SIGNALCRITICAL_PACK1_TOTAL=0`, `CORE_EXPLICIT_PACK1_TOTAL=0`, `CORE_PACK1_TOTAL=68`, `PROJECT_EXPLICIT_PACK1_TOTAL=43`.
+- Guard: no build/full audit. CPU samples were `70.8, 47.5, 75.5`; average remained above 50%.
+
+## Current14 Safe Signal Using Prune
+
+Problem: Sidecar `Leibniz` found one local compile-wall hygiene issue in a SHINOBU-owned signal file: `Core/Signals/PrologueReentrySignals.cs` imported `Hecton8.World` without using any World type. It also had an unused `System.Runtime.InteropServices` import.
+Solution: Removed only those two unused `using` directives. No type, namespace, method, signal payload, asmdef, or public API changed.
+Rejected Alternatives: Removing broad `Hecton8.Core.asmdef` sibling runtime references was rejected because the asmdef still contains legacy Core/GlobalRegistry gravity and needs Integrator ownership plus compile proof. Moving Audio runtime DTOs out of `Core/GlobalSignals.cs` was rejected as an Audio/Core contract extraction task, not a blind local patch.
+Scalability potential: Low = less accidental compile-wall coupling in the prologue signal warmup file. Middle/High/Ultra = dependency surface is slightly narrower without changing gameplay or presentation cost.
+Hardware Impact: 0 measured us. Source hygiene only; compile-time impact is unmeasured.
+
+Evidence:
+- `rg "using Hecton8\\.World|using System\\.Runtime\\.InteropServices" Assets/_Project/Scripts/Core/Signals/PrologueReentrySignals.cs` returned no hits.
+- `PlayerMovementPresentationSignals.cs` still legitimately imports `Hecton8.World` because it uses `AbsoluteUniversePosition`.
+- `Leibniz` classified direct sibling references in `Hecton8.Core.asmdef` and Audio types in `GlobalSignals.cs` as real but deferred risks.
+- No build/full audit was launched; CPU samples were `13.4, 85, 99.6`.
+
+## Current15 Core Compile-Wall Triage
+
+Problem: The guarded Core compile exposed six errors unrelated to the Current13 Pack=1 edits: a definite-assignment bug in `HomeostasisBrain.ScalabilityDictator.cs`, missing DRS helper inclusion for two Visor renderer features, a missing `Hecton8.Narrative` namespace import for `IndustrialLoreBitMask`, and unavailable `math.reversebytes` calls in binary endian readers.
+Solution: Applied only mechanically proven fixes. Initialized `sanitizedWeight` before the `enabled && TrySanitize...` expression. Added the existing `HectonDrsRenderFeatureGate.cs` as a conditional source-backed include in `Directory.Build.targets` instead of editing generated `.csproj`. Added `using Hecton8.Narrative;` to `SaveBinaryPayloadCodec.cs`. Replaced `math.reversebytes` with explicit allocation-free `ReverseUInt32` helpers in `ShinobuFloraFaunaSymbiosisSolver.cs` and `ShinobuOceanSurfaceAtmosphereRuntime.cs`.
+Rejected Alternatives: Editing `Hecton8.Core.csproj` was rejected because Unity regenerates it. Moving `IndustrialLoreBitMask` into a new shared contract was rejected as a larger owner/API change. Leaving `math.reversebytes` for package upgrade was rejected because the project currently lacks that API and the bit-swap helper is deterministic.
+Scalability potential: Low = Core surrogate compile stays usable for rapid iteration. Middle = source-backed helper include preserves generated project drift handling. High/Ultra = DRS feature gating remains shared and does not duplicate survival-scale logic.
+Hardware Impact: 0 measured us runtime; compile-wall removal only.
+
+Evidence:
+- Guard before build: no compiler processes, CPU samples `23, 14.7, 27.9, 32.7, 23.1`, avg `24.3`.
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies -v:minimal /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1` -> 0 errors, 8 warnings.
+- Warnings are pre-existing `GlobalPhysicsStateManager.PhysicsDistanceCullingJob` CS0649 fields.
+- SignalCritical current15 audit -> files 7, shaders 62, errors 0, warnings 0, infos 10.
+- Full current15 audit -> files 1761, shaders 62, errors 16, warnings 486, infos 467, confirmedErrors 16.
+
+## Current16 Full Audit Hard-Gate Repair
+
+Problem: Full current15 audit had 16 hard errors: five unowned 300-frame telemetry rings and eleven duplicate runtime signal-name collisions across incompatible domain DTOs.
+Solution: Used two read-only subagents for classification, then applied only 85%+ confidence edits. Renamed incompatible local/domain signal DTOs to unique names and updated all generic `SignalBus<T>`, `NativeArray<T>`, `NativeQueue<T>`, `VaultBufferHandle<T>`, pointer, and `UnsafeUtility.SizeOf<T>()` references. Added `NativeMemorySentinel.RegisterNativeArray`/`UnregisterNativeArray` coverage to the five 300-frame rings and also registered `InstanceCullingService._indirectArgsReadback` because it is adjacent persistent native storage.
+Rejected Alternatives: Merging layouts under one shared signal was rejected because the duplicate DTOs have incompatible sizes and semantics. Renaming public Modding-facing `MockAcousticSignal`/`MockDamageSignal` was rejected as API owner-blocked. Migrating the five blackbox rings to `GlobalDataVault` was rejected for this pass because it requires owner route cards and new BufferIDs; Sentinel registration reduces the hard ownership error without changing runtime topology.
+Scalability potential: Low = fewer hard static stops and tracked native memory for 300-frame rings on constrained hardware. Middle = duplicate signal names no longer fragment typed lanes for active domains. High = presentation/VFX domains can keep richer local telemetry without pretending it is gameplay truth. Ultra = SignalBus names are unique enough for visual-overkill consumers to route by domain without accidental lane collision.
+Hardware Impact: 0 measured us runtime. Static hard errors were reduced from 16 to 0; frame-time and GC claims remain unmeasured.
+
+Evidence:
+- Renames: `DeltaCrusherMockLaserFireSignal`, `PredatorMockAcousticSignal`, `ThermodynamicsMockDamageSignal`, `ApexBrainAcousticEchoTap`, `ApexPanicSignal`, `ExosuitAcousticEchoTap`, `PlasmaBeamAcousticEchoTap`.
+- Sentinel registrations: `DiegeticTooltipSystem._blackBox`, `InternalFloodWaterlineRuntime._telemetry`, `InstanceCullingService._telemetryRing`, `InstanceCullingService._indirectArgsReadback`, `AwaitableDropSequenceDirector._blackBox`, `OrbitalDropReentryVfxController._telemetry`.
+- Full current16 audit -> files 1761, shaders 62, errors 0, warnings 492, infos 467, confirmedErrors 0.
+- SignalCritical current16 audit -> files 7, shaders 62, errors 0, warnings 0, infos 10, confirmedErrors 0.
+- Guard before compile: no compiler processes, CPU samples `23.4, 29.4, 27.5, 22.3, 26.9`, avg `25.9`.
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies -v:minimal /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1` -> 0 errors, 8 warnings.
+- H-Phi trend after audit -> 120 artifacts, 393 metric series. Latest signal-audit series includes Full current16 with 0 confirmed errors.
+
+## Current17 Core Runtime Layout And Audit Warning Prune
+
+Problem: Current16 hard errors were zero, but the full audit still carried 492 warnings and Core still had exact `Pack = 1` markers in low-risk utility/runtime DTOs. The previous regex also matched `Pack = 16`, inflating review counters and making the warning origin less precise.
+Solution: Removed `Pack = 1` only where layout was already explicit or naturally aligned and public field names/offsets could be preserved. Added manual padding/explicit sizes where needed. Patched Core utility/runtime DTOs in `BurstCallback`, `JobFenceManager`, `NativeQuery`, `NativeRingBuffer`, `StackQueue`, and `UnsafeArenaAllocator`; patched safe Core contract DTOs in `GlobalRegistry` and `GlobalRegistryContracts`; renamed private `HardwareThermalService.ThermalTelemetryEntry` to `HardwareThermalTelemetryEntry`; changed the audit regex to `Pack\s*=\s*1(?!\d)`.
+Rejected Alternatives: Bulk-removing the remaining Core `Pack = 1` hits was rejected because many are file/wire/replay/bridge/native-container ABI surfaces. Migrating registered blackbox rings to GlobalDataVault was rejected in this pass because it needs route cards and owner buffer IDs. Editing generated `.csproj` files was rejected.
+Scalability potential: Low/ARM64 = fewer packed runtime DTO markers and fewer false `Pack = 16` audit hits. Middle = cleaner Full audit review queue. High/Ultra = Core warning budget is lower without changing presentation systems or gameplay truth.
+Hardware Impact: 0 measured us. Static warning reduction and compile proof only; no runtime profiler/GC/IL2CPP claim.
+
+Evidence:
+- Full audit current17 -> files 1761, shaders 62, errors 0, warnings 463, infos 461, confirmedErrors 0.
+- SignalCritical current17 -> files 7, shaders 62, errors 0, warnings 0, infos 10, confirmedErrors 0.
+- Warning delta current16 -> current17: `492 -> 463` (-29).
+- Core compile guard opened at CPU avg `49.7`; `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies -v:minimal /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1` -> 0 errors, 8 known CS0649 warnings.
+- H-Phi trend current17 -> 123 artifacts, 393 metric series; recent artifacts include Full and SignalCritical current17 audits.
+- `StackQueue<T>` expected layout: fixed byte buffer 256, four ushort fields 8, `ushort _pad0` 2, `uint _pad1` 4, natural total 272 bytes, multiple of 8.
+- `UnsafeArenaAllocator.ArenaBlock` explicit size 16: offset 0 `Ptr`, offset 8 `ByteCount`, offset 12 `_pad0`.
+- `ForceOverrideToken` explicit size 8: offset 0 `Value`, offset 4 `_pad0`.
+- `SeismicRuntimeSnapshot` explicit/named tail padding total 56; `NarrativeSpatialTriggerAuthoring` total 88; `PlayerRuntimePoseSnapshot` total 80; `ToxicitySignal` total 32; `RegistryEventPayload` total 24.
+
+## Current18 Audit Root-Owner Classifier Patch
+
+Problem: After current17, Full audit still classified H8Memory/GlobalDataVault root-owner telemetry arrays as downstream `LOCAL_NATIVE_TELEMETRY_RING_REGISTERED_NON_VAULT` warnings even though the ownership tags already proved `HasH8MemoryOwnership` or `IsH8MemoryRootAllocator`. That makes the warning list less truthful.
+Solution: Added a classifier branch that emits `LOCAL_NATIVE_TELEMETRY_RING_ROOT_OWNER` as INFO for root allocation telemetry. This does not excuse downstream private blackbox rings; it only stops penalizing the root allocator/vault owner itself.
+Rejected Alternatives: Silencing all registered non-vault warnings was rejected; most registered rings still need owner-route-card migration to GlobalDataVault. Running a build under high CPU was rejected by AGENTS.md.
+Scalability potential: Low = fewer false review targets when triaging memory ownership on constrained hardware. Middle/High/Ultra = H-Phi review focuses on real owner-domain rings instead of the root memory authority.
+Hardware Impact: 0 measured us; CLI classifier patch only.
+
+Evidence:
+- `git diff --check -- Tools/SignalBusContractAuditCli/Program.cs` returned exit 0; line-ending warning only.
+- CLI build was initially blocked three times by CPU averages `67.2`, `67.6`, and `68.8`, then guard opened at CPU avg `27.1`.
+- `dotnet build Tools\SignalBusContractAuditCli\SignalBusContractAuditCli.csproj -v:minimal /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1` -> 0 errors, 0 warnings.
+- Full audit current18 -> files 1761, shaders 62, errors 0, warnings 459, infos 465, confirmedErrors 0.
+- SignalCritical audit current18 -> files 7, shaders 62, errors 0, warnings 0, infos 10, confirmedErrors 0.
+- Warning delta current17 -> current18: `463 -> 459` (-4), matching root-owner telemetry downgrades plus current file reality.
+- H-Phi trend current18 -> 125 artifacts, 393 metric series.
+
+## Current19 Root-Owner Classifier Correction
+
+Problem: The first Current18 classifier branch was too broad because it also downgraded downstream systems that use `H8Memory.Allocate/Release`, including `Power/WfcOutpostPowerBootRuntime._blackBox`. A downstream H8Memory-owned ring is still non-vault migration debt and must remain visible as a warning.
+Solution: Narrowed the root-owner exception to `Core/Memory/H8Memory.cs` and `Core/Memory/GlobalDataVault.cs` only. Downstream `HasH8MemoryOwnership` stays under the existing registered/non-vault warning path.
+Rejected Alternatives: Keeping the broader downgrade was rejected because it would hide real H-Phi debt. Removing the root-owner exception entirely was rejected because the root allocator/vault owner itself is not a downstream private allocation breach.
+Scalability potential: Low = audit triage stays honest for constrained-memory devices. Middle/High/Ultra = root telemetry is not mixed with owner-domain migration debt, so DataVault work can be planned by actual owner surface.
+Hardware Impact: 0 measured us; CLI classifier patch only.
+
+Evidence:
+- CLI build guard opened at CPU avg `19.3`.
+- `dotnet build Tools\SignalBusContractAuditCli\SignalBusContractAuditCli.csproj -v:minimal /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1` -> 0 errors, 0 warnings.
+- Full audit current19 -> files 1761, shaders 62, errors 0, warnings 460, infos 464, confirmedErrors 0.
+- SignalCritical current19 -> files 7, shaders 62, errors 0, warnings 0, infos 10, confirmedErrors 0.
+- Root-owner INFO rows now only cover `Core/Memory/GlobalDataVault.cs:_defragBlackBox` and `Core/Memory/H8Memory.cs:_blackBox/_eventBlackBox`.
+- Warning delta current17 -> current19: `463 -> 460` (-3). Warning delta current16 -> current19: `492 -> 460` (-32).
+- H-Phi trend current19 -> 127 artifacts, 393 metric series.

@@ -104,7 +104,7 @@ Shader "Hecton8/Flora/ProceduralBio"
             float4 _HectonFloraBiomeTintParams;
             float4 _BiolumMasterPhase;
             float4 _BiolumIntensity;
-            float4 _GlobalBiolumStates[16];
+            float4x4 _GlobalBiolumDearLieGroups;
             float4 _GlobalBiolumParams;
             float4 _GlobalBiolumClock;
             float4 _GlobalBiolumAupOffset;
@@ -265,20 +265,20 @@ Shader "Hecton8/Flora/ProceduralBio"
                 float4 safeParams = all(isfinite(_GlobalBiolumParams)) ? _GlobalBiolumParams : float4(0.0, 0.0, 0.0, 0.0);
                 float4 safeAupOffset = all(isfinite(_GlobalBiolumAupOffset)) ? _GlobalBiolumAupOffset : float4(0.0, 0.0, 0.0, 0.0);
                 float safeClock = isfinite(_GlobalBiolumClock.x) ? _GlobalBiolumClock.x : 0.0;
-                int activeCount = min(max((int)floor(max(safeParams.x, 0.0)), 0), 16);
+                int activeCount = min(max((int)floor(max(safeParams.x, 0.0)), 0), 4);
                 if (activeCount <= 0)
                     return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
                 float selector = frac(abs(positionWS.x * 0.037 + positionWS.z * 0.053 + safeAupOffset.x * 0.0013 + safeAupOffset.z * 0.0017));
                 int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
-                float4 stateRaw = _GlobalBiolumStates[stateIndex];
+                float4 stateRaw = _GlobalBiolumDearLieGroups[stateIndex];
                 float4 state = all(isfinite(stateRaw)) ? stateRaw : float4(0.0, 0.0, 0.0, 0.0);
                 half strobe = saturate((half)max(safeParams.z, 0.0));
                 half highTier = step(4.0h, (half)max(safeParams.y, 0.0));
                 int secondaryIndex = stateIndex + 1;
                 if (secondaryIndex >= activeCount)
                     secondaryIndex = 0;
-                float4 secondaryStateRaw = _GlobalBiolumStates[secondaryIndex];
+                float4 secondaryStateRaw = _GlobalBiolumDearLieGroups[secondaryIndex];
                 float4 secondaryState = all(isfinite(secondaryStateRaw)) ? secondaryStateRaw : float4(0.0, 0.0, 0.0, 0.0);
                 half overdrive = 0.0h;
                 half godSpark = 0.0h;

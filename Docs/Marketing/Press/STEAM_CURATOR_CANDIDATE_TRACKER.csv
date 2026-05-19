@@ -1,0 +1,6 @@
+curator_id,curator_name,steam_url,focus_tags,language,status,fit_score,followers,review_quality,recent_activity,scam_risk,message_variant,copies_planned,last_checked,notes
+CUR-001,Rely on Horror,https://store.steampowered.com/curator/6856130-Rely-on-Horror/,Horror;Survival Horror,en,RAW_SEED,TBD,UNKNOWN,TBD,TBD,TBD,Horror curator,1,2026-05-19,Verify identity and current activity in Steamworks before sending.
+CUR-002,HORROR gems,https://store.steampowered.com/curator/41487727-HORROR-gems/,Horror,en,RAW_SEED,TBD,UNKNOWN,TBD,TBD,TBD,Horror curator,1,2026-05-19,Use Curator Connect only.
+CUR-003,Survival Horror tag surface,https://store.steampowered.com/tags/en/Survival%20Horror/,Survival Horror,various,DISCOVERY_SURFACE,TBD,UNKNOWN,TBD,TBD,TBD,TBD,0,2026-05-19,Find active curators through Steamworks/tag search.
+CUR-004,Atmospheric tag surface,https://store.steampowered.com/tags/en/Atmospheric/,Atmospheric,various,DISCOVERY_SURFACE,TBD,UNKNOWN,TBD,TBD,TBD,TBD,0,2026-05-19,Broad/noisy; filter manually.
+CUR-005,Base Building tag surface,https://store.steampowered.com/tags/en/Base%20Building/,Base Building,various,DISCOVERY_SURFACE,TBD,UNKNOWN,TBD,TBD,TBD,TBD,0,2026-05-19,Use only after base feature proof exists.

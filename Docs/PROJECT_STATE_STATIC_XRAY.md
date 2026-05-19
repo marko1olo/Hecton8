@@ -64,11 +64,24 @@ Evidence class: `CLI_COMPILE` plus `STATIC_SOURCE_FULL_SCAN`.
 - `Docs/Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json` reports Core graph debt back at `25/10/14/8/6` and no unused Core asmdef reference candidates after file/index alignment; CurrentDisk53/BudgetGate22 are newer archived Core compile/H-Phi boundary evidence than that prune slice, not current active-workspace compile proof.
 - This addendum does not change the core verdict: runtime playability and scalability remain unproven until Unity import/Console, Play Mode, profiler, GCMonitor, player build, memory, scene wiring, save/load, and visual captures exist.
 
+## 2026-05-19 Global Authority Correction
+
+Evidence class: `STATIC_SOURCE` / `STATIC_DOC`.
+
+- Current global authority policy is defined by `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`, and `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`.
+- `GlobalRegistry` is allowed as a cold authority spine for bootstrap, ownership, rebinding, and dependency injection. It is not a hot-path service search API and not a gameplay brain.
+- First-party hot broadcasts should use typed `SignalBus<T>` lanes or an explicitly documented NativeQueue bridge lane. Direct `GlobalSignals` queue traffic is retained bridge infrastructure, not the default expansion path.
+- `HectonEventBus` is not the first-party hot gameplay bus. It is mod/API/cold/internal-meta boundary infrastructure; any existing first-party runtime usage must be classified cold/warm/hot and migrated or justified by measurement.
+- `GlobalDataVault` only counts as data-sovereignty progress when buffers have owner, `BufferID`, `SystemID`, generation/lifetime/disposal rules, stale-handle protection, and black-box telemetry. Adding vault references to improve H-Phi is fake progress.
+- New subsystem/global-authority work starts owner-local and follows the setup playbook before adding global surface.
+- New or changed global routes require the route-card template: owner, instrument, phase, cadence, capacity, failure mode, telemetry, shutdown, and proof.
+- Static verdict: the project is not yet globally failing, but the global authority surface is already in the danger zone. Net-new global surface growth is blocked until review queues in the migration ledger move down.
+
 ## Static Inventory Findings
 
-- 2026-05-19 R24 source-scale spot check: `Assets/_Project/**/*.cs` = `1814`, `Assets/_Project/Scripts/**/*.cs` = `1758`, non-test C# files excluding `Assets/_Project/Tests*` = `1794`, project physical lines = `1198173`, script physical lines = `1178627`, non-test physical lines = `1193454`, direct public interfaces in `GlobalRegistryContracts.cs` = `62`, first-party asmdefs = `119`. Evidence class: `STATIC_SOURCE`; this is not compile or runtime proof and must be rerun under concurrent source churn.
-- `Assets/_Project/Scripts/**/*.cs`: `1758` first-party script C# files in the R24 static PowerShell pass.
-- `Assets/_Project/**/*.cs`: `1814` C# files in the R24 broader extension inventory.
+- 2026-05-19 R27 source-scale spot check: `Assets/_Project/**/*.cs` = `1818`, `Assets/_Project/Scripts/**/*.cs` = `1761`, non-test C# files excluding `Assets/_Project/Tests*` = `1797`, project physical lines = `1204221`, script physical lines = `1184559`, non-test physical lines = `1199376`, broad `interface` token hits = `342`, direct interface declaration lines = `267`, direct public interfaces in `GlobalRegistryContracts.cs` = `62`, first-party asmdefs = `123`, direct `GlobalSignals.CreateQueue(...)` slots = `73`, and typed `SignalBus<T>.EnsureInitialized()` lanes = `133`. Evidence class: `STATIC_SOURCE`; this is not compile or runtime proof and must be rerun under concurrent source churn.
+- `Assets/_Project/Scripts/**/*.cs`: `1761` first-party script C# files in the R27 static PowerShell pass.
+- `Assets/_Project/**/*.cs`: `1818` C# files in the R27 broader extension inventory.
 - BuildSettings contains the normative scene chain:
   - `Assets/_Project/Scenes/00_BOOTSTRAP.unity`
   - `Assets/_Project/Scenes/01_MAIN_MENU.unity`
@@ -83,9 +96,9 @@ Evidence class: `CLI_COMPILE` plus `STATIC_SOURCE_FULL_SCAN`.
 Good:
 
 - Static scan found only `SystemDispatcher` owning first-party Unity `Update` / `LateUpdate` methods.
-- Gameplay is mostly routed through dispatcher tick interfaces and `GlobalRegistry` lanes.
+- Gameplay is mostly routed through dispatcher tick interfaces and `GlobalRegistry` lanes, but current authority limits registry reads to cold discovery/injection and cached owner interfaces or snapshots in hot paths.
 - `SystemDispatcher` has explicit cadence lanes, profiler markers, fixed/slow/cold/frost ticks, late-frame circuit breakers, and GC-pressure awareness.
-- `GlobalSignals` uses NativeQueue-backed lanes and typed SignalBus infrastructure.
+- `GlobalSignals` uses NativeQueue-backed lanes and typed `SignalBus<T>` infrastructure. Current expansion policy prefers typed SignalBus lanes; direct GlobalSignals queue traffic is bridge/migration surface.
 - There are many watchdog/profiler/smoke-test tools in the codebase.
 
 Risk:
@@ -638,6 +651,7 @@ Positive architecture:
 - `HectonEventBus` has a dispatch-depth cap of 5, recursive cascade reporting, callback watchdog, exception isolation, subscriber disable, and managed allocation tracking around callbacks.
 - Typed managed event publishing/subscribing is `internal` and forbidden from active mod execution scope; public mod-facing event lanes use unmanaged payloads/native payload copies.
 - `ModCommandDispatcher` uses persistent `NativeQueue` lanes, `NativeHashMap` lookup tables, command quotas, per-mod command accounting, AUP rebasing, and queue prewarm.
+- Current Mod API static validator now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). Existing queues/capacities are source facts and static validator proof only, not mod runtime proof.
 - Mod command capacities are explicit: 4096 standard commands, 4096 AUP commands, 1024 render instances, 128 raycasts, 256 reject/AUP response lanes, 32 mod states.
 - `ModRegistryEvents` coalesces registry invalidations into small native queues and drains them through `SystemDispatcher`.
 
@@ -652,10 +666,10 @@ Risk:
 
 Decision:
 
-- Treat `HectonEventBus` as a first-party event spine with mod projection, not as an optional mod API.
-- Hot gameplay lanes should prefer existing NativeQueue/static buses or narrow domain signals. `HectonEventBus` is acceptable for cold/meta/progression hooks, but suspicious for frequent frame gameplay.
+- Treat `HectonEventBus` as mod/API/cold/internal-meta boundary infrastructure, not the first-party gameplay event spine.
+- Hot first-party gameplay lanes should use typed `SignalBus<T>` or an explicitly documented NativeQueue bridge lane. `HectonEventBus` is acceptable for cold/meta/progression hooks only when the allocation/cascade/watchdog cost is irrelevant or measured.
 - Add a shipping policy: mod layer enabled/disabled per build target, external `Mods` scan policy, IL2CPP policy, and artifact-backed boot trace.
-- Add a small static ledger of first-party `HectonEventBus` use: cold allowed, warm reviewed, hot forbidden unless measured.
+- Keep the first-party `HectonEventBus` ledger in `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`: cold allowed, warm reviewed, hot forbidden unless measured and explicitly justified.
 - Do not delete this layer blindly. It contains real safety work. The correction is boundary discipline and measured runtime cost, not panic removal.
 
 ## Black Box / Crash Forensics Addendum
@@ -1032,7 +1046,7 @@ Positive architecture:
 - DOC_AUDIT R29 added a `SaveManager` async world-pager bridge for chunk page writes/reads/copy/retire/telemetry/flush. DOC_AUDIT R30/R31 corrected the overclaim: chunk dehydration is now bounded to at most `2` signals per tick and stages inventory shadow plus chunk metadata only. It no longer captures the entire global `VoxelDeltaProcessor` snapshot per dehydrated chunk.
 - `H8BinaryWorldPager` now fail-closes on `IOException` / `UnauthorizedAccessException` while opening `world_data.h8bin`: it records an initialization fault and rejects pager IO instead of throwing through bootstrap. R30 also changes page-file sharing to `FileShare.Read` for single-writer semantics, adds a bounded worker-stop handshake before native disposal, releases invalid read results, and treats sparse/collided page headers as `Missing` rather than `Corrupt`. R31 removes pager initialization from `SaveManager.InitializeNativeBuffers()`, so the sidecar page file is opened only on first actual chunk page IO.
 - DOC_AUDIT R32 splits `SaveManager` boot buffers from persistence working buffers: boot now keeps the save telemetry ring and tiny load-candidate scratch only, while the 64 MB raw payload, about 68 MB compressed payload, and 10 MB staging arenas allocate on first save/load/chunk-sidecar use. R33 tightens the fault path so a faulted/uninitialized pager does not allocate the 10 MB staging arena, and load first-use allocation sits inside the normal failure/cleanup envelope. R36 re-removed a concurrent regression where chunk dehydration captured the global voxel snapshot as `worldPagerVoxelDeltaSnapshot`; R37 rechecked the latest churn, restored a joinable pager worker thread, and locally compiled `Hecton8.Core.Memory` plus `Hecton8.Core` through Unity Bee/Roslyn temp response files with exit code `0`. R38 hardens unexpected pager worker command faults so dequeued pending counters decrement in `finally`, records current WFC outpost MacroDB bitmask persist/restore contract coverage in `SaveManager`, and demoted the old full-Core success as stale under then-current churn; R43 later superseded that compile-blocked note with a clean external root `Hecton8*.csproj` no-restore CLI recheck.
-- DOC_AUDIT R39 identified the first blocker for external Core builds as generated-project drift: `Hecton8.Core.asmdef` references `23` first-party assemblies that were absent from generated `Hecton8.Core.csproj`. `HectonComplianceValidator` now has an editor-only `CSPROJ001` tripwire for this exact mismatch. R40 attempted a non-destructive Unity batchmode project refresh, found the root generated projects still stale, and added a source-backed `Directory.Build.targets` bridge instead of editing generated `.csproj` files. R41 serially rechecked the root `Hecton8*.csproj` compile surface after restoring missing MSBuild assets; R43 rechecked the same root surface under current churn. Final single-project no-restore CLI builds now pass for `Hecton8.Core.csproj`, `Hecton8.Editor.csproj`, `Hecton8.PlayModeTests.csproj`, `Hecton8.World.Contracts.csproj`, `Hecton8.World.Dots.csproj`, `Hecton8.Bootstrap.Contracts.csproj`, `Hecton8.Input.Generated.csproj`, and `Hecton8.Input.csproj` at `0 Warning(s)` / `0 Error(s)` with `LASTEXITCODE=0`. Fresh no-restore attempts can still fail before source compilation on missing `Temp\obj` restore assets, missing referenced `Temp\bin\Debug` DLLs, or shared `Temp\obj` locks; restore/build plus build-server cleanup clears those evidence hazards. Full restore graphs still emit vendor/package warnings from URP/GPUInstancer/Crest/ShaderGraph and MapMagic/Den.Tools. This is external compile evidence only, not Unity Console, Play Mode, profiler, GCMonitor, player build, or scene wiring proof.
+- DOC_AUDIT R39 identified the first blocker for external Core builds as generated-project drift: `Hecton8.Core.asmdef` references `23` first-party assemblies that were absent from generated `Hecton8.Core.csproj`. `HectonComplianceValidator` now has an editor-only `CSPROJ001` tripwire for this exact mismatch. R40 attempted a non-destructive Unity batchmode project refresh, found the root generated projects still stale, and added a source-backed `Directory.Build.targets` bridge instead of editing generated `.csproj` files. R41 serially rechecked the root `Hecton8*.csproj` compile surface after restoring missing MSBuild assets; R43 rechecked the same root surface under then-current churn. R43 historical single-project no-restore CLI builds passed at capture time for the eight root projects, but current dirty-workspace compile proof requires a fresh rerun with artifact path, command, timestamp, environment, and output. Fresh no-restore attempts can still fail before source compilation on missing `Temp\obj` restore assets, missing referenced `Temp\bin\Debug` DLLs, or shared `Temp\obj` locks; restore/build plus build-server cleanup clears those evidence hazards. Full restore graphs still emit vendor/package warnings from URP/GPUInstancer/Crest/ShaderGraph and MapMagic/Den.Tools. This is external compile evidence only, not Unity Console, Play Mode, profiler, GCMonitor, player build, or scene wiring proof.
 - `PersistentWorldRegistry` is a real persistence authority, not a thin list dump. It owns save snapshots, tombstone preload, indexed-sector restore, paging disable/fallback, sector override temp files, and corruption/quarantine surfaces.
 - `ISaveable` documents ownership rules: each owner writes only its own DTO section, validates on load, and should avoid new array allocation in the contract.
 - PlayMode and smoke surfaces exist: `SmokeTests_SaveLoad.cs`, `InquisitionStabilityPlayModeTests.cs`, `SavePersistenceOmegaSmokeTester`, `SaveRecoverySmokeTester`, and `SaveSystemRuntimeSmokeTester`.

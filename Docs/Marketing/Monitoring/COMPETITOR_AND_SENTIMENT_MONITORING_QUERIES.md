@@ -8,6 +8,26 @@ Runtime impact: none
 
 This file defines what to monitor weekly so HECTON-8 can react to real market pain instead of trailer hype. It is not a mandate to attack competitors publicly.
 
+## 2026-05-19 Launch-Week Baseline: Subnautica 2
+
+Evidence boundary: current public web snapshot, not permanent truth. Recheck before every strategy change.
+
+| Signal | Source | Current read | HECTON-8 implication |
+|---|---|---|---|
+| SN2 has launched into Early Access. | Steam store: `https://store.steampowered.com/app/1962700/Subnautica_2/` | Released 2026-05-14; Steam lists single-player, online co-op, cross-platform multiplayer, 11 supported languages, DirectX 12, and a large Very Positive review base. | Competitor momentum is strong. Marketing cannot depend on backlash or "they failed" framing. |
+| SN2 has mass visibility. | PC Gamer / SteamDB launch coverage: `https://www.pcgamer.com/games/survival-crafting/subnautica-2-pulls-over-370-000-concurrent-players-in-its-first-30-minutes-on-steam-as-it-cannonballs-into-early-access/` | Press reports very high launch concurrency. | HECTON-8 needs narrow identity and proof, not generic underwater-survival comparison. |
+| EULA/privacy/content-creator concern exists. | Notebookcheck 2026-05-18: `https://www.notebookcheck.net/Negative-Subnautica-2-Steam-reviews-slam-EULA-for-ownership-and-privacy-concerns.1299090.0.html` | Negative-review cluster around EULA/privacy/content usage claims; article also says overall reception remains Very Positive. | Public copy should emphasize clean creator/key/disclosure policy later, but do not moralize against SN2. |
+| Co-op desync anecdotes exist. | Reddit example: `https://www.reddit.com/r/Subnautica_2/comments/1tgb0v9/desync_bug_in_coop/` | Anecdotal non-host state desync around growbeds, building, storage, and death. | HECTON-8 still must not promise co-op. Internally, if co-op ever returns, shared persistence must be treated as the hard problem. |
+| Movement/stutter anecdotes exist. | Reddit examples: `https://www.reddit.com/r/Subnautica_2/comments/1tebzwr/subnautica_2_wasd_keyboard_movement_stutter_fix/`, `https://www.reddit.com/r/subnautica/comments/1te9q0n/stutter_issues_when_moving_around_in_subnautica_2/` | Anecdotal input-repeat and traversal-area stutter complaints on launch week. | HECTON-8 performance messaging remains banned until profiler proof. Product target: first route must feel stable before public clip capture. |
+| Base-building friction exists but is mixed. | Reddit example: `https://www.reddit.com/r/subnautica/comments/1tdnbi6/subnautica_2_base_building_minor_disappointment/` | Some players like flexible building; some miss chunky prefabs and faster readable results. | HECTON-8 should design base marketing around readable industrial modules plus optional depth, not pure blank-canvas construction. |
+
+Current interpretation:
+
+- SN2 is not weak. Treat it as a dominant competitor with real player love.
+- The actionable gaps are trust, texture, mechanical weight, proof-backed stability, and readable systems.
+- HECTON-8 public attack language remains forbidden.
+- The best marketing asset is a screenshot/clip that instantly says "this is heavier, colder, more industrial, and not the same emotional contract."
+
 ## Evidence Classes
 
 | Class | Use |

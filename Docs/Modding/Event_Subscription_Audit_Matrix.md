@@ -1,7 +1,7 @@
 # Event Subscription Audit Matrix
 
-Date: 2026-05-17
-Status: STATIC_SOURCE_AUDIT / RUNTIME_PENDING
+Date: 2026-05-19
+Status: ENVELOPE-ONLY STATIC_SOURCE_AUDIT / RUNTIME_PENDING
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -18,6 +18,17 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Owner prompt: MODDING_API_SCHEMA_BUILDER
+
+## 2026-05-19 Envelope-Only Override
+
+The managed event subscription surface below is retained as source-audit context. In current envelope-only UGC mode, managed event bridges are quarantined:
+
+- `ModLoader` must not install projected managed event bridges for public UGC;
+- public subscribe/publish paths must no-op, reject, or remain uninstalled according to the quarantine source gate;
+- no managed callback is a current runtime modding promise;
+- future read-only event exposure must be implemented as bounded, unmanaged, envelope-compatible, or SDK-simulated projection with runtime proof.
+
+The active modder interface is SDK authoring plus 64-byte envelope submission. See [SDK_Authoring_Interface_Plan.md](SDK_Authoring_Interface_Plan.md).
 
 ## Source Files
 

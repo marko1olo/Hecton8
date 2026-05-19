@@ -86,6 +86,7 @@
     <Compile Include="Assets\_Project\Scripts\Physics\Tethers\Contracts\TetherSignalContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Physics\Tethers\Contracts\TetherSignalContracts.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Lighting\Shafts\ScreenSpaceLightShaftRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Lighting\Shafts\ScreenSpaceLightShaftRuntime.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Lighting\Shafts\ScreenSpaceLightShaftSource.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Lighting\Shafts\ScreenSpaceLightShaftSource.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Visor\HectonDrsRenderFeatureGate.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Visor\HectonDrsRenderFeatureGate.cs'))" />
     <Compile Include="Assets\_Project\Scripts\UI\Navigation\DiegeticGyroCompassRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\UI\Navigation\DiegeticGyroCompassRuntime.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Tools\WfcLaserCutRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Tools\WfcLaserCutRuntime.cs'))" />
     <Compile Include="Assets\_Project\Scripts\VFX\Wakes\WakeDisplacementData.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\VFX\Wakes\WakeDisplacementData.cs'))" />

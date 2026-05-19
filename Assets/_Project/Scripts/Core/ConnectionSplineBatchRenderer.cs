@@ -41,7 +41,7 @@ namespace Hecton8.Core
             RelayUnpowered = 4
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct FlexiblePipeInstanceGpuData
         {
             public float4 P0Radius;

@@ -35,7 +35,8 @@ namespace Hecton8.Animation.FaunaProcedural
 
             float3 velocity = ProceduralBoneMath.Float3(cheapNoise, highNoise * 0.35f, speed);
             float deterministicTime = SimulationFrame * 0.016666668f;
-            float swimPhase = deterministicTime * math.lerp(0.5f, 1.8f, quality) + signal.NoisePhase;
+            float phaseSeed = ((entityHash ^ SectorHash) & 1023u) * 0.006135923f;
+            float swimPhase = deterministicTime * math.lerp(0.5f, 1.8f, quality) + phaseSeed;
             float lateral = ProceduralBoneMath.FastSin(swimPhase + index * 0.173f) * math.lerp(0.25f, 1.1f, quality);
             float3 target = ProceduralBoneMath.Float3(lateral, 0.25f + quality * 0.45f, 2.5f + speed * 0.35f);
 
@@ -47,7 +48,7 @@ namespace Hecton8.Animation.FaunaProcedural
             signal.SectorHash = SectorHash;
             signal.SimulationFrame = SimulationFrame;
             signal.Flags = ProceduralBoneBlenderConstants.TelemetryFlagMockSignal;
-            signal.NoisePhase = swimPhase;
+            signal.NoisePhase = phaseSeed;
             signal.SpeedHint = speed;
             signal._pad0 = 0UL;
             Signals[index] = signal;
@@ -118,7 +119,7 @@ namespace Hecton8.Animation.FaunaProcedural
                 return;
             }
 
-            float inputQuality = input.GlobalQualityWeight > 0f && math.isfinite(input.GlobalQualityWeight)
+            float inputQuality = math.isfinite(input.GlobalQualityWeight)
                 ? input.GlobalQualityWeight
                 : GlobalQualityWeight;
             float quality = math.saturate(math.min(

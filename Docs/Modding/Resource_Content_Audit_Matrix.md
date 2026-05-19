@@ -1,7 +1,7 @@
 # Resource And Content Audit Matrix
 
-Date: 2026-05-17
-Status: STATIC_SOURCE_AUDIT / RUNTIME_PENDING
+Date: 2026-05-19
+Status: ENVELOPE-ONLY STATIC_SOURCE_AUDIT / RUNTIME_PENDING
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -18,6 +18,17 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Owner prompt: MODDING_API_SCHEMA_BUILDER
+
+## 2026-05-19 Envelope-Only Override
+
+The table below records the historical/source-audit resource facade. In current envelope-only runtime mode, direct mod resource/content ingress is quarantined:
+
+- public resource proxy registration does not grant a live Unity object to mods;
+- runtime `.bundle`, `lang_*.json`, raw PNG, prefab, material, mesh, texture, audio clip, or localization file discovery is not a mod right;
+- UGC assets must be imported by SDK tooling, CRC-approved, byte-capped, and referenced by `FutureCommandEnvelope` asset opcodes;
+- engine owners resolve approved hashes internally after the sandbox accepts a packet.
+
+SDK authoring details are in [SDK_Authoring_Interface_Plan.md](SDK_Authoring_Interface_Plan.md).
 
 ## Source Files
 

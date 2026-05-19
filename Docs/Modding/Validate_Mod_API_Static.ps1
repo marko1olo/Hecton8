@@ -183,8 +183,8 @@ $modEventDtoOffsets = @([regex]::Matches($eventContractsSource, 'FieldOffset\((\
         Name = $_.Groups[3].Value
     }
 })
-$modCommandSizeMatch = [regex]::Match($commandDispatcherSource, 'StructLayout\(LayoutKind\.Sequential,\s*Size\s*=\s*(\d+)\)\]\s*public\s+struct\s+ModCommand', 'Singleline')
-Assert-True $modCommandSizeMatch.Success 'Missing ModCommand sequential size declaration.'
+$modCommandSizeMatch = [regex]::Match($commandDispatcherSource, 'StructLayout\(LayoutKind\.(?:Sequential|Explicit),\s*Size\s*=\s*(\d+)\)\]\s*public\s+struct\s+ModCommand', 'Singleline')
+Assert-True $modCommandSizeMatch.Success 'Missing ModCommand 64-byte layout size declaration.'
 $modCommandSize = [int]$modCommandSizeMatch.Groups[1].Value
 $modAupResponseSizeMatch = [regex]::Match($spatialContractsSource, 'StructLayout\(LayoutKind\.Sequential,\s*Size\s*=\s*(\d+)\)\]\s*public\s+struct\s+ModAupResponse', 'Singleline')
 Assert-True $modAupResponseSizeMatch.Success 'Missing ModAupResponse sequential size declaration.'

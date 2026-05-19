@@ -1,7 +1,7 @@
 # HECTON-8 Mod Payload Layout Audit Matrix
 
-Date: 2026-05-17
-Status: STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION  
+Date: 2026-05-19
+Status: ENVELOPE-ONLY STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -24,12 +24,29 @@ Primary sources:
 - `Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs`
 - `Assets/_Project/Scripts/ModdingAPI/ModSpatialContracts.cs`
 
+## 2026-05-19 Envelope-Only Payload
+
+The active UGC runtime payload is `FutureCommandEnvelope`, not legacy `ModCommand`.
+
+| Field | Offset | Size | Type | Rule |
+|---|---:|---:|---|---|
+| `OpcodeHash` | 0 | 4 | `uint` | Stable opcode hash; must exist in allowlist. |
+| `ModderSignature` | 4 | 4 | `uint` | Per-mod signature for budgets and memory lease. |
+| `TargetAUP` | 8 | 24 | `double3` | Finite and within sandbox bounds. |
+| `PayloadData` | 32 | 16 | `float4` | Opcode-specific lanes; numeric lanes must be finite. |
+| `IntegrityHash` | 48 | 8 | `ulong` | XXHash3 over bytes `0..47`. |
+| `_pad0` | 56 | 8 | `ulong` | Explicit padding to 64 bytes. |
+
+Total size: `64` bytes. This is one L1 cache line and a multiple of 8/16. Runtime docs must not replace this with `Pack=1`, JSON, variable payloads, or managed object references.
+
+Legacy payloads below are retained for source-audit continuity only while the legacy command/event surfaces are quarantined.
+
 ## Fixed Payload Contracts
 
 | Payload | Layout | Size | Source | Notes |
 |---|---|---:|---|---|
 | `ModEventDto` | Explicit | 64 bytes | `ModEventContracts.cs` | Projected public signal DTO. Exact field offsets are contract. |
-| `ModCommand` | Sequential | 64 bytes | `ModCommandDispatcher.cs` | Base command packet. Header is 8 bytes, payload is seven 64-bit words. |
+| `ModCommand` | Explicit | 64 bytes | `ModCommandDispatcher.cs` | Dormant legacy command packet. Header fields are explicit and `ModHash` / `RequestId` overlay `Payload0`. |
 | `ModAupResponse` | Sequential | 64 bytes | `ModSpatialContracts.cs` | Async response payload for flow, voxel, and acoustic AUP paths. |
 
 ## ModEventDto Field Offsets
@@ -62,19 +79,21 @@ Primary sources:
 
 ## ModCommand Payload Words
 
-| Field | Type | Contract |
-|---|---|---|
-| `Opcode` | `ushort` | `ModCommandOpcode` value. |
-| `TargetSystem` | `ushort` | `ModCommandTargetSystem` value. |
-| `Flags` | `ushort` | `ModCommandFlags` value. |
-| `ApiVersion` | `ushort` | Captured from registered mod API version. |
-| `Payload0` | `ulong` | Low 32 bits = `ModHash`; high 32 bits = `RequestId`. |
-| `Payload1` | `ulong` | Opcode-specific. |
-| `Payload2` | `ulong` | Opcode-specific. |
-| `Payload3` | `ulong` | Opcode-specific. |
-| `Payload4` | `ulong` | Opcode-specific. |
-| `Payload5` | `ulong` | Opcode-specific. |
-| `Payload6` | `ulong` | Opcode-specific. |
+| Field | Offset | Type | Contract |
+|---|---:|---|---|
+| `Opcode` | 0 | `ushort` | `ModCommandOpcode` value. |
+| `TargetSystem` | 2 | `ushort` | `ModCommandTargetSystem` value. |
+| `Flags` | 4 | `ushort` | `ModCommandFlags` value. |
+| `ApiVersion` | 6 | `ushort` | Captured from registered mod API version. |
+| `Payload0` | 8 | `ulong` | Low 32 bits = `ModHash`; high 32 bits = `RequestId`. |
+| `ModHash` | 8 | `uint` | Field overlay on `Payload0` low 32 bits. |
+| `RequestId` | 12 | `uint` | Field overlay on `Payload0` high 32 bits. |
+| `Payload1` | 16 | `ulong` | Opcode-specific. |
+| `Payload2` | 24 | `ulong` | Opcode-specific. |
+| `Payload3` | 32 | `ulong` | Opcode-specific. |
+| `Payload4` | 40 | `ulong` | Opcode-specific. |
+| `Payload5` | 48 | `ulong` | Opcode-specific. |
+| `Payload6` | 56 | `ulong` | Opcode-specific. |
 
 ## Sequential Result Payloads
 

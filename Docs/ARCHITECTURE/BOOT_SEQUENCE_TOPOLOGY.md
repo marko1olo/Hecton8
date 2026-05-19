@@ -32,7 +32,7 @@ This is the documentation contract. The current implementation still has legacy 
 | Stage | Source Owner | Required Work | Hard Rule |
 |---:|---|---|---|
 | 1 | allocators / memory sentinels | persistent native memory, arena, budget trackers | allocate cold, never in hot tick |
-| 2 | `GlobalSignals` | prewarm source-observed native signal queues: R24 scan sees `73` direct `CreateQueue(...)` slots, `133` typed `SignalBus<T>.EnsureInitialized()` lanes, plus `DebugSignal` | no listener callbacks during publish |
+| 2 | `GlobalSignals` | prewarm source-observed native signal queues: R27 scan sees `73` direct `CreateQueue(...)` slots and `133` typed `SignalBus<T>.EnsureInitialized()` lanes including `DebugSignal`; rerun command, timestamp, and artifact before exact-count use | no listener callbacks during publish |
 | 3 | platform I/O | persistent path, FileStream save I/O, native bridges | no MMF claims without source proof |
 | 4 | `H8StaticDataArena` | load `.h8bin` into persistent native arena | validate header, directory, checksum |
 | 5 | registry services | Kahn-sorted bootstrap nodes and GlobalRegistry service slots | no singleton self-wiring |
@@ -74,7 +74,7 @@ No presentation system can be treated as authoritative state. Presentation can r
 |---|---|
 | "Single clean bootstrap sovereign" | false; bootstrap authority still spans `GameBootstrapper`, `SceneBootstrap`, and legacy owner surfaces |
 | "FileStream everywhere" | false for Data Monolith; `H8StaticDataArena` still uses boot-only `File.ReadAllBytes` staging |
-| "Five artery event bus" | stale; R24 static source scan sees `73` direct native queue slots, `133` typed `SignalBus<T>` lanes, and `DebugSignal`; rerun before exact use |
+| "Five artery event bus" | stale; R27 static source scan sees `73` direct native queue slots and `133` typed `SignalBus<T>` lanes including `DebugSignal`; rerun before exact use |
 
 ## Verification Required
 

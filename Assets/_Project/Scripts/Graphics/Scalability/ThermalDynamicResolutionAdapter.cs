@@ -75,6 +75,7 @@ namespace Hecton8.Graphics.Scalability
         private const float NotificationThreshold = 0.4f;
         private const float EwmaAlpha = 0.18f;
         private const float ScaleEpsilon = 0.0001f;
+        private const float PixelStableGridStep = 2f;
         private const float SharpenEpsilon = 0.001f;
         private const float VisualBudgetEpsilon = 0.01f;
         private const float VisualFeatureFeather = 0.14f;
@@ -112,6 +113,8 @@ namespace Hecton8.Graphics.Scalability
         private static readonly int s_drsPostProcessWeightId = Shader.PropertyToID("_H8DrsHeavyPostProcessWeight");
         private static readonly int s_drsUpscalerTypeHashId = Shader.PropertyToID("_H8DrsUpscalerTypeHash");
         private static readonly int s_visorFluidOverkillId = Shader.PropertyToID("_HectonVisorFluidVisualOverkill");
+        private static readonly int s_h8GlobalQualityWeightId = Shader.PropertyToID("_H8GlobalQualityWeight");
+        private static readonly int s_globalQualityWeightId = Shader.PropertyToID("_GlobalQualityWeight");
         private static readonly int s_uiLayer = LayerMask.NameToLayer("UI");
         private static ThermalDynamicResolutionAdapter s_activeAdapter;
         private static float s_systemScalePercentage = 100f;
@@ -122,6 +125,7 @@ namespace Hecton8.Graphics.Scalability
         private VaultBufferHandle<DrsStateDTO> _drsStateHandle;
         private VaultBufferHandle<ResolutionScaleState> _scaleStateHandle;
         private VaultBufferHandle<DrsTelemetryEntry> _telemetryHandle;
+        private VaultBufferHandle<ScalabilityStateDTO> _scalabilityStateHandle;
         private JobHandle _stressEwmaHandle;
         private int _telemetryCursor;
         private uint _sequence;
@@ -133,6 +137,7 @@ namespace Hecton8.Graphics.Scalability
         private float _latestGpuUtil01;
         private float _latestSystemStress01;
         private float _latestSystemStressEwma01;
+        private float _latestGlobalQualityWeight01 = PolicyMaxScale;
         private float _sharpenIntensity01;
         private float _dearLie01;
         private float _visualOverkill01;
@@ -184,6 +189,7 @@ namespace Hecton8.Graphics.Scalability
         private bool _mockQualityWeightActive;
         private bool _visualFeatureWeightsCommitted;
         private float _mockQualityWeight01 = 1f;
+        private string _blackBoxDumpPath;
         private DrsScaleLimitsDTO _scaleLimits;
         private ResolutionScaleState _scaleStateMirror;
         private DrsStateDTO _drsState;
@@ -340,6 +346,7 @@ namespace Hecton8.Graphics.Scalability
                 return;
             }
 
+            ResolveBlackBoxDumpPathCold();
             _urpAsset = UniversalRenderPipeline.asset;
             _defaultRenderScale = _urpAsset != null ? ClampRenderScale(_urpAsset.renderScale) : PolicyMaxScale;
             _currentScale = math.min(_defaultRenderScale, PolicyMaxScale);
@@ -447,7 +454,9 @@ namespace Hecton8.Graphics.Scalability
             _scaleStateHandle = default;
             _telemetryHandle = default;
             _drsStateHandle = default;
+            _scalabilityStateHandle = default;
             _dataVault = null;
+            _blackBoxDumpPath = null;
         }
 
         public void Tick(float deltaTime)
@@ -466,6 +475,7 @@ namespace Hecton8.Graphics.Scalability
             _latestFrameTimeEwmaMs = SanitizePositive(_latestFrameTimeEwmaMs, TargetFrameTimeMs);
             _latestSystemHealth01 = Sanitize01(_latestSystemHealth01);
             _latestGpuUtil01 = Sanitize01(_latestGpuUtil01);
+            _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
             _hardwareTier = ResolveHardwareTierByte();
             _stpActive = ResolveStpIntent((HectonQualityTier)_hardwareTier);
             _latestSystemStress01 = ResolveSystemStressInput01();
@@ -515,6 +525,7 @@ namespace Hecton8.Graphics.Scalability
                 ? targetScale
                 : ResolveSmoothedRenderScale(_currentScale, targetScale, deltaTime);
             nextScale = ClampRenderScale(nextScale);
+            nextScale = ResolvePixelStableRenderScale(nextScale);
             _targetScale = targetScale;
             _sharpenIntensity01 = ResolveSharpenIntensity(nextScale);
             _upscalerTypeHash = ResolveUpscalerHash(tier, nextScale);
@@ -553,7 +564,7 @@ namespace Hecton8.Graphics.Scalability
             return true;
         }
 
-        public ref DrsStateDTO GetMutableDrsState()
+        public ref readonly DrsStateDTO GetDrsStateReadOnly()
         {
             return ref _drsState;
         }
@@ -700,6 +711,7 @@ namespace Hecton8.Graphics.Scalability
         {
             _mockQualityWeightActive = active;
             _mockQualityWeight01 = math.isfinite(qualityWeight01) ? math.saturate(qualityWeight01) : 1f;
+            _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
         }
 
         public void ConsumeMockQualityWeightSignal(in MockQualityWeightSignal signal)
@@ -709,6 +721,7 @@ namespace Hecton8.Graphics.Scalability
 
             _mockQualityWeightActive = true;
             _mockQualityWeight01 = math.saturate(signal.GlobalQualityWeight);
+            _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
             if (signal.FrameTimeMs > 0f && math.isfinite(signal.FrameTimeMs))
                 _latestFrameTimeEwmaMs = math.max(_latestFrameTimeEwmaMs, signal.FrameTimeMs);
         }
@@ -1047,6 +1060,7 @@ namespace Hecton8.Graphics.Scalability
             _drsStateHandle = default;
             _scaleStateHandle = default;
             _telemetryHandle = default;
+            _scalabilityStateHandle = default;
         }
 
         private void UpdateScaleState(byte flags)
@@ -1105,7 +1119,7 @@ namespace Hecton8.Graphics.Scalability
             state.VisualOverkill01 = _visualOverkill01;
             state.DearLie01 = _dearLie01;
             state.VisualFeatureFlags = _visualFeatureFlags;
-            state.Reserved4 = 0;
+            state.GlobalQualityWeight01 = _latestGlobalQualityWeight01;
             state.Reserved5 = 0;
             state.Reserved6 = 0;
         }
@@ -1280,6 +1294,7 @@ namespace Hecton8.Graphics.Scalability
             _dearLie01 = 0f;
             _visualOverkill01 = 0f;
             _visualFeatureFlags = 0u;
+            _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
             _upscalerTypeHash = ResolveUpscalerHash((HectonQualityTier)_hardwareTier, _currentScale);
             UpdateDrsState();
             ApplyVisualBudgetGlobals();
@@ -1433,7 +1448,8 @@ namespace Hecton8.Graphics.Scalability
                 math.isfinite(_targetScale) &&
                 math.isfinite(_latestFrameTimeEwmaMs) &&
                 math.isfinite(_latestSystemStress01) &&
-                math.isfinite(_latestSystemStressEwma01))
+                math.isfinite(_latestSystemStressEwma01) &&
+                math.isfinite(_latestGlobalQualityWeight01))
             {
                 return false;
             }
@@ -1450,6 +1466,7 @@ namespace Hecton8.Graphics.Scalability
             _latestFrameTimeEwmaMs = TargetFrameTimeMs;
             _latestSystemStress01 = 1f;
             _latestSystemStressEwma01 = 1f;
+            _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
             _sharpenIntensity01 = 0f;
             _pressureFrameCount = 0;
             _recoveryFrameCount = RecoveryHysteresisFrames;
@@ -1484,11 +1501,13 @@ namespace Hecton8.Graphics.Scalability
         private void ApplyDirectRenderScale(float renderScale, float bufferScale)
         {
             renderScale = ClampRenderScale(renderScale);
-            _ = renderScale;
             if (!math.isfinite(bufferScale) || bufferScale <= 0f)
                 bufferScale = PolicyMaxScale;
 
             bufferScale = ClampRenderScale(bufferScale);
+            if (_urpAsset != null && math.abs(_urpAsset.renderScale - renderScale) > ScaleEpsilon)
+                _urpAsset.renderScale = renderScale;
+
             ScalableBufferManager.ResizeBuffers(bufferScale, bufferScale);
         }
 
@@ -1688,13 +1707,11 @@ namespace Hecton8.Graphics.Scalability
 
             try
             {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-                if (string.IsNullOrEmpty(projectRoot))
+                string dumpPath = _blackBoxDumpPath;
+                if (string.IsNullOrEmpty(dumpPath))
                     return;
 
-                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(logDirectory);
-                using FileStream stream = File.Open(Path.Combine(logDirectory, DumpFileName), FileMode.Create, FileAccess.Write, FileShare.Read);
+                using FileStream stream = File.Open(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 int count = math.min(TelemetryCapacity, telemetryLength);
                 Span<byte> header = stackalloc byte[TelemetryHeaderBytes];
                 BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), TelemetryMagic);
@@ -1722,6 +1739,22 @@ namespace Hecton8.Graphics.Scalability
             {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)TelemetryMagic));
             }
+        }
+
+        private void ResolveBlackBoxDumpPathCold()
+        {
+            _blackBoxDumpPath = null;
+            string dataPath = Application.dataPath;
+            if (string.IsNullOrEmpty(dataPath))
+                return;
+
+            DirectoryInfo projectRoot = Directory.GetParent(dataPath);
+            if (projectRoot == null)
+                return;
+
+            string logDirectory = Path.Combine(projectRoot.FullName, "Docs", "AgentLogs");
+            Directory.CreateDirectory(logDirectory);
+            _blackBoxDumpPath = Path.Combine(logDirectory, DumpFileName);
         }
 
         private static void WriteDrsTelemetryEntryLittleEndian(Span<byte> destination, DrsTelemetryEntry entry)
@@ -1916,10 +1949,95 @@ namespace Hecton8.Graphics.Scalability
         private float ResolveGlobalQualityWeight(float stress01)
         {
             float stressWeight = math.saturate(1f - Sanitize01(stress01));
-            if (_mockQualityWeightActive)
-                return math.min(Sanitize01(_mockQualityWeight01), stressWeight);
+            return math.min(Sanitize01(_latestGlobalQualityWeight01), stressWeight);
+        }
 
-            return stressWeight;
+        private float ResolveQualitySignalWeight()
+        {
+            float qualityWeight = ResolvePublishedGlobalQualityWeight();
+            if (_mockQualityWeightActive)
+                qualityWeight = math.min(qualityWeight, Sanitize01(_mockQualityWeight01));
+
+            return qualityWeight;
+        }
+
+        private float ResolvePublishedGlobalQualityWeight()
+        {
+            if (TryReadScalabilityStateQualityWeight(out float vaultQualityWeight))
+                return vaultQualityWeight;
+
+            if (TryReadPublishedShaderQualityWeight(out float shaderQualityWeight))
+                return shaderQualityWeight;
+
+            float cachedQualityWeight = _latestGlobalQualityWeight01;
+            if (!math.isfinite(cachedQualityWeight))
+                return PolicyMaxScale;
+
+            if (_frameCounter == 0u && cachedQualityWeight <= 0f && !_mockQualityWeightActive)
+                return PolicyMaxScale;
+
+            return math.saturate(cachedQualityWeight);
+        }
+
+        private static bool TryReadPublishedShaderQualityWeight(out float qualityWeight)
+        {
+            qualityWeight = PolicyMaxScale;
+            float h8QualityWeight = Shader.GetGlobalFloat(s_h8GlobalQualityWeightId);
+            float legacyQualityWeight = Shader.GetGlobalFloat(s_globalQualityWeightId);
+            bool hasH8QualityWeight = math.isfinite(h8QualityWeight) && h8QualityWeight > 0f;
+            bool hasLegacyQualityWeight = math.isfinite(legacyQualityWeight) && legacyQualityWeight > 0f;
+            if (!hasH8QualityWeight && !hasLegacyQualityWeight)
+                return false;
+
+            float value = hasH8QualityWeight && hasLegacyQualityWeight
+                ? math.min(h8QualityWeight, legacyQualityWeight)
+                : hasH8QualityWeight
+                    ? h8QualityWeight
+                    : legacyQualityWeight;
+            qualityWeight = math.saturate(value);
+            return true;
+        }
+
+        private bool TryReadScalabilityStateQualityWeight(out float qualityWeight)
+        {
+            qualityWeight = PolicyMaxScale;
+            IDataVault vault = _dataVault;
+            if (vault == null || !TryRefreshScalabilityStateHandle(vault))
+                return false;
+
+            if (_scalabilityStateHandle.Length <= 0)
+                return false;
+
+            void* pointer = _scalabilityStateHandle.ResolvePointer(vault);
+            if (pointer == null)
+                return false;
+
+            float value = *(float*)pointer;
+            if (!math.isfinite(value))
+                return false;
+
+            if (_frameCounter == 0u && value <= 0f && !_mockQualityWeightActive)
+                return false;
+
+            qualityWeight = math.saturate(value);
+            return true;
+        }
+
+        private bool TryRefreshScalabilityStateHandle(IDataVault vault)
+        {
+            if (vault == null)
+                return false;
+
+            if (_scalabilityStateHandle.IsCreated && vault.ResolveBuffer(ref _scalabilityStateHandle))
+                return _scalabilityStateHandle.Length > 0;
+
+            if (!vault.TryGetBufferHandle(BufferID.ShinobuScalabilityState, out _scalabilityStateHandle))
+            {
+                _scalabilityStateHandle = default;
+                return false;
+            }
+
+            return _scalabilityStateHandle.IsCreated && _scalabilityStateHandle.Length > 0;
         }
 
         private float ResolveMinScaleLimit(HectonQualityTier tier)
@@ -1984,6 +2102,20 @@ namespace Hecton8.Graphics.Scalability
             float targetSmoothing = math.clamp(baseSmoothing * 2f, 0.2f, 64f);
             float alpha = math.saturate(1f - math.exp(-targetSmoothing * safeDt));
             return currentTargetScale + (desiredTargetScale - currentTargetScale) * alpha;
+        }
+
+        private static float ResolvePixelStableRenderScale(float renderScale)
+        {
+            renderScale = ClampRenderScale(renderScale);
+            if (renderScale >= PolicyMaxScale - ScaleEpsilon)
+                return PolicyMaxScale;
+
+            float screenWidth = Screen.width > 0 ? Screen.width : 1f;
+            float screenHeight = Screen.height > 0 ? Screen.height : 1f;
+            float dominantAxisPixels = math.max(screenWidth, screenHeight);
+            float scaleGrid = PixelStableGridStep * math.rcp(math.max(1f, dominantAxisPixels));
+            float snappedScale = math.round(renderScale * math.rcp(scaleGrid)) * scaleGrid;
+            return ClampRenderScale(snappedScale);
         }
 
         private uint ResolveUpscalerHash(HectonQualityTier tier, float renderScale)
@@ -2104,8 +2236,11 @@ namespace Hecton8.Graphics.Scalability
             float multiplier = math.isfinite(_sharpeningMultiplier)
                 ? math.clamp(_sharpeningMultiplier, 0f, 2f)
                 : DefaultSharpeningMultiplier;
-            float inverseDeficit = math.max(0f, math.rcp(safeScale) - 1f);
-            return math.clamp(inverseDeficit * multiplier, 0f, 0.85f);
+            float linearDeficit = math.saturate((PolicyMaxScale - safeScale) * math.rcp(math.max(0.0001f, PolicyMaxScale - MinScale)));
+            float inverseDeficit = math.saturate((math.rcp(safeScale) - 1f) * math.rcp(math.max(0.0001f, math.rcp(MinScale) - 1f)));
+            float taaResolve = math.lerp(Smooth01(linearDeficit), inverseDeficit, 0.65f);
+            float qualityRingingGuard = math.lerp(0.78f, 1f, Sanitize01(_latestGlobalQualityWeight01));
+            return math.clamp(taaResolve * multiplier * qualityRingingGuard, 0f, 0.85f);
         }
 
         private void UpdateVisualBudget(HectonQualityTier tier, float stress01, float renderScale)

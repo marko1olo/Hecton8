@@ -82,7 +82,7 @@ namespace Hecton8.Physics.Exosuit
     /// Low-frequency acoustic stomp or scrape tap from heavy exosuit contact.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Size = 32)]
-    public partial struct AcousticEchoTap : ISignal
+    public partial struct ExosuitAcousticEchoTap : ISignal
     {
         public double3 AUP;
         public float Intensity01;

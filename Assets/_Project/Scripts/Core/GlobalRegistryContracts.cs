@@ -212,7 +212,7 @@ namespace Hecton8.Core
     /// Registry-published world streaming IO backpressure read model.
     /// Movement, PDA, and VFX consumers read the dispatcher scalar or this cached service; they do not touch Addressables owners directly.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct StreamingHlodImpostorPoint
     {
         public float3 Center;
@@ -617,7 +617,7 @@ namespace Hecton8.Core
     /// Blittable celestial runtime payload consumed by rendering, fluid, audio, and gameplay systems.
     /// Double universe time is retained for deterministic sync; spatial presentation data is reduced to float vectors.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 144)]
     public struct CelestialRuntimeSnapshot
     {
         /// <summary>Authoritative Absolute Universe Time used for the analytical orbit solve.</summary>
@@ -681,7 +681,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable GI relay state published for watchdogs, diagnostics, and low-cost consumers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct GIRelayRuntimeSnapshot
     {
         public double AbsoluteUniverseTime;
@@ -732,7 +732,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable seismic and harmonic-tide payload for systems that need latest deterministic macro-world state.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 56)]
     public struct SeismicRuntimeSnapshot
     {
         public double AbsoluteUniverseTime;
@@ -745,6 +745,7 @@ namespace Hecton8.Core
         public float ThermalEruptionProbabilityScalar;
         public uint Flags;
         public uint Sequence;
+        private uint _pad0;
     }
 
     /// <summary>
@@ -1595,7 +1596,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable hand pose pair for VR hand renderers: controller target versus spring-driven physical hand.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public readonly struct VRSomaticHandPose
     {
         public readonly byte HandIndex;
@@ -1764,7 +1765,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Cold-path authoring payload copied from scene POI components into the native spatial registry.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 88)]
     public struct NarrativeSpatialTriggerAuthoring
     {
         public AbsoluteUniversePosition PositionAup;
@@ -1780,18 +1781,20 @@ namespace Hecton8.Core
         private byte _reserved0;
         private byte _reserved1;
         private byte _reserved2;
+        private uint _pad0;
     }
 
     /// <summary>
     /// Blittable player pose snapshot for systems that need player AUP and view direction without concrete player-runtime access.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 80)]
     public struct PlayerRuntimePoseSnapshot
     {
         public float3 RuntimePosition;
         public float3 Forward;
         public AbsoluteUniversePosition Aup;
         public uint Flags;
+        private uint _pad0;
 
         public PlayerRuntimePoseSnapshot(float3 runtimePosition, float3 forward, AbsoluteUniversePosition aup, uint flags)
         {
@@ -1799,6 +1802,7 @@ namespace Hecton8.Core
             Forward = forward;
             Aup = aup;
             Flags = flags;
+            _pad0 = 0u;
         }
     }
 
@@ -2207,7 +2211,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable flood readback for one habitat room, expressed in runtime-space meters.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public readonly struct HabitatRoomWaterlineSnapshot
     {
         public const byte FlagBreached = 1 << 0;
@@ -2700,7 +2704,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Unmanaged gas-to-physiology signal emitted when CO2 toxicity or nitrogen narcosis crosses a scalar threshold.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public readonly struct ToxicitySignal
     {
         public ToxicitySignal(
@@ -2719,6 +2723,8 @@ namespace Hecton8.Core
             Narcosis01 = narcosis01;
             FrameIndex = frameIndex;
             Flags = flags;
+            _pad0 = 0;
+            _pad1 = 0u;
         }
 
         public int RoomId { get; }
@@ -2728,6 +2734,8 @@ namespace Hecton8.Core
         public float Narcosis01 { get; }
         public uint FrameIndex { get; }
         public ushort Flags { get; }
+        private readonly ushort _pad0;
+        private readonly uint _pad1;
     }
 
     /// <summary>
@@ -2988,7 +2996,7 @@ namespace Hecton8.Core
     /// Unmanaged registry event payload drained by <see cref="SystemDispatcher"/>.
     /// Managed service references are carried by GlobalRegistry sidecar slots during dispatch only.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
     public struct RegistryEventPayload
     {
         public uint PreviousServiceHash;
@@ -2997,6 +3005,7 @@ namespace Hecton8.Core
         public uint FrameIndex;
         public ushort ServiceSlot;
         public ushort EventType;
+        private uint _pad0;
     }
 
     /// <summary>
@@ -3598,7 +3607,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Allocation-free global biomass audit sample returned by <see cref="IEcosystemDirectorService"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
     public struct EcosystemBiomassAuditSample
     {
         public float PreyBiomassSum;

@@ -116,6 +116,9 @@ namespace Hecton8.Modding
 
         internal static bool RegisterManagedFactory(string modId, Func<IHectonMod> factory)
         {
+            if (ShouldForceFutureCommandEnvelopeOnly())
+                return false;
+
             if (string.IsNullOrWhiteSpace(modId) || factory == null)
                 return false;
 
@@ -144,8 +147,12 @@ namespace Hecton8.Modding
 
             SaveEvents.Register(_saveEventListener);
             ModCommandDispatcher.Initialize();
-            ModEventProjectionBridge.InstallGlobal();
-            ModResourceRegistry.Initialize();
+            if (!ShouldForceFutureCommandEnvelopeOnly())
+            {
+                ModEventProjectionBridge.InstallGlobal();
+                ModResourceRegistry.Initialize();
+            }
+
             GameBootstrapper.Register(_bootstrapEventListener);
             Application.quitting += HandleApplicationQuitting;
             SceneManager.sceneLoaded += HandleSceneLoaded;
@@ -158,12 +165,16 @@ namespace Hecton8.Modding
                 return;
 
             SaveEvents.Unregister(_saveEventListener);
-            ModEventProjectionBridge.ShutdownGlobal();
+            if (!ShouldForceFutureCommandEnvelopeOnly())
+                ModEventProjectionBridge.ShutdownGlobal();
+
             GameBootstrapper.Unregister(_bootstrapEventListener);
             Application.quitting -= HandleApplicationQuitting;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             ModCommandDispatcher.Shutdown();
-            ModResourceRegistry.Shutdown();
+            if (!ShouldForceFutureCommandEnvelopeOnly())
+                ModResourceRegistry.Shutdown();
+
             _hooksInstalled = false;
         }
 
@@ -236,13 +247,30 @@ namespace Hecton8.Modding
                 }
 
                 string modDirectory = Path.GetDirectoryName(manifestPath);
-                string assemblyPath = ResolveAssemblyPath(modDirectory, manifest);
+                bool envelopeOnly = ShouldForceFutureCommandEnvelopeOnly();
+                string assemblyPath = envelopeOnly
+                    ? string.Empty
+                    : ResolveAssemblyPath(modDirectory, manifest);
                 bool hasManagedEntry =
                     !string.IsNullOrWhiteSpace(manifest.EntryAssembly) ||
                     !string.IsNullOrWhiteSpace(manifest.EntryType) ||
-                    !string.IsNullOrWhiteSpace(assemblyPath);
+                    (!envelopeOnly && !string.IsNullOrWhiteSpace(assemblyPath));
 
-                candidate = BuildCandidate(manifest, manifestPath, modDirectory, assemblyPath, hasManagedEntry);
+                string bundlePath = envelopeOnly
+                    ? string.Empty
+                    : ResolveBundlePath(modDirectory, manifest.Id);
+                string[] localizationFiles = envelopeOnly
+                    ? Array.Empty<string>()
+                    : ResolveLocalizationFiles(modDirectory);
+
+                candidate = BuildCandidate(
+                    manifest,
+                    manifestPath,
+                    modDirectory,
+                    assemblyPath,
+                    hasManagedEntry,
+                    bundlePath,
+                    localizationFiles);
                 return true;
             }
             catch (Exception ex)
@@ -257,7 +285,9 @@ namespace Hecton8.Modding
             string manifestPath,
             string modDirectory,
             string assemblyPath,
-            bool hasManagedEntry)
+            bool hasManagedEntry,
+            string bundlePath,
+            string[] localizationFiles)
         {
             ModCandidate candidate = new ModCandidate
             {
@@ -276,8 +306,8 @@ namespace Hecton8.Modding
                 EntryTypeName = manifest.EntryType ?? string.Empty,
                 ManifestPath = manifestPath,
                 ModDirectory = modDirectory,
-                BundlePath = ResolveBundlePath(modDirectory, manifest.Id),
-                LocalizationFiles = ResolveLocalizationFiles(modDirectory),
+                BundlePath = bundlePath ?? string.Empty,
+                LocalizationFiles = localizationFiles ?? Array.Empty<string>(),
                 HasManagedEntry = hasManagedEntry
             };
 
@@ -465,6 +495,16 @@ namespace Hecton8.Modding
             if (candidate.IsDisabled)
                 return;
 
+            if (ShouldForceFutureCommandEnvelopeOnly())
+            {
+                DisableCandidate(
+                    candidate,
+                    candidate.HasManagedEntry
+                        ? "Managed mod entry disabled. UGC commands must use 64-byte FutureCommandEnvelope packets."
+                        : "Filesystem content ingestion disabled. UGC assets must be approved by CRC and referenced by 64-byte FutureCommandEnvelope packets.");
+                return;
+            }
+
             ModAssetManager.RegisterBundlePath(candidate.Metadata.Id, candidate.BundlePath);
             ModLocalizationBridge.RegisterLocalizationFiles(candidate.Metadata.Id, candidate.LocalizationFiles);
 
@@ -475,17 +515,11 @@ namespace Hecton8.Modding
                     Metadata = candidate.Metadata,
                     Status = ModLoadStatus.Active,
                     DirectoryPath = candidate.ModDirectory,
-                    StatusMessage = "Content-only mod loaded.",
+                    StatusMessage = "Content-only mod loaded in legacy non-envelope mode.",
                     AssetBundlePath = candidate.BundlePath,
                     HasManagedEntry = false,
                     HasLocalizationFiles = candidate.LocalizationFiles != null && candidate.LocalizationFiles.Length > 0
                 });
-                return;
-            }
-
-            if (ShouldForceFutureCommandEnvelopeOnly())
-            {
-                DisableCandidate(candidate, "Managed mod entry disabled. UGC commands must use 64-byte FutureCommandEnvelope packets.");
                 return;
             }
 
@@ -559,6 +593,11 @@ namespace Hecton8.Modding
         private static bool ShouldForceFutureCommandEnvelopeOnly()
         {
             return true;
+        }
+
+        internal static bool GetIsFutureCommandEnvelopeOnly()
+        {
+            return ShouldForceFutureCommandEnvelopeOnly();
         }
 
         private static void DisableCandidate(ModCandidate candidate, string reason)
@@ -638,6 +677,13 @@ namespace Hecton8.Modding
         {
             modInstance = null;
             failureReason = null;
+
+            if (ShouldForceFutureCommandEnvelopeOnly())
+            {
+                failureReason = "Managed mod factories are quarantined. UGC commands must use 64-byte FutureCommandEnvelope packets.";
+                return false;
+            }
+
             uint modHash = ModCommandDispatcher.ComputeModHash(modId);
             if (modHash == 0u || !_managedModFactories.TryGetValue(modHash, out Func<IHectonMod> factory) || factory == null)
             {
@@ -666,17 +712,26 @@ namespace Hecton8.Modding
 
         private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            if (ShouldForceFutureCommandEnvelopeOnly())
+                return;
+
             GlobalRegistry.ModWorldPersistence?.InitializeService();
             ModLocalizationBridge.FlushPendingInjections();
         }
 
         private static void HandleLoadCompleted(string slotName)
         {
+            if (ShouldForceFutureCommandEnvelopeOnly())
+                return;
+
             HectonEventBus.Publish(new GameLoadedEvent(slotName));
         }
 
         private static void HandleGameReady()
         {
+            if (ShouldForceFutureCommandEnvelopeOnly())
+                return;
+
             ModEventProjectionBridge.InstallGlobal();
             ModItemRegistry.FlushPendingRegistrations();
             ModBuildableRegistry.FlushPendingRegistrations();

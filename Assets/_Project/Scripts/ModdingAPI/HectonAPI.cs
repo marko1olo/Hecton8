@@ -27,6 +27,9 @@ namespace Hecton8.Modding
         /// </summary>
         public static class Events
         {
+            private const string EnvelopeOnlyEventApiDisabledMessage =
+                "HectonAPI.Events is disabled in FutureCommandEnvelope-only mode. Submit 64-byte FutureCommandEnvelope packets through HectonAPI.Commands.RequestFuture.";
+
             /// <summary>
             /// Subscribes to a typed modding event.
             /// Handlers are isolated behind try/catch so one broken mod does not break the entire dispatch chain.
@@ -43,6 +46,7 @@ namespace Hecton8.Modding
             internal static HectonEventSubscription Subscribe<TEvent>(Action<TEvent> handler, string subscriberId = null)
                 where TEvent : HectonEvent
             {
+                ThrowIfEnvelopeOnly();
                 return HectonEventBus.Subscribe(handler, subscriberId);
             }
 
@@ -58,6 +62,7 @@ namespace Hecton8.Modding
                 string subscriberId = null)
                 where TPayload : unmanaged
             {
+                ThrowIfEnvelopeOnly();
                 return HectonEventBus.Subscribe(handler, subscriberId);
             }
 
@@ -69,6 +74,7 @@ namespace Hecton8.Modding
             /// <returns>A disposable subscription token.</returns>
             public static HectonEventSubscription SubscribeNative(HectonNativeEventHandler handler, string subscriberId = null)
             {
+                ThrowIfEnvelopeOnly();
                 return HectonEventBus.SubscribeNative(handler, subscriberId);
             }
 
@@ -80,6 +86,7 @@ namespace Hecton8.Modding
             /// <returns>A disposable subscription token.</returns>
             public static HectonEventSubscription SubscribeProjected(Action<ModEventDto> handler, string subscriberId = null)
             {
+                ThrowIfEnvelopeOnly();
                 return HectonEventBus.SubscribeProjected(handler, subscriberId);
             }
 
@@ -87,6 +94,7 @@ namespace Hecton8.Modding
                 HectonUnmanagedEventHandler<ModPlayerSpawnedEvent> handler,
                 string subscriberId = null)
             {
+                ThrowIfEnvelopeOnly();
                 return HectonEventBus.Subscribe(handler, subscriberId);
             }
 
@@ -94,6 +102,7 @@ namespace Hecton8.Modding
                 HectonUnmanagedEventHandler<ModBiomeChangedEvent> handler,
                 string subscriberId = null)
             {
+                ThrowIfEnvelopeOnly();
                 return HectonEventBus.Subscribe(handler, subscriberId);
             }
 
@@ -120,6 +129,7 @@ namespace Hecton8.Modding
             internal static TEvent Publish<TEvent>(TEvent evt)
                 where TEvent : HectonEvent
             {
+                ThrowIfEnvelopeOnly();
                 return HectonEventBus.Publish(evt);
             }
 
@@ -131,7 +141,14 @@ namespace Hecton8.Modding
             public static void Publish<TPayload>(in TPayload payload)
                 where TPayload : unmanaged
             {
+                ThrowIfEnvelopeOnly();
                 HectonEventBus.Publish(in payload);
+            }
+
+            private static void ThrowIfEnvelopeOnly()
+            {
+                if (ModLoader.GetIsFutureCommandEnvelopeOnly())
+                    throw new IllegalContractException(EnvelopeOnlyEventApiDisabledMessage);
             }
         }
 
@@ -167,7 +184,7 @@ namespace Hecton8.Modding
         }
 
         /// <summary>
-        /// Command-facing mod API. Commands are requests; engine systems validate and execute during late-frame drain.
+        /// Command-facing mod API. UGC commands must be fixed 64-byte future envelopes.
         /// </summary>
         public static class Commands
         {
@@ -182,33 +199,33 @@ namespace Hecton8.Modding
             }
 
             /// <summary>
-            /// Enqueues a sandboxed command request.
+            /// Legacy command lane is quarantined. Use <see cref="RequestFuture"/> with a 64-byte envelope.
             /// </summary>
             /// <param name="command">Command packet. Mod identity is assigned by the engine.</param>
-            /// <returns>True when the command was queued.</returns>
+            /// <returns>Always false while envelope-only UGC is enforced.</returns>
             public static bool Request(in ModCommand command)
             {
-                return ModCommandDispatcher.Request(in command);
+                return false;
             }
 
             /// <summary>
-            /// Enqueues an Absolute Universe Position command. Required for spawn, move, effect, heat, and raycast requests.
+            /// Legacy AUP command lane is quarantined. Use <see cref="RequestFuture"/> with a 64-byte envelope.
             /// </summary>
             /// <param name="command">AUP-backed command packet.</param>
-            /// <returns>True when the command was queued.</returns>
+            /// <returns>Always false while envelope-only UGC is enforced.</returns>
             public static bool RequestAup(in ModAupCommand command)
             {
-                return ModCommandDispatcher.RequestAup(in command);
+                return false;
             }
 
             /// <summary>
-            /// Enqueues one matrix for the reserved mod instancing graphics layer.
+            /// Legacy render-instance lane is quarantined. Use <see cref="RequestFuture"/> with a 64-byte envelope.
             /// </summary>
             /// <param name="command">Render instance packet.</param>
-            /// <returns>True when the matrix entered the frame queue.</returns>
+            /// <returns>Always false while envelope-only UGC is enforced.</returns>
             public static bool RequestRenderInstance(in ModRenderInstanceCommand command)
             {
-                return ModCommandDispatcher.RequestRenderInstance(in command);
+                return false;
             }
         }
 
@@ -458,25 +475,23 @@ namespace Hecton8.Modding
         }
 
         /// <summary>
-        /// Asset-facing mod API for bundle-backed content loaded from a mod package directory.
+        /// Asset-facing legacy API. Direct object loading is quarantined in envelope-only UGC mode.
         /// </summary>
         public static class Assets
         {
             /// <summary>
-            /// Loads a prefab from the specified mod package.
-            /// The mod must provide a supported AssetBundle registered by the loader.
+            /// Direct prefab references are forbidden; use a CRC-approved asset hash in a FutureCommandEnvelope.
             /// </summary>
             /// <param name="modId">Stable owner mod identifier.</param>
             /// <param name="assetName">AssetBundle asset name or mod-relative prefab asset path.</param>
             /// <returns>The loaded prefab asset, or null when no matching asset exists.</returns>
             internal static GameObject LoadPrefab(string modId, string assetName)
             {
-                throw new IllegalContractException("Mods cannot receive Unity prefab references. Use HectonAPI.Resources.TryResolvePrefab and submit a ModCommand.");
+                throw new IllegalContractException("Mods cannot receive Unity prefab references. Resolve a resource hash and submit a FutureCommandEnvelope through HectonAPI.Commands.RequestFuture.");
             }
 
             /// <summary>
-            /// Loads an audio clip from the specified mod package.
-            /// The mod must provide a supported AssetBundle registered by the loader.
+            /// Direct audio clip references are forbidden; use a CRC-approved asset hash in a FutureCommandEnvelope.
             /// </summary>
             /// <param name="modId">Stable owner mod identifier.</param>
             /// <param name="assetName">AssetBundle asset name for the target clip.</param>
@@ -487,9 +502,7 @@ namespace Hecton8.Modding
             }
 
             /// <summary>
-            /// Loads a texture from the specified mod package.
-            /// The loader first resolves the mod AssetBundle.
-            /// If no texture is found there, a raw PNG fallback is attempted when <paramref name="assetName"/> points to a mod-relative file path.
+            /// Direct texture references are forbidden; use a CRC-approved asset hash in a FutureCommandEnvelope.
             /// </summary>
             /// <param name="modId">Stable owner mod identifier.</param>
             /// <param name="assetName">AssetBundle asset name or mod-relative PNG path.</param>
@@ -670,17 +683,16 @@ namespace Hecton8.Modding
             }
 
             /// <summary>
-            /// Spawns a persistent prefab instance from a mod AssetBundle and registers it with the mod world save owner.
-            /// Use this API when the spawned object must survive save/load round-trips.
+            /// Direct persistent prefab spawning is forbidden; use a validated FutureCommandEnvelope request.
             /// </summary>
             /// <param name="modId">Stable owner mod identifier.</param>
-            /// <param name="assetName">Prefab asset name inside the mod AssetBundle.</param>
+            /// <param name="assetName">Legacy prefab asset name.</param>
             /// <param name="position">World position for the spawned instance.</param>
             /// <param name="rotation">World rotation for the spawned instance.</param>
             /// <returns>The spawned instance, or null when the prefab or world owners are unavailable.</returns>
             internal static GameObject SpawnPersistentPrefab(string modId, string assetName, Vector3 position, Quaternion rotation)
             {
-                throw new IllegalContractException("Mods cannot spawn Unity prefabs directly. Resolve a resource hash and submit a ModCommand.");
+                throw new IllegalContractException("Mods cannot spawn Unity prefabs directly. Resolve a resource hash and submit a FutureCommandEnvelope through HectonAPI.Commands.RequestFuture.");
             }
 
             /// <summary>
@@ -690,7 +702,7 @@ namespace Hecton8.Modding
             /// <returns>True when the instance was recognized and removed successfully.</returns>
             internal static bool DespawnPersistentInstance(GameObject instance)
             {
-                throw new IllegalContractException("Mods cannot despawn Unity instances directly. Submit a validated ModCommand.");
+                throw new IllegalContractException("Mods cannot despawn Unity instances directly. Submit a validated FutureCommandEnvelope through HectonAPI.Commands.RequestFuture.");
             }
         }
 

@@ -1,0 +1,2 @@
+asset_id,type,path,build_id,date,status,hook,shown_features,source_capture,qa_score,co_op_check,performance_claim_check,feature_truth_check,localization_check,owner,rejection_code,notes
+EXAMPLE-001,screenshot,MarketingAssets/01_Screenshots/Approved/H8_Screenshot_PressureHatch_b0000_2026-05-19_v01.png,b0000,2026-05-19,EXAMPLE_ONLY,Pressure hatch,"pressure;machinery;route",real_gameplay_or_placeholder,0,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,SHINOBU_TEMPLATE,,Replace example before use
