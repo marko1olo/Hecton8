@@ -22,6 +22,7 @@
 #define H8_UBER_NOIR_POM_STEPS 16
 #define H8_UBER_NOIR_MAX_HULL_DENTS 16
 #define H8_UBER_NOIR_MAX_GPU_HULL_DENTS 512
+#define H8_UBER_NOIR_MAX_DEFORMATION_STATES 256
 #define H8_UBER_NOIR_MAX_GLOBAL_WAKES 16
 #define H8_UBER_NOIR_MATERIAL_CAPACITY 8192
 #define H8_UBER_NOIR_FLAG_TEXTURE_ARRAYS 1u
@@ -148,6 +149,23 @@ struct H8HullDentDTO
 };
 StructuredBuffer<H8HullDentDTO> _HectonHullDentDTOBuffer;
 float4 _HectonHullDentDTOParams; // x=active count, y=dto enabled, z=max depth scar, w=quality tier
+struct H8DeformationStateDTO
+{
+    float3 LocalPosition;
+    float Radius;
+    float3 Normal;
+    float Depth;
+    float Age;
+    float Severity;
+    uint DamageTypeHash;
+    uint SourceHash;
+    uint Frame;
+    uint Flags;
+    uint Reserved0;
+    uint Reserved1;
+};
+StructuredBuffer<H8DeformationStateDTO> _HectonDeformationStateBuffer;
+float4 _HectonDeformationStateParams; // x=active count, y=max shader dents, z=max depth scar, w=GlobalQualityWeight
 float4 _HectonMaterialDecayRuntime;
 float4 _HectonPlayerBloodSplatter;
 float _HectonActiveShaderFeatureMask;
@@ -188,6 +206,7 @@ struct H8UberNoirVaryings
     half3 extinctionColor : TEXCOORD9;
     half dentScar : TEXCOORD10;
     nointerpolation uint materialIndex : TEXCOORD11;
+    half3 deformationNormalWS : TEXCOORD12;
     UNITY_VERTEX_INPUT_INSTANCE_ID
     UNITY_VERTEX_OUTPUT_STEREO
 };
@@ -306,7 +325,8 @@ float H8UberNoirSmoothRange01(float edge0, float edge1, float value)
 float H8UberNoirHighCostAllowed()
 {
     float globalAllow = isfinite(_HectonUberNoirRuntimeParams.y) ? saturate(_HectonUberNoirRuntimeParams.y) : 1.0;
-    float stressGate = 1.0 - step(0.8, saturate(_HectonUberNoirRuntimeParams.x));
+    float stress01 = saturate(_HectonUberNoirRuntimeParams.x);
+    float stressGate = 1.0 - H8UberNoirSmoothRange01(0.72, 0.88, stress01);
     return globalAllow * stressGate;
 }
 
@@ -637,6 +657,54 @@ float H8UberNoirUnpackDentDepth(float packed)
     return fmod(floor(packedInt * (1.0 / 256.0)), 256.0) * (1.0 / 255.0);
 }
 
+int H8UberNoirActiveDeformationStateCount()
+{
+    float active = isfinite(_HectonDeformationStateParams.x) ? max(_HectonDeformationStateParams.x, 0.0) : 0.0;
+    float limit = isfinite(_HectonDeformationStateParams.y) ? max(_HectonDeformationStateParams.y, 0.0) : 0.0;
+    return (int)clamp(min(active, limit), 0.0, (float)H8_UBER_NOIR_MAX_DEFORMATION_STATES);
+}
+
+float H8UberNoirGaussianFalloff(float distSq, float radius)
+{
+    float radiusSq = max(radius * radius, H8_UBER_NOIR_EPS);
+    float exponent = -distSq * (0.7213475204444817 * H8UberNoirSafeRcp(radiusSq));
+    return exp2(max(exponent, -16.0));
+}
+
+float3 H8UberNoirEvaluateDeformationNormalBiasOS(float3 positionOS, float3 normalOS)
+{
+    float featureMask = step(0.5, _UberNoirFeatureFlags.z);
+    int activeCount = H8UberNoirActiveDeformationStateCount();
+    if (activeCount <= 0 || featureMask <= 0.0)
+        return float3(0.0, 0.0, 0.0);
+
+    float3 safePositionOS = H8UberNoirFinite3(positionOS, float3(0.0, 0.0, 0.0));
+    float3 safeNormalOS = H8UberNoirSafeNormalize(normalOS, float3(0.0, 1.0, 0.0));
+    float quality = saturate(max(_HectonDeformationStateParams.w, H8UberNoirGlobalQualityWeight()));
+    float3 bias = float3(0.0, 0.0, 0.0);
+
+    [loop]
+    for (int i = 0; i < activeCount; i++)
+    {
+        H8DeformationStateDTO dent = _HectonDeformationStateBuffer[i];
+        if ((dent.Flags & 1u) == 0u)
+            continue;
+
+        float radius = max(dent.Radius, H8_UBER_NOIR_EPS);
+        float depth = max(dent.Depth, 0.0);
+        float3 dentNormalOS = H8UberNoirSafeNormalize(dent.Normal, safeNormalOS);
+        float3 delta = safePositionOS - dent.LocalPosition;
+        float distSq = dot(delta, delta);
+        float gaussian = H8UberNoirGaussianFalloff(distSq, radius);
+        float normalMask = saturate(dot(safeNormalOS, dentNormalOS) * 0.5 + 0.5);
+        float3 tangentDelta = delta - dentNormalOS * dot(delta, dentNormalOS);
+        float derivative = depth * gaussian * H8UberNoirSafeRcp(max(radius * radius, H8_UBER_NOIR_EPS));
+        bias += tangentDelta * (derivative * normalMask);
+    }
+
+    return H8UberNoirFinite3(bias * featureMask * lerp(0.35, 1.0, quality), float3(0.0, 0.0, 0.0));
+}
+
 float3 H8UberNoirApplyHullDentsOS(float3 positionOS, float3 normalOS)
 {
     float featureMask = step(0.5, _UberNoirFeatureFlags.z);
@@ -644,10 +712,29 @@ float3 H8UberNoirApplyHullDentsOS(float3 positionOS, float3 normalOS)
     float3 dentedPosition = H8UberNoirFinite3(positionOS, float3(0.0, 0.0, 0.0));
     float3 safeNormalOS = H8UberNoirSafeNormalize(normalOS, float3(0.0, 1.0, 0.0));
 
-#if defined(_MATH_LOD_LOW)
-    float lowScar = saturate(max(_HectonHullDentParams.z, _HectonHullDentDTOParams.z)) * max(_UberNoirBendParams.w, 0.0) * strength;
-    return H8UberNoirFinite3(dentedPosition - safeNormalOS * lowScar, positionOS);
-#else
+    int deformationActiveCount = H8UberNoirActiveDeformationStateCount();
+    if (deformationActiveCount > 0)
+    {
+        [loop]
+        for (int deformationIndex = 0; deformationIndex < deformationActiveCount; deformationIndex++)
+        {
+            H8DeformationStateDTO deformation = _HectonDeformationStateBuffer[deformationIndex];
+            if ((deformation.Flags & 1u) == 0u)
+                continue;
+
+            float radius = max(deformation.Radius, H8_UBER_NOIR_EPS);
+            float depth = max(deformation.Depth, 0.0);
+            float3 dentNormalOS = H8UberNoirSafeNormalize(deformation.Normal, safeNormalOS);
+            float3 delta = dentedPosition - deformation.LocalPosition;
+            float distSq = dot(delta, delta);
+            float gaussian = H8UberNoirGaussianFalloff(distSq, radius);
+            float normalMask = saturate(dot(safeNormalOS, dentNormalOS) * 0.5 + 0.5);
+            dentedPosition -= dentNormalOS * (gaussian * depth * strength * normalMask);
+        }
+
+        return H8UberNoirFinite3(dentedPosition, positionOS);
+    }
+
     int dtoActiveCount = (int)clamp(_HectonHullDentDTOParams.x * step(0.5, _HectonHullDentDTOParams.y), 0.0, (float)H8_UBER_NOIR_MAX_GPU_HULL_DENTS);
     if (dtoActiveCount > 0)
     {
@@ -682,7 +769,6 @@ float3 H8UberNoirApplyHullDentsOS(float3 positionOS, float3 normalOS)
     }
 
     return H8UberNoirFinite3(dentedPosition, positionOS);
-#endif
 }
 
 void H8UberNoirBuildTangentFrame(
@@ -781,10 +867,27 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
 float H8UberNoirEvaluateHullDentScarOS(float3 positionOS)
 {
     float featureMask = step(0.5, _UberNoirFeatureFlags.z);
-#if defined(_MATH_LOD_LOW)
-    return saturate(max(_HectonHullDentParams.z, _HectonHullDentDTOParams.z) * featureMask);
-#else
     float scar = 0.0;
+    int deformationActiveCount = H8UberNoirActiveDeformationStateCount();
+    if (deformationActiveCount > 0)
+    {
+        float3 safePositionOS = H8UberNoirFinite3(positionOS, float3(0.0, 0.0, 0.0));
+        [loop]
+        for (int deformationIndex = 0; deformationIndex < deformationActiveCount; deformationIndex++)
+        {
+            H8DeformationStateDTO deformation = _HectonDeformationStateBuffer[deformationIndex];
+            if ((deformation.Flags & 1u) == 0u)
+                continue;
+
+            float radius = max(deformation.Radius, H8_UBER_NOIR_EPS);
+            float depth = max(deformation.Depth, 0.0);
+            float3 delta = safePositionOS - deformation.LocalPosition;
+            scar = max(scar, H8UberNoirGaussianFalloff(dot(delta, delta), radius) * depth);
+        }
+
+        return saturate(scar * featureMask);
+    }
+
     int dtoActiveCount = (int)clamp(_HectonHullDentDTOParams.x * step(0.5, _HectonHullDentDTOParams.y), 0.0, (float)H8_UBER_NOIR_MAX_GPU_HULL_DENTS);
     if (dtoActiveCount > 0)
     {
@@ -816,7 +919,6 @@ float H8UberNoirEvaluateHullDentScarOS(float3 positionOS)
     }
 
     return saturate(scar * featureMask);
-#endif
 }
 
 half3 H8UberNoirApplyBentHullNormalBiasWS(half3 normalWS, half3 viewDirWS)
@@ -1233,6 +1335,9 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
     surface.anisotropy = 0.0h;
     surface.powerLevel = (half)materialState.PowerLevel;
     H8UberNoirApplyWearVitalityColor(vitality, surface);
+    surface.normalWS = (half3)H8UberNoirSafeNormalize(
+        (float3)surface.normalWS + (float3)input.deformationNormalWS * saturate(input.dentScar),
+        (float3)input.normalWS);
     return surface;
 #else
     half3 normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, wearUv), (half)_BumpScale);
@@ -1285,6 +1390,9 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
         surface.smoothness = lerp(surface.smoothness, 0.08h, dentScar * 0.72h);
         surface.metallic = lerp(surface.metallic, 0.85h, dentScar * 0.24h);
     }
+    surface.normalWS = (half3)H8UberNoirSafeNormalize(
+        (float3)surface.normalWS + (float3)input.deformationNormalWS * saturate(input.dentScar * lerp(0.45h, 1.25h, (half)quality)),
+        safeNormalWS);
     surface.emission += H8UberNoirResolveBiolumEmission(input.positionWS, ormSample.a, input.instanceSeed) * lerp(0.35h, 1.0h, surface.powerLevel);
     return surface;
 #endif
@@ -1567,9 +1675,11 @@ H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
     float instanceFadeSource = instanceData.SeedFadeFlags.y;
     float safeInstanceFade = isfinite(instanceFadeSource) ? saturate(instanceFadeSource) : 1.0;
     float dentScarOS = H8UberNoirEvaluateHullDentScarOS(positionOS);
+    float3 deformationNormalBiasOS = H8UberNoirEvaluateDeformationNormalBiasOS(positionOS, normalOS);
     positionOS = H8UberNoirApplyHullDentsOS(positionOS, normalOS);
     float3 positionWS = mul(objectToRuntimeWorld, float4(positionOS, 1.0)).xyz;
     float3 normalWS = H8UberNoirTransformNormal(normalOS, instanceData.WorldToObject);
+    float3 deformationNormalBiasWS = H8UberNoirFinite3(mul((float3x3)objectToRuntimeWorld, deformationNormalBiasOS), float3(0.0, 0.0, 0.0));
     positionWS = H8UberNoirApplyDynamicHullBendingWS(positionWS, normalWS, (half)safeInstanceSeed);
     H8UberNoirApplyGlobalWakeWS(positionWS, normalWS, (half)safeInstanceSeed);
 
@@ -1579,6 +1689,7 @@ H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
     output.positionWS = positionWS;
     output.positionCS = TransformWorldToHClip(positionWS);
     output.normalWS = (half3)normalWS;
+    output.deformationNormalWS = (half3)deformationNormalBiasWS;
     output.tangentWS = half4((half3)tangentWS, input.tangentOS.w);
     output.viewDirWS = (half3)viewDirWS;
     float2 rawUv = input.uv;

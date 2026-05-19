@@ -43,6 +43,61 @@ Current default: `A - Pressure/Salvage`.
 
 Reason: HECTON-8 has no public proof assets yet. The first Steam copy must not depend on unproven base failure, vehicle scope, co-op, large world, or performance claims.
 
+## 2026-05-19 Steam Page Assembly V0
+
+Status: pre-capture / not publishable / use after real assets exist.
+
+This is the first assembly decision table. It converts the copy candidates, asset metadata slots, and tag strategy into one Steam-page draft path.
+
+| Steam surface | Default choice | Required evidence | Switch condition | Kill condition |
+|---|---|---|---|---|
+| Short description | Candidate A - Pressure/Salvage | `PLAN-SHOT-001`, `PLAN-SHOT-003`, and one base/machinery shot score 10/12 for Steam. | Switch to B only if base/machinery failure is visually clear; switch to C only if Seed Ship/anomaly is visible as a system. | Viewers cannot name minute-to-minute action or assume co-op. |
+| First screenshot | `PLAN-SHOT-001` Identity hero | Black-water industrial silhouette plus player/light/pressure cue. | Use `PLAN-SHOT-003` if identity hero is beautiful but actionless. | Reads as empty ocean, generic diver shot, or Subnautica clone frame. |
+| Second screenshot | `PLAN-SHOT-003` Salvage contact | Tool/interact target/hazard/reward must be readable. | Use base system shot if salvage interaction is not implemented. | Player verb needs caption. |
+| Third screenshot | `PLAN-SHOT-002` Pressure room | Gauges, seals, pressure door, dirty glass, maintenance surfaces. | Use `PLAN-SHOT-005` if failure state is clearer than room state. | Reads as clean sci-fi lounge. |
+| Fourth screenshot | `PLAN-SHOT-006` Threat silhouette | Threat/scale through instrument/floodlight relation. | Use `PLAN-CLIP-002` as trailer/short instead if still frame is unclear. | Reads as terrain or random monster pose. |
+| Fifth screenshot | `PLAN-SHOT-005` Base under stress | Leak/flood/warning plus response path. | Hold if failure system is not honest in build. | Only red UI or fake scripted damage. |
+| Sixth screenshot | `PLAN-SHOT-004` Heavy machine | Real vehicle/tool/pump/ballast mass. | Omit if heavy machine is not playable/visible. | Looks decorative or toy-like. |
+| Seventh screenshot | `PLAN-SHOT-007` Seed Ship signal | Instrument corruption or route pull visible in-world. | Move earlier only if anomaly is the strongest cold-read hook. | Only abstract glow/lore wall. |
+| Eighth screenshot | `PLAN-SHOT-008` Low-spec readability | Internal only until measured context exists. | Replace with scale/interior shot for public page. | Any public FPS/performance implication without receipts. |
+| Steam trailer | 55-75s from `PLAN-CLIP-001` through `PLAN-CLIP-004` plus title card | First 10s must include player verb. | Use 20s teaser first if footage quantity is limited. | Trailer could be any underwater game. |
+| Capsule rough | `PLAN-CAPSULE-001` A/B/C | Must read at small size and avoid one-note blue/black. | Commission/polish only after cold-read winner exists. | Users cannot read title or see HECTON identity. |
+| Tag stack | Survival / Exploration / Base Building / Sci-fi / Singleplayer | First six screenshots prove survival, exploration, base, and single-player read. | Use exploration-heavy or horror-heavy stack only if first demo proves it. | Any top tag implies missing co-op, open-world, procedural, or simulation scope. |
+
+### Steam Page V0 Copy Block
+
+Use only if Candidate A wins cold-read testing.
+
+```text
+HECTON-8 is a single-player deep-sea survival game about pressure, salvage, machinery, and the cost of keeping a base alive below the light.
+```
+
+First paragraph:
+
+```text
+HECTON-8 is a single-player deep-sea survival game set in black water below the light. Every route asks the same question: how much pressure, oxygen, power, and machine failure can you afford before coming back costs more than going deeper?
+```
+
+Feature bullets V0:
+
+```text
+- Descend into industrial black-water routes where pressure and visibility shape every decision.
+- Salvage wreckage and useful machinery without losing the return path.
+- Keep pressure-rated habitats alive through power, oxygen, seals, and maintenance.
+- Read danger through instruments, floodlights, gauges, and failing machines.
+- Follow the Seed Ship signal only when the build can show its effect honestly.
+```
+
+### Steam Page V0 Reject Rules
+
+Reject the V0 page draft if any of these happen in a five-person cold read:
+
+- 2+ people think the game is co-op or multiplayer.
+- 2+ people ask what the player actually does.
+- 2+ people say the screenshots are just dark water.
+- 2+ people identify it only as a Subnautica clone.
+- 1+ person calls a screenshot AI/concept-looking while it is meant as gameplay proof.
+
 ### Short Description Cold-Test Script
 
 Show copy A/B/C with one screenshot for five seconds. Ask:

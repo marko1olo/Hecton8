@@ -252,7 +252,7 @@ namespace Hecton8.Core
 
             Hecton8.Core.Contracts.Signals.CombatDamageSignal signal = new Hecton8.Core.Contracts.Signals.CombatDamageSignal
             {
-                WorldPoint = worldPoint,
+                ImpactAup = Hecton8.Core.Contracts.Signals.CombatDamageSignalCodec.FromRuntimePoint(worldPoint),
                 Direction = float3.zero,
                 Magnitude = math.max(0f, integrityDelta),
                 DamageType = state.StatusMask,

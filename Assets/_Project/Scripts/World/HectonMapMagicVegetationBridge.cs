@@ -33,23 +33,41 @@ namespace Hecton8.World
             public float Padding;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct AbyssalPathTelemetryEntry
         {
+            [FieldOffset(0)]
             public int Frame;
+            [FieldOffset(4)]
             public int RawCount;
+            [FieldOffset(8)]
             public int OutputCount;
+            [FieldOffset(12)]
             public int PortalLookAhead;
+            [FieldOffset(16)]
             public int MaxDdaSamples;
+            [FieldOffset(20)]
             public float FunnelMs;
+            [FieldOffset(24)]
             public float StartX;
+            [FieldOffset(28)]
             public float StartY;
+            [FieldOffset(32)]
             public float StartZ;
+            [FieldOffset(36)]
             public float EndX;
+            [FieldOffset(40)]
             public float EndY;
+            [FieldOffset(44)]
             public float EndZ;
+            [FieldOffset(48)]
             public uint Flags;
+            [FieldOffset(52)]
             public uint Sequence;
+            [FieldOffset(56)]
+            public uint Padding0;
+            [FieldOffset(60)]
+            public uint Padding1;
         }
 
         private struct PredatorFearNodeState
@@ -2006,7 +2024,7 @@ namespace Hecton8.World
             PreallocateAbyssalNavigationBuffers();
             EnsureThreatSamplingChunkHashBuffersCapacity(FixedThreatSamplingHashCapacity);
             EnsureArtificialStructureHashBuffersCapacity(FixedArtificialStructureHashCapacity);
-            InitializeLargeFloraCollisionProxyState();
+            InitializeLargeFloraVisualSwayState();
             BindRendererSources();
             ResolveRuntimeDependencies();
             TrySubscribeEvents();
@@ -2020,7 +2038,7 @@ namespace Hecton8.World
                 return;
 
             BindRendererSources();
-            TryWarmupLargeFloraCollisionProxyPool();
+            TryWarmupLargeFloraVisualSwayState();
             TryRegister();
         }
 
@@ -2054,7 +2072,7 @@ namespace Hecton8.World
             DisposeArtificialStructureSnapshot();
             DisposePoolDefragState();
             DisposeCanopyGridState();
-            DisposeLargeFloraCollisionProxyState();
+            DisposeLargeFloraVisualSwayState();
             ClearRendererBindings();
             ReleaseBuffers();
             ResetActiveState(clearChunkCache: true);
@@ -2104,7 +2122,7 @@ namespace Hecton8.World
             DisposeArtificialStructureSnapshot();
             DisposePoolDefragState();
             DisposeCanopyGridState();
-            DisposeLargeFloraCollisionProxyState();
+            DisposeLargeFloraVisualSwayState();
             ClearRendererBindings();
             ReleaseBuffers();
             ResetActiveState(clearChunkCache: true);
@@ -2150,7 +2168,7 @@ namespace Hecton8.World
 
             UpdatePlayerMotionState(dt);
             UpdateNativePoolDefragState(dt);
-            UpdateLargeFloraCollisionProxies(clampedDt);
+            UpdateLargeFloraVisualSwayState(clampedDt);
 
             if (TryValidateResidentTileCaches())
             {
@@ -2187,7 +2205,7 @@ namespace Hecton8.World
                 return;
 
             ResolveRuntimeDependencies();
-            TryWarmupLargeFloraCollisionProxyPool();
+            TryWarmupLargeFloraVisualSwayState();
             RefreshResidency();
             SyncMegaWreckInteriorTerrainHoles();
             EvictDistantTerrainHoles();
@@ -4081,7 +4099,7 @@ namespace Hecton8.World
             _totalUniverseOffset = ToVector3(_totalUniverseOffsetDouble);
             GlobalTotalUniverseOffset = _totalUniverseOffset;
             GlobalTotalUniverseOffsetDouble = _totalUniverseOffsetDouble;
-            RebaseLargeFloraCollisionProxyRuntimePositions();
+            RebaseLargeFloraVisualSwayRuntimePositions();
 
             _evictionKeys.Clear();
             Dictionary<ChunkKey, ChunkPayload>.Enumerator payloadEnumerator = _chunkPayloads.GetEnumerator();

@@ -96,6 +96,9 @@ namespace Hecton8.UI
         private Transform _cachedTransform;
         private PlayerToolManager _toolManager;
         private PlayerInventory _inventory;
+        private PlayerActionController _cachedPlayerActions;
+        private LocalizationManager _cachedLocalization;
+        private InputManager _cachedInputManager;
         private bool _registered;
         private bool _registeredLateFrame;
         private string _currentPrompt;
@@ -180,6 +183,7 @@ namespace Hecton8.UI
 
         private void Start()
         {
+            RefreshCachedRegistryServices();
             TryRegisterHotSwapListener();
             SubscribeInputManagerIfAvailable();
             RefreshLocalizedPromptCache();
@@ -212,7 +216,7 @@ namespace Hecton8.UI
             float safeDeltaTime = math.max(0f, deltaTime);
             _cameraRetryTimer = math.max(0f, _cameraRetryTimer - safeDeltaTime);
             // â”€â”€ Check if action is in progress â”€â”€
-            PlayerActionController actionController = GlobalRegistry.PlayerActions;
+            PlayerActionController actionController = _cachedPlayerActions;
             if (actionController != null && actionController.IsActionInProgress)
             {
                 // Show action in progress prompt, hide interaction prompt
@@ -626,7 +630,7 @@ namespace Hecton8.UI
             if (string.Equals(_currentPromptSource, prompt, StringComparison.Ordinal))
                 return;
 
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager localization = _cachedLocalization;
             string expandedPrompt = localization != null ? localization.ExpandText(prompt) : prompt;
             _currentPromptSource = prompt;
             if (_currentPrompt == expandedPrompt)
@@ -726,7 +730,7 @@ namespace Hecton8.UI
             if (_subscribedInputManager != null)
                 return;
 
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            InputManager inputManager = _cachedInputManager;
             if (inputManager == null)
                 return;
 
@@ -743,21 +747,36 @@ namespace Hecton8.UI
             _subscribedInputManager = null;
         }
 
+        private void RefreshCachedRegistryServices()
+        {
+            _cachedInputManager = GlobalRegistry.NativeInputManager;
+            _cachedPlayerActions = GlobalRegistry.PlayerActions;
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
+        }
+
         /// <inheritdoc />
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Input)
+            if (serviceSlot != GlobalRegistryServiceSlot.Input &&
+                serviceSlot != GlobalRegistryServiceSlot.PlayerActionRuntime &&
+                serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
+            {
                 return;
+            }
 
-            UnsubscribeInputManager();
+            if (serviceSlot == GlobalRegistryServiceSlot.Input)
+                UnsubscribeInputManager();
+
+            RefreshCachedRegistryServices();
 
             if (!isActiveAndEnabled)
                 return;
 
-            SubscribeInputManagerIfAvailable();
+            if (serviceSlot == GlobalRegistryServiceSlot.Input)
+                SubscribeInputManagerIfAvailable();
             RefreshLocalizedPromptCache();
             _promptProbeTimer = 0f;
             ClearPromptBuildCache();
@@ -830,17 +849,17 @@ namespace Hecton8.UI
             _localizedVerbTake = ResolveLocalizedExpanded("ITEM_INTERACT_TAKE", "Take");
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager localization = _cachedLocalization;
             return localization != null
                 ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback)
                 : fallback;
         }
 
-        private static string ResolveLocalizedExpanded(string key, string fallback)
+        private string ResolveLocalizedExpanded(string key, string fallback)
         {
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager localization = _cachedLocalization;
             return localization != null
                 ? localization.GetExpandedOrFallback(localization.CurrentLanguage, key, fallback)
                 : fallback;

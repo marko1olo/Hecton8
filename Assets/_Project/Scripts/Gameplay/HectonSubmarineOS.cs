@@ -545,7 +545,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SubmarineCoreDirector))]
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Hecton Submarine OS")]
-    public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable, IPowerGridTelemetryListener, IHighPressureEventListener, IFatalPressureImplosionEventListener, IDroneFleetSnapshotEventListener, ISonarPingEventListener, ISonarSnapshotEventListener
+    public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable, IPowerGridTelemetryListener, IHighPressureEventListener, IFatalPressureImplosionEventListener, IDroneFleetSnapshotEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, IScalabilityChangedEventListener
     {
         private const float DefaultReferencePressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
         private const float LowPowerThreshold01 = 0.20f;
@@ -722,8 +722,10 @@ namespace Hecton8.Gameplay
         private bool _registeredUpdatable;
         private bool _registeredRenderable;
         private bool _registeredSlowTick;
+        private bool _registeredScalabilityListener;
         private bool _runtimeLifecycleStarted;
         private bool _stationKeepingStateCached;
+        private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Low;
         private float _brownoutPulsePhase;
         private int _hostileDroneAlarmCount;
         private SubmarineVwsFlags _vwsActiveFlags;
@@ -786,6 +788,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            RefreshCachedScalabilityTier();
+            TryRegisterScalabilityListener();
             TryStartRuntimeLifecycle();
         }
 
@@ -796,12 +800,13 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            if (!_runtimeLifecycleStarted && !_registeredUpdatable && !_registeredSlowTick && !_registeredRenderable)
+            if (!_runtimeLifecycleStarted && !_registeredUpdatable && !_registeredSlowTick && !_registeredRenderable && !_registeredScalabilityListener)
                 return;
 
             _runtimeLifecycleStarted = false;
             PublishShutdownSnapshot();
             Unsubscribe();
+            TryUnregisterScalabilityListener();
             TryUnregister();
             SetLowPowerMode(false);
             SetCascadingBrownout(false);
@@ -812,6 +817,7 @@ namespace Hecton8.Gameplay
         {
             _runtimeLifecycleStarted = false;
             Unsubscribe();
+            TryUnregisterScalabilityListener();
             TryUnregister();
             RestoreBrownoutVisualsImmediate();
         }
@@ -828,7 +834,7 @@ namespace Hecton8.Gameplay
             _diagnosticsRefreshAccumulator += safeDeltaTime;
 
             bool publishSnapshot = false;
-            if (_navigationRefreshAccumulator >= ResolveSonarRefreshIntervalSeconds(GlobalRegistry.ScalabilityTier))
+            if (_navigationRefreshAccumulator >= ResolveSonarRefreshIntervalSeconds(_cachedScalabilityTier))
             {
                 _navigationRefreshAccumulator = 0f;
                 RefreshNavigationTelemetry();
@@ -1082,6 +1088,35 @@ namespace Hecton8.Gameplay
             }
         }
 
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _cachedScalabilityTier = payload.CurrentQualityTier;
+            ApplySonarLodShaderGlobal();
+        }
+
+        private void RefreshCachedScalabilityTier()
+        {
+            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_registeredScalabilityListener || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
+        }
+
         private bool ResolveSubOsPowered()
         {
             return _powerNormalized > SubOsUnpoweredThreshold01 || _powerSupplyRatio > SubOsUnpoweredThreshold01;
@@ -1299,9 +1334,9 @@ namespace Hecton8.Gameplay
             return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
         }
 
-        private static void ApplySonarLodShaderGlobal()
+        private void ApplySonarLodShaderGlobal()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier tier = _cachedScalabilityTier;
             float refreshInterval = ResolveSonarRefreshIntervalSeconds(tier);
             float interpolationEnabled = ResolveSonarInterpolationEnabled(tier) ? 1f : 0f;
             Shader.SetGlobalVector(

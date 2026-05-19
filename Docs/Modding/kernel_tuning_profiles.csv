@@ -1,0 +1,4 @@
+# opcode,priority,max_per_frame,flags,range,max_duration,intensity_scale
+SurvivalOverride,1.0,64,0,1,5,1
+HapticPulse,0.35,128,0,32,5,1
+SubtitleCue,0.25,64,0,1,30,1

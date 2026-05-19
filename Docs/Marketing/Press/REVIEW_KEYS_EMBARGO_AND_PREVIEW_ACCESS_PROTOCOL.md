@@ -157,6 +157,44 @@ Current build does not include:
 key_id,batch_id,key_type,recipient_name,recipient_url,contact_route,purpose,region,language,build_version,sent_at,status,coverage_url,disclosure_required,notes
 ```
 
+## 2026-05-19 Preview Access Batch V0
+
+Status: protocol-only / no keys / no access authorized.
+
+Use this as the first access batch design after a stable preview/demo build exists. Do not request or send keys from this table.
+
+| Batch | Max size | Access type | Recipients | Required gates | Stop condition |
+|---|---:|---|---|---|---|
+| ACC-001 | 10 | Private preview or Steam Playtest invite | Wave A verified creators from CRM | Playtest decision gate passes, contact routes verified, build known issues ready. | Any recipient route cannot be verified or build has first-route blocker. |
+| ACC-002 | 10 | Release State Override or approved preview access | Press rows marked ready after presskit | Press kit publish gate passes and route rechecked same day. | Any outlet asks for extra raw keys or route mismatch appears. |
+| ACC-003 | 8 | Steam Curator Connect | Curator tracker first-copy candidates | Public Steam page/build exists; Curator Connect used, not raw keys. | Curator asks for external keys or page is stale/formulaic. |
+| ACC-004 | 10 | Technical QA/playtest | Low/mid-spec testers selected by score | Hardware specs collected; feedback tags ready. | Performance blocks all content feedback. |
+
+### Access Message Must Include
+
+```text
+Access type:
+Build version:
+Allowed capture:
+Known issues:
+Current build includes:
+Current build does not include:
+Disclosure requirement:
+Feedback route:
+Support contact:
+```
+
+### Access Stop Rules
+
+Stop sending access if:
+
+- 2 recipients report a build blocker in the first route;
+- key/access route leaks outside verified contacts;
+- recipient asks for false talking points;
+- disclosure language is rejected;
+- feedback is dominated by co-op expectation caused by our copy;
+- Steam/Curator/YouTube/FTC rules have not been rechecked that week.
+
 ## Scam Red Flags
 
 - "Send 5 keys for our review team" with no staff proof;

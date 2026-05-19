@@ -42,18 +42,18 @@ namespace Hecton8.Core.Contracts.Signals
     /// <summary>
     /// Last flushed state for one typed signal lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct SignalLaneTelemetry
     {
-        public uint LaneHash;
-        public int QueuedBeforeFlush;
-        public int SnapshotCount;
-        public int DroppedCount;
-        public byte Flags;
-        public byte Reserved0;
-        public ushort Reserved1;
-        public uint Reserved2;
-        public ulong Reserved3;
+        [FieldOffset(0)] public uint LaneHash;
+        [FieldOffset(4)] public int QueuedBeforeFlush;
+        [FieldOffset(8)] public int SnapshotCount;
+        [FieldOffset(12)] public int DroppedCount;
+        [FieldOffset(16)] public int CoalescedCount;
+        [FieldOffset(20)] public byte Flags;
+        [FieldOffset(21)] public byte Reserved0;
+        [FieldOffset(22)] public ushort Reserved1;
+        [FieldOffset(24)] public ulong Reserved2;
     }
 
     /// <summary>Procedural instance culling overload signal. Size: 32 bytes.</summary>
@@ -70,9 +70,9 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(28)] public uint SourceHash;
     }
 
-    /// <summary>Async persistence save request lane payload. Size: 32 bytes.</summary>
+    /// <summary>Owner-local async persistence request packet. Not a SignalBus lane. Size: 32 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct SaveRequestSignal : ISignal
+    public struct SaveRequestSignal
     {
         public const byte ManualSlotFlag = 1 << 0;
 

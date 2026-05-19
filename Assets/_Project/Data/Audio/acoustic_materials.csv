@@ -1,0 +1,4 @@
+# material,absorption01,scatter01,density01,lowPassHertz
+rock,0.32,0.55,0.85,2100
+metal,0.18,0.28,1.00,3400
+flesh,0.62,0.75,0.45,1200

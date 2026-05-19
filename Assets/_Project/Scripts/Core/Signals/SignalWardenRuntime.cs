@@ -223,18 +223,441 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>
-    /// Fixed black-box row for signal-bus throughput snapshots. Size: 32 bytes.
+    /// Designer-authored signal coalescing and frame-cap tuning row. Size: 32 bytes.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct SignalTuningProfile
+    {
+        [FieldOffset(0)] public uint LaneHash;
+        [FieldOffset(4)] public int MinFrameSignals;
+        [FieldOffset(8)] public int MaxFrameSignals;
+        [FieldOffset(12)] public float CoalescingRadiusMeters;
+        [FieldOffset(16)] public int Priority;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public ulong Reserved0;
+    }
+
+    /// <summary>
+    /// Vault-backed table for cold signal_tuning_profiles.csv overrides.
+    /// </summary>
+    [Preserve]
+    public static class SignalTuningTable
+    {
+        private const int MaxProfiles = 64;
+        private const int CsvScratchBytes = 8192;
+        private const float DefaultCoalescingRadiusMeters = 1f;
+        private const BufferID ProfileBufferId = (BufferID)73040;
+        private const BufferID ProfileCountBufferId = (BufferID)73041;
+        private const BufferID CsvScratchBufferId = (BufferID)73042;
+
+        private static IDataVault _vault;
+        private static VaultBufferHandle<SignalTuningProfile> _profilesHandle;
+        private static VaultBufferHandle<int> _countHandle;
+        private static VaultBufferHandle<byte> _csvScratchHandle;
+        private static NativeArray<SignalTuningProfile> _profiles;
+        private static NativeArray<int> _count;
+        private static NativeArray<byte> _csvScratch;
+        private static int _initialized;
+
+        /// <summary>Initializes the unmanaged tuning DTO table from the global vault.</summary>
+        public static void Initialize(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            if (_initialized != 0 && ReferenceEquals(_vault, vault))
+                return;
+
+            _vault = vault;
+            _profilesHandle = vault.GetBufferHandle<SignalTuningProfile>(
+                ProfileBufferId,
+                MaxProfiles,
+                SystemID.CoreDiagnostics,
+                NativeArrayOptions.ClearMemory);
+            _countHandle = vault.GetBufferHandle<int>(
+                ProfileCountBufferId,
+                1,
+                SystemID.CoreDiagnostics,
+                NativeArrayOptions.ClearMemory);
+            _csvScratchHandle = vault.GetBufferHandle<byte>(
+                CsvScratchBufferId,
+                CsvScratchBytes,
+                SystemID.CoreDiagnostics,
+                NativeArrayOptions.UninitializedMemory);
+
+            _profiles = _profilesHandle.Resolve(vault);
+            _count = _countHandle.Resolve(vault);
+            _csvScratch = _csvScratchHandle.Resolve(vault);
+            if (!_profiles.IsCreated || _profiles.Length < MaxProfiles || !_count.IsCreated || _count.Length < 1)
+            {
+                _profiles = default;
+                _count = default;
+                _csvScratch = default;
+                _initialized = 0;
+                return;
+            }
+
+            _initialized = 1;
+            _count[0] = 0;
+            UpsertProfile(ComputeLabelHash(nameof(AcousticPingSignal)), 16, 128, DefaultCoalescingRadiusMeters, 40);
+            UpsertProfile(ComputeLabelHash(nameof(CombatDamageSignal)), 16, 128, DefaultCoalescingRadiusMeters, 100);
+        }
+
+        /// <summary>Returns the resolved scratch buffer used by the zero-string CSV parser.</summary>
+        public static bool TryGetCsvScratch(out NativeArray<byte> scratch)
+        {
+            scratch = default;
+            if (_initialized == 0 || !_csvScratch.IsCreated)
+                return false;
+
+            scratch = _csvScratch;
+            return true;
+        }
+
+        /// <summary>Reads a tuning profile by stable lane hash without touching GlobalRegistry.</summary>
+        public static bool TryGetProfile(uint laneHash, out SignalTuningProfile profile)
+        {
+            profile = default;
+            if (laneHash == 0u || _initialized == 0 || !_profiles.IsCreated || !_count.IsCreated)
+                return false;
+
+            int count = math.clamp(_count[0], 0, math.min(MaxProfiles, _profiles.Length));
+            for (int i = 0; i < count; i++)
+            {
+                SignalTuningProfile candidate = _profiles[i];
+                if (candidate.LaneHash != laneHash)
+                    continue;
+
+                profile = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Applies or replaces a tuning profile in the vault table.</summary>
+        public static bool UpsertProfile(uint laneHash, int minFrameSignals, int maxFrameSignals, float coalescingRadiusMeters, int priority)
+        {
+            if (laneHash == 0u || _initialized == 0 || !_profiles.IsCreated || !_count.IsCreated)
+                return false;
+
+            int safeMin = math.clamp(minFrameSignals, 1, 4096);
+            int safeMax = math.clamp(maxFrameSignals, safeMin, 4096);
+            float safeRadius = math.max(0.0001f, math.isfinite(coalescingRadiusMeters) ? coalescingRadiusMeters : DefaultCoalescingRadiusMeters);
+            int safePriority = math.clamp(priority, 0, 255);
+            int count = math.clamp(_count[0], 0, math.min(MaxProfiles, _profiles.Length));
+            for (int i = 0; i < count; i++)
+            {
+                SignalTuningProfile existing = _profiles[i];
+                if (existing.LaneHash != laneHash)
+                    continue;
+
+                existing.MinFrameSignals = safeMin;
+                existing.MaxFrameSignals = safeMax;
+                existing.CoalescingRadiusMeters = safeRadius;
+                existing.Priority = safePriority;
+                _profiles[i] = existing;
+                SignalPriorityTable.UpsertPriority(laneHash, safePriority);
+                return true;
+            }
+
+            if (count >= MaxProfiles)
+                return false;
+
+            _profiles[count] = new SignalTuningProfile
+            {
+                LaneHash = laneHash,
+                MinFrameSignals = safeMin,
+                MaxFrameSignals = safeMax,
+                CoalescingRadiusMeters = safeRadius,
+                Priority = safePriority
+            };
+            _count[0] = count + 1;
+            SignalPriorityTable.UpsertPriority(laneHash, safePriority);
+            return true;
+        }
+
+        internal static uint ComputeLabelHash(ReadOnlySpan<byte> label)
+        {
+            const uint fnvOffset = 2166136261u;
+            const uint fnvPrime = 16777619u;
+            uint hash = fnvOffset;
+            for (int i = 0; i < label.Length; i++)
+            {
+                byte c = label[i];
+                if (c == (byte)' ' || c == (byte)'\t')
+                    continue;
+
+                hash ^= c;
+                hash *= fnvPrime;
+            }
+
+            return hash == 0u ? 1u : hash;
+        }
+
+        private static uint ComputeLabelHash(string label)
+        {
+            const uint fnvOffset = 2166136261u;
+            const uint fnvPrime = 16777619u;
+            uint hash = fnvOffset;
+            if (!string.IsNullOrEmpty(label))
+            {
+                for (int i = 0; i < label.Length; i++)
+                {
+                    hash ^= label[i];
+                    hash *= fnvPrime;
+                }
+            }
+
+            return hash == 0u ? 1u : hash;
+        }
+    }
+
+    /// <summary>
+    /// Cold allocation-free parser for StreamingAssets/signal_tuning_profiles.csv.
+    /// Expected columns: signal,min_frame,max_frame,coalescing_radius,priority.
+    /// </summary>
+    [Preserve]
+    public static class SignalTuningCsvHotSwap
+    {
+        private const byte Comma = (byte)',';
+        private const byte LineFeed = (byte)'\n';
+        private const byte CarriageReturn = (byte)'\r';
+        private const byte Period = (byte)'.';
+
+        /// <summary>Loads the default signal tuning CSV if the vault and file are available.</summary>
+        public static bool TryLoadDefault()
+        {
+            string dataPath = Application.dataPath;
+            if (string.IsNullOrEmpty(dataPath))
+                return false;
+
+            string path = Path.Combine(dataPath, "StreamingAssets", "signal_tuning_profiles.csv");
+            return TryLoad(path);
+        }
+
+        /// <summary>Loads a signal tuning CSV into vault-backed DTO rows.</summary>
+        public static unsafe bool TryLoad(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            SignalTuningTable.Initialize(vault);
+            if (!SignalTuningTable.TryGetCsvScratch(out NativeArray<byte> scratch) || !scratch.IsCreated)
+                return false;
+
+            int bytesRead;
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    Span<byte> bytes = new Span<byte>(scratch.GetUnsafePtr(), scratch.Length);
+                    bytesRead = stream.Read(bytes);
+                }
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            return Parse(new ReadOnlySpan<byte>(scratch.GetUnsafeReadOnlyPtr(), bytesRead));
+        }
+
+        private static bool Parse(ReadOnlySpan<byte> bytes)
+        {
+            bool changed = false;
+            int rowStart = 0;
+            while (rowStart < bytes.Length)
+            {
+                int rowEnd = rowStart;
+                while (rowEnd < bytes.Length && bytes[rowEnd] != LineFeed && bytes[rowEnd] != CarriageReturn)
+                    rowEnd++;
+
+                if (TryParseRow(bytes.Slice(rowStart, rowEnd - rowStart)))
+                    changed = true;
+
+                rowStart = rowEnd + 1;
+                while (rowStart < bytes.Length && (bytes[rowStart] == LineFeed || bytes[rowStart] == CarriageReturn))
+                    rowStart++;
+            }
+
+            return changed;
+        }
+
+        private static bool TryParseRow(ReadOnlySpan<byte> row)
+        {
+            if (row.Length <= 0 || row[0] == (byte)'#')
+                return false;
+
+            int first = IndexOf(row, Comma, 0);
+            int second = IndexOf(row, Comma, first + 1);
+            int third = IndexOf(row, Comma, second + 1);
+            int fourth = IndexOf(row, Comma, third + 1);
+            if (first <= 0 || second <= first || third <= second || fourth <= third)
+                return false;
+
+            ReadOnlySpan<byte> name = Trim(row.Slice(0, first));
+            if (!TryResolveLaneHash(name, out uint laneHash))
+                return false;
+
+            if (!TryParseInt(Trim(row.Slice(first + 1, second - first - 1)), out int minSignals) ||
+                !TryParseInt(Trim(row.Slice(second + 1, third - second - 1)), out int maxSignals) ||
+                !TryParseFloat(Trim(row.Slice(third + 1, fourth - third - 1)), out float radiusMeters) ||
+                !TryParseInt(Trim(row.Slice(fourth + 1)), out int priority))
+            {
+                return false;
+            }
+
+            return SignalTuningTable.UpsertProfile(laneHash, minSignals, maxSignals, radiusMeters, priority);
+        }
+
+        private static bool TryResolveLaneHash(ReadOnlySpan<byte> name, out uint laneHash)
+        {
+            laneHash = 0u;
+            if (name.Length <= 0)
+                return false;
+
+            if (TryParseUInt(name, out uint parsed))
+            {
+                laneHash = parsed;
+                return laneHash != 0u;
+            }
+
+            laneHash = SignalTuningTable.ComputeLabelHash(name);
+            return laneHash != 0u;
+        }
+
+        private static int IndexOf(ReadOnlySpan<byte> bytes, byte target, int start)
+        {
+            if (start < 0)
+                return -1;
+
+            for (int i = start; i < bytes.Length; i++)
+            {
+                if (bytes[i] == target)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static ReadOnlySpan<byte> Trim(ReadOnlySpan<byte> bytes)
+        {
+            int start = 0;
+            int end = bytes.Length;
+            while (start < end && (bytes[start] == (byte)' ' || bytes[start] == (byte)'\t'))
+                start++;
+            while (end > start && (bytes[end - 1] == (byte)' ' || bytes[end - 1] == (byte)'\t'))
+                end--;
+            return bytes.Slice(start, end - start);
+        }
+
+        private static bool TryParseInt(ReadOnlySpan<byte> bytes, out int value)
+        {
+            value = 0;
+            if (!TryParseUInt(bytes, out uint parsed))
+                return false;
+
+            value = unchecked((int)math.min(parsed, int.MaxValue));
+            return true;
+        }
+
+        private static bool TryParseUInt(ReadOnlySpan<byte> bytes, out uint value)
+        {
+            value = 0u;
+            if (bytes.Length <= 0)
+                return false;
+
+            int index = 0;
+            bool hex = false;
+            if (bytes.Length > 2 && bytes[0] == (byte)'0' && (bytes[1] == (byte)'x' || bytes[1] == (byte)'X'))
+            {
+                hex = true;
+                index = 2;
+            }
+
+            for (; index < bytes.Length; index++)
+            {
+                byte c = bytes[index];
+                uint digit;
+                if (c >= (byte)'0' && c <= (byte)'9')
+                    digit = (uint)(c - (byte)'0');
+                else if (hex && c >= (byte)'a' && c <= (byte)'f')
+                    digit = (uint)(c - (byte)'a' + 10);
+                else if (hex && c >= (byte)'A' && c <= (byte)'F')
+                    digit = (uint)(c - (byte)'A' + 10);
+                else
+                    return false;
+
+                value = hex ? (value << 4) | digit : (value * 10u) + digit;
+            }
+
+            return true;
+        }
+
+        private static bool TryParseFloat(ReadOnlySpan<byte> bytes, out float value)
+        {
+            value = 0f;
+            if (bytes.Length <= 0)
+                return false;
+
+            uint whole = 0u;
+            uint fraction = 0u;
+            uint fractionScale = 1u;
+            bool afterPeriod = false;
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                byte c = bytes[i];
+                if (c == Period && !afterPeriod)
+                {
+                    afterPeriod = true;
+                    continue;
+                }
+
+                if (c < (byte)'0' || c > (byte)'9')
+                    return false;
+
+                uint digit = (uint)(c - (byte)'0');
+                if (afterPeriod)
+                {
+                    fraction = (fraction * 10u) + digit;
+                    fractionScale *= 10u;
+                }
+                else
+                {
+                    whole = (whole * 10u) + digit;
+                }
+            }
+
+            value = whole + (fractionScale > 1u ? fraction / (float)fractionScale : 0f);
+            return math.isfinite(value);
+        }
+    }
+
+    /// <summary>
+    /// Fixed black-box row for signal-bus throughput snapshots. Size: 64 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SignalTelemetryFrame
     {
         [FieldOffset(0)] public uint Frame;
-        [FieldOffset(4)] public uint PeakSignalsPerFrame;
-        [FieldOffset(8)] public uint DroppedSignals;
-        [FieldOffset(12)] public uint CorruptedSignals;
-        [FieldOffset(16)] public uint ActiveLaneCount;
-        [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] public ulong Reserved;
+        [FieldOffset(4)] public uint TotalPushedSignals;
+        [FieldOffset(8)] public uint PeakSignalsPerFrame;
+        [FieldOffset(12)] public uint CoalescedSignals;
+        [FieldOffset(16)] public uint DroppedSignals;
+        [FieldOffset(20)] public uint CorruptedSignals;
+        [FieldOffset(24)] public uint ActiveLaneCount;
+        [FieldOffset(28)] public uint Flags;
+        [FieldOffset(32)] public uint GlobalQualityMilli;
+        [FieldOffset(36)] public uint SystemStressMilli;
+        [FieldOffset(40)] public ulong Reserved0;
+        [FieldOffset(48)] public ulong Reserved1;
+        [FieldOffset(56)] public ulong Reserved2;
     }
 
     /// <summary>
@@ -247,7 +670,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const int HeaderSizeBytes = 16;
         private const uint DumpMagic0 = 0x48454354u; // HECT
         private const uint DumpMagic1 = 0x4F4E3800u; // ON8\0
-        private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_02.bin";
+        private const string DumpPath = "Docs/AgentLogs/Dump_SIGNAL_CORRIDOR.bin";
         private const BufferID SignalTelemetryRingBufferId = (BufferID)73038;
         private const BufferID SignalTelemetryCursorBufferId = (BufferID)73039;
         private const SystemID OwnerSystemId = SystemID.CoreDiagnostics;
@@ -296,7 +719,16 @@ namespace Hecton8.Core.Contracts.Signals
         }
 
         /// <summary>Writes one black-box row. Call cadence is owned by GlobalSignals.</summary>
-        public static void ReportFrame(int frame, int peakSignals, int droppedSignals, int corruptedSignals, int activeLaneCount)
+        public static void ReportFrame(
+            int frame,
+            int totalPushedSignals,
+            int peakSignals,
+            int coalescedSignals,
+            int droppedSignals,
+            int corruptedSignals,
+            int activeLaneCount,
+            int globalQualityMilli,
+            int systemStressMilli)
         {
             if (!TryResolveRing(out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor))
                 return;
@@ -305,17 +737,23 @@ namespace Hecton8.Core.Contracts.Signals
             ring[index] = new SignalTelemetryFrame
             {
                 Frame = unchecked((uint)math.max(0, frame)),
+                TotalPushedSignals = unchecked((uint)math.max(0, totalPushedSignals)),
                 PeakSignalsPerFrame = unchecked((uint)math.max(0, peakSignals)),
+                CoalescedSignals = unchecked((uint)math.max(0, coalescedSignals)),
                 DroppedSignals = unchecked((uint)math.max(0, droppedSignals)),
                 CorruptedSignals = unchecked((uint)math.max(0, corruptedSignals)),
                 ActiveLaneCount = unchecked((uint)math.max(0, activeLaneCount)),
-                Flags = droppedSignals > 0 ? 1u : 0u
+                Flags = (droppedSignals > 0 ? 1u : 0u) |
+                        (coalescedSignals > 0 ? 2u : 0u) |
+                        (corruptedSignals > 0 ? 4u : 0u),
+                GlobalQualityMilli = unchecked((uint)math.clamp(globalQualityMilli, 0, 1000)),
+                SystemStressMilli = unchecked((uint)math.clamp(systemStressMilli, 0, 1000))
             };
 
             cursor[0] = index + 1 >= Capacity ? 0 : index + 1;
         }
 
-        /// <summary>Dumps the full signal black-box ring to Docs/AgentLogs/Dump_SHINOBU_02.bin.</summary>
+        /// <summary>Dumps the full signal black-box ring to Docs/AgentLogs/Dump_SIGNAL_CORRIDOR.bin.</summary>
         public static bool DumpToDisk()
         {
             if (!TryResolveRing(out NativeArray<SignalTelemetryFrame> ring, out _))
@@ -358,6 +796,19 @@ namespace Hecton8.Core.Contracts.Signals
             {
                 return false;
             }
+        }
+
+        /// <summary>Copies the current vault-backed telemetry ring into an editor/runtime diagnostic buffer.</summary>
+        public static int CopyFrames(NativeArray<SignalTelemetryFrame> destination)
+        {
+            if (!destination.IsCreated || !TryResolveRing(out NativeArray<SignalTelemetryFrame> ring, out _))
+                return 0;
+
+            int count = math.min(destination.Length, Capacity);
+            for (int i = 0; i < count; i++)
+                destination[i] = ring[i];
+
+            return count;
         }
 
         private static void WriteUInt32LittleEndian(Span<byte> bytes, int offset, uint value)

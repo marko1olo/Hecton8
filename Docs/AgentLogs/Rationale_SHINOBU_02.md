@@ -1,7 +1,7 @@
 # SHINOBU_02 Rationale
 
-Date: 2026-05-18
-Status: PENDING VERIFICATION - STATIC/CLI GATES REFRESHED
+Date: 2026-05-19
+Status: PENDING VERIFICATION - CURRENT24 STATIC DOC ACTUALITY PATCHED; CURRENT22 BUILD/AUDIT/H-PHI STILL PENDING
 
 ## Active Ledger Restoration
 
@@ -511,3 +511,111 @@ Evidence:
 - Root-owner INFO rows now only cover `Core/Memory/GlobalDataVault.cs:_defragBlackBox` and `Core/Memory/H8Memory.cs:_blackBox/_eventBlackBox`.
 - Warning delta current17 -> current19: `463 -> 460` (-3). Warning delta current16 -> current19: `492 -> 460` (-32).
 - H-Phi trend current19 -> 127 artifacts, 393 metric series.
+
+## Current20 Safe Core Pack1 Runtime/Contract Cleanup
+
+Problem: Current19 full audit was hard-green, but Core still contained exact `Pack = 1` markers on a small set of SHINOBU-safe runtime/contract DTOs. The remaining list mixed safe runtime descriptors with high-risk bridge/replay/file/macro/global contract ABI surfaces.
+Solution: Removed `Pack = 1` only from four inspected Core surfaces with 85%+ confidence. `SplineDescriptor` is an internal runtime visual descriptor stored in `NativeArray<SplineDescriptor>` by `ConnectionSplineBatchRenderer`; it now has an explicit 64-byte cache-line stride. `BrineLayerSample` is a named-field brine handoff DTO with no binary writer or size sentinel found; it now has a 32-byte sequential layout. `BatteryRuntimeSnapshot` is a managed aggregate service snapshot with no native array, binary writer, or manifest sentinel found; it now has a 16-byte layout and `EmergencyReserveActive` is marshalled as one byte. `MacroDatabaseSignalBridge` is an empty readonly bridge struct; its packed layout attribute was useless and removed.
+Rejected Alternatives: `ContentAssetBinaryRecord` was rejected because validators and binary/native export semantics treat it as a real 32-byte binary record. `H8BridgeContracts`, `DodReplayRecorder`, macro database records, inertial navigation records, prologue sequence records, and many `GlobalRegistryContracts` hits were rejected because they can encode bridge/replay/file/wire or owner-contract ABI. Running Core build or fresh audit under CPU load was rejected by the AGENTS.md hardware guard.
+Scalability potential: Low/ARM64 = removes four packed runtime/contract markers and aligns the spline descriptor to one 64-byte L1 cache line. Middle = Core warning queue is smaller and easier to route to true owners. High/Ultra = pipe visual descriptors remain cache-predictable while visual-overkill spline rendering stays decoupled from gameplay truth.
+Hardware Impact: 0 measured us. This is static layout hygiene; no Unity import, profiler, GC, IL2CPP, or runtime frame-time evidence exists.
+
+Evidence:
+- Touched-file exact Pack=1 scan returned no hits for `PowerGridRuntimeService.cs`, `BrineLayerSample.cs`, `LogisticsPipeBuilder.cs`, and `MacroDatabaseSignalBridge.cs`.
+- Broader Core exact Pack=1 count is now 43.
+- `SplineDescriptor` layout: 0-11 `Start`, 12-23 `End`, 24-35 `StartForward`, 36-47 `EndForward`, 48-51 `Radius`, 52-55 `RuptureStartTimeSeconds`, 56-59 `FlowScalar`, 60 `Flags`, 61-63 `_pad0.._pad2`, total 64.
+- `BrineLayerSample` layout: 0-7 `CartographySector`, 8-11 `AbsoluteHeightY`, 12-15 `RuntimeHeightY`, 16-19 `DensityMultiplier`, 20-23 `Toxicity01`, 24 `Flags`, 25 `Reserved0`, 26-27 `SectorHash`, 28-31 `_pad0`, total 32.
+- `BatteryRuntimeSnapshot` layout: 0-3 `TotalStoredEnergyWattSeconds`, 4-7 `TotalCapacityWattSeconds`, 8-11 `ChargeNormalized`, 12 `EmergencyReserveActive` (`UnmanagedType.I1`), 13-15 `_pad0.._pad2`, total 16.
+- `git diff --check` on the four touched source files returned exit 0; line-ending warnings only.
+- Build/audit guard initially blocked dotnet: no compiler processes, but CPU samples were `68.1, 69.7, 71, 70.9, 52.9`, then `54.8, 34.6, 48.4, 60.3, 51.7`.
+- Guard later opened with no compiler processes and CPU samples `35.9, 36.1, 27.3, 31.8, 35.5`; Core build returned 0 errors and 8 known CS0649 warnings in `GlobalPhysicsStateManager.PhysicsDistanceCullingJob`.
+- SignalCritical current20 audit: files 7, shaders 62, errors 0, warnings 0, infos 10, confirmedErrors 0.
+- Full current20 audit: files 1761, shaders 62, errors 0, warnings 457, infos 463, confirmedErrors 0.
+- H-Phi trend current20: 129 artifacts, 393 metric series.
+
+## Current21 Core Pack1 Sidecar Sweep
+
+Problem: Current20 still left 43 exact Core `Pack = 1` markers. The list mixed real file/replay/owner ABI surfaces with sidecar-classified runtime/contract records that could be made ARM64-clean without inventing cross-domain dependencies.
+Solution: Spawned two read-only classifiers and patched only 85%+ candidates. Removed `Pack = 1` from inertial/prologue snapshots, ABI-preserving H8 bridge records, safe macro database contract records, safe DodReplay sidecar records, and selected `GlobalRegistryContracts` snapshots/packets. Added explicit private padding where default alignment would otherwise leave hidden tail/inter-field gaps. Reverted the local `GerstnerWaveComponent` stride change after the sidecar classified it as Fluid/Graphics owner work.
+Rejected Alternatives: Bulk-removing all remaining Pack=1 markers was rejected. `ContentAssetBinaryRecord`, raw DodReplay job/panic/VRAM records, `MacroDatabaseTelemetryEntry`, `GerstnerWaveComponent`, `WeatherRuntimeSnapshot`, `GasBaseHibernationSnapshot`, and `EcosystemSectorPopulationSample` remain owner-deferred because they represent file/dump ABI or cross-domain stride/boolean/AUP remaps.
+Scalability potential: Low/ARM64 = fewer unaligned runtime reads and fewer static Pack=1 review rows. Middle = safer GlobalRegistry packet/snapshot transport without changing public field names. High/Ultra = Bridge/Macro/DodReplay evidence stays binary-sized while presentation systems keep visual-overkill paths decoupled from gameplay truth.
+Hardware Impact: 0 measured us. This is static layout hygiene plus compile/audit proof, not profiler evidence.
+
+Evidence:
+- Read-only sidecar `Helmholtz` classified GlobalRegistry candidates; read-only sidecar `Beauvoir` classified bridge/macro/replay candidates. SHINOBU_02 retained owner responsibility and patched only the safe subset.
+- GlobalRegistry layouts: `DamagePacket` size 48, `VRSomaticChestSocketPose` 80, `VRSomaticCollisionState` 96, `VRSomaticSnapshot` 120, `GasRoomSnapshot` 40, `GasDynamicsNativeMemoryAudit` 48, `HectonHardwareProfile` 32, `FaunaGenomeMutationRequest` 56, `OrbitalDirectorSnapshot` 48.
+- Contract/bridge/replay layouts: `CompassStateDTO` 176, `InertialNavigationSnapshot` 120, `PrologueOrbitalSnapshot` 48, `PrologueAtmosphericReentrySnapshot` 16, `PrologueCompleteSnapshot` 16, all H8 bridge records keep declared 32/40/48/64-byte sizes, safe Macro records keep 24/32/40/48/64/80-byte sizes, safe DodReplay records keep 24/32/40/48/56-byte sizes.
+- Broader Core exact `Pack = 1` count is now 9. Remaining exact hits are deliberately deferred owner/file ABI surfaces.
+- Guard before Core build: no compiler processes, CPU samples `16.6, 11.2, 12.9, 21.2, 43.8`, avg `21.1`.
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies -v:minimal /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1`: 0 errors, 8 known CS0649 warnings in `GlobalPhysicsStateManager.PhysicsDistanceCullingJob`.
+- SignalCritical current21 audit: files 7, shaders 62, errors 0, warnings 0, infos 10, confirmedErrors 0.
+- Full current21 audit: files 1761, shaders 62, errors 0, warnings 432, infos 454, confirmedErrors 0. Warning delta current20 -> current21 is `457 -> 432` (-25).
+- H-Phi trend current21: 131 artifacts, 393 metric series.
+
+## Current22 Remaining Safe Core Pack1 Sweep
+
+Problem: Current21 left nine exact Core `Pack = 1` markers. Six of those were no longer defensible as deferred once inspected: one Macro blackbox entry, three DodReplay sidecar entries, one Gas hibernation snapshot, and one Ecosystem population sample. Leaving them packed keeps ARM64 misalignment risk in live NativeArray/blackbox or contract DTO surfaces.
+
+Solution: Removed `Pack = 1` only from those six 85%+ confidence surfaces and added explicit size/padding where default sequential layout would otherwise hide gaps. `MacroDatabaseTelemetryEntry` is now a 72-byte blackbox entry with all 8-byte fields first and explicit tail padding. DodReplay job/panic/VRAM sidecars remain 32 bytes, but 64-bit fields are now 8-byte aligned; `DodReplayBurstPanicRecord` uses explicit offsets and the replay sidecar version was raised from 2 to 3. `GasBaseHibernationSnapshot` preserves public getters while replacing bool auto-property storage with byte flags and explicit pads. `EcosystemSectorPopulationSample` keeps public fields and pins `ApexInSector` to one byte with `MarshalAs(UnmanagedType.I1)`.
+
+Rejected Alternatives: `ContentAssetBinaryRecord` was rejected because editor validators and binary export paths assert a real 32-byte packed content record. `GerstnerWaveComponent` and `WeatherRuntimeSnapshot` were rejected because their nested stride is owned by Fluid/Graphics systems, GPU/weather snapshot consumers, and Vault buffer expectations; blind removal would risk a cross-domain stride break. Running Core build, SignalCritical audit, Full audit, or H-Phi trend under current CPU load was rejected by the AGENTS.md hardware guard.
+
+Scalability potential: Low/ARM64 = removes six more packed DTOs from Core while aligning 64-bit fields and bool storage. Middle = Core Pack=1 review queue is now reduced to three deliberate owner/file ABI surfaces. High/Ultra = replay and telemetry sidecars remain fixed-size and analyzable without contaminating Fluid/Graphics owner stride decisions.
+
+Hardware Impact: 0 measured us. This is static layout hygiene and binary/version safety; no runtime profiler, GC, Unity import, or IL2CPP/ARM64 player evidence exists.
+
+Evidence:
+- `rg -P "Pack\s*=\s*1(?!\d)" Assets/_Project/Scripts/Core -g "*.cs"` now reports exactly three hits: `ContentAssetBinaryRecord`, `GerstnerWaveComponent`, and `WeatherRuntimeSnapshot`.
+- `MacroDatabaseTelemetryEntry` layout: 0 `PlayerSectorHash` ulong, 8 `RootNodeOffset` long, 16 `CacheBytes` long, 24 `DeadBytes` long, 32 `CacheEntries` int, 36 `PageFaults` int, 40 `PageFaultsTotal` int, 44 `HydratedSectors` int, 48 `EvictedSectors` int, 52 `LastCompactionStallMicroseconds` int, 56 `FrameIndex` uint, 60 `Tier` byte, 61 `CompactionState` byte, 62 `Flags` byte, 63 `_pad0`, 64 `Reserved` ushort, 66 `_pad1`, 68 `_pad2`, total 72.
+- `DodReplayJobProfileRecord` layout: 0 `FrameIndex`, 4 `SubjectHash`, 8 `CompletionMicroseconds`, 12 `WorkerIndex`, 14 `Flags`, 16 `ErrorCode`, 20 `_pad0`, 24 `Reserved`, total 32.
+- `DodReplayBurstPanicRecord` layout: 0 `JobDataHash`, 8 `FrameIndex`, 12 `SubjectHash`, 16 `ErrorCode`, 20 `PayloadOffsetBytes`, 24 `Flags`, 28 `PayloadBytes`, 30 `SourceBytes`, total 32.
+- `DodReplayVramAllocationRecord` layout: 0 `FrameIndex`, 4 `OwnerHash`, 8 `LabelHash`, 12 `_pad0`, 16 `Bytes`, 24 `Stride`, 28 `Flags`, total 32.
+- `GasBaseHibernationSnapshot` layout: 0-47 `CenterAup`, 48 `HibernatedUnscaledTime`, 56 `BatteryWattSeconds`, 60 `IdleDrawWatts`, 64 `LeakRatePerSecond`, 68 `BaseId`, 72 `RoomStart`, 76 `RoomCount`, 80 `Awake`, 81 `PlayerInside`, 82 `_pad0`, 84 `_pad1`, total 88.
+- `EcosystemSectorPopulationSample` layout: 0 `SectorX`, 4 `SectorZ`, 8 `PreyPopulation`, 12 `PredatorPopulation`, 16 `Fitness`, 20 `SpeedMultiplier`, 24 `CamouflageIndex`, 28 `ApexInSector`, 29-31 pads, 32 `PreyBiomass01`, 36 `PredatorBiomass01`, 40 `FloraOvergrowth01`, 44 `_pad3`, total 48.
+- `git diff --check` on touched source files returned exit 0; line-ending warnings only.
+- Build/audit guard blocked verification: CPU avg `95.5`, then `100`, then final guarded retry `100`. No dotnet build or audit was launched after Current22.
+
+Sidecar confirmations:
+- `ContentAssetBinaryRecord`: cold packed file/export DTO only. Validators assert 32 bytes, no active NativeArray/raw reader/writer was found. It remains unsafe for hot ARM64 runtime storage because `EstimatedVramBytes` sits at offset 4, so the owner migration is a versioned file-record/runtime-record split.
+- `GerstnerWaveComponent` / `WeatherRuntimeSnapshot`: owner-deferred. The wave component is used by `HectonFluidEngine` NativeArray storage, DataVault `OceanGerstnerWaves`, Burst wave query jobs, and Graphics caustics Vault readers. GPU upload paths repack into `float4` vectors, but the correct ARM64 fix changes component stride 28 -> 32 and snapshot size 140 -> 152, requiring Fluid/Graphics/Weather owner compile plus layout sentinels. The sidecar also found non-Core `HectonFluidEngine.WaveQueryJob` still uses `Pack = 1`, outside SHINOBU_02 ownership.
+
+## Current23 Guarded Verification Attempt
+
+Problem: Current22 source edits still need Core compile, SignalCritical audit, Full audit, and H-Phi trend proof. The hardware guard continued to report saturated CPU, so launching dotnet would violate the user's explicit iteration-protection rule.
+
+Solution: Performed low-cost source-only checks and process inspection. Confirmed no compiler processes were active, but CPU guard stayed at 100%. Reconfirmed scoped SignalBus/Core signal `Pack = 1` is zero and broader Core exact `Pack = 1` remains exactly three deliberate/deferred rows.
+
+Rejected Alternatives: Running `dotnet build` or `dotnet run` under 100% CPU was rejected. Killing the long-running `python` process was rejected because it is not SHINOBU-owned and may belong to another agent/user task. Editing Fluid/Graphics `GerstnerWaveComponent`/`WeatherRuntimeSnapshot` was rejected because sidecar classification identified owner-domain stride risk.
+
+Scalability potential: Process-only. Prevents a compile wall and avoids adding verification load while the workstation is already saturated.
+
+Hardware Impact: 0 measured us. No compile/audit/profiler claim.
+
+Evidence:
+- Build guard: CPU samples `100,100,100,100,100`; no `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` process returned.
+- Top non-compiler CPU history included `python` PID 22820 with high accumulated CPU, plus `explorer`, `WindowsTerminal`, `Taskmgr`, `codex`, `Code`, `git`, and `node`.
+- Scoped exact Pack=1 scan over `Core/Signals`, `Core/GlobalSignals.cs`, and `Core/Contracts/HectonSignalLaneContract.cs` returned no hits.
+- Broader Core exact Pack=1 scan returned the same three deliberate/deferred rows.
+
+## Current24 Documentation And Evidence Boundary Refresh
+
+Problem: Active docs lagged behind SHINOBU_02 Current22/23 source truth. Concrete stale rows claimed `ObjectBatchInstance` / `ObjectBatchChunk` and `SaveDeltaCompression` still used `Pack = 1`, while current source no longer does. Active docs also lacked an explicit warning that Current22 Core layout cleanup is source-only until Core compile/audit/H-Phi reruns are captured.
+Solution: Added small, evidence-classed overlays to active root/architecture/system/quality docs instead of rewriting broad concurrent documentation work. Promoted only facts backed by current source scans and existing current21 artifacts: scoped Core SignalBus exact `Pack = 1` count `0`, broader Core exact `Pack = 1` count `3`, latest artifact-backed SignalCritical current21 `0` errors/warnings, latest Full current21 `0` errors / `432` warnings / `454` infos / `0` confirmed-probable errors, and Current22 compile/audit/H-Phi still pending. Also corrected local wording that could be misread as runtime proof: `ContentAssetBinaryRecord` comments now state cold export/validator use only, binary payload docs now say static path wiring instead of runtime proof, and resource-content docs now mark runtime rows as authored/source-intended until Unity/save/load/visual artifacts exist.
+Rejected Alternatives: Reordering old `LOG_SHINOBU_02.md` blocks was rejected because the ledger is append-only evidence and may contain concurrent history. Running dotnet or Unity was rejected because this pass is documentation/source actuality and Current23 build guard was saturated. Broad stale-doc rewriting was rejected because many active docs are already dirty from other agents.
+Scalability potential: Low = stale Pack=1 claims no longer hide ARM64 alignment work or file-format exceptions. Middle = active docs now separate source-only from artifact-backed audit state. High/Ultra = Fluid/Graphics owner-deferred Gerstner/weather stride work stays visible without SHINOBU claiming cross-domain proof.
+Hardware Impact: 0 measured us. Documentation/evidence-only pass.
+
+Evidence:
+- `ObjectBatchInstance` current source: `StructLayout(LayoutKind.Sequential, Size = 80)`.
+- `ObjectBatchChunk` current source: `StructLayout(LayoutKind.Sequential, Size = 40)`.
+- `SaveDeltaCompression` fixed records current source: sequential explicit sizes without `Pack = 1`.
+- `ActiveSplineData` and `DockingSplineSample` current source: fixed-size layouts without `Pack = 1`; `DockTelemetryEntry` remains packed and owner-deferred.
+- Current source exact Core `Pack = 1` scan reports `ContentAssetBinaryRecord`, `GerstnerWaveComponent`, and `WeatherRuntimeSnapshot` only.
+- Scoped Core SignalBus exact `Pack = 1` scan reports zero hits.
+- `Docs/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.md`: files `7`, shaders `62`, errors `0`, warnings `0`, infos `10`, runtime/transitive signal Pack1 `0`.
+- `Docs/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_full_current21.md`: files `1761`, shaders `62`, errors `0`, warnings `432`, infos `454`, confirmed/probable errors `0`, project-wide Pack1 layouts `230`.
+- `Docs/AgentLogs/HPhiTrend_SHINOBU_02_current21.md`: `131` artifacts, `393` series; history only, not a fresh H-Phi run.
+- `ContentAssetHashMap.cs` remarks now classify `ContentAssetBinaryRecord` as cold export/validator output; no public field, size, or ABI change was made.
+- `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` now separates `STATIC_SOURCE` evidence from Unity import, scene host, runtime file I/O success, GC, profiler, and Frame Debugger proof. Biolum Dear Lie wording now distinguishes per-instance squared-distance wavefront/falloff from the remaining cold/control-path sqrt on damage magnitude.
+- `PROJECT_CONTENT_LEDGER.md` now marks resource/flora runtime routes as authored/source-intended and explicitly keeps scene wiring, Unity serialization, runtime spawn path, save/load, and visual proof pending.
+- `HECTON_PHI_STATIC_METRIC.md` now records that current21 trend still has duplicate signal-name debt `10` against `MaxDuplicateSignalNames=0`; clean SignalCritical does not imply full-project duplicate closeout.

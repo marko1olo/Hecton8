@@ -19,7 +19,7 @@ namespace Hecton8.AI
     [RequireComponent(typeof(FaunaBrain))]
     internal sealed class FaunaKinematicsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable
     {
-        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LEVIATHAN_KINEMATICS_SOLVER.bin";
+        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LEVIATHAN_RIGGER.bin";
         private const string BiteTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_FAUNA_BITE_IK_SOLVER.bin";
         private const ulong TelemetryDumpMagic = 0x4C455649494B3031UL;
         private const ulong BiteTelemetryDumpMagic = 0x4642494B30303031UL;
@@ -40,6 +40,10 @@ namespace Hecton8.AI
         private const float BiteHullDentHighRadiusMeters = 1.35f;
         private const float BiteHullDentLowDepthMeters = 0.035f;
         private const float BiteHullDentHighDepthMeters = 0.28f;
+        private const uint LeviathanRigMagicH8lr = 0x524C3848u; // H8LR
+        private const uint LeviathanRigMagicLvrg = 0x4752564Cu; // LVRG
+        private const int LeviathanRigHeaderBytes = 16;
+        private const int LeviathanRigRowBytes = 16;
         private const uint BiteSparksSignalHash = 0x42505453u; // BPTS
 
         private static readonly int _LeviathanBonesId = Shader.PropertyToID("_H8LeviathanBones");
@@ -59,11 +63,20 @@ namespace Hecton8.AI
         [Tooltip("Visual radius written into each procedural bone matrix.")]
         [SerializeField, Range(0.05f, 6f)] private float _bodyRadius = 1.15f;
 
+        [Tooltip("Procedural swim wave frequency in cycles per second.")]
+        [SerializeField, Range(0.05f, 3f)] private float _swimWaveFrequencyHz = 0.55f;
+
+        [Tooltip("Base lateral swim wave amplitude in meters before velocity and quality scaling.")]
+        [SerializeField, Range(0f, 6f)] private float _swimWaveAmplitudeMeters = 1.1f;
+
+        [Tooltip("FABRIK convergence tolerance exposed for rigger tuning and named job tests.")]
+        [SerializeField, Range(0.001f, 0.5f)] private float _fabrikToleranceMeters = 0.025f;
+
         [Tooltip("Follower damping for the Verlet tail cache.")]
         [SerializeField, Range(0f, 1f)] private float _verletDamping = 0.87f;
 
-        [Tooltip("High-tier constraint iterations. Low tier is forced to one.")]
-        [SerializeField, Range(1, 4)] private int _highTierConstraintIterations = 3;
+        [Tooltip("Maximum constraint iterations at GlobalQualityWeight=1.0. Thermal collapse lerps this to one.")]
+        [SerializeField, Range(1, 10)] private int _highTierConstraintIterations = 10;
 
         [Header("Terrain Hugging")]
         [Tooltip("Meters added above SDF or heightmap contact to prevent visual z-fighting.")]
@@ -105,7 +118,10 @@ namespace Hecton8.AI
 
         private VaultBufferHandle<float3> _segmentPositionsHandle;
         private VaultBufferHandle<float3> _previousSegmentPositionsHandle;
-        private VaultBufferHandle<float4x4> _leviathanBonesHandle;
+        private VaultBufferHandle<LeviathanBoneDTO> _leviathanBonesHandle;
+        private VaultBufferHandle<LeviathanBoneConstraintsDTO> _boneConstraintsHandle;
+        private VaultBufferHandle<LeviathanCapsuleColliderDTO> _colliderProxiesHandle;
+        private VaultBufferHandle<byte> _rigCsvScratchHandle;
         private VaultBufferHandle<LeviathanTerrainIkTelemetryEntry> _telemetryRingHandle;
         private VaultBufferHandle<int> _telemetryCursorHandle;
         private VaultBufferHandle<JawIkTarget> _jawIkTargetsHandle;
@@ -145,6 +161,7 @@ namespace Hecton8.AI
         private float _constraintIterationSwitchTimer;
         private float _tailWhipSecondsRemaining;
         private float _attackTelegraphBlend;
+        private float _globalQualityWeight = 1f;
         private float3 _pendingOriginShiftOffset;
         private float3 _motionIntentVelocity;
         private float3 _motionIntentHeadTarget;
@@ -155,7 +172,7 @@ namespace Hecton8.AI
         private Rigidbody _strikeTargetRigidbody;
         private Collider _strikeTargetCollider;
 
-        internal bool TryGetLeviathanBones(out NativeArray<float4x4>.ReadOnly bones, out int activeSegmentCount)
+        internal bool TryGetLeviathanBones(out NativeArray<LeviathanBoneDTO>.ReadOnly bones, out int activeSegmentCount)
         {
             if (_disposed ||
                 _solverScheduled ||
@@ -163,7 +180,7 @@ namespace Hecton8.AI
                 !TryResolveSpineVaultBuffers(
                     out _,
                     out _,
-                    out NativeArray<float4x4> leviathanBones,
+                    out NativeArray<LeviathanBoneDTO> leviathanBones,
                     out _,
                     out _))
             {
@@ -205,7 +222,7 @@ namespace Hecton8.AI
             TryGetComponent(out _body);
             RefreshColdDependencies();
             EnsurePersistentBuffers();
-            SeedSpineFromOwner();
+            HydrateRigDefinitionsOrMockCold();
         }
 
         private void OnEnable()
@@ -216,7 +233,7 @@ namespace Hecton8.AI
             CompleteScheduledSolverForLifecycle();
             RefreshColdDependencies();
             EnsurePersistentBuffers();
-            SeedSpineFromOwner();
+            HydrateRigDefinitionsOrMockCold();
             ResetConstraintIterationHysteresis();
             TryRegister();
             TryRegisterOriginShiftListener();
@@ -264,7 +281,7 @@ namespace Hecton8.AI
             if (!TryResolveSpineVaultBuffers(
                     out NativeArray<float3> segmentPositions,
                     out NativeArray<float3> previousSegmentPositions,
-                    out NativeArray<float4x4> leviathanBones,
+                    out NativeArray<LeviathanBoneDTO> leviathanBones,
                     out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
                     out NativeArray<int> telemetryCursor))
             {
@@ -272,14 +289,16 @@ namespace Hecton8.AI
             }
 
             HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
+            float qualityWeight = ResolveGlobalQualityWeight();
             float safeDeltaTime = math.min(math.max(0f, deltaTime), 0.05f);
             _qualityTier = qualityTier;
+            _globalQualityWeight = qualityWeight;
             ApplyPendingOriginShiftRebase();
-            RefreshQualityState(safeDeltaTime, qualityTier);
+            RefreshQualityState(safeDeltaTime, qualityWeight);
             CaptureFallbackMotionIntent();
             ApplyPresentationIntentTargets();
             ResolveTerrainPayload(
-                qualityTier,
+                qualityWeight,
                 out NativeArray<byte> sdfTexture3D,
                 out int3 sdfDimensions,
                 out float3 sdfOrigin,
@@ -299,7 +318,11 @@ namespace Hecton8.AI
 
             ConsumeStrikeSignals();
             float systemStress01 = ResolveSystemStress01();
-            uint runtimeFlags = ResolveRuntimeFlags(qualityTier);
+            uint runtimeFlags = ResolveRuntimeFlags(qualityWeight);
+            TryResolveProceduralAuxVaultBuffers(
+                out NativeArray<LeviathanBoneConstraintsDTO> boneConstraints,
+                out NativeArray<LeviathanCapsuleColliderDTO> colliderProxies,
+                out _);
             bool biteTargetReady = PrepareBiteTarget(
                 out NativeArray<JawIkTarget> jawIkTargets,
                 out NativeArray<CurrentJawPos> currentJawPos,
@@ -310,6 +333,8 @@ namespace Hecton8.AI
                 SegmentPositions = segmentPositions,
                 PreviousSegmentPositions = previousSegmentPositions,
                 LeviathanBones = leviathanBones,
+                BoneConstraints = boneConstraints,
+                ColliderProxies = colliderProxies,
                 TelemetryRing = telemetryRing,
                 TelemetryCursor = telemetryCursor,
                 VoxelSdfTexture3D = sdfTexture3D,
@@ -325,10 +350,14 @@ namespace Hecton8.AI
                 Damping = _verletDamping,
                 SegmentLength = _segmentLength,
                 BodyRadius = _bodyRadius,
+                SwimWaveFrequencyHz = _swimWaveFrequencyHz,
+                SwimWaveAmplitudeMeters = _swimWaveAmplitudeMeters,
+                FabrikToleranceMeters = _fabrikToleranceMeters,
                 TerrainClearance = _terrainClearance,
                 TailWhipSecondsRemaining = safeTailWhipSecondsRemaining,
                 TailWhipDurationSeconds = _tailWhipDurationSeconds,
                 TailWhipAmplitudeMeters = _tailWhipAmplitudeMeters,
+                GlobalQualityWeight = qualityWeight,
                 HeadTargetPosition = _motionIntentHeadTarget,
                 IntendedVelocity = _motionIntentVelocity,
                 OwnerForward = ResolveOwnerForward(),
@@ -367,7 +396,7 @@ namespace Hecton8.AI
                     LowerJawBoneIndex = ProceduralBiteIkConstants.DefaultLowerJawBoneIndex,
                     FirstTentacleBoneIndex = ProceduralBiteIkConstants.DefaultFirstTentacleBoneIndex,
                     TentacleBoneCount = ProceduralBiteIkConstants.MaxTentacleBones,
-                    RuntimeFlags = ResolveBiteRuntimeFlags(qualityTier, systemStress01)
+                    RuntimeFlags = ResolveBiteRuntimeFlags(qualityWeight, systemStress01)
                 };
                 scheduledHandle = biteJob.Schedule(scheduledHandle);
             }
@@ -439,7 +468,7 @@ namespace Hecton8.AI
             CompleteScheduledSolverForLifecycle();
             RefreshColdDependencies();
             EnsurePersistentBuffers();
-            SeedSpineFromOwner();
+            HydrateRigDefinitionsOrMockCold();
             ResetConstraintIterationHysteresis();
         }
 
@@ -517,6 +546,7 @@ namespace Hecton8.AI
         {
             if (TryResolveSpineVaultBuffers(out _, out _, out _, out _, out _))
             {
+                TryResolveProceduralAuxVaultBuffers(out _, out _, out _);
                 TryResolveBiteIkVaultBuffers(out _, out _, out _, out _);
                 return;
             }
@@ -529,10 +559,13 @@ namespace Hecton8.AI
                 return;
             }
 
-            _segmentPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanSegmentPositions, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _previousSegmentPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanPreviousSegmentPositions, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _leviathanBonesHandle = vault.GetBufferHandle<float4x4>(BufferID.LeviathanBoneMatrices, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _telemetryRingHandle = vault.GetBufferHandle<LeviathanTerrainIkTelemetryEntry>(BufferID.LeviathanTerrainIkTelemetryRing, LeviathanTerrainIkConstants.TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _segmentPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanSegmentPositions, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _previousSegmentPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanPreviousSegmentPositions, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _leviathanBonesHandle = vault.GetBufferHandle<LeviathanBoneDTO>(BufferID.LeviathanBoneMatrices, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _boneConstraintsHandle = vault.GetBufferHandle<LeviathanBoneConstraintsDTO>(BufferID.LeviathanProceduralBoneConstraints, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _colliderProxiesHandle = vault.GetBufferHandle<LeviathanCapsuleColliderDTO>(BufferID.LeviathanCreatureColliderProxies, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _rigCsvScratchHandle = vault.GetBufferHandle<byte>(BufferID.LeviathanRigCsvScratch, 4096, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _telemetryRingHandle = vault.GetBufferHandle<LeviathanTerrainIkTelemetryEntry>(BufferID.LeviathanTerrainIkTelemetryRing, LeviathanTerrainIkConstants.TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
             _telemetryCursorHandle = vault.GetBufferHandle<int>(BufferID.LeviathanTerrainIkTelemetryCursor, 1, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
             EnsureBiteIkVaultHandles(vault);
         }
@@ -540,7 +573,7 @@ namespace Hecton8.AI
         private bool TryResolveSpineVaultBuffers(
             out NativeArray<float3> segmentPositions,
             out NativeArray<float3> previousSegmentPositions,
-            out NativeArray<float4x4> leviathanBones,
+            out NativeArray<LeviathanBoneDTO> leviathanBones,
             out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
             out NativeArray<int> telemetryCursor)
         {
@@ -570,6 +603,52 @@ namespace Hecton8.AI
                    leviathanBones.Length >= MaxSegments &&
                    telemetryRing.Length >= LeviathanTerrainIkConstants.TelemetryCapacity &&
                    telemetryCursor.Length >= 1;
+        }
+
+        private bool TryResolveProceduralAuxVaultBuffers(
+            out NativeArray<LeviathanBoneConstraintsDTO> boneConstraints,
+            out NativeArray<LeviathanCapsuleColliderDTO> colliderProxies,
+            out NativeArray<byte> rigCsvScratch)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                boneConstraints = default;
+                colliderProxies = default;
+                rigCsvScratch = default;
+                return false;
+            }
+
+            if (!_boneConstraintsHandle.IsCreated)
+                _boneConstraintsHandle = vault.GetBufferHandle<LeviathanBoneConstraintsDTO>(
+                    BufferID.LeviathanProceduralBoneConstraints,
+                    MaxSegments,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.UninitializedMemory);
+
+            if (!_colliderProxiesHandle.IsCreated)
+                _colliderProxiesHandle = vault.GetBufferHandle<LeviathanCapsuleColliderDTO>(
+                    BufferID.LeviathanCreatureColliderProxies,
+                    MaxSegments,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.UninitializedMemory);
+
+            if (!_rigCsvScratchHandle.IsCreated)
+                _rigCsvScratchHandle = vault.GetBufferHandle<byte>(
+                    BufferID.LeviathanRigCsvScratch,
+                    4096,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.UninitializedMemory);
+
+            boneConstraints = _boneConstraintsHandle.Resolve(vault);
+            colliderProxies = _colliderProxiesHandle.Resolve(vault);
+            rigCsvScratch = _rigCsvScratchHandle.Resolve(vault);
+            return boneConstraints.IsCreated &&
+                   colliderProxies.IsCreated &&
+                   rigCsvScratch.IsCreated &&
+                   boneConstraints.Length >= MaxSegments &&
+                   colliderProxies.Length >= MaxSegments &&
+                   rigCsvScratch.Length >= 4096;
         }
 
         private bool TryResolveBiteIkVaultBuffers(
@@ -714,6 +793,9 @@ namespace Hecton8.AI
             _segmentPositionsHandle = default;
             _previousSegmentPositionsHandle = default;
             _leviathanBonesHandle = default;
+            _boneConstraintsHandle = default;
+            _colliderProxiesHandle = default;
+            _rigCsvScratchHandle = default;
             _telemetryRingHandle = default;
             _telemetryCursorHandle = default;
             _jawIkTargetsHandle = default;
@@ -735,12 +817,260 @@ namespace Hecton8.AI
                 DumpTelemetryBlackBoxOnce();
         }
 
-        private void SeedSpineFromOwner()
+        private void HydrateRigDefinitionsOrMockCold()
+        {
+            bool hydrated = TryHydrateRigDefinitionsBinaryCold();
+            if (!hydrated)
+                GenerateEmergencyMockRig();
+
+            TryHydrateRigConstraintsCsvCold();
+        }
+
+        private bool TryHydrateRigDefinitionsBinaryCold()
         {
             if (!TryResolveSpineVaultBuffers(
                     out NativeArray<float3> segmentPositions,
                     out NativeArray<float3> previousSegmentPositions,
-                    out NativeArray<float4x4> leviathanBones,
+                    out NativeArray<LeviathanBoneDTO> leviathanBones,
+                    out _,
+                    out _) ||
+                !TryResolveProceduralAuxVaultBuffers(
+                    out NativeArray<LeviathanBoneConstraintsDTO> boneConstraints,
+                    out NativeArray<LeviathanCapsuleColliderDTO> colliderProxies,
+                    out NativeArray<byte> rigScratch) ||
+                !rigScratch.IsCreated ||
+                rigScratch.Length < LeviathanRigHeaderBytes + LeviathanRigRowBytes)
+            {
+                return false;
+            }
+
+            string streamingPath = Path.Combine(Application.streamingAssetsPath, "leviathan_rig_definitions.h8bin");
+            if (TryHydrateRigDefinitionBinaryCold(
+                    streamingPath,
+                    rigScratch,
+                    segmentPositions,
+                    previousSegmentPositions,
+                    leviathanBones,
+                    boneConstraints,
+                    colliderProxies))
+            {
+                return true;
+            }
+
+            string archivePath = Path.Combine(Application.dataPath, "_Project/_Archive/leviathan_rig_definitions.h8bin");
+            return TryHydrateRigDefinitionBinaryCold(
+                archivePath,
+                rigScratch,
+                segmentPositions,
+                previousSegmentPositions,
+                leviathanBones,
+                boneConstraints,
+                colliderProxies);
+        }
+
+        private bool TryHydrateRigDefinitionBinaryCold(
+            string path,
+            NativeArray<byte> rigScratch,
+            NativeArray<float3> segmentPositions,
+            NativeArray<float3> previousSegmentPositions,
+            NativeArray<LeviathanBoneDTO> leviathanBones,
+            NativeArray<LeviathanBoneConstraintsDTO> boneConstraints,
+            NativeArray<LeviathanCapsuleColliderDTO> colliderProxies)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                if (stream.Length < LeviathanRigHeaderBytes + LeviathanRigRowBytes)
+                    return false;
+
+                int maxBytes = (int)Math.Min(rigScratch.Length, Math.Min(stream.Length, 4096L));
+                byte[] coldReadBuffer = new byte[maxBytes]; // COLD ALLOC: binary rig boot bridge; bytes are copied into Vault scratch before parsing.
+                int read = stream.Read(coldReadBuffer, 0, maxBytes);
+                for (int i = 0; i < read; i++)
+                    rigScratch[i] = coldReadBuffer[i];
+
+                return TryParseRigDefinitionBinary(
+                    rigScratch,
+                    read,
+                    ResolveOwnerRuntimePosition(),
+                    ResolveOwnerForward(),
+                    SanitizePositiveFinite(_bodyRadius, 1.15f, 0.01f),
+                    segmentPositions,
+                    previousSegmentPositions,
+                    leviathanBones,
+                    boneConstraints,
+                    colliderProxies,
+                    out int activeBoneCount) &&
+                    activeBoneCount > 1;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+        }
+
+        private bool TryParseRigDefinitionBinary(
+            NativeArray<byte> bytes,
+            int length,
+            float3 rootPosition,
+            float3 ownerForward,
+            float bodyRadius,
+            NativeArray<float3> segmentPositions,
+            NativeArray<float3> previousSegmentPositions,
+            NativeArray<LeviathanBoneDTO> leviathanBones,
+            NativeArray<LeviathanBoneConstraintsDTO> boneConstraints,
+            NativeArray<LeviathanCapsuleColliderDTO> colliderProxies,
+            out int activeBoneCount)
+        {
+            activeBoneCount = 0;
+            if (!bytes.IsCreated ||
+                length < LeviathanRigHeaderBytes + LeviathanRigRowBytes ||
+                !segmentPositions.IsCreated ||
+                !previousSegmentPositions.IsCreated ||
+                !leviathanBones.IsCreated ||
+                !boneConstraints.IsCreated)
+            {
+                return false;
+            }
+
+            uint magic = ReadUInt32Little(bytes, 0);
+            bool swapEndian = false;
+            if (!IsLeviathanRigMagic(magic))
+            {
+                uint swappedMagic = math.reversebytes(magic);
+                if (!IsLeviathanRigMagic(swappedMagic))
+                    return false;
+
+                swapEndian = true;
+            }
+
+            uint rowCountRaw = ReadUInt32(bytes, 8, swapEndian);
+            uint headerBytesRaw = ReadUInt32(bytes, 12, swapEndian);
+            int headerBytes = math.clamp((int)headerBytesRaw, LeviathanRigHeaderBytes, length);
+            int availableRows = (length - headerBytes) / LeviathanRigRowBytes;
+            int declaredRows = rowCountRaw > int.MaxValue ? int.MaxValue : (int)rowCountRaw;
+            int rowCount = math.clamp(Math.Min(declaredRows, availableRows), 2, MaxSegments);
+            if (rowCount <= 1)
+                return false;
+
+            float3 forward = NormalizeSafe(ownerForward, new float3(0f, 0f, 1f));
+            float3 up = new float3(0f, 1f, 0f);
+            float3 cursor = SanitizeFiniteInputFloat3(rootPosition, float3.zero);
+            for (int i = 0; i < MaxSegments; i++)
+            {
+                int rowOffset = headerBytes + math.min(i, rowCount - 1) * LeviathanRigRowBytes;
+                int parentIndex = i == 0 ? -1 : i - 1;
+                ushort chainId = 0;
+                ushort flags = 0;
+                float segmentLength = LeviathanTerrainIkConstants.DefaultSegmentLength;
+                float maxBendRadians = math.radians(45f);
+
+                if (i < rowCount && rowOffset + LeviathanRigRowBytes <= length)
+                {
+                    parentIndex = ReadInt32(bytes, rowOffset, swapEndian);
+                    chainId = ReadUInt16(bytes, rowOffset + 4, swapEndian);
+                    flags = ReadUInt16(bytes, rowOffset + 6, swapEndian);
+                    segmentLength = SanitizePositiveFinite(ReadFloat32(bytes, rowOffset + 8, swapEndian), LeviathanTerrainIkConstants.DefaultSegmentLength, LeviathanTerrainIkConstants.MinSegmentLength);
+                    maxBendRadians = SanitizePositiveFinite(ReadFloat32(bytes, rowOffset + 12, swapEndian), math.radians(45f), 0f);
+                }
+
+                if (i == 0)
+                    cursor = rootPosition;
+                else
+                    cursor -= forward * segmentLength;
+
+                segmentPositions[i] = SanitizeFiniteInputFloat3(cursor, rootPosition);
+                previousSegmentPositions[i] = segmentPositions[i];
+
+                LeviathanBoneDTO bone = default;
+                bone.LocalToWorld = float4x4.TRS(segmentPositions[i], quaternion.LookRotationSafe(forward, up), new float3(bodyRadius, bodyRadius, segmentLength));
+                leviathanBones[i] = bone;
+
+                LeviathanBoneConstraintsDTO constraint = default;
+                constraint.ParentIndex = i == 0 ? -1 : math.clamp(parentIndex, 0, i - 1);
+                constraint.ChainId = chainId;
+                constraint.Flags = flags;
+                constraint.SegmentLengthMeters = segmentLength;
+                constraint.MaxBendRadians = maxBendRadians;
+                boneConstraints[i] = constraint;
+
+                if (colliderProxies.IsCreated && i < colliderProxies.Length)
+                    colliderProxies[i] = default;
+            }
+
+            _activeSegmentCount = rowCount;
+            _motionIntentVelocity = float3.zero;
+            _motionIntentHeadTarget = segmentPositions[0] + forward * math.max(LeviathanTerrainIkConstants.MinSegmentLength, boneConstraints[0].SegmentLengthMeters);
+            _headLookTargetWorldPosition = _motionIntentHeadTarget;
+            _strikeTargetWorldPosition = _motionIntentHeadTarget;
+            _motionIntentPending = false;
+            _gpuUploadDirty = true;
+            _gpuBufferDataValid = false;
+            activeBoneCount = rowCount;
+            return true;
+        }
+
+        private static bool IsLeviathanRigMagic(uint magic)
+        {
+            return magic == LeviathanRigMagicH8lr || magic == LeviathanRigMagicLvrg;
+        }
+
+        private static uint ReadUInt32Little(NativeArray<byte> bytes, int offset)
+        {
+            return (uint)(bytes[offset] |
+                (bytes[offset + 1] << 8) |
+                (bytes[offset + 2] << 16) |
+                (bytes[offset + 3] << 24));
+        }
+
+        private static uint ReadUInt32(NativeArray<byte> bytes, int offset, bool swapEndian)
+        {
+            uint value = ReadUInt32Little(bytes, offset);
+            return swapEndian ? math.reversebytes(value) : value;
+        }
+
+        private static int ReadInt32(NativeArray<byte> bytes, int offset, bool swapEndian)
+        {
+            return (int)ReadUInt32(bytes, offset, swapEndian);
+        }
+
+        private static ushort ReadUInt16(NativeArray<byte> bytes, int offset, bool swapEndian)
+        {
+            return swapEndian
+                ? (ushort)((bytes[offset] << 8) | bytes[offset + 1])
+                : (ushort)(bytes[offset] | (bytes[offset + 1] << 8));
+        }
+
+        private static float ReadFloat32(NativeArray<byte> bytes, int offset, bool swapEndian)
+        {
+            return math.asfloat(ReadUInt32(bytes, offset, swapEndian));
+        }
+
+        private void GenerateEmergencyMockRig()
+        {
+            if (!TryResolveSpineVaultBuffers(
+                    out NativeArray<float3> segmentPositions,
+                    out NativeArray<float3> previousSegmentPositions,
+                    out NativeArray<LeviathanBoneDTO> leviathanBones,
                     out _,
                     out _))
             {
@@ -751,14 +1081,34 @@ namespace Hecton8.AI
             float3 forward = ResolveOwnerForward();
             float segmentLength = SanitizePositiveFinite(_segmentLength, LeviathanTerrainIkConstants.DefaultSegmentLength, LeviathanTerrainIkConstants.MinSegmentLength);
             float bodyRadius = SanitizePositiveFinite(_bodyRadius, 1.15f, 0.01f);
+            TryResolveProceduralAuxVaultBuffers(
+                out NativeArray<LeviathanBoneConstraintsDTO> boneConstraints,
+                out NativeArray<LeviathanCapsuleColliderDTO> colliderProxies,
+                out _);
             for (int i = 0; i < MaxSegments; i++)
             {
                 float3 position = origin - forward * (segmentLength * i);
                 segmentPositions[i] = position;
                 previousSegmentPositions[i] = position;
-                leviathanBones[i] = float4x4.TRS(position, quaternion.LookRotationSafe(forward, new float3(0f, 1f, 0f)), new float3(bodyRadius, bodyRadius, segmentLength));
+                LeviathanBoneDTO bone = default;
+                bone.LocalToWorld = float4x4.TRS(position, quaternion.LookRotationSafe(forward, new float3(0f, 1f, 0f)), new float3(bodyRadius, bodyRadius, segmentLength));
+                leviathanBones[i] = bone;
+                if (boneConstraints.IsCreated && i < boneConstraints.Length)
+                {
+                    LeviathanBoneConstraintsDTO constraint = default;
+                    constraint.ParentIndex = i == 0 ? -1 : i - 1;
+                    constraint.ChainId = 0;
+                    constraint.Flags = (ushort)(i < LeviathanTerrainIkConstants.FallbackMockBoneCount ? 1 : 0);
+                    constraint.SegmentLengthMeters = segmentLength;
+                    constraint.MaxBendRadians = math.radians(math.lerp(18f, 70f, ResolveGlobalQualityWeight()));
+                    boneConstraints[i] = constraint;
+                }
+
+                if (colliderProxies.IsCreated && i < colliderProxies.Length)
+                    colliderProxies[i] = default;
             }
 
+            _activeSegmentCount = LeviathanTerrainIkConstants.FallbackMockBoneCount;
             _motionIntentVelocity = float3.zero;
             _motionIntentHeadTarget = origin + forward * segmentLength;
             _headLookTargetWorldPosition = _motionIntentHeadTarget;
@@ -766,6 +1116,145 @@ namespace Hecton8.AI
             _motionIntentPending = false;
             _gpuUploadDirty = true;
             _gpuBufferDataValid = false;
+        }
+
+        private void TryHydrateRigConstraintsCsvCold()
+        {
+            if (!TryResolveProceduralAuxVaultBuffers(
+                    out NativeArray<LeviathanBoneConstraintsDTO> boneConstraints,
+                    out _,
+                    out NativeArray<byte> csvScratch) ||
+                !boneConstraints.IsCreated ||
+                !csvScratch.IsCreated)
+            {
+                return;
+            }
+
+            string csvPath = Path.Combine(Application.streamingAssetsPath, "leviathan_rig_constraints.csv");
+            if (!File.Exists(csvPath))
+                return;
+
+            try
+            {
+                using FileStream stream = new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                int maxBytes = math.min(csvScratch.Length, 4096);
+                byte[] coldReadBuffer = new byte[maxBytes]; // COLD ALLOC: Editor/boot CSV bridge only; parser below consumes bytes without strings.
+                int read = stream.Read(coldReadBuffer, 0, maxBytes);
+                for (int i = 0; i < read; i++)
+                    csvScratch[i] = coldReadBuffer[i];
+
+                ParseConstraintCsv(csvScratch, read, boneConstraints);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+        }
+
+        private static void ParseConstraintCsv(
+            NativeArray<byte> bytes,
+            int length,
+            NativeArray<LeviathanBoneConstraintsDTO> boneConstraints)
+        {
+            int cursor = 0;
+            while (cursor < length)
+            {
+                int boneIndex = ParsePositiveInt(bytes, length, ref cursor);
+                SkipCsvSeparator(bytes, length, ref cursor);
+                float segmentLength = ParsePositiveFloat(bytes, length, ref cursor);
+                SkipCsvSeparator(bytes, length, ref cursor);
+                float maxBendDegrees = ParsePositiveFloat(bytes, length, ref cursor);
+                SkipLine(bytes, length, ref cursor);
+
+                if ((uint)boneIndex >= (uint)boneConstraints.Length)
+                    continue;
+
+                LeviathanBoneConstraintsDTO constraint = boneConstraints[boneIndex];
+                constraint.SegmentLengthMeters = SanitizePositiveFinite(segmentLength, constraint.SegmentLengthMeters, LeviathanTerrainIkConstants.MinSegmentLength);
+                constraint.MaxBendRadians = math.radians(SanitizePositiveFinite(maxBendDegrees, math.degrees(constraint.MaxBendRadians), 0f));
+                boneConstraints[boneIndex] = constraint;
+            }
+        }
+
+        private static int ParsePositiveInt(NativeArray<byte> bytes, int length, ref int cursor)
+        {
+            int value = 0;
+            while (cursor < length)
+            {
+                byte b = bytes[cursor];
+                if (b < (byte)'0' || b > (byte)'9')
+                    break;
+
+                value = math.min(9999, value * 10 + (b - (byte)'0'));
+                cursor++;
+            }
+
+            return value;
+        }
+
+        private static float ParsePositiveFloat(NativeArray<byte> bytes, int length, ref int cursor)
+        {
+            float value = 0f;
+            float scale = 0.1f;
+            bool fraction = false;
+            while (cursor < length)
+            {
+                byte b = bytes[cursor];
+                if (b == (byte)'.')
+                {
+                    fraction = true;
+                    cursor++;
+                    continue;
+                }
+
+                if (b < (byte)'0' || b > (byte)'9')
+                    break;
+
+                int digit = b - (byte)'0';
+                if (fraction)
+                {
+                    value += digit * scale;
+                    scale *= 0.1f;
+                }
+                else
+                {
+                    value = value * 10f + digit;
+                }
+
+                cursor++;
+            }
+
+            return value;
+        }
+
+        private static void SkipCsvSeparator(NativeArray<byte> bytes, int length, ref int cursor)
+        {
+            while (cursor < length)
+            {
+                byte b = bytes[cursor];
+                if (b == (byte)',' || b == (byte)';' || b == (byte)' ' || b == (byte)'\t')
+                {
+                    cursor++;
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        private static void SkipLine(NativeArray<byte> bytes, int length, ref int cursor)
+        {
+            while (cursor < length)
+            {
+                byte b = bytes[cursor++];
+                if (b == (byte)'\n')
+                    break;
+            }
         }
 
         private void CaptureFallbackMotionIntent()
@@ -915,16 +1404,17 @@ namespace Hecton8.AI
             return stress01;
         }
 
-        private uint ResolveBiteRuntimeFlags(HectonQualityTier tier, float systemStress01)
+        private uint ResolveBiteRuntimeFlags(float qualityWeight, float systemStress01)
         {
             uint flags = 0u;
+            float quality = SanitizeQualityWeight01(qualityWeight);
             if (_strikeActive || _strikeSignalActive)
                 flags |= ProceduralBiteIkConstants.RuntimeFlagStrikeActive;
-            if (IsLowTier(tier))
+            if (math.step(0.3f, quality) <= 0f)
                 flags |= ProceduralBiteIkConstants.RuntimeFlagLowTier;
-            if (tier == HectonQualityTier.High)
+            if (math.step(0.6f, quality) > 0f)
                 flags |= ProceduralBiteIkConstants.RuntimeFlagHighTier;
-            if (tier == HectonQualityTier.Ultra)
+            if (math.step(0.85f, quality) > 0f)
                 flags |= ProceduralBiteIkConstants.RuntimeFlagUltraTier;
             if (systemStress01 > ProceduralBiteIkConstants.StressFallbackThreshold01)
                 flags |= ProceduralBiteIkConstants.RuntimeFlagSystemStressFallback;
@@ -964,7 +1454,7 @@ namespace Hecton8.AI
                 debris.Intensity01 = math.saturate(1f - pose.ContactDistanceMeters);
                 debris.DebrisKind = DebrisSpawnSignal.DebrisKindSparks;
                 debris.Flags = ResolveBiteDebrisFlags(pose.Flags);
-                debris.Quantity = ResolveBiteDebrisQuantity(_qualityTier, pose.Flags);
+                debris.Quantity = ResolveBiteDebrisQuantity(_globalQualityWeight, pose.Flags);
                 if ((debris.Flags & DebrisSpawnSignal.FlagComputeShard) != 0)
                     SignalBus<DebrisSpawnSignal>.Push(in debris);
                 else
@@ -1003,7 +1493,7 @@ namespace Hecton8.AI
             float radius = math.lerp(BiteHullDentLowRadiusMeters, BiteHullDentHighRadiusMeters, overkill ? intensity01 : intensity01 * 0.35f);
             float depth = math.lerp(BiteHullDentLowDepthMeters, BiteHullDentHighDepthMeters, overkill ? intensity01 : intensity01 * 0.25f);
             byte flags = HullDeformedSignal.LegacyLocalPointFlag;
-            if (IsLowTier(_qualityTier))
+            if (math.step(0.3f, SanitizeQualityWeight01(_globalQualityWeight)) <= 0f)
                 flags |= HullDeformedSignal.LowTierVisualOnlyFlag;
 
             HullDeformedSignal dent = default;
@@ -1018,7 +1508,7 @@ namespace Hecton8.AI
             dent.SourceId = 0;
             dent.ActiveDentCount = 0;
             dent.Flags = flags;
-            dent.QualityTier = ResolveQualityTierByte(_qualityTier);
+            dent.QualityTier = ResolveQualityWeightByte(_globalQualityWeight);
             dent.Channel = AcousticPingSignal.ChannelJawSnap;
             dent.DamageType = BiteSparksSignalHash;
             GlobalSignals.Publish(in dent);
@@ -1032,13 +1522,21 @@ namespace Hecton8.AI
             return flags;
         }
 
-        private static ushort ResolveBiteDebrisQuantity(HectonQualityTier tier, uint poseFlags)
+        private static ushort ResolveBiteDebrisQuantity(float qualityWeight, uint poseFlags)
         {
+            float quality = SmoothQualityCurve(qualityWeight);
             if ((poseFlags & ProceduralBiteIkConstants.ResultFlagVisualOverkill) != 0u)
-                return tier == HectonQualityTier.Ultra ? BiteUltraTierDebrisQuantity : BiteHighTierDebrisQuantity;
-            if (tier == HectonQualityTier.Mid)
-                return BiteMidTierDebrisQuantity;
-            return BiteLowTierDebrisQuantity;
+            {
+                return (ushort)math.clamp(
+                    (int)math.round(math.lerp(BiteHighTierDebrisQuantity, BiteUltraTierDebrisQuantity, quality)),
+                    BiteHighTierDebrisQuantity,
+                    BiteUltraTierDebrisQuantity);
+            }
+
+            return (ushort)math.clamp(
+                (int)math.round(math.lerp(BiteLowTierDebrisQuantity, BiteMidTierDebrisQuantity, quality)),
+                BiteLowTierDebrisQuantity,
+                BiteMidTierDebrisQuantity);
         }
 
         private static ushort ClampHashToUShort(uint value)
@@ -1046,9 +1544,9 @@ namespace Hecton8.AI
             return value > ushort.MaxValue ? ushort.MaxValue : (ushort)value;
         }
 
-        private static byte ResolveQualityTierByte(HectonQualityTier tier)
+        private static byte ResolveQualityWeightByte(float qualityWeight)
         {
-            return (byte)math.clamp((int)tier, 0, byte.MaxValue);
+            return (byte)math.clamp((int)math.round(SanitizeQualityWeight01(qualityWeight) * byte.MaxValue), 0, byte.MaxValue);
         }
 
         private static Bounds BuildFallbackStrikeBounds(float3 center)
@@ -1068,14 +1566,20 @@ namespace Hecton8.AI
             return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
         }
 
-        private void RefreshQualityState(float deltaTime, HectonQualityTier tier)
+        private void RefreshQualityState(float deltaTime, float qualityWeight)
         {
-            int requestedSegmentCount = IsLowTier(tier)
-                ? LowTierSegments
-                : math.clamp(_highTierSegmentCount, LowTierSegments, MaxSegments);
+            float weight = SanitizeQualityWeight01(qualityWeight);
+            float curve = SmoothQualityCurve(weight);
+            int requestedSegmentCount = math.clamp(
+                (int)math.round(math.lerp(LowTierSegments, math.clamp(_highTierSegmentCount, LowTierSegments, MaxSegments), curve)),
+                LowTierSegments,
+                MaxSegments);
             _activeSegmentCount = requestedSegmentCount;
 
-            int requestedIterations = IsLowTier(tier) ? 1 : math.clamp(_highTierConstraintIterations, 1, 4);
+            int requestedIterations = math.clamp(
+                (int)math.round(math.lerp(1f, math.clamp(_highTierConstraintIterations, 1, 10), curve)),
+                1,
+                10);
             if (_resolvedConstraintIterations < 1)
             {
                 _resolvedConstraintIterations = requestedIterations;
@@ -1107,7 +1611,7 @@ namespace Hecton8.AI
         }
 
         private void ResolveTerrainPayload(
-            HectonQualityTier qualityTier,
+            float qualityWeight,
             out NativeArray<byte> sdfTexture3D,
             out int3 sdfDimensions,
             out float3 sdfOrigin,
@@ -1129,12 +1633,12 @@ namespace Hecton8.AI
             terrainResolution = 0;
 
             float3 ownerPosition = ResolveOwnerRuntimePosition();
-            ResolveSdfPayload(qualityTier, ownerPosition, out sdfTexture3D, out sdfDimensions, out sdfOrigin, out sdfCellSize, out sdfRange);
+            ResolveSdfPayload(qualityWeight, ownerPosition, out sdfTexture3D, out sdfDimensions, out sdfOrigin, out sdfCellSize, out sdfRange);
             ResolveMapMagicPayload(ownerPosition, out heightSamples, out terrainOrigin, out terrainSize, out terrainResolution);
         }
 
         private void ResolveSdfPayload(
-            HectonQualityTier qualityTier,
+            float qualityWeight,
             float3 targetPosition,
             out NativeArray<byte> sdfTexture3D,
             out int3 sdfDimensions,
@@ -1148,7 +1652,7 @@ namespace Hecton8.AI
             sdfCellSize = float3.zero;
             sdfRange = 0f;
 
-            if (!_enableSdfHugging || IsLowTier(qualityTier))
+            if (!_enableSdfHugging || math.step(0.3f, SanitizeQualityWeight01(qualityWeight)) <= 0f)
                 return;
 
             if (!HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload(
@@ -1248,7 +1752,7 @@ namespace Hecton8.AI
             if (!TryResolveSpineVaultBuffers(
                     out _,
                     out _,
-                    out NativeArray<float4x4> leviathanBones,
+                    out NativeArray<LeviathanBoneDTO> leviathanBones,
                     out _,
                     out _))
             {
@@ -1276,7 +1780,7 @@ namespace Hecton8.AI
             }
 
             GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, leviathanBones, MaxSegments);
-            float ikTier = IsLowTier(_qualityTier) ? 0f : 1f;
+            float ikTier = SanitizeQualityWeight01(_globalQualityWeight);
             float safeSegmentLength = SanitizePositiveFinite(_segmentLength, LeviathanTerrainIkConstants.DefaultSegmentLength, LeviathanTerrainIkConstants.MinSegmentLength);
             float safeTailWhipDuration = SanitizePositiveFinite(_tailWhipDurationSeconds, 1f, 0.0001f);
             float safeTailWhipSecondsRemaining = ResolveSafeTailWhipSecondsRemaining();
@@ -1343,13 +1847,13 @@ namespace Hecton8.AI
             if (!HasValidGraphicsBuffer(_bonesGraphicsBufferA, MaxSegments))
             {
                 ReleaseGraphicsBuffer(ref _bonesGraphicsBufferA);
-                _bonesGraphicsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(MaxSegments); // COLD ALLOC: GraphicsBuffer[20 float4x4] - leviathan bone upload A - owner: FaunaKinematicsRuntime
+                _bonesGraphicsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<LeviathanBoneDTO>(MaxSegments); // COLD ALLOC: GraphicsBuffer[20 64B bone DTO] - leviathan bone upload A - owner: FaunaKinematicsRuntime
             }
 
             if (!HasValidGraphicsBuffer(_bonesGraphicsBufferB, MaxSegments))
             {
                 ReleaseGraphicsBuffer(ref _bonesGraphicsBufferB);
-                _bonesGraphicsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(MaxSegments); // COLD ALLOC: GraphicsBuffer[20 float4x4] - leviathan bone upload B - owner: FaunaKinematicsRuntime
+                _bonesGraphicsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<LeviathanBoneDTO>(MaxSegments); // COLD ALLOC: GraphicsBuffer[20 64B bone DTO] - leviathan bone upload B - owner: FaunaKinematicsRuntime
             }
         }
 
@@ -1452,7 +1956,7 @@ namespace Hecton8.AI
             if (!TryResolveSpineVaultBuffers(
                     out NativeArray<float3> segmentPositions,
                     out NativeArray<float3> previousSegmentPositions,
-                    out NativeArray<float4x4> leviathanBones,
+                    out NativeArray<LeviathanBoneDTO> leviathanBones,
                     out _,
                     out _))
             {
@@ -1469,12 +1973,14 @@ namespace Hecton8.AI
             {
                 segmentPositions[i] = SanitizeFiniteInputFloat3(segmentPositions[i] - offset, float3.zero);
                 previousSegmentPositions[i] = SanitizeFiniteInputFloat3(previousSegmentPositions[i] - offset, segmentPositions[i]);
-                float4x4 matrix = leviathanBones[i];
+                LeviathanBoneDTO bone = leviathanBones[i];
+                float4x4 matrix = bone.LocalToWorld;
                 float4 c3 = matrix.c3;
                 float3 matrixRawPosition = new float3(c3.x - offset.x, c3.y - offset.y, c3.z - offset.z);
                 float3 matrixPosition = SanitizeFiniteInputFloat3(matrixRawPosition, segmentPositions[i]);
                 matrix.c3 = new float4(matrixPosition, math.isfinite(c3.w) ? c3.w : 1f);
-                leviathanBones[i] = matrix;
+                bone.LocalToWorld = matrix;
+                leviathanBones[i] = bone;
             }
 
             float3 ownerFallback = ResolveOwnerRuntimePosition();
@@ -1657,11 +2163,16 @@ namespace Hecton8.AI
         private void ResetConstraintIterationHysteresis()
         {
             _qualityTier = GlobalRegistry.ScalabilityTier;
-            bool lowTier = IsLowTier(_qualityTier);
-            _activeSegmentCount = lowTier
-                ? LowTierSegments
-                : math.clamp(_highTierSegmentCount, LowTierSegments, MaxSegments);
-            _resolvedConstraintIterations = lowTier ? 1 : math.clamp(_highTierConstraintIterations, 1, 4);
+            _globalQualityWeight = ResolveGlobalQualityWeight();
+            float curve = SmoothQualityCurve(_globalQualityWeight);
+            _activeSegmentCount = math.clamp(
+                (int)math.round(math.lerp(LowTierSegments, math.clamp(_highTierSegmentCount, LowTierSegments, MaxSegments), curve)),
+                LowTierSegments,
+                MaxSegments);
+            _resolvedConstraintIterations = math.clamp(
+                (int)math.round(math.lerp(1f, math.clamp(_highTierConstraintIterations, 1, 10), curve)),
+                1,
+                10);
             _pendingConstraintIterations = _resolvedConstraintIterations;
             _constraintIterationSwitchTimer = 0f;
         }
@@ -1698,21 +2209,106 @@ namespace Hecton8.AI
             return velocitySq > MinVectorMagnitudeSq ? velocitySq * math.rsqrt(velocitySq) : 0f;
         }
 
-        private uint ResolveRuntimeFlags(HectonQualityTier tier)
+        private uint ResolveRuntimeFlags(float qualityWeight)
         {
             uint flags = 0u;
             if (_enableSdfHugging)
                 flags |= LeviathanTerrainIkConstants.RuntimeFlagSdfHugging;
             if (_enableMapMagicFallback)
                 flags |= LeviathanTerrainIkConstants.RuntimeFlagTerrainFallback;
-            if (IsLowTier(tier))
+            if (math.step(0.3f, SanitizeQualityWeight01(qualityWeight)) <= 0f)
                 flags |= LeviathanTerrainIkConstants.RuntimeFlagLowTier;
             return flags;
         }
 
-        private static bool IsLowTier(HectonQualityTier tier)
+        internal bool TrySelfAudit(out uint faultFlags)
         {
-            return tier == HectonQualityTier.Unknown || tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
+            faultFlags = 0u;
+            if (LeviathanTerrainIkLayout.BoneDtoBytes != Unity.Collections.LowLevel.Unsafe.UnsafeUtility.SizeOf<LeviathanBoneDTO>())
+                faultFlags |= 1u << 0;
+            if (LeviathanTerrainIkLayout.BoneConstraintDtoBytes != Unity.Collections.LowLevel.Unsafe.UnsafeUtility.SizeOf<LeviathanBoneConstraintsDTO>())
+                faultFlags |= 1u << 1;
+            if (LeviathanTerrainIkLayout.ColliderProxyDtoBytes != Unity.Collections.LowLevel.Unsafe.UnsafeUtility.SizeOf<LeviathanCapsuleColliderDTO>())
+                faultFlags |= 1u << 2;
+
+            if (!TryResolveSpineVaultBuffers(
+                    out _,
+                    out _,
+                    out NativeArray<LeviathanBoneDTO> leviathanBones,
+                    out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
+                    out NativeArray<int> telemetryCursor))
+            {
+                faultFlags |= 1u << 3;
+                return false;
+            }
+
+            int count = math.min(_activeSegmentCount, leviathanBones.Length);
+            for (int i = 0; i < count; i++)
+            {
+                float4x4 matrix = leviathanBones[i].LocalToWorld;
+                if (!math.all(math.isfinite(matrix.c0)) ||
+                    !math.all(math.isfinite(matrix.c1)) ||
+                    !math.all(math.isfinite(matrix.c2)) ||
+                    !math.all(math.isfinite(matrix.c3)))
+                {
+                    faultFlags |= 1u << 4;
+                    break;
+                }
+            }
+
+            if (!telemetryRing.IsCreated || telemetryRing.Length < LeviathanTerrainIkConstants.TelemetryCapacity)
+                faultFlags |= 1u << 5;
+            if (!telemetryCursor.IsCreated || telemetryCursor.Length < 1)
+                faultFlags |= 1u << 6;
+
+            return faultFlags == 0u;
+        }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if (!Application.isPlaying || _solverScheduled)
+                return;
+
+            if (!TryResolveSpineVaultBuffers(
+                    out _,
+                    out _,
+                    out NativeArray<LeviathanBoneDTO> leviathanBones,
+                    out _,
+                    out _) ||
+                leviathanBones.Length <= 1)
+            {
+                return;
+            }
+
+            Gizmos.color = Color.cyan;
+            int count = math.min(_activeSegmentCount, leviathanBones.Length);
+            for (int i = 1; i < count; i++)
+            {
+                float4 previous = leviathanBones[i - 1].LocalToWorld.c3;
+                float4 current = leviathanBones[i].LocalToWorld.c3;
+                if (!math.all(math.isfinite(previous)) || !math.all(math.isfinite(current)))
+                    continue;
+
+                Gizmos.DrawLine(new Vector3(previous.x, previous.y, previous.z), new Vector3(current.x, current.y, current.z));
+            }
+        }
+#endif
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            return SanitizeQualityWeight01(HomeostasisBrain.GlobalQualityWeight);
+        }
+
+        private static float SanitizeQualityWeight01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float SmoothQualityCurve(float value)
+        {
+            float weight = SanitizeQualityWeight01(value);
+            return weight * weight * (3f - 2f * weight);
         }
 
         private static float3 SanitizeFiniteInputFloat3(float3 value, float3 fallback)

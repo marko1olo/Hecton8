@@ -2,7 +2,7 @@
 
 Date: 2026-05-19
 Owner lane: SUBNAUTICA_RESEARCHER
-Status: ACTIVE SOURCE-OF-TRUTH OVERLAY / R29 DOC_GLOBAL ROOT-ARCH BOUNDARY / STATIC_DOC + STATIC_SOURCE + WEB_REFERENCE
+Status: ACTIVE SOURCE-OF-TRUTH OVERLAY / R31 DOC_GLOBAL ROOT-ARCH BOUNDARY / STATIC_DOC + STATIC_SOURCE + WEB_REFERENCE
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -37,6 +37,8 @@ new or changed global routes require the route-card template.
 
 Current DOC_GLOBAL boundary:
 
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R30_ROOT_ARCHITECTURE_INTERNAL_CURRENTNESS_LOCAL.md`
 - `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`
 - `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`
 - `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`
@@ -47,7 +49,16 @@ Current DOC_GLOBAL boundary:
 - `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`
 - `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`
 
-Current R29 static gates: scoped stale Mod API blocker and proof-plan-overclaim scans are clean after validation; `Tools\AtlasCheck.py` is still red on `57` RealtimeCSG missing refs unless rerun cleanly; `Docs\Modding\Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). These are static/tool facts, not Unity runtime proof.
+Current R31 static gates: the R31 report records targeted stale R28/R29/R30/latest/proof-current scans as clean after validation; the R30 report records targeted stale R28/latest/proof-current scans as clean after validation; the R29 report records scoped stale Mod API blocker and proof-plan-overclaim scans as clean (`STATIC_DOC` / `STATIC_TOOL`; see the report for commands and output); `Tools\AtlasCheck.py` is still red on `57` RealtimeCSG missing refs unless rerun cleanly; `Docs\Modding\Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. These are static/tool facts, not Unity runtime proof.
+
+2026-05-19 SHINOBU_02 Core/SignalBus actuality overlay:
+
+- Evidence class: `STATIC_SOURCE` plus historical `STATIC_SOURCE_CLASSIFIED` audit artifacts.
+- Current source scan finds exactly three Core `Pack = 1` declarations: cold `ContentAssetBinaryRecord`, owner-deferred `GerstnerWaveComponent`, and owner-deferred `WeatherRuntimeSnapshot`.
+- Scoped Core/SignalBus scan finds zero exact `Pack = 1` declarations in `Core/Signals`, `Core/GlobalSignals.cs`, and `Core/Contracts/HectonSignalLaneContract.cs`.
+- Latest artifact-backed SHINOBU_02 SignalCritical audit is `Docs/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.md`: `0` errors, `0` warnings, `0` runtime signal `Pack = 1`, `0` transitive runtime signal `Pack = 1` field hits.
+- Latest artifact-backed SHINOBU_02 Full audit is `Docs/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_full_current21.md`: `0` errors, `432` warnings, `454` infos, `0` confirmed/probable errors at confidence `>= 90`, and `230` project-wide `Pack = 1` layouts at that capture time.
+- SHINOBU_02 Current22 reduced Core exact `Pack = 1` source hits from `9` to `3`, but Core compile, SignalCritical re-audit, Full re-audit, and H-Phi trend refresh after Current22 were blocked by the CPU guard. Do not report Current22 as compile/runtime proof.
 
 Historical machine-readable R4 companion:
 
@@ -55,7 +66,7 @@ Historical machine-readable R4 companion:
 
 ## Inventory Boundary
 
-Historical 2026-05-17 PowerShell inventory of `Docs` with `*.md`, `*.txt`, and `*.json`; do not use these numbers as current R28 counts unless recaptured:
+Historical 2026-05-17 PowerShell inventory of `Docs` with `*.md`, `*.txt`, and `*.json`; do not use these numbers as current R31 counts unless recaptured:
 
 - Total scanned docs: 3032.
 - Live docs under active/reference locations: 414.

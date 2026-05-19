@@ -136,6 +136,45 @@ Steam Playtest can be used earlier, but still needs:
 - NDA decision if private;
 - timebox.
 
+## 2026-05-19 Playtest Decision Gate V0
+
+Status: blocked until first route is playable and screening score exists.
+
+Do not open Steam Playtest or private preview just because the build launches. The first wave must answer whether the core loop is understandable.
+
+### Required Before First External Wave
+
+| Gate | Required source | Pass condition |
+|---|---|---|
+| Screening | `Audience/PLAYTESTER_RECRUITMENT_AND_SCREENING_PLAN.md` | First 25 testers selected by score and segment quota. |
+| Route | Current playable build | One start-to-return route completes without blocker. |
+| Known issues | Support/QA note | Known issues written in plain language before access. |
+| Feedback tags | Screening plan tag list | Feedback form or tracker accepts the canonical tags. |
+| No-coop boundary | Onboarding copy | Testers are told this is single-player-first and not a co-op test. |
+| Hardware context | Screening form | Every low/mid-spec tester provides CPU/GPU/RAM/storage/settings. |
+
+### Wave Result Decision
+
+After each wave, choose exactly one:
+
+| Decision | Use when | Next action |
+|---|---|---|
+| `EXPAND_WAVE` | Players reach first hook, describe pressure/machinery, and feedback is specific. | Add the next tester segment or Steam Playtest tranche. |
+| `REVISE_BUILD` | Core loop works but friction repeats in UI, controls, resource route, darkness, or onboarding. | Fix the repeated tag before inviting more. |
+| `STOP_PUBLIC_PATH` | Players cannot state what the game is, quit before hook, expect co-op, or performance blocks feedback. | Do not launch public demo; revise product/onboarding/assets. |
+
+### Tag Escalation Rules
+
+Stop expansion if any of these tags repeat across 3+ testers in a 25-person wave:
+
+- `CLARITY_PLAYER_VERB`
+- `CLONE_RISK`
+- `DARKNESS_READABILITY`
+- `SALVAGE_TEDIUM`
+- `INVENTORY_FRICTION`
+- `LOW_SPEC_PERF`
+- `COOP_EXPECTATION`
+
 ## Demo Patch Policy
 
 During public demo:

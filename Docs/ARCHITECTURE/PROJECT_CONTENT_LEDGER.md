@@ -37,7 +37,7 @@ MANDATES FOLLOWED:
 - Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 - Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current R28 static/tool boundary: AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
+- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current R31 static/tool boundary: R31 is the latest DOC_GLOBAL root/architecture current-boundary propagation layer; R30 remains the prior internal-currentness layer; AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 ## Historical 2026-05-04 Boundary
@@ -57,7 +57,7 @@ May 7 static audit scanned `1192` `.cs` files under `Assets/_Project/Scripts` an
 
 Result: `334` scripts are deletion review targets because the filename token was not found in any other `.cs` file and the script `.meta` GUID was not found in first-party prefab YAML.
 
-Full candidate artifact:
+Historical candidate artifact, absent in the current filesystem:
 
 - `CodexArtifacts/2026-05-07_ORPHANED_SCRIPT_AUDIT.csv`
 
@@ -126,13 +126,13 @@ Source of truth: `Assets/_Project/Scripts/Core/HectonLayerMasks.cs` and `Project
 
 ### Extreme-Depth Notes
 
-- `ResourceNodeTemplate_DeepMantleGeode.asset` is the hydrothermal-only geode owner. Runtime gate: `Temperature > 80C`, steam explosion without `ToolUpgradeBits.ThermalShield`, crater carve on depletion, extractor-enabled.
-- `ResourceNodeTemplate_ThermalDiamond.asset` is the flash-freeze crystallization output. Runtime owner: `AbyssalThermalManager.ReportFlashFreeze(...)` -> Burst boundary validation -> `ResourceDistributionDirector.TrySpawnThermalDiamondCrystallization(...)`.
-- `ResourceNodeTemplate_CrystallizedOsmium.asset`, `ResourceNodeTemplate_ToxicSulfurDeposit.asset`, and `ResourceNodeTemplate_BrineIsotopeGeode.asset` are deterministic hadal brine-pool resources. Runtime gate: `RequiresBrinePool = true`, brine density override `1250 kg/m3`, toxicity hazard routing, and seismic upwelling reinstatement.
+- `ResourceNodeTemplate_DeepMantleGeode.asset` is the hydrothermal-only geode owner. Authored/source-intended runtime gate: `Temperature > 80C`, steam explosion without `ToolUpgradeBits.ThermalShield`, crater carve on depletion, extractor-enabled. Scene wiring, Unity serialization, runtime spawn path, save/load, and visual proof remain pending unless linked to fresh artifacts.
+- `ResourceNodeTemplate_ThermalDiamond.asset` is the flash-freeze crystallization output. Authored/source-intended runtime route: `AbyssalThermalManager.ReportFlashFreeze(...)` -> Burst boundary validation -> `ResourceDistributionDirector.TrySpawnThermalDiamondCrystallization(...)`. Scene wiring, Unity serialization, runtime spawn path, save/load, and visual proof remain pending unless linked to fresh artifacts.
+- `ResourceNodeTemplate_CrystallizedOsmium.asset`, `ResourceNodeTemplate_ToxicSulfurDeposit.asset`, and `ResourceNodeTemplate_BrineIsotopeGeode.asset` are deterministic hadal brine-pool resources. Authored/source-intended runtime gate: `RequiresBrinePool = true`, brine density override `1250 kg/m3`, toxicity hazard routing, and seismic upwelling reinstatement. Scene wiring, Unity serialization, runtime spawn path, save/load, and visual proof remain pending unless linked to fresh artifacts.
 - `ResourceNodeTemplate_TitaniumBasaltMass.asset` is the new hadal titanium vein for autonomous production scaling.
 - `ResourceNodeTemplate_CrystallizedOsmium.asset`, `ResourceNodeTemplate_XenonOmegaVentCache.asset`, `ResourceNodeTemplate_Silicon7BGlassVein.asset`, `ResourceNodeTemplate_AegiriumCrustNodule.asset`, and `ResourceNodeTemplate_BrineIsotopeGeode.asset` currently route into placeholder item assets until dedicated isotope item records exist. Lore IDs are `crystallized_osmium`, `xenon_omega`, `silicon_7b`, `aegirium`, and `brine_isotope`.
-- `ResourceNodeTemplate_CarbonGraphiteNodule.asset` is the pressure-metamorphism source. Runtime gate: resident node, depth `>3500m`, `ResourceNode.PressureMetamorphismProgressSeconds` accumulates in the Burst slow-tick lane.
-- `ResourceNodeTemplate_PressureDiamond.asset` is the pressure-metamorphism output. Runtime owner: `ResourceDistributionDirector.PressureMetamorphismJob`, persistence marker: `PersistentWorldItemFlags.ResourceNodeMetamorphosed`, stable entity remains alive and changes template without destruction.
+- `ResourceNodeTemplate_CarbonGraphiteNodule.asset` is the pressure-metamorphism source. Authored/source-intended runtime gate: resident node, depth `>3500m`, `ResourceNode.PressureMetamorphismProgressSeconds` accumulates in the Burst slow-tick lane. Scene wiring, Unity serialization, runtime spawn path, save/load, and visual proof remain pending unless linked to fresh artifacts.
+- `ResourceNodeTemplate_PressureDiamond.asset` is the pressure-metamorphism output. Authored/source-intended runtime owner: `ResourceDistributionDirector.PressureMetamorphismJob`, persistence marker: `PersistentWorldItemFlags.ResourceNodeMetamorphosed`, stable entity remains alive and changes template without destruction. Scene wiring, Unity serialization, runtime spawn path, save/load, and visual proof remain pending unless linked to fresh artifacts.
 
 ## Flora Template HashIDs
 
@@ -164,7 +164,7 @@ Source of truth: `Assets/_Project/Scripts/Core/HectonLayerMasks.cs` and `Project
 ### Flora Notes
 
 - Authoring source: `Assets/_Project/Data/World/FloraTemplates/`
-- Runtime owner: `HectonMapMagicVegetationBridge.floraTemplates`
+- Authored/source-intended runtime owner: `HectonMapMagicVegetationBridge.floraTemplates`; scene wiring, Unity serialization, runtime spawn path, save/load, and visual proof remain pending unless linked to fresh artifacts.
 - Loot hash routing is mirrored from authored `FloraDataTemplate` assets and consumed through existing `HarvestableTemplate` drop authority.
 - `AudioMaterialID`: `1 = Organic`, `2 = Brittle`, `3 = Metallic`
 - `Attachment Surface`: `Any = floating/freeform`, `Seabed = terrain-anchored`, `Metal = artificial-structure overgrowth`
@@ -205,7 +205,7 @@ Source of truth: `Assets/_Project/Scripts/Core/HectonLayerMasks.cs` and `Project
 
 ## Persistence Contract
 
-- Runtime depletion key: `PersistentWorldRegistry.ComputeResourceNodeTombstoneId(...)`
+- Source-intended runtime depletion key: `PersistentWorldRegistry.ComputeResourceNodeTombstoneId(...)`; runtime save/load route proof remains pending.
 - Legacy display string bridge: `PersistentWorldRegistry.FormatResourceNodeTombstoneId(...)`
 - Save-path flag: `PersistentWorldItemFlags.ResourceNodeDestroyed`
 - Resident tombstone set: `NativeParallelHashSet<ulong> _resourceNodeTombstoneIds`

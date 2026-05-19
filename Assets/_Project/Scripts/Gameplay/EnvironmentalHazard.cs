@@ -226,7 +226,7 @@ namespace Hecton8.Gameplay
 
         private void OnTriggerEnter(Collider other)
         {
-            if (hazardType == HazardType.Radiation)
+            if (hazardType == HazardType.Radiation || hazardType == HazardType.Heat)
                 return;
 
             if (!useTriggerCollider)
@@ -248,7 +248,7 @@ namespace Hecton8.Gameplay
 
         private void OnTriggerExit(Collider other)
         {
-            if (hazardType == HazardType.Radiation)
+            if (hazardType == HazardType.Radiation || hazardType == HazardType.Heat)
                 return;
 
             if (!useTriggerCollider)
@@ -285,6 +285,12 @@ namespace Hecton8.Gameplay
             if (hazardType == HazardType.Radiation)
             {
                 TryRegisterRadiationSource();
+                return;
+            }
+
+            if (hazardType == HazardType.Heat)
+            {
+                TryPublishThermalFieldSource();
                 return;
             }
 
@@ -463,6 +469,16 @@ namespace Hecton8.Gameplay
 
             float intensity = Mathf.Max(0f, baseDamagePerSecond) * 10f;
             RadiationHazardGrid.RegisterSource(_radiationSourceId, _cachedTransform.position, intensity, hazardRadius);
+        }
+
+        private void TryPublishThermalFieldSource()
+        {
+            if (hazardType != HazardType.Heat || _cachedTransform == null)
+                return;
+
+            IThermodynamicsService thermodynamics = GlobalRegistry.ThermodynamicsService;
+            if (thermodynamics != null && thermodynamics.IsInitialized)
+                thermodynamics.TryInjectTransientHeatSource(_cachedTransform.position, hazardRadius, baseDamagePerSecond, unchecked((uint)_radiationSourceId));
         }
 
         /// <summary>

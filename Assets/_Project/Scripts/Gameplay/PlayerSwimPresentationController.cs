@@ -12,7 +12,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player Swim Presentation Controller")]
-    public sealed class PlayerSwimPresentationController : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PlayerSwimPresentationController : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const float Pi = 3.14159265359f;
         private const float TwoPi = 6.28318530718f;
@@ -555,6 +555,7 @@ namespace Hecton8.Gameplay
 #endif
 
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
         private SwimPresentationProfile _activeProfile;
         private PlayerSwimPresentationMode _currentMode;
         private float _presentationBlend;
@@ -773,7 +774,9 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
             TryRegister();
+            TryRegisterHotSwapListener();
         }
 
         private void Start()
@@ -815,6 +818,7 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalFloat(_SwimVatSpeedScalarShaderId, 0f);
             _lastSwimVatSpeedScalarByte = int.MinValue;
             _swimVatSpeedScalar = 0f;
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
@@ -825,6 +829,7 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalFloat(_SwimVatSpeedScalarShaderId, 0f);
             _lastSwimVatSpeedScalarByte = int.MinValue;
             _swimVatSpeedScalar = 0f;
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
@@ -978,6 +983,37 @@ namespace Hecton8.Gameplay
             _registered = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Input)
+                _inputService = currentService as IInputService;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _inputService = GlobalRegistry.Input;
+        }
+
         private void AutoResolveReferences(bool allowSingletonAccess = true)
         {
             if (playerMovement == null)
@@ -1003,7 +1039,7 @@ namespace Hecton8.Gameplay
             }
 
             if (allowSingletonAccess && _inputService == null)
-                _inputService = GlobalRegistry.Input;
+                CacheRegistryServicesCold();
         }
 
         private void ResolveGuideReferences()
@@ -2017,9 +2053,6 @@ namespace Hecton8.Gameplay
 
         private void UpdateToolSuppression(float dt)
         {
-            if (_inputService == null)
-                _inputService = GlobalRegistry.Input;
-
             PlayerInputState inputState = _inputService != null && _inputService.IsPlayerInputEnabled
                 ? _inputService.GetState()
                 : default;
@@ -2151,9 +2184,6 @@ namespace Hecton8.Gameplay
             Vector3 velocity,
             float dt)
         {
-            if (_inputService == null)
-                _inputService = GlobalRegistry.Input;
-
             PlayerInputState inputState = _inputService != null && _inputService.IsPlayerInputEnabled
                 ? _inputService.GetState()
                 : default;

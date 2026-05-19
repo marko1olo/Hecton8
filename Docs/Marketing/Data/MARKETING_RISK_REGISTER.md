@@ -37,6 +37,11 @@ This file lists the ways HECTON-8 marketing can fail before and after first scre
 | RISK-023 | First creator batch goes to high-value creators before the asset matches their format. | High | Medium | CRM status `NEEDS_ASSET` blocks send; require screenshot/clip/demo per lead. | Pause outreach, move rows back to `VERIFY_BEFORE_CONTACT`, and rebuild asset-fit notes. |
 | RISK-024 | Public posts mine SN2 complaints and look petty. | High | Medium | Monitoring file labels SN2 pain as internal research only; public copy cannot mention competitor failures. | Delete/rewrite post, issue neutral correction if needed. |
 | RISK-025 | Steam short description sells mood but not gameplay. | High | Medium | Cold-test A/B/C copy against screenshot; require viewers to name minute-to-minute action. | Use pressure/salvage baseline until base/anomaly proof exists. |
+| RISK-026 | Official handles are split, taken, or orphaned under wrong credentials. | High | Medium | Human owner reserves handles in password manager with 2FA/recovery/backup codes; public checks are only candidates. | Stop public posting, recover or rebrand to the reserved handle set, update all docs/presskit links. |
+| RISK-027 | `Hecton8` handle collision causes user confusion. | Medium | Medium | Prefer `Hecton8Game`; record that X and YouTube `Hecton8` are already unrelated/taken. | Add official-link verification to Steam page/presskit and avoid asking users to search handles manually. |
+| RISK-028 | Press route data goes stale before assets exist. | Medium | High | Same-day recheck required before every send; tracker states are triage, not permission. | Hold the pitch, update route/contact notes, and send only through current official route. |
+| RISK-029 | Curator Connect slots are wasted on stale/formulaic pages. | Medium | Medium | Use the curator tracker status buckets; allocate first copies only to active high-fit rows after Steam page/build exists. | Stop curator batch and record response/no-response quality before expanding. |
+| RISK-030 | Public platform fetches are misread as final availability. | Medium | Medium | Mark JS/login/generic pages as inconclusive; final handle reservation happens only while logged in. | Correct social playbook and reservation sheet; avoid public announcements until official links are verified. |
 
 ## Severity Definitions
 
@@ -68,3 +73,5 @@ Escalation:
 5. Performance claims must wait for proof.
 6. HECTON-8 must look industrial/pressure-driven, not derivative underwater survival.
 7. Agent output must become verified rows and scored assets, not more disconnected docs.
+8. Social handles need owner-controlled reservation before public links appear.
+9. Press and curator trackers are triage only; exact routes must be rechecked after assets exist.

@@ -746,7 +746,13 @@ namespace Hecton8.AI.Ambient
             preyBiomass01 = 0.35f;
             carryingCapacity01 = 0.5f;
             IEcosystemDirectorService ecosystem = _ecosystem;
-            if (ecosystem == null || !ecosystem.IsInitialized || !math.all(math.isfinite(runtimePosition)))
+            if (ecosystem == null)
+            {
+                ecosystem = GlobalRegistry.EcosystemDirector;
+                _ecosystem = ecosystem;
+            }
+
+            if (ecosystem == null || !math.all(math.isfinite(runtimePosition)))
                 return;
 
             Vector3 position = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);

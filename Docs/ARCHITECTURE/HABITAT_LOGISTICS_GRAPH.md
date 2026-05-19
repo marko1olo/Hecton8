@@ -26,7 +26,7 @@ Purpose: canonical architecture contract for habitat logistics links, Bishop-fra
 - Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 - Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current R28 static/tool boundary: AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
+- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current R31 static/tool boundary: R31 is the latest DOC_GLOBAL root/architecture current-boundary propagation layer; R30 remains the prior internal-currentness layer; AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 Historical 2026-05-04 boundary:
@@ -102,6 +102,22 @@ NativeArray<float> EdgeResistance; // aligned with EdgeDestinations
 ```
 
 Mutation source is module/socket discovery. Runtime traversal reads CSR only.
+
+## SHINOBU_114 Runtime Solver Addendum (2026-05-19)
+
+`Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs` is the active base logistics flow owner for the WFC/base mock lane. It now keeps the graph in DataVault-backed flat buffers and solves power/oxygen pressure from CSR state:
+
+- `LogisticsNodeDTO` is explicit 32 bytes: `NodeHash`, `Capacity`, `CurrentLoad`, `Flags`, `EdgeStartIndex`, `EdgeCount`, and padding.
+- `LogisticsEdgeDTO` is explicit 32 bytes with `Nodes`, `Capacity`, `Resistance`, `Flow01`, and quantized transfer state.
+- `BuildCsrGraphJob` rebuilds offsets, destinations, and conductance into contiguous lanes after topology changes.
+- `LogisticsFlowSolverJob` identifies connected components with Vault-owned int scratch lanes inside `ShinobuLogisticsCounters`; no private persistent `NativeQueue` or `NativeList` owns BFS/reachable state.
+- `HomeostasisBrain.GlobalQualityWeight` maps through a smoothstep curve to 1..10 Jacobi iterations and 5..1 oxygen cadence; no binary tier switch owns accuracy.
+- Edge length/resistance must subtract `double3` AUPs before any `float3` cast.
+- Flow visualization is shader scalar only through `ConnectionSplineBatchRenderer.SetPipeNodeFlow`; no resource GameObjects are authorized.
+- Fault telemetry writes the 300-frame black-box ring and dumps to `Docs/AgentLogs/Dump_LOGISTICS_SURGEON.bin`.
+- Breach side effects write node indices into the same Vault scratch lane during the solver and publish the existing `FluidIncursionSignal` lane during POST_SIMULATION. No duplicate local breach signal queue is authorized.
+
+The historical `PowerNode`/`LogisticsPipeNode` managed lists are authoring or adapter surfaces only. They must not become the runtime flow traversal authority.
 
 Rebuild sequence:
 

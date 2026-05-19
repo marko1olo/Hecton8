@@ -1845,7 +1845,7 @@ namespace Hecton8.VFX.Bioluminescence
                 float radius = math.clamp(4f + math.sqrt(math.max(magnitude, 0.0001f)) * 2.75f, 4f, 48f);
                 damageSignal[0] = new MockCombatDamageSignal
                 {
-                    OriginAUP = new double3(signal.WorldPoint.x, signal.WorldPoint.y, signal.WorldPoint.z),
+                    OriginAUP = signal.ImpactAup,
                     RadiusMeters = radius,
                     AgeSeconds = 0f,
                     PackedDamageColor = BiolumPackedColorUtility.PackRgb10A2(new float3(1f, 0.075f, 0.025f), 1f),

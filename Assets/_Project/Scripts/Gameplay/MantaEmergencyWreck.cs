@@ -38,19 +38,23 @@ namespace Hecton8.Gameplay
 
         [DisallowMultipleComponent]
         [DefaultExecutionOrder(-4900)]
-        private sealed class ResidencyRuntime : MonoBehaviour, IUpdatable
+        private sealed class ResidencyRuntime : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
         {
             private bool _registered;
+            private bool _hotSwapListenerRegistered;
             private float _playerResolveCooldown;
             private Transform _playerTransform;
 
             private void OnEnable()
             {
+                CacheRegistryServicesCold();
                 TryRegister();
+                TryRegisterHotSwapListener();
             }
 
             private void OnDisable()
             {
+                TryUnregisterHotSwapListener();
                 TryUnregister();
             }
 
@@ -59,6 +63,7 @@ namespace Hecton8.Gameplay
                 if (ReferenceEquals(s_residencyRuntime, this))
                     s_residencyRuntime = null;
 
+                TryUnregisterHotSwapListener();
                 TryUnregister();
             }
 
@@ -70,7 +75,7 @@ namespace Hecton8.Gameplay
                 if (!TryResolvePlayerTransform(deltaTime, out Transform playerTransform))
                     return;
 
-                ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
+                ObjectPoolManager poolManager = s_cachedObjectPool;
                 if (poolManager == null)
                     return;
 
@@ -139,6 +144,37 @@ namespace Hecton8.Gameplay
 
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registered = false;
+            }
+
+            public void OnGlobalRegistryServiceReplaced(
+                GlobalRegistryServiceSlot serviceSlot,
+                object previousService,
+                object currentService)
+            {
+                if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
+                    s_cachedObjectPool = currentService as ObjectPoolManager;
+            }
+
+            private void TryRegisterHotSwapListener()
+            {
+                if (_hotSwapListenerRegistered || !Application.isPlaying)
+                    return;
+
+                _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+            }
+
+            private void TryUnregisterHotSwapListener()
+            {
+                if (!_hotSwapListenerRegistered)
+                    return;
+
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _hotSwapListenerRegistered = false;
+            }
+
+            private static void CacheRegistryServicesCold()
+            {
+                s_cachedObjectPool = GlobalRegistry.ObjectPool;
             }
 
             private bool TryResolvePlayerTransform(float deltaTime, out Transform playerTransform)
@@ -216,6 +252,7 @@ namespace Hecton8.Gameplay
         private static int s_freeResidencySlotCount;
         private static int s_activeDehydratedResidencySlotCount;
         private static ResidencyRuntime s_residencyRuntime;
+        private static ObjectPoolManager s_cachedObjectPool;
 
         private Rigidbody _rigidbody;
         private PickupItem _pickupItem;
@@ -239,6 +276,7 @@ namespace Hecton8.Gameplay
             s_freeResidencySlotCount = 0;
             s_activeDehydratedResidencySlotCount = 0;
             s_residencyRuntime = null;
+            s_cachedObjectPool = null;
         }
 
         /// <summary>
@@ -455,7 +493,7 @@ namespace Hecton8.Gameplay
         private void DespawnSelf(bool preserveResidencySlot)
         {
             _preserveResidencyOnDespawn = preserveResidencySlot;
-            ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
+            ObjectPoolManager poolManager = s_cachedObjectPool;
             if (poolManager != null)
             {
                 poolManager.Despawn(gameObject);

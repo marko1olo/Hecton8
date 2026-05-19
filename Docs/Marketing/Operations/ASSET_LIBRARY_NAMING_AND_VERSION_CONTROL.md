@@ -59,6 +59,7 @@ H8_Trailer_Steam_b0150_2026-06-20_v07.mp4
 
 | Status | Meaning |
 |---|---|
+| PLANNED_CAPTURE | Capture/export slot exists, but no real asset has been captured. |
 | RAW | Captured, not reviewed. |
 | QA_FAIL | Rejected by checklist. |
 | REVISION | Needs edit/capture change. |

@@ -2553,6 +2553,12 @@ namespace Hecton8.World
                         return;
                     }
 
+                    if (_chunkCenters.IsCreated && (uint)index < (uint)_chunkCenters.Length)
+                    {
+                        AbsoluteUniversePositionBlit chunkCenter = _chunkCenters[index];
+                        assetLifecycle.MarkAddressableAssetAup(assetHash, ToAbsoluteDouble3(in chunkCenter));
+                    }
+
                     _addressableHandles[index] = acquiredHandle;
                     _hasAddressableHandle[index] = true;
                     _addressableLoadPending[index] = true;
@@ -2750,6 +2756,12 @@ namespace Hecton8.World
                 handle.Result,
                 EstimateAddressableChunkBytes(index),
                 true);
+
+            if (_chunkCenters.IsCreated && (uint)index < (uint)_chunkCenters.Length)
+            {
+                AbsoluteUniversePositionBlit chunkCenter = _chunkCenters[index];
+                assetLifecycle.MarkAddressableAssetAup(assetHash, ToAbsoluteDouble3(in chunkCenter));
+            }
         }
 
 #endif

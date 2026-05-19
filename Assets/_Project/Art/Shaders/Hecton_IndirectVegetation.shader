@@ -182,6 +182,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             StructuredBuffer<uint> _HectonVisibleInstanceIndices;
             StructuredBuffer<uint> _HectonFloraSnapFlags;
             StructuredBuffer<float2> _MarineSnowFlowField;
+            StructuredBuffer<float4> _HectonFloraSwayDisplacementField;
             StructuredBuffer<float4> _AbyssalFlowFieldResult;
             StructuredBuffer<float4> _PredatorAUPBuffer;
             StructuredBuffer<uint> _BiolumGpuColorBuffer;
@@ -192,6 +193,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _HectonFloraWakeBuffer[HECTON_MAX_PROCEDURAL_WAKE_POINTS];
 
             float4 _MarineSnowFlowFieldCenterCellSize;
+            float4 _HectonFloraSwayFieldCenterCellSize;
+            float4 _HectonFloraSwayFieldParams;
             float4 _HectonVegetationFogColor;
             float4 _HectonVegetationAmbientColor;
             float4 _HectonVegetationCurrentVector;
@@ -452,6 +455,60 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             {
                 float2 flowXZ = SampleMarineSnowFlowFieldXZ(positionWS);
                 return float3(flowXZ.x, 0.0, flowXZ.y);
+            }
+
+            float4 SampleFloraSwayFieldCell(int3 cell, int resolution)
+            {
+                int3 safeCell = clamp(cell, int3(0, 0, 0), int3(resolution - 1, resolution - 1, resolution - 1));
+                int index = safeCell.x + safeCell.y * resolution + safeCell.z * resolution * resolution;
+                return _HectonFloraSwayDisplacementField[index];
+            }
+
+            float3 ResolveFloraSwayFieldOffset(float3 positionWS, half bendMask, half heightMask, float instanceType, out float fieldWeight)
+            {
+                fieldWeight = 0.0;
+                int resolution = (int)max(_HectonFloraSwayFieldParams.x, 0.0);
+                float active = saturate(_HectonFloraSwayFieldParams.y);
+                float qualityWeight = saturate(_HectonFloraSwayFieldParams.z);
+                float cellSize = max(_HectonFloraSwayFieldCenterCellSize.w, 0.001);
+                if (active <= 0.0001 || resolution <= 1 || bendMask <= 0.0001 || cellSize <= 0.001)
+                    return float3(0.0, 0.0, 0.0);
+
+                float halfExtent = (resolution - 1) * cellSize * 0.5;
+                float3 gridPosition = ((positionWS - _HectonFloraSwayFieldCenterCellSize.xyz) + halfExtent.xxx) / cellSize;
+                if (any(gridPosition < float3(0.0, 0.0, 0.0)) || any(gridPosition > float3(resolution - 1, resolution - 1, resolution - 1)))
+                    return float3(0.0, 0.0, 0.0);
+
+                float3 baseCellFloat = floor(gridPosition);
+                int3 baseCell = (int3)baseCellFloat;
+                float3 cellFrac = saturate(gridPosition - baseCellFloat);
+                float trilinearWeight = smoothstep(0.22, 0.55, qualityWeight);
+                float4 fieldSample = SampleFloraSwayFieldCell((int3)round(gridPosition), resolution);
+                if (trilinearWeight > 0.001)
+                {
+                    cellFrac *= trilinearWeight;
+                    float4 c000 = SampleFloraSwayFieldCell(baseCell + int3(0, 0, 0), resolution);
+                    float4 c100 = SampleFloraSwayFieldCell(baseCell + int3(1, 0, 0), resolution);
+                    float4 c010 = SampleFloraSwayFieldCell(baseCell + int3(0, 1, 0), resolution);
+                    float4 c110 = SampleFloraSwayFieldCell(baseCell + int3(1, 1, 0), resolution);
+                    float4 c001 = SampleFloraSwayFieldCell(baseCell + int3(0, 0, 1), resolution);
+                    float4 c101 = SampleFloraSwayFieldCell(baseCell + int3(1, 0, 1), resolution);
+                    float4 c011 = SampleFloraSwayFieldCell(baseCell + int3(0, 1, 1), resolution);
+                    float4 c111 = SampleFloraSwayFieldCell(baseCell + int3(1, 1, 1), resolution);
+                    fieldSample = lerp(
+                        lerp(lerp(c000, c100, cellFrac.x), lerp(c010, c110, cellFrac.x), cellFrac.y),
+                        lerp(lerp(c001, c101, cellFrac.x), lerp(c011, c111, cellFrac.x), cellFrac.y),
+                        cellFrac.z);
+                }
+                if (!all(isfinite(fieldSample)))
+                    return float3(0.0, 0.0, 0.0);
+
+                float energy = saturate(fieldSample.w) * active;
+                float typeScale = instanceType < 0.5 ? 0.62 : (instanceType < 1.5 ? 1.22 : 0.68);
+                float heightScale = bendMask * lerp(0.16, 1.18, heightMask);
+                float overkillGain = lerp(0.74, 1.18, qualityWeight);
+                fieldWeight = energy * heightScale;
+                return fieldSample.xyz * (heightScale * typeScale * overkillGain);
             }
 
             float3 ResolveAbyssalFlowField(float3 positionWS)
@@ -1600,7 +1657,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float heightScale = saturate(abs(encodedHeightScale));
                 float widthScale = ResolveOrganicWidthScale(encodedWidthScale, entropyProgress);
                 float heightMask = saturate(input.uv.y);
-                float bendMask = heightMask * heightMask * authoredBendAmplitude;
+                float stiffnessMask = saturate(input.color.r);
+                float bendMask = heightMask * heightMask * authoredBendAmplitude * stiffnessMask;
                 float curvatureMask = saturate(input.color.a);
                 float4 aupGeneticHash = ResolveAupGeneticHash(stableAupSeed);
                 float2 originXZ = stableAupSeed.xz;
@@ -1669,8 +1727,12 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float3 animatedPositionWS = basePositionWS;
                 float3 wakeTrailOffset = ResolveWakeTrailOffset(basePositionWS, baseNormalWS, bendMask, heightMask, instanceType);
                 float3 submarineWashOffset = ResolveSubmarineWashOffset(basePositionWS, baseNormalWS, bendMask, heightMask, instanceType);
+                float floraSwayFieldWeight;
+                float3 floraSwayFieldOffset = ResolveFloraSwayFieldOffset(basePositionWS, bendMask, heightMask, instanceType, floraSwayFieldWeight);
+                submarineWashOffset *= (1.0 - saturate(_HectonFloraSwayFieldParams.y));
                 float proceduralWakeShear;
                 float3 proceduralWakeOffset = ResolveProceduralWakeOffset(basePositionWS, bendMask, heightMask, instanceType, proceduralWakeShear);
+                proceduralWakeShear = max(proceduralWakeShear, floraSwayFieldWeight);
                 float3 flowSynchronyOffset = ResolveFlowSynchronyOffset(basePositionWS, bendMask, instanceType, instanceNoise);
 
                 if (_HectonLodPassMode < 0.5)
@@ -1701,6 +1763,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                             FastCosApprox(phase * 1.37 + heightMask * _GrassWindFrequency)) * 0.18);
                         animatedPositionWS += wakeTrailOffset;
                         animatedPositionWS += submarineWashOffset;
+                        animatedPositionWS += floraSwayFieldOffset;
                         animatedPositionWS += proceduralWakeOffset;
                         animatedPositionWS += flowSynchronyOffset;
                         animatedPositionWS += currentOffset * (0.85 * detailAmplitude);
@@ -1723,6 +1786,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         #endif
                         animatedPositionWS += wakeTrailOffset * 1.1;
                         animatedPositionWS += submarineWashOffset * 1.15;
+                        animatedPositionWS += floraSwayFieldOffset * 1.12;
                         animatedPositionWS += proceduralWakeOffset * 1.18;
                         animatedPositionWS += flowSynchronyOffset;
                         animatedPositionWS += currentOffset * (1.15 * detailAmplitude);
@@ -1752,6 +1816,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         float2 radialWS = SafeNormalize2(animatedPositionWS.xz - renderOriginWS.xz + float2(0.001, 0.001));
                         animatedPositionWS += wakeTrailOffset * 0.45;
                         animatedPositionWS += submarineWashOffset * 0.72;
+                        animatedPositionWS += floraSwayFieldOffset * 0.68;
                         animatedPositionWS += proceduralWakeOffset * 0.62;
                         animatedPositionWS += flowSynchronyOffset;
                         animatedPositionWS.xz += currentOffset.xz * (0.5 * detailAmplitude);
@@ -1791,6 +1856,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     float farSwayStrength = (instanceType < 0.5 ? _GrassWindAmplitude * 0.55 : _KelpCurrentAmplitude * 0.42) * wiltSuppression * farStateSwayScale * lerp(0.35, 1.0, authoredBendAmplitude) * lerp(0.35, 1.0, normalizedHealth);
                     animatedPositionWS += wakeTrailOffset * 0.8;
                     animatedPositionWS += submarineWashOffset * 0.75;
+                    animatedPositionWS += floraSwayFieldOffset * 0.55;
                     animatedPositionWS += proceduralWakeOffset * 0.42;
                     animatedPositionWS += flowSynchronyOffset * 0.85;
                     animatedPositionWS.xz += farFlow * (farSwayStrength * bendMask * lodAlpha);
@@ -1800,6 +1866,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float3 interactionOffset = ResolveInteractionOffset(animatedPositionWS, baseNormalWS, bendMask, cameraDistanceSq);
                 float3 playerBendOffset = ResolvePlayerBendOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType);
                 float3 impactOffset = ResolveImpactOffset(animatedPositionWS, baseNormalWS, bendMask);
+                float fieldDrivenBend = saturate(_HectonFloraSwayFieldParams.y);
+                interactionOffset *= (1.0 - fieldDrivenBend);
+                playerBendOffset *= (1.0 - fieldDrivenBend);
                 float interactionTypeScale = instanceType < 0.5 ? 0.7 : (instanceType < 1.5 ? 1.15 : 0.85);
                 animatedPositionWS += impactOffset * 0.95;
                 animatedPositionWS += interactionOffset * (_InteractionPushStrength * interactionTypeScale);

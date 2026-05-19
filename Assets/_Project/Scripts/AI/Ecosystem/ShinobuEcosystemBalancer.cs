@@ -13,6 +13,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Hecton8.AI.Ecosystem
@@ -22,7 +23,8 @@ namespace Hecton8.AI.Ecosystem
     /// </summary>
     public sealed class ShinobuEcosystemBalancer : ITickable, IColdTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
-        private const int DefaultEntityCapacity = 5000;
+        private const int DefaultEntityCapacity = 100000;
+        private const int MinimumVisualBoidBudget = 1000;
         private const int DefaultSectorCapacity = 256;
         private const int TelemetryCapacity = 300;
         private const int CounterCapacity = 24;
@@ -32,6 +34,8 @@ namespace Hecton8.AI.Ecosystem
         private const int FrameJobBatchSize = 64;
         private const int MaxNeighborSamples = 48;
         private const int MaxSpatialHashChainSteps = 64;
+        private const int SwarmSpeciesProfileCapacity = 64;
+        private const uint DefaultBoidIndexCountPerInstance = 3u;
         private const int CsvMaxBytes = 8192;
         private const int LegacyProfileReadBytes = 64;
         private const float DefaultCellSizeMeters = 10f;
@@ -41,15 +45,19 @@ namespace Hecton8.AI.Ecosystem
         private const float DefaultRehydrateDistanceMeters = 160f;
         private const float DefaultObstacleProbeMeters = 2f;
         private const float DefaultBoidSpeedMetersPerSecond = 5.5f;
+        private const float DefaultSimulationTickDeltaSeconds = 1f / 60f;
+        private const float TelemetryFaultThresholdMs = 1.5f;
         private const double AupCellSizeMetersDouble = HectonPhysicsContract.AupSectorSizeMetersDouble;
         private const string LegacyFaunaCapsFile = "fauna_population_caps.h8bin";
         private const string LegacyBoidProfileFile = "boid_behavior_profiles.bin";
+        private const string SwarmSpeciesCsvRelativePath = "swarm_species_profiles.csv";
+        private const string SwarmSpeciesCsvPrecomputedRelativePath = "Data/Precomputed/swarm_species_profiles.csv";
         private const string CsvRelativePath = "ecosystem_balance.csv";
         private const string CsvPrecomputedRelativePath = "Data/Precomputed/ecosystem_balance.csv";
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_ECOSYSTEM.bin";
-        private const string DumpH8RelativePath = "Docs/AgentLogs/Dump_ECOSYSTEM.h8dump";
-        private const ulong DumpMagic = 0x45434F535348494EUL; // ECOSSHIN
-        private const int DumpVersion = 2;
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_ABYSSAL_SWARM.bin";
+        private const string DumpH8RelativePath = "Docs/AgentLogs/Dump_ABYSSAL_SWARM.h8dump";
+        private const ulong DumpMagic = 0x414259535357524DUL; // ABYSSWRM
+        private const int DumpVersion = 3;
         private const uint SourceHash = 0x5348494Eu; // SHIN
 
         internal const uint EntityFlagActive = 1u << 0;
@@ -67,6 +75,8 @@ namespace Hecton8.AI.Ecosystem
         public const uint TuningFlagLegacyBinary = 1u << 1;
         public const uint TuningFlagCsvOverride = 1u << 2;
         public const uint TuningFlagEditorDebugGrid = 1u << 3;
+        public const uint TuningFlagEditorDebugVectors = 1u << 4;
+        public const uint TelemetryFlagSolveOverBudget = 1u << 30;
 
         private const int CounterInitialized = 0;
         private const int CounterActive = 1;
@@ -95,19 +105,23 @@ namespace Hecton8.AI.Ecosystem
 
         private VaultBufferHandle<AmbientEntityDTO> _entityHandle;
         private VaultBufferHandle<AmbientEntityAupDTO> _aupHandle;
+        private VaultBufferHandle<BoidStateDTO> _boidStateHandle;
         private VaultBufferHandle<AmbientEntityDTO> _entitySnapshotHandle;
         private VaultBufferHandle<AmbientEntityAupDTO> _aupSnapshotHandle;
+        private VaultBufferHandle<BoidStateDTO> _boidStateSnapshotHandle;
         private VaultBufferHandle<EcosystemSectorDTO> _sectorHandle;
         private VaultBufferHandle<ShinobuEcosystemTuning> _tuningHandle;
         private VaultBufferHandle<int> _counterHandle;
         private VaultBufferHandle<ShinobuTelemetryEntry> _telemetryHandle;
         private VaultBufferHandle<ShinobuSpatialHashDebugCell> _debugCellHandle;
-        private VaultBufferHandle<float4x4> _renderMatrixHandle;
+        private VaultBufferHandle<BoidMatrixDTO> _renderMatrixHandle;
         private VaultBufferHandle<float4> _renderCustomDataHandle;
+        private VaultBufferHandle<BoidIndirectArgsDTO> _indirectArgsHandle;
         private VaultBufferHandle<int> _spatialHashBucketHeadHandle;
         private VaultBufferHandle<int> _spatialHashNextHandle;
         private VaultBufferHandle<byte> _csvScratchHandle;
         private VaultBufferHandle<byte> _legacyScratchHandle;
+        private VaultBufferHandle<SwarmSpeciesProfileDTO> _swarmSpeciesProfileHandle;
 
         private IDataVault _dataVault;
         private JobHandle _activeJobHandle;
@@ -115,10 +129,16 @@ namespace Hecton8.AI.Ecosystem
         private float3 _cameraLocalPosition;
         private float3 _cameraForward = new float3(0f, 0f, 1f);
         private long _csvTimestampTicks;
+        private long _swarmSpeciesCsvTimestampTicks;
         private long _scheduleTicks;
         private int _telemetryCursor;
         private int _coldTickIndex;
+        private uint _simulationFrameCounter;
         private float _lastFlockingMs;
+        private float _lastSpatialHashMs;
+        private float _lastMatrixUploadMs;
+        private float _lastGlobalQualityWeight;
+        private int _lastActiveBudget;
         private bool _registeredTick;
         private bool _registeredColdTick;
         private bool _registeredLateFrame;
@@ -193,6 +213,9 @@ namespace Hecton8.AI.Ecosystem
             _dataVault = currentService as IDataVault;
             ResetVaultHandles();
             _telemetryCursor = 0;
+            _simulationFrameCounter = 0u;
+            _csvTimestampTicks = 0L;
+            _swarmSpeciesCsvTimestampTicks = 0L;
             _dumpedFault = false;
 
             if (_dataVault == null || !EnsureVaultState())
@@ -221,15 +244,18 @@ namespace Hecton8.AI.Ecosystem
                     vault,
                     out NativeArray<AmbientEntityDTO> entities,
                     out NativeArray<AmbientEntityAupDTO> aups,
+                    out NativeArray<BoidStateDTO> boidStates,
                     out NativeArray<AmbientEntityDTO> entitySnapshot,
                     out NativeArray<AmbientEntityAupDTO> aupSnapshot,
+                    out NativeArray<BoidStateDTO> boidStateSnapshot,
                     out NativeArray<EcosystemSectorDTO> sectors,
                     out NativeArray<ShinobuEcosystemTuning> tuningArray,
                     out NativeArray<int> counters,
                     out NativeArray<ShinobuTelemetryEntry> telemetry,
                     out NativeArray<ShinobuSpatialHashDebugCell> debugCells,
-                    out NativeArray<float4x4> matrices,
+                    out NativeArray<BoidMatrixDTO> matrices,
                     out NativeArray<float4> customData,
+                    out NativeArray<BoidIndirectArgsDTO> indirectArgs,
                     out NativeArray<int> spatialHashBucketHeads,
                     out NativeArray<int> spatialHashNext))
             {
@@ -239,11 +265,16 @@ namespace Hecton8.AI.Ecosystem
             int count = entityCapacity;
             count = math.min(count, entities.Length);
             count = math.min(count, aups.Length);
+            count = math.min(count, boidStates.Length);
             count = math.min(count, entitySnapshot.Length);
             count = math.min(count, aupSnapshot.Length);
+            count = math.min(count, boidStateSnapshot.Length);
             count = math.min(count, spatialHashNext.Length);
             count = math.min(count, matrices.Length);
             count = math.min(count, customData.Length);
+            float globalQualityWeight = ResolveGlobalQualityWeight01();
+            float systemStress01 = ResolveSystemStress01();
+            count = ResolveActiveEntityBudget(count, globalQualityWeight);
             if (count <= 0)
                 return;
 
@@ -267,27 +298,38 @@ namespace Hecton8.AI.Ecosystem
 
                 MockPredatorRuntime predator = ResolvePredatorRuntime();
                 bool debugGridEnabled = (tuning.Flags & TuningFlagEditorDebugGrid) != 0u && debugCells.IsCreated;
+                int maxNeighborSamples = ResolveNeighborSampleBudget(MaxNeighborSamples, globalQualityWeight);
+                int maxChainSteps = ResolveSpatialHashChainBudget(MaxSpatialHashChainSteps, globalQualityWeight);
+                int updateStride = ResolveUpdateStride(globalQualityWeight, systemStress01);
+                float simulationDeltaSeconds = ResolveSimulationTickDelta(globalQualityWeight);
+                double3 cameraAbsolute = ToAbsoluteDouble3(in _cameraAup);
+                uint frame = AdvanceSimulationFrame();
                 var buildJob = new LocalShiftAndSpatialHashJob
                 {
                     Entities = entities,
                     Aups = aups,
+                    BoidStates = boidStates,
                     EntitySnapshot = entitySnapshot,
                     AupSnapshot = aupSnapshot,
+                    BoidStateSnapshot = boidStateSnapshot,
                     CenterAup = _cameraAup,
                     CellSizeMeters = math.max(0.25f, spatialCellSizeMeters),
                     SectorSizeMeters = math.max(1f, sectorSizeMeters),
-                    SystemStress01 = ResolveSystemStress01(),
+                    SystemStress01 = systemStress01,
+                    GlobalQualityWeight = globalQualityWeight,
+                    UpdateStride = updateStride,
+                    Frame = frame,
                     Count = count
                 };
 
                 JobHandle handle = buildJob.Schedule(count, FrameJobBatchSize);
-                var hashJob = new BuildVaultSpatialHashJob
+                var hashJob = new BuildBoidSpatialHashJob
                 {
                     AupSnapshot = aupSnapshot,
                     BucketHeads = spatialHashBucketHeads,
                     BucketNext = spatialHashNext,
                     Counters = counters,
-                    MaxChainSteps = MaxSpatialHashChainSteps,
+                    MaxChainSteps = maxChainSteps,
                     Count = count
                 };
                 handle = hashJob.Schedule(handle);
@@ -304,31 +346,35 @@ namespace Hecton8.AI.Ecosystem
                         CellSizeMeters = math.max(0.25f, spatialCellSizeMeters),
                         Count = count,
                         Capacity = math.min(DebugCellCapacity, debugCells.Length),
-                        MaxChainSteps = MaxSpatialHashChainSteps
+                        MaxChainSteps = maxChainSteps
                     };
                     handle = debugJob.Schedule(handle);
                 }
 
-                var solveJob = new BurstBoidBehaviorSolverJob
+                var solveJob = new BoidFlockingJob
                 {
                     Entities = entities,
                     Aups = aups,
+                    BoidStates = boidStates,
                     EntitySnapshot = entitySnapshot,
                     AupSnapshot = aupSnapshot,
+                    BoidStateSnapshot = boidStateSnapshot,
                     BucketHeads = spatialHashBucketHeads,
                     BucketNext = spatialHashNext,
                     CenterAup = _cameraAup,
+                    CenterAbsolute = cameraAbsolute,
                     CameraForward = SafeNormalize(_cameraForward, new float3(0f, 0f, 1f)),
-                    TerrainSampler = MockTerrainSampler.Default,
+                    TerrainSampler = MockTerrainSampler.CreateDefault(),
                     Predator = predator,
                     Tuning = tuning,
-                    DeltaSeconds = math.clamp(deltaTime, 0.001f, 0.05f),
+                    DeltaSeconds = simulationDeltaSeconds,
+                    GlobalQualityWeight = globalQualityWeight,
                     CellSizeMeters = math.max(0.25f, spatialCellSizeMeters),
                     SectorSizeMeters = math.max(1f, sectorSizeMeters),
                     NeighborRadiusMeters = math.max(1f, neighborRadiusMeters),
                     ObstacleProbeMeters = math.max(0.1f, obstacleProbeMeters),
-                    MaxNeighborSamplesPerBoid = MaxNeighborSamples,
-                    MaxSpatialHashChainSteps = MaxSpatialHashChainSteps,
+                    MaxNeighborSamplesPerBoid = maxNeighborSamples,
+                    MaxSpatialHashChainSteps = maxChainSteps,
                     Count = count
                 };
                 handle = solveJob.Schedule(count, FrameJobBatchSize, handle);
@@ -337,8 +383,11 @@ namespace Hecton8.AI.Ecosystem
                 {
                     Entities = entities,
                     Aups = aups,
+                    BoidStates = boidStates,
                     Matrices = matrices,
                     CustomData = customData,
+                    CenterAbsolute = cameraAbsolute,
+                    GlobalQualityWeight = globalQualityWeight,
                     Count = count
                 };
                 handle = renderJob.Schedule(count, FrameJobBatchSize, handle);
@@ -352,9 +401,20 @@ namespace Hecton8.AI.Ecosystem
                     SectorCount = math.min(sectorCapacity, sectors.Length)
                 };
                 handle = countJob.Schedule(handle);
+                handle = WriteIndirectArgs(
+                    indirectArgs,
+                    DefaultBoidIndexCountPerInstance,
+                    0u,
+                    0u,
+                    (uint)math.max(0, count),
+                    handle);
 
                 _activeJobHandle = handle;
                 _scheduleTicks = Stopwatch.GetTimestamp();
+                _lastActiveBudget = count;
+                _lastGlobalQualityWeight = globalQualityWeight;
+                _lastSpatialHashMs = 0f;
+                _lastMatrixUploadMs = 0f;
                 H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
                 _jobScheduled = true;
                 _jobLocksHeld = true;
@@ -418,12 +478,17 @@ namespace Hecton8.AI.Ecosystem
                 BufferID.ShinobuAmbientEntities,
                 entityCapacity,
                 SystemID.AIEcology,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.UninitializedMemory);
             _aupHandle = vault.GetBufferHandle<AmbientEntityAupDTO>(
                 BufferID.ShinobuAmbientAups,
                 entityCapacity,
                 SystemID.AIEcology,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.UninitializedMemory);
+            _boidStateHandle = vault.GetBufferHandle<BoidStateDTO>(
+                BufferID.ShinobuBoidStates,
+                entityCapacity,
+                SystemID.AIEcology,
+                NativeArrayOptions.UninitializedMemory);
             _entitySnapshotHandle = vault.GetBufferHandle<AmbientEntityDTO>(
                 BufferID.ShinobuAmbientEntitySnapshot,
                 entityCapacity,
@@ -431,6 +496,11 @@ namespace Hecton8.AI.Ecosystem
                 NativeArrayOptions.UninitializedMemory);
             _aupSnapshotHandle = vault.GetBufferHandle<AmbientEntityAupDTO>(
                 BufferID.ShinobuAmbientAupSnapshot,
+                entityCapacity,
+                SystemID.AIEcology,
+                NativeArrayOptions.UninitializedMemory);
+            _boidStateSnapshotHandle = vault.GetBufferHandle<BoidStateDTO>(
+                BufferID.ShinobuBoidStateSnapshot,
                 entityCapacity,
                 SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
@@ -459,16 +529,21 @@ namespace Hecton8.AI.Ecosystem
                 DebugCellCapacity,
                 SystemID.AIEcology,
                 NativeArrayOptions.ClearMemory);
-            _renderMatrixHandle = vault.GetBufferHandle<float4x4>(
+            _renderMatrixHandle = vault.GetBufferHandle<BoidMatrixDTO>(
                 BufferID.ShinobuRenderMatrices,
                 entityCapacity,
                 SystemID.AIEcology,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.UninitializedMemory);
             _renderCustomDataHandle = vault.GetBufferHandle<float4>(
                 BufferID.ShinobuRenderCustomData,
                 entityCapacity,
                 SystemID.AIEcology,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.UninitializedMemory);
+            _indirectArgsHandle = vault.GetBufferHandle<BoidIndirectArgsDTO>(
+                BufferID.ShinobuBoidIndirectArgs,
+                1,
+                SystemID.AIEcology,
+                NativeArrayOptions.UninitializedMemory);
             _spatialHashBucketHeadHandle = vault.GetBufferHandle<int>(
                 BufferID.ShinobuSpatialHashBucketHeads,
                 SpatialHashBucketCapacity,
@@ -489,11 +564,18 @@ namespace Hecton8.AI.Ecosystem
                 LegacyProfileReadBytes,
                 SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
+            _swarmSpeciesProfileHandle = vault.GetBufferHandle<SwarmSpeciesProfileDTO>(
+                BufferID.ShinobuSwarmSpeciesProfiles,
+                SwarmSpeciesProfileCapacity,
+                SystemID.AIEcology,
+                NativeArrayOptions.ClearMemory);
 
             bool ready = _entityHandle.IsCreated &&
                          _aupHandle.IsCreated &&
+                         _boidStateHandle.IsCreated &&
                          _entitySnapshotHandle.IsCreated &&
                          _aupSnapshotHandle.IsCreated &&
+                         _boidStateSnapshotHandle.IsCreated &&
                          _sectorHandle.IsCreated &&
                          _tuningHandle.IsCreated &&
                          _counterHandle.IsCreated &&
@@ -501,10 +583,12 @@ namespace Hecton8.AI.Ecosystem
                          _debugCellHandle.IsCreated &&
                          _renderMatrixHandle.IsCreated &&
                          _renderCustomDataHandle.IsCreated &&
+                         _indirectArgsHandle.IsCreated &&
                          _spatialHashBucketHeadHandle.IsCreated &&
                          _spatialHashNextHandle.IsCreated &&
                          _csvScratchHandle.IsCreated &&
-                         _legacyScratchHandle.IsCreated;
+                         _legacyScratchHandle.IsCreated &&
+                         _swarmSpeciesProfileHandle.IsCreated;
             if (!ready)
                 return false;
 
@@ -526,22 +610,27 @@ namespace Hecton8.AI.Ecosystem
             IDataVault vault,
             out NativeArray<AmbientEntityDTO> entities,
             out NativeArray<AmbientEntityAupDTO> aups,
+            out NativeArray<BoidStateDTO> boidStates,
             out NativeArray<AmbientEntityDTO> entitySnapshot,
             out NativeArray<AmbientEntityAupDTO> aupSnapshot,
+            out NativeArray<BoidStateDTO> boidStateSnapshot,
             out NativeArray<EcosystemSectorDTO> sectors,
             out NativeArray<ShinobuEcosystemTuning> tuning,
             out NativeArray<int> counters,
             out NativeArray<ShinobuTelemetryEntry> telemetry,
             out NativeArray<ShinobuSpatialHashDebugCell> debugCells,
-            out NativeArray<float4x4> matrices,
+            out NativeArray<BoidMatrixDTO> matrices,
             out NativeArray<float4> customData,
+            out NativeArray<BoidIndirectArgsDTO> indirectArgs,
             out NativeArray<int> spatialHashBucketHeads,
             out NativeArray<int> spatialHashNext)
         {
             entities = _entityHandle.Resolve(vault);
             aups = _aupHandle.Resolve(vault);
+            boidStates = _boidStateHandle.Resolve(vault);
             entitySnapshot = _entitySnapshotHandle.Resolve(vault);
             aupSnapshot = _aupSnapshotHandle.Resolve(vault);
+            boidStateSnapshot = _boidStateSnapshotHandle.Resolve(vault);
             sectors = _sectorHandle.Resolve(vault);
             tuning = _tuningHandle.Resolve(vault);
             counters = _counterHandle.Resolve(vault);
@@ -549,12 +638,15 @@ namespace Hecton8.AI.Ecosystem
             debugCells = _debugCellHandle.Resolve(vault);
             matrices = _renderMatrixHandle.Resolve(vault);
             customData = _renderCustomDataHandle.Resolve(vault);
+            indirectArgs = _indirectArgsHandle.Resolve(vault);
             spatialHashBucketHeads = _spatialHashBucketHeadHandle.Resolve(vault);
             spatialHashNext = _spatialHashNextHandle.Resolve(vault);
             return entities.IsCreated &&
                    aups.IsCreated &&
+                   boidStates.IsCreated &&
                    entitySnapshot.IsCreated &&
                    aupSnapshot.IsCreated &&
+                   boidStateSnapshot.IsCreated &&
                    sectors.IsCreated &&
                    tuning.IsCreated &&
                    counters.IsCreated &&
@@ -562,6 +654,7 @@ namespace Hecton8.AI.Ecosystem
                    debugCells.IsCreated &&
                    matrices.IsCreated &&
                    customData.IsCreated &&
+                   indirectArgs.IsCreated &&
                    spatialHashBucketHeads.IsCreated &&
                    spatialHashNext.IsCreated;
         }
@@ -575,13 +668,15 @@ namespace Hecton8.AI.Ecosystem
             out NativeArray<int> counters,
             out NativeArray<ShinobuTelemetryEntry> telemetry,
             out NativeArray<ShinobuSpatialHashDebugCell> debugCells,
-            out NativeArray<float4x4> matrices,
+            out NativeArray<BoidMatrixDTO> matrices,
             out NativeArray<float4> customData)
         {
             return TryResolveBuffers(
                 vault,
                 out entities,
                 out aups,
+                out _,
+                out _,
                 out _,
                 out _,
                 out sectors,
@@ -591,6 +686,7 @@ namespace Hecton8.AI.Ecosystem
                 out debugCells,
                 out matrices,
                 out customData,
+                out _,
                 out _,
                 out _);
         }
@@ -629,7 +725,7 @@ namespace Hecton8.AI.Ecosystem
                 if (bytesRead < 24)
                     return false;
 
-                ShinobuEcosystemTuning profile = ShinobuEcosystemTuning.Default;
+                ShinobuEcosystemTuning profile = ShinobuEcosystemTuning.CreateDefault();
                 profile.SeparationWeight = ReadFloatLE(scratch, 0, profile.SeparationWeight);
                 profile.AlignmentWeight = ReadFloatLE(scratch, 4, profile.AlignmentWeight);
                 profile.CohesionWeight = ReadFloatLE(scratch, 8, profile.CohesionWeight);
@@ -669,7 +765,7 @@ namespace Hecton8.AI.Ecosystem
             if (!tuning.IsCreated || tuning.Length <= 0)
                 return;
 
-            ShinobuEcosystemTuning profile = ShinobuEcosystemTuning.Default;
+            ShinobuEcosystemTuning profile = ShinobuEcosystemTuning.CreateDefault();
             profile.Flags = TuningFlagEmergencyMock;
             tuning[0] = profile;
             _runtimeFlags |= TuningFlagEmergencyMock;
@@ -743,9 +839,15 @@ namespace Hecton8.AI.Ecosystem
 
         private void MonitorCsvOverrides(IDataVault vault)
         {
+            MonitorTuningCsvOverrides(vault);
+            MonitorSwarmSpeciesProfiles(vault);
+        }
+
+        private void MonitorTuningCsvOverrides(IDataVault vault)
+        {
             try
             {
-                string path = ResolveCsvPath();
+                string path = ResolveTuningCsvPath();
                 if (string.IsNullOrEmpty(path) || !File.Exists(path))
                     return;
 
@@ -782,6 +884,40 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
+        private void MonitorSwarmSpeciesProfiles(IDataVault vault)
+        {
+            try
+            {
+                string path = ResolveSwarmSpeciesCsvPath();
+                if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                    return;
+
+                DateTime lastWriteUtc = File.GetLastWriteTimeUtc(path);
+                if (lastWriteUtc.Ticks == _swarmSpeciesCsvTimestampTicks)
+                    return;
+
+                NativeArray<byte> scratch = _csvScratchHandle.Resolve(vault);
+                NativeArray<SwarmSpeciesProfileDTO> profiles = _swarmSpeciesProfileHandle.Resolve(vault);
+                NativeArray<int> counters = _counterHandle.Resolve(vault);
+                if (!scratch.IsCreated || scratch.Length < CsvMaxBytes || !profiles.IsCreated || profiles.Length <= 0)
+                    return;
+
+                int bytesRead = ReadFileIntoNativeScratch(path, scratch, CsvMaxBytes, FileShare.ReadWrite);
+                if (bytesRead <= 0)
+                    return;
+
+                int parsed = ParseSwarmSpeciesProfiles(scratch, bytesRead, profiles);
+                if (counters.IsCreated && counters.Length > CounterProfileLoaded)
+                    counters[CounterProfileLoaded] = math.max(counters[CounterProfileLoaded], parsed);
+
+                _swarmSpeciesCsvTimestampTicks = lastWriteUtc.Ticks;
+            }
+            catch (Exception)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53504346u, SourceHash, 0f);
+            }
+        }
+
         private void RunMacroBiomassPass(IDataVault vault)
         {
             if (!TryResolveBuffers(
@@ -790,13 +926,16 @@ namespace Hecton8.AI.Ecosystem
                     out NativeArray<AmbientEntityAupDTO> aups,
                     out _,
                     out _,
+                    out _,
+                    out _,
                     out NativeArray<EcosystemSectorDTO> sectors,
                     out NativeArray<ShinobuEcosystemTuning> tuningArray,
                     out NativeArray<int> counters,
                     out NativeArray<ShinobuTelemetryEntry> telemetry,
                     out NativeArray<ShinobuSpatialHashDebugCell> debugCells,
-                    out NativeArray<float4x4> matrices,
+                    out NativeArray<BoidMatrixDTO> matrices,
                     out NativeArray<float4> customData,
+                    out _,
                     out NativeArray<int> spatialHashBucketHeads,
                     out NativeArray<int> spatialHashNext))
             {
@@ -809,6 +948,7 @@ namespace Hecton8.AI.Ecosystem
             try
             {
                 ShinobuEcosystemTuning tuning = ShinobuEcosystemTuning.Sanitize(tuningArray[0]);
+                float globalQualityWeight = ResolveGlobalQualityWeight01();
                 var job = new LotkaVolterraMacroJob
                 {
                     Entities = entities,
@@ -819,13 +959,14 @@ namespace Hecton8.AI.Ecosystem
                     Counters = counters,
                     CenterAup = _cameraAup,
                     Tuning = tuning,
+                    GlobalQualityWeight = globalQualityWeight,
                     EntityCount = math.min(entityCapacity, math.min(entities.Length, aups.Length)),
                     SectorCount = math.min(sectorCapacity, sectors.Length),
                     SectorSizeMeters = math.max(1f, sectorSizeMeters),
                     DehydrationDistanceSq = dehydrationDistanceMeters * dehydrationDistanceMeters,
                     RehydrationDistanceSq = rehydrationDistanceMeters * rehydrationDistanceMeters,
                     ApplyLotka = (_coldTickIndex % 60) == 0 ? 1 : 0,
-                    Frame = unchecked((uint)Mathf.Max(0, Time.frameCount))
+                    Frame = ResolveCurrentSimulationFrame()
                 };
                 job.Run();
             }
@@ -884,27 +1025,32 @@ namespace Hecton8.AI.Ecosystem
             int invalidMath = ReadCounter(counters, CounterInvalidMath);
             int overflow = ReadCounter(counters, CounterSpatialHashOverflow);
             uint stateHash = MixTelemetryHash(active, hydrated, dehydrated, skipped, invalidMath, overflow);
+            bool solveOverBudget = _lastFlockingMs > TelemetryFaultThresholdMs;
 
             telemetry[index] = new ShinobuTelemetryEntry
             {
-                Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
+                Frame = ResolveCurrentSimulationFrame(),
                 StateHash = stateHash,
                 ActiveBoidCount = active,
                 HydratedBoidCount = hydrated,
                 DehydratedSectorCount = dehydrated,
                 SkippedBoidCount = skipped,
-                AverageFlockingTimeMs = math.max(0f, _lastFlockingMs),
-                SystemStress01 = ResolveSystemStress01(),
-                Flags = _runtimeFlags | (invalidMath != 0 ? EntityFlagInvalidMath : 0u) | (overflow != 0 ? 0x80000000u : 0u),
-                Reserved0 = ReadCounter(counters, CounterReproduced),
-                Reserved1 = ReadCounter(counters, CounterTombstoned),
-                Reserved2 = ReadCounter(counters, CounterDebugCellCount),
-                Reserved3 = ReadCounter(counters, CounterCsvLoaded),
-                Reserved4 = ReadCounter(counters, CounterProfileLoaded),
-                Reserved5 = 0
+                FlockingSolveTimeMs = math.max(0f, _lastFlockingMs),
+                GlobalQualityWeight = _lastGlobalQualityWeight,
+                Flags = _runtimeFlags |
+                        (invalidMath != 0 ? EntityFlagInvalidMath : 0u) |
+                        (overflow != 0 ? 0x80000000u : 0u) |
+                        (solveOverBudget ? TelemetryFlagSolveOverBudget : 0u),
+                SpatialHashTimeMs = math.max(0f, _lastSpatialHashMs),
+                MatrixUploadTimeMs = math.max(0f, _lastMatrixUploadMs),
+                ReproducedCount = ReadCounter(counters, CounterReproduced),
+                TombstonedCount = ReadCounter(counters, CounterTombstoned),
+                DebugCellCount = ReadCounter(counters, CounterDebugCellCount),
+                CsvLoadedCount = (ushort)math.clamp(ReadCounter(counters, CounterCsvLoaded), 0, ushort.MaxValue),
+                ProfileLoadedCount = (ushort)math.clamp(ReadCounter(counters, CounterProfileLoaded), 0, ushort.MaxValue)
             };
 
-            if ((invalidMath != 0 || overflow != 0) && !_dumpedFault)
+            if ((invalidMath != 0 || overflow != 0 || solveOverBudget) && !_dumpedFault)
             {
                 _dumpedFault = true;
                 DumpBlackBox(telemetry, nextCursor);
@@ -921,9 +1067,13 @@ namespace Hecton8.AI.Ecosystem
             lockedCount++;
             if (!vault.TryLockBuffer(BufferID.ShinobuAmbientAups, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
             lockedCount++;
+            if (!vault.TryLockBuffer(BufferID.ShinobuBoidStates, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
+            lockedCount++;
             if (!vault.TryLockBuffer(BufferID.ShinobuAmbientEntitySnapshot, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
             lockedCount++;
             if (!vault.TryLockBuffer(BufferID.ShinobuAmbientAupSnapshot, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
+            lockedCount++;
+            if (!vault.TryLockBuffer(BufferID.ShinobuBoidStateSnapshot, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
             lockedCount++;
             if (!vault.TryLockBuffer(BufferID.ShinobuEcosystemSectors, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
             lockedCount++;
@@ -938,6 +1088,8 @@ namespace Hecton8.AI.Ecosystem
             if (!vault.TryLockBuffer(BufferID.ShinobuRenderMatrices, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
             lockedCount++;
             if (!vault.TryLockBuffer(BufferID.ShinobuRenderCustomData, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
+            lockedCount++;
+            if (!vault.TryLockBuffer(BufferID.ShinobuBoidIndirectArgs, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
             lockedCount++;
             if (!vault.TryLockBuffer(BufferID.ShinobuSpatialHashBucketHeads, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
             lockedCount++;
@@ -955,23 +1107,26 @@ namespace Hecton8.AI.Ecosystem
 
             IDataVault vault = _dataVault;
             if (vault != null)
-                UnlockLockedJobBuffers(vault, 13);
+                UnlockLockedJobBuffers(vault, 16);
             _jobLocksHeld = false;
         }
 
         private static void UnlockLockedJobBuffers(IDataVault vault, int lockedCount)
         {
-            if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.ShinobuSpatialHashNext, SystemID.AIEcology);
-            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.ShinobuSpatialHashBucketHeads, SystemID.AIEcology);
-            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.ShinobuRenderCustomData, SystemID.AIEcology);
-            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.ShinobuRenderMatrices, SystemID.AIEcology);
-            if (lockedCount >= 9) vault.TryUnlockBuffer(BufferID.ShinobuSpatialHashDebugCells, SystemID.AIEcology);
-            if (lockedCount >= 8) vault.TryUnlockBuffer(BufferID.ShinobuEcosystemTelemetryRing, SystemID.AIEcology);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(BufferID.ShinobuEcosystemCounters, SystemID.AIEcology);
-            if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.ShinobuEcosystemTuning, SystemID.AIEcology);
-            if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.ShinobuEcosystemSectors, SystemID.AIEcology);
-            if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.ShinobuAmbientAupSnapshot, SystemID.AIEcology);
-            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.ShinobuAmbientEntitySnapshot, SystemID.AIEcology);
+            if (lockedCount >= 16) vault.TryUnlockBuffer(BufferID.ShinobuSpatialHashNext, SystemID.AIEcology);
+            if (lockedCount >= 15) vault.TryUnlockBuffer(BufferID.ShinobuSpatialHashBucketHeads, SystemID.AIEcology);
+            if (lockedCount >= 14) vault.TryUnlockBuffer(BufferID.ShinobuBoidIndirectArgs, SystemID.AIEcology);
+            if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.ShinobuRenderCustomData, SystemID.AIEcology);
+            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.ShinobuRenderMatrices, SystemID.AIEcology);
+            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.ShinobuSpatialHashDebugCells, SystemID.AIEcology);
+            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.ShinobuEcosystemTelemetryRing, SystemID.AIEcology);
+            if (lockedCount >= 9) vault.TryUnlockBuffer(BufferID.ShinobuEcosystemCounters, SystemID.AIEcology);
+            if (lockedCount >= 8) vault.TryUnlockBuffer(BufferID.ShinobuEcosystemTuning, SystemID.AIEcology);
+            if (lockedCount >= 7) vault.TryUnlockBuffer(BufferID.ShinobuEcosystemSectors, SystemID.AIEcology);
+            if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.ShinobuBoidStateSnapshot, SystemID.AIEcology);
+            if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.ShinobuAmbientAupSnapshot, SystemID.AIEcology);
+            if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.ShinobuAmbientEntitySnapshot, SystemID.AIEcology);
+            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.ShinobuBoidStates, SystemID.AIEcology);
             if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.ShinobuAmbientAups, SystemID.AIEcology);
             if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.ShinobuAmbientEntities, SystemID.AIEcology);
         }
@@ -1031,8 +1186,10 @@ namespace Hecton8.AI.Ecosystem
         {
             _entityHandle = default;
             _aupHandle = default;
+            _boidStateHandle = default;
             _entitySnapshotHandle = default;
             _aupSnapshotHandle = default;
+            _boidStateSnapshotHandle = default;
             _sectorHandle = default;
             _tuningHandle = default;
             _counterHandle = default;
@@ -1040,10 +1197,12 @@ namespace Hecton8.AI.Ecosystem
             _debugCellHandle = default;
             _renderMatrixHandle = default;
             _renderCustomDataHandle = default;
+            _indirectArgsHandle = default;
             _spatialHashBucketHeadHandle = default;
             _spatialHashNextHandle = default;
             _csvScratchHandle = default;
             _legacyScratchHandle = default;
+            _swarmSpeciesProfileHandle = default;
         }
 
         private void ClearCachedState()
@@ -1052,9 +1211,15 @@ namespace Hecton8.AI.Ecosystem
             ResetVaultHandles();
             _telemetryCursor = 0;
             _coldTickIndex = 0;
+            _simulationFrameCounter = 0u;
             _lastFlockingMs = 0f;
+            _lastSpatialHashMs = 0f;
+            _lastMatrixUploadMs = 0f;
+            _lastGlobalQualityWeight = 0f;
+            _lastActiveBudget = 0;
             _scheduleTicks = 0L;
             _csvTimestampTicks = 0L;
+            _swarmSpeciesCsvTimestampTicks = 0L;
             _runtimeFlags = 0u;
             _dumpedFault = false;
         }
@@ -1147,6 +1312,231 @@ namespace Hecton8.AI.Ecosystem
             return stress;
         }
 
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(weight) ? math.saturate(weight) : 0f;
+        }
+
+        private static int ResolveActiveEntityBudget(int capacity, float globalQualityWeight)
+        {
+            int safeCapacity = math.max(0, capacity);
+            if (safeCapacity <= MinimumVisualBoidBudget)
+                return safeCapacity;
+
+            float q = Smooth01(globalQualityWeight);
+            int minBudget = math.min(MinimumVisualBoidBudget, safeCapacity);
+            return math.clamp((int)math.round(math.lerp(minBudget, safeCapacity, q)), 1, safeCapacity);
+        }
+
+        private static int ResolveNeighborSampleBudget(int maxSamples, float globalQualityWeight)
+        {
+            float q = Smooth01(math.saturate((globalQualityWeight - 0.08f) * 1.0869565f));
+            return math.clamp((int)math.round(math.lerp(4f, math.max(4, maxSamples), q)), 1, math.max(1, maxSamples));
+        }
+
+        private static int ResolveSpatialHashChainBudget(int maxChainSteps, float globalQualityWeight)
+        {
+            float q = Smooth01(math.saturate((globalQualityWeight - 0.05f) * 1.0526316f));
+            return math.clamp((int)math.round(math.lerp(8f, math.max(8, maxChainSteps), q)), 1, math.max(1, maxChainSteps));
+        }
+
+        private static int ResolveUpdateStride(float globalQualityWeight, float systemStress01)
+        {
+            float thermalCollapse01 = math.saturate(math.max(0f, systemStress01 - 0.55f) * 2.2222223f);
+            float q = Smooth01(math.saturate(globalQualityWeight * (1f - thermalCollapse01)));
+            return math.clamp((int)math.round(math.lerp(12f, 1f, q)), 1, 12);
+        }
+
+        private uint AdvanceSimulationFrame()
+        {
+            uint next = _simulationFrameCounter + 1u;
+            if (next == 0u)
+                next = 1u;
+
+            _simulationFrameCounter = next;
+            return next;
+        }
+
+        private uint ResolveCurrentSimulationFrame()
+        {
+            return _simulationFrameCounter != 0u ? _simulationFrameCounter : 1u;
+        }
+
+        private static float ResolveSimulationTickDelta(float globalQualityWeight)
+        {
+            float lowCadenceDelta = DefaultSimulationTickDeltaSeconds * 12f;
+            float highCadenceDelta = DefaultSimulationTickDeltaSeconds;
+            return math.lerp(lowCadenceDelta, highCadenceDelta, Smooth01(globalQualityWeight));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float Smooth01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - (2f * x));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float3 SampleEmergencyMockFlow(float3 localPosition, uint stableSeed, float globalQualityWeight)
+        {
+            float q = Smooth01(globalQualityWeight);
+            float scale = math.lerp(0.0065f, 0.024f, q);
+            float seedPhase = (stableSeed & 1023u) * 0.006135923f;
+            float3 p = localPosition * scale;
+            float x = TriangleSigned((p.y * 2.17f) + (p.z * 0.61f) + seedPhase);
+            float y = TriangleSigned((p.z * 1.53f) - (p.x * 0.37f) + seedPhase * 0.5f) * math.lerp(0.08f, 0.34f, q);
+            float z = TriangleSigned((p.x * 1.89f) + (p.y * 0.43f) - seedPhase);
+            float3 flow = new float3(x, y, z);
+            return SafeNormalize(flow, new float3(0f, 0f, 1f)) * math.lerp(0.25f, 2.35f, q);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float TriangleSigned(float phase)
+        {
+            float triangle01 = 1f - math.abs((math.frac(phase * 0.15915494f + 0.25f) * 2f) - 1f);
+            return (triangle01 * 2f) - 1f;
+        }
+
+        public static unsafe bool TryUploadRenderMatricesToGpu(
+            GraphicsBuffer destination,
+            NativeArray<BoidMatrixDTO> source,
+            int count)
+        {
+            if (destination == null || !source.IsCreated || count <= 0)
+                return false;
+
+            int safeCount = math.min(count, math.min(source.Length, destination.count));
+            if (safeCount <= 0 || destination.stride != UnsafeUtility.SizeOf<BoidMatrixDTO>())
+                return false;
+
+            NativeArray<BoidMatrixDTO> mapped = destination.LockBufferForWrite<BoidMatrixDTO>(0, safeCount);
+            void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+            void* src = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(source);
+            UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<BoidMatrixDTO>());
+            destination.UnlockBufferAfterWrite<BoidMatrixDTO>(safeCount);
+            return true;
+        }
+
+        public static bool TryUploadIndirectDrawArgs(
+            GraphicsBuffer destination,
+            NativeArray<BoidIndirectArgsDTO> source)
+        {
+            if (destination == null || !source.IsCreated || source.Length <= 0)
+                return false;
+            if (destination.count < 1 || destination.stride != GraphicsBuffer.IndirectDrawIndexedArgs.size)
+                return false;
+
+            BoidIndirectArgsDTO dto = source[0];
+            if (dto.InstanceCount == 0u || dto.IndexCountPerInstance == 0u)
+                return false;
+
+            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> mapped =
+                destination.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+            mapped[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            {
+                indexCountPerInstance = dto.IndexCountPerInstance,
+                instanceCount = dto.InstanceCount,
+                startIndex = dto.StartIndex,
+                baseVertexIndex = dto.BaseVertexIndex,
+                startInstance = dto.StartInstance
+            };
+            destination.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            return true;
+        }
+
+        public static bool TryUploadIndirectDrawArgs(
+            GraphicsBuffer destination,
+            Mesh mesh,
+            int activeBoidCount)
+        {
+            if (destination == null || mesh == null || activeBoidCount <= 0)
+                return false;
+            if (destination.count < 1 || destination.stride != GraphicsBuffer.IndirectDrawIndexedArgs.size)
+                return false;
+
+            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> mapped =
+                destination.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+            mapped[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            {
+                indexCountPerInstance = mesh.GetIndexCount(0),
+                instanceCount = (uint)activeBoidCount,
+                startIndex = mesh.GetIndexStart(0),
+                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                startInstance = 0u
+            };
+            destination.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            return true;
+        }
+
+        public static bool TryDrawProceduralIndirect(
+            Material material,
+            Bounds bounds,
+            GraphicsBuffer indirectArgsBuffer,
+            MaterialPropertyBlock properties,
+            int layer)
+        {
+            if (material == null || indirectArgsBuffer == null)
+                return false;
+
+            Graphics.DrawProceduralIndirect(
+                material,
+                bounds,
+                MeshTopology.Triangles,
+                indirectArgsBuffer,
+                0,
+                null,
+                properties,
+                ShadowCastingMode.Off,
+                false,
+                layer);
+            return true;
+        }
+
+        internal static JobHandle GenerateEmergencyMockFlow(
+            NativeArray<AbyssalFlowTensorDTO> flowTensors,
+            float3 originLocal,
+            float cellSizeMeters,
+            float globalQualityWeight,
+            uint sectorHash,
+            JobHandle dependsOn)
+        {
+            if (!flowTensors.IsCreated || flowTensors.Length <= 0)
+                return dependsOn;
+
+            var job = new GenerateEmergencyMockFlowJob
+            {
+                FlowTensors = flowTensors,
+                OriginLocal = originLocal,
+                CellSizeMeters = math.max(1f, cellSizeMeters),
+                GlobalQualityWeight = math.saturate(globalQualityWeight),
+                SectorHash = sectorHash
+            };
+            return job.Schedule(flowTensors.Length, FrameJobBatchSize, dependsOn);
+        }
+
+        internal static JobHandle WriteIndirectArgs(
+            NativeArray<BoidIndirectArgsDTO> indirectArgs,
+            uint indexCountPerInstance,
+            uint startIndex,
+            uint baseVertexIndex,
+            uint activeBoidCount,
+            JobHandle dependsOn)
+        {
+            if (!indirectArgs.IsCreated || indirectArgs.Length <= 0)
+                return dependsOn;
+
+            var job = new WriteBoidIndirectArgsJob
+            {
+                IndirectArgs = indirectArgs,
+                IndexCountPerInstance = indexCountPerInstance,
+                StartIndex = startIndex,
+                BaseVertexIndex = baseVertexIndex,
+                ActiveBoidCount = activeBoidCount
+            };
+            return job.Schedule(dependsOn);
+        }
+
         private string TryFindLegacyProfilePath()
         {
             string root = ResolveProjectRoot();
@@ -1184,7 +1574,17 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
-        private static string ResolveCsvPath()
+        private static string ResolveSwarmSpeciesCsvPath()
+        {
+            string root = ResolveProjectRoot();
+            string path = Path.Combine(root, SwarmSpeciesCsvPrecomputedRelativePath);
+            if (File.Exists(path))
+                return path;
+            path = Path.Combine(root, SwarmSpeciesCsvRelativePath);
+            return File.Exists(path) ? path : null;
+        }
+
+        private static string ResolveTuningCsvPath()
         {
             string root = ResolveProjectRoot();
             string path = Path.Combine(root, CsvPrecomputedRelativePath);
@@ -1244,15 +1644,16 @@ namespace Hecton8.AI.Ecosystem
                     writer.Write(entry.HydratedBoidCount);
                     writer.Write(entry.DehydratedSectorCount);
                     writer.Write(entry.SkippedBoidCount);
-                    writer.Write(entry.AverageFlockingTimeMs);
-                    writer.Write(entry.SystemStress01);
+                    writer.Write(entry.FlockingSolveTimeMs);
+                    writer.Write(entry.GlobalQualityWeight);
                     writer.Write(entry.Flags);
-                    writer.Write(entry.Reserved0);
-                    writer.Write(entry.Reserved1);
-                    writer.Write(entry.Reserved2);
-                    writer.Write(entry.Reserved3);
-                    writer.Write(entry.Reserved4);
-                    writer.Write(entry.Reserved5);
+                    writer.Write(entry.SpatialHashTimeMs);
+                    writer.Write(entry.MatrixUploadTimeMs);
+                    writer.Write(entry.ReproducedCount);
+                    writer.Write(entry.TombstonedCount);
+                    writer.Write(entry.DebugCellCount);
+                    writer.Write(entry.CsvLoadedCount);
+                    writer.Write(entry.ProfileLoadedCount);
                     writer.Write(entry.Pad0);
                 }
             }
@@ -1289,6 +1690,97 @@ namespace Hecton8.AI.Ecosystem
 
                 cursor = SkipLine(bytes, cursor, length);
             }
+        }
+
+        public static int ParseSwarmSpeciesProfiles(
+            NativeArray<byte> bytes,
+            int length,
+            NativeArray<SwarmSpeciesProfileDTO> profiles)
+        {
+            if (!bytes.IsCreated || !profiles.IsCreated || profiles.Length <= 0)
+                return 0;
+
+            length = math.min(length, bytes.Length);
+            int cursor = 0;
+            int writeIndex = 0;
+            while (cursor < length && writeIndex < profiles.Length)
+            {
+                if (bytes[cursor] == (byte)'#' || bytes[cursor] == (byte)'\n' || bytes[cursor] == (byte)'\r')
+                {
+                    cursor = SkipLine(bytes, cursor, length);
+                    continue;
+                }
+
+                int biomassStart = cursor;
+                int biomassEnd = ReadCsvCell(bytes, ref cursor, length);
+                int meshStart = cursor;
+                int meshEnd = ReadCsvCell(bytes, ref cursor, length);
+                int materialStart = cursor;
+                int materialEnd = ReadCsvCell(bytes, ref cursor, length);
+                int speciesStart = cursor;
+                int speciesEnd = ReadCsvCell(bytes, ref cursor, length);
+                int scaleStart = cursor;
+                int scaleEnd = ReadCsvCell(bytes, ref cursor, length);
+                int speedStart = cursor;
+                int speedEnd = ReadCsvCell(bytes, ref cursor, length);
+                int fearStart = cursor;
+                int fearEnd = ReadCsvCell(bytes, ref cursor, length);
+
+                if (biomassEnd <= biomassStart || meshEnd <= meshStart || materialEnd <= materialStart)
+                {
+                    cursor = SkipLine(bytes, cursor, length);
+                    continue;
+                }
+
+                bool parsedSpecies = TryParseFloatAscii(bytes, speciesStart, speciesEnd, out float speciesValue);
+                bool parsedScale = TryParseFloatAscii(bytes, scaleStart, scaleEnd, out float scaleValue);
+                bool parsedSpeed = TryParseFloatAscii(bytes, speedStart, speedEnd, out float speedValue);
+                bool parsedFear = TryParseFloatAscii(bytes, fearStart, fearEnd, out float fearValue);
+                if (!parsedSpecies && !parsedScale && !parsedSpeed && !parsedFear)
+                {
+                    cursor = SkipLine(bytes, cursor, length);
+                    continue;
+                }
+
+                profiles[writeIndex++] = new SwarmSpeciesProfileDTO
+                {
+                    BiomassHash = HashAsciiKey(bytes, biomassStart, biomassEnd),
+                    MeshHash = HashAsciiKey(bytes, meshStart, meshEnd),
+                    MaterialHash = HashAsciiKey(bytes, materialStart, materialEnd),
+                    SpeciesID = (ushort)math.clamp((int)speciesValue, 0, ushort.MaxValue),
+                    Flags = 0,
+                    Scale = math.isfinite(scaleValue) && scaleValue > 0f ? scaleValue : 1f,
+                    Speed = math.isfinite(speedValue) && speedValue > 0f ? speedValue : DefaultBoidSpeedMetersPerSecond,
+                    FearResponse = math.isfinite(fearValue) && fearValue >= 0f ? fearValue : 1f,
+                    Pad0 = 0u
+                };
+
+                cursor = SkipLine(bytes, cursor, length);
+            }
+
+            for (int i = writeIndex; i < profiles.Length; i++)
+                profiles[i] = default;
+
+            return writeIndex;
+        }
+
+        private static int ReadCsvCell(NativeArray<byte> bytes, ref int cursor, int length)
+        {
+            while (cursor < length && (bytes[cursor] == (byte)' ' || bytes[cursor] == (byte)'\t'))
+                cursor++;
+
+            int start = cursor;
+            while (cursor < length && bytes[cursor] != (byte)',' && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
+                cursor++;
+
+            int end = cursor;
+            while (end > start && (bytes[end - 1] == (byte)' ' || bytes[end - 1] == (byte)'\t'))
+                end--;
+
+            if (cursor < length && bytes[cursor] == (byte)',')
+                cursor++;
+
+            return end;
         }
 
         private static void ApplyCsvValue(uint keyHash, float value, ref ShinobuEcosystemTuning tuning)
@@ -1422,6 +1914,29 @@ namespace Hecton8.AI.Ecosystem
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ushort ResolveSpeciesId(uint speciesHash)
+        {
+            uint mixed = speciesHash ^ (speciesHash >> 16);
+            return (ushort)(mixed & 0xFFFFu);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static BoidStateDTO BuildBoidState(
+            in AbsoluteUniversePosition aup,
+            uint speciesHash,
+            int packIndex,
+            float speed)
+        {
+            return new BoidStateDTO
+            {
+                AUP = ToAbsoluteDouble3(in aup),
+                SpeciesID = ResolveSpeciesId(speciesHash),
+                PackIndex = (ushort)(packIndex & 0xFFFF),
+                Speed = math.max(0f, math.isfinite(speed) ? speed : 0f)
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static AbsoluteUniversePosition FromAbsoluteDouble3(double3 absolute)
         {
             if (!math.all(math.isfinite(absolute)))
@@ -1515,7 +2030,7 @@ namespace Hecton8.AI.Ecosystem
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint Hash32(uint value)
+        internal static uint Hash32(uint value)
         {
             value ^= value >> 16;
             value *= 0x7feb352du;
@@ -1555,6 +2070,12 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             AssertSize<AmbientEntityDTO>(32);
+            AssertSize<BoidStateDTO>(32);
+            AssertSize<BoidTargetDTO>(32);
+            AssertSize<BoidMatrixDTO>(64);
+            AssertSize<BoidIndirectArgsDTO>(32);
+            AssertSize<SwarmSpeciesProfileDTO>(32);
+            AssertSize<AbyssalFlowTensorDTO>(64);
             AssertSize<AmbientEntityAupDTO>(64);
             AssertSize<EcosystemSectorDTO>(32);
             AssertSize<ShinobuEcosystemTuning>(64);
@@ -1569,6 +2090,15 @@ namespace Hecton8.AI.Ecosystem
             AssertOffset<AmbientEntityDTO>(nameof(AmbientEntityDTO.Velocity), 12);
             AssertOffset<AmbientEntityDTO>(nameof(AmbientEntityDTO.SpeciesHash), 24);
             AssertOffset<AmbientEntityDTO>(nameof(AmbientEntityDTO.Biomass), 28);
+            AssertOffset<BoidStateDTO>(nameof(BoidStateDTO.AUP), 0);
+            AssertOffset<BoidStateDTO>(nameof(BoidStateDTO.SpeciesID), 24);
+            AssertOffset<BoidStateDTO>(nameof(BoidStateDTO.PackIndex), 26);
+            AssertOffset<BoidStateDTO>(nameof(BoidStateDTO.Speed), 28);
+            AssertOffset<BoidMatrixDTO>(nameof(BoidMatrixDTO.C0), 0);
+            AssertOffset<BoidMatrixDTO>(nameof(BoidMatrixDTO.C1), 16);
+            AssertOffset<BoidMatrixDTO>(nameof(BoidMatrixDTO.C2), 32);
+            AssertOffset<BoidMatrixDTO>(nameof(BoidMatrixDTO.C3), 48);
+            AssertOffset<BoidIndirectArgsDTO>(nameof(BoidIndirectArgsDTO.InstanceCount), 4);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.SectorHash), 0);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.HerbivoreMass), 4);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.CarnivoreMass), 8);
@@ -1602,13 +2132,88 @@ namespace Hecton8.AI.Ecosystem
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct AmbientEntityDTO
     {
-        public float3 Position;
-        public float3 Velocity;
-        public uint SpeciesHash;
-        public float Biomass;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float3 Velocity;
+        [FieldOffset(24)] public uint SpeciesHash;
+        [FieldOffset(28)] public float Biomass;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct BoidStateDTO
+    {
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public ushort SpeciesID;
+        [FieldOffset(26)] public ushort PackIndex;
+        [FieldOffset(28)] public float Speed;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct BoidTargetDTO
+    {
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public ushort SpeciesID;
+        [FieldOffset(26)] public ushort Flags;
+        [FieldOffset(28)] public float Weight01;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct BoidMatrixDTO
+    {
+        [FieldOffset(0)] public float4 C0;
+        [FieldOffset(16)] public float4 C1;
+        [FieldOffset(32)] public float4 C2;
+        [FieldOffset(48)] public float4 C3;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static BoidMatrixDTO FromFloat4x4(float4x4 matrix)
+        {
+            return new BoidMatrixDTO
+            {
+                C0 = matrix.c0,
+                C1 = matrix.c1,
+                C2 = matrix.c2,
+                C3 = matrix.c3
+            };
+        }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct BoidIndirectArgsDTO
+    {
+        [FieldOffset(0)] public uint IndexCountPerInstance;
+        [FieldOffset(4)] public uint InstanceCount;
+        [FieldOffset(8)] public uint StartIndex;
+        [FieldOffset(12)] public uint BaseVertexIndex;
+        [FieldOffset(16)] public uint StartInstance;
+        [FieldOffset(20)] public uint Pad0;
+        [FieldOffset(24)] public uint Pad1;
+        [FieldOffset(28)] public uint Pad2;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct SwarmSpeciesProfileDTO
+    {
+        [FieldOffset(0)] public uint BiomassHash;
+        [FieldOffset(4)] public uint MeshHash;
+        [FieldOffset(8)] public uint MaterialHash;
+        [FieldOffset(12)] public ushort SpeciesID;
+        [FieldOffset(14)] public ushort Flags;
+        [FieldOffset(16)] public float Scale;
+        [FieldOffset(20)] public float Speed;
+        [FieldOffset(24)] public float FearResponse;
+        [FieldOffset(28)] public uint Pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct AbyssalFlowTensorDTO
+    {
+        [FieldOffset(0)] public float4 AxisXAndStrength;
+        [FieldOffset(16)] public float4 AxisYAndCurl;
+        [FieldOffset(32)] public float4 AxisZAndTurbulence;
+        [FieldOffset(48)] public float4 LocalOriginAndQuality;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -1654,29 +2259,32 @@ namespace Hecton8.AI.Ecosystem
         [FieldOffset(56)] public uint Flags;
         [FieldOffset(60)] public uint Reserved;
 
-        public static ShinobuEcosystemTuning Default => new ShinobuEcosystemTuning
+        public static ShinobuEcosystemTuning CreateDefault()
         {
-            SeparationWeight = 1.35f,
-            AlignmentWeight = 0.45f,
-            CohesionWeight = 0.38f,
-            PredatorAvoidanceWeight = 8.0f,
-            HerbivoreBirthRate = 0.11f,
-            CarnivoreBirthRate = 0.035f,
-            HerbivoreDeathRate = 0.018f,
-            CarnivoreDeathRate = 0.026f,
-            FloraGrowthRate = 0.22f,
-            FeedRate = 0.018f,
-            BiomassReproductionThreshold = 2.4f,
-            MaxSpeedMetersPerSecond = 5.5f,
-            CarryingCapacity = 9000f,
-            PredationRate = 0.00012f,
-            Flags = 0u,
-            Reserved = 0u
-        };
+            return new ShinobuEcosystemTuning
+            {
+                SeparationWeight = 1.35f,
+                AlignmentWeight = 0.45f,
+                CohesionWeight = 0.38f,
+                PredatorAvoidanceWeight = 8.0f,
+                HerbivoreBirthRate = 0.11f,
+                CarnivoreBirthRate = 0.035f,
+                HerbivoreDeathRate = 0.018f,
+                CarnivoreDeathRate = 0.026f,
+                FloraGrowthRate = 0.22f,
+                FeedRate = 0.018f,
+                BiomassReproductionThreshold = 2.4f,
+                MaxSpeedMetersPerSecond = 5.5f,
+                CarryingCapacity = 9000f,
+                PredationRate = 0.00012f,
+                Flags = 0u,
+                Reserved = 0u
+            };
+        }
 
         public static ShinobuEcosystemTuning Sanitize(ShinobuEcosystemTuning value)
         {
-            ShinobuEcosystemTuning fallback = Default;
+            ShinobuEcosystemTuning fallback = CreateDefault();
             value.SeparationWeight = SanitizePositive(value.SeparationWeight, fallback.SeparationWeight);
             value.AlignmentWeight = SanitizePositive(value.AlignmentWeight, fallback.AlignmentWeight);
             value.CohesionWeight = SanitizePositive(value.CohesionWeight, fallback.CohesionWeight);
@@ -1709,15 +2317,16 @@ namespace Hecton8.AI.Ecosystem
         [FieldOffset(12)] public int HydratedBoidCount;
         [FieldOffset(16)] public int DehydratedSectorCount;
         [FieldOffset(20)] public int SkippedBoidCount;
-        [FieldOffset(24)] public float AverageFlockingTimeMs;
-        [FieldOffset(28)] public float SystemStress01;
+        [FieldOffset(24)] public float FlockingSolveTimeMs;
+        [FieldOffset(28)] public float GlobalQualityWeight;
         [FieldOffset(32)] public uint Flags;
-        [FieldOffset(36)] public int Reserved0;
-        [FieldOffset(40)] public int Reserved1;
-        [FieldOffset(44)] public int Reserved2;
-        [FieldOffset(48)] public int Reserved3;
-        [FieldOffset(52)] public int Reserved4;
-        [FieldOffset(56)] public int Reserved5;
+        [FieldOffset(36)] public float SpatialHashTimeMs;
+        [FieldOffset(40)] public float MatrixUploadTimeMs;
+        [FieldOffset(44)] public int ReproducedCount;
+        [FieldOffset(48)] public int TombstonedCount;
+        [FieldOffset(52)] public int DebugCellCount;
+        [FieldOffset(56)] public ushort CsvLoadedCount;
+        [FieldOffset(58)] public ushort ProfileLoadedCount;
         [FieldOffset(60)] public uint Pad0;
     }
 
@@ -1760,25 +2369,28 @@ namespace Hecton8.AI.Ecosystem
         [FieldOffset(12)] public float Distance;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public partial struct MockTerrainSampler
     {
-        public float3 SphereA;
-        public float3 SphereB;
-        public float3 SphereC;
-        public float PlaneY;
-        public float SphereRadius;
-        public float Reserved;
+        [FieldOffset(0)] public float3 SphereA;
+        [FieldOffset(12)] public float3 SphereB;
+        [FieldOffset(24)] public float3 SphereC;
+        [FieldOffset(36)] public float PlaneY;
+        [FieldOffset(40)] public float SphereRadius;
+        [FieldOffset(44)] public float Reserved;
 
-        public static MockTerrainSampler Default => new MockTerrainSampler
+        public static MockTerrainSampler CreateDefault()
         {
-            SphereA = new float3(24f, -6f, 10f),
-            SphereB = new float3(-32f, -4f, 18f),
-            SphereC = new float3(8f, -10f, -42f),
-            PlaneY = -18f,
-            SphereRadius = 4f,
-            Reserved = 0f
-        };
+            return new MockTerrainSampler
+            {
+                SphereA = new float3(24f, -6f, 10f),
+                SphereB = new float3(-32f, -4f, 18f),
+                SphereC = new float3(8f, -10f, -42f),
+                PlaneY = -18f,
+                SphereRadius = 4f,
+                Reserved = 0f
+            };
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MockTerrainSample SampleSdf(float3 position)
@@ -1829,71 +2441,152 @@ namespace Hecton8.AI.Ecosystem
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    internal struct GenerateEmergencyMockFlowJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<AbyssalFlowTensorDTO> FlowTensors;
+        public float3 OriginLocal;
+        public float CellSizeMeters;
+        public float GlobalQualityWeight;
+        public uint SectorHash;
+
+        public void Execute(int index)
+        {
+            if (index >= FlowTensors.Length)
+                return;
+
+            int side = 16;
+            int x = index & 15;
+            int y = (index >> 4) & 15;
+            int z = (index >> 8) & 15;
+            float3 local = OriginLocal + ((new float3(x, y, z) - new float3(side * 0.5f)) * math.max(1f, CellSizeMeters));
+            uint seed = ShinobuEcosystemBalancer.Hash32((uint)index ^ SectorHash ^ 0x4142464Cu);
+            float3 flow = ShinobuEcosystemBalancer.SampleEmergencyMockFlow(local, seed, GlobalQualityWeight);
+            float3 curlX = ShinobuEcosystemBalancer.SampleEmergencyMockFlow(local + new float3(CellSizeMeters, 0f, 0f), seed ^ 0x58415849u, GlobalQualityWeight) - flow;
+            float3 curlY = ShinobuEcosystemBalancer.SampleEmergencyMockFlow(local + new float3(0f, CellSizeMeters, 0f), seed ^ 0x59415849u, GlobalQualityWeight) - flow;
+            float3 curlZ = ShinobuEcosystemBalancer.SampleEmergencyMockFlow(local + new float3(0f, 0f, CellSizeMeters), seed ^ 0x5A415849u, GlobalQualityWeight) - flow;
+            FlowTensors[index] = new AbyssalFlowTensorDTO
+            {
+                AxisXAndStrength = new float4(flow, math.length(flow)),
+                AxisYAndCurl = new float4(curlY, math.length(curlX)),
+                AxisZAndTurbulence = new float4(curlZ, math.length(curlY + curlZ)),
+                LocalOriginAndQuality = new float4(local, math.saturate(GlobalQualityWeight))
+            };
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    internal struct WriteBoidIndirectArgsJob : IJob
+    {
+        [NoAlias] public NativeArray<BoidIndirectArgsDTO> IndirectArgs;
+        public uint IndexCountPerInstance;
+        public uint StartIndex;
+        public uint BaseVertexIndex;
+        public uint ActiveBoidCount;
+
+        public void Execute()
+        {
+            if (!IndirectArgs.IsCreated || IndirectArgs.Length <= 0)
+                return;
+
+            IndirectArgs[0] = new BoidIndirectArgsDTO
+            {
+                IndexCountPerInstance = IndexCountPerInstance,
+                InstanceCount = ActiveBoidCount,
+                StartIndex = StartIndex,
+                BaseVertexIndex = BaseVertexIndex,
+                StartInstance = 0u,
+                Pad0 = 0u,
+                Pad1 = 0u,
+                Pad2 = 0u
+            };
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct LocalShiftAndSpatialHashJob : IJobParallelFor
     {
-        public NativeArray<AmbientEntityDTO> Entities;
-        public NativeArray<AmbientEntityAupDTO> Aups;
-        public NativeArray<AmbientEntityDTO> EntitySnapshot;
-        public NativeArray<AmbientEntityAupDTO> AupSnapshot;
+        [NoAlias] public NativeArray<AmbientEntityDTO> Entities;
+        [NoAlias] public NativeArray<AmbientEntityAupDTO> Aups;
+        [NoAlias] public NativeArray<BoidStateDTO> BoidStates;
+        [NoAlias] public NativeArray<AmbientEntityDTO> EntitySnapshot;
+        [NoAlias] public NativeArray<AmbientEntityAupDTO> AupSnapshot;
+        [NoAlias] public NativeArray<BoidStateDTO> BoidStateSnapshot;
         public AbsoluteUniversePosition CenterAup;
         public float CellSizeMeters;
         public float SectorSizeMeters;
         public float SystemStress01;
+        public float GlobalQualityWeight;
+        public int UpdateStride;
+        public uint Frame;
         public int Count;
 
-        public void Execute(int index)
+        public unsafe void Execute(int index)
         {
             if (index >= Count)
                 return;
 
-            AmbientEntityAupDTO meta = Aups[index];
+            AmbientEntityDTO* entities = (AmbientEntityDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Entities);
+            AmbientEntityAupDTO* aups = (AmbientEntityAupDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Aups);
+            BoidStateDTO* boidStates = (BoidStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(BoidStates);
+            AmbientEntityDTO* entitySnapshots = (AmbientEntityDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(EntitySnapshot);
+            AmbientEntityAupDTO* aupSnapshots = (AmbientEntityAupDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(AupSnapshot);
+            BoidStateDTO* boidStateSnapshots = (BoidStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(BoidStateSnapshot);
+            ref AmbientEntityDTO entity = ref UnsafeUtility.AsRef<AmbientEntityDTO>(entities + index);
+            ref AmbientEntityAupDTO meta = ref UnsafeUtility.AsRef<AmbientEntityAupDTO>(aups + index);
+            ref BoidStateDTO boidState = ref UnsafeUtility.AsRef<BoidStateDTO>(boidStates + index);
+            ref AmbientEntityDTO entitySnapshot = ref UnsafeUtility.AsRef<AmbientEntityDTO>(entitySnapshots + index);
+            ref AmbientEntityAupDTO aupSnapshot = ref UnsafeUtility.AsRef<AmbientEntityAupDTO>(aupSnapshots + index);
+            ref BoidStateDTO boidStateSnapshot = ref UnsafeUtility.AsRef<BoidStateDTO>(boidStateSnapshots + index);
             uint flags = meta.Flags;
             if ((flags & ShinobuEcosystemBalancer.EntityFlagActive) == 0u ||
                 (flags & ShinobuEcosystemBalancer.EntityFlagHydrated) == 0u)
             {
                 meta.Flags = flags | ShinobuEcosystemBalancer.EntityFlagFree;
-                Aups[index] = meta;
-                EntitySnapshot[index] = default;
-                AupSnapshot[index] = meta;
+                boidState = default;
+                entitySnapshot = default;
+                aupSnapshot = meta;
+                boidStateSnapshot = default;
                 return;
             }
 
             flags &= ~ShinobuEcosystemBalancer.EntityFlagSkipUpdate;
-            AmbientEntityDTO entity = Entities[index];
             float3 local = ShinobuEcosystemBalancer.AupToLocal(in meta.PositionAup, in CenterAup);
             if (!math.all(math.isfinite(local)))
             {
                 meta.Flags = flags | ShinobuEcosystemBalancer.EntityFlagInvalidMath;
-                Aups[index] = meta;
-                EntitySnapshot[index] = entity;
-                AupSnapshot[index] = meta;
+                boidState = ShinobuEcosystemBalancer.BuildBoidState(in meta.PositionAup, entity.SpeciesHash, index, math.length(entity.Velocity));
+                entitySnapshot = entity;
+                aupSnapshot = meta;
+                boidStateSnapshot = boidState;
                 return;
             }
 
             int3 sectorCoord = ShinobuEcosystemBalancer.ResolveSectorCoord(in meta.PositionAup, SectorSizeMeters);
             int cellHash = ShinobuEcosystemBalancer.ResolveSpatialCellHash(local, CellSizeMeters);
-            if (SystemStress01 > 0.82f && (index & 1) != 0)
+            int stride = math.max(1, UpdateStride);
+            uint laneHash = ShinobuEcosystemBalancer.Hash32((uint)index ^ meta.StableSeed ^ Frame);
+            if (stride > 1 && (laneHash % (uint)stride) != 0u)
                 flags |= ShinobuEcosystemBalancer.EntityFlagSkipUpdate;
 
             entity.Position = local;
             meta.SectorHash = ShinobuEcosystemBalancer.ResolveSectorHash(sectorCoord);
             meta.SpatialCellHash = cellHash;
             meta.Flags = flags;
-            Entities[index] = entity;
-            Aups[index] = meta;
-            EntitySnapshot[index] = entity;
-            AupSnapshot[index] = meta;
+            boidState = ShinobuEcosystemBalancer.BuildBoidState(in meta.PositionAup, entity.SpeciesHash, index, math.length(entity.Velocity));
+            entitySnapshot = entity;
+            aupSnapshot = meta;
+            boidStateSnapshot = boidState;
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct BuildVaultSpatialHashJob : IJob
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    internal struct BuildBoidSpatialHashJob : IJob
     {
-        [ReadOnly] public NativeArray<AmbientEntityAupDTO> AupSnapshot;
-        public NativeArray<int> BucketHeads;
-        public NativeArray<int> BucketNext;
-        [NativeDisableParallelForRestriction] public NativeArray<int> Counters;
+        [ReadOnly, NoAlias] public NativeArray<AmbientEntityAupDTO> AupSnapshot;
+        [NoAlias] public NativeArray<int> BucketHeads;
+        [NoAlias] public NativeArray<int> BucketNext;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Counters;
         public int MaxChainSteps;
         public int Count;
 
@@ -1941,21 +2634,25 @@ namespace Hecton8.AI.Ecosystem
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct BurstBoidBehaviorSolverJob : IJobParallelFor
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    internal struct BoidFlockingJob : IJobParallelFor
     {
-        public NativeArray<AmbientEntityDTO> Entities;
-        public NativeArray<AmbientEntityAupDTO> Aups;
-        [ReadOnly] public NativeArray<AmbientEntityDTO> EntitySnapshot;
-        [ReadOnly] public NativeArray<AmbientEntityAupDTO> AupSnapshot;
-        [ReadOnly] public NativeArray<int> BucketHeads;
-        [ReadOnly] public NativeArray<int> BucketNext;
+        [NoAlias] public NativeArray<AmbientEntityDTO> Entities;
+        [NoAlias] public NativeArray<AmbientEntityAupDTO> Aups;
+        [NoAlias] public NativeArray<BoidStateDTO> BoidStates;
+        [ReadOnly, NoAlias] public NativeArray<AmbientEntityDTO> EntitySnapshot;
+        [ReadOnly, NoAlias] public NativeArray<AmbientEntityAupDTO> AupSnapshot;
+        [ReadOnly, NoAlias] public NativeArray<BoidStateDTO> BoidStateSnapshot;
+        [ReadOnly, NoAlias] public NativeArray<int> BucketHeads;
+        [ReadOnly, NoAlias] public NativeArray<int> BucketNext;
         public AbsoluteUniversePosition CenterAup;
+        public double3 CenterAbsolute;
         public float3 CameraForward;
         public MockTerrainSampler TerrainSampler;
         public MockPredatorRuntime Predator;
         public ShinobuEcosystemTuning Tuning;
         public float DeltaSeconds;
+        public float GlobalQualityWeight;
         public float CellSizeMeters;
         public float SectorSizeMeters;
         public float NeighborRadiusMeters;
@@ -1964,12 +2661,23 @@ namespace Hecton8.AI.Ecosystem
         public int MaxSpatialHashChainSteps;
         public int Count;
 
-        public void Execute(int index)
+        public unsafe void Execute(int index)
         {
             if (index >= Count)
                 return;
 
-            AmbientEntityAupDTO meta = AupSnapshot[index];
+            AmbientEntityDTO* entities = (AmbientEntityDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Entities);
+            AmbientEntityAupDTO* aups = (AmbientEntityAupDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Aups);
+            BoidStateDTO* boidStates = (BoidStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(BoidStates);
+            AmbientEntityDTO* entitySnapshots = (AmbientEntityDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(EntitySnapshot);
+            AmbientEntityAupDTO* aupSnapshots = (AmbientEntityAupDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(AupSnapshot);
+            BoidStateDTO* boidStateSnapshots = (BoidStateDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(BoidStateSnapshot);
+            int* bucketHeads = (int*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(BucketHeads);
+            int* bucketNext = (int*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(BucketNext);
+            ref AmbientEntityDTO entityOut = ref UnsafeUtility.AsRef<AmbientEntityDTO>(entities + index);
+            ref AmbientEntityAupDTO metaOut = ref UnsafeUtility.AsRef<AmbientEntityAupDTO>(aups + index);
+            ref BoidStateDTO boidStateOut = ref UnsafeUtility.AsRef<BoidStateDTO>(boidStates + index);
+            AmbientEntityAupDTO meta = UnsafeUtility.AsRef<AmbientEntityAupDTO>(aupSnapshots + index);
             uint flags = meta.Flags;
             if ((flags & ShinobuEcosystemBalancer.EntityFlagActive) == 0u ||
                 (flags & ShinobuEcosystemBalancer.EntityFlagHydrated) == 0u ||
@@ -1978,25 +2686,32 @@ namespace Hecton8.AI.Ecosystem
                 return;
             }
 
-            AmbientEntityDTO entity = EntitySnapshot[index];
-            float3 position = entity.Position;
+            AmbientEntityDTO entity = UnsafeUtility.AsRef<AmbientEntityDTO>(entitySnapshots + index);
+            BoidStateDTO boidState = UnsafeUtility.AsRef<BoidStateDTO>(boidStateSnapshots + index);
+            double3 localDelta = boidState.AUP - CenterAbsolute;
+            float3 position = math.all(math.isfinite(localDelta)) ? (float3)localDelta : entity.Position;
             float3 velocity = entity.Velocity;
             bool invalid = !math.all(math.isfinite(position)) || !math.all(math.isfinite(velocity));
             if (invalid)
             {
                 meta.Flags = flags | ShinobuEcosystemBalancer.EntityFlagInvalidMath;
-                Aups[index] = meta;
+                boidStateOut = boidState;
+                metaOut = meta;
                 return;
             }
 
             float3 forward = ShinobuEcosystemBalancer.SafeNormalize(velocity, CameraForward);
             float cameraDot = math.dot(ShinobuEcosystemBalancer.SafeNormalize(position, CameraForward), CameraForward);
-            bool visibleCone = cameraDot > -0.15f;
+            float visibleConeThreshold = math.lerp(0.62f, -0.15f, ShinobuEcosystemBalancer.Smooth01(GlobalQualityWeight));
+            bool visibleCone = cameraDot > visibleConeThreshold;
             float3 acceleration = new float3(0f);
             if (visibleCone)
             {
-                QueryNeighbors(index, position, velocity, ref acceleration);
+                QueryNeighbors(index, position, velocity, ref acceleration, entitySnapshots, aupSnapshots, bucketHeads, bucketNext);
             }
+
+            float3 emergencyFlow = ShinobuEcosystemBalancer.SampleEmergencyMockFlow(position, meta.StableSeed, GlobalQualityWeight);
+            acceleration += emergencyFlow * math.lerp(0.35f, 1.75f, ShinobuEcosystemBalancer.Smooth01(GlobalQualityWeight));
 
             if (Predator.Valid != 0)
             {
@@ -2015,7 +2730,10 @@ namespace Hecton8.AI.Ecosystem
             if (terrain.Distance < ObstacleProbeMeters)
             {
                 float push = math.saturate((ObstacleProbeMeters - terrain.Distance) / math.max(0.001f, ObstacleProbeMeters));
-                acceleration += ShinobuEcosystemBalancer.SafeNormalize(terrain.Normal, new float3(0f, 1f, 0f)) * (push * 6f);
+                float3 wallNormal = ShinobuEcosystemBalancer.SafeNormalize(terrain.Normal, new float3(0f, 1f, 0f));
+                float3 vortexSwirl = ShinobuEcosystemBalancer.SafeNormalize(math.cross(new float3(0f, 1f, 0f), wallNormal), forward);
+                float swirlWeight = math.lerp(0.35f, 1f, ShinobuEcosystemBalancer.Smooth01(GlobalQualityWeight));
+                acceleration += (wallNormal * (push * 2.25f)) + (vortexSwirl * (push * math.lerp(2.5f, 8.5f, swirlWeight)));
             }
 
             entity.Biomass = math.max(0.05f, entity.Biomass + (MockFloraSpawner.SampleFloraMass(position, entity.SpeciesHash) * Tuning.FeedRate * DeltaSeconds));
@@ -2031,7 +2749,8 @@ namespace Hecton8.AI.Ecosystem
             if (!math.all(math.isfinite(position)) || !math.all(math.isfinite(velocity)))
             {
                 meta.Flags = flags | ShinobuEcosystemBalancer.EntityFlagInvalidMath;
-                Aups[index] = meta;
+                boidStateOut = boidState;
+                metaOut = meta;
                 return;
             }
 
@@ -2040,11 +2759,24 @@ namespace Hecton8.AI.Ecosystem
             meta.PositionAup = ShinobuEcosystemBalancer.OffsetAup(in CenterAup, position);
             meta.SpatialCellHash = ShinobuEcosystemBalancer.ResolveSpatialCellHash(position, CellSizeMeters);
             meta.SectorHash = ShinobuEcosystemBalancer.ResolveSectorHash(ShinobuEcosystemBalancer.ResolveSectorCoord(in meta.PositionAup, SectorSizeMeters));
-            Entities[index] = entity;
-            Aups[index] = meta;
+            boidState.AUP = ShinobuEcosystemBalancer.ToAbsoluteDouble3(in meta.PositionAup);
+            boidState.SpeciesID = ShinobuEcosystemBalancer.ResolveSpeciesId(entity.SpeciesHash);
+            boidState.PackIndex = (ushort)(index & 0xFFFF);
+            boidState.Speed = math.length(velocity);
+            entityOut = entity;
+            metaOut = meta;
+            boidStateOut = boidState;
         }
 
-        private void QueryNeighbors(int index, float3 position, float3 velocity, ref float3 acceleration)
+        private unsafe void QueryNeighbors(
+            int index,
+            float3 position,
+            float3 velocity,
+            ref float3 acceleration,
+            AmbientEntityDTO* entitySnapshots,
+            AmbientEntityAupDTO* aupSnapshots,
+            int* bucketHeads,
+            int* bucketNext)
         {
             int3 baseCell = ShinobuEcosystemBalancer.ResolveSpatialCell(position, CellSizeMeters);
             float radiusSq = NeighborRadiusMeters * NeighborRadiusMeters;
@@ -2062,21 +2794,21 @@ namespace Hecton8.AI.Ecosystem
                     {
                         int hash = ShinobuEcosystemBalancer.ResolveSpatialCellHash(baseCell + new int3(x, y, z));
                         int bucket = ShinobuEcosystemBalancer.ResolveSpatialBucketIndex(hash);
-                        int otherIndex = BucketHeads[bucket];
+                        int otherIndex = bucketHeads[bucket];
                         int guard = 0;
                         while (otherIndex >= 0 && otherIndex < Count && guard < maxChainSteps)
                         {
                             guard++;
-                            int nextIndex = BucketNext[otherIndex];
+                            int nextIndex = bucketNext[otherIndex];
                             if (otherIndex != index)
                             {
-                                AmbientEntityAupDTO otherMeta = AupSnapshot[otherIndex];
+                                AmbientEntityAupDTO otherMeta = UnsafeUtility.AsRef<AmbientEntityAupDTO>(aupSnapshots + otherIndex);
                                 uint otherFlags = otherMeta.Flags;
                                 if (otherMeta.SpatialCellHash == hash &&
                                     (otherFlags & ShinobuEcosystemBalancer.EntityFlagActive) != 0u &&
                                     (otherFlags & ShinobuEcosystemBalancer.EntityFlagHydrated) != 0u)
                                 {
-                                    AmbientEntityDTO other = EntitySnapshot[otherIndex];
+                                    AmbientEntityDTO other = UnsafeUtility.AsRef<AmbientEntityDTO>(entitySnapshots + otherIndex);
                                     float3 delta = position - other.Position;
                                     float distSq = math.lengthsq(delta);
                                     if (distSq > 0.0001f && distSq <= radiusSq)
@@ -2111,73 +2843,87 @@ namespace Hecton8.AI.Ecosystem
             if (neighborCount <= 0)
                 return;
 
-            float inv = 1f / neighborCount;
+            float inv = math.rcp(math.max(1, neighborCount));
             float3 desiredAlignment = ShinobuEcosystemBalancer.SafeNormalize(alignment * inv, velocity);
             float3 center = cohesion * inv;
             float3 desiredCohesion = ShinobuEcosystemBalancer.SafeNormalize(center - position, new float3(0f));
+            float reynolds01 = ShinobuEcosystemBalancer.Smooth01(math.saturate((GlobalQualityWeight - 0.14f) * 1.1627907f));
             acceleration += separation * Tuning.SeparationWeight;
-            acceleration += desiredAlignment * Tuning.AlignmentWeight;
-            acceleration += desiredCohesion * Tuning.CohesionWeight;
+            acceleration += desiredAlignment * (Tuning.AlignmentWeight * reynolds01);
+            acceleration += desiredCohesion * (Tuning.CohesionWeight * reynolds01);
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BuildShinobuRenderPayloadJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<AmbientEntityDTO> Entities;
-        [ReadOnly] public NativeArray<AmbientEntityAupDTO> Aups;
-        public NativeArray<float4x4> Matrices;
-        public NativeArray<float4> CustomData;
+        [ReadOnly, NoAlias] public NativeArray<AmbientEntityDTO> Entities;
+        [ReadOnly, NoAlias] public NativeArray<AmbientEntityAupDTO> Aups;
+        [ReadOnly, NoAlias] public NativeArray<BoidStateDTO> BoidStates;
+        [NoAlias] public NativeArray<BoidMatrixDTO> Matrices;
+        [NoAlias] public NativeArray<float4> CustomData;
+        public double3 CenterAbsolute;
+        public float GlobalQualityWeight;
         public int Count;
 
-        public void Execute(int index)
+        public unsafe void Execute(int index)
         {
             if (index >= Count)
                 return;
 
-            AmbientEntityAupDTO meta = Aups[index];
-            AmbientEntityDTO entity = Entities[index];
+            AmbientEntityDTO* entities = (AmbientEntityDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Entities);
+            AmbientEntityAupDTO* aups = (AmbientEntityAupDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Aups);
+            BoidStateDTO* boidStates = (BoidStateDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(BoidStates);
+            BoidMatrixDTO* matrices = (BoidMatrixDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Matrices);
+            float4* customData = (float4*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(CustomData);
+            ref AmbientEntityDTO entity = ref UnsafeUtility.AsRef<AmbientEntityDTO>(entities + index);
+            ref AmbientEntityAupDTO meta = ref UnsafeUtility.AsRef<AmbientEntityAupDTO>(aups + index);
+            ref BoidStateDTO boidState = ref UnsafeUtility.AsRef<BoidStateDTO>(boidStates + index);
+            ref BoidMatrixDTO matrixOut = ref UnsafeUtility.AsRef<BoidMatrixDTO>(matrices + index);
+            ref float4 customOut = ref UnsafeUtility.AsRef<float4>(customData + index);
             uint flags = meta.Flags;
+            double3 localDelta = boidState.AUP - CenterAbsolute;
+            float3 position = math.all(math.isfinite(localDelta)) ? (float3)localDelta : entity.Position;
             if ((flags & ShinobuEcosystemBalancer.EntityFlagActive) == 0u ||
                 (flags & ShinobuEcosystemBalancer.EntityFlagHydrated) == 0u ||
                 (flags & ShinobuEcosystemBalancer.EntityFlagInvalidMath) != 0u ||
-                !math.all(math.isfinite(entity.Position)) ||
+                !math.all(math.isfinite(position)) ||
                 !math.all(math.isfinite(entity.Velocity)) ||
                 !math.isfinite(entity.Biomass))
             {
-                Matrices[index] = default;
-                CustomData[index] = default;
+                matrixOut = default;
+                customOut = default;
                 return;
             }
 
             float3 forward = ShinobuEcosystemBalancer.SafeNormalize(entity.Velocity, new float3(0f, 0f, 1f));
             float scale = math.clamp(0.18f + entity.Biomass * 0.06f, 0.12f, 0.6f);
-            float4x4 matrix = float4x4.TRS(entity.Position, quaternion.LookRotationSafe(forward, new float3(0f, 1f, 0f)), new float3(scale));
+            float4x4 matrix = float4x4.TRS(position, quaternion.LookRotationSafe(forward, new float3(0f, 1f, 0f)), new float3(scale));
             if (!math.all(math.isfinite(matrix.c0)) ||
                 !math.all(math.isfinite(matrix.c1)) ||
                 !math.all(math.isfinite(matrix.c2)) ||
                 !math.all(math.isfinite(matrix.c3)))
             {
-                Matrices[index] = default;
-                CustomData[index] = default;
+                matrixOut = default;
+                customOut = default;
                 return;
             }
 
-            Matrices[index] = matrix;
+            matrixOut = BoidMatrixDTO.FromFloat4x4(matrix);
             float speciesLane = entity.SpeciesHash == 0x4341524Eu ? 1f : 0f;
-            CustomData[index] = new float4(speciesLane, entity.Biomass, (flags & ShinobuEcosystemBalancer.EntityFlagSkipUpdate) != 0u ? 1f : 0f, 1f);
+            customOut = new float4(speciesLane, entity.Biomass, (flags & ShinobuEcosystemBalancer.EntityFlagSkipUpdate) != 0u ? 1f : 0f, GlobalQualityWeight);
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BuildHashDebugCellsJob : IJob
     {
-        [ReadOnly] public NativeArray<AmbientEntityDTO> Entities;
-        [ReadOnly] public NativeArray<AmbientEntityAupDTO> Aups;
-        [ReadOnly] public NativeArray<int> BucketHeads;
-        [ReadOnly] public NativeArray<int> BucketNext;
-        public NativeArray<ShinobuSpatialHashDebugCell> DebugCells;
-        [NativeDisableParallelForRestriction] public NativeArray<int> Counters;
+        [ReadOnly, NoAlias] public NativeArray<AmbientEntityDTO> Entities;
+        [ReadOnly, NoAlias] public NativeArray<AmbientEntityAupDTO> Aups;
+        [ReadOnly, NoAlias] public NativeArray<int> BucketHeads;
+        [ReadOnly, NoAlias] public NativeArray<int> BucketNext;
+        [NoAlias] public NativeArray<ShinobuSpatialHashDebugCell> DebugCells;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Counters;
         public float CellSizeMeters;
         public int Count;
         public int Capacity;
@@ -2242,12 +2988,12 @@ namespace Hecton8.AI.Ecosystem
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct CountTelemetryCountersJob : IJob
     {
-        [ReadOnly] public NativeArray<AmbientEntityAupDTO> Aups;
-        [ReadOnly] public NativeArray<EcosystemSectorDTO> Sectors;
-        [NativeDisableParallelForRestriction] public NativeArray<int> Counters;
+        [ReadOnly, NoAlias] public NativeArray<AmbientEntityAupDTO> Aups;
+        [ReadOnly, NoAlias] public NativeArray<EcosystemSectorDTO> Sectors;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Counters;
         public int Count;
         public int SectorCount;
 
@@ -2281,17 +3027,18 @@ namespace Hecton8.AI.Ecosystem
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct LotkaVolterraMacroJob : IJob
     {
-        public NativeArray<AmbientEntityDTO> Entities;
-        public NativeArray<AmbientEntityAupDTO> Aups;
-        public NativeArray<EcosystemSectorDTO> Sectors;
-        public NativeArray<int> SectorBucketHeads;
-        public NativeArray<int> SectorEntityLinks;
-        [NativeDisableParallelForRestriction] public NativeArray<int> Counters;
+        [NoAlias] public NativeArray<AmbientEntityDTO> Entities;
+        [NoAlias] public NativeArray<AmbientEntityAupDTO> Aups;
+        [NoAlias] public NativeArray<EcosystemSectorDTO> Sectors;
+        [NoAlias] public NativeArray<int> SectorBucketHeads;
+        [NoAlias] public NativeArray<int> SectorEntityLinks;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Counters;
         public AbsoluteUniversePosition CenterAup;
         public ShinobuEcosystemTuning Tuning;
+        public float GlobalQualityWeight;
         public int EntityCount;
         public int SectorCount;
         public float SectorSizeMeters;
@@ -2506,7 +3253,8 @@ namespace Hecton8.AI.Ecosystem
                     continue;
 
                 float totalMass = math.max(0f, sector.HerbivoreMass + sector.CarnivoreMass);
-                int spawnCount = math.clamp((int)math.floor(totalMass), 0, 64);
+                float density01 = ShinobuEcosystemBalancer.Smooth01(GlobalQualityWeight);
+                int spawnCount = math.clamp((int)math.floor((totalMass * 0.01f) * math.lerp(0.25f, 1f, density01)), 0, 64);
                 uint seed = sector.SectorHash ^ 0x52485944u;
                 int spawnedThisSector = 0;
                 for (int spawn = 0; spawn < spawnCount; spawn++)

@@ -23,6 +23,36 @@ A press angle is valid only if the current asset/build proves it. If the screens
 | PA-009 | First playable demo | Broad press/creator | public/private demo |
 | PA-010 | Steam Next Fest participation | Steam/demo lists | accepted/eligible event proof |
 
+## 2026-05-19 Asset-Proof Press Angle Matrix
+
+Status: pre-presskit / not send-ready / choose only after real assets exist.
+
+This matrix turns press angles into proof gates. A pitch can use only one primary angle, and that angle must be visible in the linked screenshot/clip pack.
+
+| Angle ID | Primary proof asset | Secondary proof | Best outlet bucket | Subject line seed | Hold condition |
+|---|---|---|---|---|---|
+| PA-001 | `PLAN-SHOT-001` + Steam page | `PLAN-SHOT-003` | PC general / indie discovery | `HECTON-8 first look: single-player deep-sea survival under pressure` | Hold if the first shot reads as generic diver/ocean or implies co-op. |
+| PA-002 | `PLAN-SHOT-004` | `PLAN-SHOT-002` | Visual/design / indie / creator | `NASA-punk survival below the light: HECTON-8 machinery first look` | Hold if machinery looks decorative, plastic, or clean sci-fi. |
+| PA-003 | `PLAN-SHOT-005` | `PLAN-CLIP-001` | Survival/base-building press | `HECTON-8 shows base risk and pressure failure below the light` | Hold if failure is fake, UI-only, or not present in build. |
+| PA-004 | `PLAN-SHOT-007` | `PLAN-CLIP-002` | Indie/story / mystery | `HECTON-8 teases the Seed Ship signal beneath black water` | Hold if anomaly reads as abstract concept art or lore-only. |
+| PA-005 | `PLAN-CLIP-002` with audio | `PLAN-SHOT-006` | Horror / dread / atmospheric press | `HECTON-8 turns deep-sea visibility into sustained pressure` | Hold if clip is just a monster reveal or jump scare. |
+| PA-006 | `PLAN-CLIP-004` | `PLAN-SHOT-004` | Survival/vehicle creators and press | `HECTON-8 heavy machinery clip shows industrial underwater survival` | Hold if movement reads slow without weight. |
+| PA-007 | `PLAN-CLIP-003` | `PLAN-SHOT-003` | Systems/design / survival press | `HECTON-8 frames salvage as pressure and route risk, not blind grind` | Hold if clip does not show choice, cost, or consequence. |
+| PA-008 | Profiler/hardware proof only | `PLAN-SHOT-008` internal readability only | Tech/dev press | `HECTON-8 tech note: scalable underwater readability without brute-force ocean sim` | Hold until build, hardware, settings, frame-time context, and implementation notes exist. |
+| PA-009 | Public/private demo build | `PLAN-CLIP-*` demo route | Broad press / creator / demo lists | `HECTON-8 demo available: pressure, salvage, and machinery below the light` | Hold until demo is stable and honest exclusions are documented. |
+| PA-010 | Official event acceptance/eligibility | Demo page | Steam/demo/event lists | `HECTON-8 joins [event] with a deep-sea survival demo` | Hold until official event proof exists. |
+
+### Press Subject Kill Rules
+
+Kill a subject line if it:
+
+- needs the word "Subnautica" to make sense;
+- sells co-op, multiplayer, large world, or performance;
+- says "NASA-punk" but the linked asset is clean sci-fi;
+- says "base failure" but the asset is just red UI;
+- says "demo" or "Steam" before the link exists;
+- cannot be proven by the first linked image/clip.
+
 ## Subject Lines By Beat
 
 ### First Screenshot Reveal

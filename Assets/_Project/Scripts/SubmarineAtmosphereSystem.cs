@@ -1435,6 +1435,7 @@ namespace Hecton8.Atmosphere
         // COLD ALLOC: int[8] - per-room boiling hazard source IDs - owner: SubmarineAtmosphereSystem
         private readonly int[] _boilingHazardIds = new int[RoomCapacity];
         private uint _boilingHazardActiveMask;
+        private IThermodynamicsService _thermodynamicsService;
         // COLD ALLOC: int[8] - per-room low-O2 toxicity hazard source IDs - owner: SubmarineAtmosphereSystem
         private readonly int[] _toxicRoomHazardIds = new int[RoomCapacity];
         // COLD ALLOC: int[8] - per-room fake smoke hazard source IDs - owner: SubmarineAtmosphereSystem
@@ -2751,6 +2752,9 @@ namespace Hecton8.Atmosphere
                 if (playerContext != null)
                     _playerCamera = playerContext.PlayerCamera;
             }
+
+            if (_thermodynamicsService == null || IsUnityObjectInvalid(_thermodynamicsService))
+                _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
         }
 
         private void SeedBoilingHazardIds()
@@ -4598,7 +4602,10 @@ namespace Hecton8.Atmosphere
                 return;
 
             uint roomBit = 1u << roomIndex;
-            if (HectonHazardManager.Register(_boilingHazardIds[roomIndex], worldCenter, intensity, radius, HazardType.Heat))
+            IThermodynamicsService thermodynamics = ResolveThermodynamicsService();
+            if (thermodynamics != null &&
+                thermodynamics.IsInitialized &&
+                thermodynamics.TryInjectTransientHeatSource(worldCenter, radius, intensity, unchecked((uint)_boilingHazardIds[roomIndex])))
             {
                 _boilingHazardActiveMask |= roomBit;
                 return;
@@ -4618,6 +4625,22 @@ namespace Hecton8.Atmosphere
 
             HectonHazardManager.Unregister(_boilingHazardIds[roomIndex]);
             _boilingHazardActiveMask &= ~roomBit;
+        }
+
+        private IThermodynamicsService ResolveThermodynamicsService()
+        {
+            if (IsUnityObjectInvalid(_thermodynamicsService))
+            {
+                _thermodynamicsService = null;
+                return null;
+            }
+
+            return _thermodynamicsService;
+        }
+
+        private static bool IsUnityObjectInvalid(object context)
+        {
+            return context is UnityEngine.Object unityObject && unityObject == null;
         }
 
         private float ResolveInstantThermalCapacity(int roomIndex)

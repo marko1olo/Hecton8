@@ -474,7 +474,6 @@ Legacy `GlobalSignals.Publish(...)` call sites found: 255. Many use local variab
 | `MockInventoryTransactionSignal` | `Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:290` | `Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2414` | none found |
 | `MockItemAcquiredSignal` | `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs:116` | none found | none found |
 | `MockLaserFireSignal` | `Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs:29` | none found | none found |
-| `MockModuleStateSignal` | `Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:72` | none found | none found |
 | `MockNarrativeTriggerSignal` | `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:2332` | `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1160` | none found |
 | `MockPlayerFootstepSignal` | `Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs:548` | none found | none found |
 | `MockPlayerPositionSignal` | `Assets/_Project/Scripts/Quest/QuestDagRuntimeTypes.cs:116` | none found | none found |

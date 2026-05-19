@@ -707,9 +707,7 @@ namespace Hecton8.Gameplay
             if (targetId == 0u || !(magnitude > 0f))
                 return false;
 
-            float3 localPoint = math.all(math.isfinite(globalSignal.WorldPoint))
-                ? globalSignal.WorldPoint
-                : float3.zero;
+            float3 localPoint = CombatDamageSignalCodec.ToRuntimePointOrZero(in globalSignal);
             float3 direction = math.lengthsq(globalSignal.Direction) > 0.0001f && math.all(math.isfinite(globalSignal.Direction))
                 ? globalSignal.Direction
                 : ResolveDominantAxisDirection(localPoint);

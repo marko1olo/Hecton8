@@ -25,7 +25,7 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(PlayerTransportFeelContract))]
     [RequireComponent(typeof(VehicleMotor))]
     [AddComponentMenu("Hecton8/Gameplay/Transport/Mountable Player Transport")]
-    public sealed class MountablePlayerTransport : MonoBehaviour, IInteractable, ITickable, IUpdatable, IFixedTickable, IPlayerTransportSource, IKinematicVehicleTransportSource, IPlayerTransportLifecycleOwner, ITransportPlatform, IDamageSignalEmitter, IOriginShiftListener
+    public sealed class MountablePlayerTransport : MonoBehaviour, IInteractable, ITickable, IUpdatable, IFixedTickable, IPlayerTransportSource, IKinematicVehicleTransportSource, IPlayerTransportLifecycleOwner, ITransportPlatform, IDamageSignalEmitter, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const string DefaultMountText = "Board Transport";
         private const string DefaultDismountText = "Dismount";
@@ -191,6 +191,8 @@ namespace Hecton8.Gameplay
         private Collider _interactionCollider;
         private Rigidbody _transportBody;
         private VehicleMotor _vehicleMotor;
+        private IInputService _cachedInputService;
+        private IAudioService _cachedAudioService;
         private SubmarineAutoLevelBallastController _submarineAutoLevelController;
         private PlayerTransportFeelContract _transportFeelContract;
         private VehicleUpgradeModule _vehicleUpgradeModule;
@@ -204,6 +206,7 @@ namespace Hecton8.Gameplay
         private bool _registeredFixedTick;
         private bool _registeredUpdate;
         private bool _registeredOriginShiftListener;
+        private bool _registeredHotSwapListener;
         private bool _interactionColliderWasEnabled;
         private Vector3 _riderAnchorLocalPosition;
         private Quaternion _riderAnchorLocalRotation = Quaternion.identity;
@@ -319,6 +322,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            RefreshCachedRegistryServices();
+            TryRegisterHotSwapListener();
             RefreshVehicleCommandTargetId();
             TryRegister();
             TryRegisterOriginShiftListener();
@@ -337,6 +342,7 @@ namespace Hecton8.Gameplay
         {
             ForceReleaseMountedRider();
             TryUnregisterOriginShiftListener();
+            TryUnregisterHotSwapListener();
             TryUnregister();
             _damageReceivers.Clear();
         }
@@ -345,6 +351,7 @@ namespace Hecton8.Gameplay
         {
             ForceReleaseMountedRider();
             TryUnregisterOriginShiftListener();
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
@@ -425,7 +432,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            IInputService inputService = GlobalRegistry.Input;
+            IInputService inputService = _cachedInputService;
             PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
                 ? inputService.GetState()
                 : default;
@@ -2101,6 +2108,43 @@ namespace Hecton8.Gameplay
             _registered = _registeredFixedTick || _registeredUpdate;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Input &&
+                serviceSlot != GlobalRegistryServiceSlot.Audio)
+            {
+                return;
+            }
+
+            RefreshCachedRegistryServices();
+        }
+
+        private void RefreshCachedRegistryServices()
+        {
+            _cachedInputService = GlobalRegistry.Input;
+            _cachedAudioService = GlobalRegistry.Audio;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
         private void TryUnregister()
         {
             if (!_registered)
@@ -2198,8 +2242,8 @@ namespace Hecton8.Gameplay
             if (clip == null)
                 return;
 
-            if (Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
-                audio.PlayAtPoint(clip, ResolveTransportRuntimePosition(), transportAudioVolume);
+            if (_cachedAudioService != null)
+                _cachedAudioService.PlayAtPoint(clip, ResolveTransportRuntimePosition(), transportAudioVolume);
         }
 
         private void UpdatePresentationTransportBoost(float fixedDeltaTime)

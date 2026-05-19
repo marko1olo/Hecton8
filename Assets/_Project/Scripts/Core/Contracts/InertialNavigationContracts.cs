@@ -6,7 +6,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Vault-owned compass state. Runtime writers keep this as the single mutable compass authority.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 176)]
+    [StructLayout(LayoutKind.Sequential, Size = 176)]
     public struct CompassStateDTO
     {
         public double3 ActualAUP;
@@ -52,7 +52,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Registry-facing dead-reckoning state exposed to cockpit and UI consumers without concrete navigation runtime coupling.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 120)]
+    [StructLayout(LayoutKind.Sequential, Size = 120)]
     public struct InertialNavigationSnapshot
     {
         /// <summary>Actual submarine AUP resolved from the authoritative motion read model.</summary>

@@ -159,6 +159,8 @@ namespace Hecton8.UI
         private int _appliedLeftFooterVersion = int.MinValue;
         private int _appliedRightFooterVersion = int.MinValue;
         private IDataVault _glitchVault;
+        private LocalizationManager _localization;
+        private InputManager _nativeInputManager;
         private VaultBufferHandle<byte> _glitchTableHandle;
         private bool _glitchTableHandleReady;
         private bool _hotSwapRegistered;
@@ -170,6 +172,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
             RefreshBindings();
             RefreshLocalizedTextCache();
             EnsureBuilt();
@@ -298,7 +301,26 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
                 BindGlitchTableVault(currentService as IDataVault);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+            {
+                _localization = currentService as LocalizationManager;
+                RefreshLocalizedTextCache();
+                InvalidateAppliedLabelVersions();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime ||
+                serviceSlot == GlobalRegistryServiceSlot.Input)
+            {
+                _nativeInputManager = GlobalRegistry.NativeInputManager;
+                _cachedRebootBindingLength = 0;
+                _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -367,6 +389,12 @@ namespace Hecton8.UI
             return true;
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            _localization = GlobalRegistry.Localization;
+            _nativeInputManager = GlobalRegistry.NativeInputManager;
+        }
+
         private void Unsubscribe()
         {
             PDAEvents.Unregister(this);
@@ -420,7 +448,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localization;
             if (_intrusionManager == null)
                 _intrusionManager = PDAIntrusionManager.ActiveRuntimeInstance;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
@@ -710,7 +738,7 @@ namespace Hecton8.UI
             if (_intrusionManager == null)
                 _intrusionManager = PDAIntrusionManager.ActiveRuntimeInstance;
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localization;
             bool rtl = manager != null && LocalizationManager.IsRightToLeftLanguage(manager.CurrentLanguage);
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             bool useStressReactiveStrings = stressBucket > 0;
@@ -1004,9 +1032,9 @@ namespace Hecton8.UI
             SplitSinglePlaceholderTemplate(IntrusionHintFormat, out _localizedIntrusionHintPrefix, out _localizedIntrusionHintSuffix);
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localization;
             if (manager == null)
                 return fallback;
 
@@ -1345,7 +1373,7 @@ namespace Hecton8.UI
 
         private ReadOnlySpan<char> ResolveRebootBinding()
         {
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            InputManager inputManager = _nativeInputManager;
             InputDisplayStyle displayStyle = inputManager != null
                 ? inputManager.CurrentDisplayStyle
                 : InputDisplayStyle.KeyboardMouse;

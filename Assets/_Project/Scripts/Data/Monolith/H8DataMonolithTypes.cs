@@ -11,6 +11,9 @@ namespace Hecton8.Data
         /// <summary>Binary magic for the directory block: H8DM.</summary>
         public const uint BlobMagic = 0x4D443848u;
 
+        /// <summary>Header byte count written at offset 0.</summary>
+        public const ushort HeaderSizeMarker = HeaderSizeBytes;
+
         /// <summary>Current binary format version.</summary>
         public const ushort FormatVersion = 1;
 
@@ -33,7 +36,7 @@ namespace Hecton8.Data
         public const int SectionAlignmentBytes = 16;
 
         /// <summary>Master item record size.</summary>
-        public const int ItemRecordSize = 64;
+        public const int ItemRecordSize = 80;
 
         /// <summary>Creature genome trait record size.</summary>
         public const int CreatureTraitRecordSize = 64;
@@ -43,6 +46,18 @@ namespace Hecton8.Data
 
         /// <summary>Biome record size.</summary>
         public const int BiomeRecordSize = 64;
+
+        /// <summary>Economy scalar record size.</summary>
+        public const int EconomyRecordSize = 64;
+
+        /// <summary>Physics scalar record size.</summary>
+        public const int PhysicsConstantsRecordSize = 64;
+
+        /// <summary>Data Monolith telemetry ring entry size.</summary>
+        public const int TelemetryEntrySize = 64;
+
+        /// <summary>Fixed boot telemetry ring capacity.</summary>
+        public const int TelemetryRingCapacity = 300;
     }
 
     /// <summary>
@@ -73,7 +88,9 @@ namespace Hecton8.Data
         SopErrors = 21u,
         HudLayouts = 22u,
         LocalizationUtf8 = 23u,
-        SectorPageDirectory = 24u
+        SectorPageDirectory = 24u,
+        Economy = 25u,
+        PhysicsConstants = 26u
     }
 
     /// <summary>
@@ -98,392 +115,461 @@ namespace Hecton8.Data
     /// <summary>
     /// Mandatory 16-byte BIOS header. Checksum covers all bytes after this header.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = H8DataLayoutConstants.HeaderSizeBytes)]
+    [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.HeaderSizeBytes)]
     public struct H8DataBlobHeader
     {
-        /// <summary>World seed used by the authored blob, or zero for seed-agnostic static data.</summary>
-        public uint WorldSeed;
+        /// <summary>Magic: H8DM. Duplicated in the directory for cold corruption triage.</summary>
+        [FieldOffset(0)] public uint Magic;
 
-        /// <summary>FNV-1a hash of the app version used by the bake.</summary>
-        public uint AppVersionHash;
+        /// <summary>Binary format version.</summary>
+        [FieldOffset(4)] public ushort FormatVersion;
+
+        /// <summary>Header byte count. Must be 16.</summary>
+        [FieldOffset(6)] public ushort HeaderBytes;
 
         /// <summary>XXHash3-64 checksum for bytes [16..blobLength).</summary>
-        public ulong Checksum64;
+        [FieldOffset(8)] public ulong Checksum64;
     }
 
     /// <summary>
     /// Fixed blob directory stored immediately after the 16-byte BIOS header.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = H8DataLayoutConstants.DirectorySizeBytes)]
+    [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.DirectorySizeBytes)]
     public struct H8DataBlobDirectory
     {
-        public uint Magic;
-        public ushort FormatVersion;
-        public ushort SectionCount;
-        public uint SectionTableOffset;
-        public uint SectionTableBytes;
-        public uint BlobBytes;
-        public uint DataStartOffset;
-        public uint LocalizationOffset;
-        public uint LocalizationBytes;
-        public uint Flags;
-        public uint Reserved0;
-        public uint Reserved1;
-        public uint Reserved2;
-        public uint Reserved3;
-        public uint Reserved4;
-        public uint Reserved5;
-        public uint Reserved6;
+        [FieldOffset(0)] public uint Magic;
+        [FieldOffset(4)] public ushort FormatVersion;
+        [FieldOffset(6)] public ushort SectionCount;
+        [FieldOffset(8)] public uint SectionTableOffset;
+        [FieldOffset(12)] public uint SectionTableBytes;
+        [FieldOffset(16)] public uint BlobBytes;
+        [FieldOffset(20)] public uint DataStartOffset;
+        [FieldOffset(24)] public uint LocalizationOffset;
+        [FieldOffset(28)] public uint LocalizationBytes;
+        [FieldOffset(32)] public uint Flags;
+        [FieldOffset(36)] public uint WorldSeed;
+        [FieldOffset(40)] public uint AppVersionHash;
+        [FieldOffset(44)] public uint Reserved0;
+        [FieldOffset(48)] public uint Reserved1;
+        [FieldOffset(52)] public uint Reserved2;
+        [FieldOffset(56)] public uint Reserved3;
+        [FieldOffset(60)] public uint Reserved4;
     }
 
     /// <summary>
     /// Fixed 16-byte section table entry.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct H8DataSectionEntry
     {
-        public uint SectionId;
-        public uint RecordSize;
-        public uint Count;
-        public uint OffsetBytes;
+        [FieldOffset(0)] public uint SectionId;
+        [FieldOffset(4)] public uint RecordSize;
+        [FieldOffset(8)] public uint Count;
+        [FieldOffset(12)] public uint OffsetBytes;
     }
 
     /// <summary>
-    /// Master item record. Exactly 64 bytes and addressable by base pointer + index * 64.
+    /// Master item record. Exactly 80 bytes and addressable by base pointer + index * 80.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = H8DataLayoutConstants.ItemRecordSize)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct H8ItemRecord
     {
-        public uint HashId;
-        public uint RecordIndex;
-        public uint CategoryHash;
-        public uint Flags;
-        public ushort MaxStack;
-        public ushort RecipeIngredientCount;
-        public ulong RecipeMask0;
-        public ulong RecipeMask1;
-        public float MassKg;
-        public float VolumeM3;
-        public float BaseQuality;
-        public float HeatCapacity;
-        public uint YieldHash;
-        public int NameUtf8Offset;
-        public int DescriptionUtf8Offset;
+        [FieldOffset(0)] public uint HashId;
+        [FieldOffset(4)] public uint RecordIndex;
+        [FieldOffset(8)] public uint CategoryHash;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public ulong RecipeMask0;
+        [FieldOffset(24)] public ulong RecipeMask1;
+        [FieldOffset(32)] public float MassKg;
+        [FieldOffset(36)] public float VolumeM3;
+        [FieldOffset(40)] public float BaseQuality;
+        [FieldOffset(44)] public float HeatCapacity;
+        [FieldOffset(48)] public uint YieldHash;
+        [FieldOffset(52)] public int NameUtf8Offset;
+        [FieldOffset(56)] public int DescriptionUtf8Offset;
+        [FieldOffset(60)] public uint NameUtf8ByteLength;
+        [FieldOffset(64)] public uint DescriptionUtf8ByteLength;
+        [FieldOffset(68)] public ushort MaxStack;
+        [FieldOffset(70)] public ushort RecipeIngredientCount;
+        [FieldOffset(72)] public uint Cost;
+        [FieldOffset(76)] public float AccessFrequency;
     }
 
     /// <summary>
     /// Compact creature genome data consumed by ecosystem and steering jobs. Exactly 32 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = H8DataLayoutConstants.CreatureGenomeTraitBlockSize)]
+    [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.CreatureGenomeTraitBlockSize)]
     public struct H8CreatureGenomeTraitBlock
     {
-        public float Aggression;
-        public float Metabolism;
-        public float MaxHealth;
-        public float CruiseSpeed;
-        public float BurstSpeed;
-        public float SpawnCreditCost;
-        public float PressureMinMeters;
-        public float PressureMaxMeters;
+        [FieldOffset(0)] public float Aggression;
+        [FieldOffset(4)] public float Metabolism;
+        [FieldOffset(8)] public float MaxHealth;
+        [FieldOffset(12)] public float CruiseSpeed;
+        [FieldOffset(16)] public float BurstSpeed;
+        [FieldOffset(20)] public float SpawnCreditCost;
+        [FieldOffset(24)] public float PressureMinMeters;
+        [FieldOffset(28)] public float PressureMaxMeters;
     }
 
     /// <summary>
     /// Creature genome trait table record. Exactly 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = H8DataLayoutConstants.CreatureTraitRecordSize)]
+    [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.CreatureTraitRecordSize)]
     public struct H8CreatureTraitRecord
     {
-        public uint SpeciesHash;
-        public uint RecordIndex;
-        public uint MateMask;
-        public uint BiomeMask;
-        public uint Flags;
-        public H8CreatureGenomeTraitBlock Genome;
-        public int DisplayNameUtf8Offset;
-        public uint LootTableHash;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint SpeciesHash;
+        [FieldOffset(4)] public uint RecordIndex;
+        [FieldOffset(8)] public uint MateMask;
+        [FieldOffset(12)] public uint BiomeMask;
+        [FieldOffset(16)] public H8CreatureGenomeTraitBlock Genome;
+        [FieldOffset(48)] public int DisplayNameUtf8Offset;
+        [FieldOffset(52)] public uint LootTableHash;
+        [FieldOffset(56)] public uint Flags;
+        [FieldOffset(60)] public uint Reserved0;
     }
 
     /// <summary>
     /// Biome scalar record. Exactly 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = H8DataLayoutConstants.BiomeRecordSize)]
+    [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.BiomeRecordSize)]
     public struct H8BiomeRecord
     {
-        public uint BiomeHash;
-        public uint RecordIndex;
-        public uint Flags;
-        public uint SurfaceId;
-        public float MinDepthMeters;
-        public float MaxDepthMeters;
-        public float TemperatureCelsius;
-        public float PressureScalar;
-        public float FogDensity;
-        public float LightScatterR;
-        public float LightScatterG;
-        public float LightScatterB;
-        public int DisplayNameUtf8Offset;
-        public uint HeatmapId;
-        public uint RadiationFieldHash;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint BiomeHash;
+        [FieldOffset(4)] public uint RecordIndex;
+        [FieldOffset(8)] public uint Flags;
+        [FieldOffset(12)] public uint SurfaceId;
+        [FieldOffset(16)] public float MinDepthMeters;
+        [FieldOffset(20)] public float MaxDepthMeters;
+        [FieldOffset(24)] public float TemperatureCelsius;
+        [FieldOffset(28)] public float PressureScalar;
+        [FieldOffset(32)] public float FogDensity;
+        [FieldOffset(36)] public float LightScatterR;
+        [FieldOffset(40)] public float LightScatterG;
+        [FieldOffset(44)] public float LightScatterB;
+        [FieldOffset(48)] public int DisplayNameUtf8Offset;
+        [FieldOffset(52)] public uint HeatmapId;
+        [FieldOffset(56)] public uint RadiationFieldHash;
+        [FieldOffset(60)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct H8RecipeRecord
     {
-        public uint OutputHash;
-        public uint StationHash;
-        public uint Flags;
-        public uint IngredientCount;
-        public ulong IngredientMask0;
-        public ulong IngredientMask1;
-        public uint IngredientHash0;
-        public uint IngredientHash1;
-        public uint IngredientHash2;
-        public uint IngredientHash3;
-        public float CraftSeconds;
-        public uint OutputCount;
-        public uint Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public ulong IngredientMask0;
+        [FieldOffset(8)] public ulong IngredientMask1;
+        [FieldOffset(16)] public uint OutputHash;
+        [FieldOffset(20)] public uint StationHash;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint IngredientCount;
+        [FieldOffset(32)] public uint IngredientHash0;
+        [FieldOffset(36)] public uint IngredientHash1;
+        [FieldOffset(40)] public uint IngredientHash2;
+        [FieldOffset(44)] public uint IngredientHash3;
+        [FieldOffset(48)] public float CraftSeconds;
+        [FieldOffset(52)] public uint OutputCount;
+        [FieldOffset(56)] public uint Reserved0;
+        [FieldOffset(60)] public uint Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct H8BiomeHeatmapCellRecord
     {
-        public uint BiomeHash;
-        public ushort X;
-        public ushort Y;
-        public uint Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public uint BiomeHash;
+        [FieldOffset(4)] public uint Reserved0;
+        [FieldOffset(8)] public uint Reserved1;
+        [FieldOffset(12)] public ushort X;
+        [FieldOffset(14)] public ushort Y;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct H8QuestNodeRecord
     {
-        public uint NodeHash;
-        public uint CompletionFlagId;
-        public uint FirstEdgeIndex;
-        public ushort EdgeCount;
-        public ushort NodeType;
-        public uint RequiredMask0;
-        public uint RequiredMask1;
-        public uint RequiredMask2;
-        public uint RequiredMask3;
+        [FieldOffset(0)] public uint NodeHash;
+        [FieldOffset(4)] public uint CompletionFlagId;
+        [FieldOffset(8)] public uint FirstEdgeIndex;
+        [FieldOffset(12)] public uint RequiredMask0;
+        [FieldOffset(16)] public uint RequiredMask1;
+        [FieldOffset(20)] public uint RequiredMask2;
+        [FieldOffset(24)] public uint RequiredMask3;
+        [FieldOffset(28)] public ushort EdgeCount;
+        [FieldOffset(30)] public ushort NodeType;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct H8QuestEdgeRecord
     {
-        public uint FromNodeHash;
-        public uint ToNodeHash;
-        public uint GateFlagId;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint FromNodeHash;
+        [FieldOffset(4)] public uint ToNodeHash;
+        [FieldOffset(8)] public uint GateFlagId;
+        [FieldOffset(12)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct H8LootCdfRecord
     {
-        public uint TableHash;
-        public uint ItemHash;
-        public uint CumulativeWeight;
-        public uint TotalWeight;
+        [FieldOffset(0)] public uint TableHash;
+        [FieldOffset(4)] public uint ItemHash;
+        [FieldOffset(8)] public uint CumulativeWeight;
+        [FieldOffset(12)] public uint TotalWeight;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct H8VoxelMaterialRecord
     {
-        public uint VoxelHash;
-        public uint YieldHash;
-        public float Hardness;
-        public float MeltingPointCelsius;
-        public float Density;
-        public uint SurfaceId;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint VoxelHash;
+        [FieldOffset(4)] public uint YieldHash;
+        [FieldOffset(8)] public float Hardness;
+        [FieldOffset(12)] public float MeltingPointCelsius;
+        [FieldOffset(16)] public float Density;
+        [FieldOffset(20)] public uint SurfaceId;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct H8AudioClipRegistryRecord
     {
-        public uint EventHash;
-        public int AddressableKeyUtf8Offset;
-        public uint BankHash;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint EventHash;
+        [FieldOffset(4)] public int AddressableKeyUtf8Offset;
+        [FieldOffset(8)] public uint BankHash;
+        [FieldOffset(12)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct H8VfxScalarRecord
     {
-        public uint EffectHash;
-        public float EmissionRate;
-        public float ColorR;
-        public float ColorG;
-        public float ColorB;
-        public float ColorA;
-        public float Intensity;
-        public uint Flags;
+        [FieldOffset(0)] public uint EffectHash;
+        [FieldOffset(4)] public float EmissionRate;
+        [FieldOffset(8)] public float ColorR;
+        [FieldOffset(12)] public float ColorG;
+        [FieldOffset(16)] public float ColorB;
+        [FieldOffset(20)] public float ColorA;
+        [FieldOffset(24)] public float Intensity;
+        [FieldOffset(28)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct H8DepthPressureSampleRecord
     {
-        public float DepthMeters;
-        public float PressureAtmospheres;
-        public float Normalized;
-        public uint Reserved0;
+        [FieldOffset(0)] public float DepthMeters;
+        [FieldOffset(4)] public float PressureAtmospheres;
+        [FieldOffset(8)] public float Normalized;
+        [FieldOffset(12)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct H8ToolHeatCapacityRecord
     {
-        public uint ToolHash;
-        public float HeatCapacity;
-        public float MaxSafeTemperature;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint ToolHash;
+        [FieldOffset(4)] public float HeatCapacity;
+        [FieldOffset(8)] public float MaxSafeTemperature;
+        [FieldOffset(12)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct H8SubmarineHullConstantRecord
     {
-        public uint PartHash;
-        public float MassKg;
-        public float DragScalar;
-        public float BuoyancyScalar;
-        public float CrushDepthMeters;
-        public float IntegrityCap;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint PartHash;
+        [FieldOffset(4)] public float MassKg;
+        [FieldOffset(8)] public float DragScalar;
+        [FieldOffset(12)] public float BuoyancyScalar;
+        [FieldOffset(16)] public float CrushDepthMeters;
+        [FieldOffset(20)] public float IntegrityCap;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct H8NarrativeTriggerRecord
     {
-        public uint TriggerHash;
-        public long AupX;
-        public long AupY;
-        public long AupZ;
-        public float RadiusMeters;
+        [FieldOffset(0)] public double AupX;
+        [FieldOffset(8)] public double AupY;
+        [FieldOffset(16)] public double AupZ;
+        [FieldOffset(24)] public uint TriggerHash;
+        [FieldOffset(28)] public float RadiusMeters;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct H8PhysicsMaterialRecord
     {
-        public uint SurfaceHash;
-        public float Friction;
-        public float Restitution;
-        public uint Flags;
+        [FieldOffset(0)] public uint SurfaceHash;
+        [FieldOffset(4)] public float Friction;
+        [FieldOffset(8)] public float Restitution;
+        [FieldOffset(12)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct H8GhostModuleRecord
     {
-        public uint ModuleHash;
-        public uint Flags;
-        public float SnapOffsetX;
-        public float SnapOffsetY;
-        public float SnapOffsetZ;
-        public float PowerRequirement;
-        public float BuildCostScalar;
-        public uint RecipeHash;
-        public int DisplayNameUtf8Offset;
-        public uint PortMask0;
-        public uint PortMask1;
-        public uint PortMask2;
-        public uint PortMask3;
-        public uint Reserved0;
-        public uint Reserved1;
-        public uint Reserved2;
+        [FieldOffset(0)] public uint ModuleHash;
+        [FieldOffset(4)] public uint Flags;
+        [FieldOffset(8)] public float SnapOffsetX;
+        [FieldOffset(12)] public float SnapOffsetY;
+        [FieldOffset(16)] public float SnapOffsetZ;
+        [FieldOffset(20)] public float PowerRequirement;
+        [FieldOffset(24)] public float BuildCostScalar;
+        [FieldOffset(28)] public uint RecipeHash;
+        [FieldOffset(32)] public int DisplayNameUtf8Offset;
+        [FieldOffset(36)] public uint PortMask0;
+        [FieldOffset(40)] public uint PortMask1;
+        [FieldOffset(44)] public uint PortMask2;
+        [FieldOffset(48)] public uint PortMask3;
+        [FieldOffset(52)] public uint Reserved0;
+        [FieldOffset(56)] public uint Reserved1;
+        [FieldOffset(60)] public uint Reserved2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct H8RadiationIntensityCellRecord
     {
-        public uint CellHash;
-        public float IntensitySv;
-        public float FalloffMeters;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint CellHash;
+        [FieldOffset(4)] public float IntensitySv;
+        [FieldOffset(8)] public float FalloffMeters;
+        [FieldOffset(12)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct H8SpawnCreditCostRecord
     {
-        public uint EntityHash;
-        public float CreditCost;
-        public uint DirectorMask;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint EntityHash;
+        [FieldOffset(4)] public float CreditCost;
+        [FieldOffset(8)] public uint DirectorMask;
+        [FieldOffset(12)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct H8LightAttenuationSampleRecord
     {
-        public float DepthMeters;
-        public float FogDensity;
-        public float ScatterR;
-        public float ScatterG;
-        public float ScatterB;
-        public float Absorption;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public float DepthMeters;
+        [FieldOffset(4)] public float FogDensity;
+        [FieldOffset(8)] public float ScatterR;
+        [FieldOffset(12)] public float ScatterG;
+        [FieldOffset(16)] public float ScatterB;
+        [FieldOffset(20)] public float Absorption;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct H8SopErrorRecord
     {
-        public uint ErrorHash;
-        public int MessageUtf8Offset;
-        public uint Severity;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint ErrorHash;
+        [FieldOffset(4)] public int MessageUtf8Offset;
+        [FieldOffset(8)] public uint Severity;
+        [FieldOffset(12)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct H8HudLayoutRecord
     {
-        public uint ElementHash;
-        public uint Flags;
-        public float M00;
-        public float M01;
-        public float M02;
-        public float M03;
-        public float M10;
-        public float M11;
-        public float M12;
-        public float M13;
-        public float M20;
-        public float M21;
-        public float M22;
-        public float M23;
-        public float M30;
-        public float M31;
+        [FieldOffset(0)] public uint ElementHash;
+        [FieldOffset(4)] public uint Flags;
+        [FieldOffset(8)] public float M00;
+        [FieldOffset(12)] public float M01;
+        [FieldOffset(16)] public float M02;
+        [FieldOffset(20)] public float M03;
+        [FieldOffset(24)] public float M10;
+        [FieldOffset(28)] public float M11;
+        [FieldOffset(32)] public float M12;
+        [FieldOffset(36)] public float M13;
+        [FieldOffset(40)] public float M20;
+        [FieldOffset(44)] public float M21;
+        [FieldOffset(48)] public float M22;
+        [FieldOffset(52)] public float M23;
+        [FieldOffset(56)] public float M30;
+        [FieldOffset(60)] public float M31;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct H8SectorPageRecord
     {
-        public uint SectorHash;
-        public uint BiomeHash;
-        public uint FileOffsetBytes;
-        public uint ByteCount;
-        public long AupX;
-        public long AupZ;
+        [FieldOffset(0)] public long AupX;
+        [FieldOffset(8)] public long AupZ;
+        [FieldOffset(16)] public uint SectorHash;
+        [FieldOffset(20)] public uint BiomeHash;
+        [FieldOffset(24)] public uint FileOffsetBytes;
+        [FieldOffset(28)] public uint ByteCount;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.EconomyRecordSize)]
+    public struct H8EconomyRecord
+    {
+        [FieldOffset(0)] public uint HashId;
+        [FieldOffset(4)] public int NameUtf8Offset;
+        [FieldOffset(8)] public int DescriptionUtf8Offset;
+        [FieldOffset(12)] public float BasePrice;
+        [FieldOffset(16)] public float Scarcity01;
+        [FieldOffset(20)] public float Demand01;
+        [FieldOffset(24)] public float SupplyRefreshSeconds;
+        [FieldOffset(28)] public float AccessFrequency;
+        [FieldOffset(32)] public uint NameUtf8ByteLength;
+        [FieldOffset(36)] public uint DescriptionUtf8ByteLength;
+        [FieldOffset(40)] public uint Flags;
+        [FieldOffset(44)] public uint Reserved0;
+        [FieldOffset(48)] public uint Reserved1;
+        [FieldOffset(52)] public uint Reserved2;
+        [FieldOffset(56)] public uint Reserved3;
+        [FieldOffset(60)] public uint Reserved4;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.PhysicsConstantsRecordSize)]
+    public struct H8PhysicsConstantsRecord
+    {
+        [FieldOffset(0)] public uint HashId;
+        [FieldOffset(4)] public int NameUtf8Offset;
+        [FieldOffset(8)] public int DescriptionUtf8Offset;
+        [FieldOffset(12)] public uint NameUtf8ByteLength;
+        [FieldOffset(16)] public uint DescriptionUtf8ByteLength;
+        [FieldOffset(20)] public float MassKg;
+        [FieldOffset(24)] public float AddedMass;
+        [FieldOffset(28)] public float LinearDrag;
+        [FieldOffset(32)] public float Buoyancy;
+        [FieldOffset(36)] public float CrushDepthM;
+        [FieldOffset(40)] public float AupSectorSizeMeters;
+        [FieldOffset(44)] public float MaxWorldBoundsMeters;
+        [FieldOffset(48)] public float AccessFrequency;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public uint Reserved0;
+        [FieldOffset(60)] public uint Reserved1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.TelemetryEntrySize)]
+    public struct H8DataMonolithTelemetryEntry
+    {
+        [FieldOffset(0)] public ulong Checksum64;
+        [FieldOffset(8)] public long LoadTicks;
+        [FieldOffset(16)] public long IoTicks;
+        [FieldOffset(24)] public uint FrameIndex;
+        [FieldOffset(28)] public uint BlobBytes;
+        [FieldOffset(32)] public uint SectionCount;
+        [FieldOffset(36)] public uint LoadStatus;
+        [FieldOffset(40)] public uint PathFlags;
+        [FieldOffset(44)] public uint StateHash;
+        [FieldOffset(48)] public uint Reserved0;
+        [FieldOffset(52)] public uint Reserved1;
+        [FieldOffset(56)] public uint Reserved2;
+        [FieldOffset(60)] public uint Reserved3;
     }
 
     /// <summary>
     /// Cold lookup alias from a static-data authored hash to a LocData UTF-8 slice.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 12)]
     public struct H8StaticLocalizationReference
     {
-        public uint KeyHash;
-        public int Utf8Offset;
-        public int ByteLength;
+        [FieldOffset(0)] public uint KeyHash;
+        [FieldOffset(4)] public int Utf8Offset;
+        [FieldOffset(8)] public int ByteLength;
     }
 
     /// <summary>
     /// Zero-allocation cursor for walking static LocData hash aliases once.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public struct H8StaticLocalizationCursor
     {
-        public int Section;
-        public int RecordIndex;
+        [FieldOffset(0)] public int Section;
+        [FieldOffset(4)] public int RecordIndex;
     }
 
     /// <summary>
@@ -522,7 +608,10 @@ namespace Hecton8.Data
                    IsAligned16(UnsafeUtility.SizeOf<H8LightAttenuationSampleRecord>()) &&
                    IsAligned16(UnsafeUtility.SizeOf<H8SopErrorRecord>()) &&
                    IsAligned16(UnsafeUtility.SizeOf<H8HudLayoutRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8SectorPageRecord>());
+                   IsAligned16(UnsafeUtility.SizeOf<H8SectorPageRecord>()) &&
+                   UnsafeUtility.SizeOf<H8EconomyRecord>() == H8DataLayoutConstants.EconomyRecordSize &&
+                   UnsafeUtility.SizeOf<H8PhysicsConstantsRecord>() == H8DataLayoutConstants.PhysicsConstantsRecordSize &&
+                   UnsafeUtility.SizeOf<H8DataMonolithTelemetryEntry>() == H8DataLayoutConstants.TelemetryEntrySize;
         }
 
         private static bool IsAligned16(int byteCount)

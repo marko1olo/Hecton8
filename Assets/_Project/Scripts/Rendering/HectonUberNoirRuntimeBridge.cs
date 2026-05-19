@@ -57,22 +57,34 @@ namespace Hecton8.Core
         /// <summary>
         /// Fixed-size shader feature telemetry entry for ARM64/Quest-safe DataVault storage.
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = TelemetryEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = TelemetryEntrySizeBytes)]
         public struct UberNoirShaderTelemetryEntry
         {
             public const int SizeBytes = TelemetryEntrySizeBytes;
 
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint FeatureMask;
+            [FieldOffset(8)]
             public float SystemStress01;
+            [FieldOffset(12)]
             public float HighCostAllowed01;
+            [FieldOffset(16)]
             public float VisualOverkill01;
+            [FieldOffset(20)]
             public uint QualityTier;
+            [FieldOffset(24)]
             public uint Flags;
+            [FieldOffset(28)]
             public uint StateHash;
+            [FieldOffset(32)]
             public float PomEnabled01;
+            [FieldOffset(36)]
             public float SecondaryCaustics01;
+            [FieldOffset(40)]
             public float Refraction01;
+            [FieldOffset(44)]
             public float Reserved0;
         }
 
@@ -156,8 +168,15 @@ namespace Hecton8.Core
             float stress01 = ResolveSystemStress01();
             bool lowTier = IsLowTier(GlobalRegistry.ScalabilityTier, GlobalRegistry.ScalabilityTierProfileByte);
             bool stressShed = ResolveStressShed(stress01);
-            float highCostAllowed01 = lowTier || stressShed ? 0f : 1f;
-            float visualOverkill01 = !lowTier && !stressShed && IsHighTier(GlobalRegistry.ScalabilityTier) ? 1f : 0f;
+            float quality01 = ResolveGlobalQualityWeight01();
+            float hardwareCeiling01 = ResolveHardwareVisualCeiling01(GlobalRegistry.ScalabilityTier, GlobalRegistry.ScalabilityTierProfileByte);
+            float stressAllowance01 = 1f - Smooth01(math.saturate((stress01 - StressRecoveryThreshold) * math.rcp(math.max(0.0001f, StressShedThreshold - StressRecoveryThreshold))));
+            float highCostAllowed01 = quality01 * hardwareCeiling01 * stressAllowance01;
+            if (stressShed)
+                highCostAllowed01 = math.min(highCostAllowed01, 0.05f);
+            float visualOverkill01 = Smooth01(math.saturate((quality01 - 0.78f) * math.rcp(0.22f))) *
+                                     Smooth01(hardwareCeiling01) *
+                                     stressAllowance01;
             uint featureMask = BuildFeatureMask(lowTier, stressShed, highCostAllowed01, visualOverkill01);
 
             if (!math.isfinite(stress01) || !math.isfinite(highCostAllowed01) || !math.isfinite(visualOverkill01))
@@ -240,21 +259,20 @@ namespace Hecton8.Core
                     return;
 
                 uint tier = (uint)GlobalRegistry.ScalabilityTier;
-                ring[_telemetryCursor] = new UberNoirShaderTelemetryEntry
-                {
-                    Frame = (uint)math.max(0, Time.frameCount),
-                    FeatureMask = featureMask,
-                    SystemStress01 = stress01,
-                    HighCostAllowed01 = highCostAllowed01,
-                    VisualOverkill01 = visualOverkill01,
-                    QualityTier = tier,
-                    Flags = 0u,
-                    StateHash = Mix(featureMask ^ ((uint)math.round(stress01 * 1000f) << 12) ^ (tier << 24)),
-                    PomEnabled01 = (featureMask & FeaturePom) != 0u ? 1f : 0f,
-                    SecondaryCaustics01 = (featureMask & FeatureSecondaryCaustics) != 0u ? 1f : 0f,
-                    Refraction01 = (featureMask & FeatureScreenRefraction) != 0u ? 1f : 0f,
-                    Reserved0 = 0f
-                };
+                UberNoirShaderTelemetryEntry entry = default;
+                entry.Frame = (uint)math.max(0, Time.frameCount);
+                entry.FeatureMask = featureMask;
+                entry.SystemStress01 = stress01;
+                entry.HighCostAllowed01 = highCostAllowed01;
+                entry.VisualOverkill01 = visualOverkill01;
+                entry.QualityTier = tier;
+                entry.Flags = 0u;
+                entry.StateHash = Mix(featureMask ^ ((uint)math.round(stress01 * 1000f) << 12) ^ (tier << 24));
+                entry.PomEnabled01 = (featureMask & FeaturePom) != 0u ? 1f : 0f;
+                entry.SecondaryCaustics01 = (featureMask & FeatureSecondaryCaustics) != 0u ? 1f : 0f;
+                entry.Refraction01 = (featureMask & FeatureScreenRefraction) != 0u ? 1f : 0f;
+                entry.Reserved0 = 0f;
+                ring[_telemetryCursor] = entry;
 
                 _telemetryCursor++;
                 if (_telemetryCursor >= TelemetryCapacity)
@@ -461,17 +479,41 @@ namespace Hecton8.Core
             return math.isfinite(stress01) ? math.saturate(stress01) : 0f;
         }
 
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float quality01 = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(quality01) ? math.saturate(quality01) : 0f;
+        }
+
+        private static float ResolveHardwareVisualCeiling01(HectonQualityTier tier, byte profileByte)
+        {
+            if (profileByte == ScalabilityTierProfiles.LowMx350 || tier == HectonQualityTier.Unknown || tier == HectonQualityTier.Low)
+                return 0.24f;
+
+            if (tier == HectonQualityTier.Mx350)
+                return 0.34f;
+
+            if (tier == HectonQualityTier.Mid)
+                return 0.58f;
+
+            if (tier == HectonQualityTier.High)
+                return 0.82f;
+
+            return 1f;
+        }
+
+        private static float Smooth01(float value)
+        {
+            value = math.saturate(value);
+            return value * value * (3f - 2f * value);
+        }
+
         private static bool IsLowTier(HectonQualityTier tier, byte profileByte)
         {
             return profileByte == ScalabilityTierProfiles.LowMx350 ||
                    tier == HectonQualityTier.Unknown ||
                    tier == HectonQualityTier.Low ||
                    tier == HectonQualityTier.Mx350;
-        }
-
-        private static bool IsHighTier(HectonQualityTier tier)
-        {
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
         }
 
         private static bool ValidateTelemetryLayout()

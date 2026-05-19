@@ -1,9 +1,8 @@
 using System;
 using System.Buffers.Binary;
-using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.SaveSystem;
 using Unity.Collections;
@@ -38,9 +37,12 @@ namespace Hecton8.Optimization
         private const int MaxAddressableHandleMapCapacity = MaxTrackedAddressableCapacity * 2;
         private const int HeapTelemetryCapacity = 300;
         private const int CacheProfileCapacity = 256;
+        private const int CacheProfileCsvScratchBytes = 64 * 1024;
+        private const int DetachedReleaseHandleCapacity = 64;
+        private const float AddressableMapPressureThreshold = 0.85f;
         private const float MinimumAdaptiveTtlSeconds = 10f;
         private const float DefaultHighEndTtlSeconds = 300f;
-        private const float SharedBundleTtlMultiplier = 2f;
+        private const float SharedBundleTtlMultiplier = 1.5f;
         private const int LeakRefCountThreshold = 50;
         private const uint HeapTelemetryFaultFlag = 1u << 0;
         private const uint HeapTelemetryVramPanicFlag = 1u << 1;
@@ -109,6 +111,7 @@ namespace Hecton8.Optimization
         private VaultBufferHandle<byte> _assetTrackerFlagsVaultHandle;
         private VaultBufferHandle<AssetHandleMapEntryDTO> _assetHandleMapVaultHandle;
         private VaultBufferHandle<AssetCacheProfileDTO> _cacheProfileVaultHandle;
+        private VaultBufferHandle<byte> _cacheProfileCsvScratchVaultHandle;
         private VaultBufferHandle<AssetHeapTelemetryEntry> _heapTelemetryVaultHandle;
         private SystemDispatcher _cachedDispatcher;
         private VRAMPressureMonitor _cachedVramPressure;
@@ -129,26 +132,24 @@ namespace Hecton8.Optimization
         private int _lastAddressableDependencyOrder;
         private int _addressableDependencyGroupLoadCount;
         private AsyncOperationHandle[] _addressableHandlePool;
+        private AsyncOperationHandle[] _detachedReleaseHandles;
         private uint[] _addressableHandleHashes;
         private uint[] _addressableBundlePrefixHashes;
         private int _addressableHandleCount;
+        private int _detachedReleaseHandleCount;
 #endif
 
-        // COLD ALLOC: Dictionary<uint, AssetRecord>[MaxTrackedAddressableCapacity] - global asset residency registry - owner: AssetLifecycleGovernor
-        private readonly Dictionary<uint, AssetRecord> _registry = new Dictionary<uint, AssetRecord>(MaxTrackedAddressableCapacity);
-        // COLD ALLOC: Queue<uint>[MaxTrackedAddressableCapacity] - pending release queue drained on cold tick and pressure passes - owner: AssetLifecycleGovernor
-        private readonly Queue<uint> _pendingRelease = new Queue<uint>(MaxTrackedAddressableCapacity);
-        // COLD ALLOC: List<uint>[64] - eviction candidate scratch buffer capped by hard reaper pass - owner: AssetLifecycleGovernor
-        private readonly List<uint> _evictionCandidates = new List<uint>(MaxHardReaperEvictions);
-        // COLD ALLOC: List<uint>[64] - retry candidate scratch buffer for failed async dispatches - owner: AssetLifecycleGovernor
-        private readonly List<uint> _retryCandidates = new List<uint>(MaxHardReaperEvictions);
+        private ManagedAssetRecordTable _assetRecords;
+        private FixedUIntQueue _pendingReleaseQueue;
+        private FixedUIntList _evictionCandidates;
+        private FixedUIntList _retryCandidates;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         // COLD ALLOC: StringBuilder[512] - throttled diagnostics builder - owner: AssetLifecycleGovernor
 #endif
 
         internal long TrackedResidentBytes { get; private set; }
         internal long NativeHeapEstimateBytes => (long)(TrackedResidentBytes * NativeHeapOverheadFactor);
-        internal int PendingReleaseCount => _pendingRelease.Count;
+        internal int PendingReleaseCount => _pendingReleaseQueue.Count;
         internal Material CheckerboardMaterial => _checkerboardMaterial;
 #if UNITY_ADDRESSABLES_EXIST
         internal int AddressableDependencyGroupLoadCount => _addressableDependencyGroupLoadCount;
@@ -159,7 +160,7 @@ namespace Hecton8.Optimization
             int bootstrapHandleCapacity = Mathf.Clamp(maxTrackedAddressableHandles, 1, MaxTrackedAddressableCapacity);
             maxTrackedAddressableHandles = bootstrapHandleCapacity;
             maxRegistryCapacity = Mathf.Max(Mathf.Max(1, maxRegistryCapacity), bootstrapHandleCapacity);
-            _registry.EnsureCapacity(maxRegistryCapacity);
+            EnsureManagedRecordStorage();
             EnsureNativeHandleStorage();
             _nextHardReaperTime = Time.unscaledTime + HardReaperIntervalSeconds;
             _hardReaperUnloadCompletedCallback = HandleHardReaperUnloadCompleted;
@@ -196,22 +197,34 @@ namespace Hecton8.Optimization
             ResetAddressableHeapRuntimeState(true);
         }
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (UnsafeUtility.SizeOf<AssetHandleMapEntryDTO>() != 64)
+                Debug.LogError("[AssetLifecycleGovernor] AssetHandleMapEntryDTO must remain 64 bytes.", this);
+            if (UnsafeUtility.SizeOf<AssetTrackerDTO>() != 64)
+                Debug.LogError("[AssetLifecycleGovernor] AssetTrackerDTO must remain 64 bytes.", this);
+        }
+#endif
+
         private void ResetAddressableHeapRuntimeState(bool disposeFallbackAssets)
         {
+            _explicitBlindFrameWindowActive = true;
+            _explicitBlindFrameWindowUntil = 0f;
             ReleaseHardReaperAsyncHandles();
             SetHardReaperScannerInterferenceActive(false);
             _mockScreenFadeToBlackActive = false;
             _mockScreenFadeToBlackUntil = 0f;
-            _explicitBlindFrameWindowActive = false;
-            _explicitBlindFrameWindowUntil = 0f;
             _externalVramPanicActive = false;
             _externalVramPanicUntil = 0f;
 
-            _registry.Clear();
-            _pendingRelease.Clear();
+            _assetRecords.Clear();
+            _pendingReleaseQueue.Clear();
             _evictionCandidates.Clear();
             _retryCandidates.Clear();
             DisposeNativeHandleStorage();
+            _explicitBlindFrameWindowActive = false;
+            _explicitBlindFrameWindowUntil = 0f;
             _frameSequence = 0L;
             _nextColdReleaseTime = 0f;
             _nextColdTickWarningTime = 0f;
@@ -234,6 +247,24 @@ namespace Hecton8.Optimization
                 DisposeFallbackAssets();
         }
 
+        private void EnsureManagedRecordStorage()
+        {
+            _assetRecords.Initialize(MaxTrackedAddressableCapacity);
+            _pendingReleaseQueue.Initialize(MaxTrackedAddressableCapacity);
+            _evictionCandidates.Initialize(MaxHardReaperEvictions);
+            _retryCandidates.Initialize(MaxHardReaperEvictions);
+        }
+
+        private bool EnqueuePendingRelease(uint key)
+        {
+            if (_pendingReleaseQueue.Enqueue(key))
+                return true;
+
+            _lastLeakSuspectHash = key;
+            DumpHeapTelemetry();
+            return false;
+        }
+
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
@@ -253,6 +284,7 @@ namespace Hecton8.Optimization
             {
                 EvaluateAddressableTtlAndQueueReleases();
                 DrainPendingReleaseQueue(maxDeferredReleasesPerFrame);
+                DrainDetachedAddressableReleaseHandles();
                 PumpRetries();
                 ReleaseDistantChunkAddressables(MaxColdDistantChunkReleases);
                 EvaluateHardMemoryReaper(now);
@@ -281,7 +313,7 @@ namespace Hecton8.Optimization
             if (!ResolveCollision(ref key, assetGuid, address))
                 return key;
 
-            if (_registry.TryGetValue(key, out AssetRecord record))
+            if (_assetRecords.TryGetValue(key, out AssetRecord record))
             {
                 record.RefCount++;
                 record.Owner = owner != null ? owner : record.Owner;
@@ -299,7 +331,7 @@ namespace Hecton8.Optimization
                     TryApplyShaderFallback(ref record, asset);
                 }
 
-                _registry[key] = record;
+                _assetRecords.Set(key, record);
                 return key;
             }
 
@@ -327,7 +359,7 @@ namespace Hecton8.Optimization
             };
 
             TryApplyShaderFallback(ref created, asset);
-            _registry[key] = created;
+            _assetRecords.Set(key, created);
             TrackedResidentBytes += created.SizeBytes;
 
             if (asset == null && residencyKind != AssetResidencyKind.SceneOwned)
@@ -338,7 +370,7 @@ namespace Hecton8.Optimization
 
         internal void MarkLoaded(uint key, Object asset, long sizeBytes, bool ownsAssetInstance = false)
         {
-            if (!_registry.TryGetValue(key, out AssetRecord record))
+            if (!_assetRecords.TryGetValue(key, out AssetRecord record))
                 return;
 
             if (record.ActiveRequestId != 0)
@@ -358,7 +390,7 @@ namespace Hecton8.Optimization
             record.RetryCount = 0;
             record.LastAccessFrame = _frameSequence;
             TryApplyShaderFallback(ref record, asset);
-            _registry[key] = record;
+            _assetRecords.Set(key, record);
         }
 
 #if UNITY_ADDRESSABLES_EXIST
@@ -369,7 +401,7 @@ namespace Hecton8.Optimization
             long sizeBytes,
             bool isChunkAsset)
         {
-            if (!_registry.TryGetValue(key, out AssetRecord record))
+            if (!_assetRecords.TryGetValue(key, out AssetRecord record))
                 return;
 
             if (record.ActiveRequestId != 0)
@@ -392,7 +424,7 @@ namespace Hecton8.Optimization
             record.RetryCount = 0;
             record.LastAccessFrame = _frameSequence;
             TryApplyShaderFallback(ref record, asset);
-            _registry[key] = record;
+            _assetRecords.Set(key, record);
         }
 
         internal void MarkAddressableDependencyGroupLoaded(
@@ -442,14 +474,15 @@ namespace Hecton8.Optimization
                 return true;
 
             if (!TryResolveTrackerViews(
-                    out _,
-                    out _,
+                    out NativeArray<AssetTrackerDTO> trackers,
+                    out NativeArray<float> ttl,
                     out NativeArray<byte> trackerFlags,
-                    out _))
+                    out NativeArray<AssetHandleMapEntryDTO> handleMap))
             {
                 return false;
             }
 
+            HandleAddressableMapPressureIfNeeded(trackers, ttl, trackerFlags, handleMap);
             int slot = AllocateAddressableHandleSlot(assetHash, trackerFlags);
             if (slot < 0)
             {
@@ -480,7 +513,7 @@ namespace Hecton8.Optimization
                     handle))
             {
                 if (handle.IsValid())
-                    Addressables.Release(handle);
+                    TryExecuteOrDeferBlindFrameRelease(handle);
 
                 handle = default;
                 _lastLeakSuspectHash = assetHash;
@@ -526,14 +559,15 @@ namespace Hecton8.Optimization
                 return true;
 
             if (!TryResolveTrackerViews(
-                    out _,
-                    out _,
+                    out NativeArray<AssetTrackerDTO> trackers,
+                    out NativeArray<float> ttl,
                     out NativeArray<byte> trackerFlags,
-                    out _))
+                    out NativeArray<AssetHandleMapEntryDTO> handleMap))
             {
                 return false;
             }
 
+            HandleAddressableMapPressureIfNeeded(trackers, ttl, trackerFlags, handleMap);
             int slot = AllocateAddressableHandleSlot(assetHash, trackerFlags);
             if (slot < 0)
             {
@@ -565,7 +599,7 @@ namespace Hecton8.Optimization
                     handle))
             {
                 if (handle.IsValid())
-                    Addressables.Release(handle);
+                    TryExecuteOrDeferBlindFrameRelease(handle);
 
                 handle = default;
                 _lastLeakSuspectHash = assetHash;
@@ -583,6 +617,29 @@ namespace Hecton8.Optimization
                 return;
 
             Release(assetHash);
+        }
+
+        internal bool MarkAddressableAssetAup(uint assetHash, double3 assetAup)
+        {
+            if (assetHash == 0u || !math.all(math.isfinite(assetAup)) || !TryPrepareTrackerMutation())
+                return false;
+
+            if (!TryResolveTrackerViews(
+                    out NativeArray<AssetTrackerDTO> trackers,
+                    out _,
+                    out _,
+                    out NativeArray<AssetHandleMapEntryDTO> handleMap) ||
+                !TryGetHandleSlot(assetHash, handleMap, out int slot) ||
+                (uint)slot >= (uint)trackers.Length)
+            {
+                return false;
+            }
+
+            AssetTrackerDTO tracker = trackers[slot];
+            tracker.AssetAup = assetAup;
+            tracker.MaxResidencyRadiusSq = DistantChunkReleaseDistanceMeters * DistantChunkReleaseDistanceMeters;
+            trackers[slot] = tracker;
+            return true;
         }
 
         public void SetHeapSanitizerMockBlindFrame(bool active, float durationSeconds)
@@ -612,26 +669,26 @@ namespace Hecton8.Optimization
 
         internal void MarkChunkResidency(uint key)
         {
-            if (!_registry.TryGetValue(key, out AssetRecord record))
+            if (!_assetRecords.TryGetValue(key, out AssetRecord record))
                 return;
 
             record.IsChunkAsset = true;
             record.LastAccessFrame = _frameSequence;
-            _registry[key] = record;
+            _assetRecords.Set(key, record);
         }
 
         internal void MarkAccessed(uint key)
         {
-            if (!_registry.TryGetValue(key, out AssetRecord record))
+            if (!_assetRecords.TryGetValue(key, out AssetRecord record))
                 return;
 
             record.LastAccessFrame = _frameSequence;
-            _registry[key] = record;
+            _assetRecords.Set(key, record);
         }
 
         internal void Release(uint key)
         {
-            if (!_registry.TryGetValue(key, out AssetRecord record))
+            if (!_assetRecords.TryGetValue(key, out AssetRecord record))
                 return;
 
             int nativeRefCount = TryDecrementNativeRefCount(key, out int slot);
@@ -669,11 +726,11 @@ namespace Hecton8.Optimization
                 else if (!ArmNativeTtlRelease(key, slot))
                 {
                     record.PendingRelease = true;
-                    _pendingRelease.Enqueue(key);
+                    EnqueuePendingRelease(key);
                 }
             }
 
-            _registry[key] = record;
+            _assetRecords.Set(key, record);
         }
 
         internal void ForceDrainPendingReleaseQueue()
@@ -688,12 +745,12 @@ namespace Hecton8.Optimization
 
         internal int EvictLowestPriorityUnusedAssets(int maxCount, AssetPriorityTier minimumPriority)
         {
-            if (maxCount <= 0 || _registry.Count == 0)
+            if (maxCount <= 0 || _assetRecords.Count == 0)
                 return 0;
 
             _evictionCandidates.Clear();
 
-            Dictionary<uint, AssetRecord>.Enumerator enumerator = _registry.GetEnumerator();
+            ManagedAssetRecordTable.Enumerator enumerator = _assetRecords.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 AssetRecord record = enumerator.Current.Value;
@@ -714,7 +771,7 @@ namespace Hecton8.Optimization
             for (int i = 0; i < count; i++)
             {
                 uint key = _evictionCandidates[i];
-                if (!_registry.TryGetValue(key, out AssetRecord record))
+                if (!_assetRecords.TryGetValue(key, out AssetRecord record))
                     continue;
 
                 if (TryExecuteOrDeferBlindFrameRelease(key, record))
@@ -732,7 +789,7 @@ namespace Hecton8.Optimization
 
         internal void MarkLoadFailed(uint key, string error)
         {
-            if (!_registry.TryGetValue(key, out AssetRecord record))
+            if (!_assetRecords.TryGetValue(key, out AssetRecord record))
                 return;
 
             if (record.ActiveRequestId != 0)
@@ -756,7 +813,7 @@ namespace Hecton8.Optimization
             }
 
             ApplyFallbackMaterial(record.Owner);
-            _registry[key] = record;
+            _assetRecords.Set(key, record);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[AssetLifecycleGovernor] Asset load failed.", this);
@@ -768,7 +825,7 @@ namespace Hecton8.Optimization
             int capacity = Mathf.Clamp(maxTrackedAddressableHandles, 1, MaxTrackedAddressableCapacity);
             maxTrackedAddressableHandles = capacity;
             maxRegistryCapacity = Mathf.Max(Mathf.Max(1, maxRegistryCapacity), capacity);
-            _registry.EnsureCapacity(maxRegistryCapacity);
+            EnsureManagedRecordStorage();
             int mapCapacity = ResolveHandleMapCapacity(capacity);
 
             bool needsColdClear = !_nativeStorageInitialized ||
@@ -819,7 +876,7 @@ namespace Hecton8.Optimization
 
             if (!TryCopyCacheProfilesFromVault())
             {
-                GenerateEmergencyMockProfiles();
+                GenerateEmergencyMockCacheProfiles();
                 MirrorCacheProfilesToVault();
             }
             EnsureFallbackImpostorMesh();
@@ -828,9 +885,11 @@ namespace Hecton8.Optimization
             if (_addressableHandlePool == null || _addressableHandlePool.Length != capacity)
             {
                 _addressableHandlePool = new AsyncOperationHandle[capacity]; // COLD ALLOC: AsyncOperationHandle[capacity] - Unity handle bridge, indexed by Vault tracker slot - owner: AssetLifecycleGovernor
+                _detachedReleaseHandles = new AsyncOperationHandle[DetachedReleaseHandleCapacity]; // COLD ALLOC: AsyncOperationHandle[64] - raw handles awaiting blind-frame release after failed registration - owner: AssetLifecycleGovernor
                 _addressableHandleHashes = new uint[capacity]; // COLD ALLOC: uint[capacity] - handle slot asset hashes - owner: AssetLifecycleGovernor
                 _addressableBundlePrefixHashes = new uint[capacity]; // COLD ALLOC: uint[capacity] - bundle prefix hashes for TTL inflation - owner: AssetLifecycleGovernor
                 _addressableHandleCount = 0;
+                _detachedReleaseHandleCount = 0;
             }
 #endif
         }
@@ -846,16 +905,19 @@ namespace Hecton8.Optimization
                 {
                     AsyncOperationHandle handle = _addressableHandlePool[i];
                     if (handle.IsValid())
-                        Addressables.Release(handle);
+                        TryExecuteOrDeferBlindFrameRelease(handle);
 
                     _addressableHandlePool[i] = default;
                 }
             }
+            DrainDetachedAddressableReleaseHandles();
 
             _addressableHandlePool = null;
+            _detachedReleaseHandles = null;
             _addressableHandleHashes = null;
             _addressableBundlePrefixHashes = null;
             _addressableHandleCount = 0;
+            _detachedReleaseHandleCount = 0;
 #endif
             ClearAddressableHeapVaultState(false, false);
             _dataVault = null;
@@ -864,6 +926,7 @@ namespace Hecton8.Optimization
             _assetTrackerFlagsVaultHandle = default;
             _assetHandleMapVaultHandle = default;
             _cacheProfileVaultHandle = default;
+            _cacheProfileCsvScratchVaultHandle = default;
             _heapTelemetryVaultHandle = default;
             _cachedDispatcher = null;
             _cachedVramPressure = null;
@@ -925,28 +988,27 @@ namespace Hecton8.Optimization
             bool clearCacheProfiles,
             bool clearTelemetry)
         {
+            int clearLength = 0;
             if (trackers.IsCreated)
-            {
-                for (int i = 0; i < trackers.Length; i++)
-                    trackers[i] = default;
-            }
-
+                clearLength = math.max(clearLength, trackers.Length);
             if (ttl.IsCreated)
-            {
-                for (int i = 0; i < ttl.Length; i++)
-                    ttl[i] = 0f;
-            }
-
+                clearLength = math.max(clearLength, ttl.Length);
             if (flags.IsCreated)
-            {
-                for (int i = 0; i < flags.Length; i++)
-                    flags[i] = 0;
-            }
-
+                clearLength = math.max(clearLength, flags.Length);
             if (map.IsCreated)
+                clearLength = math.max(clearLength, map.Length);
+
+            if (clearLength > 0)
             {
-                for (int i = 0; i < map.Length; i++)
-                    map[i] = default;
+                HeapSanitizerMemClearJob clearJob = new HeapSanitizerMemClearJob
+                {
+                    Trackers = trackers,
+                    TimeToLiveSeconds = ttl,
+                    Flags = flags,
+                    HandleMap = map
+                };
+                // COLD SYNC JOB: boot/teardown Vault sanitizer clear; avoids OS memset on steady-state native heap.
+                clearJob.Schedule(clearLength, 64).Complete();
             }
 
             if (clearCacheProfiles && profiles.IsCreated)
@@ -998,6 +1060,16 @@ namespace Hecton8.Optimization
             return profiles.IsCreated;
         }
 
+        private bool TryResolveCacheProfileCsvScratch(out NativeArray<byte> scratch)
+        {
+            scratch = default;
+            if (!TryResolveHeapSanitizerVaultBuffers())
+                return false;
+
+            scratch = _cacheProfileCsvScratchVaultHandle.Resolve(_dataVault);
+            return scratch.IsCreated;
+        }
+
         private bool TryResolveTelemetryView(out NativeArray<AssetHeapTelemetryEntry> telemetry)
         {
             telemetry = default;
@@ -1018,12 +1090,16 @@ namespace Hecton8.Optimization
                              _dataVault.TryLockBuffer(BufferID.AddressableHeapTimeToLive, SystemID.WorldStreaming);
             bool lockedFlags = lockedTtl &&
                                _dataVault.TryLockBuffer(BufferID.AddressableHeapTrackerFlags, SystemID.WorldStreaming);
-            if (lockedTrackers && lockedTtl && lockedFlags)
+            bool lockedHandleMap = lockedFlags &&
+                                   _dataVault.TryLockBuffer(BufferID.AddressableHeapHandleMap, SystemID.WorldStreaming);
+            if (lockedTrackers && lockedTtl && lockedFlags && lockedHandleMap)
             {
                 _ttlEvaluationVaultLocksHeld = true;
                 return true;
             }
 
+            if (lockedHandleMap)
+                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapHandleMap, SystemID.WorldStreaming);
             if (lockedFlags)
                 _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackerFlags, SystemID.WorldStreaming);
             if (lockedTtl)
@@ -1041,6 +1117,7 @@ namespace Hecton8.Optimization
                 return;
             }
 
+            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapHandleMap, SystemID.WorldStreaming);
             _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackerFlags, SystemID.WorldStreaming);
             _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTimeToLive, SystemID.WorldStreaming);
             _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackers, SystemID.WorldStreaming);
@@ -1096,7 +1173,7 @@ namespace Hecton8.Optimization
         {
             handle = default;
             cacheHit = false;
-            if (!_registry.TryGetValue(assetHash, out AssetRecord record) ||
+            if (!_assetRecords.TryGetValue(assetHash, out AssetRecord record) ||
                 !record.HasAddressableHandle ||
                 !record.AddressableHandle.IsValid())
             {
@@ -1114,7 +1191,7 @@ namespace Hecton8.Optimization
             if (sizeBytes > 0L)
                 ReplaceTrackedSize(ref record, sizeBytes);
 
-            _registry[assetHash] = record;
+            _assetRecords.Set(assetHash, record);
             _nativeRefSyncRequired = true;
             handle = record.AddressableHandle.Convert<GameObject>();
             cacheHit = true;
@@ -1154,6 +1231,10 @@ namespace Hecton8.Optimization
 
             int refCount = AssetTrackerAtomic.Increment(trackers, slot);
             SetNativeRefCount(assetHash, slot, refCount, trackers, handleMap);
+            AssetTrackerDTO refreshedTracker = trackers[slot];
+            refreshedTracker.AssetAup = ResolveAssetAup();
+            refreshedTracker.MaxResidencyRadiusSq = DistantChunkReleaseDistanceMeters * DistantChunkReleaseDistanceMeters;
+            trackers[slot] = refreshedTracker;
             byte flags = trackerFlags[slot];
             flags = (byte)(flags & ~(AssetHandleFlags.PendingTtl | AssetHandleFlags.Releasable));
             flags = rawHandle.IsDone
@@ -1162,7 +1243,7 @@ namespace Hecton8.Optimization
             trackerFlags[slot] = flags;
             ttl[slot] = 0f;
 
-            if (_registry.TryGetValue(assetHash, out AssetRecord record))
+            if (_assetRecords.TryGetValue(assetHash, out AssetRecord record))
             {
                 record.RefCount = refCount;
                 record.Owner = owner != null ? owner : record.Owner;
@@ -1175,7 +1256,7 @@ namespace Hecton8.Optimization
                 if (sizeBytes > 0L)
                     ReplaceTrackedSize(ref record, sizeBytes);
 
-                _registry[assetHash] = record;
+                _assetRecords.Set(assetHash, record);
             }
 
             handle = rawHandle.Convert<GameObject>();
@@ -1200,6 +1281,44 @@ namespace Hecton8.Optimization
 
             _lastLeakSuspectHash = assetHash;
             return -1;
+        }
+
+        private void HandleAddressableMapPressureIfNeeded(
+            NativeArray<AssetTrackerDTO> trackers,
+            NativeArray<float> ttl,
+            NativeArray<byte> trackerFlags,
+            NativeArray<AssetHandleMapEntryDTO> handleMap)
+        {
+            if (!IsAddressableMapPressureCritical(handleMap))
+                return;
+
+            int forced = ForceFurthestUnusedAddressableTtlsToZero(
+                trackers,
+                ttl,
+                trackerFlags,
+                handleMap,
+                ResolvePlayerAupForEviction());
+            if (forced <= 0)
+                return;
+
+            _forcedVramReleaseCount += forced;
+            DrainTtlEvaluationResults(trackers, trackerFlags, true);
+        }
+
+        private static bool IsAddressableMapPressureCritical(NativeArray<AssetHandleMapEntryDTO> handleMap)
+        {
+            if (!handleMap.IsCreated || handleMap.Length <= 0)
+                return false;
+
+            int used = 0;
+            for (int i = 0; i < handleMap.Length; i++)
+            {
+                uint flags = handleMap[i].Flags;
+                if ((flags & (AssetHandleMapFlags.Occupied | AssetHandleMapFlags.Tombstone)) != 0u)
+                    used++;
+            }
+
+            return used >= (int)(handleMap.Length * AddressableMapPressureThreshold);
         }
 
         private bool RegisterAddressableHandleSlot(
@@ -1236,7 +1355,10 @@ namespace Hecton8.Optimization
             {
                 AssetHash = assetHash,
                 ReferenceCount = 1,
-                HandlePointer = unchecked((ulong)(slot + 1))
+                HandlePointer = unchecked((ulong)(slot + 1)),
+                AssetAup = ResolveAssetAup(),
+                MaxResidencyRadiusSq = DistantChunkReleaseDistanceMeters * DistantChunkReleaseDistanceMeters,
+                Flags = 0u
             };
             ttl[slot] = 0f;
 
@@ -1245,7 +1367,7 @@ namespace Hecton8.Optimization
                 flags = (byte)(flags | AssetHandleFlags.BundleShared);
             trackerFlags[slot] = flags;
 
-            if (_registry.TryGetValue(assetHash, out AssetRecord record))
+            if (_assetRecords.TryGetValue(assetHash, out AssetRecord record))
             {
                 ReplaceTrackedSize(ref record, sizeBytes);
             }
@@ -1279,7 +1401,7 @@ namespace Hecton8.Optimization
             record.LastAccessFrame = _frameSequence;
             record.ActiveRequestId = 0;
             record.NextRetryTime = 0f;
-            _registry[assetHash] = record;
+            _assetRecords.Set(assetHash, record);
             return true;
         }
 
@@ -1294,11 +1416,7 @@ namespace Hecton8.Optimization
 
         private static int ResolveHandleMapCapacity(int handleCapacity)
         {
-            int requested = Mathf.Clamp(handleCapacity * 2, 2, MaxAddressableHandleMapCapacity);
-            int capacity = 1;
-            while (capacity < requested && capacity < MaxAddressableHandleMapCapacity)
-                capacity <<= 1;
-            return capacity;
+            return MaxAddressableHandleMapCapacity;
         }
 
         private bool TryGetHandleSlot(uint assetHash, out int slot)
@@ -1326,8 +1444,8 @@ namespace Hecton8.Optimization
                 return false;
 
             AssetHandleMapEntryDTO entry = handleMap[index];
-            slot = entry.Slot;
-            return slot >= 0 && entry.AssetHash == assetHash;
+            slot = entry.PoolSlotIndex;
+            return slot >= 0 && unchecked((uint)entry.AssetHash) == assetHash;
         }
 
         private static bool TryFindHandleMapIndex(
@@ -1351,7 +1469,7 @@ namespace Hecton8.Optimization
                 uint flags = entry.Flags;
                 if ((flags & AssetHandleMapFlags.Occupied) != 0u)
                 {
-                    if (entry.AssetHash == assetHash)
+                    if (unchecked((uint)entry.AssetHash) == assetHash)
                     {
                         index = candidateIndex;
                         return true;
@@ -1389,7 +1507,7 @@ namespace Hecton8.Optimization
                 uint flags = entry.Flags;
                 if ((flags & AssetHandleMapFlags.Occupied) != 0u)
                 {
-                    if (entry.AssetHash == assetHash)
+                    if (unchecked((uint)entry.AssetHash) == assetHash)
                     {
                         index = candidateIndex;
                         return true;
@@ -1418,6 +1536,18 @@ namespace Hecton8.Optimization
             return false;
         }
 
+        private static ref AssetHandleMapEntryDTO GetEntryAsRef(
+            NativeArray<AssetHandleMapEntryDTO> handleMap,
+            int index)
+        {
+            unsafe
+            {
+                void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(handleMap);
+                int stride = UnsafeUtility.SizeOf<AssetHandleMapEntryDTO>();
+                return ref UnsafeUtility.AsRef<AssetHandleMapEntryDTO>((byte*)basePtr + (stride * index));
+            }
+        }
+
         private static bool UpsertHandleMapEntry(
             NativeArray<AssetHandleMapEntryDTO> handleMap,
             uint assetHash,
@@ -1431,26 +1561,23 @@ namespace Hecton8.Optimization
 
             uint generation = 1u;
             AssetHandleMapEntryDTO current = handleMap[index];
-            if ((current.Flags & AssetHandleMapFlags.Occupied) != 0u && current.AssetHash == assetHash)
+            if ((current.Flags & AssetHandleMapFlags.Occupied) != 0u && unchecked((uint)current.AssetHash) == assetHash)
                 generation = current.Generation + 1u;
 
             uint flags = AssetHandleMapFlags.Occupied;
             if (sharedBundle)
                 flags |= AssetHandleMapFlags.BundleShared;
 
-            handleMap[index] = new AssetHandleMapEntryDTO
+            ref AssetHandleMapEntryDTO target = ref GetEntryAsRef(handleMap, index);
+            target = new AssetHandleMapEntryDTO
             {
-                HandlePointer = unchecked((ulong)(slot + 1)),
                 AssetHash = assetHash,
                 BundlePrefixHash = bundlePrefixHash,
-                Slot = slot,
+                PoolSlotIndex = slot,
                 RefCount = refCount,
+                TimeToLive = 0f,
                 Flags = flags,
-                Generation = generation,
-                _pad0 = 0UL,
-                _pad1 = 0UL,
-                _pad2 = 0UL,
-                _pad3 = 0UL
+                Generation = generation
             };
             return true;
         }
@@ -1466,11 +1593,9 @@ namespace Hecton8.Optimization
 
             if (TryFindHandleMapIndex(assetHash, handleMap, out int index))
             {
-                AssetHandleMapEntryDTO entry = handleMap[index];
-                entry.Slot = slot;
+                ref AssetHandleMapEntryDTO entry = ref GetEntryAsRef(handleMap, index);
+                entry.PoolSlotIndex = slot;
                 entry.RefCount = refCount;
-                entry.HandlePointer = unchecked((ulong)(slot + 1));
-                handleMap[index] = entry;
                 return;
             }
 
@@ -1484,12 +1609,14 @@ namespace Hecton8.Optimization
             if (!TryFindHandleMapIndex(assetHash, handleMap, out int index))
                 return;
 
-            AssetHandleMapEntryDTO entry = handleMap[index];
-            handleMap[index] = new AssetHandleMapEntryDTO
+            ref AssetHandleMapEntryDTO entry = ref GetEntryAsRef(handleMap, index);
+            ulong previousAssetHash = entry.AssetHash;
+            uint previousGeneration = entry.Generation;
+            entry = new AssetHandleMapEntryDTO
             {
-                AssetHash = entry.AssetHash,
+                AssetHash = previousAssetHash,
                 Flags = AssetHandleMapFlags.Tombstone,
-                Generation = entry.Generation + 1u
+                Generation = previousGeneration + 1u
             };
         }
 
@@ -1505,7 +1632,7 @@ namespace Hecton8.Optimization
             {
                 AssetHandleMapEntryDTO entry = handleMap[i];
                 if ((entry.Flags & AssetHandleMapFlags.Occupied) != 0u &&
-                    entry.BundlePrefixHash == bundlePrefixHash)
+                    unchecked((uint)entry.BundlePrefixHash) == bundlePrefixHash)
                 {
                     count++;
                 }
@@ -1527,17 +1654,17 @@ namespace Hecton8.Optimization
             {
                 AssetHandleMapEntryDTO entry = handleMap[i];
                 if ((entry.Flags & AssetHandleMapFlags.Occupied) == 0u ||
-                    entry.BundlePrefixHash != bundlePrefixHash)
+                    unchecked((uint)entry.BundlePrefixHash) != bundlePrefixHash)
                 {
                     continue;
                 }
 
-                entry.Flags = shared
+                ref AssetHandleMapEntryDTO mutableEntry = ref GetEntryAsRef(handleMap, i);
+                mutableEntry.Flags = shared
                     ? entry.Flags | AssetHandleMapFlags.BundleShared
                     : entry.Flags & ~AssetHandleMapFlags.BundleShared;
-                handleMap[i] = entry;
 
-                int slot = entry.Slot;
+                int slot = mutableEntry.PoolSlotIndex;
                 if (trackerFlags.IsCreated && (uint)slot < (uint)trackerFlags.Length)
                 {
                     byte flags = trackerFlags[slot];
@@ -1617,7 +1744,7 @@ namespace Hecton8.Optimization
                     out NativeArray<AssetTrackerDTO> trackers,
                     out NativeArray<float> ttl,
                     out NativeArray<byte> trackerFlags,
-                    out _) ||
+                    out NativeArray<AssetHandleMapEntryDTO> handleMap) ||
                 (uint)slot >= (uint)trackers.Length)
             {
                 return false;
@@ -1627,7 +1754,14 @@ namespace Hecton8.Optimization
             if ((flags & AssetHandleFlags.Active) == 0)
                 return false;
 
-            ttl[slot] = ResolveAdaptiveTtlSeconds(assetHash, flags);
+            float adjustedTtl = ResolveAdaptiveTtlSeconds(assetHash, flags);
+            ttl[slot] = adjustedTtl;
+            if (TryFindHandleMapIndex(assetHash, handleMap, out int mapIndex))
+            {
+                ref AssetHandleMapEntryDTO entry = ref GetEntryAsRef(handleMap, mapIndex);
+                entry.TimeToLive = adjustedTtl;
+            }
+
             trackerFlags[slot] = (byte)((flags | AssetHandleFlags.PendingTtl) & ~AssetHandleFlags.Releasable);
             return true;
         }
@@ -1677,7 +1811,12 @@ namespace Hecton8.Optimization
 
             if (vramPanic)
             {
-                ForceUnusedAddressableTtlsToZero(trackers, ttl, trackerFlags);
+                ForceFurthestUnusedAddressableTtlsToZero(
+                    trackers,
+                    ttl,
+                    trackerFlags,
+                    handleMap,
+                    ResolvePlayerAupForEviction());
                 DrainTtlEvaluationResults(trackers, trackerFlags, true);
             }
         }
@@ -1703,7 +1842,7 @@ namespace Hecton8.Optimization
                 if (assetHash == 0u)
                     continue;
 
-                if (!_registry.TryGetValue(assetHash, out AssetRecord record))
+                if (!_assetRecords.TryGetValue(assetHash, out AssetRecord record))
                 {
                     uint bundlePrefixHash = ResolveBundlePrefixHashForSlot(i);
                     RemoveHandleMapEntry(handleMap, assetHash);
@@ -1736,7 +1875,14 @@ namespace Hecton8.Optimization
                     continue;
                 }
 
-                ttl[i] = ResolveAdaptiveTtlSeconds(assetHash, flags);
+                float adjustedTtl = ResolveAdaptiveTtlSeconds(assetHash, flags);
+                ttl[i] = adjustedTtl;
+                if (TryFindHandleMapIndex(assetHash, handleMap, out int mapIndex))
+                {
+                    ref AssetHandleMapEntryDTO entry = ref GetEntryAsRef(handleMap, mapIndex);
+                    entry.TimeToLive = adjustedTtl;
+                }
+
                 trackerFlags[i] = (byte)((flags | AssetHandleFlags.PendingTtl) & ~AssetHandleFlags.Releasable);
             }
         }
@@ -1750,7 +1896,7 @@ namespace Hecton8.Optimization
                     out NativeArray<AssetTrackerDTO> trackers,
                     out NativeArray<float> ttl,
                     out NativeArray<byte> trackerFlags,
-                    out _))
+                    out NativeArray<AssetHandleMapEntryDTO> handleMap))
             {
                 return;
             }
@@ -1758,16 +1904,22 @@ namespace Hecton8.Optimization
             if (!TryLockTtlEvaluationVaultBuffers())
                 return;
 
+            bool vramPanic = IsVramPanicReleaseFrame();
             AssetTtlEvaluationJob job = new AssetTtlEvaluationJob
             {
                 Trackers = trackers,
                 TimeToLiveSeconds = ttl,
                 Flags = trackerFlags,
-                DeltaSeconds = ColdReleaseIntervalSeconds
+                HandleMap = handleMap,
+                PlayerAup = ResolvePlayerAupForEviction(),
+                MaxResidencyRadiusSq = DistantChunkReleaseDistanceMeters * DistantChunkReleaseDistanceMeters,
+                DeltaSeconds = ColdReleaseIntervalSeconds,
+                ForceVramPanic = vramPanic ? (byte)1 : (byte)0
             };
-            _ttlEvaluationHandle = job.Schedule();
+            _ttlEvaluationHandle = job.Schedule(trackers.Length, 16);
+            H8Memory.RegisterActiveJob(SystemID.WorldStreaming, _ttlEvaluationHandle);
             _ttlEvaluationScheduled = true;
-            _ttlEvaluationVramPanic = IsVramPanicReleaseFrame();
+            _ttlEvaluationVramPanic = vramPanic;
         }
 
         private void DrainTtlEvaluationResults(
@@ -1826,43 +1978,103 @@ namespace Hecton8.Optimization
             return pending;
         }
 
-        private static void ForceUnusedAddressableTtlsToZero(
+        private static int ForceFurthestUnusedAddressableTtlsToZero(
             NativeArray<AssetTrackerDTO> trackers,
             NativeArray<float> ttl,
-            NativeArray<byte> trackerFlags)
+            NativeArray<byte> trackerFlags,
+            NativeArray<AssetHandleMapEntryDTO> handleMap,
+            double3 playerAup)
         {
             if (!trackers.IsCreated)
-                return;
+                return 0;
 
+            int candidateCount = 0;
             for (int i = 0; i < trackers.Length; i++)
             {
                 byte flags = trackerFlags[i];
                 if ((flags & AssetHandleFlags.Active) == 0 ||
-                    (flags & AssetHandleFlags.Pinned) != 0)
+                    (flags & AssetHandleFlags.Pinned) != 0 ||
+                    (flags & AssetHandleFlags.Releasable) != 0)
                 {
                     continue;
                 }
 
                 AssetTrackerDTO tracker = trackers[i];
-                if (tracker.ReferenceCount == 0)
-                {
-                    ttl[i] = 0f;
-                    trackerFlags[i] = (byte)(flags | AssetHandleFlags.PendingTtl | AssetHandleFlags.Releasable);
-                }
+                if (tracker.ReferenceCount == 0 && AssetTrackerAtomic.IsRefCountZero(trackers, i))
+                    candidateCount++;
             }
+
+            if (candidateCount <= 0)
+                return 0;
+
+            int targetCount = math.max(1, (candidateCount + 9) / 10);
+            int marked = 0;
+            for (int selection = 0; selection < targetCount; selection++)
+            {
+                int bestIndex = -1;
+                float bestDistanceSq = -1f;
+                for (int i = 0; i < trackers.Length; i++)
+                {
+                    byte flags = trackerFlags[i];
+                    if ((flags & AssetHandleFlags.Active) == 0 ||
+                        (flags & AssetHandleFlags.Pinned) != 0 ||
+                        (flags & AssetHandleFlags.Releasable) != 0)
+                    {
+                        continue;
+                    }
+
+                    AssetTrackerDTO tracker = trackers[i];
+                    if (tracker.ReferenceCount != 0 || !AssetTrackerAtomic.IsRefCountZero(trackers, i))
+                        continue;
+
+                    float distanceSq = CalculateLocalizedDistanceSq(in tracker, playerAup);
+                    if (distanceSq <= bestDistanceSq)
+                        continue;
+
+                    bestDistanceSq = distanceSq;
+                    bestIndex = i;
+                }
+
+                if (bestIndex < 0)
+                    break;
+
+                ttl[bestIndex] = 0f;
+                uint assetHash = trackers[bestIndex].AssetHash;
+                if (TryFindHandleMapIndex(assetHash, handleMap, out int mapIndex))
+                {
+                    ref AssetHandleMapEntryDTO entry = ref GetEntryAsRef(handleMap, mapIndex);
+                    entry.TimeToLive = 0f;
+                }
+
+                trackerFlags[bestIndex] = (byte)(trackerFlags[bestIndex] | AssetHandleFlags.PendingTtl | AssetHandleFlags.Releasable);
+                marked++;
+            }
+
+            return marked;
+        }
+
+        private static float CalculateLocalizedDistanceSq(in AssetTrackerDTO tracker, double3 playerAup)
+        {
+            double3 delta = tracker.AssetAup - playerAup;
+            if (!math.all(math.isfinite(delta)))
+                return 0f;
+
+            float3 localDelta = new float3((float)delta.x, (float)delta.y, (float)delta.z);
+            float distanceSq = math.lengthsq(localDelta);
+            return math.isfinite(distanceSq) ? distanceSq : 0f;
         }
 
         private bool QueueExpiredAddressableRelease(uint assetHash, int slot, NativeArray<byte> trackerFlags)
         {
-            if (!_registry.TryGetValue(assetHash, out AssetRecord record))
+            if (!_assetRecords.TryGetValue(assetHash, out AssetRecord record))
                 return false;
 
             if (record.RefCount > 0 || record.PendingRelease)
                 return false;
 
             record.PendingRelease = true;
-            _registry[assetHash] = record;
-            _pendingRelease.Enqueue(assetHash);
+            _assetRecords.Set(assetHash, record);
+            EnqueuePendingRelease(assetHash);
             trackerFlags[slot] = (byte)(trackerFlags[slot] & ~(AssetHandleFlags.PendingTtl | AssetHandleFlags.Releasable));
             return true;
         }
@@ -1870,11 +2082,8 @@ namespace Hecton8.Optimization
         private float ResolveAdaptiveTtlSeconds(uint assetHash, byte flags)
         {
             float quality = math.saturate(ResolveGlobalQualityWeight());
-            float normalizedQuality = math.saturate((quality - 0.3f) * math.rcp(0.7f));
-            float polynomial = normalizedQuality * normalizedQuality * (3f - 2f * normalizedQuality);
-            float curve = math.step(0.3f, quality) * polynomial;
             float highTtl = math.clamp(baseAddressableTtlSeconds, MinimumAdaptiveTtlSeconds, DefaultHighEndTtlSeconds);
-            float ttl = math.lerp(MinimumAdaptiveTtlSeconds, highTtl, curve);
+            float ttl = highTtl;
 
             if (TryFindCacheProfile(assetHash, out AssetCacheProfileDTO profile))
             {
@@ -1887,6 +2096,7 @@ namespace Hecton8.Optimization
             if ((flags & AssetHandleFlags.BundleShared) != 0)
                 ttl *= SharedBundleTtlMultiplier;
 
+            ttl *= math.lerp(0.1f, 3.0f, math.smoothstep(0.2f, 0.8f, quality));
             return math.clamp(ttl, 0f, DefaultHighEndTtlSeconds * 4f);
         }
 
@@ -1923,6 +2133,33 @@ namespace Hecton8.Optimization
 
             float value = pressure.VramPressureFactor;
             return math.saturate(math.isfinite(value) ? value : 0f);
+        }
+
+        private static double3 ResolveAssetAup()
+        {
+            return ResolvePlayerAupForEviction();
+        }
+
+        private static double3 ResolvePlayerAupForEviction()
+        {
+            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            if (player != null && player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                double3 aup = ToAbsoluteDouble3(in snapshot);
+                if (math.all(math.isfinite(aup)))
+                    return aup;
+            }
+
+            return double3.zero;
+        }
+
+        private static double3 ToAbsoluteDouble3(in PlayerRuntimePoseSnapshot snapshot)
+        {
+            double cellSize = HectonPhysicsContract.AupSectorSizeMetersDouble;
+            return new double3(
+                (snapshot.Aup.GridX * cellSize) + snapshot.Aup.LocalX,
+                (snapshot.Aup.GridY * cellSize) + snapshot.Aup.LocalY,
+                (snapshot.Aup.GridZ * cellSize) + snapshot.Aup.LocalZ);
         }
 
         private bool IsVramPanicReleaseFrame()
@@ -2037,7 +2274,7 @@ namespace Hecton8.Optimization
             }
         }
 
-        private void GenerateEmergencyMockProfiles()
+        private void GenerateEmergencyMockCacheProfiles()
         {
             if (!TryResolveCacheProfileView(out NativeArray<AssetCacheProfileDTO> profiles) || profiles.Length < 4)
                 return;
@@ -2069,6 +2306,7 @@ namespace Hecton8.Optimization
                                    !_assetHandleMapVaultHandle.IsCreated ||
                                    _assetHandleMapVaultHandle.Length < mapCapacity ||
                                    !_cacheProfileVaultHandle.IsCreated ||
+                                   !_cacheProfileCsvScratchVaultHandle.IsCreated ||
                                    !_heapTelemetryVaultHandle.IsCreated;
             if (newVaultHandles)
             {
@@ -2098,6 +2336,11 @@ namespace Hecton8.Optimization
                     CacheProfileCapacity,
                     SystemID.WorldStreaming,
                     NativeArrayOptions.UninitializedMemory);
+                _cacheProfileCsvScratchVaultHandle = vault.GetBufferHandle<byte>(
+                    BufferID.AddressableHeapCsvScratch,
+                    CacheProfileCsvScratchBytes,
+                    SystemID.WorldStreaming,
+                    NativeArrayOptions.UninitializedMemory);
                 _heapTelemetryVaultHandle = vault.GetBufferHandle<AssetHeapTelemetryEntry>(
                     BufferID.AddressableHeapTelemetry,
                     HeapTelemetryCapacity,
@@ -2110,6 +2353,7 @@ namespace Hecton8.Optimization
                    _assetTrackerFlagsVaultHandle.IsCreated &&
                    _assetHandleMapVaultHandle.IsCreated &&
                    _cacheProfileVaultHandle.IsCreated &&
+                   _cacheProfileCsvScratchVaultHandle.IsCreated &&
                    _heapTelemetryVaultHandle.IsCreated;
         }
 
@@ -2287,6 +2531,91 @@ namespace Hecton8.Optimization
             return false;
         }
 
+        public bool TryGetHeapSanitizerTelemetryAt(
+            int ordinalFromNewest,
+            out uint activeHandles,
+            out uint cacheHits,
+            out uint cacheMisses,
+            out float vramPressure,
+            out uint flags)
+        {
+            activeHandles = 0u;
+            cacheHits = 0u;
+            cacheMisses = 0u;
+            vramPressure = 0f;
+            flags = 0u;
+            if (ordinalFromNewest < 0 || !TryResolveTelemetryView(out NativeArray<AssetHeapTelemetryEntry> telemetry))
+                return false;
+
+            int length = telemetry.Length;
+            if (length <= 0 || ordinalFromNewest >= length)
+                return false;
+
+            int index = _heapTelemetryCursor - 1 - ordinalFromNewest;
+            while (index < 0)
+                index += length;
+
+            AssetHeapTelemetryEntry entry = telemetry[index % length];
+            activeHandles = entry.ActiveHandles;
+            cacheHits = entry.CacheHits;
+            cacheMisses = entry.CacheMisses;
+            vramPressure = entry.VramPressure;
+            flags = entry.Flags;
+            return entry.FrameIndex != 0u || entry.ResultHash != 0u;
+        }
+
+        public bool TryGetHeapSanitizerLeakSuspectAt(
+            int ordinal,
+            out uint assetHash,
+            out ulong bundlePrefixHash,
+            out int refCount)
+        {
+            assetHash = 0u;
+            bundlePrefixHash = 0UL;
+            refCount = 0;
+            if (ordinal < 0 ||
+                !TryResolveTrackerViews(
+                    out NativeArray<AssetTrackerDTO> trackers,
+                    out _,
+                    out NativeArray<byte> trackerFlags,
+                    out NativeArray<AssetHandleMapEntryDTO> handleMap))
+            {
+                return false;
+            }
+
+            int seen = 0;
+            for (int i = 0; i < handleMap.Length; i++)
+            {
+                AssetHandleMapEntryDTO entry = handleMap[i];
+                if ((entry.Flags & AssetHandleMapFlags.Occupied) == 0u)
+                    continue;
+
+                int slot = entry.PoolSlotIndex;
+                if ((uint)slot >= (uint)trackers.Length)
+                    continue;
+
+                byte trackerFlag = trackerFlags[slot];
+                if ((trackerFlag & AssetHandleFlags.Active) == 0)
+                    continue;
+
+                AssetTrackerDTO tracker = trackers[slot];
+                if (tracker.ReferenceCount <= LeakRefCountThreshold)
+                    continue;
+
+                if (seen == ordinal)
+                {
+                    assetHash = tracker.AssetHash;
+                    bundlePrefixHash = entry.BundlePrefixHash;
+                    refCount = tracker.ReferenceCount;
+                    return true;
+                }
+
+                seen++;
+            }
+
+            return false;
+        }
+
         public bool SetHeapSanitizerPin(uint assetHash, bool pinned)
         {
             if (!TryPrepareTrackerMutation())
@@ -2317,11 +2646,36 @@ namespace Hecton8.Optimization
                 return false;
 
             EnsureNativeHandleStorage();
-            string csv = File.ReadAllText(absolutePath);
-            return TryParseAssetCacheRules(csv.AsSpan());
+            if (!TryResolveCacheProfileCsvScratch(out NativeArray<byte> scratch))
+                return false;
+
+            using FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            if (stream.Length <= 0L || stream.Length > scratch.Length)
+                return false;
+
+            unsafe
+            {
+                byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                int expectedBytes = (int)stream.Length;
+                int totalRead = 0;
+                while (totalRead < expectedBytes)
+                {
+                    Span<byte> target = new Span<byte>(basePtr + totalRead, expectedBytes - totalRead);
+                    int read = stream.Read(target);
+                    if (read <= 0)
+                        break;
+
+                    totalRead += read;
+                }
+
+                if (totalRead <= 0)
+                    return false;
+
+                return TryParseAssetCacheRules(new ReadOnlySpan<byte>(basePtr, totalRead));
+            }
         }
 
-        public bool TryParseAssetCacheRules(ReadOnlySpan<char> csv)
+        public bool TryParseAssetCacheRules(ReadOnlySpan<byte> csv)
         {
             if (!TryResolveCacheProfileView(out NativeArray<AssetCacheProfileDTO> profiles))
                 return false;
@@ -2334,11 +2688,11 @@ namespace Hecton8.Optimization
                 while (cursor < csv.Length && csv[cursor] != '\n' && csv[cursor] != '\r')
                     cursor++;
 
-                ReadOnlySpan<char> line = csv.Slice(lineStart, cursor - lineStart).Trim();
+                ReadOnlySpan<byte> line = TrimAscii(csv.Slice(lineStart, cursor - lineStart));
                 while (cursor < csv.Length && (csv[cursor] == '\n' || csv[cursor] == '\r'))
                     cursor++;
 
-                if (line.Length == 0 || line[0] == '#')
+                if (line.Length == 0 || line[0] == (byte)'#')
                     continue;
 
                 if (TryParseCacheProfileLine(line, out AssetCacheProfileDTO profile))
@@ -2352,26 +2706,26 @@ namespace Hecton8.Optimization
             return profileIndex > 0;
         }
 
-        private static bool TryParseCacheProfileLine(ReadOnlySpan<char> line, out AssetCacheProfileDTO profile)
+        private static bool TryParseCacheProfileLine(ReadOnlySpan<byte> line, out AssetCacheProfileDTO profile)
         {
             profile = default;
-            ReadOnlySpan<char> key = NextCsvToken(ref line);
-            ReadOnlySpan<char> ttl = NextCsvToken(ref line);
-            ReadOnlySpan<char> multiplier = NextCsvToken(ref line);
-            ReadOnlySpan<char> flags = NextCsvToken(ref line);
+            ReadOnlySpan<byte> key = NextCsvToken(ref line);
+            ReadOnlySpan<byte> ttl = NextCsvToken(ref line);
+            ReadOnlySpan<byte> multiplier = NextCsvToken(ref line);
+            ReadOnlySpan<byte> flags = NextCsvToken(ref line);
 
             if (key.Length == 0 || !TryParseAssetHash(key, out uint assetHash))
                 return false;
 
-            if (!float.TryParse(ttl, NumberStyles.Float, CultureInfo.InvariantCulture, out float ttlSeconds))
+            if (!TryParseFloatAscii(ttl, out float ttlSeconds))
                 ttlSeconds = DefaultHighEndTtlSeconds;
 
-            if (!float.TryParse(multiplier, NumberStyles.Float, CultureInfo.InvariantCulture, out float ttlMultiplier))
+            if (!TryParseFloatAscii(multiplier, out float ttlMultiplier))
                 ttlMultiplier = 1f;
 
             uint parsedFlags = 0u;
             if (flags.Length > 0)
-                uint.TryParse(flags, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsedFlags);
+                TryParseUIntAscii(flags, out parsedFlags);
 
             profile = new AssetCacheProfileDTO
             {
@@ -2383,31 +2737,44 @@ namespace Hecton8.Optimization
             return true;
         }
 
-        private static ReadOnlySpan<char> NextCsvToken(ref ReadOnlySpan<char> line)
+        private static ReadOnlySpan<byte> NextCsvToken(ref ReadOnlySpan<byte> line)
         {
             if (line.Length == 0)
-                return ReadOnlySpan<char>.Empty;
+                return ReadOnlySpan<byte>.Empty;
 
-            int comma = line.IndexOf(',');
+            int comma = line.IndexOf((byte)',');
             if (comma < 0)
             {
-                ReadOnlySpan<char> result = line.Trim();
-                line = ReadOnlySpan<char>.Empty;
+                ReadOnlySpan<byte> result = TrimAscii(line);
+                line = ReadOnlySpan<byte>.Empty;
                 return result;
             }
 
-            ReadOnlySpan<char> token = line.Slice(0, comma).Trim();
+            ReadOnlySpan<byte> token = TrimAscii(line.Slice(0, comma));
             line = line.Slice(comma + 1);
             return token;
         }
 
-        private static bool TryParseAssetHash(ReadOnlySpan<char> token, out uint assetHash)
+        private static ReadOnlySpan<byte> TrimAscii(ReadOnlySpan<byte> value)
+        {
+            int start = 0;
+            int end = value.Length - 1;
+            while (start <= end && value[start] <= (byte)' ')
+                start++;
+            while (end >= start && value[end] <= (byte)' ')
+                end--;
+
+            return start > end ? ReadOnlySpan<byte>.Empty : value.Slice(start, end - start + 1);
+        }
+
+        private static bool TryParseAssetHash(ReadOnlySpan<byte> token, out uint assetHash)
         {
             assetHash = 0u;
-            if (token.Length > 2 && token[0] == '0' && (token[1] == 'x' || token[1] == 'X'))
-                return uint.TryParse(token.Slice(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out assetHash);
+            token = TrimAscii(token);
+            if (token.Length == 0)
+                return false;
 
-            if (uint.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out assetHash))
+            if (TryParseUIntAscii(token, out assetHash))
                 return assetHash != 0u;
 
             unchecked
@@ -2422,6 +2789,125 @@ namespace Hecton8.Optimization
                 assetHash = hash != 0u ? hash : 1u;
                 return true;
             }
+        }
+
+        private static bool TryParseUIntAscii(ReadOnlySpan<byte> token, out uint value)
+        {
+            value = 0u;
+            token = TrimAscii(token);
+            if (token.Length == 0)
+                return false;
+
+            int index = 0;
+            int radix = 10;
+            if (token.Length > 2 &&
+                token[0] == (byte)'0' &&
+                (token[1] == (byte)'x' || token[1] == (byte)'X'))
+            {
+                index = 2;
+                radix = 16;
+            }
+
+            bool any = false;
+            uint parsed = 0u;
+            for (; index < token.Length; index++)
+            {
+                byte c = token[index];
+                int digit;
+                if (c >= (byte)'0' && c <= (byte)'9')
+                    digit = c - (byte)'0';
+                else if (radix == 16 && c >= (byte)'a' && c <= (byte)'f')
+                    digit = c - (byte)'a' + 10;
+                else if (radix == 16 && c >= (byte)'A' && c <= (byte)'F')
+                    digit = c - (byte)'A' + 10;
+                else
+                    return false;
+
+                if (digit >= radix)
+                    return false;
+
+                parsed = unchecked((parsed * (uint)radix) + (uint)digit);
+                any = true;
+            }
+
+            value = parsed;
+            return any;
+        }
+
+        private static bool TryParseFloatAscii(ReadOnlySpan<byte> token, out float value)
+        {
+            value = 0f;
+            token = TrimAscii(token);
+            if (token.Length == 0)
+                return false;
+
+            int index = 0;
+            bool negative = false;
+            if (token[index] == (byte)'-' || token[index] == (byte)'+')
+            {
+                negative = token[index] == (byte)'-';
+                index++;
+            }
+
+            float parsed = 0f;
+            bool any = false;
+            while (index < token.Length && token[index] >= (byte)'0' && token[index] <= (byte)'9')
+            {
+                parsed = (parsed * 10f) + (token[index] - (byte)'0');
+                index++;
+                any = true;
+            }
+
+            if (index < token.Length && token[index] == (byte)'.')
+            {
+                index++;
+                float place = 0.1f;
+                while (index < token.Length && token[index] >= (byte)'0' && token[index] <= (byte)'9')
+                {
+                    parsed += (token[index] - (byte)'0') * place;
+                    place *= 0.1f;
+                    index++;
+                    any = true;
+                }
+            }
+
+            if (!any)
+                return false;
+
+            if (index < token.Length && (token[index] == (byte)'e' || token[index] == (byte)'E'))
+            {
+                index++;
+                bool exponentNegative = false;
+                if (index < token.Length && (token[index] == (byte)'-' || token[index] == (byte)'+'))
+                {
+                    exponentNegative = token[index] == (byte)'-';
+                    index++;
+                }
+
+                int exponent = 0;
+                bool hasExponent = false;
+                while (index < token.Length && token[index] >= (byte)'0' && token[index] <= (byte)'9')
+                {
+                    exponent = math.min(38, (exponent * 10) + (token[index] - (byte)'0'));
+                    index++;
+                    hasExponent = true;
+                }
+
+                if (!hasExponent)
+                    return false;
+
+                float scale = 1f;
+                for (int i = 0; i < exponent; i++)
+                    scale *= 10f;
+
+                parsed = exponentNegative ? parsed / scale : parsed * scale;
+            }
+
+            if (index != token.Length)
+                return false;
+
+            value = negative ? -parsed : parsed;
+            return math.isfinite(value);
         }
 
         private int CountActiveAddressableHandles()
@@ -2646,13 +3132,13 @@ namespace Hecton8.Optimization
 
         private void PumpRetries()
         {
-            if (_registry.Count == 0)
+            if (_assetRecords.Count == 0)
                 return;
 
             float now = Time.unscaledTime;
             _retryCandidates.Clear();
 
-            Dictionary<uint, AssetRecord>.Enumerator enumerator = _registry.GetEnumerator();
+            ManagedAssetRecordTable.Enumerator enumerator = _assetRecords.GetEnumerator();
             while (enumerator.MoveNext() && _retryCandidates.Count < MaxHardReaperEvictions)
             {
                 AssetRecord record = enumerator.Current.Value;
@@ -2689,7 +3175,7 @@ namespace Hecton8.Optimization
 
         private void QueueAsyncDispatch(uint key)
         {
-            if (!_registry.TryGetValue(key, out AssetRecord record))
+            if (!_assetRecords.TryGetValue(key, out AssetRecord record))
                 return;
 
             if (record.ActiveRequestId != 0)
@@ -2707,43 +3193,33 @@ namespace Hecton8.Optimization
 
             record.ActiveRequestId = requestId;
             record.NextRetryTime = 0f;
-            _registry[key] = record;
+            _assetRecords.Set(key, record);
         }
 
         private int DrainPendingReleaseQueue(int maxCount)
         {
             int drained = 0;
-            while (_pendingRelease.Count > 0 && drained < maxCount)
+            while (_pendingReleaseQueue.Count > 0 && drained < maxCount)
             {
-                uint key = _pendingRelease.Dequeue();
+                if (!_pendingReleaseQueue.TryDequeue(out uint key))
+                    break;
                 drained++;
 
-                if (!_registry.TryGetValue(key, out AssetRecord record))
+                if (!_assetRecords.TryGetValue(key, out AssetRecord record))
                     continue;
 
                 record.PendingRelease = false;
-                _registry[key] = record;
+                _assetRecords.Set(key, record);
 
                 if (record.RefCount > 0)
                     continue;
 
-                if (IsAddressableReleaseBlockedByBlindFrame(in record))
+                if (!TryExecuteOrDeferBlindFrameRelease(key, record) &&
+                    _assetRecords.TryGetValue(key, out record) &&
+                    record.RefCount == 0 &&
+                    record.PendingRelease)
                 {
-                    record.PendingRelease = true;
-                    _registry[key] = record;
-                    _pendingRelease.Enqueue(key);
                     break;
-                }
-
-                if (!ExecuteReleaseFlow(key))
-                {
-                    if (_registry.TryGetValue(key, out record) && record.RefCount == 0)
-                    {
-                        record.PendingRelease = true;
-                        _registry[key] = record;
-                        _pendingRelease.Enqueue(key);
-                        break;
-                    }
                 }
             }
 
@@ -2795,7 +3271,7 @@ namespace Hecton8.Optimization
                     return;
                 }
 
-                Addressables.Release(_hardReaperCleanBundleCacheHandle);
+                TryExecuteOrDeferBlindFrameRelease(_hardReaperCleanBundleCacheHandle);
                 _hardReaperCleanBundleCacheHandle = default;
             }
 
@@ -2830,12 +3306,12 @@ namespace Hecton8.Optimization
             if (_hardReaperCleanBundleCacheHandle.IsValid() &&
                 _hardReaperCleanBundleCacheHandle.Equals(handle))
             {
-                Addressables.Release(_hardReaperCleanBundleCacheHandle);
+                TryExecuteOrDeferBlindFrameRelease(_hardReaperCleanBundleCacheHandle);
                 _hardReaperCleanBundleCacheHandle = default;
             }
             else if (handle.IsValid())
             {
-                Addressables.Release(handle);
+                TryExecuteOrDeferBlindFrameRelease(handle);
             }
 
             _hardReaperBundleCacheCleanComplete = true;
@@ -2868,7 +3344,7 @@ namespace Hecton8.Optimization
                 if (_hardReaperCleanBundleCacheCompletedCallback != null)
                     _hardReaperCleanBundleCacheHandle.Completed -= _hardReaperCleanBundleCacheCompletedCallback;
 
-                Addressables.Release(_hardReaperCleanBundleCacheHandle);
+                TryExecuteOrDeferBlindFrameRelease(_hardReaperCleanBundleCacheHandle);
                 _hardReaperCleanBundleCacheHandle = default;
             }
 #endif
@@ -2885,7 +3361,7 @@ namespace Hecton8.Optimization
 
         private bool ExecuteReleaseFlow(uint key)
         {
-            if (!_registry.TryGetValue(key, out AssetRecord record))
+            if (!_assetRecords.TryGetValue(key, out AssetRecord record))
                 return false;
 
             if (record.RefCount > 0)
@@ -2895,7 +3371,7 @@ namespace Hecton8.Optimization
             if (!nativeSlotCleared && IsTrackerMutationBlockedByScheduledJob())
             {
                 record.PendingRelease = true;
-                _registry[key] = record;
+                _assetRecords.Set(key, record);
                 return false;
             }
 
@@ -2921,7 +3397,7 @@ namespace Hecton8.Optimization
 #if UNITY_ADDRESSABLES_EXIST
             if (record.HasAddressableHandle && record.AddressableHandle.IsValid())
             {
-                Addressables.Release(record.AddressableHandle);
+                TryExecuteOrDeferBlindFrameRelease(record.AddressableHandle);
                 _orphanedHandlesReleased++;
             }
             else if (record.OwnsAssetInstance && record.Asset != null && !ReferenceEquals(record.Asset, _checkerboardMaterial))
@@ -2936,7 +3412,7 @@ namespace Hecton8.Optimization
             if (TrackedResidentBytes < 0L)
                 TrackedResidentBytes = 0L;
 
-            _registry.Remove(key);
+            _assetRecords.Remove(key);
             return true;
         }
 
@@ -2981,6 +3457,27 @@ namespace Hecton8.Optimization
 #endif
         }
 
+#if UNITY_ADDRESSABLES_EXIST
+        private bool TryExecuteOrDeferBlindFrameRelease(AsyncOperationHandle handle)
+        {
+            if (!handle.IsValid())
+                return true;
+
+            if (IsBlindReleaseFrame() || IsVramPanicReleaseFrame())
+            {
+                Addressables.Release(handle);
+                return true;
+            }
+
+            return EnqueueDetachedAddressableRelease(handle);
+        }
+
+        private bool TryExecuteOrDeferBlindFrameRelease<TObject>(AsyncOperationHandle<TObject> handle)
+        {
+            return TryExecuteOrDeferBlindFrameRelease((AsyncOperationHandle)handle);
+        }
+#endif
+
         private bool TryExecuteOrDeferBlindFrameRelease(uint key, AssetRecord record)
         {
             if (IsAddressableReleaseBlockedByBlindFrame(in record))
@@ -2988,18 +3485,84 @@ namespace Hecton8.Optimization
                 if (!record.PendingRelease)
                 {
                     record.PendingRelease = true;
-                    _pendingRelease.Enqueue(key);
+                    EnqueuePendingRelease(key);
                 }
 
                 _nativeRefSyncRequired = true;
-                _registry[key] = record;
+                _assetRecords.Set(key, record);
                 return false;
             }
 
             record.PendingRelease = false;
-            _registry[key] = record;
+            _assetRecords.Set(key, record);
             return ExecuteReleaseFlow(key);
         }
+
+#if UNITY_ADDRESSABLES_EXIST
+        private bool EnqueueDetachedAddressableRelease(AsyncOperationHandle handle)
+        {
+            if (!handle.IsValid())
+                return true;
+
+            if (_detachedReleaseHandles == null)
+            {
+                _lastLeakSuspectHash = _lastLeakSuspectHash != 0u ? _lastLeakSuspectHash : CollisionSalt;
+                DumpHeapTelemetry();
+                return false;
+            }
+
+            for (int i = 0; i < _detachedReleaseHandles.Length; i++)
+            {
+                if (_detachedReleaseHandles[i].IsValid())
+                    continue;
+
+                _detachedReleaseHandles[i] = handle;
+                if (i >= _detachedReleaseHandleCount)
+                    _detachedReleaseHandleCount = i + 1;
+                return true;
+            }
+
+            _lastLeakSuspectHash = _lastLeakSuspectHash != 0u ? _lastLeakSuspectHash : CollisionSalt;
+            DumpHeapTelemetry();
+            return false;
+        }
+
+        private void DrainDetachedAddressableReleaseHandles()
+        {
+            if (_detachedReleaseHandles == null ||
+                _detachedReleaseHandleCount <= 0 ||
+                (!IsBlindReleaseFrame() && !IsVramPanicReleaseFrame()))
+            {
+                return;
+            }
+
+            int highestValid = -1;
+            int count = math.min(_detachedReleaseHandleCount, _detachedReleaseHandles.Length);
+            for (int i = 0; i < count; i++)
+            {
+                AsyncOperationHandle handle = _detachedReleaseHandles[i];
+                if (!handle.IsValid() || TryExecuteOrDeferBlindFrameRelease(handle))
+                {
+                    _detachedReleaseHandles[i] = default;
+                    continue;
+                }
+
+                highestValid = i;
+            }
+
+            for (int i = count; i < _detachedReleaseHandles.Length; i++)
+            {
+                if (_detachedReleaseHandles[i].IsValid())
+                    highestValid = i;
+            }
+
+            _detachedReleaseHandleCount = highestValid + 1;
+        }
+#else
+        private void DrainDetachedAddressableReleaseHandles()
+        {
+        }
+#endif
 
         private int ReleaseDistantChunkAddressables(int maxReleaseCount)
         {
@@ -3111,8 +3674,8 @@ namespace Hecton8.Optimization
 
         private int CompareEvictionPriority(uint leftKey, uint rightKey)
         {
-            AssetRecord left = _registry[leftKey];
-            AssetRecord right = _registry[rightKey];
+            AssetRecord left = _assetRecords.GetUnchecked(leftKey);
+            AssetRecord right = _assetRecords.GetUnchecked(rightKey);
 
             if (left.Priority != right.Priority)
                 return (byte)right.Priority - (byte)left.Priority;
@@ -3124,6 +3687,341 @@ namespace Hecton8.Optimization
                 return 1;
 
             return 0;
+        }
+
+        private struct FixedUIntList
+        {
+            private uint[] _items;
+            private int _count;
+
+            public int Count => _count;
+
+            public uint this[int index] => _items[index];
+
+            public void Initialize(int capacity)
+            {
+                int safeCapacity = Mathf.Max(1, capacity);
+                if (_items != null && _items.Length == safeCapacity)
+                    return;
+
+                _items = new uint[safeCapacity]; // COLD ALLOC: uint[capacity] - fixed scratch list storage - owner: AssetLifecycleGovernor
+                _count = 0;
+            }
+
+            public void Clear()
+            {
+                _count = 0;
+            }
+
+            public bool Add(uint value)
+            {
+                if (_items == null || _count >= _items.Length)
+                    return false;
+
+                _items[_count] = value;
+                _count++;
+                return true;
+            }
+
+            public void Insert(int index, uint value)
+            {
+                if (_items == null || _items.Length == 0)
+                    return;
+
+                int clamped = math.clamp(index, 0, _count);
+                int last = math.min(_count, _items.Length - 1);
+                for (int i = last; i > clamped; i--)
+                    _items[i] = _items[i - 1];
+
+                _items[clamped] = value;
+                if (_count < _items.Length)
+                    _count++;
+            }
+
+            public void RemoveAt(int index)
+            {
+                if (_items == null || (uint)index >= (uint)_count)
+                    return;
+
+                for (int i = index; i < _count - 1; i++)
+                    _items[i] = _items[i + 1];
+
+                _items[_count - 1] = 0u;
+                _count--;
+            }
+        }
+
+        private struct FixedUIntQueue
+        {
+            private uint[] _items;
+            private int _head;
+            private int _tail;
+            private int _count;
+
+            public int Count => _count;
+
+            public void Initialize(int capacity)
+            {
+                int safeCapacity = Mathf.Max(1, capacity);
+                if (_items != null && _items.Length == safeCapacity)
+                    return;
+
+                _items = new uint[safeCapacity]; // COLD ALLOC: uint[capacity] - fixed pending release ring - owner: AssetLifecycleGovernor
+                _head = 0;
+                _tail = 0;
+                _count = 0;
+            }
+
+            public void Clear()
+            {
+                _head = 0;
+                _tail = 0;
+                _count = 0;
+            }
+
+            public bool Enqueue(uint value)
+            {
+                if (_items == null || _items.Length == 0 || _count >= _items.Length)
+                    return false;
+
+                _items[_tail] = value;
+                _tail++;
+                if (_tail >= _items.Length)
+                    _tail = 0;
+
+                _count++;
+                return true;
+            }
+
+            public bool TryDequeue(out uint value)
+            {
+                value = 0u;
+                if (_items == null || _items.Length == 0 || _count <= 0)
+                    return false;
+
+                value = _items[_head];
+                _items[_head] = 0u;
+                _head++;
+                if (_head >= _items.Length)
+                    _head = 0;
+
+                _count--;
+                return true;
+            }
+        }
+
+        private struct ManagedAssetRecordTable
+        {
+            private const byte Empty = 0;
+            private const byte Occupied = 1;
+            private const byte Tombstone = 2;
+
+            private uint[] _keys;
+            private AssetRecord[] _records;
+            private byte[] _states;
+            private int _count;
+
+            public int Count => _count;
+
+            public void Initialize(int capacity)
+            {
+                int safeCapacity = Mathf.Max(2, capacity);
+                if (_keys != null && _keys.Length == safeCapacity)
+                    return;
+
+                _keys = new uint[safeCapacity]; // COLD ALLOC: uint[capacity] - fixed asset record hash keys - owner: AssetLifecycleGovernor
+                _records = new AssetRecord[safeCapacity]; // COLD ALLOC: AssetRecord[capacity] - fixed managed asset metadata slots - owner: AssetLifecycleGovernor
+                _states = new byte[safeCapacity]; // COLD ALLOC: byte[capacity] - fixed asset record slot states - owner: AssetLifecycleGovernor
+                _count = 0;
+            }
+
+            public void Clear()
+            {
+                if (_keys == null)
+                    return;
+
+                for (int i = 0; i < _keys.Length; i++)
+                {
+                    _keys[i] = 0u;
+                    _records[i] = default;
+                    _states[i] = Empty;
+                }
+
+                _count = 0;
+            }
+
+            public bool TryGetValue(uint key, out AssetRecord record)
+            {
+                record = default;
+                if (!TryFindIndex(key, out int index))
+                    return false;
+
+                record = _records[index];
+                return true;
+            }
+
+            public AssetRecord GetUnchecked(uint key)
+            {
+                return TryGetValue(key, out AssetRecord record) ? record : default;
+            }
+
+            public bool Set(uint key, AssetRecord record)
+            {
+                if (!TryFindInsertIndex(key, out int index))
+                    return false;
+
+                if (_states[index] != Occupied)
+                    _count++;
+
+                _keys[index] = key;
+                _records[index] = record;
+                _states[index] = Occupied;
+                return true;
+            }
+
+            public bool Remove(uint key)
+            {
+                if (!TryFindIndex(key, out int index))
+                    return false;
+
+                _records[index] = default;
+                _states[index] = Tombstone;
+                _count = math.max(0, _count - 1);
+                return true;
+            }
+
+            public Enumerator GetEnumerator()
+            {
+                return new Enumerator(_keys, _records, _states);
+            }
+
+            private bool TryFindIndex(uint key, out int index)
+            {
+                index = -1;
+                if (_keys == null || _keys.Length == 0)
+                    return false;
+
+                int length = _keys.Length;
+                int start = (int)(key % unchecked((uint)length));
+                for (int probe = 0; probe < length; probe++)
+                {
+                    int candidate = start + probe;
+                    if (candidate >= length)
+                        candidate -= length;
+
+                    byte state = _states[candidate];
+                    if (state == Occupied)
+                    {
+                        if (_keys[candidate] == key)
+                        {
+                            index = candidate;
+                            return true;
+                        }
+
+                        continue;
+                    }
+
+                    if (state == Empty)
+                        return false;
+                }
+
+                return false;
+            }
+
+            private bool TryFindInsertIndex(uint key, out int index)
+            {
+                index = -1;
+                if (_keys == null || _keys.Length == 0)
+                    return false;
+
+                int firstTombstone = -1;
+                int length = _keys.Length;
+                int start = (int)(key % unchecked((uint)length));
+                for (int probe = 0; probe < length; probe++)
+                {
+                    int candidate = start + probe;
+                    if (candidate >= length)
+                        candidate -= length;
+
+                    byte state = _states[candidate];
+                    if (state == Occupied)
+                    {
+                        if (_keys[candidate] == key)
+                        {
+                            index = candidate;
+                            return true;
+                        }
+
+                        continue;
+                    }
+
+                    if (state == Tombstone)
+                    {
+                        if (firstTombstone < 0)
+                            firstTombstone = candidate;
+                        continue;
+                    }
+
+                    index = firstTombstone >= 0 ? firstTombstone : candidate;
+                    return true;
+                }
+
+                if (firstTombstone >= 0)
+                {
+                    index = firstTombstone;
+                    return true;
+                }
+
+                return false;
+            }
+
+            public struct Entry
+            {
+                public uint Key;
+                public AssetRecord Value;
+
+                public Entry(uint key, AssetRecord value)
+                {
+                    Key = key;
+                    Value = value;
+                }
+            }
+
+            public struct Enumerator
+            {
+                private readonly uint[] _keys;
+                private readonly AssetRecord[] _records;
+                private readonly byte[] _states;
+                private int _index;
+
+                public Entry Current;
+
+                public Enumerator(uint[] keys, AssetRecord[] records, byte[] states)
+                {
+                    _keys = keys;
+                    _records = records;
+                    _states = states;
+                    _index = -1;
+                    Current = default;
+                }
+
+                public bool MoveNext()
+                {
+                    if (_keys == null)
+                        return false;
+
+                    while (++_index < _keys.Length)
+                    {
+                        if (_states[_index] != Occupied)
+                            continue;
+
+                        Current = new Entry(_keys[_index], _records[_index]);
+                        return true;
+                    }
+
+                    return false;
+                }
+            }
         }
 
         private void EnsureFallbackAssets()
@@ -3213,14 +4111,14 @@ namespace Hecton8.Optimization
 
         private bool ResolveCollision(ref uint key, string assetGuid, string address)
         {
-            if (!_registry.TryGetValue(key, out AssetRecord existing))
+            if (!_assetRecords.TryGetValue(key, out AssetRecord existing))
                 return true;
 
             if (MatchesIdentity(existing, assetGuid, address))
                 return true;
 
             uint saltedKey = key ^ CollisionSalt;
-            if (!_registry.TryGetValue(saltedKey, out existing))
+            if (!_assetRecords.TryGetValue(saltedKey, out existing))
             {
                 key = saltedKey;
                 return true;

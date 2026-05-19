@@ -45,6 +45,8 @@ Former root compute drift:
 
 Latest DOC_GLOBAL documentation boundary:
 
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`
+- `Docs/Reports/2026-05-19_DOCUMENTATION_R30_ROOT_ARCHITECTURE_INTERNAL_CURRENTNESS_LOCAL.md`
 - `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`
 - `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`
 - `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`
@@ -175,12 +177,12 @@ Root `TERRAIN_AND_BIOME_REALITY_MAP.md` is not active authority; use `Docs/Repor
 Root `BROKEN_PREFABS.md` is not active authority; it is a generated snapshot and must be summarized in a dated `Docs/Reports/` file before citation.
 Root `.log` files were moved to dated bundles under `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_*/`.
 `.codex-artifacts/**` remains evidence artifact storage, not documentation authority.
-Historical documentation synchronization pass: `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`; current DOC_GLOBAL orientation starts at R29/R28/R27/R26/R25/R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9.
-Latest final-inquisition proof boundary: `Docs/Reports/2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md`.
+Historical documentation synchronization pass: `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`; current DOC_GLOBAL orientation starts at R31/R30/R29/R28/R27/R26/R25/R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9.
+Historical final-inquisition proof boundary: `Docs/Reports/2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md`; subordinate to the R31/R30/R29/R28/R27 DOC_GLOBAL chain for current root/architecture orientation.
 Historical Project Atlas/source-count synchronization pass: `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`; rerun current source/atlas counters before using exact values.
-Latest documentation sweep: `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
-Latest documentation sorting map: `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`.
-Latest header/archive queue: `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`.
+Historical documentation sweep: `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
+Historical documentation sorting map: `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`.
+Historical header/archive queue: `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`.
 At the 2026-05-07 check, root text scan saw `5` root `.md` files and `0` root `.txt`/`.log` files; only the three anchors listed above were active documentation authority.
 
 ## 2026-05-11 Check
@@ -189,15 +191,15 @@ Root documentation anchors remain `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, an
 Root `TERRAIN_AND_BIOME_REALITY_MAP.md` is still not active authority; use `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
 Root `BROKEN_PREFABS.md` is still not active authority; it is a generated snapshot and must be summarized in a dated `Docs/Reports/` file before citation.
 At the 2026-05-11 check, root text scan saw `5` root `.md` files and `0` root `.txt`/`.log` files.
-Latest documentation/data continuation: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
-Latest `.agents-skills` doctrine update: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
-Latest active documentation manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+Historical May 11 documentation/data continuation: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+Historical `.agents-skills` doctrine-support report; current doctrine is in `AGENTS.md` and `.agents-skills/`: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
+Historical active documentation manifest snapshot; do not use it for current counts or authority: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
 May 11 report text claimed completed Core build evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. Treat it as stale report text. May 14/R43 evidence is historical external root `Hecton8*.csproj` no-restore CLI output; it is not current dirty-workspace proof without rerun artifact path, command, timestamp, environment, and output, and it is not Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof.
 Current Unity MCP proof was not run in the May 11 continuation; older MCP editor-console readbacks are historical only.
 
 ## 2026-05-13 R2 Check
 
-Historical broad counter/missing-artifact override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`; current DOC_GLOBAL correction layer starts at R29/R28/R27/R26/R25/R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9.
+Historical broad counter/missing-artifact override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`; current DOC_GLOBAL correction layer starts at R31/R30/R29/R28/R27/R26/R25/R24/R23/R22/R21/R20/R19/R18/R17/R16/R15/R14/R13/R11/R10/R9.
 The May 11 active manifest remains a historical machine-readable manifest; its numeric counters and authority list are historical where later DOC_GLOBAL or DOC_AUDIT layers conflict.
 Current direct `Docs/` root has `16` markdown files plus `Actual Domains of Project.txt`; JSON dependency graph artifacts are generated evidence, not long-lived markdown authority.
 At the 2026-05-13 R2 check, root text scan saw `6` root `.md`, `3` root `.log`, `3` root `.json`, and `0` root `.txt`.
@@ -209,7 +211,7 @@ No root `.txt`, `.log`, or `.json` authority file is promoted by this R5 pass.
 
 ## 2026-05-13 R9 Check
 
-Latest DOC_GLOBAL correction is `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`. R28 remains the prior root/architecture interior-boundary correction; R27 remains the latest root/architecture source-counter/index boundary; R26 remains the prior root/architecture HFI/blocker/source-counter boundary; R25 and R24 remain prior root/architecture boundaries; `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` is the current static HFI/H-Phi/global-authority risk snapshot; R23 remains the proof-language/navigation boundary; R22/R21/R20/R19/R18/R17/R16/R15 remain subordinate source-counter/report-index, proof-residue, Marketing/EventBus/counter, R4, report-vault, and navigation correction layers; May 13/R9 are historical where newer layers conflict.
+Latest DOC_GLOBAL correction is `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`. R30 remains the prior internal-currentness correction; R29 remains the prior stale-gate/global-authority correction; R28 remains the prior root/architecture interior-boundary correction; R27 remains the latest root/architecture source-counter/index boundary; R26 remains the prior root/architecture HFI/blocker/source-counter boundary; R25 and R24 remain prior root/architecture boundaries; `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` is the current static HFI/H-Phi/global-authority risk snapshot; R23 remains the proof-language/navigation boundary; R22/R21/R20/R19/R18/R17/R16/R15 remain subordinate source-counter/report-index, proof-residue, Marketing/EventBus/counter, R4, report-vault, and navigation correction layers; May 13/R9 are historical where newer layers conflict.
 
 Current root scan:
 

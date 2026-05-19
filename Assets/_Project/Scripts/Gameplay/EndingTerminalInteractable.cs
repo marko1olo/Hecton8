@@ -24,7 +24,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class EndingTerminalInteractable : MonoBehaviour, IInteractable, IEndingEventListener, ILocalizationLanguageChangedListener
+    public sealed class EndingTerminalInteractable : MonoBehaviour, IInteractable, IEndingEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -51,6 +51,9 @@ namespace Hecton8.Gameplay
         private string _cachedActiveText;
         private string _cachedCompleteText;
         private string _cachedDataLoadedText;
+        private EndingSystem _cachedEnding;
+        private QuestManager _cachedQuest;
+        private bool _hotSwapListenerRegistered;
 
         // Pre-cached interact texts — zero GC
         private const string TextInactive = "ATLAS-6 TERMINAL UNAVAILABLE";
@@ -68,6 +71,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             EndingEvents.Register(this);
             LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizedTextCache();
@@ -78,6 +83,7 @@ namespace Hecton8.Gameplay
         {
             SetObjectActive(highlightObject, false);
             _choiceOpen = false;
+            TryUnregisterHotSwapListener();
             LocalizationEvents.UnregisterLanguageListener(this);
             EndingEvents.Unregister(this);
         }
@@ -98,7 +104,7 @@ namespace Hecton8.Gameplay
 
         public void Interact(Transform interactor)
         {
-            EndingSystem ending = GlobalRegistry.Ending;
+            EndingSystem ending = _cachedEnding;
             if (ending == null) return;
 
             if (ending.IsEndingComplete)
@@ -123,7 +129,7 @@ namespace Hecton8.Gameplay
 
         public string GetInteractText()
         {
-            EndingSystem ending = GlobalRegistry.Ending;
+            EndingSystem ending = _cachedEnding;
             if (ending == null) return _cachedInactiveText;
             if (ending.IsEndingComplete) return _cachedCompleteText;
             if (!HasAllAtlasKeys()) return _cachedInactiveText;
@@ -186,7 +192,7 @@ namespace Hecton8.Gameplay
             if (!_choiceOpen || choice == EndingChoice.None)
                 return;
 
-            EndingSystem ending = GlobalRegistry.Ending;
+            EndingSystem ending = _cachedEnding;
             if (ending == null || !ending.CanChooseEnding || !HasAllAtlasKeys())
                 return;
 
@@ -214,14 +220,14 @@ namespace Hecton8.Gameplay
         {
             if (activeIndicator == null) return;
 
-            EndingSystem ending = GlobalRegistry.Ending;
+            EndingSystem ending = _cachedEnding;
             bool active = ending != null && HasAllAtlasKeys() && !ending.IsEndingComplete;
             SetObjectActive(activeIndicator, active);
         }
 
         private bool HasAllAtlasKeys()
         {
-            QuestManager questManager = GlobalRegistry.Quest;
+            QuestManager questManager = _cachedQuest;
             if (questManager == null || requiredAtlasKeyQuestIds == null || requiredAtlasKeyQuestIds.Length == 0)
                 return false;
 
@@ -238,6 +244,52 @@ namespace Hecton8.Gameplay
             }
 
             return true;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.EndingRuntime)
+            {
+                _cachedEnding = currentService as EndingSystem;
+                UpdateActiveIndicator();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.QuestRuntime ||
+                serviceSlot == GlobalRegistryServiceSlot.QuestSystem)
+            {
+                if (serviceSlot == GlobalRegistryServiceSlot.QuestRuntime)
+                    _cachedQuest = currentService as QuestManager;
+                else if (currentService is QuestManager questManager)
+                    _cachedQuest = questManager;
+                UpdateActiveIndicator();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedEnding = GlobalRegistry.Ending;
+            _cachedQuest = GlobalRegistry.Quest;
         }
 
         private void RebuildLocalizedTextCache()

@@ -394,6 +394,89 @@ Reject applicants who:
 - cannot provide hardware specs;
 - only want free early access.
 
+## 2026-05-19 Asset-To-Post Execution Queue
+
+Status: draft-ready / asset-gated / do not post without matching real capture.
+
+Use this table as the first operating queue once screenshots or clips exist. Every row must be linked to an actual file in the asset library before publication.
+
+| Queue ID | Required asset | Primary platform | Draft copy | CTA | Kill if |
+|---|---|---|---|---|---|
+| POST-001 | Identity hero screenshot: black water, industrial silhouette, player light | X/Bluesky | `One floodlight, too much water. HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and the cost of coming back.` | `Does the identity read without a caption?` | Viewers read it as empty water or generic Subnautica-like scenery. |
+| POST-002 | Pressure room interior screenshot | Reddit critique | `I am testing whether this room reads as a pressure vessel, not a cozy base. What detail sells or breaks that read first: gauges, seals, grime, lighting, or layout?` | `Ask for critique only, no Steam CTA.` | Comments focus on clean sci-fi room or cannot identify the survival system. |
+| POST-003 | Salvage contact screenshot | X/Bluesky | `A good salvage route should look profitable and stupid. If the player cannot tell what they are risking, the shot failed.` | `Would you go farther?` | Player verb is unclear or the salvage target looks like decorative junk. |
+| POST-004 | Base under stress screenshot | Reddit critique | `Survival players: does this base failure look fair, or does it look like random punishment? I need the harsh read before this becomes Steam material.` | `Ask fairness/readability question.` | Users cannot tell what failed or what the player should do next. |
+| POST-005 | Threat silhouette screenshot | X/Bluesky | `The sonar saw it first. HECTON-8 is aiming for readable dread, not black screenshots.` | `Can you read the threat?` | Silhouette reads as terrain, empty fog, or arbitrary monster pose. |
+| POST-006 | Seed Ship/anomaly screenshot | Steam news/devlog | `The Seed Ship should feel like a system interfering with the world before the lore explains it. This shot is only usable if the instrument corruption is readable.` | `No external CTA unless Steam page exists.` | It reads as abstract glow/noise or requires lore text. |
+| POST-007 | Low-spec internal proof frame | Internal only | `Internal readability check. Same scene must still sell pressure/machinery with cheap effects. Do not publish as a performance claim.` | `QA decision: publish later / keep internal / kill.` | Anyone tries to use it as FPS or optimization marketing without measured context. |
+| POST-008 | 20s pressure leak clip | TikTok/Shorts/Reels | `The warning was fair. The decision was not.` | `Watch the gauge.` | First 3 seconds do not show motion/tension or the clip needs explanation. |
+| POST-009 | 20s sonar clip | TikTok/Shorts/Reels | `This is not a monster reveal. This is a bad instrument reading.` | `No wishlist CTA on first test.` | Viewers cannot understand what sonar changed. |
+| POST-010 | 20s salvage failure clip | X/Bluesky + creator warmup | `A normal salvage run until the route started charging interest.` | `Ask if the escalation feels fair.` | Clip looks scripted, pre-rendered, or unrelated to player action. |
+| POST-011 | Heavy machinery startup clip | X/Bluesky | `The machine should be louder than the player. Machinery is survival, not decoration.` | `Does it feel heavy?` | Machine movement looks weightless, toy-like, or purely cosmetic. |
+| POST-012 | Steam capsule rough A/B/C image | Reddit critique if rules allow | `Which capsule reads fastest at small size: pressure hatch, salvage floodlight, or Seed Ship signal? I am not asking for wishlists, just thumbnail-read critique.` | `Ask A/B/C choice.` | Community rules disallow self-promo or comments read all variants as clone/generic. |
+
+### First Screenshot Pack Caption Set
+
+Use one caption per screenshot. Do not stack all captions into one post.
+
+```text
+Identity hero:
+One floodlight, too much water.
+
+Pressure room:
+The safest room is still underwater.
+
+Salvage:
+Every useful part has a cost.
+
+Heavy machine:
+Built to survive. Not built to forgive.
+
+Base stress:
+Depth turns small mistakes into disasters.
+
+Threat:
+The sonar saw it first.
+
+Seed Ship:
+Never follow a signal into black water.
+```
+
+### First Five Creator Warmup Lines
+
+Use only for creators already in `Data/CREATOR_VERIFICATION_TEMPLATE.csv` and only after the matching asset exists.
+
+```text
+Pressure/salvage angle:
+I am checking whether this HECTON-8 clip reads as a real survival route: descend, salvage, manage pressure, return. If it does not read in 10 seconds, I do not want to send it to your audience yet.
+
+Base/machinery angle:
+This is the first asset where the base is supposed to read as a pressure machine, not a room. If the machinery looks decorative, I need to fix the shot before any demo outreach.
+
+Horror/atmosphere angle:
+This clip is aiming for dread through instruments and pressure, not jumpscares. If the threat does not read before the reveal, the clip is not ready.
+
+Indie discovery angle:
+The Steam page is not the ask yet. I am checking whether the first playable verb is clear enough for an indie-discovery audience.
+
+Systems creator angle:
+The hook is not "underwater". The hook is whether pressure, power, salvage, and route risk look like systems a player can reason about.
+```
+
+### First 72-Hour Posting Sequence After Screenshot Pack
+
+Do not run this if the screenshot pack fails QA.
+
+| Time | Action | Asset | Notes |
+|---|---|---|---|
+| Hour 0 | Post identity hero on X/Bluesky | POST-001 | No Steam CTA unless page exists. |
+| Hour 4 | Internal comment read | POST-001 | Record clone/readability/co-op/performance confusion. |
+| Hour 12 | Reddit critique in one allowed community | POST-002 or POST-004 | Developer disclosure required. No tracking link unless allowed. |
+| Hour 24 | Post salvage or machinery asset | POST-003 or POST-011 | Pick the asset that answers the biggest confusion from Hour 0. |
+| Hour 36 | Update CRM pitch notes for matching creator segment | CRM rows only | No outreach if comments exposed unreadable player verb. |
+| Hour 48 | Steam/news draft if Steam page exists | Bundle A | Otherwise keep as devlog draft. |
+| Hour 72 | Decide proceed/revise/kill | All first-pack posts | Proceed only if viewers understand genre, pressure, machinery, and player verb. |
+
 ## Thirty-Day Pre-Screenshot Posting Plan
 
 No screenshots yet means no broad public campaign. Use these as prep drafts and internal tests:

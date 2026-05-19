@@ -64,9 +64,9 @@ Every currently mod-exposed `SignalBus<T>` lane is listed below. No other first-
 
 `InteractionEvents` and `CraftingEvents` are also exposed, but they are not `SignalBus<T>` projections. They are copied into `SubscribeNative` as immutable bytes for the callback duration.
 
-Full source audit: [Signal_Audit_Matrix.md](Signal_Audit_Matrix.md) records 160 current `ISignal` structs in `GlobalSignals.cs`. Only 2 are projected for mods. The remaining 158 are denied by default.
+Full source audit: [Signal_Audit_Matrix.md](Signal_Audit_Matrix.md) records 161 current `ISignal` structs in `GlobalSignals.cs`. Only 2 are projected for mods. The remaining 159 are denied by default.
 
-R21 static closure: `Signal_Schema.json` schema revision `14` records the `160 / 2 / 158` signal split in both the source inventory and `staticValidation.lastStaticValidationSnapshot`, with `runtimeProof` set to `PENDING_VERIFICATION`. `Validate_Mod_API_Static.ps1` fails if that static snapshot block drifts behind the source inventory again. This is still static source/doc evidence only, not Unity runtime verification.
+R22 static closure: `Signal_Schema.json` schema revision `15` records the `161 / 2 / 159` signal split in both the source inventory and `staticValidation.lastStaticValidationSnapshot`, with `runtimeProof` set to `PENDING_VERIFICATION`. `Validate_Mod_API_Static.ps1` fails if that static snapshot block drifts behind the source inventory again. This is still static source/doc evidence only, not Unity runtime verification.
 
 ## ModEventDto Contract
 

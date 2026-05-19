@@ -21,7 +21,7 @@ using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     internal struct PlayerKinematicsRuntimeTelemetryEntry
     {
         [FieldOffset(0)] public float3 Position;
@@ -40,7 +40,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(76)] public uint Reserved2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct PlayerKinematicsSyncState
     {
         [FieldOffset(0)] public float3 Position;
@@ -54,7 +54,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(60)] public uint Reserved2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct PlayerKinematicsAccumulatorState
     {
         [FieldOffset(0)] public int FastTickCounter;
@@ -67,7 +67,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(28)] public uint Reserved;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct PlayerKinematicsBodyJob : IJob
     {
         public NativeArray<float3> Positions;
@@ -418,7 +418,7 @@ namespace Hecton8.Gameplay
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct PlayerKinematicsHandPlacementJob : IJob
     {
         public const byte RuntimeFlagLowTier = 1 << 0;
@@ -1150,7 +1150,7 @@ namespace Hecton8.Gameplay
                 Frame = (uint)Time.frameCount,
                 RuntimeFlags = ResolveBodyFlags(ladderActive, inSolid) |
                                math.select(0u, BodyFlagMaelstromActive, activeMaelstromCount > 0) |
-                               math.select(0u, BodyFlagSdfSqueezeIntervention, sdfSqueezeResult.IsActive)
+                              math.select(0u, BodyFlagSdfSqueezeIntervention, SdfSqueezeResult.IsResultActive(in sdfSqueezeResult))
             };
             bodyJob.Run();
             if (rawBodyStateInvalid)
@@ -1168,7 +1168,7 @@ namespace Hecton8.Gameplay
                 resolvedPosition3,
                 resolvedVelocity3,
                 lowTier != 0 ? KccVelocitySignal.FlagLowTier : (byte)0);
-            if (sdfSqueezeResult.IsActive)
+            if (SdfSqueezeResult.IsResultActive(in sdfSqueezeResult))
                 PublishSdfSqueezeSignals(in sdfSqueezeResult, resolvedPosition3, resolvedVelocity3, lowTier);
             if (faultFlags == 0)
                 _dumpWrittenForFault = false;
@@ -1287,7 +1287,7 @@ namespace Hecton8.Gameplay
                 for (int i = 0; i < _sdfSqueezeResults.Length; i++)
                 {
                     SdfSqueezeResult result = _sdfSqueezeResults[i];
-                    if (result.IsActive)
+                    if (SdfSqueezeResult.IsResultActive(in result))
                     {
                         result.Position = SanitizeFloat3(result.Position - offset, float3.zero);
                         _sdfSqueezeResults[i] = result;
@@ -1295,7 +1295,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            if (_lastSdfSqueezeResult.IsActive)
+            if (SdfSqueezeResult.IsResultActive(in _lastSdfSqueezeResult))
                 _lastSdfSqueezeResult.Position = SanitizeFloat3(_lastSdfSqueezeResult.Position - offset, float3.zero);
 
             if (_hasImpactBracePoint)
@@ -1864,7 +1864,7 @@ namespace Hecton8.Gameplay
             if ((result.Flags & SdfSqueezeResult.FlagNaNFallback) != 0u)
                 WriteSdfSqueezeTelemetry(in result, bodyPosition, bodyVelocity);
 
-            if (!result.IsActive)
+            if (!SdfSqueezeResult.IsResultActive(in result))
                 return false;
 
             _lastSdfSqueezeResult = result;
@@ -1885,7 +1885,7 @@ namespace Hecton8.Gameplay
         {
             result = default;
             if (_sdfSqueezeSlowHoldFrames <= 0 ||
-                !_lastSdfSqueezeResult.IsActive ||
+                !SdfSqueezeResult.IsResultActive(in _lastSdfSqueezeResult) ||
                 inSolid == 0 ||
                 !HasMotionSoaStorage())
             {

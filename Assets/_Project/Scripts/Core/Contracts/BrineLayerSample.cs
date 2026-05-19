@@ -6,7 +6,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Blittable brine plane sample for allocation-free handoff between world sampling and runtime consumers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct BrineLayerSample
     {
         public int2 CartographySector;
@@ -17,5 +17,6 @@ namespace Hecton8.Core.Contracts
         public byte Flags;
         public byte Reserved0;
         public ushort SectorHash;
+        private uint _pad0;
     }
 }

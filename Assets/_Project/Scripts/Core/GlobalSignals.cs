@@ -32,52 +32,69 @@ using HullRepairedSignal = Hecton8.Core.Contracts.Signals.HullRepairedSignal;
 
 namespace Hecton8.Core.Contracts.Signals
 {
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public readonly struct ScalabilityChangedEvent : ISignal
     {
         public ScalabilityChangedEvent(byte previousTier, byte currentTier)
         {
-            _previousTier = Hecton8.Core.ScalabilityTierProfiles.Normalize(previousTier);
-            _currentTier = Hecton8.Core.ScalabilityTierProfiles.Normalize(currentTier);
-            _reserved0 = 0;
-            _reserved1 = 0u;
-            _reserved2 = 0ul;
+            PreviousTier = Hecton8.Core.ScalabilityTierProfiles.Normalize(previousTier);
+            CurrentTier = Hecton8.Core.ScalabilityTierProfiles.Normalize(currentTier);
+            PreviousQualityTier = Hecton8.Core.ScalabilityTierRuntime.ToQualityTier(PreviousTier);
+            CurrentQualityTier = Hecton8.Core.ScalabilityTierRuntime.ToQualityTier(CurrentTier);
+            Reserved0 = 0u;
+            Reserved1 = 0ul;
         }
 
-        public byte PreviousTier => _previousTier;
-        public byte CurrentTier => _currentTier;
-        public Hecton8.Core.HectonQualityTier PreviousQualityTier => Hecton8.Core.ScalabilityTierRuntime.ToQualityTier(_previousTier);
-        public Hecton8.Core.HectonQualityTier CurrentQualityTier => Hecton8.Core.ScalabilityTierRuntime.ToQualityTier(_currentTier);
-
-        private readonly byte _previousTier;
-        private readonly byte _currentTier;
-        private readonly ushort _reserved0;
-        private readonly uint _reserved1;
-        private readonly ulong _reserved2;
+        [FieldOffset(0)] public readonly byte PreviousTier;
+        [FieldOffset(1)] public readonly byte CurrentTier;
+        [FieldOffset(2)] public readonly Hecton8.Core.HectonQualityTier PreviousQualityTier;
+        [FieldOffset(3)] public readonly Hecton8.Core.HectonQualityTier CurrentQualityTier;
+        [FieldOffset(4)] public readonly uint Reserved0;
+        [FieldOffset(8)] public readonly ulong Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public readonly struct AcousticZoneChangedEvent : ISignal
     {
         public AcousticZoneChangedEvent(bool isInterior)
         {
-            _isInterior = isInterior ? (byte)1 : (byte)0;
-            _reserved0 = 0;
-            _reserved1 = 0;
-            _reserved2 = 0u;
-            _reserved3 = 0ul;
+            IsInterior = isInterior ? (byte)1 : (byte)0;
+            Reserved0 = 0;
+            Reserved1 = 0;
+            Reserved2 = 0u;
+            Reserved3 = 0ul;
         }
 
-        public bool IsInterior => _isInterior != 0;
-
-        private readonly byte _isInterior;
-        private readonly byte _reserved0;
-        private readonly ushort _reserved1;
-        private readonly uint _reserved2;
-        private readonly ulong _reserved3;
+        [FieldOffset(0)] public readonly byte IsInterior;
+        [FieldOffset(1)] public readonly byte Reserved0;
+        [FieldOffset(2)] public readonly ushort Reserved1;
+        [FieldOffset(4)] public readonly uint Reserved2;
+        [FieldOffset(8)] public readonly ulong Reserved3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    /// <summary>Scalar flood acoustic occlusion payload. Audio owns DSP; fluid owns only these bounded numbers.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct HabitatFloodAcousticMuffleSignal : ISignal
+    {
+        public const byte FlagCriticalFlood = 1 << 0;
+        public const byte FlagBulkheadSealed = 1 << 1;
+        public const byte FlagInvalid = 1 << 7;
+
+        [FieldOffset(0)] public long SourceGridX;
+        [FieldOffset(8)] public long SourceGridY;
+        [FieldOffset(16)] public long SourceGridZ;
+        [FieldOffset(24)] public float3 SourceLocal;
+        [FieldOffset(36)] public uint SourceHash;
+        [FieldOffset(40)] public float FloodIntensity01;
+        [FieldOffset(44)] public float LowPassCutoffHz;
+        [FieldOffset(48)] public byte TransmissionByte;
+        [FieldOffset(49)] public byte Flags;
+        [FieldOffset(50)] public ushort Reserved0;
+        [FieldOffset(52)] public uint Reserved1;
+        [FieldOffset(56)] public ulong Reserved2;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct DirectorAIMusicSignal : ISignal
     {
         public const byte SpawnHordeEventType = 1;
@@ -90,27 +107,22 @@ namespace Hecton8.Core.Contracts.Signals
 
         public DirectorAIMusicSignal(byte eventType, Vector3 position, float value, bool boolValue)
         {
-            _eventType = eventType;
-            _boolValue = boolValue ? (byte)1 : (byte)0;
-            _reserved0 = 0;
-            _value = value;
-            _position = position;
-            _reserved1 = 0u;
-            _reserved2 = 0ul;
+            Position = position;
+            Value = value;
+            EventType = eventType;
+            BoolValue = boolValue ? (byte)1 : (byte)0;
+            Reserved0 = 0;
+            Reserved1 = 0u;
+            Reserved2 = 0ul;
         }
 
-        public byte EventType => _eventType;
-        public bool BoolValue => _boolValue != 0;
-        public float Value => _value;
-        public Vector3 Position => _position;
-
-        private readonly byte _eventType;
-        private readonly byte _boolValue;
-        private readonly ushort _reserved0;
-        private readonly float _value;
-        private readonly Vector3 _position;
-        private readonly uint _reserved1;
-        private readonly ulong _reserved2;
+        [FieldOffset(0)] public readonly Vector3 Position;
+        [FieldOffset(12)] public readonly float Value;
+        [FieldOffset(16)] public readonly byte EventType;
+        [FieldOffset(17)] public readonly byte BoolValue;
+        [FieldOffset(18)] public readonly ushort Reserved0;
+        [FieldOffset(20)] public readonly uint Reserved1;
+        [FieldOffset(24)] public readonly ulong Reserved2;
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 144)]
@@ -654,7 +666,8 @@ namespace Hecton8.Core.Contracts.Signals
         PressureImpulse = 1,
         ElectromagneticPulse = 2,
         AcousticPing = 3,
-        AcousticImpulse = 4
+        AcousticImpulse = 4,
+        FloodMassShift = 5
     }
 
     /// <summary>
@@ -760,8 +773,10 @@ namespace Hecton8.Core.Contracts.Signals
     {
         uint LaneHash { get; }
         int QueuedBeforeFlush { get; }
+        int PushedLastFlush { get; }
         int SnapshotCount { get; }
         int DroppedLastFlush { get; }
+        int CoalescedLastFlush { get; }
         int CorruptedSignalTotal { get; }
         bool StormDetectedLastFlush { get; }
         bool FlushDuringSimulationPause { get; }
@@ -780,11 +795,15 @@ namespace Hecton8.Core.Contracts.Signals
         private const int LaneCapacity = 256;
         private const int StressScale = 1000;
 
-        // COLD ALLOC: ISignalLane[256] - typed signal-lane registry for deterministic pre-simulation flush - owner: SignalBusRegistry
+        // COLD ALLOC: ISignalLane[256] - fallback typed signal-lane registry for deterministic pre-simulation flush - owner: SignalBusRegistry
         private static readonly ISignalLane[] _lanes = new ISignalLane[LaneCapacity];
+        // COLD ALLOC: int[256] - indices for dynamic lanes that still require fallback dispatch - owner: SignalBusRegistry
+        private static readonly int[] _fallbackLaneIndices = new int[LaneCapacity];
         private static int _laneCount;
+        private static int _fallbackLaneCount;
         private static int _lowTierMode = 1;
         private static int _registrationOverflow;
+        private static int _globalQualityMilli = StressScale;
         private static int _systemStressMilli;
         private static int _simulationHalted;
 
@@ -800,12 +819,16 @@ namespace Hecton8.Core.Contracts.Signals
         /// <summary>Runtime stress scalar in [0..1], quantized to avoid float tearing.</summary>
         public static float SystemStress01 => math.saturate(Volatile.Read(ref _systemStressMilli) * 0.001f);
 
+        /// <summary>Continuous corridor quality scalar in [0..1], quantized to avoid float tearing.</summary>
+        public static float GlobalQualityWeight01 => math.saturate(Volatile.Read(ref _globalQualityMilli) * 0.001f);
+
         /// <summary>True after a fatal signal requests an immediate dispatcher halt.</summary>
         public static bool IsSimulationHalted => Volatile.Read(ref _simulationHalted) != 0;
 
         internal static int SystemStressMilli => Volatile.Read(ref _systemStressMilli);
+        internal static int GlobalQualityMilli => Volatile.Read(ref _globalQualityMilli);
 
-        internal static void Register(ISignalLane lane)
+        internal static void Register(ISignalLane lane, bool directDispatch)
         {
             if (lane == null)
                 return;
@@ -825,7 +848,12 @@ namespace Hecton8.Core.Contracts.Signals
                 return;
             }
 
-            _lanes[_laneCount++] = lane;
+            int laneIndex = _laneCount;
+            _lanes[laneIndex] = lane;
+            if (!directDispatch)
+                _fallbackLaneIndices[_fallbackLaneCount++] = laneIndex;
+
+            _laneCount++;
         }
 
         /// <summary>Sets whether low-tier lane caps are active.</summary>
@@ -841,6 +869,14 @@ namespace Hecton8.Core.Contracts.Signals
         {
             float sanitized = math.isfinite(stress01) ? math.saturate(stress01) : 1f;
             Volatile.Write(ref _systemStressMilli, (int)math.round(sanitized * StressScale));
+        }
+
+        /// <summary>Sets the continuous quality scalar that controls lane caps and coalescing pressure.</summary>
+        /// <param name="quality01">Quality in [0..1]. Non-finite values clamp to survival minimum.</param>
+        public static void SetGlobalQualityWeight01(float quality01)
+        {
+            float sanitized = math.isfinite(quality01) ? math.saturate(quality01) : 0f;
+            Volatile.Write(ref _globalQualityMilli, (int)math.round(sanitized * StressScale));
         }
 
         /// <summary>Sets the fatal-interrupt latch checked by dispatcher bucket loops.</summary>
@@ -860,23 +896,35 @@ namespace Hecton8.Core.Contracts.Signals
         {
             bool lowTier = LowTierMode;
             int systemStressMilli = Volatile.Read(ref _systemStressMilli);
-            int laneCount = _laneCount;
             bool simulationPaused = global::Hecton8.Core.GlobalSignals.SimulationPaused;
-            for (int i = 0; i < laneCount; i++)
+            FlushDirectSignalLanes(lowTier, systemStressMilli, simulationPaused);
+            int fallbackLaneCount = _fallbackLaneCount;
+            for (int i = 0; i < fallbackLaneCount; i++)
             {
-                if (simulationPaused && !_lanes[i].FlushDuringSimulationPause)
+                ISignalLane lane = _lanes[_fallbackLaneIndices[i]];
+                if (lane == null)
                     continue;
 
-                _lanes[i].FlushPreSimulation(lowTier, systemStressMilli);
+                if (simulationPaused && !lane.FlushDuringSimulationPause)
+                    continue;
+
+                lane.FlushPreSimulation(lowTier, systemStressMilli);
             }
         }
 
         /// <summary>Clears every frame snapshot after consumers finish the simulation frame.</summary>
         public static void ClearPostSimulationSnapshots()
         {
-            int laneCount = _laneCount;
-            for (int i = 0; i < laneCount; i++)
-                _lanes[i].ClearPostSimulation();
+            ClearDirectSignalLaneSnapshots();
+            int fallbackLaneCount = _fallbackLaneCount;
+            for (int i = 0; i < fallbackLaneCount; i++)
+            {
+                ISignalLane lane = _lanes[_fallbackLaneIndices[i]];
+                if (lane == null)
+                    continue;
+
+                lane.ClearPostSimulation();
+            }
         }
 
         /// <summary>Disposes every typed lane. Called on subsystem reset and application quit.</summary>
@@ -893,7 +941,9 @@ namespace Hecton8.Core.Contracts.Signals
             }
 
             _laneCount = 0;
+            _fallbackLaneCount = 0;
             Volatile.Write(ref _registrationOverflow, 0);
+            Volatile.Write(ref _globalQualityMilli, StressScale);
             Volatile.Write(ref _systemStressMilli, 0);
             Volatile.Write(ref _simulationHalted, 0);
         }
@@ -920,6 +970,288 @@ namespace Hecton8.Core.Contracts.Signals
         internal static ISignalLane GetLaneAt(int index)
         {
             return index >= 0 && index < _laneCount ? _lanes[index] : null;
+        }
+
+        private static void FlushDirectSignalLanes(bool lowTier, int systemStressMilli, bool simulationPaused)
+        {
+            FlushDirectSignalLane<AcousticPingSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<AcousticZoneChangedEvent>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<AnomalyProximitySignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<AtmosphericReentrySignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<AupPreShiftSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<AupShiftSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<BaseModuleCompromisedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<BatteryLevelSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<BiomeChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<BiomeGradientSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<BrownoutSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<BubbleSpawnSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<CameraFrustumSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<CameraJuiceImpactSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<CameraPositionSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ChunkDehydratedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<InputStateSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerInputSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerLookTargetSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<CombatDamageSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<CompassCalibratedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<CpuStarvationSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<CraftingCompletedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<CullingOverloadSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<DataVaultUpdateSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<DebrisSpawnSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<DebugSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<DeferredSubmarineImpactSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<DesyncDetectedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<DiegeticHudSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<DirectorAIMusicSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<DockingCompleteSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<DockingFailedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<DockingRequestSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<DropPodLandedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<EntityDeathSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<EntitySpawnSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<FaunaStateChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<FluidImpulseSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<FramePacingWarningSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<FrameTimeSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<global::Hecton8.Core.Contracts.Signals.AudioEvent>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<HapticRequest>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<HighSpeedImpactSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<HUDNotificationSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<HullDeformedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<HullRepairedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ImpactSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<InputSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<InventoryChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<InventoryCommandSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ItemAcquiredSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ItemDurabilityChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<KccVelocitySignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<KillSwitchSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<LaserCutterEventPayload>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<LockstepSnapshotSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<LoreFragmentScannedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<MacroCollisionSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<MacroDatabaseSectorHydrationSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ManualOverridePulledSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<MemoryAddressShiftSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<MemoryPressureSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<MockPlayerFootstepSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<MockRockCollisionSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<MovementAcousticSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PdaExchangeStateChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PhysicsEventPayload>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerStateSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SurvivalVitalsChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PhysiologyStateSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerStressSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerActionCancelledSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerActionCompletedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerActionProgressSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerBaseEnterSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerBaseExitSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerExhaleSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerFatalPressureSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerFootstepSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerSprintStateSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerTransportBailoutSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PlayerWaterSplashSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PrefabAcousticSignatureSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PrefabLoreLinkSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<PrologueCompleteSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<RadiationDoseSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<RadiationSourceSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ReentryVfxStateSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ResolutionChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ResourceDepletionDeltaSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SaveCompletedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SaveMetadataReadySignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SaveStatusSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ScalabilityChangedEvent>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ScanLogChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ScannerToolActiveSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SectorDehydratedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SectorResidencyHydratedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SeismicSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SignalWardenMockDamageSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SimulationBucketSyncSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SplashEvent>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<StateCorrectionSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<StorageDebtSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<StreamingTurbulenceSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SubmarineFloodStateSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SubmarineLightsChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SwarmDispersedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SyncFenceSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SystemGlitchSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SystemHealthIndexSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SystemHealthSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SystemPauseSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<TemperatureChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<TetherFiredSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<TetherSnappedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<TetherTensionSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ThermalStateChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ToolAcousticSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<ToolLoadoutChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<VehicleUpgradesChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<VisorDropletSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<VisualFlareSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<VoxelCarveEvent>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<WakeGeneratedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<WakeRequestSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<WaterTransitionSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<WeatherChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<WfcOutpostDoorPowerSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<WfcOutpostGeneratedSignal>(lowTier, systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<WfcOutpostStateChangedSignal>(lowTier, systemStressMilli, simulationPaused);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void FlushDirectSignalLane<T>(bool lowTier, int systemStressMilli, bool simulationPaused)
+            where T : unmanaged, ISignal
+        {
+            if (simulationPaused && !SignalLanePolicyCache<T>.FlushDuringSimulationPause)
+                return;
+
+            SignalBus<T>.FlushPreSimulation(lowTier, systemStressMilli);
+        }
+
+        private static void ClearDirectSignalLaneSnapshots()
+        {
+            SignalBus<AcousticPingSignal>.ClearPostSimulation();
+            SignalBus<AcousticZoneChangedEvent>.ClearPostSimulation();
+            SignalBus<AnomalyProximitySignal>.ClearPostSimulation();
+            SignalBus<AtmosphericReentrySignal>.ClearPostSimulation();
+            SignalBus<AupPreShiftSignal>.ClearPostSimulation();
+            SignalBus<AupShiftSignal>.ClearPostSimulation();
+            SignalBus<BaseModuleCompromisedSignal>.ClearPostSimulation();
+            SignalBus<BatteryLevelSignal>.ClearPostSimulation();
+            SignalBus<BiomeChangedSignal>.ClearPostSimulation();
+            SignalBus<BiomeGradientSignal>.ClearPostSimulation();
+            SignalBus<BrownoutSignal>.ClearPostSimulation();
+            SignalBus<BubbleSpawnSignal>.ClearPostSimulation();
+            SignalBus<CameraFrustumSignal>.ClearPostSimulation();
+            SignalBus<CameraJuiceImpactSignal>.ClearPostSimulation();
+            SignalBus<CameraPositionSignal>.ClearPostSimulation();
+            SignalBus<ChunkDehydratedSignal>.ClearPostSimulation();
+            SignalBus<InputStateSignal>.ClearPostSimulation();
+            SignalBus<PlayerInputSignal>.ClearPostSimulation();
+            SignalBus<PlayerLookTargetSignal>.ClearPostSimulation();
+            SignalBus<CombatDamageSignal>.ClearPostSimulation();
+            SignalBus<CompassCalibratedSignal>.ClearPostSimulation();
+            SignalBus<CpuStarvationSignal>.ClearPostSimulation();
+            SignalBus<CraftingCompletedSignal>.ClearPostSimulation();
+            SignalBus<CullingOverloadSignal>.ClearPostSimulation();
+            SignalBus<DataVaultUpdateSignal>.ClearPostSimulation();
+            SignalBus<DebrisSpawnSignal>.ClearPostSimulation();
+            SignalBus<DebugSignal>.ClearPostSimulation();
+            SignalBus<DeferredSubmarineImpactSignal>.ClearPostSimulation();
+            SignalBus<DesyncDetectedSignal>.ClearPostSimulation();
+            SignalBus<DiegeticHudSignal>.ClearPostSimulation();
+            SignalBus<DirectorAIMusicSignal>.ClearPostSimulation();
+            SignalBus<DockingCompleteSignal>.ClearPostSimulation();
+            SignalBus<DockingFailedSignal>.ClearPostSimulation();
+            SignalBus<DockingRequestSignal>.ClearPostSimulation();
+            SignalBus<DropPodLandedSignal>.ClearPostSimulation();
+            SignalBus<EntityDeathSignal>.ClearPostSimulation();
+            SignalBus<EntitySpawnSignal>.ClearPostSimulation();
+            SignalBus<FaunaStateChangedSignal>.ClearPostSimulation();
+            SignalBus<FluidImpulseSignal>.ClearPostSimulation();
+            SignalBus<FramePacingWarningSignal>.ClearPostSimulation();
+            SignalBus<FrameTimeSignal>.ClearPostSimulation();
+            SignalBus<global::Hecton8.Core.Contracts.Signals.AudioEvent>.ClearPostSimulation();
+            SignalBus<HapticRequest>.ClearPostSimulation();
+            SignalBus<HighSpeedImpactSignal>.ClearPostSimulation();
+            SignalBus<HUDNotificationSignal>.ClearPostSimulation();
+            SignalBus<HullDeformedSignal>.ClearPostSimulation();
+            SignalBus<HullRepairedSignal>.ClearPostSimulation();
+            SignalBus<ImpactSignal>.ClearPostSimulation();
+            SignalBus<InputSignal>.ClearPostSimulation();
+            SignalBus<InventoryChangedSignal>.ClearPostSimulation();
+            SignalBus<InventoryCommandSignal>.ClearPostSimulation();
+            SignalBus<ItemAcquiredSignal>.ClearPostSimulation();
+            SignalBus<ItemDurabilityChangedSignal>.ClearPostSimulation();
+            SignalBus<KccVelocitySignal>.ClearPostSimulation();
+            SignalBus<KillSwitchSignal>.ClearPostSimulation();
+            SignalBus<LaserCutterEventPayload>.ClearPostSimulation();
+            SignalBus<LockstepSnapshotSignal>.ClearPostSimulation();
+            SignalBus<LoreFragmentScannedSignal>.ClearPostSimulation();
+            SignalBus<MacroCollisionSignal>.ClearPostSimulation();
+            SignalBus<MacroDatabaseSectorHydrationSignal>.ClearPostSimulation();
+            SignalBus<ManualOverridePulledSignal>.ClearPostSimulation();
+            SignalBus<MemoryAddressShiftSignal>.ClearPostSimulation();
+            SignalBus<MemoryPressureSignal>.ClearPostSimulation();
+            SignalBus<MockPlayerFootstepSignal>.ClearPostSimulation();
+            SignalBus<MockRockCollisionSignal>.ClearPostSimulation();
+            SignalBus<MovementAcousticSignal>.ClearPostSimulation();
+            SignalBus<PdaExchangeStateChangedSignal>.ClearPostSimulation();
+            SignalBus<PhysicsEventPayload>.ClearPostSimulation();
+            SignalBus<PlayerStateSignal>.ClearPostSimulation();
+            SignalBus<SurvivalVitalsChangedSignal>.ClearPostSimulation();
+            SignalBus<PhysiologyStateSignal>.ClearPostSimulation();
+            SignalBus<PlayerStressSignal>.ClearPostSimulation();
+            SignalBus<PlayerActionCancelledSignal>.ClearPostSimulation();
+            SignalBus<PlayerActionCompletedSignal>.ClearPostSimulation();
+            SignalBus<PlayerActionProgressSignal>.ClearPostSimulation();
+            SignalBus<PlayerBaseEnterSignal>.ClearPostSimulation();
+            SignalBus<PlayerBaseExitSignal>.ClearPostSimulation();
+            SignalBus<PlayerExhaleSignal>.ClearPostSimulation();
+            SignalBus<PlayerFatalPressureSignal>.ClearPostSimulation();
+            SignalBus<PlayerFootstepSignal>.ClearPostSimulation();
+            SignalBus<PlayerSprintStateSignal>.ClearPostSimulation();
+            SignalBus<PlayerTransportBailoutSignal>.ClearPostSimulation();
+            SignalBus<PlayerWaterSplashSignal>.ClearPostSimulation();
+            SignalBus<PrefabAcousticSignatureSignal>.ClearPostSimulation();
+            SignalBus<PrefabLoreLinkSignal>.ClearPostSimulation();
+            SignalBus<PrologueCompleteSignal>.ClearPostSimulation();
+            SignalBus<RadiationDoseSignal>.ClearPostSimulation();
+            SignalBus<RadiationSourceSignal>.ClearPostSimulation();
+            SignalBus<ReentryVfxStateSignal>.ClearPostSimulation();
+            SignalBus<ResolutionChangedSignal>.ClearPostSimulation();
+            SignalBus<ResourceDepletionDeltaSignal>.ClearPostSimulation();
+            SignalBus<SaveCompletedSignal>.ClearPostSimulation();
+            SignalBus<SaveMetadataReadySignal>.ClearPostSimulation();
+            SignalBus<SaveStatusSignal>.ClearPostSimulation();
+            SignalBus<ScalabilityChangedEvent>.ClearPostSimulation();
+            SignalBus<ScanLogChangedSignal>.ClearPostSimulation();
+            SignalBus<ScannerToolActiveSignal>.ClearPostSimulation();
+            SignalBus<SectorDehydratedSignal>.ClearPostSimulation();
+            SignalBus<SectorResidencyHydratedSignal>.ClearPostSimulation();
+            SignalBus<SeismicSignal>.ClearPostSimulation();
+            SignalBus<SignalWardenMockDamageSignal>.ClearPostSimulation();
+            SignalBus<SimulationBucketSyncSignal>.ClearPostSimulation();
+            SignalBus<SplashEvent>.ClearPostSimulation();
+            SignalBus<StateCorrectionSignal>.ClearPostSimulation();
+            SignalBus<StorageDebtSignal>.ClearPostSimulation();
+            SignalBus<StreamingTurbulenceSignal>.ClearPostSimulation();
+            SignalBus<SubmarineFloodStateSignal>.ClearPostSimulation();
+            SignalBus<SubmarineLightsChangedSignal>.ClearPostSimulation();
+            SignalBus<SwarmDispersedSignal>.ClearPostSimulation();
+            SignalBus<SyncFenceSignal>.ClearPostSimulation();
+            SignalBus<SystemGlitchSignal>.ClearPostSimulation();
+            SignalBus<SystemHealthIndexSignal>.ClearPostSimulation();
+            SignalBus<SystemHealthSignal>.ClearPostSimulation();
+            SignalBus<SystemPauseSignal>.ClearPostSimulation();
+            SignalBus<TemperatureChangedSignal>.ClearPostSimulation();
+            SignalBus<TetherFiredSignal>.ClearPostSimulation();
+            SignalBus<TetherSnappedSignal>.ClearPostSimulation();
+            SignalBus<TetherTensionSignal>.ClearPostSimulation();
+            SignalBus<ThermalStateChangedSignal>.ClearPostSimulation();
+            SignalBus<ToolAcousticSignal>.ClearPostSimulation();
+            SignalBus<ToolLoadoutChangedSignal>.ClearPostSimulation();
+            SignalBus<VehicleUpgradesChangedSignal>.ClearPostSimulation();
+            SignalBus<VisorDropletSignal>.ClearPostSimulation();
+            SignalBus<VisualFlareSignal>.ClearPostSimulation();
+            SignalBus<VoxelCarveEvent>.ClearPostSimulation();
+            SignalBus<WakeGeneratedSignal>.ClearPostSimulation();
+            SignalBus<WakeRequestSignal>.ClearPostSimulation();
+            SignalBus<WaterTransitionSignal>.ClearPostSimulation();
+            SignalBus<WeatherChangedSignal>.ClearPostSimulation();
+            SignalBus<WfcOutpostDoorPowerSignal>.ClearPostSimulation();
+            SignalBus<WfcOutpostGeneratedSignal>.ClearPostSimulation();
+            SignalBus<WfcOutpostStateChangedSignal>.ClearPostSimulation();
         }
     }
 
@@ -957,8 +1289,11 @@ namespace Hecton8.Core.Contracts.Signals
         private static int _lowTierFrameSignals = DefaultLowTierFrameSignals;
         private static int _legacyReadCursor;
         private static int _queuedBeforeFlush;
+        private static int _pushedLastFlush;
         private static int _droppedLastFlush;
         private static int _droppedPendingFlush;
+        private static int _coalescedLastFlush;
+        private static int _coalescedTotal;
         private static int _stormDetectedLastFlush;
         private static int _loadShedTotal;
         private static int _corruptedSignalTotal;
@@ -1056,8 +1391,11 @@ namespace Hecton8.Core.Contracts.Signals
             _legacyReadCursor = 0;
             _frameSnapshotCount = 0;
             _queuedBeforeFlush = 0;
+            _pushedLastFlush = 0;
             _droppedLastFlush = 0;
             _droppedPendingFlush = 0;
+            _coalescedLastFlush = 0;
+            _coalescedTotal = 0;
             _stormDetectedLastFlush = 0;
             _loadShedTotal = 0;
             _corruptedSignalTotal = 0;
@@ -1218,10 +1556,12 @@ namespace Hecton8.Core.Contracts.Signals
             _frameSnapshotCount = 0;
             _legacyReadCursor = 0;
             _droppedLastFlush = Interlocked.Exchange(ref _droppedPendingFlush, 0);
+            _coalescedLastFlush = 0;
             _stormDetectedLastFlush = 0;
 
             int queued = _queue.Count;
             _queuedBeforeFlush = queued;
+            _pushedLastFlush = queued + _droppedLastFlush;
             _peakQueuedLastFlush = queued > _peakQueuedLastFlush ? queued : _peakQueuedLastFlush;
             bool nonCriticalVfx = SignalLanePolicyCache<T>.NonCriticalVfx;
             int priority = SignalPriorityTable.GetPriority(_laneHash);
@@ -1263,22 +1603,184 @@ namespace Hecton8.Core.Contracts.Signals
                 if (!_queue.TryDequeue(out T signal))
                     break;
 
-                _frameSnapshot[_frameSnapshotCount++] = signal;
+                if (TryCoalesceOrAppend(ref signal, frameLimit))
+                    continue;
             }
+
+            if (_frameSnapshotCount > 1 && SignalLanePolicyCache<T>.DeterministicMutationOrder)
+                SortSnapshotDeterministically();
         }
 
         private static int ResolveFrameLimit(bool lowTier, int systemStressMilli, bool nonCriticalVfx, int priority)
         {
+            float qualityWeight = SignalBusRegistry.GlobalQualityWeight01;
+            float stressWeight = math.saturate(systemStressMilli * 0.001f);
+            float effectiveQuality = math.saturate(qualityWeight * math.lerp(1f, 0.35f, stressWeight));
+            float curvedQuality = effectiveQuality * effectiveQuality * (3f - (2f * effectiveQuality));
+            int minSignals = _lowTierFrameSignals;
+            int maxSignals = _maxFrameSignals;
+            if (SignalTuningTable.TryGetProfile(_laneHash, out SignalTuningProfile tuning))
+            {
+                minSignals = math.clamp(tuning.MinFrameSignals, 1, _maxFrameSignals);
+                maxSignals = math.clamp(tuning.MaxFrameSignals, minSignals, _maxFrameSignals);
+            }
+
+            int continuousLimit = (int)math.round(math.lerp(minSignals, maxSignals, curvedQuality));
+
             if (priority >= 100)
-                return lowTier ? Math.Min(_maxFrameSignals, Math.Max(_lowTierFrameSignals, _lowTierFrameSignals << 1)) : _maxFrameSignals;
+                return math.clamp(Math.Max(continuousLimit, minSignals << 1), 1, _maxFrameSignals);
 
-            if (nonCriticalVfx && systemStressMilli > LowTierDropStressMilli)
-                return 0;
+            if (nonCriticalVfx)
+            {
+                int vfxLimit = (int)math.round(math.lerp(1f, continuousLimit, curvedQuality));
+                return math.clamp(vfxLimit, 1, _maxFrameSignals);
+            }
 
-            if (systemStressMilli < HighEndOverkillStressMilli)
-                return _maxFrameSignals;
+            return math.clamp(continuousLimit, 1, _maxFrameSignals);
+        }
 
-            return lowTier ? _lowTierFrameSignals : _maxFrameSignals;
+        private static bool TryCoalesceOrAppend(ref T signal, int frameLimit)
+        {
+            if (SignalLanePolicyCache<T>.CoalescesByAupGrid && TryCoalesceAcousticPing(ref signal))
+                return true;
+
+            if (SignalLanePolicyCache<T>.CoalescesByTargetHash && TryCoalesceCombatDamage(ref signal))
+                return true;
+
+            if (_frameSnapshotCount >= frameLimit)
+            {
+                _droppedLastFlush++;
+                Interlocked.Increment(ref _loadShedTotal);
+                return true;
+            }
+
+            _frameSnapshot[_frameSnapshotCount++] = signal;
+            return true;
+        }
+
+        private static bool TryCoalesceAcousticPing(ref T signal)
+        {
+            ref AcousticPingSignal incoming = ref UnsafeUtility.As<T, AcousticPingSignal>(ref signal);
+            for (int i = 0; i < _frameSnapshotCount; i++)
+            {
+                T existingGeneric = _frameSnapshot[i];
+                ref AcousticPingSignal existing = ref UnsafeUtility.As<T, AcousticPingSignal>(ref existingGeneric);
+                if (existing.Channel != incoming.Channel ||
+                    !IsSameAupMeterCell(in existing.PositionAup, in incoming.PositionAup))
+                {
+                    continue;
+                }
+
+                existing.RadiusMeters = math.max(existing.RadiusMeters, incoming.RadiusMeters);
+                existing.Intensity01 = math.saturate(math.max(existing.Intensity01, incoming.Intensity01));
+                existing.Flags = (byte)(existing.Flags | incoming.Flags);
+                if (existing.SourceId == 0u)
+                    existing.SourceId = incoming.SourceId;
+
+                _frameSnapshot[i] = existingGeneric;
+                _coalescedLastFlush++;
+                Interlocked.Increment(ref _coalescedTotal);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryCoalesceCombatDamage(ref T signal)
+        {
+            ref CombatDamageSignal incoming = ref UnsafeUtility.As<T, CombatDamageSignal>(ref signal);
+            if (incoming.TargetHash == 0u)
+                return false;
+
+            for (int i = 0; i < _frameSnapshotCount; i++)
+            {
+                T existingGeneric = _frameSnapshot[i];
+                ref CombatDamageSignal existing = ref UnsafeUtility.As<T, CombatDamageSignal>(ref existingGeneric);
+                if (existing.TargetHash != incoming.TargetHash ||
+                    existing.DamageType != incoming.DamageType ||
+                    existing.Channel != incoming.Channel)
+                {
+                    continue;
+                }
+
+                existing.Magnitude = math.max(0f, existing.Magnitude) + math.max(0f, incoming.Magnitude);
+                existing.IntegrityDelta = (byte)math.min(byte.MaxValue, existing.IntegrityDelta + incoming.IntegrityDelta);
+                existing.Flags = (byte)(existing.Flags | incoming.Flags);
+                if (existing.SourceHash == 0u)
+                    existing.SourceHash = incoming.SourceHash;
+                if (existing.SourceId == 0)
+                    existing.SourceId = incoming.SourceId;
+
+                _frameSnapshot[i] = existingGeneric;
+                _coalescedLastFlush++;
+                Interlocked.Increment(ref _coalescedTotal);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsSameAupMeterCell(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        {
+            float radiusMeters = SignalTuningTable.TryGetProfile(_laneHash, out SignalTuningProfile profile)
+                ? math.max(0.0001f, profile.CoalescingRadiusMeters)
+                : 1f;
+            return a.GridX == b.GridX &&
+                   a.GridY == b.GridY &&
+                   a.GridZ == b.GridZ &&
+                   (int)math.floor(a.LocalX / radiusMeters) == (int)math.floor(b.LocalX / radiusMeters) &&
+                   (int)math.floor(a.LocalY / radiusMeters) == (int)math.floor(b.LocalY / radiusMeters) &&
+                   (int)math.floor(a.LocalZ / radiusMeters) == (int)math.floor(b.LocalZ / radiusMeters);
+        }
+
+        private static void SortSnapshotDeterministically()
+        {
+            for (int i = 1; i < _frameSnapshotCount; i++)
+            {
+                T current = _frameSnapshot[i];
+                ulong currentKey = ResolveDeterministicSortKey(in current);
+                int j = i - 1;
+                while (j >= 0 && ResolveDeterministicSortKey(in _frameSnapshot[j]) > currentKey)
+                {
+                    _frameSnapshot[j + 1] = _frameSnapshot[j];
+                    j--;
+                }
+
+                _frameSnapshot[j + 1] = current;
+            }
+        }
+
+        private static ulong ResolveDeterministicSortKey(in T signal)
+        {
+            T copy = signal;
+            if (typeof(T) == typeof(CombatDamageSignal))
+            {
+                ref CombatDamageSignal combat = ref UnsafeUtility.As<T, CombatDamageSignal>(ref copy);
+                return ((ulong)combat.TargetHash << 32) | combat.SourceHash;
+            }
+
+            if (typeof(T) == typeof(PlayerStateSignal))
+            {
+                ref PlayerStateSignal player = ref UnsafeUtility.As<T, PlayerStateSignal>(ref copy);
+                return ((ulong)player.SourceHash << 32) | player.Frame;
+            }
+
+            return ResolveGenericSortKey(in signal);
+        }
+
+        private static unsafe ulong ResolveGenericSortKey(in T signal)
+        {
+            T copy = signal;
+            byte* bytes = (byte*)UnsafeUtility.AddressOf(ref copy);
+            int length = UnsafeUtility.SizeOf<T>();
+            ulong hash = 14695981039346656037ul;
+            for (int i = 0; i < length; i++)
+            {
+                hash ^= bytes[i];
+                hash *= 1099511628211ul;
+            }
+
+            return hash;
         }
 
         private static void DropOldest(int count)
@@ -1318,8 +1820,11 @@ namespace Hecton8.Core.Contracts.Signals
 
             _legacyReadCursor = 0;
             _queuedBeforeFlush = 0;
+            _pushedLastFlush = 0;
             _droppedLastFlush = 0;
             _droppedPendingFlush = 0;
+            _coalescedLastFlush = 0;
+            _coalescedTotal = 0;
             _stormDetectedLastFlush = 0;
             _loadShedTotal = 0;
             _corruptedSignalTotal = 0;
@@ -1337,7 +1842,7 @@ namespace Hecton8.Core.Contracts.Signals
             if (_laneHash == 0u)
                 _laneHash = ComputeTypeHash();
 
-            SignalBusRegistry.Register(_laneAdapter);
+            SignalBusRegistry.Register(_laneAdapter, SignalLanePolicyCache<T>.DirectRegistryDispatch);
             _registered = true;
         }
 
@@ -1449,8 +1954,10 @@ namespace Hecton8.Core.Contracts.Signals
         {
             public uint LaneHash => SignalBus<T>.LaneHash;
             public int QueuedBeforeFlush => _queuedBeforeFlush;
+            public int PushedLastFlush => _pushedLastFlush;
             public int SnapshotCount => SignalBus<T>.SnapshotCount;
             public int DroppedLastFlush => _droppedLastFlush;
+            public int CoalescedLastFlush => _coalescedLastFlush;
             public int CorruptedSignalTotal => Volatile.Read(ref _corruptedSignalTotal);
             public bool StormDetectedLastFlush => _stormDetectedLastFlush != 0;
             public bool FlushDuringSimulationPause => SignalLanePolicyCache<T>.FlushDuringSimulationPause;
@@ -1476,10 +1983,12 @@ namespace Hecton8.Core.Contracts.Signals
                 telemetry.QueuedBeforeFlush = _queuedBeforeFlush;
                 telemetry.SnapshotCount = SignalBus<T>.SnapshotCount;
                 telemetry.DroppedCount = _droppedLastFlush + Volatile.Read(ref _corruptedSignalTotal);
+                telemetry.CoalescedCount = _coalescedLastFlush;
                 telemetry.Flags = (byte)(
                     (_stormDetectedLastFlush != 0 ? 1 : 0) |
                     (SignalLanePolicyCache<T>.NonCriticalVfx ? 2 : 0) |
-                    (SignalLanePolicyCache<T>.FatalInterrupt ? 4 : 0));
+                    (SignalLanePolicyCache<T>.FatalInterrupt ? 4 : 0) |
+                    (_coalescedLastFlush > 0 ? 8 : 0));
             }
         }
     }
@@ -1490,6 +1999,10 @@ namespace Hecton8.Core.Contracts.Signals
         public static readonly bool NonCriticalVfx = ResolveNonCriticalVfx();
         public static readonly bool FlushDuringSimulationPause = ResolveFlushDuringSimulationPause();
         public static readonly bool FatalInterrupt = ResolveFatalInterrupt();
+        public static readonly bool CoalescesByAupGrid = ResolveCoalescesByAupGrid();
+        public static readonly bool CoalescesByTargetHash = ResolveCoalescesByTargetHash();
+        public static readonly bool DeterministicMutationOrder = ResolveDeterministicMutationOrder();
+        public static readonly bool DirectRegistryDispatch = ResolveDirectRegistryDispatch();
 
         private static bool ResolveNonCriticalVfx()
         {
@@ -1541,7 +2054,7 @@ namespace Hecton8.Core.Contracts.Signals
                    type == typeof(AupPreShiftSignal) ||
                    type == typeof(AupShiftSignal) ||
                    type == typeof(ResolutionChangedSignal) ||
-                   type == typeof(global::Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent) ||
+                   type == typeof(ScalabilityChangedEvent) ||
                    type == typeof(SystemHealthIndexSignal) ||
                    type == typeof(CpuStarvationSignal);
         }
@@ -1552,6 +2065,164 @@ namespace Hecton8.Core.Contracts.Signals
             return type == typeof(PlayerFatalPressureSignal) ||
                    type == typeof(SystemGlitchSignal) ||
                    type == typeof(KillSwitchSignal);
+        }
+
+        private static bool ResolveCoalescesByAupGrid()
+        {
+            Type type = typeof(T);
+            return type == typeof(AcousticPingSignal);
+        }
+
+        private static bool ResolveCoalescesByTargetHash()
+        {
+            Type type = typeof(T);
+            return type == typeof(CombatDamageSignal);
+        }
+
+        private static bool ResolveDeterministicMutationOrder()
+        {
+            Type type = typeof(T);
+            return type == typeof(CombatDamageSignal) ||
+                   type == typeof(PlayerStateSignal) ||
+                   type == typeof(StateCorrectionSignal) ||
+                   type == typeof(SyncFenceSignal);
+        }
+
+        private static bool ResolveDirectRegistryDispatch()
+        {
+            Type type = typeof(T);
+            return type == typeof(AcousticPingSignal) ||
+                   type == typeof(AcousticZoneChangedEvent) ||
+                   type == typeof(AnomalyProximitySignal) ||
+                   type == typeof(AtmosphericReentrySignal) ||
+                   type == typeof(AupPreShiftSignal) ||
+                   type == typeof(AupShiftSignal) ||
+                   type == typeof(BaseModuleCompromisedSignal) ||
+                   type == typeof(BatteryLevelSignal) ||
+                   type == typeof(BiomeChangedSignal) ||
+                   type == typeof(BiomeGradientSignal) ||
+                   type == typeof(BrownoutSignal) ||
+                   type == typeof(BubbleSpawnSignal) ||
+                   type == typeof(CameraFrustumSignal) ||
+                   type == typeof(CameraJuiceImpactSignal) ||
+                   type == typeof(CameraPositionSignal) ||
+                   type == typeof(ChunkDehydratedSignal) ||
+                   type == typeof(InputStateSignal) ||
+                   type == typeof(PlayerInputSignal) ||
+                   type == typeof(PlayerLookTargetSignal) ||
+                   type == typeof(CombatDamageSignal) ||
+                   type == typeof(CompassCalibratedSignal) ||
+                   type == typeof(CpuStarvationSignal) ||
+                   type == typeof(CraftingCompletedSignal) ||
+                   type == typeof(CullingOverloadSignal) ||
+                   type == typeof(DataVaultUpdateSignal) ||
+                   type == typeof(DebrisSpawnSignal) ||
+                   type == typeof(DebugSignal) ||
+                   type == typeof(DeferredSubmarineImpactSignal) ||
+                   type == typeof(DesyncDetectedSignal) ||
+                   type == typeof(DiegeticHudSignal) ||
+                   type == typeof(DirectorAIMusicSignal) ||
+                   type == typeof(DockingCompleteSignal) ||
+                   type == typeof(DockingFailedSignal) ||
+                   type == typeof(DockingRequestSignal) ||
+                   type == typeof(DropPodLandedSignal) ||
+                   type == typeof(EntityDeathSignal) ||
+                   type == typeof(EntitySpawnSignal) ||
+                   type == typeof(FaunaStateChangedSignal) ||
+                   type == typeof(FluidImpulseSignal) ||
+                   type == typeof(FramePacingWarningSignal) ||
+                   type == typeof(FrameTimeSignal) ||
+                   type == typeof(global::Hecton8.Core.Contracts.Signals.AudioEvent) ||
+                   type == typeof(HapticRequest) ||
+                   type == typeof(HighSpeedImpactSignal) ||
+                   type == typeof(HUDNotificationSignal) ||
+                   type == typeof(HullDeformedSignal) ||
+                   type == typeof(HullRepairedSignal) ||
+                   type == typeof(ImpactSignal) ||
+                   type == typeof(InputSignal) ||
+                   type == typeof(InventoryChangedSignal) ||
+                   type == typeof(InventoryCommandSignal) ||
+                   type == typeof(ItemAcquiredSignal) ||
+                   type == typeof(ItemDurabilityChangedSignal) ||
+                   type == typeof(KccVelocitySignal) ||
+                   type == typeof(KillSwitchSignal) ||
+                   type == typeof(LaserCutterEventPayload) ||
+                   type == typeof(LockstepSnapshotSignal) ||
+                   type == typeof(LoreFragmentScannedSignal) ||
+                   type == typeof(MacroCollisionSignal) ||
+                   type == typeof(MacroDatabaseSectorHydrationSignal) ||
+                   type == typeof(ManualOverridePulledSignal) ||
+                   type == typeof(MemoryAddressShiftSignal) ||
+                   type == typeof(MemoryPressureSignal) ||
+                   type == typeof(MockPlayerFootstepSignal) ||
+                   type == typeof(MockRockCollisionSignal) ||
+                   type == typeof(MovementAcousticSignal) ||
+                   type == typeof(PdaExchangeStateChangedSignal) ||
+                   type == typeof(PhysicsEventPayload) ||
+                   type == typeof(PlayerStateSignal) ||
+                   type == typeof(SurvivalVitalsChangedSignal) ||
+                   type == typeof(PhysiologyStateSignal) ||
+                   type == typeof(PlayerStressSignal) ||
+                   type == typeof(PlayerActionCancelledSignal) ||
+                   type == typeof(PlayerActionCompletedSignal) ||
+                   type == typeof(PlayerActionProgressSignal) ||
+                   type == typeof(PlayerBaseEnterSignal) ||
+                   type == typeof(PlayerBaseExitSignal) ||
+                   type == typeof(PlayerExhaleSignal) ||
+                   type == typeof(PlayerFatalPressureSignal) ||
+                   type == typeof(PlayerFootstepSignal) ||
+                   type == typeof(PlayerSprintStateSignal) ||
+                   type == typeof(PlayerTransportBailoutSignal) ||
+                   type == typeof(PlayerWaterSplashSignal) ||
+                   type == typeof(PrefabAcousticSignatureSignal) ||
+                   type == typeof(PrefabLoreLinkSignal) ||
+                   type == typeof(PrologueCompleteSignal) ||
+                   type == typeof(RadiationDoseSignal) ||
+                   type == typeof(RadiationSourceSignal) ||
+                   type == typeof(ReentryVfxStateSignal) ||
+                   type == typeof(ResolutionChangedSignal) ||
+                   type == typeof(ResourceDepletionDeltaSignal) ||
+                   type == typeof(SaveCompletedSignal) ||
+                   type == typeof(SaveMetadataReadySignal) ||
+                   type == typeof(SaveStatusSignal) ||
+                   type == typeof(ScalabilityChangedEvent) ||
+                   type == typeof(ScanLogChangedSignal) ||
+                   type == typeof(ScannerToolActiveSignal) ||
+                   type == typeof(SectorDehydratedSignal) ||
+                   type == typeof(SectorResidencyHydratedSignal) ||
+                   type == typeof(SeismicSignal) ||
+                   type == typeof(SignalWardenMockDamageSignal) ||
+                   type == typeof(SimulationBucketSyncSignal) ||
+                   type == typeof(SplashEvent) ||
+                   type == typeof(StateCorrectionSignal) ||
+                   type == typeof(StorageDebtSignal) ||
+                   type == typeof(StreamingTurbulenceSignal) ||
+                   type == typeof(SubmarineFloodStateSignal) ||
+                   type == typeof(SubmarineLightsChangedSignal) ||
+                   type == typeof(SwarmDispersedSignal) ||
+                   type == typeof(SyncFenceSignal) ||
+                   type == typeof(SystemGlitchSignal) ||
+                   type == typeof(SystemHealthIndexSignal) ||
+                   type == typeof(SystemHealthSignal) ||
+                   type == typeof(SystemPauseSignal) ||
+                   type == typeof(TemperatureChangedSignal) ||
+                   type == typeof(TetherFiredSignal) ||
+                   type == typeof(TetherSnappedSignal) ||
+                   type == typeof(TetherTensionSignal) ||
+                   type == typeof(ThermalStateChangedSignal) ||
+                   type == typeof(ToolAcousticSignal) ||
+                   type == typeof(ToolLoadoutChangedSignal) ||
+                   type == typeof(VehicleUpgradesChangedSignal) ||
+                   type == typeof(VisorDropletSignal) ||
+                   type == typeof(VisualFlareSignal) ||
+                   type == typeof(VoxelCarveEvent) ||
+                   type == typeof(WakeGeneratedSignal) ||
+                   type == typeof(WakeRequestSignal) ||
+                   type == typeof(WaterTransitionSignal) ||
+                   type == typeof(WeatherChangedSignal) ||
+                   type == typeof(WfcOutpostDoorPowerSignal) ||
+                   type == typeof(WfcOutpostGeneratedSignal) ||
+                   type == typeof(WfcOutpostStateChangedSignal);
         }
     }
 
@@ -1650,6 +2321,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const int MockRockCollisionSignalGuardCode = unchecked((int)0x51A1005Cu);
         private const int MacroCollisionSignalGuardCode = unchecked((int)0x51A1005Du);
         private const int WakeRequestSignalGuardCode = unchecked((int)0x51A1005Eu);
+        private const double MaxSignalAupExtentMeters = 100000.0d;
         private const byte GuardNone = 0;
         private const byte GuardImpact = 2;
         private const byte GuardHighSpeedImpact = 3;
@@ -3025,6 +3697,16 @@ namespace Hecton8.Core.Contracts.Signals
                 guardCode = PhysiologyStateSignalGuardCode;
             if (SanitizeUnit01(ref signal.Recovery01))
                 guardCode = PhysiologyStateSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Supersaturation01))
+                guardCode = PhysiologyStateSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Narcosis01))
+                guardCode = PhysiologyStateSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.AmbientPressureAtm))
+                guardCode = PhysiologyStateSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.NitrogenLoadAtm))
+                guardCode = PhysiologyStateSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.AscentRateMetersPerSecond))
+                guardCode = PhysiologyStateSignalGuardCode;
 
             return guardCode;
         }
@@ -3664,7 +4346,7 @@ namespace Hecton8.Core.Contracts.Signals
             if (SanitizeNonNegative(ref signal.Scalar2))
                 guardCode = PhysicsEventPayloadGuardCode;
             if (signal.EventType < (ushort)PhysicsEventType.PressureImpulse ||
-                signal.EventType > (ushort)PhysicsEventType.AcousticImpulse)
+                signal.EventType > (ushort)PhysicsEventType.FloodMassShift)
             {
                 signal.EventType = (ushort)PhysicsEventType.PressureImpulse;
                 guardCode = PhysicsEventPayloadGuardCode;
@@ -3693,9 +4375,9 @@ namespace Hecton8.Core.Contracts.Signals
         private static int SanitizeCombatDamageSignal(ref CombatDamageSignal signal)
         {
             int guardCode = 0;
-            if (!math.all(math.isfinite(signal.WorldPoint)))
+            if (!CombatDamageSignalCodec.IsFiniteAup(signal.ImpactAup))
             {
-                signal.WorldPoint = float3.zero;
+                signal.ImpactAup = double3.zero;
                 guardCode = CombatDamageSignalGuardCode;
             }
 
@@ -3730,7 +4412,10 @@ namespace Hecton8.Core.Contracts.Signals
             bool invalid =
                 !math.isfinite(position.LocalX) ||
                 !math.isfinite(position.LocalY) ||
-                !math.isfinite(position.LocalZ);
+                !math.isfinite(position.LocalZ) ||
+                math.abs(((double)position.GridX * AbsoluteUniversePosition.CellSizeMeters) + position.LocalX) > MaxSignalAupExtentMeters ||
+                math.abs(((double)position.GridY * AbsoluteUniversePosition.CellSizeMeters) + position.LocalY) > MaxSignalAupExtentMeters ||
+                math.abs(((double)position.GridZ * AbsoluteUniversePosition.CellSizeMeters) + position.LocalZ) > MaxSignalAupExtentMeters;
 
             if (!invalid)
                 return false;
@@ -4497,9 +5182,13 @@ namespace Hecton8.Core
             if (_initialized)
                 return;
 
-            SignalBusRegistry.SetLowTierMode(GlobalRegistry.ScalabilityTierProfileByte == 0);
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            SignalBusRegistry.SetGlobalQualityWeight01(qualityWeight);
+            SignalBusRegistry.SetLowTierMode(qualityWeight <= 0.25f);
             SignalBusRegistry.ClearSimulationHalt();
             SignalPriorityTable.InitializeFromDisk();
+            SignalTuningTable.Initialize(GlobalRegistry.DataVault);
+            SignalTuningCsvHotSwap.TryLoadDefault();
             SignalTelemetryRingBuffer.Initialize();
             CreateQueue(ref _impactSignals, ImpactSignalCapacity, nameof(_impactSignals));
             CreateQueue(ref _aupPreShiftSignals, AupPreShiftSignalCapacity, nameof(_aupPreShiftSignals));
@@ -4610,7 +5299,7 @@ namespace Hecton8.Core
             ValidateSignalSize<PrefabAcousticSignatureSignal>(32);
             ValidateSignalSize<PrefabLoreLinkSignal>(32);
             ValidateSignalSize<MemoryPressureSignal>(32);
-            ValidateSignalSize<MemoryAddressShiftSignal>(32);
+            ValidateSignalSize<MemoryAddressShiftSignal>(64);
             ValidateSignalSize<ResolutionChangedSignal>(32);
             ValidateSignalSize<SystemHealthIndexSignal>(32);
             ValidateSignalSize<ScalabilityChangedEvent>(16);
@@ -4680,7 +5369,7 @@ namespace Hecton8.Core
             ValidateSignalSize<LightLevelSignal>(32);
             ValidateSignalSize<SubmarineLightsChangedSignal>(80);
             ValidateSignalSize<FaunaStateChangedSignal>(64);
-            ValidateSignalSize<PhysiologyStateSignal>(32);
+            ValidateSignalSize<PhysiologyStateSignal>(64);
             ValidateSignalSize<PlayerStressSignal>(32);
             ValidateSignalSize<TraumaSignal>(32);
             ValidateSignalSize<WakeGeneratedSignal>(64);
@@ -4758,7 +5447,9 @@ namespace Hecton8.Core
         /// <summary>Initializes only the diagnostics visual lane without waking gameplay signal queues.</summary>
         public static void EnsureDebugSignalLaneInitialized()
         {
-            SignalBusRegistry.SetLowTierMode(GlobalRegistry.ScalabilityTierProfileByte == 0);
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            SignalBusRegistry.SetGlobalQualityWeight01(qualityWeight);
+            SignalBusRegistry.SetLowTierMode(qualityWeight <= 0.25f);
             ConfigureDebugSignalLane();
         }
 
@@ -4848,7 +5539,9 @@ namespace Hecton8.Core
         public static void FlushPreSimulation()
         {
             EnsureInitialized();
-            SignalBusRegistry.SetLowTierMode(GlobalRegistry.ScalabilityTierProfileByte == 0);
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            SignalBusRegistry.SetGlobalQualityWeight01(qualityWeight);
+            SignalBusRegistry.SetLowTierMode(qualityWeight <= 0.25f);
             SignalBusRegistry.SetSystemStress01(global::Hecton8.Core.HomeostasisBrain.SystemHealthIndex01);
             SignalBusRegistry.FlushPreSimulation();
             ApplyAupShiftSafety();
@@ -4868,7 +5561,10 @@ namespace Hecton8.Core
             CombatDamageSignal sanitizedSignal = signal;
             int guardCode = SignalPayloadFiniteGuards.Sanitize(ref sanitizedSignal);
             if (guardCode != 0)
+            {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
+                return;
+            }
 
             _latestDamageSignal = sanitizedSignal;
             AdvanceSignalSequence(ref _latestDamageSignalSequence);
@@ -6023,7 +6719,9 @@ namespace Hecton8.Core
                 startIndex = 0;
 
             int sampledNonCritical = 0;
+            int pushedSignals = 0;
             int peakSignals = 0;
+            int coalescedSignals = 0;
             int droppedSignals = 0;
             int corruptedSignals = 0;
             for (int pass = 0; pass < laneCount; pass++)
@@ -6037,10 +6735,16 @@ namespace Hecton8.Core
                     continue;
 
                 int snapshotCount = lane.SnapshotCount;
+                int pushedCount = lane.PushedLastFlush;
                 int droppedCount = lane.DroppedLastFlush;
+                int coalescedCount = lane.CoalescedLastFlush;
                 int corruptedCount = lane.CorruptedSignalTotal;
                 if (lane.QueuedBeforeFlush > peakSignals)
                     peakSignals = lane.QueuedBeforeFlush;
+                if (pushedCount > 0)
+                    pushedSignals += pushedCount;
+                if (coalescedCount > 0)
+                    coalescedSignals += coalescedCount;
                 if (droppedCount > 0)
                     droppedSignals += droppedCount;
                 if (corruptedCount > 0)
@@ -6073,7 +6777,18 @@ namespace Hecton8.Core
                 nextIndex %= laneCount;
 
             Volatile.Write(ref _signalTelemetryCursor, nextIndex);
-            SignalTelemetryRingBuffer.ReportFrame(Time.frameCount, peakSignals, droppedSignals, corruptedSignals, laneCount);
+            SignalTelemetryRingBuffer.ReportFrame(
+                Time.frameCount,
+                pushedSignals,
+                peakSignals,
+                coalescedSignals,
+                droppedSignals,
+                corruptedSignals,
+                laneCount,
+                SignalBusRegistry.GlobalQualityMilli,
+                SignalBusRegistry.SystemStressMilli);
+            if (pushedSignals > 0 && droppedSignals > (pushedSignals >> 1))
+                SignalTelemetryRingBuffer.DumpToDisk();
             int previousCorrupted = Volatile.Read(ref _signalTelemetryLastCorruptedTotal);
             if (corruptedSignals > previousCorrupted)
             {
@@ -6119,7 +6834,7 @@ namespace Hecton8.Core
             SignalBus<PlayerInputSignal>.EnsureInitialized();
             SignalBus<PlayerLookTargetSignal>.Configure(PlayerLookTargetSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerLookTargetSignal)));
             SignalBus<PlayerLookTargetSignal>.EnsureInitialized();
-            SignalBus<CombatDamageSignal>.Configure(DamageSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CombatDamageSignal)));
+            SignalBus<CombatDamageSignal>.Configure(DamageSignalCapacity, maxFrameSignals: 128, lowTierFrameSignals: 16, laneHash: ComputeStableSignalLaneHash(nameof(CombatDamageSignal)));
             SignalBus<CombatDamageSignal>.EnsureInitialized();
             SignalBus<ImpactSignal>.Configure(ImpactSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ImpactSignal)));
             SignalBus<ImpactSignal>.EnsureInitialized();
@@ -6159,7 +6874,7 @@ namespace Hecton8.Core
             SignalBus<PlayerStateSignal>.EnsureInitialized();
             SignalBus<SurvivalVitalsChangedSignal>.Configure(SurvivalVitalsChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SurvivalVitalsChangedSignal)));
             SignalBus<SurvivalVitalsChangedSignal>.EnsureInitialized();
-            SignalBus<PhysiologyStateSignal>.Configure(PhysiologyStateSignalCapacity, maxFrameSignals: PhysiologyStateSignalCapacity, lowTierFrameSignals: 32, laneHash: ComputeStableSignalLaneHash(nameof(PhysiologyStateSignal)));
+            SignalBus<PhysiologyStateSignal>.Configure(PhysiologyStateSignalCapacity, maxFrameSignals: PhysiologyStateSignalCapacity, lowTierFrameSignals: 32, laneHash: PhysiologyStateSignal.LaneHash);
             SignalBus<PhysiologyStateSignal>.EnsureInitialized();
             SignalBus<PlayerStressSignal>.Configure(PlayerStressSignalCapacity, maxFrameSignals: PlayerStressSignalCapacity, lowTierFrameSignals: 32, laneHash: ComputeStableSignalLaneHash(nameof(PlayerStressSignal)));
             SignalBus<PlayerStressSignal>.EnsureInitialized();
@@ -6193,7 +6908,7 @@ namespace Hecton8.Core
             SignalBus<LaserCutterEventPayload>.EnsureInitialized();
             SignalBus<FramePacingWarningSignal>.Configure(FramePacingWarningSignalCapacity, maxFrameSignals: 16, lowTierFrameSignals: 4, laneHash: ComputeStableSignalLaneHash(nameof(FramePacingWarningSignal)));
             SignalBus<FramePacingWarningSignal>.EnsureInitialized();
-            SignalBus<AcousticPingSignal>.Configure(AcousticPingSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(AcousticPingSignal)));
+            SignalBus<AcousticPingSignal>.Configure(AcousticPingSignalCapacity, maxFrameSignals: 128, lowTierFrameSignals: 16, laneHash: ComputeStableSignalLaneHash(nameof(AcousticPingSignal)));
             SignalBus<AcousticPingSignal>.EnsureInitialized();
             SignalBus<MovementAcousticSignal>.Configure(MovementAcousticSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(MovementAcousticSignal)));
             SignalBus<MovementAcousticSignal>.EnsureInitialized();
@@ -6223,8 +6938,6 @@ namespace Hecton8.Core
             SignalBus<DiegeticHudSignal>.EnsureInitialized();
             SignalBus<HUDNotificationSignal>.Configure(HUDNotificationSignalCapacity, maxFrameSignals: HUDNotificationSignalCapacity, lowTierFrameSignals: 64, laneHash: ComputeStableSignalLaneHash(nameof(HUDNotificationSignal)));
             SignalBus<HUDNotificationSignal>.EnsureInitialized();
-            SignalBus<SaveRequestSignal>.Configure(SaveLifecycleSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SaveRequestSignal)));
-            SignalBus<SaveRequestSignal>.EnsureInitialized();
             SignalBus<SaveCompletedSignal>.Configure(SaveLifecycleSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SaveCompletedSignal)));
             SignalBus<SaveCompletedSignal>.EnsureInitialized();
             SignalBus<SaveStatusSignal>.Configure(SaveLifecycleSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SaveStatusSignal)));
@@ -6717,6 +7430,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(56)] public uint Frame;
         [FieldOffset(60)] public byte State;
         [FieldOffset(61)] public byte Flags;
+        [FieldOffset(62)] public ushort Reserved0;
     }
 
     public static class SurvivalVitalsChangedSignalFlags
@@ -7435,12 +8149,13 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(25)] public byte Flags;
     }
 
-    /// <summary>GlobalDataVault relocation notice for systems caching raw pointers. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    /// <summary>GlobalDataVault relocation and swap-pop notice for systems caching raw pointers or vault indices. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MemoryAddressShiftSignal : ISignal
     {
         public const byte FlagMemMove = 1 << 0;
         public const byte FlagFenceProtected = 1 << 1;
+        public const byte FlagSwapPopIndexMove = 1 << 2;
 
         [FieldOffset(0)] public long OldPointer;
         [FieldOffset(8)] public long NewPointer;
@@ -7449,6 +8164,14 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(24)] public uint Version;
         [FieldOffset(28)] public byte Flags;
         [FieldOffset(29)] public byte SystemId;
+        [FieldOffset(30)] private ushort _pad0;
+        [FieldOffset(32)] public int OldIndex;
+        [FieldOffset(36)] public int NewIndex;
+        [FieldOffset(40)] public uint MovedEntityId;
+        [FieldOffset(44)] public uint SourceFrame;
+        [FieldOffset(48)] public uint SourceHash;
+        [FieldOffset(52)] public uint CompactedCount;
+        [FieldOffset(56)] private ulong _pad1;
     }
 
     /// <summary>Runtime mip/resolution residency change signal. Size: 32 bytes.</summary>
@@ -7526,6 +8249,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(56)] public uint SourceId;
         [FieldOffset(60)] public byte Channel;
         [FieldOffset(61)] public byte Flags;
+        [FieldOffset(62)] public ushort Reserved0;
     }
 
     /// <summary>Player movement acoustic broadcast signal. Size: 64 bytes.</summary>
@@ -8331,16 +9055,30 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(63)] public byte Flags;
     }
 
-    /// <summary>Authoritative player physiology state signal. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    /// <summary>Authoritative player physiology state signal. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct PhysiologyStateSignal : ISignal
     {
+        public const uint LaneHash = 0x50485953u; // PHYS
+        public const byte CauseDecompression = 3;
+
         [FieldOffset(0)] public float PlayerStress01;
         [FieldOffset(4)] public float O2DrainMultiplier;
         [FieldOffset(8)] public float Recovery01;
         [FieldOffset(12)] public uint Frame;
         [FieldOffset(16)] public byte Cause;
         [FieldOffset(17)] public byte Flags;
+        [FieldOffset(20)] public float Supersaturation01;
+        [FieldOffset(24)] public float Narcosis01;
+        [FieldOffset(28)] public float AmbientPressureAtm;
+        [FieldOffset(32)] public float NitrogenLoadAtm;
+        [FieldOffset(36)] public float AscentRateMetersPerSecond;
+        [FieldOffset(40)] public uint TissueOverMValueMask;
+        [FieldOffset(44)] public uint SourceHash;
+        [FieldOffset(48)] public int EntityIndex;
+        [FieldOffset(52)] public byte ActiveCompartments;
+        [FieldOffset(53)] public byte FatalSeverity;
+        [FieldOffset(56)] public uint StatusFlags;
     }
 
     /// <summary>Player stress signal. Size: 32 bytes.</summary>
@@ -8398,18 +9136,70 @@ namespace Hecton8.Core.Contracts.Signals
         public const byte LegacyMirrorFlag = 1 << 0;
         public const byte DirectRuntimeFlag = 1 << 1;
 
-        [FieldOffset(0)] public float3 WorldPoint;
-        [FieldOffset(12)] public float3 Direction;
-        [FieldOffset(24)] public float Magnitude;
-        [FieldOffset(28)] public uint DamageType;
-        [FieldOffset(32)] public uint TargetHash;
-        [FieldOffset(36)] public uint SourceHash;
-        [FieldOffset(40)] public uint Frame;
-        [FieldOffset(44)] public ushort SourceId;
-        [FieldOffset(46)] public ushort TargetId;
-        [FieldOffset(48)] public byte Channel;
-        [FieldOffset(49)] public byte Flags;
-        [FieldOffset(50)] public byte IntegrityDelta;
+        [FieldOffset(0)] public double3 ImpactAup;
+        [FieldOffset(24)] public float3 Direction;
+        [FieldOffset(36)] public float Magnitude;
+        [FieldOffset(40)] public uint DamageType;
+        [FieldOffset(44)] public uint TargetHash;
+        [FieldOffset(48)] public uint SourceHash;
+        [FieldOffset(52)] public uint Frame;
+        [FieldOffset(56)] public ushort SourceId;
+        [FieldOffset(58)] public ushort TargetId;
+        [FieldOffset(60)] public byte Channel;
+        [FieldOffset(61)] public byte Flags;
+        [FieldOffset(62)] public byte IntegrityDelta;
+        [FieldOffset(63)] public byte Reserved0;
+    }
+
+    public static class CombatDamageSignalCodec
+    {
+        private const double MaxAupExtentMeters = 100000.0d;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double3 FromRuntimePoint(float3 runtimePoint)
+        {
+            if (!math.all(math.isfinite(runtimePoint)))
+                return double3.zero;
+
+            Vector3 point = new Vector3(runtimePoint.x, runtimePoint.y, runtimePoint.z);
+            return global::Hecton8.Core.HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(point);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double3 FromRuntimePoint(Vector3 runtimePoint)
+        {
+            if (!math.all(math.isfinite(new float3(runtimePoint.x, runtimePoint.y, runtimePoint.z))))
+                return double3.zero;
+
+            return global::Hecton8.Core.HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePoint);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryToRuntimePoint(in CombatDamageSignal signal, out float3 runtimePoint)
+        {
+            runtimePoint = default;
+            if (!IsFiniteAup(signal.ImpactAup))
+                return false;
+
+            Vector3 runtime = global::Hecton8.Core.HectonFloatingOrigin.ToRuntimePosition(signal.ImpactAup);
+            runtimePoint = new float3(runtime.x, runtime.y, runtime.z);
+            return math.all(math.isfinite(runtimePoint));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ToRuntimePointOrZero(in CombatDamageSignal signal)
+        {
+            return TryToRuntimePoint(in signal, out float3 runtimePoint) ? runtimePoint : float3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsFiniteAup(double3 aup)
+        {
+            return math.all(math.isfinite(aup)) &&
+                   math.abs(aup.x) <= MaxAupExtentMeters &&
+                   math.abs(aup.y) <= MaxAupExtentMeters &&
+                   math.abs(aup.z) <= MaxAupExtentMeters;
+        }
     }
 
     /// <summary>Visual hull dent notification lane for audio groans and non-authoritative feedback. Size: 64 bytes.</summary>
@@ -8575,7 +9365,7 @@ namespace Hecton8.Core.Contracts.Signals
 
         public void Transform(ref CombatDamageSignal signal)
         {
-            signal.WorldPoint += _shiftMeters;
+            // CombatDamageSignal stores absolute AUP; origin shifts do not mutate the fact.
         }
     }
 }

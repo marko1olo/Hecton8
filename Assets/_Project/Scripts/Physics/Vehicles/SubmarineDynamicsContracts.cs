@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
@@ -67,216 +68,221 @@ namespace Hecton8.Physics.Vehicles
     /// <summary>
     /// Hot submarine pose and velocity state. Size: 192 bytes, exactly 3 L1 cache lines.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 192)]
+    [StructLayout(LayoutKind.Explicit, Size = 192)]
     public struct SubmarineKinematicState
     {
-        public double3 Aup;
-        public quaternion Rotation;
-        public float3 LocalPosition;
-        public float3 LinearVelocity;
-        public float3 AngularVelocity;
-        public float3 CenterOfMassLocal;
-        public float3 CenterOfBuoyancyLocal;
-        public float3 InertiaTensor;
-        public float TotalMassKg;
-        public float BallastRatio01;
-        public float GyroDisabledSeconds;
-        public uint Flags;
-        public uint TelemetryCursor;
-        public uint EntityId;
-        public uint ShiftFrameId;
-        public byte MathLod;
-        public byte HardwareTier;
-        private ushort _pad0;
-        private long _pad1;
-        private long _pad2;
-        private long _pad3;
-        private long _pad4;
-        private long _pad5;
-        private long _pad6;
+        [FieldOffset(0)] public double3 Aup;
+        [FieldOffset(24)] public quaternion Rotation;
+        [FieldOffset(40)] public float3 LocalPosition;
+        [FieldOffset(52)] public float3 LinearVelocity;
+        [FieldOffset(64)] public float3 AngularVelocity;
+        [FieldOffset(76)] public float3 CenterOfMassLocal;
+        [FieldOffset(88)] public float3 CenterOfBuoyancyLocal;
+        [FieldOffset(100)] public float3 InertiaTensor;
+        [FieldOffset(112)] public float TotalMassKg;
+        [FieldOffset(116)] public float BallastRatio01;
+        [FieldOffset(120)] public float GyroDisabledSeconds;
+        [FieldOffset(124)] public uint Flags;
+        [FieldOffset(128)] public uint TelemetryCursor;
+        [FieldOffset(132)] public uint EntityId;
+        [FieldOffset(136)] public uint ShiftFrameId;
+        [FieldOffset(140)] public byte MathLod;
+        [FieldOffset(141)] public byte HardwareTier;
+        [FieldOffset(142)] private ushort _pad0;
+        [FieldOffset(144)] private ulong _pad1;
+        [FieldOffset(152)] private ulong _pad2;
+        [FieldOffset(160)] private ulong _pad3;
+        [FieldOffset(168)] private ulong _pad4;
+        [FieldOffset(176)] private ulong _pad5;
+        [FieldOffset(184)] private ulong _pad6;
     }
 
     /// <summary>Per-frame control intent for one submarine. Size: 64 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SubmarineKinematicControl
     {
-        public float3 ThrustLocal;
-        public float3 TorqueLocal;
-        public float TargetDepthMeters;
-        public float Throttle01;
-        public float BallastCommand01;
-        public float FloodWaterMassKg;
-        public float CargoMassKg;
-        public float ExternalImpulseMagnitude;
-        public float3 ExternalImpulseLocal;
-        public uint Flags;
+        [FieldOffset(0)] public float3 ThrustLocal;
+        [FieldOffset(12)] public float3 TorqueLocal;
+        [FieldOffset(24)] public float TargetDepthMeters;
+        [FieldOffset(28)] public float Throttle01;
+        [FieldOffset(32)] public float BallastCommand01;
+        [FieldOffset(36)] public float FloodWaterMassKg;
+        [FieldOffset(40)] public float CargoMassKg;
+        [FieldOffset(44)] public float ExternalImpulseMagnitude;
+        [FieldOffset(48)] public float3 ExternalImpulseLocal;
+        [FieldOffset(60)] public uint Flags;
     }
 
     /// <summary>
     /// Mass and local center data. Size: 128 bytes, exactly 2 L1 cache lines.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct SubmarineMassProperties
     {
-        public double3 PivotAup;
-        public float3 BaseCenterOfMassLocal;
-        public float3 FloodCenterLocal;
-        public float3 CargoCenterLocal;
-        public float3 CenterOfMassLocal;
-        public float3 CenterOfBuoyancyLocal;
-        public float BaseMassKg;
-        public float FloodMassKg;
-        public float CargoMassKg;
-        private long _pad0;
-        private long _pad1;
-        private long _pad2;
-        private long _pad3;
+        [FieldOffset(0)] public double3 PivotAup;
+        [FieldOffset(24)] public float3 BaseCenterOfMassLocal;
+        [FieldOffset(36)] public float3 FloodCenterLocal;
+        [FieldOffset(48)] public float3 CargoCenterLocal;
+        [FieldOffset(60)] public float3 CenterOfMassLocal;
+        [FieldOffset(72)] public float3 CenterOfBuoyancyLocal;
+        [FieldOffset(84)] public float BaseMassKg;
+        [FieldOffset(88)] public float FloodMassKg;
+        [FieldOffset(92)] public float CargoMassKg;
+        [FieldOffset(96)] private ulong _pad0;
+        [FieldOffset(104)] private ulong _pad1;
+        [FieldOffset(112)] private ulong _pad2;
+        [FieldOffset(120)] private ulong _pad3;
     }
 
     /// <summary>Ballast PID and slosh oscillator state. Size: 64 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SubmarinePidState
     {
-        public float Integral;
-        public float PreviousError;
-        public float LastOutput;
-        public float LastDerivative;
-        public float LastTarget;
-        public float SloshPosition;
-        public float SloshVelocity;
-        public float LowLodHoldSeconds;
-        public uint Frame;
-        public byte MathLod;
-        public byte Flags;
-        private ushort _pad0;
-        private int _pad1;
-        private long _pad2;
-        private long _pad3;
+        [FieldOffset(0)] public float Integral;
+        [FieldOffset(4)] public float PreviousError;
+        [FieldOffset(8)] public float LastOutput;
+        [FieldOffset(12)] public float LastDerivative;
+        [FieldOffset(16)] public float LastTarget;
+        [FieldOffset(20)] public float SloshPosition;
+        [FieldOffset(24)] public float SloshVelocity;
+        [FieldOffset(28)] public float LowLodHoldSeconds;
+        [FieldOffset(32)] public uint Frame;
+        [FieldOffset(36)] public byte MathLod;
+        [FieldOffset(37)] public byte Flags;
+        [FieldOffset(38)] private ushort _pad0;
+        [FieldOffset(40)] private uint _pad1;
+        [FieldOffset(44)] private uint _pad2;
+        [FieldOffset(48)] private ulong _pad3;
+        [FieldOffset(56)] private ulong _pad4;
     }
 
     /// <summary>Last solved forces for gameplay and visual consumers. Size: 128 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct SubmarineForceAccumulator
     {
-        public float3 LinearForceWorld;
-        public float3 TorqueWorld;
-        public float3 LastThrustWorld;
-        public float3 LastDragWorld;
-        public float3 LastBuoyancyWorld;
-        public float3 ImpactPointLocal;
-        public float3 ImpactNormalWorld;
-        public float CavitationIndex;
-        public float ImpactMagnitude;
-        public uint Flags;
-        public uint Frame;
-        private float4 _pad0;
-        private float3 _pad1;
+        [FieldOffset(0)] public float3 LinearForceWorld;
+        [FieldOffset(12)] public float3 TorqueWorld;
+        [FieldOffset(24)] public float3 LastThrustWorld;
+        [FieldOffset(36)] public float3 LastDragWorld;
+        [FieldOffset(48)] public float3 LastBuoyancyWorld;
+        [FieldOffset(60)] public float3 ImpactPointLocal;
+        [FieldOffset(72)] public float3 ImpactNormalWorld;
+        [FieldOffset(84)] public float CavitationIndex;
+        [FieldOffset(88)] public float ImpactMagnitude;
+        [FieldOffset(92)] public uint Flags;
+        [FieldOffset(96)] public uint Frame;
+        [FieldOffset(100)] private uint _pad0;
+        [FieldOffset(104)] private ulong _pad1;
+        [FieldOffset(112)] private ulong _pad2;
+        [FieldOffset(120)] private ulong _pad3;
     }
 
     /// <summary>Designer-tunable constants mirrored into the Vault. Size: 128 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct SubmarineKinematicConfig
     {
-        public double3 LocalOriginAup;
-        public float BaseMassKg;
-        public float HullVolumeM3;
-        public float FluidDensityKgPerM3;
-        public float DragScale;
-        public float PidP;
-        public float PidI;
-        public float PidD;
-        public float PidIntegralLimit;
-        public float GyroStrength;
-        public float GyroDamping;
-        public float MaxThrustN;
-        public float MaxTorqueNm;
-        public float BallastLiftN;
-        public float CavitationDepthMeters;
-        public float CavitationThreshold;
-        public float SloshSpring;
-        public float SloshDamping;
-        public float FloodComGain;
-        public float CargoForwardMeters;
-        public float TickDilationPressure01;
-        public float3 MockFloodLocal;
-        public uint SourceHash;
-        public byte HardwareTier;
-        public byte Flags;
-        private ushort _pad0;
-        private int _pad1;
+        [FieldOffset(0)] public double3 LocalOriginAup;
+        [FieldOffset(24)] public float BaseMassKg;
+        [FieldOffset(28)] public float HullVolumeM3;
+        [FieldOffset(32)] public float FluidDensityKgPerM3;
+        [FieldOffset(36)] public float DragScale;
+        [FieldOffset(40)] public float PidP;
+        [FieldOffset(44)] public float PidI;
+        [FieldOffset(48)] public float PidD;
+        [FieldOffset(52)] public float PidIntegralLimit;
+        [FieldOffset(56)] public float GyroStrength;
+        [FieldOffset(60)] public float GyroDamping;
+        [FieldOffset(64)] public float MaxThrustN;
+        [FieldOffset(68)] public float MaxTorqueNm;
+        [FieldOffset(72)] public float BallastLiftN;
+        [FieldOffset(76)] public float CavitationDepthMeters;
+        [FieldOffset(80)] public float CavitationThreshold;
+        [FieldOffset(84)] public float SloshSpring;
+        [FieldOffset(88)] public float SloshDamping;
+        [FieldOffset(92)] public float FloodComGain;
+        [FieldOffset(96)] public float CargoForwardMeters;
+        [FieldOffset(100)] public float TickDilationPressure01;
+        [FieldOffset(104)] public float3 MockFloodLocal;
+        [FieldOffset(116)] public uint SourceHash;
+        [FieldOffset(120)] public byte HardwareTier;
+        [FieldOffset(121)] public byte Flags;
+        [FieldOffset(122)] private ushort _pad0;
+        [FieldOffset(124)] private uint _pad1;
     }
 
     /// <summary>300-frame blackbox telemetry entry. Size: 128 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct SubmarineKinematicTelemetry
     {
-        public double3 Aup;
-        public float3 LinearVelocity;
-        public float3 AngularVelocity;
-        public float3 CenterOfMassLocal;
-        public float3 CenterOfBuoyancyLocal;
-        public float3 LocalPosition;
-        public uint Frame;
-        public uint Flags;
-        public float TotalMassKg;
-        public float BallastRatio01;
-        public float CavitationIndex;
-        public float EstimatedCostUs;
-        public uint StateHash;
-        private uint _pad0;
-        private long _pad1;
+        [FieldOffset(0)] public double3 Aup;
+        [FieldOffset(24)] public float3 LinearVelocity;
+        [FieldOffset(36)] public float3 AngularVelocity;
+        [FieldOffset(48)] public float3 CenterOfMassLocal;
+        [FieldOffset(60)] public float3 CenterOfBuoyancyLocal;
+        [FieldOffset(72)] public float3 LocalPosition;
+        [FieldOffset(84)] public uint Frame;
+        [FieldOffset(88)] public uint Flags;
+        [FieldOffset(92)] public float TotalMassKg;
+        [FieldOffset(96)] public float BallastRatio01;
+        [FieldOffset(100)] public float CavitationIndex;
+        [FieldOffset(104)] public float EstimatedCostUs;
+        [FieldOffset(108)] public uint StateHash;
+        [FieldOffset(112)] private uint _pad0;
+        [FieldOffset(116)] private uint _pad1;
+        [FieldOffset(120)] private ulong _pad2;
     }
 
     /// <summary>Fallback flood signal used when the real flood domain is unavailable. Size: 64 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
-    public partial struct MockFloodSignal
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public partial struct MockFloodSignal : ISignal
     {
-        public float3 LocalCompartment;
-        public float WaterMassKg;
-        public float FillRatio01;
-        public uint Frame;
-        public byte Flags;
-        private byte _pad0;
-        private ushort _pad1;
-        private long _pad2;
-        private long _pad3;
-        private long _pad4;
-        private uint _pad5;
+        [FieldOffset(0)] public float3 LocalCompartment;
+        [FieldOffset(12)] public float WaterMassKg;
+        [FieldOffset(16)] public float FillRatio01;
+        [FieldOffset(20)] public uint Frame;
+        [FieldOffset(24)] public byte Flags;
+        [FieldOffset(25)] private byte _pad0;
+        [FieldOffset(26)] private ushort _pad1;
+        [FieldOffset(28)] private uint _pad2;
+        [FieldOffset(32)] private ulong _pad3;
+        [FieldOffset(40)] private ulong _pad4;
+        [FieldOffset(48)] private ulong _pad5;
+        [FieldOffset(56)] private ulong _pad6;
     }
 
     /// <summary>Fallback impact signal used when the real hull domain is unavailable. Size: 64 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
-    public partial struct MockImpactSignal
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public partial struct MockImpactSignal : ISignal
     {
-        public float3 LocalPoint;
-        public float3 NormalWorld;
-        public float Magnitude;
-        public float DepthMeters;
-        public uint Frame;
-        public byte TraumaLevel;
-        private byte _pad0;
-        private ushort _pad1;
-        private long _pad2;
-        private long _pad3;
-        private long _pad4;
+        [FieldOffset(0)] public float3 LocalPoint;
+        [FieldOffset(12)] public float3 NormalWorld;
+        [FieldOffset(24)] public float Magnitude;
+        [FieldOffset(28)] public float DepthMeters;
+        [FieldOffset(32)] public uint Frame;
+        [FieldOffset(36)] public byte TraumaLevel;
+        [FieldOffset(37)] private byte _pad0;
+        [FieldOffset(38)] private ushort _pad1;
+        [FieldOffset(40)] private ulong _pad2;
+        [FieldOffset(48)] private ulong _pad3;
+        [FieldOffset(56)] private ulong _pad4;
     }
 
     /// <summary>Cavitation cue emitted by the dynamics job. Size: 64 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
-    public partial struct CavitationAcousticSignal
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public partial struct CavitationAcousticSignal : ISignal
     {
-        public float3 LocalPosition;
-        public float Intensity01;
-        public float FrequencyHz;
-        public uint Frame;
-        public byte Flags;
-        private byte _pad0;
-        private ushort _pad1;
-        private uint _pad2;
-        private long _pad3;
-        private long _pad4;
-        private long _pad5;
-        private long _pad6;
+        [FieldOffset(0)] public float3 LocalPosition;
+        [FieldOffset(12)] public float Intensity01;
+        [FieldOffset(16)] public float FrequencyHz;
+        [FieldOffset(20)] public uint Frame;
+        [FieldOffset(24)] public byte Flags;
+        [FieldOffset(25)] private byte _pad0;
+        [FieldOffset(26)] private ushort _pad1;
+        [FieldOffset(28)] private uint _pad2;
+        [FieldOffset(32)] private ulong _pad3;
+        [FieldOffset(40)] private ulong _pad4;
+        [FieldOffset(48)] private ulong _pad5;
+        [FieldOffset(56)] private ulong _pad6;
     }
 
     public static unsafe class SubmarineKinematicAccess
@@ -297,7 +303,7 @@ namespace Hecton8.Physics.Vehicles
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct MockFloodSignalSeederJob : IJob
     {
         public NativeQueue<MockFloodSignal>.ParallelWriter FloodWriter;
@@ -324,19 +330,20 @@ namespace Hecton8.Physics.Vehicles
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct Submarine6DIntegratorJob : IJobParallelFor
     {
-        public NativeArray<SubmarineKinematicState> States;
-        public NativeArray<SubmarineKinematicControl> Controls;
-        public NativeArray<SubmarinePidState> PidStates;
-        public NativeArray<SubmarineMassProperties> MassProperties;
-        public NativeArray<SubmarineForceAccumulator> Forces;
-        public NativeArray<SubmarineKinematicTelemetry> Telemetry;
-        [ReadOnly] public NativeArray<SubmarineKinematicConfig> Configs;
-        [ReadOnly] public NativeArray<float> DragLut;
+        [NoAlias] public NativeArray<SubmarineKinematicState> States;
+        [NoAlias] public NativeArray<SubmarineKinematicControl> Controls;
+        [NoAlias] public NativeArray<SubmarinePidState> PidStates;
+        [NoAlias] public NativeArray<SubmarineMassProperties> MassProperties;
+        [NoAlias] public NativeArray<SubmarineForceAccumulator> Forces;
+        [NoAlias] public NativeArray<SubmarineKinematicTelemetry> Telemetry;
+        [ReadOnly, NoAlias] public NativeArray<SubmarineKinematicConfig> Configs;
+        [ReadOnly, NoAlias] public NativeArray<float> DragLut;
         public NativeQueue<CavitationAcousticSignal>.ParallelWriter CavitationWriter;
         public float FixedDeltaTime;
+        public float GlobalQualityWeight;
         public uint Frame;
         public int VehicleCount;
 
@@ -362,15 +369,29 @@ namespace Hecton8.Physics.Vehicles
             SubmarineKinematicConfig config = Configs[0];
 
             float dt = math.clamp(FixedDeltaTime, 0.001f, 0.05f);
-            bool lowMathRequested = (config.Flags & SubmarineDynamicsConstants.ConfigFlagThermalDilation) != 0;
+            int stride = ResolveQualityStride(GlobalQualityWeight);
+            bool skippedByStride = stride > 1 && ((Frame + (uint)index) % (uint)stride) != 0u;
+            bool lowMathRequested = (config.Flags & SubmarineDynamicsConstants.ConfigFlagThermalDilation) != 0 || stride > 1;
             pid.LowLodHoldSeconds = lowMathRequested
                 ? math.max(pid.LowLodHoldSeconds, 2f)
                 : math.max(0f, pid.LowLodHoldSeconds - dt);
             bool lowMathLod = pid.LowLodHoldSeconds > 0f;
-            bool runSlowSolvers = !lowMathLod || (Frame & 3u) == 0u;
+            bool runSlowSolvers = !lowMathLod || (Frame % (uint)stride) == 0u;
 
             if ((state.Flags & SubmarineDynamicsConstants.StateFlagInitialized) == 0u)
                 InitializeState(ref state, in config, index);
+
+            if (skippedByStride)
+            {
+                ApplyDeadReckoning(ref state, in config, dt);
+                pid.Frame = Frame;
+                state.ShiftFrameId = Frame;
+                WriteTelemetry(index, ref state, in force, ref Telemetry);
+                States[index] = state;
+                PidStates[index] = pid;
+                Forces[index] = force;
+                return;
+            }
 
             float3 localPosition = ToLocal(in state.Aup, in config);
             state.LocalPosition = localPosition;
@@ -569,6 +590,31 @@ namespace Hecton8.Physics.Vehicles
             state.TotalMassKg = math.max(1f, config.BaseMassKg);
             state.InertiaTensor = ResolveInertiaTensor(state.TotalMassKg, float3.zero, 0f, in config);
             state.EntityId = (uint)index;
+        }
+
+        private static void ApplyDeadReckoning(ref SubmarineKinematicState state, in SubmarineKinematicConfig config, float dt)
+        {
+            state.LinearVelocity = SafeFinite(state.LinearVelocity, float3.zero);
+            state.AngularVelocity = SafeFinite(state.AngularVelocity, float3.zero);
+            state.LocalPosition = SafeFinite(state.LocalPosition + (state.LinearVelocity * dt), float3.zero);
+            state.Aup = SafeAup(config.LocalOriginAup) + new double3(state.LocalPosition);
+            quaternion rotation = NormalizeSafe(state.Rotation);
+            float angularSpeed = math.length(state.AngularVelocity);
+            if (angularSpeed > 0.0001f)
+            {
+                quaternion deltaRotation = quaternion.AxisAngle(state.AngularVelocity / angularSpeed, angularSpeed * dt);
+                rotation = math.normalize(math.mul(deltaRotation, rotation));
+            }
+
+            state.Rotation = rotation;
+            state.Flags |= SubmarineDynamicsConstants.StateFlagInitialized;
+        }
+
+        private static int ResolveQualityStride(float globalQualityWeight)
+        {
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float inverse = 1f - quality;
+            return math.clamp(1 + (int)math.floor(inverse * 3.333334f), 1, 4);
         }
 
         private static float3 ToLocal(in double3 aup, in SubmarineKinematicConfig config)

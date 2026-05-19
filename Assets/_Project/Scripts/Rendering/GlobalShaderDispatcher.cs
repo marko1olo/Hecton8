@@ -16,42 +16,60 @@ using UnityEngine.Rendering;
 
 namespace Hecton8.Core
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct ShaderGlobalsDTO
     {
         public const int SizeBytes = 48;
 
+        [FieldOffset(0)]
         public float4 FogColor;
+        [FieldOffset(16)]
         public float3 FlowVector;
+        [FieldOffset(28)]
         public float FlowMagnitude;
+        [FieldOffset(32)]
         public float GlobalTime;
+        [FieldOffset(36)]
         public float _pad0;
+        [FieldOffset(40)]
         public float _pad1;
+        [FieldOffset(44)]
         public float _pad2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockWeatherState
     {
         public const int SizeBytes = 16;
 
+        [FieldOffset(0)]
         public float Storm01;
+        [FieldOffset(4)]
         public float Turbidity01;
+        [FieldOffset(8)]
         public float Heat01;
+        [FieldOffset(12)]
         public float BiomeBlend01;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct UberNoirGlobalTuning
     {
         public const int SizeBytes = 48;
 
+        [FieldOffset(0)]
         public Vector4 FogColor;
+        [FieldOffset(16)]
         public Vector3 FlowVector;
+        [FieldOffset(28)]
         public float FogDensity;
+        [FieldOffset(32)]
         public float CausticSpeed;
+        [FieldOffset(36)]
         public float FlowMagnitude;
+        [FieldOffset(40)]
         public float _pad0;
+        [FieldOffset(44)]
         public float _pad1;
     }
 
@@ -96,7 +114,6 @@ namespace Hecton8.Core
         private const string KeywordVolumetricFogOn = "_VOLUMETRIC_FOG_ON";
         private const string KeywordDearLieFlow = "_H8_DEAR_LIE_FLOW";
         private const string KeywordThermalAnomalies = "_H8_THERMAL_ANOMALIES";
-        private const string KeywordVisualOverkill = "_H8_VISUAL_OVERKILL";
 
         private static readonly int _FogColorId = Shader.PropertyToID("_H8FogColor");
         private static readonly int _FogDensityId = Shader.PropertyToID("_H8FogDensity");
@@ -286,6 +303,8 @@ namespace Hecton8.Core
             bool lowTier = tierProfile == ScalabilityTierProfiles.LowMx350 ||
                            GlobalRegistry.ScalabilityTier == HectonQualityTier.Low ||
                            GlobalRegistry.ScalabilityTier == HectonQualityTier.Mx350;
+            float globalQualityWeight01 = ResolveGlobalQualityWeight01();
+            float lowTierWeight01 = ResolveLowTierWeight01(globalQualityWeight01, lowTier);
             bool highTier = !lowTier;
             ApplyTierKeywords(tierProfile, lowTier, highTier);
 
@@ -316,7 +335,7 @@ namespace Hecton8.Core
                 if (!TryResolveShaderGlobalSlotsLocked(vault, out NativeArray<float4> slots))
                     return;
 
-                RunMockGlobalDataJob(slots, lowTier, (float)_shaderTime, ResolveSectorPhase());
+                RunMockGlobalDataJob(slots, lowTierWeight01, (float)_shaderTime, ResolveSectorPhase());
 
                 ref ShaderGlobalsDTO dtoRef = ref ResolveShaderGlobalsRef(slots);
                 aupOffset = ResolveAupOffset();
@@ -351,7 +370,7 @@ namespace Hecton8.Core
                 vault.TryUnlockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability);
             }
 
-            Vector4 wakeParams = UploadDynamicWakeBuffers(vault, lowTier);
+            Vector4 wakeParams = UploadDynamicWakeBuffers(vault, lowTierWeight01);
             ExecuteGlobalDispatch(
                 in dto,
                 ambient,
@@ -661,14 +680,14 @@ namespace Hecton8.Core
             slots[ExtinctionCoefficientsSlot] = new float4(0.624f, 0.0434f, 0.0106f, 0.024f);
         }
 
-        private void RunMockGlobalDataJob(NativeArray<float4> slots, bool lowTier, float shaderTime, float sectorPhase)
+        private void RunMockGlobalDataJob(NativeArray<float4> slots, float lowTierWeight01, float shaderTime, float sectorPhase)
         {
             MockGlobalShaderDataJob job = new MockGlobalShaderDataJob
             {
                 Slots = slots,
                 ShaderTime = shaderTime,
                 SectorPhase = sectorPhase,
-                LowTier = lowTier ? 1 : 0,
+                LowTierWeight01 = math.saturate(lowTierWeight01),
                 GeneratedEmergencyGlobals = _generatedEmergencyGlobals ? 1 : 0,
                 ManualOverrideActive = s_manualOverrideActive ? 1 : 0,
                 CsvOverrideActive = s_csvOverrideActive ? 1 : 0,
@@ -690,14 +709,16 @@ namespace Hecton8.Core
                    TelemetrySlotStart + TelemetryCapacity <= RequiredShaderGlobalSlots;
         }
 
-        private Vector4 UploadDynamicWakeBuffers(IDataVault vault, bool lowTier)
+        private Vector4 UploadDynamicWakeBuffers(IDataVault vault, float lowTierWeight01)
         {
+            lowTierWeight01 = math.saturate(lowTierWeight01);
+            Vector4 fallbackParams = new Vector4(0f, lowTierWeight01, 0f, 0f);
             if (!EnsureGpuBuffers() ||
                 vault == null ||
                 !vault.TryGetBufferHandle(BufferID.WakeGlobalBuffer, out VaultBufferHandle<float4> wakeHandle) ||
                 !vault.TryGetBufferHandle(BufferID.WakeVectorBuffer, out VaultBufferHandle<float4> vectorHandle))
             {
-                _lastWakeParams = lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
+                _lastWakeParams = fallbackParams;
                 return _lastWakeParams;
             }
 
@@ -708,14 +729,14 @@ namespace Hecton8.Core
                 wakeLocked = vault.TryLockBuffer(BufferID.WakeGlobalBuffer, SystemID.GraphicsScalability);
                 if (!wakeLocked)
                 {
-                    _lastWakeParams = lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
+                    _lastWakeParams = fallbackParams;
                     return _lastWakeParams;
                 }
 
                 vectorLocked = vault.TryLockBuffer(BufferID.WakeVectorBuffer, SystemID.GraphicsScalability);
                 if (!vectorLocked)
                 {
-                    _lastWakeParams = lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
+                    _lastWakeParams = fallbackParams;
                     return _lastWakeParams;
                 }
 
@@ -723,22 +744,29 @@ namespace Hecton8.Core
                 NativeArray<float4> vectors = vectorHandle.Resolve(vault);
                 if (!wakes.IsCreated || !vectors.IsCreated)
                 {
-                    _lastWakeParams = lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
+                    _lastWakeParams = fallbackParams;
                     return _lastWakeParams;
                 }
 
                 int uploadCount = math.min(DynamicWakeCapacity, math.min(wakes.Length, vectors.Length));
                 if (uploadCount <= 0)
                 {
-                    _lastWakeParams = lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
+                    _lastWakeParams = fallbackParams;
                     return _lastWakeParams;
                 }
 
-                GraphicsBufferUploadUtility.UploadNativeArray(_wakeBuffer, wakes, uploadCount);
-                GraphicsBufferUploadUtility.UploadNativeArray(_wakeVectorBuffer, vectors, uploadCount);
+                int lowLimit = math.min(DynamicWakeLowTierCapacity, uploadCount);
+                int slotLimit = (int)math.ceil(math.lerp(uploadCount, lowLimit, lowTierWeight01));
+                if (slotLimit < lowLimit)
+                    slotLimit = lowLimit;
+                if (slotLimit > uploadCount)
+                    slotLimit = uploadCount;
+
+                GraphicsBufferUploadUtility.UploadNativeArray(_wakeBuffer, wakes, slotLimit);
+                GraphicsBufferUploadUtility.UploadNativeArray(_wakeVectorBuffer, vectors, slotLimit);
 
                 int activeCount = 0;
-                for (int i = 0; i < uploadCount; i++)
+                for (int i = 0; i < slotLimit; i++)
                 {
                     if (math.any(math.abs(wakes[i]) > new float4(0.0001f)) ||
                         math.any(math.abs(vectors[i]) > new float4(0.0001f)))
@@ -747,8 +775,7 @@ namespace Hecton8.Core
                     }
                 }
 
-                int slotLimit = lowTier ? math.min(DynamicWakeLowTierCapacity, uploadCount) : uploadCount;
-                _lastWakeParams = new Vector4(slotLimit, lowTier ? 1f : 0f, math.min(activeCount, slotLimit), 1f);
+                _lastWakeParams = new Vector4(slotLimit, lowTierWeight01, math.min(activeCount, slotLimit), 1f);
                 return _lastWakeParams;
             }
             finally
@@ -961,14 +988,42 @@ namespace Hecton8.Core
             IResolutionScalerService scaler = GlobalRegistry.ResolutionScaler;
             if (scaler != null && scaler.TryGetScaleState(out ResolutionScaleState state))
             {
-                float current = math.saturate(state.CurrentRenderScale01);
-                float target = math.saturate(state.TargetRenderScale01);
-                float stress = math.saturate(state.SystemStress01);
-                return new Vector4(current > 0f ? current : 1f, target > 0f ? target : current, stress, state.VisualOverkill01);
+                float current = math.saturate(math.isfinite(state.CurrentRenderScale01) ? state.CurrentRenderScale01 : 1f);
+                float target = math.saturate(math.isfinite(state.TargetRenderScale01) ? state.TargetRenderScale01 : current);
+                float stress = math.saturate(math.isfinite(state.SystemStress01) ? state.SystemStress01 : 0f);
+                float quality = math.saturate(math.isfinite(state.GlobalQualityWeight01) ? state.GlobalQualityWeight01 : 1f);
+                float fallbackOverkill = Smooth01(math.saturate((quality - 0.78f) * 4.5454545f));
+                float overkill = math.saturate(math.isfinite(state.VisualOverkill01) ? state.VisualOverkill01 : fallbackOverkill);
+                return new Vector4(current > 0f ? current : 1f, target > 0f ? target : current, stress, overkill);
             }
 
             float fallbackStress = math.saturate(HomeostasisBrain.SystemHealthIndex01);
-            return new Vector4(1f, 1f, fallbackStress, GlobalRegistry.ScalabilityTier == HectonQualityTier.Ultra ? 1f : 0f);
+            float quality01 = ResolveGlobalQualityWeight01();
+            float overkill01 = Smooth01(math.saturate((quality01 - 0.78f) * 4.5454545f));
+            return new Vector4(1f, 1f, fallbackStress, overkill01);
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            IResolutionScalerService scaler = GlobalRegistry.ResolutionScaler;
+            if (scaler != null && scaler.TryGetScaleState(out ResolutionScaleState state))
+                return math.saturate(math.isfinite(state.GlobalQualityWeight01) ? state.GlobalQualityWeight01 : 1f);
+
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 1f);
+        }
+
+        private static float ResolveLowTierWeight01(float qualityWeight01, bool lowTierFallback)
+        {
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : (lowTierFallback ? 0.35f : 1f));
+            float weight = 1f - Smooth01(math.saturate((quality - 0.18f) * 1.2195122f));
+            return lowTierFallback ? math.max(weight, 0.25f) : weight;
+        }
+
+        private static float Smooth01(float value)
+        {
+            value = math.saturate(value);
+            return value * value * (3f - 2f * value);
         }
 
         private Vector4 ResolveHazardPulse(float shaderTime)
@@ -1037,7 +1092,6 @@ namespace Hecton8.Core
             SetKeyword(KeywordCausticsOn, highTier);
             SetKeyword(KeywordVolumetricFogOn, highTier);
             SetKeyword(KeywordThermalAnomalies, highTier);
-            SetKeyword(KeywordVisualOverkill, qualityTier == HectonQualityTier.Ultra);
         }
 
         private void SetKeyword(string keyword, bool enabled)
@@ -1392,13 +1446,14 @@ namespace Hecton8.Core
             slots[startSlot + 3] = new float4(matrix.m30, matrix.m31, matrix.m32, matrix.m33);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct MockGlobalShaderDataJob : IJob
         {
+            [NoAlias]
             public NativeArray<float4> Slots;
             public float ShaderTime;
             public float SectorPhase;
-            public int LowTier;
+            public float LowTierWeight01;
             public int GeneratedEmergencyGlobals;
             public int ManualOverrideActive;
             public int CsvOverrideActive;
@@ -1427,7 +1482,10 @@ namespace Hecton8.Core
                 flowVector = math.isfinite(flowLengthSq) && flowLengthSq > 0.0001f
                     ? flowVector * math.rsqrt(math.max(flowLengthSq, 0.0001f))
                     : new float3(1f, 0f, 0f);
-                float flowMagnitude = LowTier != 0 ? 0.32f + (0.18f * storm) : 0.78f + (0.38f * storm);
+                float lowTierWeight = math.saturate(LowTierWeight01);
+                float lowFlowMagnitude = 0.32f + (0.18f * storm);
+                float highFlowMagnitude = 0.78f + (0.38f * storm);
+                float flowMagnitude = math.lerp(highFlowMagnitude, lowFlowMagnitude, lowTierWeight);
 
                 if (CsvOverrideActive != 0)
                 {
@@ -1456,7 +1514,7 @@ namespace Hecton8.Core
                 Slots[ShaderGlobalsDtoSlot + 2] = new float4(ShaderTime, 0f, 0f, 0f);
                 Slots[MockWeatherSlot] = new float4(storm, turbidity, heat, smoothBiome);
                 Slots[AmbientSlot] = new float4(fogColorDensity.xyz * (0.55f + (0.25f * (1f - storm))), fogColorDensity.w);
-                Slots[CausticRuntimeSlot] = new float4(causticSpeed, LowTier != 0 ? 0.12f : 0.75f * (1f - storm), smoothBiome, storm);
+                Slots[CausticRuntimeSlot] = new float4(causticSpeed, math.lerp(0.75f * (1f - storm), 0.12f, lowTierWeight), smoothBiome, storm);
                 Slots[ExtinctionCoefficientsSlot] = new float4(0.624f, 0.0434f * (1f + turbidity), 0.0106f * (1f + (turbidity * 0.5f)), fogColorDensity.w);
             }
         }

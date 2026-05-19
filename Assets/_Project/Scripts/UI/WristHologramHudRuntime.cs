@@ -147,7 +147,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Wrist Hologram HUD Runtime")]
-    public sealed unsafe class WristHologramHudRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable
+    public sealed unsafe class WristHologramHudRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const int StateCapacity = 1;
         private const int GlyphCapacity = 128;
@@ -223,6 +223,7 @@ namespace Hecton8.UI
         [SerializeField, Range(0.05f, 2f)] private float csvPollIntervalSeconds = 0.5f;
 
         private IDataVault _vault;
+        private IDataVault _cachedDataVault;
         private VaultBufferHandle<WristHudStateDTO> _stateHandle;
         private VaultBufferHandle<WristHudQuadTransformDTO> _quadHandle;
         private VaultBufferHandle<WristHudFontGlyphDTO> _fontAtlasHandle;
@@ -234,6 +235,8 @@ namespace Hecton8.UI
 
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
+        private bool _registeredHotSwapListener;
+        private bool _registeredScalabilityListener;
         private bool _blackBoxDumped;
         private bool _csvLoaded;
         private bool _legacyMissing;
@@ -382,6 +385,9 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            RefreshCachedRegistryServices();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             ColdSanityCheckLayout();
             EnsureNativeBuffers();
             EnsureNativeQueues();
@@ -392,6 +398,7 @@ namespace Hecton8.UI
 
         private void Start()
         {
+            RefreshCachedRegistryServices();
             EnsureNativeBuffers();
             EnsureGraphicsResources();
             TryRegisterTickLanes();
@@ -401,6 +408,8 @@ namespace Hecton8.UI
         {
             CompletePendingJob();
             TryUnregisterTickLanes();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             _frontQuadCount = 0;
             _lastUploadCount = -1;
             _lastUploadedFrameIndex = -1;
@@ -410,6 +419,8 @@ namespace Hecton8.UI
         {
             CompletePendingJob();
             TryUnregisterTickLanes();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             ReleaseGraphicsResources();
             DisposeNativeState();
             DisposeNativeQueues();
@@ -427,7 +438,6 @@ namespace Hecton8.UI
             if (_jobScheduled)
                 CompletePendingJob();
 
-            RefreshCachedTier();
             DrainSignalQueues(deltaTime);
             RefreshUiStateStoreInputs();
 #if UNITY_EDITOR
@@ -454,7 +464,7 @@ namespace Hecton8.UI
                 return false;
             }
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _cachedDataVault;
             if (vault == null)
             {
                 ReleaseNativeStateHandles();
@@ -703,16 +713,6 @@ namespace Hecton8.UI
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
-        }
-
-        private void RefreshCachedTier()
-        {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier == _cachedTier)
-                return;
-
-            _cachedTier = tier;
-            ApplyMaterialColdState();
         }
 
         private void SeedInitialState()
@@ -1750,6 +1750,73 @@ namespace Hecton8.UI
         private bool IsEffectiveLowTier()
         {
             return IsLowTier(_cachedTier) || _lowTierHoldFrames > 0 || _globalSystemPressure01 >= 0.8f;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            _cachedDataVault = currentService as IDataVault;
+            if (!ReferenceEquals(_vault, _cachedDataVault))
+            {
+                ReleaseNativeStateHandles();
+                _fontAtlasGenerated = false;
+            }
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            HectonQualityTier tier = payload.CurrentQualityTier;
+            if (tier == _cachedTier)
+                return;
+
+            _cachedTier = tier;
+            ApplyMaterialColdState();
+        }
+
+        private void RefreshCachedRegistryServices()
+        {
+            _cachedDataVault = GlobalRegistry.DataVault;
+            _cachedTier = GlobalRegistry.ScalabilityTier;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_registeredScalabilityListener || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
         }
 
         private static string ResolveProjectRoot()

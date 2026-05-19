@@ -291,9 +291,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_AP
 Required result:
 
 - `Status = PASS`
-- `SourceSignals = 160`
+- `SourceSignals = 161`
 - `AllowedProjectedSignals = 2`
-- `DeniedByDefaultSignals = 158`
+- `DeniedByDefaultSignals = 159`
 - `ProjectionBridgeSignals = CombatDamageSignal,WeatherChangedSignal`
 - `AcceptedCommandOpcodes = 8`
 - `CommandRejectReasons = 19`

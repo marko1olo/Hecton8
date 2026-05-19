@@ -1321,7 +1321,7 @@ namespace Hecton8.Environment
                     continue;
 
                 CombatDamageSignal damage = default;
-                damage.WorldPoint = delta;
+                damage.ImpactAup = module.AUP;
                 damage.Direction = math.normalizesafe(delta, new float3(0f, -1f, 0f));
                 damage.Magnitude = shockwave;
                 damage.DamageType = SeismicDirectorSourceHash;

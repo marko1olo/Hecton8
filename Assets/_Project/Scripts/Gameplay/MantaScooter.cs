@@ -37,7 +37,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Tools/Manta Scooter")]
-    public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IUpdatable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, IDamageSignalEmitter, ILocalizationLanguageChangedListener
+    public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IUpdatable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, IDamageSignalEmitter, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const float DefaultTransportPropulsionReference = 800f;
         private const float ThrottleBlendSpeedFloor = 0.01f;
@@ -170,6 +170,9 @@ namespace Hecton8.Gameplay
         private HectonSurvivalSystem _mantaSurvivalSystem;
         private VehicleUpgradeModule _vehicleUpgradeModule;
         private AudioSource _motorAudioSource;
+        private IInputService _cachedInputService;
+        private ObjectPoolManager _cachedObjectPool;
+        private SpatialAudioManager _cachedSpatialAudioManager;
         private Rigidbody _playerRigidbody;
         private Transform _cachedTransform;
         private bool _isActive;
@@ -179,6 +182,7 @@ namespace Hecton8.Gameplay
         private int _inventoryConditionAnchorIndex = -1;
         private int _inventoryConditionAnchorHashId;
         private bool _registeredTick;
+        private bool _hotSwapListenerRegistered;
         private bool _hudStateInitialized;
         private bool _lastHudVisible;
         private int _lastDepthTenths = int.MinValue;
@@ -405,6 +409,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            RefreshCachedRegistryServices();
+            TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshMantaLocalizationCache();
             RegisterHeadlightShadowBudget();
@@ -414,6 +420,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
+            TryUnregisterHotSwapListener();
             UnregisterHeadlightShadowBudget();
             RestoreHeadlightDefaults();
             ClearHeadlightGlobals();
@@ -597,7 +604,7 @@ namespace Hecton8.Gameplay
 
             if (_isActive)
             {
-                IInputService inputService = GlobalRegistry.Input;
+                IInputService inputService = _cachedInputService;
                 PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
                     ? inputService.GetState()
                     : default;
@@ -724,8 +731,8 @@ namespace Hecton8.Gameplay
             if (_motorAudioSource == null || _motorAudioSource.outputAudioMixerGroup != null)
                 return;
 
-            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
-                _motorAudioSource.outputAudioMixerGroup = spatialAudioManager.SfxGroup;
+            if (_cachedSpatialAudioManager != null)
+                _motorAudioSource.outputAudioMixerGroup = _cachedSpatialAudioManager.SfxGroup;
         }
 
         private void DeactivateScooter()
@@ -873,7 +880,7 @@ namespace Hecton8.Gameplay
             if (wreckPrefab == null)
                 return false;
 
-            ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
+            ObjectPoolManager poolManager = _cachedObjectPool;
             if (poolManager == null)
                 return false;
 
@@ -1092,7 +1099,7 @@ namespace Hecton8.Gameplay
 
         private void TickDriveRelease(float deltaTime)
         {
-            IInputService inputService = GlobalRegistry.Input;
+            IInputService inputService = _cachedInputService;
             PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
                 ? inputService.GetState()
                 : default;
@@ -2134,6 +2141,46 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredTick = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Input &&
+                serviceSlot != GlobalRegistryServiceSlot.Audio &&
+                serviceSlot != GlobalRegistryServiceSlot.ObjectPool)
+            {
+                return;
+            }
+
+            RefreshCachedRegistryServices();
+            TryAssignMotorMixerRoute();
+        }
+
+        private void RefreshCachedRegistryServices()
+        {
+            _cachedInputService = GlobalRegistry.Input;
+            _cachedObjectPool = GlobalRegistry.ObjectPool;
+            _cachedSpatialAudioManager = GlobalRegistry.Audio as SpatialAudioManager;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)

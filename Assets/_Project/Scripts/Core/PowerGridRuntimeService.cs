@@ -6,7 +6,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Aggregate storage snapshot published by the global power runtime.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public struct BatteryRuntimeSnapshot
     {
         /// <summary>Total committed stored energy across all runtime banks.</summary>
@@ -19,7 +19,11 @@ namespace Hecton8.Core
         public float ChargeNormalized;
 
         /// <summary>True while the grid runtime is reserving energy for emergency-only loads.</summary>
+        [MarshalAs(UnmanagedType.I1)]
         public bool EmergencyReserveActive;
+        private byte _pad0;
+        private byte _pad1;
+        private byte _pad2;
     }
 
     /// <summary>

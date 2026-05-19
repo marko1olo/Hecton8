@@ -56,7 +56,7 @@ namespace Hecton8.Core.Contracts
         public const uint OrbitalRelativityDirector = 0x4F524249u; // ORBI
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public readonly struct PrologueOrbitalSnapshot
     {
         public PrologueOrbitalSnapshot(
@@ -86,7 +86,7 @@ namespace Hecton8.Core.Contracts
         public byte Flags { get; }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public readonly struct PrologueAtmosphericReentrySnapshot
     {
         public PrologueAtmosphericReentrySnapshot(
@@ -113,7 +113,7 @@ namespace Hecton8.Core.Contracts
         public byte Flags { get; }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public readonly struct PrologueCompleteSnapshot
     {
         public PrologueCompleteSnapshot(uint frame, float whiteoutHoldSeconds, ushort sequence, byte phase, byte flags)

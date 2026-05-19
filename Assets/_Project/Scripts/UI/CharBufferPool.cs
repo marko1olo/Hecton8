@@ -19,7 +19,9 @@ namespace Hecton8.UI
         private const int MaskWordCount = (SlotCount + MaskWordBits - 1) / MaskWordBits;
         internal const int RequiredBabelTextCapacity = 128;
         internal const int RequiredVrTextCapacity = 256;
+        internal const int EncyclopediaPageCapacity = 8192;
         private const int SlotLength = RequiredVrTextCapacity;
+        private const int EncyclopediaPageSlotCount = 4;
         private const int BabelArenaLength = SlotCount * RequiredBabelTextCapacity;
         private const BufferID BabelArenaBufferId = (BufferID)70540;
 
@@ -27,8 +29,11 @@ namespace Hecton8.UI
         private static readonly char[][] s_slots = CreateSlots(SlotLength);
         // COLD ALLOC: char[500][128] - TMP char[] bridge for native Babel arena slots - owner: CharBufferPool
         private static readonly char[][] s_babelTmpBridges = CreateSlots(RequiredBabelTextCapacity);
+        // COLD ALLOC: char[4][8192] - long-form PDA encyclopedia TMP staging pages - owner: CharBufferPool
+        private static readonly char[][] s_encyclopediaPages = CreateSlots(EncyclopediaPageSlotCount, EncyclopediaPageCapacity);
         // COLD ALLOC: ulong[8] - fixed free-slot bitmap for CharBufferPool - owner: CharBufferPool
         private static readonly ulong[] s_freeMasks = CreateFreeMasks();
+        private static ulong s_encyclopediaFreeMask = CreateEncyclopediaFreeMask();
         private static NativeArray<char> s_babelArena;
         private static NativeBitArray s_activeLeases;
         private static IDataVault s_babelArenaVault;
@@ -38,6 +43,7 @@ namespace Hecton8.UI
         private static int s_activeLeaseCount;
 
         internal static int AvailableSlotCount => SlotCount - s_activeLeaseCount;
+        internal static int AvailableEncyclopediaPageCount => CountBits(s_encyclopediaFreeMask);
         internal static int SlotCapacity => SlotLength;
         internal static int BabelNativeArenaLength => BabelArenaLength;
 
@@ -76,12 +82,29 @@ namespace Hecton8.UI
             }
         }
 
+        internal readonly struct EncyclopediaLease
+        {
+            public readonly int SlotIndex;
+            public readonly char[] Buffer;
+
+            public EncyclopediaLease(int slotIndex, char[] buffer)
+            {
+                SlotIndex = slotIndex;
+                Buffer = buffer;
+            }
+
+            public bool IsValid => SlotIndex >= 0 && Buffer != null;
+
+            public Span<char> Span => Buffer != null ? Buffer.AsSpan() : Span<char>.Empty;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             DisposeBabelArena();
             DisposeActiveLeaseBitset();
             ResetFreeMasks();
+            ResetEncyclopediaFreeMask();
             EnsureActiveLeaseBitset();
             EnsureBabelArena();
             s_activeLeases.Clear();
@@ -109,6 +132,13 @@ namespace Hecton8.UI
                 s_babelArena[nativeBase] = '\0';
                 s_babelArena[nativeBase + RequiredBabelTextCapacity - 1] = '\0';
             }
+
+            for (int slotIndex = 0; slotIndex < EncyclopediaPageSlotCount; slotIndex++)
+            {
+                char[] page = s_encyclopediaPages[slotIndex];
+                page[0] = '\0';
+                page[EncyclopediaPageCapacity - 1] = '\0';
+            }
         }
 
         public static bool TryAcquire(out Lease lease)
@@ -129,6 +159,18 @@ namespace Hecton8.UI
             if (TryAcquireSlot(out int slotIndex))
             {
                 lease = new BabelLease(slotIndex, s_babelTmpBridges[slotIndex]);
+                return true;
+            }
+
+            lease = default;
+            return false;
+        }
+
+        public static bool TryAcquireEncyclopedia(out EncyclopediaLease lease)
+        {
+            if (TryAcquireEncyclopediaSlot(out int slotIndex))
+            {
+                lease = new EncyclopediaLease(slotIndex, s_encyclopediaPages[slotIndex]);
                 return true;
             }
 
@@ -162,6 +204,17 @@ namespace Hecton8.UI
                 return;
 
             ReleaseSlot(lease.SlotIndex);
+        }
+
+        public static void Release(in EncyclopediaLease lease)
+        {
+            if (!lease.IsValid || (uint)lease.SlotIndex >= EncyclopediaPageSlotCount)
+                return;
+
+            if (!ReferenceEquals(lease.Buffer, s_encyclopediaPages[lease.SlotIndex]))
+                return;
+
+            ReleaseEncyclopediaSlot(lease.SlotIndex);
         }
 
         private static bool TryAcquireSlot(out int slotIndex)
@@ -211,6 +264,38 @@ namespace Hecton8.UI
             LocRegistry.ReportBufferPoolLeasesActive(s_activeLeaseCount);
         }
 
+        private static bool TryAcquireEncyclopediaSlot(out int slotIndex)
+        {
+            ulong availableMask = s_encyclopediaFreeMask;
+            if (availableMask == 0UL)
+            {
+                slotIndex = -1;
+                return false;
+            }
+
+            for (int bit = 0; bit < EncyclopediaPageSlotCount; bit++)
+            {
+                ulong slotBit = 1UL << bit;
+                if ((availableMask & slotBit) == 0UL)
+                    continue;
+
+                s_encyclopediaFreeMask = availableMask & ~slotBit;
+                slotIndex = bit;
+                return true;
+            }
+
+            slotIndex = -1;
+            return false;
+        }
+
+        private static void ReleaseEncyclopediaSlot(int slotIndex)
+        {
+            if ((uint)slotIndex >= EncyclopediaPageSlotCount)
+                return;
+
+            s_encyclopediaFreeMask |= 1UL << slotIndex;
+        }
+
         private static Span<char> GetBabelSpan(int slotIndex)
         {
             if ((uint)slotIndex >= SlotCount)
@@ -242,7 +327,12 @@ namespace Hecton8.UI
 
         private static char[][] CreateSlots(int slotLength)
         {
-            char[][] slots = new char[SlotCount][];
+            return CreateSlots(SlotCount, slotLength);
+        }
+
+        private static char[][] CreateSlots(int slotCount, int slotLength)
+        {
+            char[][] slots = new char[slotCount][];
             for (int i = 0; i < slots.Length; i++)
                 slots[i] = new char[slotLength];
 
@@ -272,6 +362,28 @@ namespace Hecton8.UI
             int usedBitsInLastWord = SlotCount - ((MaskWordCount - 1) * MaskWordBits);
             if (usedBitsInLastWord > 0 && usedBitsInLastWord < MaskWordBits)
                 masks[MaskWordCount - 1] = (1UL << usedBitsInLastWord) - 1UL;
+        }
+
+        private static ulong CreateEncyclopediaFreeMask()
+        {
+            return (1UL << EncyclopediaPageSlotCount) - 1UL;
+        }
+
+        private static void ResetEncyclopediaFreeMask()
+        {
+            s_encyclopediaFreeMask = CreateEncyclopediaFreeMask();
+        }
+
+        private static int CountBits(ulong value)
+        {
+            int count = 0;
+            while (value != 0UL)
+            {
+                value &= value - 1UL;
+                count++;
+            }
+
+            return count;
         }
 
         private static void EnsureActiveLeaseBitset()

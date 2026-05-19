@@ -1655,8 +1655,25 @@ namespace Hecton8.Bootstrap
 
         private static bool InitializeBootstrapDataMonolith(uint appVersionHash)
         {
-            return global::Hecton8.Data.H8StaticDataArena.TryInitializeFromStreamingAssets(0u, appVersionHash, false, out global::Hecton8.Data.H8DataBlobLoadStatus dataStatus) ||
-                dataStatus == global::Hecton8.Data.H8DataBlobLoadStatus.Missing;
+#if UNITY_EDITOR
+            bool failIfMissing = false;
+#else
+            bool failIfMissing = true;
+#endif
+            bool loaded = global::Hecton8.Data.H8StaticDataArena.TryInitializeFromStreamingAssets(
+                0u,
+                appVersionHash,
+                failIfMissing,
+                out global::Hecton8.Data.H8DataBlobLoadStatus dataStatus);
+
+#if UNITY_EDITOR
+            return loaded || dataStatus == global::Hecton8.Data.H8DataBlobLoadStatus.Missing;
+#else
+            if (!loaded)
+                throw new global::Hecton8.Core.FatalArchitectureException("Data Monolith boot failure: " + dataStatus);
+
+            return true;
+#endif
         }
 
         private async Awaitable<bool> InitializeCoreServicesPhaseAsync(CancellationToken ct)

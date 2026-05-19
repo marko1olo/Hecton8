@@ -1,0 +1,975 @@
+using System;
+using System.IO;
+using Hecton8.Core.Memory;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Mathematics;
+
+namespace Hecton8.World.ProceduralWreckage
+{
+    public struct ProceduralWreckageVaultHandles
+    {
+        public VaultBufferHandle<WreckageRuleDTO> Rules;
+        public VaultBufferHandle<WreckageGridCellDTO> Grid;
+        public VaultBufferHandle<WreckageNodeDTO> Nodes;
+        public VaultBufferHandle<WreckageNodeDTO> DebrisNodes;
+        public VaultBufferHandle<float4x4> RenderMatrices;
+        public VaultBufferHandle<WreckageIndirectArgsDTO> IndirectArgs;
+        public VaultBufferHandle<WreckageSectorTriggerDTO> SectorTriggers;
+        public VaultBufferHandle<LootSpawnRequestDTO> LootRequests;
+        public VaultBufferHandle<WreckageBoxColliderDTO> CollisionProxies;
+        public VaultBufferHandle<WreckageGenerationTelemetryEntry> TelemetryRing;
+        public VaultBufferHandle<int> TelemetryCursor;
+        public VaultBufferHandle<WreckageTuningDTO> Tuning;
+        public VaultBufferHandle<byte> CsvScratch;
+        public VaultBufferHandle<WreckagePaddedCounterDTO> Counters;
+        public VaultBufferHandle<WreckageDebugCellDTO> DebugCells;
+        public VaultBufferHandle<WreckageGpuScalarDTO> GpuScalars;
+        public VaultBufferHandle<WreckageSelfAuditResultDTO> SelfAudit;
+        public VaultBufferHandle<WreckageHzbTileDTO> HzbTiles;
+
+        public bool IsCreated()
+        {
+            return Rules.IsCreated &&
+                   Grid.IsCreated &&
+                   Nodes.IsCreated &&
+                   DebrisNodes.IsCreated &&
+                   RenderMatrices.IsCreated &&
+                   IndirectArgs.IsCreated &&
+                   SectorTriggers.IsCreated &&
+                   LootRequests.IsCreated &&
+                   CollisionProxies.IsCreated &&
+                   TelemetryRing.IsCreated &&
+                   TelemetryCursor.IsCreated &&
+                   Tuning.IsCreated &&
+                   CsvScratch.IsCreated &&
+                   Counters.IsCreated &&
+                   DebugCells.IsCreated &&
+                   GpuScalars.IsCreated &&
+                   SelfAudit.IsCreated &&
+                   HzbTiles.IsCreated;
+        }
+    }
+
+    public struct ProceduralWreckageVaultBuffers
+    {
+        public NativeArray<WreckageRuleDTO> Rules;
+        public NativeArray<WreckageGridCellDTO> Grid;
+        public NativeArray<WreckageNodeDTO> Nodes;
+        public NativeArray<WreckageNodeDTO> DebrisNodes;
+        public NativeArray<float4x4> RenderMatrices;
+        public NativeArray<WreckageIndirectArgsDTO> IndirectArgs;
+        public NativeArray<WreckageSectorTriggerDTO> SectorTriggers;
+        public NativeArray<LootSpawnRequestDTO> LootRequests;
+        public NativeArray<WreckageBoxColliderDTO> CollisionProxies;
+        public NativeArray<WreckageGenerationTelemetryEntry> TelemetryRing;
+        public NativeArray<int> TelemetryCursor;
+        public NativeArray<WreckageTuningDTO> Tuning;
+        public NativeArray<byte> CsvScratch;
+        public NativeArray<WreckagePaddedCounterDTO> Counters;
+        public NativeArray<WreckageDebugCellDTO> DebugCells;
+        public NativeArray<WreckageGpuScalarDTO> GpuScalars;
+        public NativeArray<WreckageSelfAuditResultDTO> SelfAudit;
+        public NativeArray<WreckageHzbTileDTO> HzbTiles;
+
+        public bool IsCreated()
+        {
+            return Rules.IsCreated &&
+                   Grid.IsCreated &&
+                   Nodes.IsCreated &&
+                   DebrisNodes.IsCreated &&
+                   RenderMatrices.IsCreated &&
+                   IndirectArgs.IsCreated &&
+                   SectorTriggers.IsCreated &&
+                   LootRequests.IsCreated &&
+                   CollisionProxies.IsCreated &&
+                   TelemetryRing.IsCreated &&
+                   TelemetryCursor.IsCreated &&
+                   Tuning.IsCreated &&
+                   CsvScratch.IsCreated &&
+                   Counters.IsCreated &&
+                   DebugCells.IsCreated &&
+                   GpuScalars.IsCreated &&
+                   SelfAudit.IsCreated &&
+                   HzbTiles.IsCreated;
+        }
+    }
+
+    public static unsafe class ProceduralWreckageVault
+    {
+        private const int DumpVersion = 1;
+        private const string BinaryRulesFileName = "wreckage_module_rules.h8bin";
+        private const string CsvRulesFileName = "wreckage_adjacency_rules.csv";
+        private const string DumpFileName = "Dump_WRECKAGE_ASSEMBLER.bin";
+        private const string AgentDumpFileName = "Dump_SHINOBU_121.bin";
+
+        public static bool TryResolve(IDataVault vault, out ProceduralWreckageVaultHandles handles)
+        {
+            handles = default;
+            if (vault == null)
+                return false;
+
+            if (vault.IsAllocationLocked)
+            {
+                if (!TryResolveExisting(vault, out handles))
+                    return false;
+
+                if (TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers lockedBuffers))
+                    HydrateDefaultsIfNeeded(lockedBuffers);
+
+                return handles.IsCreated();
+            }
+
+            handles.Rules = vault.GetBufferHandle<WreckageRuleDTO>(
+                ProceduralWreckageVaultBufferIds.Rules,
+                ProceduralWreckageConstants.MaxModuleRules,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            handles.Grid = vault.GetBufferHandle<WreckageGridCellDTO>(
+                ProceduralWreckageVaultBufferIds.Grid,
+                ProceduralWreckageConstants.MaxGridCells,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            handles.Nodes = vault.GetBufferHandle<WreckageNodeDTO>(
+                ProceduralWreckageVaultBufferIds.Nodes,
+                ProceduralWreckageConstants.MaxWreckNodes,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            handles.DebrisNodes = vault.GetBufferHandle<WreckageNodeDTO>(
+                ProceduralWreckageVaultBufferIds.DebrisNodes,
+                ProceduralWreckageConstants.MaxDebrisNodes,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            handles.RenderMatrices = vault.GetBufferHandle<float4x4>(
+                ProceduralWreckageVaultBufferIds.RenderMatrices,
+                ProceduralWreckageConstants.MaxRenderMatrices,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            handles.IndirectArgs = vault.GetBufferHandle<WreckageIndirectArgsDTO>(
+                ProceduralWreckageVaultBufferIds.IndirectArgs,
+                1,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            handles.SectorTriggers = vault.GetBufferHandle<WreckageSectorTriggerDTO>(
+                ProceduralWreckageVaultBufferIds.SectorTriggers,
+                1,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            handles.LootRequests = vault.GetBufferHandle<LootSpawnRequestDTO>(
+                ProceduralWreckageVaultBufferIds.LootRequests,
+                ProceduralWreckageConstants.MaxLootRequests,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            handles.CollisionProxies = vault.GetBufferHandle<WreckageBoxColliderDTO>(
+                ProceduralWreckageVaultBufferIds.CollisionProxies,
+                ProceduralWreckageConstants.MaxCollisionProxies,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            handles.TelemetryRing = vault.GetBufferHandle<WreckageGenerationTelemetryEntry>(
+                ProceduralWreckageVaultBufferIds.TelemetryRing,
+                ProceduralWreckageConstants.TelemetryFrames,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            handles.TelemetryCursor = vault.GetBufferHandle<int>(
+                ProceduralWreckageVaultBufferIds.TelemetryCursor,
+                1,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            handles.Tuning = vault.GetBufferHandle<WreckageTuningDTO>(
+                ProceduralWreckageVaultBufferIds.Tuning,
+                1,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            handles.CsvScratch = vault.GetBufferHandle<byte>(
+                ProceduralWreckageVaultBufferIds.CsvScratch,
+                ProceduralWreckageConstants.CsvScratchBytes,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            handles.Counters = vault.GetBufferHandle<WreckagePaddedCounterDTO>(
+                ProceduralWreckageVaultBufferIds.Counters,
+                1,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            handles.DebugCells = vault.GetBufferHandle<WreckageDebugCellDTO>(
+                ProceduralWreckageVaultBufferIds.DebugCells,
+                ProceduralWreckageConstants.MaxDebugCells,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            handles.GpuScalars = vault.GetBufferHandle<WreckageGpuScalarDTO>(
+                ProceduralWreckageVaultBufferIds.GpuScalars,
+                1,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            handles.SelfAudit = vault.GetBufferHandle<WreckageSelfAuditResultDTO>(
+                ProceduralWreckageVaultBufferIds.SelfAudit,
+                1,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+            handles.HzbTiles = vault.GetBufferHandle<WreckageHzbTileDTO>(
+                ProceduralWreckageVaultBufferIds.HzbTiles,
+                ProceduralWreckageConstants.MaxHzbTiles,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
+
+            if (!handles.IsCreated())
+                return false;
+
+            if (TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers buffers))
+                HydrateDefaultsIfNeeded(buffers);
+
+            return true;
+        }
+
+        public static bool TryResolveExisting(IDataVault vault, out ProceduralWreckageVaultHandles handles)
+        {
+            handles = default;
+            if (vault == null)
+                return false;
+
+            return vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.Rules, out handles.Rules) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.Grid, out handles.Grid) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.Nodes, out handles.Nodes) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.DebrisNodes, out handles.DebrisNodes) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.RenderMatrices, out handles.RenderMatrices) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.IndirectArgs, out handles.IndirectArgs) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.SectorTriggers, out handles.SectorTriggers) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.LootRequests, out handles.LootRequests) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.CollisionProxies, out handles.CollisionProxies) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.Tuning, out handles.Tuning) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.CsvScratch, out handles.CsvScratch) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.Counters, out handles.Counters) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.DebugCells, out handles.DebugCells) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.GpuScalars, out handles.GpuScalars) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.SelfAudit, out handles.SelfAudit) &&
+                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.HzbTiles, out handles.HzbTiles);
+        }
+
+        public static bool TryResolveViews(IDataVault vault, ref ProceduralWreckageVaultHandles handles, out ProceduralWreckageVaultBuffers buffers)
+        {
+            buffers = default;
+            if (vault == null || !handles.IsCreated())
+                return false;
+
+            buffers.Rules = handles.Rules.Resolve(vault);
+            buffers.Grid = handles.Grid.Resolve(vault);
+            buffers.Nodes = handles.Nodes.Resolve(vault);
+            buffers.DebrisNodes = handles.DebrisNodes.Resolve(vault);
+            buffers.RenderMatrices = handles.RenderMatrices.Resolve(vault);
+            buffers.IndirectArgs = handles.IndirectArgs.Resolve(vault);
+            buffers.SectorTriggers = handles.SectorTriggers.Resolve(vault);
+            buffers.LootRequests = handles.LootRequests.Resolve(vault);
+            buffers.CollisionProxies = handles.CollisionProxies.Resolve(vault);
+            buffers.TelemetryRing = handles.TelemetryRing.Resolve(vault);
+            buffers.TelemetryCursor = handles.TelemetryCursor.Resolve(vault);
+            buffers.Tuning = handles.Tuning.Resolve(vault);
+            buffers.CsvScratch = handles.CsvScratch.Resolve(vault);
+            buffers.Counters = handles.Counters.Resolve(vault);
+            buffers.DebugCells = handles.DebugCells.Resolve(vault);
+            buffers.GpuScalars = handles.GpuScalars.Resolve(vault);
+            buffers.SelfAudit = handles.SelfAudit.Resolve(vault);
+            buffers.HzbTiles = handles.HzbTiles.Resolve(vault);
+            return buffers.IsCreated();
+        }
+
+        public static bool TryScheduleMockSectorTrigger(
+            in ProceduralWreckageVaultBuffers buffers,
+            double3 rootAup,
+            uint worldSeed,
+            uint simulationFrame,
+            JobHandle inputDependency,
+            out JobHandle outputDependency)
+        {
+            outputDependency = inputDependency;
+            if (!buffers.SectorTriggers.IsCreated || !buffers.Tuning.IsCreated || !buffers.Counters.IsCreated)
+                return false;
+
+            MockSectorTriggerJob job = default;
+            job.SectorTriggers = buffers.SectorTriggers;
+            job.Tuning = buffers.Tuning;
+            job.Counters = buffers.Counters;
+            job.MockRootAUP = rootAup;
+            job.WorldSeed = worldSeed;
+            job.SimulationFrameCounter = simulationFrame;
+            outputDependency = job.Schedule(inputDependency);
+            return true;
+        }
+
+        public static bool TryScheduleGenerationPipeline(
+            in ProceduralWreckageVaultBuffers buffers,
+            double3 cameraAup,
+            float4x4 cameraRelativeViewProjection,
+            int hzbWidth,
+            int hzbHeight,
+            uint frame,
+            uint vertexCountPerInstance,
+            JobHandle inputDependency,
+            out JobHandle outputDependency)
+        {
+            outputDependency = inputDependency;
+            if (!buffers.IsCreated())
+                return false;
+
+            WreckageCollapseJob collapse = default;
+            collapse.Grid = buffers.Grid;
+            collapse.Rules = buffers.Rules;
+            collapse.SectorTriggers = buffers.SectorTriggers;
+            collapse.Tuning = buffers.Tuning;
+            collapse.Nodes = buffers.Nodes;
+            collapse.DebugCells = buffers.DebugCells;
+            collapse.Counters = buffers.Counters;
+            collapse.TelemetryRing = buffers.TelemetryRing;
+            collapse.TelemetryCursor = buffers.TelemetryCursor;
+            collapse.Frame = frame;
+            JobHandle collapseHandle = collapse.Schedule(inputDependency);
+
+            ApplyStructuralShearJob shear = default;
+            shear.Nodes = buffers.Nodes;
+            shear.Tuning = buffers.Tuning;
+            shear.Frame = frame;
+            JobHandle shearHandle = shear.Schedule(buffers.Nodes.Length, 32, collapseHandle);
+
+            GenerateDebrisFieldJob debris = default;
+            debris.SectorTriggers = buffers.SectorTriggers;
+            debris.Tuning = buffers.Tuning;
+            debris.DebrisNodes = buffers.DebrisNodes;
+            debris.Counters = buffers.Counters;
+            debris.Frame = frame;
+            JobHandle debrisHandle = debris.Schedule(shearHandle);
+
+            InjectLootRequestsJob loot = default;
+            loot.Nodes = buffers.Nodes;
+            loot.LootRequests = buffers.LootRequests;
+            loot.Counters = buffers.Counters;
+            loot.LootTableHash = HashAsciiLiteral("wreckage_loot_table");
+            JobHandle lootHandle = loot.Schedule(debrisHandle);
+
+            StageCollisionProxiesJob collision = default;
+            collision.Nodes = buffers.Nodes;
+            collision.CollisionProxies = buffers.CollisionProxies;
+            collision.Counters = buffers.Counters;
+            JobHandle collisionHandle = collision.Schedule(lootHandle);
+            JobHandle dataReady = JobHandle.CombineDependencies(debrisHandle, collisionHandle);
+
+            ExtractRenderMatricesJob extract = default;
+            extract.Nodes = buffers.Nodes;
+            extract.DebrisNodes = buffers.DebrisNodes;
+            extract.Tuning = buffers.Tuning;
+            extract.HzbTiles = buffers.HzbTiles;
+            extract.RenderMatrices = buffers.RenderMatrices;
+            extract.IndirectArgs = buffers.IndirectArgs;
+            extract.GpuScalars = buffers.GpuScalars;
+            extract.Counters = buffers.Counters;
+            extract.CameraAUP = cameraAup;
+            extract.CameraRelativeViewProjection = cameraRelativeViewProjection;
+            extract.HzbWidth = hzbWidth;
+            extract.HzbHeight = hzbHeight;
+            extract.VertexCountPerInstance = vertexCountPerInstance;
+            extract.Frame = frame;
+            JobHandle extractHandle = extract.Schedule(dataReady);
+
+            WreckageSelfAuditJob audit = default;
+            audit.Nodes = buffers.Nodes;
+            audit.Counters = buffers.Counters;
+            audit.Results = buffers.SelfAudit;
+            audit.Frame = frame;
+            outputDependency = audit.Schedule(extractHandle);
+            return true;
+        }
+
+        public static bool TryGetTuning(IDataVault vault, ref ProceduralWreckageVaultHandles handles, out WreckageTuningDTO tuning)
+        {
+            tuning = default;
+            if (!TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers buffers) ||
+                !buffers.Tuning.IsCreated ||
+                buffers.Tuning.Length <= 0)
+            {
+                return false;
+            }
+
+            tuning = buffers.Tuning[0];
+            return true;
+        }
+
+        public static bool TrySetTuning(IDataVault vault, ref ProceduralWreckageVaultHandles handles, in WreckageTuningDTO tuning)
+        {
+            if (!TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers buffers) ||
+                !buffers.Tuning.IsCreated ||
+                buffers.Tuning.Length <= 0)
+            {
+                return false;
+            }
+
+            buffers.Tuning[0] = SanitizeTuning(in tuning);
+            return true;
+        }
+
+        public static bool TryFindLegacyRuleBinary(string projectRoot, out string path)
+        {
+            path = null;
+            if (string.IsNullOrEmpty(projectRoot))
+                return false;
+
+            string candidate = Path.Combine(projectRoot, "Assets", "StreamingAssets", BinaryRulesFileName);
+            if (File.Exists(candidate))
+            {
+                path = candidate;
+                return true;
+            }
+
+            candidate = Path.Combine(projectRoot, "StreamingAssets", BinaryRulesFileName);
+            if (File.Exists(candidate))
+            {
+                path = candidate;
+                return true;
+            }
+
+            candidate = Path.Combine(projectRoot, "Docs", "Archive", BinaryRulesFileName);
+            if (File.Exists(candidate))
+            {
+                path = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool TryLoadCsvRules(IDataVault vault, ref ProceduralWreckageVaultHandles handles, string projectRoot)
+        {
+            if (!TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers buffers) ||
+                !buffers.CsvScratch.IsCreated ||
+                !buffers.Rules.IsCreated)
+            {
+                return false;
+            }
+
+            string path = ResolveCsvPath(projectRoot);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            ulong writeTicks = (ulong)File.GetLastWriteTimeUtc(path).Ticks;
+            int length = ReadFileIntoNativeScratch(path, buffers.CsvScratch);
+            if (length <= 0)
+                return false;
+
+            int ruleCount = TryApplyCsvRules(buffers.CsvScratch, length, buffers.Rules);
+            if (ruleCount <= 0)
+                return false;
+
+            if (buffers.Tuning.IsCreated && buffers.Tuning.Length > 0)
+            {
+                WreckageTuningDTO tuning = buffers.Tuning[0];
+                tuning.LastCsvHash = HashBytes(buffers.CsvScratch, length);
+                tuning.LastCsvWriteTicks = writeTicks;
+                tuning.Version++;
+                buffers.Tuning[0] = SanitizeTuning(in tuning);
+            }
+
+            if (buffers.Counters.IsCreated && buffers.Counters.Length > 0)
+            {
+                WreckagePaddedCounterDTO counter = buffers.Counters[0];
+                counter.CsvRuleCount = (uint)ruleCount;
+                counter.ActiveRuleCount = (uint)math.max(ruleCount, 1);
+                buffers.Counters[0] = counter;
+            }
+
+            return true;
+        }
+
+        public static bool TryPollCsvRules(IDataVault vault, ref ProceduralWreckageVaultHandles handles, string projectRoot)
+        {
+            if (!TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers buffers) ||
+                !buffers.Tuning.IsCreated ||
+                buffers.Tuning.Length <= 0)
+            {
+                return false;
+            }
+
+            string path = ResolveCsvPath(projectRoot);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            ulong writeTicks = (ulong)File.GetLastWriteTimeUtc(path).Ticks;
+            return buffers.Tuning[0].LastCsvWriteTicks != writeTicks &&
+                   TryLoadCsvRules(vault, ref handles, projectRoot);
+        }
+
+        public static int TryApplyCsvRules(NativeArray<byte> bytes, int length, NativeArray<WreckageRuleDTO> rules)
+        {
+            if (!bytes.IsCreated || !rules.IsCreated || length <= 0 || rules.Length <= 1)
+                return 0;
+
+            GenerateEmergencyMockWreckRules(rules);
+            int index = 0;
+            int limit = math.min(length, bytes.Length);
+            int ruleIndex = 1;
+            int written = 0;
+            while (index < limit && ruleIndex < rules.Length)
+            {
+                SkipWhitespace(bytes, limit, ref index);
+                if (index >= limit)
+                    break;
+
+                if (bytes[index] == (byte)'#')
+                {
+                    SkipLine(bytes, limit, ref index);
+                    continue;
+                }
+
+                uint moduleHash = ReadKeyHash(bytes, limit, ref index);
+                if (index < limit && bytes[index] == (byte)',')
+                    index++;
+
+                if (!TryReadUInt(bytes, limit, ref index, out uint north) ||
+                    !ConsumeComma(bytes, limit, ref index) ||
+                    !TryReadUInt(bytes, limit, ref index, out uint east) ||
+                    !ConsumeComma(bytes, limit, ref index) ||
+                    !TryReadUInt(bytes, limit, ref index, out uint south) ||
+                    !ConsumeComma(bytes, limit, ref index) ||
+                    !TryReadUInt(bytes, limit, ref index, out uint west) ||
+                    !ConsumeComma(bytes, limit, ref index) ||
+                    !TryReadUInt(bytes, limit, ref index, out uint top) ||
+                    !ConsumeComma(bytes, limit, ref index) ||
+                    !TryReadUInt(bytes, limit, ref index, out uint bottom))
+                {
+                    SkipLine(bytes, limit, ref index);
+                    continue;
+                }
+
+                float weight = 1f;
+                byte priority = 0;
+                uint flags = WreckageRuleFlags.Structural;
+                if (ConsumeComma(bytes, limit, ref index) && TryReadFloat(bytes, limit, ref index, out float parsedWeight))
+                    weight = math.max(parsedWeight, ProceduralWreckageConstants.Epsilon);
+                if (ConsumeComma(bytes, limit, ref index) && TryReadUInt(bytes, limit, ref index, out uint parsedPriority))
+                    priority = (byte)math.min(parsedPriority, 3u);
+                if (ConsumeComma(bytes, limit, ref index) && TryReadUInt(bytes, limit, ref index, out uint parsedFlags))
+                    flags = parsedFlags;
+
+                WreckageRuleDTO rule = default;
+                rule.ModuleHash = moduleHash;
+                rule.SocketNorth = (ushort)north;
+                rule.SocketEast = (ushort)east;
+                rule.SocketSouth = (ushort)south;
+                rule.SocketWest = (ushort)west;
+                rule.SocketTop = (ushort)top;
+                rule.SocketBottom = (ushort)bottom;
+                rule.BoundsExtents = new float3(3.5f, 2.25f, 3.5f);
+                rule.Weight = weight;
+                rule.PrefabHash = moduleHash;
+                rule.Flags = flags;
+                rule.ModuleId = (byte)ruleIndex;
+                rule.DrawPriority = priority;
+                rules[ruleIndex++] = rule;
+                written++;
+                SkipLine(bytes, limit, ref index);
+            }
+
+            return written > 0 ? ruleIndex : 0;
+        }
+
+        public static void GenerateEmergencyMockWreckRules(NativeArray<WreckageRuleDTO> rules)
+        {
+            if (!rules.IsCreated || rules.Length <= 0)
+                return;
+
+            ClearArray(rules);
+            SetRule(rules, 0, "void_connector", 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, new float3(0.5f), 1f, WreckageRuleFlags.Empty, 0);
+            SetRule(rules, 1, "corridor_a", 0x0001, 0x0001, 0x0001, 0x0001, 0x0020, 0x0020, new float3(3.5f, 2f, 4f), 1f, WreckageRuleFlags.Structural | WreckageRuleFlags.EssentialSilhouette, 0);
+            SetRule(rules, 2, "reactor_b", 0x0003, 0x0003, 0x0003, 0x0003, 0x0020, 0x0020, new float3(5.5f, 3.5f, 5.5f), 0.55f, WreckageRuleFlags.Structural | WreckageRuleFlags.DebrisSource | WreckageRuleFlags.EssentialSilhouette, 0);
+            SetRule(rules, 3, "breach_room", 0x0005, 0x0005, 0x0005, 0x0005, 0x0020, 0x0020, new float3(4.5f, 2.25f, 4.5f), 0.8f, WreckageRuleFlags.Structural | WreckageRuleFlags.DebrisSource, 1);
+            SetRule(rules, 4, "cargo_deadend", 0x0001, 0x0000, 0x0001, 0x0000, 0x0000, 0x0000, new float3(4f, 2f, 5f), 0.7f, WreckageRuleFlags.Structural | WreckageRuleFlags.TerminusEligible, 1);
+            SetRule(rules, 5, "airlock_seal", 0x000A, 0x000A, 0x000A, 0x000A, 0x0000, 0x0000, new float3(3f, 2.25f, 3f), 0.45f, WreckageRuleFlags.Structural | WreckageRuleFlags.TerminusEligible, 1);
+            SetRule(rules, 6, "bow_shell", 0x0001, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, new float3(5f, 2.5f, 6f), 0.25f, WreckageRuleFlags.Structural | WreckageRuleFlags.EssentialSilhouette, 0);
+            SetRule(rules, 7, "stern_engine", 0x0000, 0x0000, 0x0001, 0x0000, 0x0020, 0x0020, new float3(5f, 3f, 5f), 0.35f, WreckageRuleFlags.Structural | WreckageRuleFlags.DebrisSource | WreckageRuleFlags.EssentialSilhouette, 0);
+        }
+
+        public static bool TryDumpBlackBox(in ProceduralWreckageVaultBuffers buffers, string projectRoot, uint reason)
+        {
+            if (!buffers.TelemetryRing.IsCreated || string.IsNullOrEmpty(projectRoot))
+                return false;
+
+            string dir = Path.Combine(projectRoot, "Docs", "AgentLogs");
+            Directory.CreateDirectory(dir);
+            bool primary = TryWriteDumpFile(Path.Combine(dir, DumpFileName), in buffers, reason);
+            bool agent = TryWriteDumpFile(Path.Combine(dir, AgentDumpFileName), in buffers, reason);
+            return primary && agent;
+        }
+
+        public static bool TryDumpBlackBoxOnFault(in ProceduralWreckageVaultBuffers buffers, string projectRoot)
+        {
+            if (!buffers.TelemetryRing.IsCreated ||
+                !buffers.TelemetryCursor.IsCreated ||
+                buffers.TelemetryRing.Length <= 0 ||
+                buffers.TelemetryCursor.Length <= 0)
+            {
+                return false;
+            }
+
+            int cursor = buffers.TelemetryCursor[0] - 1;
+            if (cursor < 0)
+                cursor = buffers.TelemetryRing.Length - 1;
+
+            WreckageGenerationTelemetryEntry entry = buffers.TelemetryRing[math.clamp(cursor, 0, buffers.TelemetryRing.Length - 1)];
+            if (entry.FaultFlags == 0u)
+                return false;
+
+            return TryDumpBlackBox(in buffers, projectRoot, entry.FaultFlags);
+        }
+
+        public static uint ComputeSectorHash(double3 rootAup)
+        {
+            return ProceduralWreckageMath.HashDouble3(rootAup);
+        }
+
+        private static void HydrateDefaultsIfNeeded(ProceduralWreckageVaultBuffers buffers)
+        {
+            bool firstHydration = buffers.Tuning.IsCreated && buffers.Tuning.Length > 0 && buffers.Tuning[0].Version == 0u;
+            if (!firstHydration)
+                return;
+
+            ClearArray(buffers.Grid);
+            ClearArray(buffers.Nodes);
+            ClearArray(buffers.DebrisNodes);
+            ClearArray(buffers.RenderMatrices);
+            ClearArray(buffers.IndirectArgs);
+            ClearArray(buffers.SectorTriggers);
+            ClearArray(buffers.LootRequests);
+            ClearArray(buffers.CollisionProxies);
+            ClearArray(buffers.TelemetryRing);
+            ClearArray(buffers.TelemetryCursor);
+            ClearArray(buffers.CsvScratch);
+            ClearArray(buffers.Counters);
+            ClearArray(buffers.DebugCells);
+            ClearArray(buffers.GpuScalars);
+            ClearArray(buffers.SelfAudit);
+            ClearArray(buffers.HzbTiles);
+            GenerateEmergencyMockWreckRules(buffers.Rules);
+            buffers.Tuning[0] = BuildDefaultTuning();
+            if (buffers.Counters.IsCreated && buffers.Counters.Length > 0)
+            {
+                WreckagePaddedCounterDTO counter = default;
+                counter.ActiveRuleCount = 8u;
+                buffers.Counters[0] = counter;
+            }
+        }
+
+        private static WreckageTuningDTO BuildDefaultTuning()
+        {
+            WreckageTuningDTO tuning = default;
+            tuning.GlobalQualityWeight = 0.5f;
+            tuning.ShearSeverity = 0.45f;
+            tuning.DebrisScatterRadius = 96f;
+            tuning.VisibilityDistanceMin = 100f;
+            tuning.VisibilityDistanceMax = 500f;
+            tuning.BacktrackLimit = 256u;
+            tuning.MaxNodes = 192;
+            tuning.MaxDebris = 512;
+            tuning.CellSize = 8f;
+            tuning.MaxGenerationMs = 2f;
+            tuning.Version = 1u;
+            tuning.SeedSalt = 0x121121u;
+            return tuning;
+        }
+
+        private static WreckageTuningDTO SanitizeTuning(in WreckageTuningDTO tuning)
+        {
+            WreckageTuningDTO safe = tuning;
+            safe.GlobalQualityWeight = math.saturate(tuning.GlobalQualityWeight);
+            safe.ShearSeverity = math.saturate(tuning.ShearSeverity);
+            safe.DebrisScatterRadius = math.max(tuning.DebrisScatterRadius, 1f);
+            safe.VisibilityDistanceMin = math.max(tuning.VisibilityDistanceMin, 8f);
+            safe.VisibilityDistanceMax = math.max(tuning.VisibilityDistanceMax, safe.VisibilityDistanceMin);
+            safe.BacktrackLimit = math.max(1u, tuning.BacktrackLimit);
+            safe.MaxNodes = math.clamp(tuning.MaxNodes, 1, ProceduralWreckageConstants.MaxWreckNodes);
+            safe.MaxDebris = math.clamp(tuning.MaxDebris, 0, ProceduralWreckageConstants.MaxDebrisNodes);
+            safe.CellSize = math.max(tuning.CellSize, ProceduralWreckageConstants.Epsilon);
+            safe.MaxGenerationMs = math.max(tuning.MaxGenerationMs, 0.25f);
+            safe.Version = tuning.Version == 0u ? 1u : tuning.Version;
+            safe.SeedSalt = tuning.SeedSalt == 0u ? 0x121121u : tuning.SeedSalt;
+            return safe;
+        }
+
+        private static void SetRule(
+            NativeArray<WreckageRuleDTO> rules,
+            int index,
+            string name,
+            ushort north,
+            ushort east,
+            ushort south,
+            ushort west,
+            ushort top,
+            ushort bottom,
+            float3 extents,
+            float weight,
+            uint flags,
+            byte priority)
+        {
+            if ((uint)index >= (uint)rules.Length)
+                return;
+
+            uint hash = HashAsciiLiteral(name);
+            WreckageRuleDTO rule = default;
+            rule.ModuleHash = hash;
+            rule.SocketNorth = north;
+            rule.SocketEast = east;
+            rule.SocketSouth = south;
+            rule.SocketWest = west;
+            rule.SocketTop = top;
+            rule.SocketBottom = bottom;
+            rule.BoundsExtents = extents;
+            rule.Weight = math.max(weight, ProceduralWreckageConstants.Epsilon);
+            rule.PrefabHash = hash;
+            rule.Flags = flags;
+            rule.ModuleId = (byte)index;
+            rule.DrawPriority = priority;
+            rules[index] = rule;
+        }
+
+        private static string ResolveCsvPath(string projectRoot)
+        {
+            return string.IsNullOrEmpty(projectRoot) ? null : Path.Combine(projectRoot, CsvRulesFileName);
+        }
+
+        private static int ReadFileIntoNativeScratch(string path, NativeArray<byte> scratch)
+        {
+            if (!scratch.IsCreated || string.IsNullOrEmpty(path))
+                return 0;
+
+            using (FileStream stream = File.OpenRead(path))
+            {
+                int length = (int)math.min(stream.Length, scratch.Length);
+                void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                Span<byte> span = new Span<byte>(ptr, length);
+                return stream.Read(span);
+            }
+        }
+
+        private static void ClearArray<T>(NativeArray<T> array) where T : unmanaged
+        {
+            if (!array.IsCreated || array.Length <= 0)
+                return;
+
+            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(array);
+            UnsafeUtility.MemClear(ptr, array.Length * UnsafeUtility.SizeOf<T>());
+        }
+
+        private static void SkipWhitespace(NativeArray<byte> bytes, int limit, ref int index)
+        {
+            while (index < limit)
+            {
+                byte c = bytes[index];
+                if (c != (byte)' ' && c != (byte)'\t' && c != (byte)'\r' && c != (byte)'\n')
+                    break;
+
+                index++;
+            }
+        }
+
+        private static void SkipLine(NativeArray<byte> bytes, int limit, ref int index)
+        {
+            while (index < limit && bytes[index] != (byte)'\n')
+                index++;
+
+            if (index < limit)
+                index++;
+        }
+
+        private static bool ConsumeComma(NativeArray<byte> bytes, int limit, ref int index)
+        {
+            SkipValueWhitespace(bytes, limit, ref index);
+            if (index >= limit || bytes[index] != (byte)',')
+                return false;
+
+            index++;
+            return true;
+        }
+
+        private static uint ReadKeyHash(NativeArray<byte> bytes, int limit, ref int index)
+        {
+            uint hash = 2166136261u;
+            while (index < limit)
+            {
+                byte c = bytes[index];
+                if (c == (byte)',' || c == (byte)'\n' || c == (byte)'\r')
+                    break;
+
+                hash = ProceduralWreckageMath.HashAsciiLower(c, hash);
+                index++;
+            }
+
+            return hash;
+        }
+
+        private static bool TryReadUInt(NativeArray<byte> bytes, int limit, ref int index, out uint value)
+        {
+            value = 0u;
+            SkipValueWhitespace(bytes, limit, ref index);
+            if (index >= limit)
+                return false;
+
+            bool hex = false;
+            if (index + 1 < limit && bytes[index] == (byte)'0' && (bytes[index + 1] == (byte)'x' || bytes[index + 1] == (byte)'X'))
+            {
+                hex = true;
+                index += 2;
+            }
+
+            bool readAny = false;
+            while (index < limit)
+            {
+                byte c = bytes[index];
+                uint digit;
+                if (c >= (byte)'0' && c <= (byte)'9')
+                    digit = (uint)(c - (byte)'0');
+                else if (hex && c >= (byte)'a' && c <= (byte)'f')
+                    digit = 10u + (uint)(c - (byte)'a');
+                else if (hex && c >= (byte)'A' && c <= (byte)'F')
+                    digit = 10u + (uint)(c - (byte)'A');
+                else
+                    break;
+
+                value = hex ? (value << 4) | digit : (value * 10u) + digit;
+                readAny = true;
+                index++;
+            }
+
+            return readAny;
+        }
+
+        private static bool TryReadFloat(NativeArray<byte> bytes, int limit, ref int index, out float value)
+        {
+            value = 0f;
+            SkipValueWhitespace(bytes, limit, ref index);
+            if (index >= limit)
+                return false;
+
+            float sign = 1f;
+            if (bytes[index] == (byte)'-')
+            {
+                sign = -1f;
+                index++;
+            }
+            else if (bytes[index] == (byte)'+')
+            {
+                index++;
+            }
+
+            bool readAny = false;
+            float integer = 0f;
+            while (index < limit)
+            {
+                byte c = bytes[index];
+                if (c < (byte)'0' || c > (byte)'9')
+                    break;
+
+                integer = (integer * 10f) + (c - (byte)'0');
+                index++;
+                readAny = true;
+            }
+
+            float fraction = 0f;
+            if (index < limit && bytes[index] == (byte)'.')
+            {
+                index++;
+                float place = 0.1f;
+                while (index < limit)
+                {
+                    byte c = bytes[index];
+                    if (c < (byte)'0' || c > (byte)'9')
+                        break;
+
+                    fraction += (c - (byte)'0') * place;
+                    place *= 0.1f;
+                    index++;
+                    readAny = true;
+                }
+            }
+
+            value = (integer + fraction) * sign;
+            return readAny && math.isfinite(value);
+        }
+
+        private static void SkipValueWhitespace(NativeArray<byte> bytes, int limit, ref int index)
+        {
+            while (index < limit)
+            {
+                byte c = bytes[index];
+                if (c != (byte)' ' && c != (byte)'\t')
+                    break;
+
+                index++;
+            }
+        }
+
+        private static uint HashBytes(NativeArray<byte> bytes, int length)
+        {
+            uint hash = 2166136261u;
+            int limit = math.min(length, bytes.Length);
+            for (int i = 0; i < limit; i++)
+            {
+                hash ^= bytes[i];
+                hash *= 16777619u;
+            }
+
+            return hash;
+        }
+
+        private static uint HashAsciiLiteral(string text)
+        {
+            uint hash = 2166136261u;
+            if (string.IsNullOrEmpty(text))
+                return hash;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                char ch = text[i];
+                byte c = (byte)(ch >= 'A' && ch <= 'Z' ? ch + 32 : ch);
+                if (c != (byte)' ' && c != (byte)'\t')
+                {
+                    hash ^= c;
+                    hash *= 16777619u;
+                }
+            }
+
+            return hash;
+        }
+
+        private static bool TryWriteDumpFile(string path, in ProceduralWreckageVaultBuffers buffers, uint reason)
+        {
+            if (string.IsNullOrEmpty(path) || !buffers.TelemetryRing.IsCreated)
+                return false;
+
+            Span<byte> header = stackalloc byte[32];
+            WriteUInt32(header, 0, ProceduralWreckageConstants.DumpMagic);
+            WriteUInt32(header, 4, ProceduralWreckageConstants.DumpEndianMarker);
+            WriteUInt32(header, 8, DumpVersion);
+            WriteUInt32(header, 12, reason);
+            WriteUInt32(header, 16, (uint)buffers.TelemetryRing.Length);
+            WriteUInt32(header, 20, (uint)UnsafeUtility.SizeOf<WreckageGenerationTelemetryEntry>());
+            WriteUInt32(header, 24, buffers.TelemetryCursor.IsCreated && buffers.TelemetryCursor.Length > 0 ? (uint)buffers.TelemetryCursor[0] : 0u);
+            WriteUInt32(header, 28, 0u);
+
+            using (FileStream stream = File.Create(path))
+            {
+                stream.Write(header);
+                void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffers.TelemetryRing);
+                int byteLength = buffers.TelemetryRing.Length * UnsafeUtility.SizeOf<WreckageGenerationTelemetryEntry>();
+                ReadOnlySpan<byte> telemetry = new ReadOnlySpan<byte>(ptr, byteLength);
+                stream.Write(telemetry);
+            }
+
+            return true;
+        }
+
+        private static void WriteUInt32(Span<byte> target, int offset, uint value)
+        {
+            target[offset] = (byte)(value & 0xFFu);
+            target[offset + 1] = (byte)((value >> 8) & 0xFFu);
+            target[offset + 2] = (byte)((value >> 16) & 0xFFu);
+            target[offset + 3] = (byte)((value >> 24) & 0xFFu);
+        }
+    }
+}

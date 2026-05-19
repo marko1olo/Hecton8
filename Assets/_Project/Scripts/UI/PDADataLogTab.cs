@@ -35,7 +35,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Data Log Tab")]
-    public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable, IAudioLogEventListener, IPDAEventListener, ILocalizationLanguageChangedListener
+    public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable, IAudioLogEventListener, IPDAEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const string PlaybackTimerTemplate = "{0:00}:{1:00}";
         // COLD ALLOC: char[11] - playback timer template characters - owner: PDADataLogTab
@@ -60,6 +60,7 @@ namespace Hecton8.UI
             new Quaternion(0f, 0.70710677f, 0f, -0.70710677f),
             new Quaternion(0f, 0.38268343f, 0f, -0.9238795f)
         };
+        private static LocalizationManager s_cachedLocalization;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -139,6 +140,7 @@ namespace Hecton8.UI
         private bool _registered;
         private bool _pdaEventsRegistered;
         private bool _catalogTabRegistered;
+        private bool _hotSwapListenerRegistered;
         private bool _dirty;
         private bool _detailVisible = true;
 
@@ -279,6 +281,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterCatalogTab();
             RebuildLocalizationCache();
             if (!_built) EnsureBuilt();
@@ -296,6 +300,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterCatalogTab();
             TryUnregister();
 
@@ -306,6 +311,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterCatalogTab();
             TryUnregister();
             AudioLogEvents.Unregister(this);
@@ -568,6 +574,42 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
+                return;
+
+            s_cachedLocalization = currentService as LocalizationManager;
+            HandleLanguageChanged(s_cachedLocalization != null
+                ? s_cachedLocalization.CurrentLanguage
+                : GameLanguage.English);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private static void CacheRegistryServicesCold()
+        {
+            s_cachedLocalization = GlobalRegistry.Localization;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1259,7 +1301,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = s_cachedLocalization;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             if (stressBucket == _lastStressCorruptionBucket)
                 return;
@@ -1284,7 +1326,7 @@ namespace Hecton8.UI
             if (effect == null)
                 return;
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = s_cachedLocalization;
             effect.SetEffectActive(
                 manager != null &&
                 log != null &&
@@ -1297,7 +1339,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = s_cachedLocalization;
             return manager != null
                 ? manager.ApplyHullStressCorruptionIfNeeded(text)
                 : text;
@@ -1308,7 +1350,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = s_cachedLocalization;
             if (manager == null)
                 return text;
 
@@ -1320,7 +1362,7 @@ namespace Hecton8.UI
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = s_cachedLocalization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
@@ -1468,7 +1510,7 @@ namespace Hecton8.UI
 
         private void TriggerHiddenRecordFlash(AudioLogData log)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = s_cachedLocalization;
             if (manager == null || _summaryLabel == null || log == null)
                 return;
 

@@ -1,8 +1,10 @@
 using Hecton8.Core.Contracts.Signals;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -52,17 +54,563 @@ namespace Hecton8.Construction
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct DroneStateDTO
     {
-        public double3 AUP;
-        public float3 Velocity;
-        public uint TargetHash;
-        public uint CurrentTask;
-        public float Battery;
-        public uint Reserved0;
-        public uint Reserved1;
-        public ulong Reserved2;
+        [FieldOffset(0)] public double3 AUP_Position;
+        [FieldOffset(24)] public float3 Velocity;
+        [FieldOffset(36)] public uint CurrentTaskHash;
+        [FieldOffset(40)] public float BatteryLevel;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public uint _pad0;
+        [FieldOffset(52)] public uint _pad1;
+        [FieldOffset(56)] public ulong _pad2;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal struct DroneTargetDTO
+    {
+        [FieldOffset(0)] public double3 TargetAUP;
+        [FieldOffset(24)] public float3 LocalPosition;
+        [FieldOffset(36)] public uint TaskHash;
+        [FieldOffset(40)] public int TaskIndex;
+        [FieldOffset(44)] public int TargetModuleId;
+        [FieldOffset(48)] public float Radius;
+        [FieldOffset(52)] public uint TaskKind;
+        [FieldOffset(56)] public uint Flags;
+        [FieldOffset(60)] public uint Reserved0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    internal struct DroneProceduralIndirectArgsDTO
+    {
+        [FieldOffset(0)] public uint VertexCountPerInstance;
+        [FieldOffset(4)] public uint InstanceCount;
+        [FieldOffset(8)] public uint StartVertex;
+        [FieldOffset(12)] public uint StartInstance;
+    }
+
+    internal static class DroneFleetLayoutSentinel
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ValidateDroneStateDTO()
+        {
+            return UnsafeUtility.SizeOf<DroneStateDTO>() == 64 &&
+                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.AUP_Position)) == 0 &&
+                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.Velocity)) == 24 &&
+                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.CurrentTaskHash)) == 36 &&
+                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.BatteryLevel)) == 40 &&
+                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.Flags)) == 44 &&
+                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO._pad0)) == 48 &&
+                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO._pad1)) == 52 &&
+                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO._pad2)) == 56;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ValidateDroneTargetDTO()
+        {
+            return UnsafeUtility.SizeOf<DroneTargetDTO>() == 64 &&
+                OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.TargetAUP)) == 0 &&
+                OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.LocalPosition)) == 24 &&
+                OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.TaskHash)) == 36 &&
+                OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.TaskIndex)) == 40 &&
+                OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.TargetModuleId)) == 44 &&
+                OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.Radius)) == 48 &&
+                OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.TaskKind)) == 52 &&
+                OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.Flags)) == 56 &&
+                OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.Reserved0)) == 60;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ValidateDroneTaskDTO()
+        {
+            return UnsafeUtility.SizeOf<DroneTaskDTO>() == 64 &&
+                UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>() == 16;
+        }
+
+        private static int OffsetOf<T>(string fieldName)
+        {
+            return Marshal.OffsetOf(typeof(T), fieldName).ToInt32();
+        }
+    }
+
+    internal static class DroneFleetMockTasks
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GenerateMockDroneTasks(NativeArray<DroneTaskDTO> tasks, double3 fleetAup, int requestedCount)
+        {
+            if (!tasks.IsCreated || requestedCount <= 0)
+                return 0;
+
+            int count = math.min(tasks.Length, requestedCount);
+            for (int i = 0; i < count; i++)
+            {
+                float angle = i * 2.3999631f;
+                float radius = 6f + ((i & 7) * 2.5f);
+                float3 local = new float3(math.cos(angle) * radius, -1.5f + ((i % 3) * 1.5f), math.sin(angle) * radius);
+                tasks[i] = new DroneTaskDTO
+                {
+                    TargetAup = fleetAup + new double3(local.x, local.y, local.z),
+                    LocalPosition = local,
+                    Priority = 1f + ((i & 3) * 0.25f),
+                    Score = 0f,
+                    CriticalityWeight = 1f + ((i % 5) * 0.2f),
+                    Radius = 1.25f,
+                    ModuleIndex = i,
+                    TaskKind = (i & 1) == 0 ? 1 : 3,
+                    Reserved0 = 0u
+                };
+            }
+
+            return count;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal struct GenerateMockDroneTasksJob : IJob
+    {
+        [NoAlias] public NativeArray<DroneTaskDTO> Tasks;
+        public double3 FleetAup;
+        public int RequestedCount;
+
+        public void Execute()
+        {
+            DroneFleetMockTasks.GenerateMockDroneTasks(Tasks, FleetAup, RequestedCount);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal struct GenerateMockDroneTasksQueueJob : IJob
+    {
+        public NativeQueue<DroneTaskDTO>.ParallelWriter Tasks;
+        public double3 FleetAup;
+        public int RequestedCount;
+
+        public void Execute()
+        {
+            int count = math.max(0, RequestedCount);
+            for (int i = 0; i < count; i++)
+            {
+                float angle = i * 2.3999631f;
+                float radius = 6f + ((i & 7) * 2.5f);
+                float3 local = new float3(math.cos(angle) * radius, -1.5f + ((i % 3) * 1.5f), math.sin(angle) * radius);
+                Tasks.Enqueue(new DroneTaskDTO
+                {
+                    TargetAup = FleetAup + new double3(local.x, local.y, local.z),
+                    LocalPosition = local,
+                    Priority = 1f + ((i & 3) * 0.25f),
+                    Score = 0f,
+                    CriticalityWeight = 1f + ((i % 5) * 0.2f),
+                    Radius = 1.25f,
+                    ModuleIndex = i,
+                    TaskKind = (i & 1) == 0 ? 1 : 3,
+                    Reserved0 = 0u
+                });
+            }
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal unsafe struct DroneTaskAssignmentJob : IJobParallelFor
+    {
+        private const int UnclaimedTask = 0;
+        private const int EmptyTaskIndex = -1;
+        private const float MinimumScoreDistanceSq = 0.5625f;
+
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<HeadlessDroneState> Drones;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneStateDTO> DroneStatesDto;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneTargetDTO> DroneTargets;
+        [ReadOnly, NoAlias] public NativeArray<DroneTaskDTO> Tasks;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> TaskClaimOwners;
+
+        public int TaskCount;
+        public int EmergencyOverclock;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)Drones.Length)
+                return;
+
+            HeadlessDroneState drone = Drones[index];
+            if (drone.State == (byte)HeadlessDroneRuntimeState.Empty ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Sacrificed ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Completed ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Repair ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Attack ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Docking ||
+                drone.State == (byte)HeadlessDroneRuntimeState.ResupplyTravel ||
+                drone.State == (byte)HeadlessDroneRuntimeState.ResupplyDocked ||
+                drone.State == (byte)HeadlessDroneRuntimeState.ResupplyCommitPending ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Return ||
+                drone.TargetTaskIndex != EmptyTaskIndex)
+            {
+                MirrorDto(index, in drone, ResolveTaskHash(index, in drone));
+                return;
+            }
+
+            if (TaskCount <= 0 || !Tasks.IsCreated || !TaskClaimOwners.IsCreated)
+            {
+                MirrorDto(index, in drone, ResolveTaskHash(index, in drone));
+                return;
+            }
+
+            double3 droneAup = ResolveDroneAup(index, in drone);
+            float battery01 = math.saturate(drone.BatteryPercent * 0.01f);
+            float bestScore = -1f;
+            int bestTaskIndex = -1;
+            DroneTaskDTO bestTask = default;
+            int count = math.min(TaskCount, math.min(Tasks.Length, TaskClaimOwners.Length));
+            for (int taskIndex = 0; taskIndex < count; taskIndex++)
+            {
+                DroneTaskDTO task = Tasks[taskIndex];
+                if (task.ModuleIndex < 0)
+                    continue;
+
+                if (drone.HubGridId != 0 && task.Reserved0 != 0u && (uint)drone.HubGridId != task.Reserved0)
+                    continue;
+
+                if (EmergencyOverclock != 0 && task.TaskKind == (int)DroneFleetTaskKind.CutParasite)
+                    continue;
+
+                float3 delta = ToLocalDelta(task.TargetAup, droneAup);
+                if (!IsFinite(delta))
+                    delta = task.LocalPosition - drone.Position;
+
+                float distanceSq = math.max(MinimumScoreDistanceSq, math.lengthsq(delta));
+                float priority = math.max(0.1f, task.Priority + task.CriticalityWeight);
+                float score = priority * battery01 * math.rcp(distanceSq);
+                if (!math.isfinite(score) || score <= bestScore)
+                    continue;
+
+                bestScore = score;
+                bestTaskIndex = taskIndex;
+                bestTask = task;
+            }
+
+            if (bestTaskIndex < 0 || !TryClaimTask(bestTaskIndex, drone.DroneId))
+            {
+                MirrorDto(index, in drone, ResolveTaskHash(index, in drone));
+                return;
+            }
+
+            uint taskHash = ResolveTaskHash(bestTaskIndex, in bestTask);
+            drone.TargetTaskIndex = bestTask.ModuleIndex;
+            drone.TargetPosition = bestTask.LocalPosition;
+            drone.TargetAup = bestTask.TargetAup;
+            drone.ServiceRadius = math.max(0.1f, bestTask.Radius);
+            drone.State = (byte)HeadlessDroneRuntimeState.Travel;
+            Drones[index] = drone;
+
+            if (DroneTargets.IsCreated && (uint)index < (uint)DroneTargets.Length)
+            {
+                DroneTargets[index] = new DroneTargetDTO
+                {
+                    TargetAUP = bestTask.TargetAup,
+                    LocalPosition = bestTask.LocalPosition,
+                    TaskHash = taskHash,
+                    TaskIndex = bestTask.ModuleIndex,
+                    TargetModuleId = bestTask.ModuleIndex,
+                    Radius = bestTask.Radius,
+                    TaskKind = (uint)math.max(0, bestTask.TaskKind),
+                    Flags = 1u,
+                    Reserved0 = 0u
+                };
+            }
+
+            MirrorDto(index, in drone, taskHash);
+        }
+
+        private bool TryClaimTask(int taskIndex, int droneId)
+        {
+            int* claimPtr = (int*)TaskClaimOwners.GetUnsafePtr();
+            int priorOwner = Interlocked.CompareExchange(ref claimPtr[taskIndex], droneId, UnclaimedTask);
+            return priorOwner == UnclaimedTask || priorOwner == droneId;
+        }
+
+        private double3 ResolveDroneAup(int index, in HeadlessDroneState drone)
+        {
+            if (IsFinite(drone.PositionAup))
+                return drone.PositionAup;
+
+            if (DroneStatesDto.IsCreated && (uint)index < (uint)DroneStatesDto.Length)
+            {
+                DroneStateDTO* statePtr = (DroneStateDTO*)DroneStatesDto.GetUnsafePtr();
+                ref DroneStateDTO dto = ref UnsafeUtility.AsRef<DroneStateDTO>(statePtr + index);
+                if (IsFinite(dto.AUP_Position))
+                    return dto.AUP_Position;
+            }
+
+            return ToDouble3(drone.Position);
+        }
+
+        private void MirrorDto(int index, in HeadlessDroneState drone, uint taskHash)
+        {
+            if (!DroneStatesDto.IsCreated || (uint)index >= (uint)DroneStatesDto.Length)
+                return;
+
+            DroneStateDTO* statePtr = (DroneStateDTO*)DroneStatesDto.GetUnsafePtr();
+            ref DroneStateDTO dto = ref UnsafeUtility.AsRef<DroneStateDTO>(statePtr + index);
+            dto.AUP_Position = ResolveDroneAup(index, in drone);
+            dto.Velocity = drone.Velocity;
+            dto.CurrentTaskHash = taskHash;
+            dto.BatteryLevel = math.clamp(drone.BatteryPercent, 0f, 100f);
+            dto.Flags = PackFlags(in drone);
+        }
+
+        private static uint ResolveTaskHash(int taskIndex, in DroneTaskDTO task)
+        {
+            uint3 hashInput = new uint3(
+                (uint)math.max(0, taskIndex + 1),
+                (uint)math.max(0, task.ModuleIndex + 1),
+                (uint)math.max(0, task.TaskKind + 1));
+            return math.hash(hashInput);
+        }
+
+        private static uint ResolveTaskHash(int index, in HeadlessDroneState drone)
+        {
+            uint3 hashInput = new uint3(
+                (uint)math.max(0, index + 1),
+                (uint)math.max(0, drone.TargetTaskIndex + 1),
+                (uint)drone.State);
+            return math.hash(hashInput);
+        }
+
+        private static uint PackFlags(in HeadlessDroneState drone)
+        {
+            return ((uint)drone.State) |
+                   ((uint)drone.FactionBit << 8) |
+                   ((uint)drone.CorridorTight << 16);
+        }
+
+        private static float3 ToLocalDelta(double3 targetAup, double3 originAup)
+        {
+            double3 delta = targetAup - originAup;
+            return new float3((float)delta.x, (float)delta.y, (float)delta.z);
+        }
+
+        private static bool IsFinite(float3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static bool IsFinite(double3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static double3 ToDouble3(float3 value)
+        {
+            return new double3(value.x, value.y, value.z);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal unsafe struct DroneMetabolismJob : IJobParallelFor
+    {
+        private const int EmptyTaskIndex = -1;
+        private const float ReturnBatteryThresholdPercent = 15f;
+
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<HeadlessDroneState> Drones;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneStateDTO> DroneStatesDto;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneTargetDTO> DroneTargets;
+
+        public float DeltaTime;
+        public int EmergencyOverclock;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)Drones.Length)
+                return;
+
+            HeadlessDroneState drone = Drones[index];
+            if (drone.State == (byte)HeadlessDroneRuntimeState.Empty ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Sacrificed ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Completed)
+            {
+                MirrorDto(index, in drone);
+                return;
+            }
+
+            float safeDt = math.max(0f, DeltaTime);
+            float speed = math.sqrt(math.max(0f, math.lengthsq(drone.Velocity)));
+            float maxSpeed = math.max(0.1f, drone.MaxSpeed);
+            float speed01 = math.saturate(speed * math.rcp(maxSpeed));
+            float drainScale = EmergencyOverclock != 0 ? 5f : 1f;
+            float drain = drone.BatteryDrainPerSecond * math.lerp(0.25f, 1f, speed01) * drainScale * safeDt;
+            drone.BatteryPercent = math.max(0f, drone.BatteryPercent - drain);
+
+            if (drone.BatteryPercent <= 0f)
+            {
+                drone.State = (byte)HeadlessDroneRuntimeState.Stasis;
+                drone.Velocity = float3.zero;
+            }
+            else if (drone.BatteryPercent <= ReturnBatteryThresholdPercent &&
+                drone.State != (byte)HeadlessDroneRuntimeState.Return &&
+                drone.State != (byte)HeadlessDroneRuntimeState.Docking &&
+                drone.State != (byte)HeadlessDroneRuntimeState.ResupplyTravel &&
+                drone.State != (byte)HeadlessDroneRuntimeState.ResupplyDocked &&
+                drone.State != (byte)HeadlessDroneRuntimeState.ResupplyCommitPending)
+            {
+                drone.TargetTaskIndex = EmptyTaskIndex;
+                drone.TargetModuleId = 0;
+                drone.TargetPosition = drone.HomePosition;
+                drone.TargetAup = IsFinite(drone.HomeAup) ? drone.HomeAup : drone.PositionAup;
+                drone.State = (byte)HeadlessDroneRuntimeState.Return;
+
+                if (DroneTargets.IsCreated && (uint)index < (uint)DroneTargets.Length)
+                {
+                    DroneTargets[index] = new DroneTargetDTO
+                    {
+                        TargetAUP = drone.TargetAup,
+                        LocalPosition = drone.HomePosition,
+                        TaskHash = math.hash(new uint3((uint)math.max(0, drone.DroneId), 0x52544E55u, 15u)),
+                        TaskIndex = EmptyTaskIndex,
+                        TargetModuleId = 0,
+                        Radius = math.max(0.1f, drone.ServiceRadius),
+                        TaskKind = 0u,
+                        Flags = 2u,
+                        Reserved0 = 0u
+                    };
+                }
+            }
+
+            Drones[index] = drone;
+            MirrorDto(index, in drone);
+        }
+
+        private void MirrorDto(int index, in HeadlessDroneState drone)
+        {
+            if (!DroneStatesDto.IsCreated || (uint)index >= (uint)DroneStatesDto.Length)
+                return;
+
+            DroneStateDTO* statePtr = (DroneStateDTO*)DroneStatesDto.GetUnsafePtr();
+            ref DroneStateDTO dto = ref UnsafeUtility.AsRef<DroneStateDTO>(statePtr + index);
+            dto.AUP_Position = IsFinite(drone.PositionAup) ? drone.PositionAup : ToDouble3(drone.Position);
+            dto.Velocity = drone.Velocity;
+            dto.CurrentTaskHash = math.hash(new uint3((uint)math.max(0, drone.TargetTaskIndex + 1), (uint)math.max(0, drone.DroneId), (uint)drone.State));
+            dto.BatteryLevel = math.clamp(drone.BatteryPercent, 0f, 100f);
+            dto.Flags = ((uint)drone.State) | ((uint)drone.FactionBit << 8) | ((uint)drone.CorridorTight << 16);
+        }
+
+        private static bool IsFinite(double3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static double3 ToDouble3(float3 value)
+        {
+            return new double3(value.x, value.y, value.z);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal struct ClearDroneMacroWaypointsJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<PathWaypointDTO> Waypoints;
+        [NoAlias] public NativeArray<byte> WaypointStates;
+
+        public void Execute(int index)
+        {
+            if (WaypointStates.IsCreated && (uint)index < (uint)WaypointStates.Length)
+                WaypointStates[index] = 0;
+
+            if (Waypoints.IsCreated && (uint)index < (uint)Waypoints.Length)
+                Waypoints[index] = default;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal unsafe struct ExtractDroneMatricesJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<HeadlessDroneState> Drones;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneStateDTO> DroneStatesDto;
+        [NoAlias] public NativeArray<float4x4> Matrices;
+        public double3 CameraAup;
+        public float ScaleMeters;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)Drones.Length || (uint)index >= (uint)Matrices.Length)
+                return;
+
+            HeadlessDroneState drone = Drones[index];
+            if (drone.State == (byte)HeadlessDroneRuntimeState.Empty ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Sacrificed ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Completed)
+            {
+                Matrices[index] = float4x4.zero;
+                return;
+            }
+
+            double3 positionAup = drone.PositionAup;
+            if (DroneStatesDto.IsCreated && (uint)index < (uint)DroneStatesDto.Length)
+            {
+                DroneStateDTO* statePtr = (DroneStateDTO*)DroneStatesDto.GetUnsafePtr();
+                ref DroneStateDTO dto = ref UnsafeUtility.AsRef<DroneStateDTO>(statePtr + index);
+                if (IsFinite(dto.AUP_Position))
+                    positionAup = dto.AUP_Position;
+            }
+
+            float3 localPosition = IsFinite(positionAup)
+                ? ToFloat3(positionAup - CameraAup)
+                : drone.Position;
+            if (!IsFinite(localPosition))
+            {
+                Matrices[index] = float4x4.zero;
+                return;
+            }
+
+            quaternion rotation = ResolveSafeRotation(drone.Rotation);
+            float scale = math.max(0.01f, ScaleMeters);
+            Matrices[index] = float4x4.TRS(localPosition, rotation, new float3(scale, scale, scale));
+        }
+
+        private static quaternion ResolveSafeRotation(quaternion value)
+        {
+            float4 raw = value.value;
+            float lengthSq = math.lengthsq(raw);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.0001f)
+                return quaternion.identity;
+
+            return new quaternion(raw * math.rsqrt(lengthSq));
+        }
+
+        private static float3 ToFloat3(double3 value)
+        {
+            return new float3((float)value.x, (float)value.y, (float)value.z);
+        }
+
+        private static bool IsFinite(float3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static bool IsFinite(double3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal struct BuildDroneProceduralArgsJob : IJob
+    {
+        [NoAlias] public NativeArray<DroneProceduralIndirectArgsDTO> Args;
+        public uint VertexCountPerInstance;
+        public uint InstanceCount;
+
+        public void Execute()
+        {
+            if (!Args.IsCreated || Args.Length <= 0)
+                return;
+
+            Args[0] = new DroneProceduralIndirectArgsDTO
+            {
+                VertexCountPerInstance = VertexCountPerInstance,
+                InstanceCount = InstanceCount,
+                StartVertex = 0u,
+                StartInstance = 0u
+            };
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 16)]
@@ -72,13 +620,14 @@ namespace Hecton8.Construction
         public uint ActionCode;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Sequential, Size = 144)]
     public struct DroneFleetDebugRoute
     {
         public float3 Position;
         public float3 Target;
         public float3 Waypoint;
         public float3 SdfNormal;
+        public float3 Velocity;
         public float3 RoutePoint0;
         public float3 RoutePoint1;
         public float3 RoutePoint2;
@@ -468,7 +1017,7 @@ namespace Hecton8.Construction
         public int Reserved2;
     }
 
-    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct DroneMacroAStarJob : IJob
     {
         private const int GridSide = 8;

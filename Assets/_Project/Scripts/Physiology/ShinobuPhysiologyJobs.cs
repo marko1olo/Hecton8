@@ -1,6 +1,8 @@
 using System.Runtime.CompilerServices;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -52,6 +54,13 @@ namespace Hecton8.Physiology
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveActiveCompartmentCount(float globalQualityWeight)
+        {
+            float quality = math.saturate(SanitizeFinite(globalQualityWeight, 1f));
+            return math.clamp((int)math.lerp(4f, 16f, quality), 4, ShinobuPhysiologyConstants.TissueCompartmentCount);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PhysiologyTuningDTO SanitizeTuning(PhysiologyTuningDTO tuning)
         {
             if (tuning.Version == 0u)
@@ -98,13 +107,130 @@ namespace Hecton8.Physiology
     }
 
     /// <summary>
+    /// Cold-start tissue initializer. It is Burst-executed once after vault allocation; runtime ticks do not rely on zero-fill.
+    /// </summary>
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct InitTissueCompartmentsJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<TissueCompartmentDTO> TissueCompartments;
+        [ReadOnly, NoAlias] public NativeArray<HaldaneTissueCoefficientDTO> TissueCoefficients;
+        public int EntityCapacity;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)TissueCompartments.Length)
+                return;
+
+            int tissueIndex = index % ShinobuPhysiologyConstants.TissueCompartmentCount;
+            HaldaneTissueCoefficientDTO coefficient = TissueCoefficients.IsCreated && TissueCoefficients.Length > 0
+                ? TissueCoefficients[math.min(tissueIndex, TissueCoefficients.Length - 1)]
+                : default;
+            float halfTime = ShinobuPhysiologyJobMath.SafePositive(
+                coefficient.HalfTimeSeconds,
+                ResolveEmergencyHalfTimeSeconds(tissueIndex));
+            float mValue = math.max(1.01f, ShinobuPhysiologyJobMath.SanitizeFinite(
+                coefficient.MValueRatio,
+                ResolveEmergencyMValueRatio(tissueIndex)));
+
+            TissueCompartments[index] = new TissueCompartmentDTO
+            {
+                NitrogenTension = ShinobuPhysiologyConstants.AtmosphericPressureAtSurfaceAtm,
+                Halftime = halfTime,
+                MValue = mValue,
+                Flags = 0u
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveEmergencyHalfTimeSeconds(int index)
+        {
+            switch (index)
+            {
+                case 0: return 5f * 60f;
+                case 1: return 8f * 60f;
+                case 2: return 12.5f * 60f;
+                case 3: return 18.5f * 60f;
+                case 4: return 27f * 60f;
+                case 5: return 38.3f * 60f;
+                case 6: return 54.3f * 60f;
+                case 7: return 77f * 60f;
+                case 8: return 109f * 60f;
+                case 9: return 146f * 60f;
+                case 10: return 187f * 60f;
+                case 11: return 239f * 60f;
+                case 12: return 305f * 60f;
+                case 13: return 390f * 60f;
+                case 14: return 498f * 60f;
+                default: return 635f * 60f;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveEmergencyMValueRatio(int index)
+        {
+            return math.max(1.08f, 1.58f - index * 0.028f);
+        }
+    }
+
+    /// <summary>
+    /// Deterministic crash-dive profile generator: descent, bottom dwell, emergency ascent.
+    /// </summary>
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct MockDiveProfileJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<DiveProfileSampleDTO> Samples;
+        public float SampleStepSeconds;
+        public uint Frame;
+        public int Count;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)Count || (uint)index >= (uint)Samples.Length)
+                return;
+
+            float step = ShinobuPhysiologyJobMath.SafePositive(SampleStepSeconds, 10f);
+            float time = index * step;
+            float depth;
+            float ascentRate;
+            if (time < 180f)
+            {
+                depth = time * (300f * math.rcp(180f));
+                ascentRate = -300f * math.rcp(180f);
+            }
+            else if (time < 1380f)
+            {
+                depth = 300f;
+                ascentRate = 0f;
+            }
+            else
+            {
+                float ascentTime = time - 1380f;
+                depth = math.max(0f, 300f - ascentTime * 10f);
+                ascentRate = 10f;
+            }
+
+            Samples[index] = new DiveProfileSampleDTO
+            {
+                TimeSeconds = time,
+                DepthMeters = depth,
+                AmbientPressureAtm = ShinobuPhysiologyJobMath.DepthToPressureAtm(depth),
+                AscentRateMetersPerSecond = ascentRate,
+                Frame = Frame,
+                Flags = MockPressureSignal.ActiveFlag,
+                ProfileHash = 0x44435331u,
+                SampleIndex = unchecked((uint)index)
+            };
+        }
+    }
+
+    /// <summary>
     /// Vacuum fallback environment generator. It produces a deterministic 100m pressure drop without ocean dependencies.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct MockEnvironmentDropJob : IJobParallelFor
     {
-        public NativeArray<MockEnvironmentVitalsSignal> Environment;
-        public NativeArray<MockPressureSignal> PressureSignals;
+        [NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
+        [NoAlias] public NativeArray<MockPressureSignal> PressureSignals;
         public float MockDepthMeters;
         public float SystemHealthIndex01;
         public uint Frame;
@@ -128,13 +254,13 @@ namespace Hecton8.Physiology
                 env.AmbientPressureAtm = ShinobuPhysiologyJobMath.DepthToPressureAtm(env.DepthMeters);
                 env.AscentRateMetersPerSecond = 0f;
                 env.AmbientTemperatureCelsius = math.lerp(10f, 2f, math.saturate(env.DepthMeters * 0.01f));
-                env.Flags |= 1u;
+                env.Flags |= MockPressureSignal.ActiveFlag;
             }
 
             if (PressureSignals.IsCreated && (uint)index < (uint)PressureSignals.Length)
             {
                 MockPressureSignal pressure = PressureSignals[index];
-                if ((pressure.Flags & 1u) != 0u)
+                if ((pressure.Flags & MockPressureSignal.ActiveFlag) != 0u)
                 {
                     env.DepthMeters = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(pressure.DepthMeters, env.DepthMeters));
                     env.AmbientPressureAtm = pressure.AmbientPressureAtm > 0f
@@ -158,15 +284,15 @@ namespace Hecton8.Physiology
     /// <summary>
     /// Drains local mock dependency packets into physiology state.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct PhysiologySignalIngestJob : IJobParallelFor
     {
-        public NativeArray<PhysiologyDTO> Vitals;
-        public NativeArray<PhysiologyScalarsDTO> Scalars;
-        public NativeArray<MockCombatDamageSignal> CombatSignals;
-        public NativeArray<MockPredatorAggroSignal> PredatorSignals;
-        public NativeArray<MockToxemiaSignal> ToxemiaSignals;
-        public NativeArray<MockMedicalItemUsedSignal> MedicalSignals;
+        [NoAlias] public NativeArray<PhysiologyDTO> Vitals;
+        [NoAlias] public NativeArray<PhysiologyScalarsDTO> Scalars;
+        [NoAlias] public NativeArray<MockCombatDamageSignal> CombatSignals;
+        [NoAlias] public NativeArray<MockPredatorAggroSignal> PredatorSignals;
+        [NoAlias] public NativeArray<MockToxemiaSignal> ToxemiaSignals;
+        [NoAlias] public NativeArray<MockMedicalItemUsedSignal> MedicalSignals;
         public int Count;
 
         public void Execute(int index)
@@ -253,27 +379,31 @@ namespace Hecton8.Physiology
     }
 
     /// <summary>
-    /// Burst Haldane decompression kernel with 16 compartments and low-tier 1-compartment fallback.
+    /// Deterministic Haldanean tissue saturation kernel. Active tissue count is driven by GlobalQualityWeight.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct DecompressionJob : IJobParallelFor
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct TissueSaturationJob : IJobParallelFor
     {
-        public NativeArray<PhysiologyDTO> Vitals;
-        public NativeArray<DecompressionStateDTO> DecompressionStates;
-        [ReadOnly] public NativeArray<HaldaneTissueCoefficientDTO> TissueCoefficients;
-        [ReadOnly] public NativeArray<MockEnvironmentVitalsSignal> Environment;
-        public NativeArray<PhysiologyScalarsDTO> Scalars;
+        [NoAlias] public NativeArray<PhysiologyDTO> Vitals;
+        [NoAlias] public NativeArray<TissueCompartmentDTO> TissueCompartments;
+        [NoAlias] public NativeArray<DecompressionStateDTO> DecompressionStates;
+        [ReadOnly, NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
+        [NoAlias] public NativeArray<PhysiologyScalarsDTO> Scalars;
+        public NativeQueue<PhysiologyStateSignal>.ParallelWriter PhysiologyWriter;
         public PhysiologyTuningDTO Tuning;
         public float DeltaSeconds;
+        public float GlobalQualityWeight;
         public int Count;
-        public byte MathLod;
+        public byte EmitPhysiologySignal;
 
         public void Execute(int index)
         {
+            int compartmentBase = index * ShinobuPhysiologyConstants.TissueCompartmentCount;
             if ((uint)index >= (uint)Count ||
                 (uint)index >= (uint)Vitals.Length ||
                 (uint)index >= (uint)DecompressionStates.Length ||
-                (uint)index >= (uint)Scalars.Length)
+                (uint)index >= (uint)Scalars.Length ||
+                (uint)(compartmentBase + ShinobuPhysiologyConstants.TissueCompartmentCount - 1) >= (uint)TissueCompartments.Length)
             {
                 return;
             }
@@ -283,95 +413,123 @@ namespace Hecton8.Physiology
                 ? Environment[index]
                 : default;
 
-            float dt = math.clamp(ShinobuPhysiologyJobMath.SanitizeFinite(DeltaSeconds, 0.016f), 0.0001f, 0.05f);
+            float dt = math.clamp(ShinobuPhysiologyJobMath.SanitizeFinite(DeltaSeconds, 0.016f), 0.0001f, ShinobuPhysiologyConstants.MaxSimulationStepSeconds);
             float ambient = env.AmbientPressureAtm > 0f
                 ? ShinobuPhysiologyJobMath.SanitizeFinite(env.AmbientPressureAtm, ShinobuPhysiologyJobMath.DepthToPressureAtm(env.DepthMeters))
                 : ShinobuPhysiologyJobMath.DepthToPressureAtm(env.DepthMeters);
             ambient = math.max(0.5f, ambient);
-            float pAlv = ambient * ShinobuPhysiologyConstants.NitrogenFraction;
-            float nitrogenScale = tuning.NitrogenUptakeRate * tuning.HaldaneTimeScale;
+            float ambientNitrogenPressure = ambient * ShinobuPhysiologyConstants.NitrogenFraction;
+            float tissueEquilibriumPressure = ambient;
+            float nitrogenScale = math.max(0.001f, tuning.NitrogenUptakeRate * tuning.HaldaneTimeScale);
+            int activeCompartments = ShinobuPhysiologyJobMath.ResolveActiveCompartmentCount(GlobalQualityWeight);
             float maxTissue = 0f;
             float risk = 0f;
             uint overMask = 0u;
+            uint invalidMath = 0u;
 
             DecompressionStateDTO state = DecompressionStates[index];
             state.AmbientPressure = ambient;
-            state.AscentRate = ShinobuPhysiologyJobMath.SanitizeFinite(env.AscentRateMetersPerSecond, 0f);
+            state.AscentRate = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(env.AscentRateMetersPerSecond, 0f));
 
-            bool lowLod = MathLod == (byte)ShinobuMathLod.Low || env.SystemHealthIndex01 > 0.85f;
-            float* tissues = state.TissueTensions;
+            float* stateTissues = state.TissueTensions;
+            void* tissueBasePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(TissueCompartments);
+            int tissueStride = UnsafeUtility.SizeOf<TissueCompartmentDTO>();
+            for (int tissueIndex = 0; tissueIndex < ShinobuPhysiologyConstants.TissueCompartmentCount; tissueIndex++)
             {
-                int tissueCount = lowLod ? 1 : ShinobuPhysiologyConstants.TissueCompartmentCount;
-                for (int tissueIndex = 0; tissueIndex < tissueCount; tissueIndex++)
+                bool evaluateTissue = tissueIndex < activeCompartments - 1 ||
+                                      tissueIndex == ShinobuPhysiologyConstants.TissueCompartmentCount - 1;
+                ref TissueCompartmentDTO tissue = ref UnsafeUtility.AsRef<TissueCompartmentDTO>(
+                    (byte*)tissueBasePtr + ((compartmentBase + tissueIndex) * tissueStride));
+                float halfTime = ShinobuPhysiologyJobMath.SafePositive(tissue.Halftime, 300f);
+                if (!math.isfinite(tissue.NitrogenTension) || !math.isfinite(tissue.Halftime) || !math.isfinite(tissue.MValue))
+                    invalidMath = ShinobuPhysiologyFlags.InvalidMath;
+                float oldTension = ShinobuPhysiologyJobMath.SanitizeFinite(tissue.NitrogenTension, tissueEquilibriumPressure);
+                float next = oldTension;
+                if (evaluateTissue)
                 {
-                    int coefficientIndex = math.min(tissueIndex, math.max(0, TissueCoefficients.Length - 1));
-                    HaldaneTissueCoefficientDTO coefficient = TissueCoefficients.IsCreated && TissueCoefficients.Length > 0
-                        ? TissueCoefficients[coefficientIndex]
-                        : default;
-
-                    float k = ShinobuPhysiologyJobMath.SafePositive(coefficient.K, 0.00231f);
-                    float initial = ShinobuPhysiologyJobMath.SanitizeFinite(tissues[tissueIndex], pAlv);
-                    float next = pAlv + (initial - pAlv) * math.exp(-k * dt * nitrogenScale);
+                    float k = 0.69314718056f * math.rcp(halfTime);
+                    next = tissueEquilibriumPressure + (oldTension - tissueEquilibriumPressure) * math.exp(-k * dt * nitrogenScale);
                     if (!math.isfinite(next))
-                        next = pAlv;
-
-                    tissues[tissueIndex] = next;
-                    maxTissue = math.max(maxTissue, next);
-
-                    float mValueRatio = math.max(1.01f, ShinobuPhysiologyJobMath.SanitizeFinite(coefficient.MValueRatio, 1.35f));
-                    float mValue = math.max(0.1f, ambient * mValueRatio);
-                    if (next > mValue)
                     {
-                        overMask |= 1u << tissueIndex;
-                        risk = math.max(risk, math.saturate((next - mValue) * tuning.BendsRiskScale * math.rcp(math.max(0.0001f, mValue))));
+                        next = tissueEquilibriumPressure;
+                        invalidMath = ShinobuPhysiologyFlags.InvalidMath;
                     }
                 }
 
-                if (lowLod)
+                tissue.NitrogenTension = next;
+                tissue.Halftime = halfTime;
+                tissue.Flags = evaluateTissue ? 1u : 0u;
+                stateTissues[tissueIndex] = next;
+
+                float mValue = math.max(0.1f, ambient * math.max(1.01f, ShinobuPhysiologyJobMath.SanitizeFinite(tissue.MValue, 1.35f)));
+                float excess = next - mValue;
+                if (excess > 0f)
                 {
-                    float fastest = tissues[0];
-                    maxTissue = fastest;
-                    float coefficientMValue = TissueCoefficients.IsCreated && TissueCoefficients.Length > 0
-                        ? TissueCoefficients[0].MValueRatio
-                        : 1.35f;
-                    float mValue = math.max(0.1f, ambient * math.max(1.01f, coefficientMValue));
-                    if (fastest > mValue)
-                    {
-                        overMask |= 1u;
-                        risk = math.saturate((fastest - mValue) * tuning.BendsRiskScale * math.rcp(math.max(0.0001f, mValue)));
-                    }
+                    overMask |= 1u << tissueIndex;
+                    float compartmentRisk = excess * tuning.BendsRiskScale * math.rcp(math.max(0.0001f, mValue));
+                    risk = math.max(risk, compartmentRisk);
                 }
+
+                maxTissue = math.max(maxTissue, next);
             }
 
             PhysiologyDTO vital = Vitals[index];
             PhysiologyScalarsDTO scalar = Scalars[index];
             float narcosisDenominator = math.max(0.0001f, tuning.NarcosisFullAtm - tuning.NarcosisStartAtm);
-            scalar.NarcosisSeverity = math.saturate((ambient - tuning.NarcosisStartAtm) * math.rcp(narcosisDenominator));
-            scalar.BendsRisk = math.saturate(risk);
+            float nitrogenNarcosis = math.saturate((ambientNitrogenPressure - tuning.NarcosisStartAtm) * math.rcp(narcosisDenominator));
+            float supersaturation = math.saturate(risk);
+            scalar.NarcosisSeverity = nitrogenNarcosis;
+            scalar.BendsRisk = supersaturation;
             scalar.TissueOverMValueMask = overMask;
-            scalar.StatusFlags &= ~(ShinobuPhysiologyFlags.Bends | ShinobuPhysiologyFlags.Narcosis);
+            scalar.StatusFlags &= ~(ShinobuPhysiologyFlags.Bends | ShinobuPhysiologyFlags.Narcosis | ShinobuPhysiologyFlags.FatalBends | ShinobuPhysiologyFlags.HyperbaricOverride | ShinobuPhysiologyFlags.InvalidMath);
             scalar.StatusFlags |= overMask != 0u ? ShinobuPhysiologyFlags.Bends : 0u;
-            scalar.StatusFlags |= scalar.NarcosisSeverity > 0f ? ShinobuPhysiologyFlags.Narcosis : 0u;
+            scalar.StatusFlags |= nitrogenNarcosis > 0f ? ShinobuPhysiologyFlags.Narcosis : 0u;
+            scalar.StatusFlags |= supersaturation >= 0.98f ? ShinobuPhysiologyFlags.FatalBends : 0u;
+            scalar.StatusFlags |= (env.Flags & MockPressureSignal.HyperbaricTreatmentFlag) != 0u ? ShinobuPhysiologyFlags.HyperbaricOverride : 0u;
+            scalar.StatusFlags |= invalidMath;
             vital.TissueNitrogen = maxTissue;
 
             Vitals[index] = vital;
             Scalars[index] = scalar;
             DecompressionStates[index] = state;
+
+            if (EmitPhysiologySignal != 0 && index == 0)
+            {
+                PhysiologyStateSignal signal = default;
+                signal.PlayerStress01 = math.saturate(math.max(supersaturation, nitrogenNarcosis));
+                signal.O2DrainMultiplier = math.max(1f, ambient);
+                signal.Recovery01 = 1f - supersaturation;
+                signal.Frame = env.Frame;
+                signal.Cause = PhysiologyStateSignal.CauseDecompression;
+                signal.Flags = (byte)math.select(0, 1, supersaturation > 0f);
+                signal.Supersaturation01 = supersaturation;
+                signal.Narcosis01 = nitrogenNarcosis;
+                signal.AmbientPressureAtm = ambient;
+                signal.NitrogenLoadAtm = maxTissue;
+                signal.AscentRateMetersPerSecond = state.AscentRate;
+                signal.TissueOverMValueMask = overMask;
+                signal.SourceHash = ShinobuPhysiologyConstants.SourceHash;
+                signal.EntityIndex = index;
+                signal.ActiveCompartments = (byte)activeCompartments;
+                signal.FatalSeverity = (byte)math.round(supersaturation * 255f);
+                signal.StatusFlags = scalar.StatusFlags;
+                PhysiologyWriter.Enqueue(signal);
+            }
         }
     }
 
     /// <summary>
     /// Metabolic oxygen, temperature, toxemia, adrenaline, pulse, export, and black-box writer.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct OxygenConsumptionJob : IJobParallelFor
     {
-        public NativeArray<PhysiologyDTO> Vitals;
-        public NativeArray<PhysiologyScalarsDTO> Scalars;
-        public NativeArray<CardiacPulseStateDTO> PulseStates;
-        [ReadOnly] public NativeArray<MockEnvironmentVitalsSignal> Environment;
-        public NativeArray<VitalsExportDTO> VitalsExport;
-        public NativeArray<PhysiologyTelemetryEntry> Telemetry;
+        [NoAlias] public NativeArray<PhysiologyDTO> Vitals;
+        [NoAlias] public NativeArray<PhysiologyScalarsDTO> Scalars;
+        [NoAlias] public NativeArray<CardiacPulseStateDTO> PulseStates;
+        [ReadOnly, NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
+        [NoAlias] public NativeArray<VitalsExportDTO> VitalsExport;
+        [NoAlias] public NativeArray<PhysiologyTelemetryEntry> Telemetry;
         public NativeQueue<CardiacPulseSignal>.ParallelWriter CardiacPulseWriter;
         public PhysiologyTuningDTO Tuning;
         public float DeltaSeconds;
@@ -392,7 +550,7 @@ namespace Hecton8.Physiology
             }
 
             PhysiologyTuningDTO tuning = ShinobuPhysiologyJobMath.SanitizeTuning(Tuning);
-            float dt = math.clamp(ShinobuPhysiologyJobMath.SanitizeFinite(DeltaSeconds, 0.016f), 0.0001f, 0.05f);
+            float dt = math.clamp(ShinobuPhysiologyJobMath.SanitizeFinite(DeltaSeconds, 0.016f), 0.0001f, ShinobuPhysiologyConstants.MaxSimulationStepSeconds);
             MockEnvironmentVitalsSignal env = Environment.IsCreated && (uint)index < (uint)Environment.Length
                 ? Environment[index]
                 : default;
@@ -452,11 +610,16 @@ namespace Hecton8.Physiology
 
             float heartScale = vital.HeartRate * math.rcp(60f);
             float traumaDrain = 1f + effectiveTrauma * effectiveTrauma * 0.18f;
+            float ambientPressureAtm = env.AmbientPressureAtm > 0f
+                ? ShinobuPhysiologyJobMath.SanitizeFinite(env.AmbientPressureAtm, ShinobuPhysiologyJobMath.DepthToPressureAtm(env.DepthMeters))
+                : ShinobuPhysiologyJobMath.DepthToPressureAtm(env.DepthMeters);
+            float pressureBreathScale = math.max(1f, ambientPressureAtm);
             float o2Drain = tuning.BaseO2DrainPerSecond *
                 (0.65f + heartScale * 0.35f + adrenaline * 0.42f) *
                 traumaDrain *
                 (1f + scalar.Toxemia * tuning.ToxemiaO2Penalty) *
-                (1f + scalar.HypothermiaShiver * 0.2f);
+                (1f + scalar.HypothermiaShiver * 0.2f) *
+                pressureBreathScale;
 
             scalar.OxygenDrainPerSecond = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(o2Drain, tuning.BaseO2DrainPerSecond));
             vital.BloodOxygen = math.max(tuning.MinOxygen01, vital.BloodOxygen - scalar.OxygenDrainPerSecond * dt);
@@ -506,6 +669,10 @@ namespace Hecton8.Physiology
                 status |= ShinobuPhysiologyFlags.FatalOxygen;
                 fatalFlags |= ShinobuPhysiologyFlags.FatalOxygen;
             }
+            if ((status & ShinobuPhysiologyFlags.FatalBends) != 0u)
+                fatalFlags |= ShinobuPhysiologyFlags.FatalBends;
+            if ((status & ShinobuPhysiologyFlags.InvalidMath) != 0u)
+                fatalFlags |= ShinobuPhysiologyFlags.InvalidMath;
 
             if (!math.isfinite(vital.BloodOxygen) ||
                 !math.isfinite(vital.TissueNitrogen) ||
@@ -555,13 +722,13 @@ namespace Hecton8.Physiology
                     CoreTemperature = vital.CoreTemperature,
                     AmbientPressureAtm = math.max(0f, env.AmbientPressureAtm),
                     NarcosisSeverity = scalar.NarcosisSeverity,
-                    Toxemia = scalar.Toxemia,
+                    SupersaturationScalar = scalar.BendsRisk,
                     HeartRate = vital.HeartRate,
                     Adrenaline = vital.Adrenaline,
                     FatalFlags = fatalFlags,
                     TissueOverMValueMask = scalar.TissueOverMValueMask,
                     DepthMeters = math.max(0f, env.DepthMeters),
-                    Sequence = unchecked((uint)TelemetryCursor)
+                    ExecutionMicroseconds = 0f
                 };
             }
         }

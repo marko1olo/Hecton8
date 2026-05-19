@@ -15,7 +15,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class RelayHUDElement : MonoBehaviour, ILateFrameTickable
+    public sealed class RelayHUDElement : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private enum RelayMarkerVisibilityState : byte
         {
@@ -60,7 +60,10 @@ namespace Hecton8.UI
         private RectTransform _rectTransform;
         private HectonPlayerMovement _playerMovement;
         private EmergencyServiceRelay _trackedRelay;
+        private EmergencyServiceRelayDirector _relayDirector;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
         private bool _isVisible;
         private bool _hasLabelState;
         private bool _hasVisibilityState;
@@ -95,13 +98,16 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
             TryCacheCamera(0f);
 
             TryRegister();
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             if (_registered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -173,7 +179,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            EmergencyServiceRelayDirector relayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
+            EmergencyServiceRelayDirector relayDirector = _relayDirector;
             EmergencyServiceRelay routeTarget = relayDirector != null
                 ? relayDirector.GetActiveRouteTarget()
                 : null;
@@ -267,7 +273,7 @@ namespace Hecton8.UI
             _cameraRetryTimer = CameraRetryInterval;
 
             // Resolve via registry-owned player hierarchy.
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null)
             {
                 _mainCamera = playerContext.PlayerCamera;
@@ -284,7 +290,7 @@ namespace Hecton8.UI
             if (_playerMovement != null)
                 return true;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null)
                 _playerMovement = playerContext.PlayerMovement;
 
@@ -490,6 +496,56 @@ namespace Hecton8.UI
                 return;
 
             _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.EmergencyRelayRuntime)
+            {
+                _relayDirector = currentService as EmergencyServiceRelayDirector;
+                _trackedRelay = null;
+                _hasPositionState = false;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                _mainCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
+                _playerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
+                _hasPositionState = false;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _relayDirector = GlobalRegistry.EmergencyRelay;
+            _cachedPlayerContext = GlobalRegistry.Player;
+            if (_cachedPlayerContext != null)
+            {
+                _mainCamera = _cachedPlayerContext.PlayerCamera;
+                _playerMovement = _cachedPlayerContext.PlayerMovement;
+            }
         }
     }
 }

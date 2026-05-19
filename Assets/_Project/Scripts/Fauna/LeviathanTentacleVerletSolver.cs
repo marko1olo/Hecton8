@@ -1,12 +1,14 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using Hecton8.Animation.IK;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -59,36 +61,36 @@ namespace Hecton8.AI
         private static readonly int _TipRadiusReferenceId = Shader.PropertyToID("_TipRadiusReference");
         private static readonly int _FxTierId = Shader.PropertyToID("_H8LeviathanTentacleFxTier");
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct LeviathanTentacleTelemetryEntry
         {
-            public int FrameIndex;
-            public int ActiveTentacleCount;
-            public uint Flags;
-            public uint StateHash;
-            public float3 Root0;
-            public float3 Tip0;
-            public float3 FlowVector;
-            public float MaxStretchFraction;
-            public float Padding0;
-            public float Padding1;
+            [FieldOffset(0)] public int FrameIndex;
+            [FieldOffset(4)] public int ActiveTentacleCount;
+            [FieldOffset(8)] public uint Flags;
+            [FieldOffset(12)] public uint StateHash;
+            [FieldOffset(16)] public float3 Root0;
+            [FieldOffset(28)] public float3 Tip0;
+            [FieldOffset(40)] public float3 FlowVector;
+            [FieldOffset(52)] public float MaxStretchFraction;
+            [FieldOffset(56)] public float Padding0;
+            [FieldOffset(60)] public float Padding1;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
         private struct VerletSolveJob : IJob
         {
             private const float MinDistanceSq = 0.000001f;
 
-            public NativeArray<float3> Positions;
-            public NativeArray<float3> PreviousPositions;
-            public NativeArray<float> Radius;
-            public NativeArray<float4x4> SegmentMatrices;
-            public NativeArray<float> StretchFractions;
-            public NativeArray<float3> ConstraintCorrections;
-            public NativeArray<int> ConstraintCorrectionCounts;
-            [ReadOnly] public NativeArray<float3> RootPositions;
-            [ReadOnly] public NativeArray<float3> TargetPositions;
-            [ReadOnly] public NativeArray<uint> TentacleStates;
+            [NoAlias] public NativeArray<float3> Positions;
+            [NoAlias] public NativeArray<float3> PreviousPositions;
+            [NoAlias] public NativeArray<float> Radius;
+            [NoAlias] public NativeArray<LeviathanBoneDTO> SegmentMatrices;
+            [NoAlias] public NativeArray<float> StretchFractions;
+            [NoAlias] public NativeArray<float3> ConstraintCorrections;
+            [NoAlias] public NativeArray<int> ConstraintCorrectionCounts;
+            [ReadOnly, NoAlias] public NativeArray<float3> RootPositions;
+            [ReadOnly, NoAlias] public NativeArray<float3> TargetPositions;
+            [ReadOnly, NoAlias] public NativeArray<uint> TentacleStates;
             public float DeltaTime;
             public float Damping;
             public float RestLength;
@@ -101,11 +103,36 @@ namespace Hecton8.AI
             public float TimeSeconds;
             public float3 Gravity;
             public float3 FlowVector;
+            public float GlobalQualityWeight;
             public int TentacleCount;
             public int ConstraintIterations;
 
             public void Execute()
             {
+                if (!Positions.IsCreated ||
+                    !PreviousPositions.IsCreated ||
+                    !Radius.IsCreated ||
+                    !SegmentMatrices.IsCreated ||
+                    !StretchFractions.IsCreated ||
+                    !ConstraintCorrections.IsCreated ||
+                    !ConstraintCorrectionCounts.IsCreated ||
+                    !RootPositions.IsCreated ||
+                    !TargetPositions.IsCreated ||
+                    !TentacleStates.IsCreated ||
+                    Positions.Length < TotalSegments ||
+                    PreviousPositions.Length < TotalSegments ||
+                    Radius.Length < TotalSegments ||
+                    SegmentMatrices.Length < TotalSegments ||
+                    StretchFractions.Length < MaxTentacles ||
+                    ConstraintCorrections.Length < TotalSegments ||
+                    ConstraintCorrectionCounts.Length < TotalSegments ||
+                    RootPositions.Length < MaxTentacles ||
+                    TargetPositions.Length < MaxTentacles ||
+                    TentacleStates.Length < MaxTentacles)
+                {
+                    return;
+                }
+
                 float safeDeltaTime = math.select(0f, math.min(DeltaTime, 0.05f), math.isfinite(DeltaTime) && DeltaTime > 0f);
                 float dtSq = safeDeltaTime * safeDeltaTime;
                 float safeDamping = math.clamp(Damping, 0f, 1f);
@@ -119,8 +146,14 @@ namespace Hecton8.AI
                 float safeTime = math.select(0f, TimeSeconds, math.isfinite(TimeSeconds));
                 float3 safeGravity = SanitizeFinite(Gravity, float3.zero);
                 float3 safeFlow = SanitizeFinite(FlowVector, float3.zero) * safeFlowStrength;
+                float qualityWeight = SanitizeQualityWeight(GlobalQualityWeight);
+                float qualityCurve = Smooth01(qualityWeight);
                 int safeTentacleCount = math.clamp(TentacleCount, 0, MaxTentacles);
-                int safeIterations = math.clamp(ConstraintIterations, 1, 3);
+                int continuousIterationLimit = (int)math.round(math.lerp(1f, 3f, qualityCurve));
+                int safeIterations = math.clamp(math.min(ConstraintIterations, continuousIterationLimit), 1, 3);
+                int segmentBudget = math.clamp((int)math.round(math.lerp(6f, SegmentsPerTentacle, qualityCurve)), 2, SegmentsPerTentacle);
+                float qualityNoiseScale = math.lerp(0.35f, 1f, qualityCurve);
+                float qualityPulseScale = math.lerp(0.4f, 1f, qualityCurve);
                 float invSegmentLast = math.rcp(SegmentLastIndex);
 
                 for (int tentacleIndex = 0; tentacleIndex < MaxTentacles; tentacleIndex++)
@@ -138,11 +171,13 @@ namespace Hecton8.AI
                     bool grabbing = (state & TentacleStateGrabbing) != 0u;
                     targetPosition = ResolveClampedTarget(rootPosition, targetPosition, grabbing, safeMaxStretchLength, out float stretchFraction);
                     StretchFractions[tentacleIndex] = grabbing ? stretchFraction : 0f;
+                    int activeLastIndex = segmentBudget - 1;
+                    int activeTipIndex = FlatIndex(tentacleIndex, activeLastIndex);
 
                     Positions[baseIndex] = rootPosition;
                     PreviousPositions[baseIndex] = rootPosition;
 
-                    for (int segmentIndex = 1; segmentIndex < SegmentsPerTentacle; segmentIndex++)
+                    for (int segmentIndex = 1; segmentIndex < segmentBudget; segmentIndex++)
                     {
                         int nodeIndex = FlatIndex(tentacleIndex, segmentIndex);
                         float t = segmentIndex * invSegmentLast;
@@ -151,7 +186,7 @@ namespace Hecton8.AI
                         float waveA = CheapTriangleWave(phase) * 2f - 1f;
                         float waveB = CheapTriangleWave(phase * 0.73f + 0.19f) * 2f - 1f;
                         float3 organicNoise = new float3(waveA, waveB * 0.35f, -waveA * 0.52f) *
-                            (safeFlowNoiseStrength * middleMask);
+                            (safeFlowNoiseStrength * qualityNoiseScale * middleMask);
 
                         float3 current = SanitizeFinite(Positions[nodeIndex], rootPosition);
                         float3 previous = SanitizeFinite(PreviousPositions[nodeIndex], current);
@@ -162,15 +197,16 @@ namespace Hecton8.AI
                     }
 
                     if (grabbing)
-                        Positions[FlatIndex(tentacleIndex, SegmentLastIndex)] = targetPosition;
+                        Positions[activeTipIndex] = targetPosition;
 
                     for (int iteration = 0; iteration < safeIterations; iteration++)
-                        SolveDistanceConstraintsJacobi(tentacleIndex, rootPosition, targetPosition, grabbing, safeRestLength);
+                        SolveDistanceConstraintsJacobi(tentacleIndex, rootPosition, targetPosition, grabbing, safeRestLength, activeLastIndex);
 
                     if (grabbing)
-                        Positions[FlatIndex(tentacleIndex, SegmentLastIndex)] = targetPosition;
+                        Positions[activeTipIndex] = targetPosition;
 
-                    WriteRadiusAndMatrices(tentacleIndex, rootPosition, grabbing, safeBaseRadius, safeTipRadius, safePulseStrength, safeTime, invSegmentLast);
+                    ExtendCollapsedSegments(tentacleIndex, rootPosition, targetPosition, safeRestLength, activeLastIndex);
+                    WriteRadiusAndMatrices(tentacleIndex, rootPosition, grabbing, safeBaseRadius, safeTipRadius, safePulseStrength * qualityPulseScale, safeTime, invSegmentLast);
                 }
             }
 
@@ -179,21 +215,22 @@ namespace Hecton8.AI
                 float3 rootPosition,
                 float3 targetPosition,
                 bool grabbing,
-                float safeRestLength)
+                float safeRestLength,
+                int activeLastIndex)
             {
                 int baseIndex = FlatIndex(tentacleIndex, 0);
                 Positions[baseIndex] = rootPosition;
                 if (grabbing)
-                    Positions[FlatIndex(tentacleIndex, SegmentLastIndex)] = targetPosition;
+                    Positions[FlatIndex(tentacleIndex, activeLastIndex)] = targetPosition;
 
-                for (int segmentIndex = 0; segmentIndex < SegmentsPerTentacle; segmentIndex++)
+                for (int segmentIndex = 0; segmentIndex <= activeLastIndex; segmentIndex++)
                 {
                     int nodeIndex = baseIndex + segmentIndex;
                     ConstraintCorrections[nodeIndex] = float3.zero;
                     ConstraintCorrectionCounts[nodeIndex] = 0;
                 }
 
-                for (int segmentIndex = 1; segmentIndex < SegmentsPerTentacle; segmentIndex++)
+                for (int segmentIndex = 1; segmentIndex <= activeLastIndex; segmentIndex++)
                 {
                     int aIndex = FlatIndex(tentacleIndex, segmentIndex - 1);
                     int bIndex = FlatIndex(tentacleIndex, segmentIndex);
@@ -206,7 +243,7 @@ namespace Hecton8.AI
                     float3 direction = delta * invDistance;
                     float3 correction = direction * (distance - safeRestLength);
                     bool aPinned = segmentIndex == 1;
-                    bool bPinned = grabbing && segmentIndex == SegmentLastIndex;
+                    bool bPinned = grabbing && segmentIndex == activeLastIndex;
 
                     if (aPinned && !bPinned)
                     {
@@ -227,10 +264,10 @@ namespace Hecton8.AI
                     }
                 }
 
-                for (int segmentIndex = 1; segmentIndex < SegmentsPerTentacle; segmentIndex++)
+                for (int segmentIndex = 1; segmentIndex <= activeLastIndex; segmentIndex++)
                 {
                     int nodeIndex = baseIndex + segmentIndex;
-                    if (grabbing && segmentIndex == SegmentLastIndex)
+                    if (grabbing && segmentIndex == activeLastIndex)
                     {
                         Positions[nodeIndex] = targetPosition;
                         continue;
@@ -244,6 +281,34 @@ namespace Hecton8.AI
                     Positions[nodeIndex] = SanitizeFinite(
                         Positions[nodeIndex] + ConstraintCorrections[nodeIndex] * invCount,
                         rootPosition);
+                }
+            }
+
+            private void ExtendCollapsedSegments(
+                int tentacleIndex,
+                float3 rootPosition,
+                float3 targetPosition,
+                float safeRestLength,
+                int activeLastIndex)
+            {
+                if (activeLastIndex >= SegmentLastIndex)
+                    return;
+
+                int activeTipIndex = FlatIndex(tentacleIndex, activeLastIndex);
+                float3 tip = SanitizeFinite(Positions[activeTipIndex], targetPosition);
+                float3 previous = activeLastIndex > 0
+                    ? SanitizeFinite(Positions[FlatIndex(tentacleIndex, activeLastIndex - 1)], rootPosition)
+                    : rootPosition;
+                float3 direction = NormalizeSafe(tip - previous, NormalizeSafe(tip - rootPosition, new float3(0f, 0f, 1f)));
+                for (int segmentIndex = activeLastIndex + 1; segmentIndex < SegmentsPerTentacle; segmentIndex++)
+                {
+                    int nodeIndex = FlatIndex(tentacleIndex, segmentIndex);
+                    float wave = CheapTriangleWave(TimeSeconds * 0.29f + tentacleIndex * 0.173f + segmentIndex * 0.061f) * 2f - 1f;
+                    float collapsedOffset = safeRestLength * math.lerp(0.18f, 0.55f, math.saturate((segmentIndex - activeLastIndex) * 0.2f));
+                    float3 side = NormalizeSafe(math.cross(direction, new float3(0f, 1f, 0f)), new float3(1f, 0f, 0f));
+                    float3 fake = tip + direction * collapsedOffset + side * (wave * safeRestLength * 0.08f);
+                    Positions[nodeIndex] = SanitizeFinite(fake, tip);
+                    PreviousPositions[nodeIndex] = Positions[nodeIndex];
                 }
             }
 
@@ -283,10 +348,12 @@ namespace Hecton8.AI
                     quaternion rotation = quaternion.LookRotationSafe(direction, new float3(0f, 1f, 0f));
                     float visualLength = tipCap ? solvedRadius * 2f : math.max(0.001f, axisLength);
                     float3 center = tipCap ? current : current + axis * 0.5f;
-                    SegmentMatrices[nodeIndex] = float4x4.TRS(
+                    LeviathanBoneDTO matrix = default;
+                    matrix.LocalToWorld = float4x4.TRS(
                         SanitizeFinite(center, rootPosition),
-                        rotation,
+                        SanitizeQuaternion(rotation),
                         new float3(solvedRadius, solvedRadius, visualLength));
+                    SegmentMatrices[nodeIndex] = matrix;
                 }
             }
 
@@ -319,9 +386,38 @@ namespace Hecton8.AI
                 return 1f - math.abs(wrapped * 2f - 1f);
             }
 
+            private static float SanitizeQualityWeight(float value)
+            {
+                return math.saturate(math.select(1f, value, math.isfinite(value)));
+            }
+
+            private static float Smooth01(float value)
+            {
+                float t = math.saturate(value);
+                return t * t * (3f - 2f * t);
+            }
+
             private static float3 SanitizeFinite(float3 value, float3 fallback)
             {
                 return math.all(math.isfinite(value)) ? value : fallback;
+            }
+
+            private static float3 NormalizeSafe(float3 value, float3 fallback)
+            {
+                float lengthSq = math.lengthsq(value);
+                if (!math.isfinite(lengthSq) || lengthSq <= MinDistanceSq)
+                    return SanitizeFinite(fallback, new float3(0f, 0f, 1f));
+
+                return value * math.rsqrt(lengthSq);
+            }
+
+            private static quaternion SanitizeQuaternion(quaternion value)
+            {
+                float lengthSq = math.lengthsq(value.value);
+                if (!math.isfinite(lengthSq) || lengthSq <= MinDistanceSq)
+                    return quaternion.identity;
+
+                return new quaternion(value.value * math.rsqrt(lengthSq));
             }
         }
 
@@ -411,6 +507,7 @@ namespace Hecton8.AI
         private int _telemetryCursor;
         private int _frameIndex;
         private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
+        private float _globalQualityWeight = 1f;
         private float _grabDamageTimer;
         private float _solverTimeSeconds;
         private float _constraintIterationSwitchTimer;
@@ -435,7 +532,7 @@ namespace Hecton8.AI
         private VaultBufferHandle<float3> _positionsHandle;
         private VaultBufferHandle<float3> _previousPositionsHandle;
         private VaultBufferHandle<float> _radiusHandle;
-        private VaultBufferHandle<float4x4> _segmentMatricesHandle;
+        private VaultBufferHandle<LeviathanBoneDTO> _segmentMatricesHandle;
         private VaultBufferHandle<float> _stretchFractionsHandle;
         private VaultBufferHandle<float3> _constraintCorrectionsHandle;
         private VaultBufferHandle<int> _constraintCorrectionCountsHandle;
@@ -451,7 +548,7 @@ namespace Hecton8.AI
             public NativeArray<float3> Positions;
             public NativeArray<float3> PreviousPositions;
             public NativeArray<float> Radius;
-            public NativeArray<float4x4> SegmentMatrices;
+            public NativeArray<LeviathanBoneDTO> SegmentMatrices;
             public NativeArray<float> StretchFractions;
             public NativeArray<float3> ConstraintCorrections;
             public NativeArray<int> ConstraintCorrectionCounts;
@@ -611,7 +708,8 @@ namespace Hecton8.AI
                 safeRestLength * SegmentLastIndex);
             float3 safeGravity = SanitizeFiniteInputFloat3(new float3(gravity.x, gravity.y, gravity.z), float3.zero);
             _qualityTier = GlobalRegistry.ScalabilityTier;
-            int constraintIterations = ResolveConstraintIterationsWithHysteresis(safeDeltaTime, _qualityTier);
+            _globalQualityWeight = ResolveGlobalQualityWeight();
+            int constraintIterations = ResolveConstraintIterationsWithHysteresis(safeDeltaTime, _globalQualityWeight);
             _solverTimeSeconds += safeDeltaTime;
             if (_solverTimeSeconds > 4096f)
                 _solverTimeSeconds -= 4096f;
@@ -640,6 +738,7 @@ namespace Hecton8.AI
                 TimeSeconds = _solverTimeSeconds,
                 Gravity = safeGravity,
                 FlowVector = _lastFlowVector,
+                GlobalQualityWeight = _globalQualityWeight,
                 TentacleCount = math.clamp(activeTentacleCount, 0, MaxTentacles),
                 ConstraintIterations = constraintIterations
             };
@@ -770,19 +869,19 @@ namespace Hecton8.AI
             if (vault == null)
                 return;
 
-            _positionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentaclePositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _previousPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentaclePreviousPositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _radiusHandle = vault.GetBufferHandle<float>(BufferID.LeviathanTentacleRadius, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _segmentMatricesHandle = vault.GetBufferHandle<float4x4>(BufferID.LeviathanTentacleSegmentMatrices, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _stretchFractionsHandle = vault.GetBufferHandle<float>(BufferID.LeviathanTentacleStretchFractions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _constraintCorrectionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentacleConstraintCorrections, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _constraintCorrectionCountsHandle = vault.GetBufferHandle<int>(BufferID.LeviathanTentacleConstraintCorrectionCounts, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _rootPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentacleRootPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _targetPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentacleTargetPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _rootAupsHandle = vault.GetBufferHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleRootAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _targetAupsHandle = vault.GetBufferHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleTargetAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _tentacleStatesHandle = vault.GetBufferHandle<uint>(BufferID.LeviathanTentacleStates, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _telemetryRingHandle = vault.GetBufferHandle<LeviathanTentacleTelemetryEntry>(BufferID.LeviathanTentacleTelemetryRing, TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _positionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentaclePositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _previousPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentaclePreviousPositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _radiusHandle = vault.GetBufferHandle<float>(BufferID.LeviathanTentacleRadius, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _segmentMatricesHandle = vault.GetBufferHandle<LeviathanBoneDTO>(BufferID.LeviathanTentacleSegmentMatrices, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _stretchFractionsHandle = vault.GetBufferHandle<float>(BufferID.LeviathanTentacleStretchFractions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _constraintCorrectionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentacleConstraintCorrections, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _constraintCorrectionCountsHandle = vault.GetBufferHandle<int>(BufferID.LeviathanTentacleConstraintCorrectionCounts, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _rootPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentacleRootPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _targetPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentacleTargetPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _rootAupsHandle = vault.GetBufferHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleRootAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _targetAupsHandle = vault.GetBufferHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleTargetAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _tentacleStatesHandle = vault.GetBufferHandle<uint>(BufferID.LeviathanTentacleStates, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _telemetryRingHandle = vault.GetBufferHandle<LeviathanTentacleTelemetryEntry>(BufferID.LeviathanTentacleTelemetryRing, TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
 
             if (!TryResolvePersistentBuffers(out _))
                 ClearVaultHandles();
@@ -907,7 +1006,9 @@ namespace Hecton8.AI
                     float t = segmentIndex * math.rcp(SegmentLastIndex);
                     float solvedRadius = math.max(0.001f, math.lerp(safeBaseRadius, safeTipRadius, t));
                     buffers.Radius[nodeIndex] = solvedRadius;
-                    buffers.SegmentMatrices[nodeIndex] = float4x4.TRS(position, quaternion.identity, new float3(solvedRadius, solvedRadius, safeRestLength));
+                    LeviathanBoneDTO matrix = default;
+                    matrix.LocalToWorld = float4x4.TRS(position, quaternion.identity, new float3(solvedRadius, solvedRadius, safeRestLength));
+                    buffers.SegmentMatrices[nodeIndex] = matrix;
                 }
             }
         }
@@ -1053,8 +1154,7 @@ namespace Hecton8.AI
         {
             direction = new float3(0f, 0f, 1f);
             tipRuntimePosition = Vector3.zero;
-            if (!IsHighEndCollisionTier(_qualityTier) ||
-                buffers.RootAups.Length <= 0 ||
+            if (buffers.RootAups.Length <= 0 ||
                 buffers.TargetAups.Length <= 0)
             {
                 return false;
@@ -1136,7 +1236,7 @@ namespace Hecton8.AI
 
         private void BindFxTierToMaterial()
         {
-            tentacleMaterial.SetFloat(_FxTierId, IsLowTier(_qualityTier) ? 0f : 1f);
+            tentacleMaterial.SetFloat(_FxTierId, SmoothQuality01(_globalQualityWeight));
         }
 
         private void BindFlowBufferToMaterial()
@@ -1164,13 +1264,13 @@ namespace Hecton8.AI
             if (!HasValidGraphicsBuffer(_matrixGraphicsBufferA, TotalSegments))
             {
                 ReleaseGraphicsBuffer(ref _matrixGraphicsBufferA);
-                _matrixGraphicsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(TotalSegments); // COLD ALLOC: GraphicsBuffer[160 float4x4] - indirect tentacle matrix upload A - owner: LeviathanTentacleVerletSolver
+                _matrixGraphicsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<LeviathanBoneDTO>(TotalSegments); // COLD ALLOC: GraphicsBuffer[160 64B bone DTO] - indirect tentacle matrix upload A - owner: LeviathanTentacleVerletSolver
             }
 
             if (!HasValidGraphicsBuffer(_matrixGraphicsBufferB, TotalSegments))
             {
                 ReleaseGraphicsBuffer(ref _matrixGraphicsBufferB);
-                _matrixGraphicsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(TotalSegments); // COLD ALLOC: GraphicsBuffer[160 float4x4] - indirect tentacle matrix upload B - owner: LeviathanTentacleVerletSolver
+                _matrixGraphicsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<LeviathanBoneDTO>(TotalSegments); // COLD ALLOC: GraphicsBuffer[160 64B bone DTO] - indirect tentacle matrix upload B - owner: LeviathanTentacleVerletSolver
             }
 
             if (!HasValidGraphicsBuffer(_radiusGraphicsBufferA, TotalSegments))
@@ -1274,11 +1374,13 @@ namespace Hecton8.AI
             {
                 buffers.Positions[i] = SanitizeFiniteInputFloat3(buffers.Positions[i] - offset, float3.zero);
                 buffers.PreviousPositions[i] = SanitizeFiniteInputFloat3(buffers.PreviousPositions[i] - offset, buffers.Positions[i]);
-                float4x4 matrix = buffers.SegmentMatrices[i];
+                LeviathanBoneDTO dto = buffers.SegmentMatrices[i];
+                float4x4 matrix = dto.LocalToWorld;
                 float4 c3 = matrix.c3;
                 float3 matrixPosition = SanitizeFiniteInputFloat3(new float3(c3.x - offset.x, c3.y - offset.y, c3.z - offset.z), buffers.Positions[i]);
                 matrix.c3 = new float4(matrixPosition.x, matrixPosition.y, matrixPosition.z, c3.w);
-                buffers.SegmentMatrices[i] = matrix;
+                dto.LocalToWorld = matrix;
+                buffers.SegmentMatrices[i] = dto;
             }
 
             for (int tentacleIndex = 0; tentacleIndex < MaxTentacles; tentacleIndex++)
@@ -1436,25 +1538,26 @@ namespace Hecton8.AI
                 : float3.zero;
         }
 
-        private static int ResolveConstraintIterations(HectonQualityTier tier, int highTierIterations)
+        private static int ResolveConstraintIterations(float qualityWeight, int highTierIterations)
         {
-            return IsLowTier(tier)
-                ? 1
-                : math.clamp(highTierIterations, 1, 3);
+            float qualityCurve = SmoothQuality01(qualityWeight);
+            int highIterations = math.clamp(highTierIterations, 1, 3);
+            return math.clamp((int)math.round(math.lerp(1f, highIterations, qualityCurve)), 1, 3);
         }
 
         private void ResetConstraintIterationHysteresis()
         {
             _qualityTier = GlobalRegistry.ScalabilityTier;
-            int iterations = ResolveConstraintIterations(_qualityTier, highTierConstraintIterations);
+            _globalQualityWeight = ResolveGlobalQualityWeight();
+            int iterations = ResolveConstraintIterations(_globalQualityWeight, highTierConstraintIterations);
             _resolvedConstraintIterations = iterations;
             _pendingConstraintIterations = iterations;
             _constraintIterationSwitchTimer = 0f;
         }
 
-        private int ResolveConstraintIterationsWithHysteresis(float deltaTime, HectonQualityTier tier)
+        private int ResolveConstraintIterationsWithHysteresis(float deltaTime, float qualityWeight)
         {
-            int requestedIterations = ResolveConstraintIterations(tier, highTierConstraintIterations);
+            int requestedIterations = ResolveConstraintIterations(qualityWeight, highTierConstraintIterations);
             if (_resolvedConstraintIterations < 1)
             {
                 _resolvedConstraintIterations = requestedIterations;
@@ -1487,14 +1590,20 @@ namespace Hecton8.AI
             return _resolvedConstraintIterations;
         }
 
-        private static bool IsLowTier(HectonQualityTier tier)
+        private static float ResolveGlobalQualityWeight()
         {
-            return tier == HectonQualityTier.Unknown || tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
+            return SanitizeQualityWeight01(HomeostasisBrain.GlobalQualityWeight);
         }
 
-        private static bool IsHighEndCollisionTier(HectonQualityTier tier)
+        private static float SanitizeQualityWeight01(float value)
         {
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
+            return math.saturate(math.select(1f, value, math.isfinite(value)));
+        }
+
+        private static float SmoothQuality01(float value)
+        {
+            float t = SanitizeQualityWeight01(value);
+            return t * t * (3f - 2f * t);
         }
 
         private static bool IsFinite(Vector3 value)

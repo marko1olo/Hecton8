@@ -77,6 +77,17 @@ Evidence class: `STATIC_SOURCE` / `STATIC_DOC`.
 - New or changed global routes require the route-card template: owner, instrument, phase, cadence, capacity, failure mode, telemetry, shutdown, and proof.
 - Static verdict: the project is not yet globally failing, but the global authority surface is already in the danger zone. Net-new global surface growth is blocked until review queues in the migration ledger move down.
 
+## 2026-05-19 SHINOBU_02 Core/SignalBus Layout Addendum
+
+Evidence class: `STATIC_SOURCE` plus historical `STATIC_SOURCE_CLASSIFIED` audit artifacts.
+
+- Current source scan over `Assets/_Project/Scripts/Core` reports exactly three exact `Pack = 1` declarations: `ContentAssetBinaryRecord`, `GerstnerWaveComponent`, and `WeatherRuntimeSnapshot`.
+- Scoped source scan over `Core/Signals`, `Core/GlobalSignals.cs`, and `Core/Contracts/HectonSignalLaneContract.cs` reports zero exact `Pack = 1` declarations.
+- Latest artifact-backed SHINOBU_02 SignalCritical audit is current21: files `7`, shaders `62`, errors `0`, warnings `0`, infos `10`, runtime signal `Pack = 1` `0`, transitive runtime signal `Pack = 1` field hits `0`.
+- Latest artifact-backed SHINOBU_02 Full audit is current21: files `1761`, shaders `62`, errors `0`, warnings `432`, infos `454`, confirmed/probable errors `0`, project-wide `Pack = 1` layouts `230`.
+- Current22 source edits reduced Core exact `Pack = 1` from `9` to `3`, but Core compile, SignalCritical re-audit, Full re-audit, and H-Phi trend refresh remain pending because CPU guard blocked dotnet at `95.5-100%`.
+- Owner-deferred layout work remains outside SHINOBU_02: `GerstnerWaveComponent` / `WeatherRuntimeSnapshot` require Fluid/Graphics/Weather owner stride migration and compile/audit sentinels.
+
 ## Static Inventory Findings
 
 - 2026-05-19 R27 source-scale spot check: `Assets/_Project/**/*.cs` = `1818`, `Assets/_Project/Scripts/**/*.cs` = `1761`, non-test C# files excluding `Assets/_Project/Tests*` = `1797`, project physical lines = `1204221`, script physical lines = `1184559`, non-test physical lines = `1199376`, broad `interface` token hits = `342`, direct interface declaration lines = `267`, direct public interfaces in `GlobalRegistryContracts.cs` = `62`, first-party asmdefs = `123`, direct `GlobalSignals.CreateQueue(...)` slots = `73`, and typed `SignalBus<T>.EnsureInitialized()` lanes = `133`. Evidence class: `STATIC_SOURCE`; this is not compile or runtime proof and must be rerun under concurrent source churn.

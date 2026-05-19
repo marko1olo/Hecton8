@@ -40,6 +40,54 @@ Minimum:
 
 Do not ask for long surveys on first signup.
 
+## 2026-05-19 Owned Audience Signup Gate V0
+
+Status: draft-only / no signup push before real value exists.
+
+Use an email list only when there is a concrete reason for a player to hear from HECTON-8. Do not build a dead list from vague hype.
+
+### Signup Modes
+
+| Mode | When allowed | Fields | Promise | Stop condition |
+|---|---|---|---|---|
+| `DEMO_ALERT` | Steam page or demo/playtest is close enough to define honestly. | Email, consent, preferred language. | One email when demo/playtest opens. | Stop if demo scope/date is unknown. |
+| `PLAYTEST_WAITLIST` | First route is playable internally and screening score is active. | Email, consent, language, region, hardware opt-in, segment interest. | Possible invite, not guaranteed access. | Stop if build cannot support external testers. |
+| `DEVLOG_DIGEST` | First screenshot pack has passed QA. | Email, consent, preferred language. | Occasional major updates only. | Stop if updates would be filler. |
+| `PRESS_CREATOR_CONTACT` | Presskit exists. | Work email/contact, outlet/channel, consent. | Press/creator updates only. | Stop if presskit/contact policy is not ready. |
+
+### Signup Copy Blocks
+
+#### Demo Alert
+
+```text
+Get one email when the HECTON-8 demo or playtest opens.
+
+HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and black water. No co-op promise, no weekly filler.
+```
+
+#### Playtest Waitlist
+
+```text
+Apply for future HECTON-8 playtest waves.
+
+This is for feedback on a single-player survival build: clarity, pressure systems, salvage, base machinery, controls, and performance context. Access is not guaranteed.
+```
+
+#### Devlog Digest
+
+```text
+Occasional HECTON-8 development updates when there is something real to show: screenshots, Steam page, demo/playtest, or major systems notes.
+```
+
+### List Hygiene
+
+- Do not import creator/press CRM rows into the audience list.
+- Do not add anyone without explicit consent.
+- Segment by signup mode at collection time.
+- Send a confirmation/welcome email only.
+- If no meaningful update exists for 60 days, send nothing.
+- If unsubscribe/complaint rate rises, pause and audit copy/source.
+
 ## Segments
 
 | Segment | Use |

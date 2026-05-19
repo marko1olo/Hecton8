@@ -73,6 +73,7 @@ namespace Hecton8.Physiology
         private int _hallucinationCooldownSlowTicks;
         private uint _rngState = 0xA341316Cu;
         private uint _sourceEntityId;
+        private uint _slowTickFrameCounter;
         private bool _registeredSlowTick;
         private bool _registeredModuleStatus;
         private bool _insidePoweredBase;
@@ -140,6 +141,7 @@ namespace Hecton8.Physiology
 
         public void SlowTick()
         {
+            _slowTickFrameCounter = unchecked(_slowTickFrameCounter + 1u);
             if (!TryResolvePlayerPose(out PlayerPose pose))
             {
                 HandleMissingPlayerPose();
@@ -368,7 +370,7 @@ namespace Hecton8.Physiology
 
         private void PublishSignals(byte cause, byte flags)
         {
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = _slowTickFrameCounter;
             PlayerStressSignal stressSignal = new PlayerStressSignal
             {
                 Stress01 = _state.PlayerStress01,
@@ -398,7 +400,7 @@ namespace Hecton8.Physiology
             {
                 TraumaHash = PanicAttackTraumaHash,
                 Stress01 = _state.PlayerStress01,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = _slowTickFrameCounter,
                 TraumaKind = TraumaKindPanicAttack,
                 Severity = byte.MaxValue,
                 Flags = FlagPanicAttack
@@ -415,7 +417,8 @@ namespace Hecton8.Physiology
                 return;
             }
 
-            if (IsLowMathTier())
+            float hallucinationWeight = ResolveHallucinationVisualWeight();
+            if (hallucinationWeight <= 0.0001f)
                 return;
 
             if (_hallucinationCooldownSlowTicks > 0)
@@ -425,21 +428,29 @@ namespace Hecton8.Physiology
             }
 
             uint next = NextRandom();
-            _hallucinationCooldownSlowTicks = HallucinationCooldownMinSlowTicks +
-                (int)(next % HallucinationCooldownRandomSlowTicks);
+            int minCooldown = (int)math.round(math.lerp(
+                HallucinationCooldownMinSlowTicks * 4f,
+                HallucinationCooldownMinSlowTicks,
+                hallucinationWeight));
+            int randomWindow = math.max(1, (int)math.round(math.lerp(
+                HallucinationCooldownRandomSlowTicks * 4f,
+                HallucinationCooldownRandomSlowTicks,
+                hallucinationWeight)));
+            _hallucinationCooldownSlowTicks = minCooldown + (int)(next % (uint)randomWindow);
             float sideSign = (next & 1u) == 0u ? -1f : 1f;
             float verticalJitter = ((next >> 8) & 255u) * InvByteMax - 0.5f;
             float3 right = NormalizeApproxNoSqrt(math.cross(new float3(0f, 1f, 0f), pose.Forward), new float3(1f, 0f, 0f));
-            float3 offset = pose.Forward * HallucinationForwardMeters +
-                right * (sideSign * HallucinationSideMeters) +
-                new float3(0f, HallucinationUpMeters + verticalJitter, 0f);
+            float distanceScale = math.lerp(0.55f, 1f, hallucinationWeight);
+            float3 offset = pose.Forward * (HallucinationForwardMeters * distanceScale) +
+                right * (sideSign * HallucinationSideMeters * distanceScale) +
+                new float3(0f, HallucinationUpMeters + verticalJitter * hallucinationWeight, 0f);
 
             DebrisSpawnSignal signal = new DebrisSpawnSignal
             {
                 PositionAup = OffsetAupByRuntimeDelta(in pose.Aup, offset),
                 SpeciesHash = GhostlyFishSpeciesHash,
                 SourceEntityId = _sourceEntityId,
-                Intensity01 = _state.PlayerStress01,
+                Intensity01 = _state.PlayerStress01 * hallucinationWeight,
                 DebrisKind = GhostlyFishDebrisKind,
                 Flags = FlagHallucination
             };
@@ -565,10 +576,12 @@ namespace Hecton8.Physiology
             return math.all(math.isfinite(absolute));
         }
 
-        private static bool IsLowMathTier()
+        private static float ResolveHallucinationVisualWeight()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.saturate(math.isfinite(quality) ? quality : 1f);
+            float curve = quality * quality * (3f - 2f * quality);
+            return math.saturate((curve - 0.08f) * math.rcp(0.92f));
         }
 
         private uint NextRandom()

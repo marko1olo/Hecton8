@@ -93,7 +93,7 @@ namespace Hecton8.Core.Contracts
         public const byte Dirty = 1 << 0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct MacroDatabaseConfig
     {
         public int NodeSizeBytes;
@@ -111,6 +111,7 @@ namespace Hecton8.Core.Contracts
         public byte CreateIfMissing;
         public byte DefaultTier;
         public ushort Reserved;
+        private uint _pad0;
 
         public static MacroDatabaseConfig Default => new MacroDatabaseConfig
         {
@@ -131,7 +132,7 @@ namespace Hecton8.Core.Contracts
         };
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 40)]
     public struct MacroDatabasePayloadHandle
     {
         public ulong SectorHash;
@@ -142,18 +143,20 @@ namespace Hecton8.Core.Contracts
         public byte Flags;
         public byte Reserved0;
         public ushort Reserved1;
+        private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 24)]
     public struct MacroDatabaseNativeCacheStats
     {
         public long Bytes;
         public int Entries;
         public int Capacity;
         public int Evictions;
+        private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 80)]
     public struct MacroDatabaseStats
     {
         public long FileBytes;
@@ -173,9 +176,10 @@ namespace Hecton8.Core.Contracts
         public byte Tier;
         public byte CompactionState;
         public byte CompactionFlags;
+        private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct MacroDatabaseCompactionSnapshot
     {
         public long FileBytes;
@@ -191,7 +195,7 @@ namespace Hecton8.Core.Contracts
         public byte Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct SectorHydratedSignal
     {
         public ulong SectorHash;
@@ -201,9 +205,10 @@ namespace Hecton8.Core.Contracts
         public byte SourceTier;
         public byte Flags;
         public ushort Reserved;
+        private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 72)]
     public struct MacroDatabaseTelemetryEntry
     {
         public ulong PlayerSectorHash;
@@ -220,7 +225,10 @@ namespace Hecton8.Core.Contracts
         public byte Tier;
         public byte CompactionState;
         public byte Flags;
+        private byte _pad0;
         public ushort Reserved;
+        private ushort _pad1;
+        private uint _pad2;
     }
 
     public interface IMacroDatabaseSignalSink

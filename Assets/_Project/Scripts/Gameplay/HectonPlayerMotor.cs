@@ -27,7 +27,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Player/Hecton Player Motor")]
     public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces, IPostFixedTickable, ILateFrameTickable, IInventoryEventListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct ScheduledSweepState
         {
             [FieldOffset(0)] public Vector3 StartPosition;
@@ -1404,7 +1404,7 @@ namespace Hecton8.Gameplay
             if (lostKineticEnergy >= KinematicCcdMath.MassiveLostKineticEnergyJoules)
             {
                 Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
-                damage.WorldPoint = new float3(point.x, point.y, point.z);
+                damage.ImpactAup = Hecton8.Core.Contracts.Signals.CombatDamageSignalCodec.FromRuntimePoint(point);
                 damage.Direction = new float3(safeNormal.x, safeNormal.y, safeNormal.z);
                 damage.Magnitude = math.min(250f, lostKineticEnergy * 0.01f);
                 damage.DamageType = (uint)DamageTypeMask.Impact;

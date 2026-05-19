@@ -198,11 +198,13 @@ namespace Hecton8.Modding
                 return FutureCommandSandboxValidator.Request(in envelope);
             }
 
+#pragma warning disable CS0618
             /// <summary>
             /// Legacy command lane is quarantined. Use <see cref="RequestFuture"/> with a 64-byte envelope.
             /// </summary>
             /// <param name="command">Command packet. Mod identity is assigned by the engine.</param>
             /// <returns>Always false while envelope-only UGC is enforced.</returns>
+            [System.Obsolete("Legacy ModCommand lane is quarantined and returns false. Use RequestFuture with a 64-byte FutureCommandEnvelope.", false)]
             public static bool Request(in ModCommand command)
             {
                 return false;
@@ -213,6 +215,7 @@ namespace Hecton8.Modding
             /// </summary>
             /// <param name="command">AUP-backed command packet.</param>
             /// <returns>Always false while envelope-only UGC is enforced.</returns>
+            [System.Obsolete("Legacy AUP command lane is quarantined and returns false. Use RequestFuture with a 64-byte FutureCommandEnvelope.", false)]
             public static bool RequestAup(in ModAupCommand command)
             {
                 return false;
@@ -223,10 +226,12 @@ namespace Hecton8.Modding
             /// </summary>
             /// <param name="command">Render instance packet.</param>
             /// <returns>Always false while envelope-only UGC is enforced.</returns>
+            [System.Obsolete("Legacy render-instance lane is quarantined and returns false. Use RequestFuture with a 64-byte FutureCommandEnvelope.", false)]
             public static bool RequestRenderInstance(in ModRenderInstanceCommand command)
             {
                 return false;
             }
+#pragma warning restore CS0618
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts.Signals;
+using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts
 {
@@ -90,24 +91,112 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// SIMD-aligned dynamic-resolution hot state. Size: 16 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct DrsStateDTO
     {
+        [FieldOffset(0)]
         public float CurrentRenderScale;
+        [FieldOffset(4)]
         public float TargetRenderScale;
+        [FieldOffset(8)]
         public uint UpscalerTypeHash;
+        [FieldOffset(12)]
         public uint _pad0;
     }
 
     /// <summary>
     /// Mock quality-weight payload for blind SHI/Scalability Dictator integration tests. Size: 16 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockQualityWeightSignal : ISignal
     {
+        [FieldOffset(0)]
         public float GlobalQualityWeight;
+        [FieldOffset(4)]
         public float FrameTimeMs;
+        [FieldOffset(8)]
         public uint Flags;
+        [FieldOffset(12)]
         public uint _pad0;
+    }
+
+    /// <summary>
+    /// GPU constant-buffer payload for Uber Noir reconstruction. Three float4 lanes, 48 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    public struct UberNoirReconstructionConstantsDTO
+    {
+        public const int SizeBytes = 48;
+
+        [FieldOffset(0)]
+        public float4 RenderScaleParams;
+        [FieldOffset(16)]
+        public float4 TemporalParams;
+        [FieldOffset(32)]
+        public float4 OverkillParams;
+    }
+
+    /// <summary>
+    /// Blind reconstruction proof input. Allows CI/editor paths to force severe scale drops and jitter.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct MockReconstructionInputSignal : ISignal
+    {
+        [FieldOffset(0)]
+        public float RenderScale01;
+        [FieldOffset(4)]
+        public float GlobalQualityWeight01;
+        [FieldOffset(8)]
+        public float JitterPixels;
+        [FieldOffset(12)]
+        public float FrameTimeMs;
+        [FieldOffset(16)]
+        public float TemporalStress01;
+        [FieldOffset(20)]
+        public uint Flags;
+        [FieldOffset(24)]
+        public uint _pad0;
+        [FieldOffset(28)]
+        public uint _pad1;
+    }
+
+    /// <summary>
+    /// 64-byte reconstruction black-box entry. One cache line per frame sample.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct ReconstructionTelemetryEntry
+    {
+        [FieldOffset(0)]
+        public uint Frame;
+        [FieldOffset(4)]
+        public uint Flags;
+        [FieldOffset(8)]
+        public float CurrentRenderScale01;
+        [FieldOffset(12)]
+        public float TargetRenderScale01;
+        [FieldOffset(16)]
+        public float SharpenIntensity01;
+        [FieldOffset(20)]
+        public float BilateralRadiusPixels;
+        [FieldOffset(24)]
+        public float HistoryWeight01;
+        [FieldOffset(28)]
+        public float GlobalQualityWeight01;
+        [FieldOffset(32)]
+        public float Grain01;
+        [FieldOffset(36)]
+        public float ChromaticAberration01;
+        [FieldOffset(40)]
+        public float Vignette01;
+        [FieldOffset(44)]
+        public uint UpscalerModeHash;
+        [FieldOffset(48)]
+        public float GpuComputeTimeMs;
+        [FieldOffset(52)]
+        public float JitterPixels;
+        [FieldOffset(56)]
+        public uint _pad0;
+        [FieldOffset(60)]
+        public uint _pad1;
     }
 }

@@ -5,6 +5,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -217,6 +218,8 @@ namespace Hecton8.Modding
                 return;
 
             float3 playerRuntimePosition = ResolvePlayerRuntimePosition();
+            double3 playerAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(
+                new Vector3(playerRuntimePosition.x, playerRuntimePosition.y, playerRuntimePosition.z));
             bool lowTier = GlobalRegistry.ScalabilityTierProfileByte == 0;
             JobHandle handle = default;
             if (damageCount > 0)
@@ -225,7 +228,7 @@ namespace Hecton8.Modding
                 {
                     Signals = SignalBus<CombatDamageSignal>.GetFrameSnapshotArray(),
                     Output = _projectedEvents.AsParallelWriter(),
-                    PlayerRuntimePosition = playerRuntimePosition,
+                    PlayerAbsolutePosition = playerAbsolutePosition,
                     Limit = damageCount,
                     LowTier = lowTier ? (byte)1 : (byte)0
                 }.Schedule();
@@ -569,12 +572,12 @@ namespace Hecton8.Modding
             [System.Runtime.InteropServices.FieldOffset(20)] public uint ActiveSubscriptions;
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ProjectCombatDamageSignalsJob : IJob
         {
-            [ReadOnly] public NativeArray<CombatDamageSignal>.ReadOnly Signals;
-            public NativeQueue<ModEventDto>.ParallelWriter Output;
-            public float3 PlayerRuntimePosition;
+            [ReadOnly, NoAlias] public NativeArray<CombatDamageSignal>.ReadOnly Signals;
+            [NoAlias] public NativeQueue<ModEventDto>.ParallelWriter Output;
+            public double3 PlayerAbsolutePosition;
             public int Limit;
             public byte LowTier;
 
@@ -585,7 +588,7 @@ namespace Hecton8.Modding
                 for (int i = 0; i < count; i++)
                 {
                     CombatDamageSignal signal = Signals[i];
-                    float3 relativePosition = signal.WorldPoint - PlayerRuntimePosition;
+                    float3 relativePosition = (float3)(signal.ImpactAup - PlayerAbsolutePosition);
                     if (!math.all(math.isfinite(relativePosition)))
                         relativePosition = float3.zero;
 
@@ -613,11 +616,11 @@ namespace Hecton8.Modding
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ProjectWeatherChangedSignalsJob : IJob
         {
-            [ReadOnly] public NativeArray<WeatherChangedSignal>.ReadOnly Signals;
-            public NativeQueue<ModEventDto>.ParallelWriter Output;
+            [ReadOnly, NoAlias] public NativeArray<WeatherChangedSignal>.ReadOnly Signals;
+            [NoAlias] public NativeQueue<ModEventDto>.ParallelWriter Output;
             public int Limit;
             public byte LowTier;
 

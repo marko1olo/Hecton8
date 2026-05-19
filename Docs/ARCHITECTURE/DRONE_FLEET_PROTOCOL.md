@@ -3,6 +3,17 @@ Date: 2026-05-07
 
 Status: PENDING VERIFICATION
 
+## 2026-05-19 SHINOBU_128 Runtime Boundary
+
+- Operational cap is 500 drones; native storage is 512 slots to keep 64-wide job batches and GPU buffers aligned.
+- `DroneStateDTO` is explicit 64 B ABI (`double3 AUP_Position`, `float3 Velocity`, task hashes, battery, flags) with a layout sentinel in source.
+- State/matrix native buffers are allocated with `NativeArrayOptions.UninitializedMemory` and cold-cleared through slot reset before runtime use.
+- Task-map rebuild cadence is continuous: `framesBetweenUpdates = (int)math.lerp(5, 60, 1 - GlobalQualityWeight)`.
+- Steering cadence, macro route solve budget, docking probe count, phantom draw count, and render distance now consume `HomeostasisBrain.GlobalQualityWeight` instead of hard quality-tier switches.
+- Required black-box dump target is `Docs/AgentLogs/Dump_FLEET_COMMANDER.bin`; legacy `Dump_DRONE_FLEET.bin` and `.h8dump` are still emitted for older readers.
+- CSV tuner default is `drone_chassis_specs.csv`; `drone_specs.csv` remains a fallback path only.
+- Real drone rendering still submits through `Graphics.RenderMeshIndirect` because the current material/shader contract for procedural vertex generation is unproven. Treat exact `DrawProceduralIndirect` compliance as pending shader proof, not as completed runtime fact.
+
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
 
@@ -24,7 +35,7 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 - Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 - Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current R28 static/tool boundary: AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
+- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current R31 static/tool boundary: R31 is the latest DOC_GLOBAL root/architecture current-boundary propagation layer; R30 remains the prior internal-currentness layer; AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 ## Historical 2026-05-04 Boundary
@@ -65,15 +76,15 @@ Drone sorties are represented by native slots. No per-drone GameObject or `MonoB
 
 Scheduling model:
 1. `RepairDroneHub.SlowTick()` queues launch/abort/release requests into managed fixed-capacity arrays.
-2. `DroneFleetManager.HeadlessFleetDriver.Tick()` schedules `DroneCognitionJob`.
+2. `DroneFleetManager.HeadlessFleetDriver.Tick()` schedules the chain: `ClearDroneMacroWaypointsJob -> DroneTaskAssignmentJob -> DroneCognitionJob -> DroneMetabolismJob -> ExtractDroneMatricesJob -> BuildDroneProceduralArgsJob`.
 3. `LateFrameTick()` completes the job in the dispatcher swap window, swaps front/back buffers, applies managed-side repair/storage/organic/voxel commits, then applies queued hub requests.
-4. SRP render callback uploads `NativeArray<float4x4>` and calls `Graphics.RenderMeshIndirect`.
+4. SRP render callback uploads `NativeArray<float4x4>` and calls `Graphics.DrawProceduralIndirect` for real and phantom drones.
 
 The job never reads and writes the same drone state buffer in one pass.
 
 ## Task Arbitration
 
-`DroneCognitionJob` evaluates tasks stored in `NativeParallelMultiHashMap<int, HeadlessDroneTask>`.
+`DroneTaskAssignmentJob` evaluates the vault-backed dense `NativeArray<DroneTaskDTO>` generated from the hub task map. `DroneCognitionJob` keeps a compatibility fallback over `NativeParallelMultiHashMap<int, HeadlessDroneTask>` for launch-era targets, but macro A* waypoints are cleared and ignored.
 
 Score:
 
@@ -91,9 +102,9 @@ bool claimed = priorOwner == 0 || priorOwner == droneId;
 Before scheduling, `DroneFleetManager.ClearHeadlessTaskClaims()` clears the claim-owner array and seeds it with active drones that already hold a valid `TargetTaskIndex`. New idle drones can only claim still-unowned task indices.
 
 Emergency rule:
-- when OS level is `Evacuate`, parasite tasks are skipped by the job.
+- when OS level is `Evacuate`, parasite tasks are skipped by assignment.
 - speed multiplier = `3x`.
-- battery drain multiplier = `5x`.
+- battery drain multiplier = `5x` in `DroneMetabolismJob`.
 
 Legacy hub assignment still exists as a compatibility front door for launch decisions, but active headless claims are included when rebuilding claim counts.
 
@@ -170,6 +181,18 @@ Effect:
 - mark the native slot permanently destroyed
 - increment fleet destroyed count
 
+## 2026-05-19 SHINOBU_128 Procedural Boundary
+
+Current source boundary:
+- `DroneStateDTO` is explicit 64 B with XML offsets 0/24/36/40/44/48/52/56.
+- `DroneTargetDTO` is explicit 64 B.
+- `DroneProceduralIndirectArgsDTO` is explicit 16 B.
+- New local vault IDs are 70265 `DroneStateDTO[512]`, 70266 `DroneTargetDTO[512]`, 70267 `DroneTaskDTO[64]`, and 70268 `DroneProceduralIndirectArgsDTO[1]`.
+- `HeadlessDroneState` mirrors `PositionAup`, `HomeAup`, `TargetAup`, and `SupplyAup`.
+- `Hecton_DroneFleetProcedural.shader` expands 36 procedural vertices from `SV_VertexID`; inactive zero matrices are clipped.
+
+Compile/runtime proof is still blocked by the shared CPU gate recorded in `Docs/Tasks/Status_SHINOBU_128.md`.
+
 ## Verification Boundaries
 
 This document proves owner mapping and intended data flow only.
@@ -178,4 +201,4 @@ Not proven without fresh Unity runtime logs:
 - project compile-green state
 - MCP console has zero current errors
 - GCMonitor 0 B/frame
-- render shader support for `_DroneMatrices` or `_InstanceMatrices`
+- Frame Debugger proof for the procedural drone draw path

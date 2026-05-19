@@ -42,7 +42,6 @@
 
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Hecton8.Audio;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -65,8 +64,15 @@ namespace Hecton8.Audio
     /// </summary>
     public static class AcousticZoneEvents
     {
+        private const uint FloodMuffleLaneHash = 0x464C4D46u; // FLMF
+        private const int FloodMuffleSignalCapacity = 32;
+        private static bool _floodMuffleInitialized;
+
         /// <summary>Number of acoustic-zone payloads visible in the current typed-lane snapshot.</summary>
         public static int PendingCount => SignalBus<AcousticZoneChangedEvent>.SnapshotCount;
+
+        /// <summary>Number of flood-muffle payloads visible in the current typed-lane snapshot.</summary>
+        public static int FloodMufflePendingCount => SignalBus<HabitatFloodAcousticMuffleSignal>.SnapshotCount;
 
         internal static int DroppedZoneChangeCount => SignalBus<AcousticZoneChangedEvent>.DroppedLastFlush;
         internal static int DroppedListenerRegistrationCount => 0;
@@ -75,6 +81,7 @@ namespace Hecton8.Audio
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
         {
+            _floodMuffleInitialized = false;
             EnsureInitialized();
         }
 
@@ -93,6 +100,13 @@ namespace Hecton8.Audio
             SignalBus<AcousticZoneChangedEvent>.Push(in payload);
         }
 
+        /// <summary>Queues one habitat-flood acoustic muffle scalar payload.</summary>
+        public static void RaiseFloodMuffle(in HabitatFloodAcousticMuffleSignal payload)
+        {
+            EnsureFloodMuffleInitialized();
+            SignalBus<HabitatFloodAcousticMuffleSignal>.Push(in payload);
+        }
+
         /// <summary>Compatibility no-op; SignalBus snapshots are flushed by <see cref="GlobalSignals"/>.</summary>
         public static void FlushPending()
         {
@@ -102,6 +116,21 @@ namespace Hecton8.Audio
         {
             GlobalSignals.InitializeAllQueues();
             SignalBus<AcousticZoneChangedEvent>.EnsureInitialized();
+            EnsureFloodMuffleInitialized();
+        }
+
+        public static void EnsureFloodMuffleInitialized()
+        {
+            if (_floodMuffleInitialized)
+                return;
+
+            SignalBus<HabitatFloodAcousticMuffleSignal>.Configure(
+                FloodMuffleSignalCapacity,
+                maxFrameSignals: FloodMuffleSignalCapacity,
+                lowTierFrameSignals: 8,
+                laneHash: FloodMuffleLaneHash);
+            SignalBus<HabitatFloodAcousticMuffleSignal>.EnsureInitialized();
+            _floodMuffleInitialized = true;
         }
     }
 

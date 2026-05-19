@@ -83,28 +83,36 @@ namespace Hecton8.Optimization
         public int AgeFrames;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct AssetTrackerDTO
     {
         [FieldOffset(0)] public uint AssetHash;
         [FieldOffset(4)] public int ReferenceCount;
         [FieldOffset(8)] public ulong HandlePointer;
+        [FieldOffset(16)] public double3 AssetAup;
+        [FieldOffset(40)] public float MaxResidencyRadiusSq;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] private ulong _pad0;
+        [FieldOffset(56)] private ulong _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct AssetHandleMapEntryDTO
     {
-        [FieldOffset(0)] public ulong HandlePointer;
-        [FieldOffset(8)] public uint AssetHash;
-        [FieldOffset(12)] public uint BundlePrefixHash;
-        [FieldOffset(16)] public int Slot;
+        [FieldOffset(0)] public ulong AssetHash;
+        [FieldOffset(8)] public ulong BundlePrefixHash;
+        [FieldOffset(16)] public int PoolSlotIndex;
         [FieldOffset(20)] public int RefCount;
-        [FieldOffset(24)] public uint Flags;
-        [FieldOffset(28)] public uint Generation;
-        [FieldOffset(32)] public ulong _pad0;
-        [FieldOffset(40)] public ulong _pad1;
-        [FieldOffset(48)] public ulong _pad2;
-        [FieldOffset(56)] public ulong _pad3;
+        [FieldOffset(24)] public float TimeToLive;
+        [FieldOffset(28)] public uint Flags;
+        [FieldOffset(32)] public uint Generation;
+        [FieldOffset(36)] private uint _pad0;
+        [FieldOffset(40)] private uint _pad1;
+        [FieldOffset(44)] private uint _pad2;
+        [FieldOffset(48)] private uint _pad3;
+        [FieldOffset(52)] private uint _pad4;
+        [FieldOffset(56)] private uint _pad5;
+        [FieldOffset(60)] private uint _pad6;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -113,15 +121,6 @@ namespace Hecton8.Optimization
         [FieldOffset(0)] public uint AssetHash;
         [FieldOffset(4)] public float BaseTtlSeconds;
         [FieldOffset(8)] public float BundleTtlMultiplier;
-        [FieldOffset(12)] public uint Flags;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
-    internal partial struct MockChunkLoadSignal
-    {
-        [FieldOffset(0)] public uint AssetHash;
-        [FieldOffset(4)] public int RequestCount;
-        [FieldOffset(8)] public uint FrameIndex;
         [FieldOffset(12)] public uint Flags;
     }
 
@@ -183,77 +182,134 @@ namespace Hecton8.Optimization
             AssetTrackerDTO* ptr = (AssetTrackerDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(trackers);
             return Interlocked.Decrement(ref ptr[slot].ReferenceCount);
         }
+
+        public static bool IsRefCountZero(NativeArray<AssetTrackerDTO> trackers, int slot)
+        {
+            if (!trackers.IsCreated || (uint)slot >= (uint)trackers.Length)
+                return false;
+
+            AssetTrackerDTO* ptr = (AssetTrackerDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(trackers);
+            return Interlocked.CompareExchange(ref ptr[slot].ReferenceCount, 0, 0) == 0;
+        }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct AssetTtlEvaluationJob : IJob
+    internal struct AssetTtlEvaluationJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<AssetTrackerDTO> Trackers;
         [NoAlias] public NativeArray<float> TimeToLiveSeconds;
         [NoAlias] public NativeArray<byte> Flags;
+        [NoAlias] public NativeArray<AssetHandleMapEntryDTO> HandleMap;
+        public double3 PlayerAup;
+        public float MaxResidencyRadiusSq;
         public float DeltaSeconds;
+        public byte ForceVramPanic;
 
-        public void Execute()
+        public void Execute(int index)
         {
             float delta = DeltaSeconds > 0f ? DeltaSeconds : 1f;
-            int count = Trackers.IsCreated ? Trackers.Length : 0;
-            for (int i = 0; i < count; i++)
+            if (!Trackers.IsCreated ||
+                !TimeToLiveSeconds.IsCreated ||
+                !Flags.IsCreated ||
+                (uint)index >= (uint)Trackers.Length ||
+                (uint)index >= (uint)TimeToLiveSeconds.Length ||
+                (uint)index >= (uint)Flags.Length)
             {
-                byte flags = Flags[i];
-                if ((flags & AssetHandleFlags.Active) == 0 ||
-                    (flags & AssetHandleFlags.PendingTtl) == 0 ||
-                    (flags & AssetHandleFlags.Pinned) != 0)
+                return;
+            }
+
+            byte flags = Flags[index];
+            if ((flags & AssetHandleFlags.Active) == 0 ||
+                (flags & AssetHandleFlags.PendingTtl) == 0 ||
+                (flags & AssetHandleFlags.Pinned) != 0)
+            {
+                return;
+            }
+
+            AssetTrackerDTO tracker = Trackers[index];
+            if (tracker.ReferenceCount > 0)
+            {
+                Flags[index] = (byte)(flags & ~(AssetHandleFlags.PendingTtl | AssetHandleFlags.Releasable));
+                TimeToLiveSeconds[index] = 0f;
+                MirrorHandleMapEntry(tracker.AssetHash, tracker.ReferenceCount, 0f);
+                return;
+            }
+
+            double3 aupDelta = tracker.AssetAup - PlayerAup;
+            float distanceSq = 0f;
+            if (math.all(math.isfinite(aupDelta)))
+            {
+                float3 localDelta = new float3((float)aupDelta.x, (float)aupDelta.y, (float)aupDelta.z);
+                distanceSq = math.lengthsq(localDelta);
+            }
+
+            float safeRadiusSq = MaxResidencyRadiusSq > 0f && math.isfinite(MaxResidencyRadiusSq)
+                ? MaxResidencyRadiusSq
+                : tracker.MaxResidencyRadiusSq;
+            float distancePenalty = distanceSq > safeRadiusSq ? 5f : 1f;
+            float pressurePenalty = ForceVramPanic != 0 ? 3f : 1f;
+            float ttl = TimeToLiveSeconds[index] - (delta * distancePenalty * pressurePenalty);
+            ttl = math.isfinite(ttl) ? ttl : 0f;
+            TimeToLiveSeconds[index] = ttl;
+            MirrorHandleMapEntry(tracker.AssetHash, tracker.ReferenceCount, ttl);
+
+            if (ttl <= 0f)
+                Flags[index] = (byte)(flags | AssetHandleFlags.Releasable);
+        }
+
+        private void MirrorHandleMapEntry(uint assetHash, int refCount, float ttl)
+        {
+            if (assetHash == 0u || !HandleMap.IsCreated || HandleMap.Length == 0)
+                return;
+
+            int length = HandleMap.Length;
+            int start = (int)(assetHash % unchecked((uint)length));
+            for (int probe = 0; probe < length; probe++)
+            {
+                int candidateIndex = start + probe;
+                if (candidateIndex >= length)
+                    candidateIndex -= length;
+
+                AssetHandleMapEntryDTO entry = HandleMap[candidateIndex];
+                uint flags = entry.Flags;
+                if ((flags & AssetHandleMapFlags.Occupied) != 0u)
                 {
+                    if (unchecked((uint)entry.AssetHash) == assetHash)
+                    {
+                        entry.RefCount = refCount;
+                        entry.TimeToLive = ttl;
+                        HandleMap[candidateIndex] = entry;
+                        return;
+                    }
+
                     continue;
                 }
 
-                AssetTrackerDTO tracker = Trackers[i];
-                if (tracker.ReferenceCount > 0)
-                {
-                    flags = (byte)(flags & ~(AssetHandleFlags.PendingTtl | AssetHandleFlags.Releasable));
-                    Flags[i] = flags;
-                    continue;
-                }
-
-                float ttl = TimeToLiveSeconds[i] - delta;
-                TimeToLiveSeconds[i] = ttl;
-                if (ttl <= 0f)
-                    Flags[i] = (byte)(flags | AssetHandleFlags.Releasable);
+                if ((flags & AssetHandleMapFlags.Tombstone) == 0u)
+                    return;
             }
         }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal unsafe struct MockChunkLoadSpamJob : IJobParallelFor
+    internal struct HeapSanitizerMemClearJob : IJobParallelFor
     {
-        [NoAlias] [NativeDisableUnsafePtrRestriction] public AssetTrackerDTO* Trackers;
-        public int TrackerCount;
-        public uint BaseAssetHash;
-        public uint FrameIndex;
-        [NoAlias] public NativeArray<MockChunkLoadSignal> OutputSignals;
+        [NoAlias] public NativeArray<AssetTrackerDTO> Trackers;
+        [NoAlias] public NativeArray<float> TimeToLiveSeconds;
+        [NoAlias] public NativeArray<byte> Flags;
+        [NoAlias] public NativeArray<AssetHandleMapEntryDTO> HandleMap;
 
         public void Execute(int index)
         {
-            if (!OutputSignals.IsCreated || (uint)index >= (uint)OutputSignals.Length)
-                return;
-
-            int trackerCount = TrackerCount > 0 ? TrackerCount : 1;
-            int slot = index % trackerCount;
-            uint hash = BaseAssetHash + unchecked((uint)slot);
-            int count = 1;
-            if (Trackers != null && slot >= 0 && slot < TrackerCount)
-            {
-                Trackers[slot].AssetHash = hash;
-                count = Interlocked.Increment(ref Trackers[slot].ReferenceCount);
-            }
-
-            OutputSignals[index] = new MockChunkLoadSignal
-            {
-                AssetHash = hash,
-                RequestCount = count,
-                FrameIndex = FrameIndex,
-                Flags = 1u
-            };
+            if (Trackers.IsCreated && (uint)index < (uint)Trackers.Length)
+                Trackers[index] = default;
+            if (TimeToLiveSeconds.IsCreated && (uint)index < (uint)TimeToLiveSeconds.Length)
+                TimeToLiveSeconds[index] = 0f;
+            if (Flags.IsCreated && (uint)index < (uint)Flags.Length)
+                Flags[index] = 0;
+            if (HandleMap.IsCreated && (uint)index < (uint)HandleMap.Length)
+                HandleMap[index] = default;
         }
     }
+
 }

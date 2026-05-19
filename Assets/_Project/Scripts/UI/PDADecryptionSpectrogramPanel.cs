@@ -23,7 +23,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Decryption Spectrogram Panel")]
-    public sealed class PDADecryptionSpectrogramPanel : MonoBehaviour, IUpdatable, ILateFrameTickable, IDisposable
+    public sealed class PDADecryptionSpectrogramPanel : MonoBehaviour, IUpdatable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         internal const string WaveShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader";
         private const int HighPointCount = 128;
@@ -81,6 +81,8 @@ namespace Hecton8.UI
         private GraphicsBuffer _argsBuffer;
         private Material _runtimeMaterial;
         private Material _runtimeSourceMaterial;
+        private IDataVault _cachedDataVault;
+        private IInputService _cachedInputService;
         private Mesh _resolvedMesh;
         private Mesh _runtimeQuadMesh;
         private JobHandle _waveJobHandle;
@@ -115,6 +117,9 @@ namespace Hecton8.UI
         private bool _waveJobScheduled;
         private bool _disposed;
         private bool _materialBufferBound;
+        private bool _registeredHotSwapListener;
+        private bool _registeredScalabilityListener;
+        private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
 
         private void Awake()
         {
@@ -130,6 +135,9 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             _disposed = false;
+            RefreshCachedRegistryServices();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             EnsureNativeResources();
             EnsureGraphicsResources();
             ResetRuntimeState(_artifactHash, _blueprintHash);
@@ -139,6 +147,8 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             TryUnregisterTickHandlers();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             CompleteWaveJobForTeardown();
             ClearPresentationFeedback();
             DisposeNativeResources();
@@ -156,6 +166,8 @@ namespace Hecton8.UI
 
             _disposed = true;
             TryUnregisterTickHandlers();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             CompleteWaveJobForTeardown();
             DisposeNativeResources();
             DisposeGraphicsResources();
@@ -296,14 +308,14 @@ namespace Hecton8.UI
                 out telemetryRing);
         }
 
-        private static bool TryResolveVaultBuffer<T>(
+        private bool TryResolveVaultBuffer<T>(
             ref VaultBufferHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
             out NativeArray<T> buffer) where T : struct
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _cachedDataVault;
             if (vault == null || requiredLength <= 0)
             {
                 buffer = default;
@@ -460,7 +472,7 @@ namespace Hecton8.UI
 
         private void SampleInputState(float deltaTime)
         {
-            IInputService input = GlobalRegistry.Input;
+            IInputService input = _cachedInputService;
             PlayerInputState inputState = input != null ? input.GetState() : default;
             float amplitude01 = Sanitize01((inputState.MoveDelta.y + 1f) * 0.5f);
             float frequency01 = Sanitize01((inputState.LookDelta.x + 1f) * 0.5f);
@@ -804,12 +816,82 @@ namespace Hecton8.UI
 
         private int ResolvePointCount()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier tier = _cachedScalabilityTier;
             bool lowTier = tier == HectonQualityTier.Unknown ||
                            tier == HectonQualityTier.Low ||
                            tier == HectonQualityTier.Mx350 ||
                            (SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= lowTierVideoMemoryMb);
             return lowTier ? LowPointCount : HighPointCount;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    _cachedDataVault = currentService as IDataVault;
+                    _nativeReady = false;
+                    break;
+                case GlobalRegistryServiceSlot.Input:
+                    _cachedInputService = currentService as IInputService;
+                    break;
+            }
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            HectonQualityTier tier = payload.CurrentQualityTier;
+            if (tier == _cachedScalabilityTier)
+                return;
+
+            _cachedScalabilityTier = tier;
+            _nativeReady = false;
+            _graphicsReady = false;
+        }
+
+        private void RefreshCachedRegistryServices()
+        {
+            _cachedDataVault = GlobalRegistry.DataVault;
+            _cachedInputService = GlobalRegistry.Input;
+            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_registeredScalabilityListener || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
         }
 
         private void TryRegisterTickHandlers()

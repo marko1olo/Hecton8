@@ -1,4 +1,4 @@
-﻿# PROJECT_ATLAS
+# PROJECT_ATLAS
 
 Date: 2026-05-19
 Status: PENDING VERIFICATION
@@ -25,7 +25,7 @@ Scope: first-party `Assets/_Project/**/*.asmdef` only. Third-party and package a
 
 This atlas maps the current shattered assembly surface. It is not runtime proof.
 
-Current DOC_GLOBAL root/architecture boundary starts at `Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`; R28 remains the prior interior-boundary correction and R27 remains the latest source-counter/index snapshot.
+Current DOC_GLOBAL root/architecture boundary starts at `Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`; R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 remains the latest source-counter/index snapshot.
 
 [RULE] Contract assemblies are the intended cross-domain seam.
 [RULE] Domain assemblies must depend on contracts, DataVault handles, and typed signal lanes before depending on `Hecton8.Core`.
@@ -179,7 +179,7 @@ Interpretation:
 - Static asmdef scan: last captured; rerun before using exact counts.
 - H-Phi formula: documented.
 - Unity import: not verified.
-- Compile: not run in the R27/R28 documentation passes; no current compile proof is claimed from this atlas.
+- Compile: not run in the R27/R28/R29/R30/R31 documentation passes; no current compile proof is claimed from this atlas.
 - Runtime/profile/GC/player-build proof: absent.
 
 <!-- HECTON_PHI_DOMAIN_INDEX_START -->
@@ -189,7 +189,7 @@ Generated: `2026-05-17T02:46:03`
 Status: `PHI CALCULATED`
 Evidence class: `STATIC_SOURCE/STATIC_DOC/PY_TOOL`
 
-This generated H-Phi block is a historical 2026-05-17 static metric slice. Runtime quality remains `PENDING VERIFICATION`, and exact source counters inside this block are not current R27/R28 source-count truth unless the H-Phi generator is rerun.
+This generated H-Phi block is a historical 2026-05-17 static metric slice. Runtime quality remains `PENDING VERIFICATION`, and exact source counters inside this block are not current R27/R28/R29/R30/R31 source-count truth unless the H-Phi generator is rerun.
 
 ### Final H-Phi Scores
 

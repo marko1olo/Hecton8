@@ -18,6 +18,7 @@ namespace Hecton8.Core
         internal const int WaterExtinctionParamsSlot = 4;
         internal const int UberNoirRuntimeSlot = 5;
         internal const int UberNoirFeatureMaskSlot = 6;
+        internal const int PhysiologyDecompressionSlot = 7;
         // Shared with GlobalShaderDispatcher: slots 64-363 are the 300-frame CBuffer blackbox.
         internal const int SlotCount = 512;
 
@@ -32,6 +33,9 @@ namespace Hecton8.Core
         private static readonly int _ExtinctionLutWeatherParamsId = Shader.PropertyToID("_ExtinctionLUTWeatherParams");
         private static readonly int _HectonUberNoirRuntimeParamsId = Shader.PropertyToID("_HectonUberNoirRuntimeParams");
         private static readonly int _HectonActiveShaderFeatureMaskId = Shader.PropertyToID("_HectonActiveShaderFeatureMask");
+        private static readonly int _HectonDcsPhysiologyParamsId = Shader.PropertyToID("_HectonDcsPhysiologyParams");
+        private static readonly int _HectonSupersaturationScalarId = Shader.PropertyToID("_HectonSupersaturationScalar");
+        private static readonly int _HectonNarcosisScalarId = Shader.PropertyToID("_HectonNarcosisScalar");
 
         private static IDataVault _cachedVault;
         private static uint _cachedVaultGeneration;
@@ -43,6 +47,7 @@ namespace Hecton8.Core
         private static float4 _fallbackWaterExtinctionParams;
         private static float4 _fallbackUberNoirRuntime;
         private static float4 _fallbackUberNoirFeatureMask;
+        private static float4 _fallbackPhysiologyDecompression;
         private static bool _visualSyncDispatcherActive;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -58,6 +63,7 @@ namespace Hecton8.Core
             _fallbackWaterExtinctionParams = new float4(1500f, 2.5f, 0f, 0f);
             _fallbackUberNoirRuntime = new float4(0f, 1f, 0f, 0f);
             _fallbackUberNoirFeatureMask = default;
+            _fallbackPhysiologyDecompression = default;
             _visualSyncDispatcherActive = false;
         }
 
@@ -208,6 +214,30 @@ namespace Hecton8.Core
             {
                 Shader.SetGlobalVector(_HectonUberNoirRuntimeParamsId, ToVector4(storedRuntime));
                 Shader.SetGlobalFloat(_HectonActiveShaderFeatureMaskId, storedMask.x);
+            }
+        }
+
+        /// <summary>
+        /// Publishes scalar physiology discomfort for visor/audio shader fakes; x=supersaturation, y=narcosis, z=ambient atm, w=quality.
+        /// </summary>
+        public static void PublishPhysiologyDecompression(Vector4 physiologyVector)
+        {
+            float4 value = ToFiniteFloat4(physiologyVector);
+            value.x = math.saturate(value.x);
+            value.y = math.saturate(value.y);
+            value.z = math.max(0f, value.z);
+            value.w = math.saturate(value.w);
+            float4 stored = WriteReadSlot(
+                PhysiologyDecompressionSlot,
+                value,
+                ref _fallbackPhysiologyDecompression);
+
+            if (!_visualSyncDispatcherActive)
+            {
+                Vector4 vector = ToVector4(stored);
+                Shader.SetGlobalVector(_HectonDcsPhysiologyParamsId, vector);
+                Shader.SetGlobalFloat(_HectonSupersaturationScalarId, vector.x);
+                Shader.SetGlobalFloat(_HectonNarcosisScalarId, vector.y);
             }
         }
 

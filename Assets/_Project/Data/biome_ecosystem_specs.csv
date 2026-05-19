@@ -1,0 +1,6 @@
+biome,prey_capacity,predator_capacity,migration_resistance,temperature_optimum,toxin_penalty
+abyssal_plain,56000,9000,0.22,5.0,0.35
+thermal_vent,32000,14000,0.38,18.0,0.62
+kelp_trench,72000,7000,0.18,9.0,0.18
+reactor_ruin,12000,3000,0.64,7.0,0.95
+brine_lake,26000,5000,0.52,3.0,0.78

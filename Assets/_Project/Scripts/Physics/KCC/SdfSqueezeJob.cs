@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -13,7 +14,7 @@ namespace Hecton8.Physics.KCC
         Tetra4 = 1
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SdfSqueezeResult
     {
         public const uint FlagActive = 1u << 0;
@@ -34,17 +35,21 @@ namespace Hecton8.Physics.KCC
         [FieldOffset(56)] public uint Flags;
         [FieldOffset(60)] public uint Reserved;
 
-        public bool IsActive => (Flags & FlagActive) != 0u;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsResultActive(in SdfSqueezeResult result)
+        {
+            return (result.Flags & FlagActive) != 0u;
+        }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SdfSqueezeJob : IJob
     {
-        public NativeArray<float3> Positions;
-        public NativeArray<float3> Velocities;
-        [ReadOnly] public NativeArray<float3> IntendedMovement;
-        [ReadOnly] public NativeArray<byte> VoxelSdfTexture3D;
-        public NativeArray<SdfSqueezeResult> Results;
+        [NoAlias] public NativeArray<float3> Positions;
+        [NoAlias] public NativeArray<float3> Velocities;
+        [ReadOnly, NoAlias] public NativeArray<float3> IntendedMovement;
+        [ReadOnly, NoAlias] public NativeArray<byte> VoxelSdfTexture3D;
+        [NoAlias] public NativeArray<SdfSqueezeResult> Results;
 
         public int3 VoxelSdfDimensions;
         public float3 VoxelSdfOrigin;

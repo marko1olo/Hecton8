@@ -81,6 +81,65 @@ Priority for first 25 external testers:
 - 5 low-spec or mid-spec players;
 - 5 general cold survival players.
 
+## 2026-05-19 Playtest Screening Score V0
+
+Status: form-ready / recruitment blocked until first route is playable.
+
+Use this to select testers without filling the wave with hype traffic or co-op requests.
+
+| Signal | Points | Notes |
+|---|---:|---|
+| Played Subnautica/Subnautica-like survival and can explain what worked/failed. | +3 | Needed for clone-risk feedback. |
+| Plays survival/base/system games and can describe friction clearly. | +3 | Needed for loop and UI feedback. |
+| Likes atmosphere/horror but does not require jumpscares. | +2 | Needed for dread/readability feedback. |
+| Provides full PC specs, including GPU/RAM/storage. | +2 | Required for low/mid-spec segmentation. |
+| Will submit the 6-question feedback form after one session. | +3 | Non-negotiable for first external wave. |
+| Can record or screenshot if asked. | +1 | Useful, not required. |
+| Comfortable with unfinished build and missing content. | +2 | Reduces support friction. |
+| Expects co-op/multiplayer as a core reason to test. | -5 | Reject for first wave. |
+| Wants only free early access/content and refuses feedback. | -5 | Reject for first wave. |
+| Cannot share hardware specs. | -3 | Hold unless non-performance segment is needed. |
+| Mainly wants streamable public content before permission. | -3 | Hold until public demo. |
+
+First external wave:
+
+- 9+ points: priority candidate if segment quota needs them.
+- 6-8 points: reserve.
+- below 6: hold.
+- any hard reject: do not invite to first wave.
+
+### First Wave Quota Sheet
+
+| Slot | Segment | Count | Required minimum |
+|---|---|---:|---|
+| S1 | Subnautica-adjacent clone-risk readers | 5 | Must answer "what makes this not a clone?" after play. |
+| S2 | Survival/base/system players | 5 | Must comment on pressure, salvage, base, inventory, route cost. |
+| S3 | Horror/atmosphere players | 5 | Must comment on dread/readability without asking for jump scares. |
+| S4 | Low/mid-spec players | 5 | Must provide hardware/settings and readability feedback. |
+| S5 | Cold survival players | 5 | Must be unfamiliar enough to test first-five-minute clarity. |
+
+### Feedback Tags
+
+Use these tags in feedback logs:
+
+```text
+CLARITY_PLAYER_VERB
+CLONE_RISK
+DARKNESS_READABILITY
+PRESSURE_SYSTEM_READ
+BASE_SYSTEM_READ
+SALVAGE_TEDIUM
+INVENTORY_FRICTION
+MOVEMENT_WEIGHT
+THREAT_READ
+SEED_SHIP_CURIOSITY
+LOW_SPEC_PERF
+CONTROL_ACCESSIBILITY
+COOP_EXPECTATION
+```
+
+If `COOP_EXPECTATION`, `CLONE_RISK`, or `DARKNESS_READABILITY` appears repeatedly, stop expanding the wave and revise page/assets/onboarding.
+
 ## Tester Wave Plan
 
 | Wave | Size | Build risk | Goal |

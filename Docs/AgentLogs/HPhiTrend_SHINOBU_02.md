@@ -1,8 +1,8 @@
 ﻿# SHINOBU_02 H-Phi Trend
 
 Evidence Class: STATIC_SOURCE_HISTORY
-Generated UTC: 2026-05-18T23:55:05.7147066+00:00
-Artifacts scanned: 123
+Generated UTC: 2026-05-19T00:53:15.0677997+00:00
+Artifacts scanned: 131
 Metric series: 393
 Include Signal Audit: True
 Include Reports: False
@@ -50,6 +50,7 @@ Include Reports: False
 | Counts.NativeArrayRefs | 78 | 7025 | 9206 | 2181 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current2.json` |
 | Counts.DataVaultRefs | 73 | 150 | 2230 | 2080 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current_after_bridge_prune.json` |
 | Counts.PrimaryNativeOwnershipRisk | 59 | 7396 | 5573 | -1823 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current_after_bridge_prune.json` |
+| scannedFiles | 28 | 7 | 1761 | 1754 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_current21.json` |
 | Counts.NativeOwnershipRisk | 63 | 8141 | 6389 | -1752 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current_after_bridge_prune.json` |
 | RiskSums.NativeOwnershipRisk | 5 | 8196 | 6484 | -1712 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current2.json` |
 | RiskSums.PrimaryNativeOwnershipRisk | 5 | 7362 | 5679 | -1683 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current2.json` |
@@ -64,27 +65,26 @@ Include Reports: False
 | Counts.StructLayoutAttributes | 78 | 953 | 1614 | 661 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current2.json` |
 | AllSourceCounts.StructLayoutAttributes | 5 | 985 | 1644 | 659 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current2.json` |
 | elapsed_seconds | 4 | 341.793 | 943.018 | 601.225 | `Docs\Archive\Batch007\AgentLogs\HPhi_RESOURCE_SPAWN_LCG_TABLES.json` |
+| reviewOnlyFindings | 28 | 1 | 584 | 583 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_current21.json` |
 | AllSourceCounts.GlobalRegistrySurface | 5 | 5273 | 5788 | 515 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current2.json` |
-| Counts.GlobalRegistrySurface | 78 | 5139 | 5552 | 413 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current2.json` |
-| Budgets.GlobalRegistrySurface.Actual | 77 | 5146 | 5552 | 406 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current2.json` |
-| Budgets.PrimaryManagedRuntimeRisk.Max | 76 | 353 | -1 | -354 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current2.json` |
+| infos | 28 | 1 | 454 | 453 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_current21.json` |
 
 ## Recent Artifacts
 
 | Timestamp | Type | Metrics | Path |
 |---|---|---:|---|
+| 2026-05-19 00:52:49 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_current21.json` |
+| 2026-05-19 00:52:39 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.json` |
+| 2026-05-19 00:27:54 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_current20.json` |
+| 2026-05-19 00:27:27 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current20.json` |
+| 2026-05-19 00:04:51 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current19.json` |
+| 2026-05-19 00:04:48 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_current19.json` |
+| 2026-05-19 00:02:29 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current18.json` |
+| 2026-05-19 00:02:26 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_current18.json` |
 | 2026-05-18 23:53:38 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json` |
 | 2026-05-18 23:53:35 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_current17.json` |
 | 2026-05-18 23:35:07 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current16.json` |
 | 2026-05-18 23:33:43 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_current16.json` |
-| 2026-05-18 23:23:06 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_current15.json` |
-| 2026-05-18 23:22:51 +00:00 | SignalAudit | 21 | `Docs\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current15.json` |
-| 2026-05-18 14:16:17 +00:00 | SignalAudit | 20 | `Docs\Archive\Batch009\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_hotpath_current2.json` |
-| 2026-05-18 18:15:42 +04:00 | HPhiRuntimeSummary | 219 | `Docs\Archive\Batch009\AgentLogs\HPhi_SHINOBU_02_current2.json` |
-| 2026-05-18 14:13:44 +00:00 | SignalAudit | 20 | `Docs\Archive\Batch009\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_current2.json` |
-| 2026-05-18 14:13:28 +00:00 | SignalAudit | 20 | `Docs\Archive\Batch009\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current2.json` |
-| 2026-05-18 13:53:35 +00:00 | SignalAudit | 20 | `Docs\Archive\Batch009\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current.json` |
-| 2026-05-18 13:52:59 +00:00 | SignalAudit | 20 | `Docs\Archive\Batch009\AgentLogs\SignalBusContractAuditCli_SHINOBU_02_full_current.json` |
 
 ## Non-Claims
 

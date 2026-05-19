@@ -37,6 +37,7 @@ MonoBehaviour:
   m_Active: 1
   settings:
     shader: {fileID: 4800000, guid: 6a291e321bfc47340ae08d76a1fee749, type: 3}
+    reconstructionShader: {fileID: 4800000, guid: b104c09d7a4e49d69f0e8467bb15a104, type: 3}
     crackTexture: {fileID: 0}
     lensDirtTexture: {fileID: 0}
     blueNoiseTexture: {fileID: 0}

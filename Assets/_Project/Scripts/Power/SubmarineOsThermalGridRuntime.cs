@@ -1,0 +1,1901 @@
+using System;
+using System.IO;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
+using Hecton8.Core.Memory.Layout;
+using Unity.Burst;
+using Unity.Burst.CompilerServices;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace Hecton8.Power
+{
+    public static class SubmarineThermalGridStatusFlags
+    {
+        public const uint None = 0u;
+        public const uint Source = 1u << 0;
+        public const uint Brownout = 1u << 1;
+        public const uint Overheating = 1u << 2;
+        public const uint MicroDamage = 1u << 3;
+        public const uint Isolated = 1u << 4;
+        public const uint ExternalHeat = 1u << 5;
+        public const uint ShortCircuit = 1u << 6;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct GridNodeDTO
+    {
+        [FieldOffset(0)] public uint NodeHash;
+        [FieldOffset(4)] public float Potential;
+        [FieldOffset(8)] public float Resistance;
+        [FieldOffset(12)] public float ThermalLoad;
+        [FieldOffset(16)] public uint Flags;
+        [FieldOffset(20)] public int AdjacencyOffset;
+        [FieldOffset(24)] public int AdjacencyCount;
+        [FieldOffset(28)] public uint _pad0;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    public struct PowerEdgeDTO
+    {
+        [FieldOffset(0)] public int TargetIndex;
+        [FieldOffset(4)] public float Conductance;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct ThermalGridAnchorDTO
+    {
+        [FieldOffset(0)] public float3 LocalOffset;
+        [FieldOffset(12)] public uint NodeHash;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct SubmarineGridSpecDTO
+    {
+        [FieldOffset(0)] public uint ComponentHash;
+        [FieldOffset(4)] public float BaseConductance;
+        [FieldOffset(8)] public float ThermalLimit;
+        [FieldOffset(12)] public float BaseResistance;
+        [FieldOffset(16)] public float ExternalHeatScale;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public uint _pad0;
+        [FieldOffset(28)] public uint _pad1;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SubmarineThermalGridTuningDTO
+    {
+        [FieldOffset(0)] public float BaseResistance;
+        [FieldOffset(4)] public float ThermalDissipationRate;
+        [FieldOffset(8)] public float JacobiTolerance;
+        [FieldOffset(12)] public float DamageThreshold;
+        [FieldOffset(16)] public float CriticalThermalThreshold;
+        [FieldOffset(20)] public float HeatGainScale;
+        [FieldOffset(24)] public float ResistanceDriftRate;
+        [FieldOffset(28)] public float ExternalHeatScale;
+        [FieldOffset(32)] public float BrownoutVoltageThreshold;
+        [FieldOffset(36)] public float FlickerScale;
+        [FieldOffset(40)] public float VisualOverkillScalar;
+        [FieldOffset(44)] public float SimulationTickDeltaSeconds;
+        [FieldOffset(48)] public uint CsvRevision;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public uint _pad0;
+        [FieldOffset(60)] public uint _pad1;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct ThermalGridVisualStateDTO
+    {
+        [FieldOffset(0)] public uint NodeHash;
+        [FieldOffset(4)] public float Voltage01;
+        [FieldOffset(8)] public float Thermal01;
+        [FieldOffset(12)] public float FlickerPhase01;
+        [FieldOffset(16)] public uint Flags;
+        [FieldOffset(20)] public float VisualOverkill01;
+        [FieldOffset(24)] public uint _pad0;
+        [FieldOffset(28)] public uint _pad1;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct ThermalPowerGridTelemetrySnapshot
+    {
+        [FieldOffset(0)] public ulong StateHash;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public float TotalGeneratedPower;
+        [FieldOffset(20)] public float TotalLoad;
+        [FieldOffset(24)] public float MaximumThermalStress;
+        [FieldOffset(28)] public float JacobiResidual;
+        [FieldOffset(32)] public int IterationCount;
+        [FieldOffset(36)] public int NodeCount;
+        [FieldOffset(40)] public int EdgeCount;
+        [FieldOffset(44)] public int MicroDamageCount;
+        [FieldOffset(48)] public int BrownoutCount;
+        [FieldOffset(52)] public int ExternalHeatNodeCount;
+        [FieldOffset(56)] public uint _pad0;
+        [FieldOffset(60)] public uint _pad1;
+    }
+
+    public interface IContinuousPowerComponent
+    {
+        float Voltage01 { get; }
+        void OnVoltageChanged(float voltage01);
+    }
+
+    public sealed unsafe class SubmarineOsThermalGridRuntime : IDisposable
+    {
+        public const int MaxNodes = 512;
+        public const int MaxEdges = MaxNodes * 6;
+        public const int EmergencyMockNodeCount = 100;
+        public const int EmergencyMockEdgeCount = (EmergencyMockNodeCount - 1) * 2;
+        public const int TelemetryFrameCount = 300;
+        public const int CsvSpecCapacity = 256;
+        public const int CsvByteCapacity = 16 * 1024;
+        public const string DumpRelativePath = "Docs/AgentLogs/Dump_THERMAL_GRID.bin";
+
+        public const int GridNodeSizeBytes = 32;
+        public const int PowerEdgeSizeBytes = 8;
+        public const int TelemetrySizeBytes = 64;
+        private const int StandaloneVaultBufferCapacity = 32;
+        private const long StandaloneVaultArenaBytes = 2L * 1024L * 1024L;
+
+        private const uint SourceHash = 0x53313036u; // S106
+        private const uint DumpMagic = 0x54484752u; // THGR
+        private const uint DumpVersion = 1u;
+        private const float Epsilon = 0.0001f;
+
+        private const int CounterNodeCount = 0;
+        private const int CounterEdgeCount = 1;
+        private const int CounterTelemetryCursor = 2;
+        private const int CounterFaultFlags = 3;
+        private const int CounterCsvSpecCount = 4;
+        private const int CounterCount = 8;
+
+        private static readonly int s_ThermalGridNodeCountId = Shader.PropertyToID("_H8ThermalGridNodeCount");
+        private static readonly int s_ThermalGridBrownoutId = Shader.PropertyToID("_H8ThermalGridBrownout01");
+        private static readonly int s_ThermalGridMaxHeatId = Shader.PropertyToID("_H8ThermalGridMaxHeat01");
+        private static readonly int s_ThermalGridFlickerId = Shader.PropertyToID("_H8ThermalGridFlicker01");
+        private static readonly int s_ThermalGridVisualOverkillId = Shader.PropertyToID("_H8ThermalGridVisualOverkill01");
+        private static SubmarineOsThermalGridRuntime s_active;
+        private static GlobalDataVault s_standaloneVault;
+
+        private static readonly BufferID NodesAId = (BufferID)731060;
+        private static readonly BufferID NodesBId = (BufferID)731061;
+        private static readonly BufferID EdgesId = (BufferID)731062;
+        private static readonly BufferID InjectionsId = (BufferID)731063;
+        private static readonly BufferID ExternalHeatId = (BufferID)731064;
+        private static readonly BufferID AnchorsId = (BufferID)731065;
+        private static readonly BufferID TuningId = (BufferID)731066;
+        private static readonly BufferID TelemetryId = (BufferID)731067;
+        private static readonly BufferID CountersId = (BufferID)731068;
+        private static readonly BufferID SpecsId = (BufferID)731069;
+        private static readonly BufferID CsvBytesId = (BufferID)731070;
+        private static readonly BufferID VisualStateId = (BufferID)731071;
+        private static readonly BufferID PendingNodesId = (BufferID)731072;
+        private static readonly BufferID PendingEdgesId = (BufferID)731073;
+        private static readonly BufferID PendingInjectionsId = (BufferID)731074;
+        private static readonly BufferID PendingAnchorsId = (BufferID)731075;
+        private static readonly BufferID PendingVisualStateId = (BufferID)731076;
+        private static readonly BufferID PendingCountersId = (BufferID)731077;
+
+        private IDataVault _vault;
+        private VaultBufferHandle<GridNodeDTO> _nodesAHandle;
+        private VaultBufferHandle<GridNodeDTO> _nodesBHandle;
+        private VaultBufferHandle<PowerEdgeDTO> _edgesHandle;
+        private VaultBufferHandle<float> _injectionsHandle;
+        private VaultBufferHandle<float> _externalHeatHandle;
+        private VaultBufferHandle<ThermalGridAnchorDTO> _anchorsHandle;
+        private VaultBufferHandle<SubmarineThermalGridTuningDTO> _tuningHandle;
+        private VaultBufferHandle<ThermalPowerGridTelemetrySnapshot> _telemetryHandle;
+        private VaultBufferHandle<int> _countersHandle;
+        private VaultBufferHandle<SubmarineGridSpecDTO> _specsHandle;
+        private VaultBufferHandle<byte> _csvBytesHandle;
+        private VaultBufferHandle<ThermalGridVisualStateDTO> _visualStateHandle;
+        private VaultBufferHandle<GridNodeDTO> _pendingNodesHandle;
+        private VaultBufferHandle<PowerEdgeDTO> _pendingEdgesHandle;
+        private VaultBufferHandle<float> _pendingInjectionsHandle;
+        private VaultBufferHandle<ThermalGridAnchorDTO> _pendingAnchorsHandle;
+        private VaultBufferHandle<ThermalGridVisualStateDTO> _pendingVisualStateHandle;
+        private VaultBufferHandle<int> _pendingCountersHandle;
+
+        private JobHandle _solveHandle;
+        private JobHandle _topologyRebuildHandle;
+        private JobHandle _externalHeatJobHandle;
+        private bool _initialized;
+        private bool _solvePending;
+        private bool _topologyRebuildPending;
+        private bool _externalHeatPending;
+        private bool _activeFrontIsA = true;
+        private bool _pendingFrontIsA = true;
+        private int _pendingIterations;
+        private int _solveLockedBufferCount;
+        private int _topologyLockedBufferCount;
+        private int _externalHeatLockedBufferCount;
+        private uint _frame;
+
+        public static SubmarineOsThermalGridRuntime Active => s_active;
+
+        public bool IsInitialized => _initialized;
+
+        public int NodeCount => TryResolveCounters(out NativeArray<int> counters) ? math.clamp(counters[CounterNodeCount], 0, MaxNodes) : 0;
+
+        public int EdgeCount => TryResolveCounters(out NativeArray<int> counters) ? math.clamp(counters[CounterEdgeCount], 0, MaxEdges) : 0;
+
+        private struct VaultViews
+        {
+            public NativeArray<GridNodeDTO> NodesA;
+            public NativeArray<GridNodeDTO> NodesB;
+            public NativeArray<PowerEdgeDTO> Edges;
+            public NativeArray<float> Injections;
+            public NativeArray<float> ExternalHeat;
+            public NativeArray<ThermalGridAnchorDTO> Anchors;
+            public NativeArray<SubmarineThermalGridTuningDTO> Tuning;
+            public NativeArray<ThermalPowerGridTelemetrySnapshot> Telemetry;
+            public NativeArray<int> Counters;
+            public NativeArray<SubmarineGridSpecDTO> Specs;
+            public NativeArray<byte> CsvBytes;
+            public NativeArray<ThermalGridVisualStateDTO> VisualState;
+            public NativeArray<GridNodeDTO> PendingNodes;
+            public NativeArray<PowerEdgeDTO> PendingEdges;
+            public NativeArray<float> PendingInjections;
+            public NativeArray<ThermalGridAnchorDTO> PendingAnchors;
+            public NativeArray<ThermalGridVisualStateDTO> PendingVisualState;
+            public NativeArray<int> PendingCounters;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_active = null;
+        }
+
+        public void InjectDataVault(IDataVault vault)
+        {
+            if (!_initialized)
+                _vault = vault;
+        }
+
+        public bool EnsureInitialized()
+        {
+            if (_initialized)
+                return true;
+
+            _vault ??= ResolveDataVault();
+
+            if (_vault == null || !ValidateLayouts(out _, out _, out _, out _))
+                return false;
+
+            if (!ResolveVaultBuffers(out VaultViews views))
+                return false;
+
+            SubmarineThermalGridTuningDTO tuning = CreateDefaultTuning();
+            views.Tuning[0] = tuning;
+            ClearActiveRangeJob clear = new ClearActiveRangeJob
+            {
+                NodesA = (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.NodesA),
+                NodesB = (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.NodesB),
+                Edges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.Edges),
+                Injections = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(views.Injections),
+                ExternalHeat = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(views.ExternalHeat),
+                Anchors = (ThermalGridAnchorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.Anchors),
+                VisualState = (ThermalGridVisualStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.VisualState),
+                PendingNodes = (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingNodes),
+                PendingEdges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingEdges),
+                PendingInjections = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingInjections),
+                PendingAnchors = (ThermalGridAnchorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingAnchors),
+                PendingVisualState = (ThermalGridVisualStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingVisualState),
+                PendingCounters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingCounters),
+                Count = MaxNodes,
+                EdgeCount = MaxEdges,
+                CounterCount = CounterCount
+            };
+            // COLD SYNC JOB: one-time vault bootstrap clear before any gameplay tick can observe the buffers.
+            clear.Run(math.max(MaxNodes, MaxEdges));
+
+            for (int i = 0; i < CounterCount; i++)
+                views.Counters[i] = 0;
+            for (int i = 0; i < views.Telemetry.Length; i++)
+                views.Telemetry[i] = default;
+
+            _initialized = true;
+            s_active = this;
+            ScheduleEmergencyMockGrid(default);
+            if (_topologyRebuildPending)
+            {
+                // COLD SYNC JOB: fallback mock must be materialized before the runtime can expose a readback handle.
+                _topologyRebuildHandle.Complete();
+                _topologyRebuildPending = false;
+                if (TryLockTopologyCommitTargetBuffers(out int commitLockedCount))
+                {
+                    if (!TryCommitPendingTopologySnapshot())
+                    {
+                        UnlockTopologyCommitTargetBuffers(commitLockedCount);
+                        UnlockTopologyRebuildBuffers();
+                        _initialized = false;
+                        if (ReferenceEquals(s_active, this))
+                            s_active = null;
+                        return false;
+                    }
+
+                    UnlockTopologyCommitTargetBuffers(commitLockedCount);
+                    _activeFrontIsA = true;
+                    _pendingFrontIsA = true;
+                }
+                else
+                {
+                    UnlockTopologyRebuildBuffers();
+                    _initialized = false;
+                    if (ReferenceEquals(s_active, this))
+                        s_active = null;
+                    return false;
+                }
+
+                UnlockTopologyRebuildBuffers();
+            }
+            return true;
+        }
+
+        private static IDataVault ResolveDataVault()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault != null)
+                return vault;
+
+            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
+                return latest;
+
+            s_standaloneVault ??= GlobalDataVault.Create(StandaloneVaultBufferCapacity, StandaloneVaultArenaBytes);
+            return s_standaloneVault;
+        }
+
+        public bool ScheduleEmergencyMockGrid(JobHandle dependency)
+        {
+            if (!EnsureInitialized() || _topologyRebuildPending)
+                return false;
+
+            if (!TryLockTopologyRebuildBuffers(out _topologyLockedBufferCount))
+                return false;
+            if (!TryResolveVaultViews(out VaultViews views))
+            {
+                UnlockTopologyRebuildBuffers();
+                return false;
+            }
+
+            _topologyRebuildHandle = new EmergencyMockGridJob
+            {
+                Nodes = (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingNodes),
+                Edges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingEdges),
+                Injections = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingInjections),
+                Anchors = (ThermalGridAnchorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingAnchors),
+                VisualState = (ThermalGridVisualStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingVisualState),
+                Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingCounters),
+                Tuning = views.Tuning[0],
+                NodeCount = EmergencyMockNodeCount
+            }.Schedule(EmergencyMockNodeCount, 32, dependency);
+
+            _topologyRebuildPending = true;
+            return true;
+        }
+
+        public bool ScheduleTopologyRebuildFromSnapshot(
+            NativeArray<GridNodeDTO> nodes,
+            NativeArray<PowerEdgeDTO> edges,
+            NativeArray<float> injections,
+            NativeArray<ThermalGridAnchorDTO> anchors,
+            int nodeCount,
+            int edgeCount,
+            JobHandle dependency)
+        {
+            if (!EnsureInitialized() || _topologyRebuildPending)
+                return false;
+
+            nodeCount = math.clamp(nodeCount, 0, math.min(nodes.IsCreated ? nodes.Length : 0, MaxNodes));
+            edgeCount = math.clamp(edgeCount, 0, math.min(edges.IsCreated ? edges.Length : 0, MaxEdges));
+            if (nodeCount <= 0 ||
+                edgeCount < 0 ||
+                !injections.IsCreated ||
+                !anchors.IsCreated ||
+                injections.Length < nodeCount ||
+                anchors.Length < nodeCount)
+            {
+                return false;
+            }
+
+            if (!TryLockTopologyRebuildBuffers(out _topologyLockedBufferCount))
+                return false;
+            if (!TryResolveVaultViews(out VaultViews views))
+            {
+                UnlockTopologyRebuildBuffers();
+                return false;
+            }
+
+            int scheduleCount = math.max(nodeCount, math.max(edgeCount, CounterCount));
+            _topologyRebuildHandle = new TopologySnapshotRebuildJob
+            {
+                SourceNodes = (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(nodes),
+                SourceEdges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(edges),
+                SourceInjections = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(injections),
+                SourceAnchors = (ThermalGridAnchorDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(anchors),
+                PendingNodes = (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingNodes),
+                PendingEdges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingEdges),
+                PendingInjections = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingInjections),
+                PendingAnchors = (ThermalGridAnchorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingAnchors),
+                PendingVisualState = (ThermalGridVisualStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingVisualState),
+                PendingCounters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingCounters),
+                NodeCount = nodeCount,
+                EdgeCount = edgeCount
+            }.Schedule(scheduleCount, 64, dependency);
+
+            _topologyRebuildPending = true;
+            return true;
+        }
+
+        public bool TryCommitTopologyRebuildPostSimulation()
+        {
+            if (!_topologyRebuildPending)
+                return true;
+            if (!_topologyRebuildHandle.IsCompleted)
+                return false;
+            if (_solvePending)
+                return false;
+            if (!TryLockTopologyCommitTargetBuffers(out int commitLockedCount))
+                return false;
+
+            // POST_SIMULATION FENCE: handle is already completed; this only releases the job safety fence.
+            _topologyRebuildHandle.Complete();
+            if (!TryCommitPendingTopologySnapshot())
+            {
+                UnlockTopologyCommitTargetBuffers(commitLockedCount);
+                _topologyRebuildPending = false;
+                UnlockTopologyRebuildBuffers();
+                return false;
+            }
+
+            UnlockTopologyCommitTargetBuffers(commitLockedCount);
+            _topologyRebuildPending = false;
+            UnlockTopologyRebuildBuffers();
+            _activeFrontIsA = true;
+            _pendingFrontIsA = true;
+            return true;
+        }
+
+        public bool ScheduleExternalThermalInjection(
+            double3 submarineBaseAup,
+            double3 hazardAup,
+            float hazardTemperatureCelsius,
+            float hazardRadiusMeters,
+            float globalQualityWeight,
+            JobHandle dependency,
+            out JobHandle handle)
+        {
+            handle = dependency;
+            if (!EnsureInitialized() || _solvePending || _externalHeatPending)
+                return false;
+
+            int nodeCount = NodeCount;
+            if (nodeCount <= 0)
+                return false;
+
+            if (!TryLockExternalHeatBuffers(out _externalHeatLockedBufferCount))
+                return false;
+            if (!TryResolveVaultViews(out VaultViews views))
+            {
+                UnlockExternalHeatBuffers();
+                return false;
+            }
+
+            handle = new ExternalThermalInjectionJob
+            {
+                ExternalHeat = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(views.ExternalHeat),
+                Anchors = (ThermalGridAnchorDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.Anchors),
+                NodeCount = nodeCount,
+                SubmarineBaseAup = submarineBaseAup,
+                HazardAup = hazardAup,
+                HazardTemperatureCelsius = hazardTemperatureCelsius,
+                HazardRadiusMeters = math.max(1f, hazardRadiusMeters),
+                GlobalQualityWeight = math.saturate(globalQualityWeight)
+            }.Schedule(nodeCount, 64, dependency);
+            _externalHeatJobHandle = handle;
+            _externalHeatPending = true;
+            return true;
+        }
+
+        public bool ScheduleSolve(
+            float simulationTickDeltaSeconds,
+            float globalQualityWeight,
+            uint simulationFrame,
+            JobHandle dependency,
+            out JobHandle handle)
+        {
+            handle = dependency;
+            if (!EnsureInitialized() || _solvePending)
+                return false;
+            if (_externalHeatPending && !TryCompleteExternalThermalInjectionPostSimulation())
+                return false;
+
+            int nodeCount = NodeCount;
+            int edgeCount = EdgeCount;
+            if (nodeCount <= 0)
+                return false;
+
+            int iterations = ResolvePropagationIterations(globalQualityWeight);
+            if (!TryLockSolveBuffers(out _solveLockedBufferCount))
+                return false;
+            if (!TryResolveVaultViews(out VaultViews views))
+            {
+                UnlockSolveBuffers();
+                return false;
+            }
+
+            SubmarineThermalGridTuningDTO tuning = views.Tuning[0];
+            tuning.SimulationTickDeltaSeconds = math.max(Epsilon, simulationTickDeltaSeconds);
+            tuning.VisualOverkillScalar = math.saturate(globalQualityWeight);
+            views.Tuning[0] = SanitizeTuning(in tuning);
+
+            bool inputIsA = _activeFrontIsA;
+            GridNodeDTO* previousPtr = inputIsA
+                ? (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.NodesA)
+                : (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.NodesB);
+            JobHandle chain = dependency;
+
+            for (int iteration = 0; iteration < iterations; iteration++)
+            {
+                GridNodeDTO* readPtr = inputIsA
+                    ? (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.NodesA)
+                    : (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.NodesB);
+                GridNodeDTO* writePtr = inputIsA
+                    ? (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.NodesB)
+                    : (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.NodesA);
+
+                PowerGridRelaxationJob job = new PowerGridRelaxationJob
+                {
+                    NodesRead = readPtr,
+                    NodesWrite = writePtr,
+                    Edges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.Edges),
+                    Injections = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.Injections),
+                    ExternalHeat = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.ExternalHeat),
+                    VisualState = (ThermalGridVisualStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.VisualState),
+                    Tuning = views.Tuning[0],
+                    NodeCount = nodeCount,
+                    EdgeCount = edgeCount,
+                    DeltaSeconds = simulationTickDeltaSeconds,
+                    Frame = simulationFrame,
+                    IterationIndex = iteration
+                };
+                chain = job.Schedule(nodeCount, 64, chain);
+                inputIsA = !inputIsA;
+            }
+
+            GridNodeDTO* finalPtr = inputIsA
+                ? (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.NodesA)
+                : (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.NodesB);
+            chain = new ShortCircuitIsolationJob
+            {
+                Nodes = finalPtr,
+                Edges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.Edges),
+                NodeCount = nodeCount
+            }.Schedule(nodeCount, 64, chain);
+
+            chain = new ThermalGridTelemetryJob
+            {
+                Nodes = finalPtr,
+                PreviousNodes = previousPtr,
+                Edges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.Edges),
+                Injections = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.Injections),
+                Telemetry = (ThermalPowerGridTelemetrySnapshot*)NativeArrayUnsafeUtility.GetUnsafePtr(views.Telemetry),
+                Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(views.Counters),
+                NodeCount = nodeCount,
+                EdgeCount = edgeCount,
+                Iterations = iterations,
+                Frame = simulationFrame
+            }.Schedule(chain);
+
+            _solveHandle = chain;
+            _solvePending = true;
+            _pendingFrontIsA = inputIsA;
+            _pendingIterations = iterations;
+            _frame = simulationFrame;
+            handle = chain;
+            return true;
+        }
+
+        public bool TryCompleteSolvePostSimulation()
+        {
+            if (!_solvePending)
+                return true;
+            if (!_solveHandle.IsCompleted)
+                return false;
+
+            // POST_SIMULATION FENCE: handle is already completed; this only releases the job safety fence.
+            _solveHandle.Complete();
+            _solvePending = false;
+            UnlockSolveBuffers();
+            _activeFrontIsA = _pendingFrontIsA;
+
+            if (TryResolveCounters(out NativeArray<int> counters) &&
+                (counters[CounterFaultFlags] & (int)(SubmarineThermalGridFaultFlags.CriticalThermalFailure | SubmarineThermalGridFaultFlags.NonFinite)) != 0)
+            {
+                DumpBlackBox();
+            }
+
+            return true;
+        }
+
+        public bool TryCompleteExternalThermalInjectionPostSimulation()
+        {
+            if (!_externalHeatPending)
+                return true;
+            if (!_externalHeatJobHandle.IsCompleted)
+                return false;
+
+            // POST_SIMULATION FENCE: handle is already completed; this only releases the job safety fence.
+            _externalHeatJobHandle.Complete();
+            _externalHeatPending = false;
+            UnlockExternalHeatBuffers();
+            return true;
+        }
+
+        public bool TryGetGridReadback(
+            out NativeArray<GridNodeDTO> nodes,
+            out NativeArray<ThermalGridAnchorDTO> anchors,
+            out NativeArray<ThermalGridVisualStateDTO> visualState,
+            out int nodeCount)
+        {
+            nodes = default;
+            anchors = default;
+            visualState = default;
+            nodeCount = 0;
+            if (!EnsureInitialized() || _solvePending)
+                return false;
+
+            if (!TryResolveVaultViews(out VaultViews views))
+                return false;
+
+            nodes = _activeFrontIsA ? views.NodesA : views.NodesB;
+            anchors = views.Anchors;
+            visualState = views.VisualState;
+            nodeCount = NodeCount;
+            return nodes.IsCreated && anchors.IsCreated && visualState.IsCreated && nodeCount > 0;
+        }
+
+        public bool TryGetTuningPointer(out SubmarineThermalGridTuningDTO* tuning)
+        {
+            tuning = null;
+            if (!EnsureInitialized() || !TryResolveVaultBuffer(_tuningHandle, 1, out NativeArray<SubmarineThermalGridTuningDTO> tuningBuffer))
+                return false;
+
+            tuning = (SubmarineThermalGridTuningDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(tuningBuffer);
+            return tuning != null;
+        }
+
+        public bool TryUploadVisualScalars(GraphicsBuffer targetBuffer)
+        {
+            if (targetBuffer == null || !TryGetGridReadback(out _, out _, out NativeArray<ThermalGridVisualStateDTO> visual, out int nodeCount))
+                return false;
+
+            int count = math.min(nodeCount, visual.Length);
+            targetBuffer.SetData(visual, 0, 0, count);
+            Shader.SetGlobalInt(s_ThermalGridNodeCountId, count);
+            return true;
+        }
+
+        public bool TryPublishVisualShaderScalars()
+        {
+            if (!TryGetGridReadback(out _, out _, out NativeArray<ThermalGridVisualStateDTO> visual, out int nodeCount))
+                return false;
+
+            int count = math.min(nodeCount, visual.Length);
+            if (count <= 0)
+                return false;
+
+            float minVoltage = 1f;
+            float maxHeat = 0f;
+            float maxFlicker = 0f;
+            float maxVisualOverkill = 0f;
+            for (int i = 0; i < count; i++)
+            {
+                ThermalGridVisualStateDTO state = visual[i];
+                minVoltage = math.min(minVoltage, math.saturate(FiniteOr(state.Voltage01, 1f)));
+                maxHeat = math.max(maxHeat, math.saturate(FiniteOr(state.Thermal01, 0f)));
+                maxFlicker = math.max(maxFlicker, math.saturate(FiniteOr(state.FlickerPhase01, 0f)));
+                maxVisualOverkill = math.max(maxVisualOverkill, math.saturate(FiniteOr(state.VisualOverkill01, 0f)));
+            }
+
+            Shader.SetGlobalInt(s_ThermalGridNodeCountId, count);
+            Shader.SetGlobalFloat(s_ThermalGridBrownoutId, math.saturate(1f - minVoltage));
+            Shader.SetGlobalFloat(s_ThermalGridMaxHeatId, maxHeat);
+            Shader.SetGlobalFloat(s_ThermalGridFlickerId, maxFlicker);
+            Shader.SetGlobalFloat(s_ThermalGridVisualOverkillId, maxVisualOverkill);
+            return true;
+        }
+
+        public bool TryLoadCsvFromFile(string path)
+        {
+            if (!EnsureInitialized() || !TryResolveVaultViews(out VaultViews views) || string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                long streamLength = stream.Length;
+                int length = streamLength > views.CsvBytes.Length ? views.CsvBytes.Length : (int)streamLength;
+                if (length <= 0)
+                    return false;
+
+                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(views.CsvBytes);
+                Span<byte> buffer = new Span<byte>(ptr, length);
+                int read = 0;
+                while (read < length)
+                {
+                    int chunk = stream.Read(buffer.Slice(read));
+                    if (chunk <= 0)
+                        break;
+                    read += chunk;
+                }
+
+                if (read <= 0)
+                    return false;
+
+                int parsed = SubmarineThermalGridCsvParser.ParseGridSpecsCsv(
+                    buffer.Slice(0, read),
+                    views.Specs,
+                    views.Tuning,
+                    views.Counters.IsCreated ? views.Counters[CounterCsvSpecCount] : 0);
+                if (views.Counters.IsCreated)
+                    views.Counters[CounterCsvSpecCount] = parsed;
+                return parsed > 0;
+            }
+            catch (Exception exception)
+            {
+                if (TryResolveCounters(out NativeArray<int> counters))
+                    counters[CounterFaultFlags] |= (int)SubmarineThermalGridFaultFlags.CsvParseFault;
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53314353u, SourceHash, exception.HResult);
+                return false;
+            }
+        }
+
+        public void ForceDumpBlackBox()
+        {
+            if (EnsureInitialized())
+                DumpBlackBox();
+        }
+
+        public void Dispose()
+        {
+            if (_solvePending)
+            {
+                // TEARDOWN FENCE: dispose cannot leave vault buffers locked behind live worker pointers.
+                _solveHandle.Complete();
+                _solvePending = false;
+                UnlockSolveBuffers();
+            }
+
+            if (_topologyRebuildPending)
+            {
+                // TEARDOWN FENCE: topology staging buffers must be released before the runtime drops its vault aliases.
+                _topologyRebuildHandle.Complete();
+                _topologyRebuildPending = false;
+                UnlockTopologyRebuildBuffers();
+            }
+
+            if (_externalHeatPending)
+            {
+                // TEARDOWN FENCE: external heat writes must finish before buffer aliases are cleared.
+                _externalHeatJobHandle.Complete();
+                _externalHeatPending = false;
+                UnlockExternalHeatBuffers();
+            }
+
+            _nodesAHandle = default;
+            _nodesBHandle = default;
+            _edgesHandle = default;
+            _injectionsHandle = default;
+            _externalHeatHandle = default;
+            _anchorsHandle = default;
+            _tuningHandle = default;
+            _telemetryHandle = default;
+            _countersHandle = default;
+            _specsHandle = default;
+            _csvBytesHandle = default;
+            _visualStateHandle = default;
+            _pendingNodesHandle = default;
+            _pendingEdgesHandle = default;
+            _pendingInjectionsHandle = default;
+            _pendingAnchorsHandle = default;
+            _pendingVisualStateHandle = default;
+            _pendingCountersHandle = default;
+            _initialized = false;
+            if (ReferenceEquals(s_active, this))
+                s_active = null;
+        }
+
+        public static int ResolvePropagationIterations(float globalQualityWeight)
+        {
+            float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
+            return math.clamp((int)math.lerp(1f, 8f, weight), 1, 8);
+        }
+
+        public static SubmarineThermalGridTuningDTO CreateDefaultTuning()
+        {
+            return new SubmarineThermalGridTuningDTO
+            {
+                BaseResistance = 0.06f,
+                ThermalDissipationRate = 0.18f,
+                JacobiTolerance = 0.001f,
+                DamageThreshold = 0.72f,
+                CriticalThermalThreshold = 1.0f,
+                HeatGainScale = 0.018f,
+                ResistanceDriftRate = 0.025f,
+                ExternalHeatScale = 0.12f,
+                BrownoutVoltageThreshold = 0.2f,
+                FlickerScale = 0.35f,
+                VisualOverkillScalar = 0.5f,
+                SimulationTickDeltaSeconds = 0.05f
+            };
+        }
+
+        public static bool ValidateLayouts(out int nodeBytes, out int edgeBytes, out int tuningBytes, out int telemetryBytes)
+        {
+            nodeBytes = UnsafeUtility.SizeOf<GridNodeDTO>();
+            edgeBytes = UnsafeUtility.SizeOf<PowerEdgeDTO>();
+            tuningBytes = UnsafeUtility.SizeOf<SubmarineThermalGridTuningDTO>();
+            telemetryBytes = UnsafeUtility.SizeOf<ThermalPowerGridTelemetrySnapshot>();
+
+            return nodeBytes == GridNodeSizeBytes &&
+                   edgeBytes == PowerEdgeSizeBytes &&
+                   tuningBytes == 64 &&
+                   telemetryBytes == TelemetrySizeBytes &&
+                   UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO.NodeHash)) == 0 &&
+                   UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO.Potential)) == 4 &&
+                   UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO.Resistance)) == 8 &&
+                   UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO.ThermalLoad)) == 12 &&
+                   UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO.Flags)) == 16 &&
+                   UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO.AdjacencyOffset)) == 20 &&
+                   UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO.AdjacencyCount)) == 24 &&
+                   UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO._pad0)) == 28 &&
+                   UnsafeFieldOffset<PowerEdgeDTO>(nameof(PowerEdgeDTO.TargetIndex)) == 0 &&
+                   UnsafeFieldOffset<PowerEdgeDTO>(nameof(PowerEdgeDTO.Conductance)) == 4;
+        }
+
+        private bool ResolveVaultBuffers(out VaultViews views)
+        {
+            views = default;
+            IDataVault vault = _vault;
+            return ResolveVaultBuffer(vault, ref _nodesAHandle, NodesAId, MaxNodes, out views.NodesA) &&
+                   ResolveVaultBuffer(vault, ref _nodesBHandle, NodesBId, MaxNodes, out views.NodesB) &&
+                   ResolveVaultBuffer(vault, ref _edgesHandle, EdgesId, MaxEdges, out views.Edges) &&
+                   ResolveVaultBuffer(vault, ref _injectionsHandle, InjectionsId, MaxNodes, out views.Injections) &&
+                   ResolveVaultBuffer(vault, ref _externalHeatHandle, ExternalHeatId, MaxNodes, out views.ExternalHeat) &&
+                   ResolveVaultBuffer(vault, ref _anchorsHandle, AnchorsId, MaxNodes, out views.Anchors) &&
+                   ResolveVaultBuffer(vault, ref _tuningHandle, TuningId, 1, out views.Tuning) &&
+                   ResolveVaultBuffer(vault, ref _telemetryHandle, TelemetryId, TelemetryFrameCount, out views.Telemetry) &&
+                   ResolveVaultBuffer(vault, ref _countersHandle, CountersId, CounterCount, out views.Counters) &&
+                   ResolveVaultBuffer(vault, ref _specsHandle, SpecsId, CsvSpecCapacity, out views.Specs) &&
+                   ResolveVaultBuffer(vault, ref _csvBytesHandle, CsvBytesId, CsvByteCapacity, out views.CsvBytes) &&
+                   ResolveVaultBuffer(vault, ref _visualStateHandle, VisualStateId, MaxNodes, out views.VisualState) &&
+                   ResolveVaultBuffer(vault, ref _pendingNodesHandle, PendingNodesId, MaxNodes, out views.PendingNodes) &&
+                   ResolveVaultBuffer(vault, ref _pendingEdgesHandle, PendingEdgesId, MaxEdges, out views.PendingEdges) &&
+                   ResolveVaultBuffer(vault, ref _pendingInjectionsHandle, PendingInjectionsId, MaxNodes, out views.PendingInjections) &&
+                   ResolveVaultBuffer(vault, ref _pendingAnchorsHandle, PendingAnchorsId, MaxNodes, out views.PendingAnchors) &&
+                   ResolveVaultBuffer(vault, ref _pendingVisualStateHandle, PendingVisualStateId, MaxNodes, out views.PendingVisualState) &&
+                   ResolveVaultBuffer(vault, ref _pendingCountersHandle, PendingCountersId, CounterCount, out views.PendingCounters);
+        }
+
+        private static bool ResolveVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultBufferHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (vault.IsAllocationLocked)
+            {
+                if (!handle.IsCreated && !vault.TryGetBufferHandle(bufferId, out handle))
+                    return false;
+            }
+            else
+            {
+                handle = vault.GetBufferHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    SystemID.Power,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            buffer = handle.Resolve(vault);
+            return buffer.IsCreated && buffer.Length >= requiredLength;
+        }
+
+        private bool TryResolveVaultViews(out VaultViews views)
+        {
+            views = default;
+            return TryResolveVaultBuffer(_nodesAHandle, MaxNodes, out views.NodesA) &&
+                   TryResolveVaultBuffer(_nodesBHandle, MaxNodes, out views.NodesB) &&
+                   TryResolveVaultBuffer(_edgesHandle, MaxEdges, out views.Edges) &&
+                   TryResolveVaultBuffer(_injectionsHandle, MaxNodes, out views.Injections) &&
+                   TryResolveVaultBuffer(_externalHeatHandle, MaxNodes, out views.ExternalHeat) &&
+                   TryResolveVaultBuffer(_anchorsHandle, MaxNodes, out views.Anchors) &&
+                   TryResolveVaultBuffer(_tuningHandle, 1, out views.Tuning) &&
+                   TryResolveVaultBuffer(_telemetryHandle, TelemetryFrameCount, out views.Telemetry) &&
+                   TryResolveVaultBuffer(_countersHandle, CounterCount, out views.Counters) &&
+                   TryResolveVaultBuffer(_specsHandle, CsvSpecCapacity, out views.Specs) &&
+                   TryResolveVaultBuffer(_csvBytesHandle, CsvByteCapacity, out views.CsvBytes) &&
+                   TryResolveVaultBuffer(_visualStateHandle, MaxNodes, out views.VisualState) &&
+                   TryResolveVaultBuffer(_pendingNodesHandle, MaxNodes, out views.PendingNodes) &&
+                   TryResolveVaultBuffer(_pendingEdgesHandle, MaxEdges, out views.PendingEdges) &&
+                   TryResolveVaultBuffer(_pendingInjectionsHandle, MaxNodes, out views.PendingInjections) &&
+                   TryResolveVaultBuffer(_pendingAnchorsHandle, MaxNodes, out views.PendingAnchors) &&
+                   TryResolveVaultBuffer(_pendingVisualStateHandle, MaxNodes, out views.PendingVisualState) &&
+                   TryResolveVaultBuffer(_pendingCountersHandle, CounterCount, out views.PendingCounters);
+        }
+
+        private bool TryResolveCounters(out NativeArray<int> counters)
+        {
+            return TryResolveVaultBuffer(_countersHandle, CounterCount, out counters);
+        }
+
+        private bool TryResolveVaultBuffer<T>(
+            VaultBufferHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _vault;
+            if (vault == null || !handle.IsCreated)
+                return false;
+
+            buffer = handle.Resolve(vault);
+            return buffer.IsCreated && buffer.Length >= requiredLength;
+        }
+
+        private bool TryLockTopologyRebuildBuffers(out int lockedCount)
+        {
+            lockedCount = 0;
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            if (!TryLockBuffer(vault, PendingNodesId, ref lockedCount) ||
+                !TryLockBuffer(vault, PendingEdgesId, ref lockedCount) ||
+                !TryLockBuffer(vault, PendingInjectionsId, ref lockedCount) ||
+                !TryLockBuffer(vault, PendingAnchorsId, ref lockedCount) ||
+                !TryLockBuffer(vault, PendingVisualStateId, ref lockedCount) ||
+                !TryLockBuffer(vault, PendingCountersId, ref lockedCount))
+            {
+                UnlockTopologyRebuildBuffers(lockedCount);
+                lockedCount = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryLockTopologyCommitTargetBuffers(out int lockedCount)
+        {
+            lockedCount = 0;
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            if (!TryLockBuffer(vault, NodesAId, ref lockedCount) ||
+                !TryLockBuffer(vault, NodesBId, ref lockedCount) ||
+                !TryLockBuffer(vault, EdgesId, ref lockedCount) ||
+                !TryLockBuffer(vault, InjectionsId, ref lockedCount) ||
+                !TryLockBuffer(vault, AnchorsId, ref lockedCount) ||
+                !TryLockBuffer(vault, VisualStateId, ref lockedCount) ||
+                !TryLockBuffer(vault, CountersId, ref lockedCount))
+            {
+                UnlockTopologyCommitTargetBuffers(lockedCount);
+                lockedCount = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryLockSolveBuffers(out int lockedCount)
+        {
+            lockedCount = 0;
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            if (!TryLockBuffer(vault, NodesAId, ref lockedCount) ||
+                !TryLockBuffer(vault, NodesBId, ref lockedCount) ||
+                !TryLockBuffer(vault, EdgesId, ref lockedCount) ||
+                !TryLockBuffer(vault, InjectionsId, ref lockedCount) ||
+                !TryLockBuffer(vault, ExternalHeatId, ref lockedCount) ||
+                !TryLockBuffer(vault, VisualStateId, ref lockedCount) ||
+                !TryLockBuffer(vault, TelemetryId, ref lockedCount) ||
+                !TryLockBuffer(vault, CountersId, ref lockedCount))
+            {
+                UnlockSolveBuffers(lockedCount);
+                lockedCount = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryLockExternalHeatBuffers(out int lockedCount)
+        {
+            lockedCount = 0;
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            if (!TryLockBuffer(vault, ExternalHeatId, ref lockedCount) ||
+                !TryLockBuffer(vault, AnchorsId, ref lockedCount))
+            {
+                UnlockExternalHeatBuffers(lockedCount);
+                lockedCount = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryLockBuffer(IDataVault vault, BufferID bufferId, ref int lockedCount)
+        {
+            if (!vault.TryLockBuffer(bufferId, SystemID.Power))
+                return false;
+
+            lockedCount++;
+            return true;
+        }
+
+        private void UnlockTopologyRebuildBuffers()
+        {
+            UnlockTopologyRebuildBuffers(_topologyLockedBufferCount);
+            _topologyLockedBufferCount = 0;
+        }
+
+        private void UnlockSolveBuffers()
+        {
+            UnlockSolveBuffers(_solveLockedBufferCount);
+            _solveLockedBufferCount = 0;
+        }
+
+        private void UnlockExternalHeatBuffers()
+        {
+            UnlockExternalHeatBuffers(_externalHeatLockedBufferCount);
+            _externalHeatLockedBufferCount = 0;
+        }
+
+        private void UnlockTopologyRebuildBuffers(int lockedCount)
+        {
+            IDataVault vault = _vault;
+            if (vault == null || lockedCount <= 0)
+                return;
+
+            if (lockedCount >= 6) vault.TryUnlockBuffer(PendingCountersId, SystemID.Power);
+            if (lockedCount >= 5) vault.TryUnlockBuffer(PendingVisualStateId, SystemID.Power);
+            if (lockedCount >= 4) vault.TryUnlockBuffer(PendingAnchorsId, SystemID.Power);
+            if (lockedCount >= 3) vault.TryUnlockBuffer(PendingInjectionsId, SystemID.Power);
+            if (lockedCount >= 2) vault.TryUnlockBuffer(PendingEdgesId, SystemID.Power);
+            if (lockedCount >= 1) vault.TryUnlockBuffer(PendingNodesId, SystemID.Power);
+        }
+
+        private void UnlockTopologyCommitTargetBuffers(int lockedCount)
+        {
+            IDataVault vault = _vault;
+            if (vault == null || lockedCount <= 0)
+                return;
+
+            if (lockedCount >= 7) vault.TryUnlockBuffer(CountersId, SystemID.Power);
+            if (lockedCount >= 6) vault.TryUnlockBuffer(VisualStateId, SystemID.Power);
+            if (lockedCount >= 5) vault.TryUnlockBuffer(AnchorsId, SystemID.Power);
+            if (lockedCount >= 4) vault.TryUnlockBuffer(InjectionsId, SystemID.Power);
+            if (lockedCount >= 3) vault.TryUnlockBuffer(EdgesId, SystemID.Power);
+            if (lockedCount >= 2) vault.TryUnlockBuffer(NodesBId, SystemID.Power);
+            if (lockedCount >= 1) vault.TryUnlockBuffer(NodesAId, SystemID.Power);
+        }
+
+        private void UnlockSolveBuffers(int lockedCount)
+        {
+            IDataVault vault = _vault;
+            if (vault == null || lockedCount <= 0)
+                return;
+
+            if (lockedCount >= 8) vault.TryUnlockBuffer(CountersId, SystemID.Power);
+            if (lockedCount >= 7) vault.TryUnlockBuffer(TelemetryId, SystemID.Power);
+            if (lockedCount >= 6) vault.TryUnlockBuffer(VisualStateId, SystemID.Power);
+            if (lockedCount >= 5) vault.TryUnlockBuffer(ExternalHeatId, SystemID.Power);
+            if (lockedCount >= 4) vault.TryUnlockBuffer(InjectionsId, SystemID.Power);
+            if (lockedCount >= 3) vault.TryUnlockBuffer(EdgesId, SystemID.Power);
+            if (lockedCount >= 2) vault.TryUnlockBuffer(NodesBId, SystemID.Power);
+            if (lockedCount >= 1) vault.TryUnlockBuffer(NodesAId, SystemID.Power);
+        }
+
+        private void UnlockExternalHeatBuffers(int lockedCount)
+        {
+            IDataVault vault = _vault;
+            if (vault == null || lockedCount <= 0)
+                return;
+
+            if (lockedCount >= 2) vault.TryUnlockBuffer(AnchorsId, SystemID.Power);
+            if (lockedCount >= 1) vault.TryUnlockBuffer(ExternalHeatId, SystemID.Power);
+        }
+
+        private bool TryCommitPendingTopologySnapshot()
+        {
+            if (!TryResolveVaultViews(out VaultViews views))
+                return false;
+
+            long nodeBytes = (long)UnsafeUtility.SizeOf<GridNodeDTO>() * MaxNodes;
+            long edgeBytes = (long)UnsafeUtility.SizeOf<PowerEdgeDTO>() * MaxEdges;
+            long injectionBytes = (long)UnsafeUtility.SizeOf<float>() * MaxNodes;
+            long anchorBytes = (long)UnsafeUtility.SizeOf<ThermalGridAnchorDTO>() * MaxNodes;
+            long visualBytes = (long)UnsafeUtility.SizeOf<ThermalGridVisualStateDTO>() * MaxNodes;
+
+            UnsafeUtility.MemCpy(
+                NativeArrayUnsafeUtility.GetUnsafePtr(views.NodesA),
+                NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.PendingNodes),
+                nodeBytes);
+            UnsafeUtility.MemCpy(
+                NativeArrayUnsafeUtility.GetUnsafePtr(views.NodesB),
+                NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.PendingNodes),
+                nodeBytes);
+            UnsafeUtility.MemCpy(
+                NativeArrayUnsafeUtility.GetUnsafePtr(views.Edges),
+                NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.PendingEdges),
+                edgeBytes);
+            UnsafeUtility.MemCpy(
+                NativeArrayUnsafeUtility.GetUnsafePtr(views.Injections),
+                NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.PendingInjections),
+                injectionBytes);
+            UnsafeUtility.MemCpy(
+                NativeArrayUnsafeUtility.GetUnsafePtr(views.Anchors),
+                NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.PendingAnchors),
+                anchorBytes);
+            UnsafeUtility.MemCpy(
+                NativeArrayUnsafeUtility.GetUnsafePtr(views.VisualState),
+                NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.PendingVisualState),
+                visualBytes);
+
+            views.Counters[CounterNodeCount] = views.PendingCounters[CounterNodeCount];
+            views.Counters[CounterEdgeCount] = views.PendingCounters[CounterEdgeCount];
+            views.Counters[CounterFaultFlags] = views.PendingCounters[CounterFaultFlags];
+            return true;
+        }
+
+        private void DumpBlackBox()
+        {
+            try
+            {
+                string root = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
+                string path = Path.Combine(root, DumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+                using BinaryWriter writer = new BinaryWriter(stream);
+                writer.Write(DumpMagic);
+                writer.Write(DumpVersion);
+                writer.Write(_frame);
+                writer.Write(NodeCount);
+                writer.Write(EdgeCount);
+                writer.Write(_pendingIterations);
+                NativeArray<ThermalPowerGridTelemetrySnapshot> telemetry =
+                    TryResolveVaultBuffer(_telemetryHandle, TelemetryFrameCount, out NativeArray<ThermalPowerGridTelemetrySnapshot> resolvedTelemetry)
+                        ? resolvedTelemetry
+                        : default;
+                int telemetryCount = telemetry.IsCreated ? math.min(telemetry.Length, TelemetryFrameCount) : 0;
+                writer.Write(telemetryCount);
+                for (int i = 0; i < telemetryCount; i++)
+                {
+                    ThermalPowerGridTelemetrySnapshot entry = telemetry[i];
+                    writer.Write(entry.StateHash);
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.TotalGeneratedPower);
+                    writer.Write(entry.TotalLoad);
+                    writer.Write(entry.MaximumThermalStress);
+                    writer.Write(entry.JacobiResidual);
+                    writer.Write(entry.IterationCount);
+                    writer.Write(entry.NodeCount);
+                    writer.Write(entry.EdgeCount);
+                    writer.Write(entry.MicroDamageCount);
+                    writer.Write(entry.BrownoutCount);
+                    writer.Write(entry.ExternalHeatNodeCount);
+                }
+            }
+            catch (Exception exception)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x5331444Du, SourceHash, exception.HResult);
+            }
+        }
+
+        private static SubmarineThermalGridTuningDTO SanitizeTuning(in SubmarineThermalGridTuningDTO tuning)
+        {
+            return new SubmarineThermalGridTuningDTO
+            {
+                BaseResistance = math.max(Epsilon, FiniteOr(tuning.BaseResistance, 0.06f)),
+                ThermalDissipationRate = math.clamp(FiniteOr(tuning.ThermalDissipationRate, 0.18f), 0f, 10f),
+                JacobiTolerance = math.max(Epsilon, FiniteOr(tuning.JacobiTolerance, 0.001f)),
+                DamageThreshold = math.clamp(FiniteOr(tuning.DamageThreshold, 0.72f), Epsilon, 10f),
+                CriticalThermalThreshold = math.clamp(FiniteOr(tuning.CriticalThermalThreshold, 1f), Epsilon, 20f),
+                HeatGainScale = math.clamp(FiniteOr(tuning.HeatGainScale, 0.018f), 0f, 10f),
+                ResistanceDriftRate = math.clamp(FiniteOr(tuning.ResistanceDriftRate, 0.025f), 0f, 10f),
+                ExternalHeatScale = math.clamp(FiniteOr(tuning.ExternalHeatScale, 0.12f), 0f, 10f),
+                BrownoutVoltageThreshold = math.clamp(FiniteOr(tuning.BrownoutVoltageThreshold, 0.2f), 0f, 1f),
+                FlickerScale = math.clamp(FiniteOr(tuning.FlickerScale, 0.35f), 0f, 4f),
+                VisualOverkillScalar = math.saturate(FiniteOr(tuning.VisualOverkillScalar, 0.5f)),
+                SimulationTickDeltaSeconds = math.max(Epsilon, FiniteOr(tuning.SimulationTickDeltaSeconds, 0.05f)),
+                CsvRevision = tuning.CsvRevision,
+                Flags = tuning.Flags
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FiniteOr(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        private static int UnsafeFieldOffset<T>(string fieldName)
+        {
+            FieldInfo field = typeof(T).GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
+        }
+
+        [Flags]
+        private enum SubmarineThermalGridFaultFlags
+        {
+            None = 0,
+            NonFinite = 1 << 0,
+            CriticalThermalFailure = 1 << 1,
+            CsvParseFault = 1 << 2
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct ClearActiveRangeJob : IJobParallelFor
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* NodesA;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* NodesB;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public PowerEdgeDTO* Edges;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* Injections;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* ExternalHeat;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridAnchorDTO* Anchors;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridVisualStateDTO* VisualState;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* PendingNodes;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public PowerEdgeDTO* PendingEdges;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* PendingInjections;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridAnchorDTO* PendingAnchors;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridVisualStateDTO* PendingVisualState;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public int* PendingCounters;
+            public int Count;
+            public int EdgeCount;
+            public int CounterCount;
+
+            public void Execute(int index)
+            {
+                if ((uint)index < (uint)Count)
+                {
+                    NodesA[index] = default;
+                    NodesB[index] = default;
+                    Injections[index] = 0f;
+                    ExternalHeat[index] = 0f;
+                    Anchors[index] = default;
+                    VisualState[index] = default;
+                    PendingNodes[index] = default;
+                    PendingInjections[index] = 0f;
+                    PendingAnchors[index] = default;
+                    PendingVisualState[index] = default;
+                }
+
+                if ((uint)index < (uint)EdgeCount)
+                {
+                    Edges[index] = default;
+                    PendingEdges[index] = default;
+                }
+
+                if ((uint)index < (uint)CounterCount)
+                    PendingCounters[index] = 0;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct TopologySnapshotRebuildJob : IJobParallelFor
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* SourceNodes;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public PowerEdgeDTO* SourceEdges;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* SourceInjections;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridAnchorDTO* SourceAnchors;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* PendingNodes;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public PowerEdgeDTO* PendingEdges;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* PendingInjections;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridAnchorDTO* PendingAnchors;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridVisualStateDTO* PendingVisualState;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public int* PendingCounters;
+            public int NodeCount;
+            public int EdgeCount;
+
+            public void Execute(int index)
+            {
+                if ((uint)index < (uint)NodeCount)
+                {
+                    GridNodeDTO node = SourceNodes[index];
+                    node.Potential = math.saturate(FiniteOr(node.Potential, 0f));
+                    node.Resistance = math.max(Epsilon, FiniteOr(node.Resistance, Epsilon));
+                    node.ThermalLoad = math.max(0f, FiniteOr(node.ThermalLoad, 0f));
+                    node.AdjacencyOffset = math.clamp(node.AdjacencyOffset, 0, EdgeCount);
+                    node.AdjacencyCount = math.clamp(node.AdjacencyCount, 0, math.max(0, EdgeCount - node.AdjacencyOffset));
+                    PendingNodes[index] = node;
+                    PendingInjections[index] = FiniteOr(SourceInjections[index], 0f);
+                    PendingAnchors[index] = SourceAnchors[index];
+                    PendingVisualState[index] = new ThermalGridVisualStateDTO
+                    {
+                        NodeHash = node.NodeHash,
+                        Voltage01 = node.Potential,
+                        Thermal01 = math.saturate(node.ThermalLoad),
+                        Flags = node.Flags
+                    };
+                }
+
+                if ((uint)index < (uint)EdgeCount)
+                {
+                    PowerEdgeDTO edge = SourceEdges[index];
+                    edge.TargetIndex = (uint)edge.TargetIndex < (uint)NodeCount ? edge.TargetIndex : 0;
+                    edge.Conductance = math.max(0f, FiniteOr(edge.Conductance, 0f));
+                    PendingEdges[index] = edge;
+                }
+
+                if (index == CounterNodeCount)
+                    PendingCounters[CounterNodeCount] = NodeCount;
+                else if (index == CounterEdgeCount)
+                    PendingCounters[CounterEdgeCount] = EdgeCount;
+                else if (index == CounterFaultFlags)
+                    PendingCounters[CounterFaultFlags] = 0;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct EmergencyMockGridJob : IJobParallelFor
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* Nodes;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public PowerEdgeDTO* Edges;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* Injections;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridAnchorDTO* Anchors;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridVisualStateDTO* VisualState;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public int* Counters;
+            public SubmarineThermalGridTuningDTO Tuning;
+            public int NodeCount;
+
+            public void Execute(int index)
+            {
+                int nodeCount = math.clamp(NodeCount, 1, EmergencyMockNodeCount);
+                if ((uint)index >= (uint)nodeCount)
+                    return;
+
+                uint hash = HashNode(index);
+                int edgeOffset;
+                int edgeCount;
+                if (index == 0)
+                {
+                    edgeOffset = 0;
+                    edgeCount = nodeCount > 1 ? 1 : 0;
+                    if (edgeCount > 0)
+                        Edges[0] = new PowerEdgeDTO { TargetIndex = 1, Conductance = 1f };
+                }
+                else if (index + 1 == nodeCount)
+                {
+                    edgeOffset = 1 + (index - 1) * 2;
+                    edgeCount = 1;
+                    Edges[edgeOffset] = new PowerEdgeDTO { TargetIndex = index - 1, Conductance = 1f };
+                }
+                else
+                {
+                    edgeOffset = 1 + (index - 1) * 2;
+                    edgeCount = 2;
+                    Edges[edgeOffset] = new PowerEdgeDTO { TargetIndex = index - 1, Conductance = 1f };
+                    Edges[edgeOffset + 1] = new PowerEdgeDTO { TargetIndex = index + 1, Conductance = 1f };
+                }
+
+                float potential = index == 0 ? 1f : math.saturate(1f - index * 0.006f);
+                uint flags = index == 0 ? SubmarineThermalGridStatusFlags.Source : SubmarineThermalGridStatusFlags.None;
+                GridNodeDTO node = new GridNodeDTO
+                {
+                    NodeHash = hash,
+                    Potential = potential,
+                    Resistance = math.max(Epsilon, Tuning.BaseResistance),
+                    ThermalLoad = 0f,
+                    Flags = flags,
+                    AdjacencyOffset = edgeOffset,
+                    AdjacencyCount = edgeCount
+                };
+                Nodes[index] = node;
+                Injections[index] = index == 0 ? 0.5f : -0.0025f;
+                Anchors[index] = new ThermalGridAnchorDTO
+                {
+                    LocalOffset = new float3(index * 1.5f, 0f, 0f),
+                    NodeHash = hash
+                };
+                VisualState[index] = new ThermalGridVisualStateDTO
+                {
+                    NodeHash = hash,
+                    Voltage01 = potential,
+                    Thermal01 = 0f,
+                    FlickerPhase01 = 0f,
+                    Flags = flags
+                };
+
+                if (index == 0)
+                {
+                    Counters[CounterNodeCount] = nodeCount;
+                    Counters[CounterEdgeCount] = math.max(0, (nodeCount - 1) * 2);
+                    Counters[CounterFaultFlags] = 0;
+                }
+            }
+
+            private static uint HashNode(int index)
+            {
+                uint hash = 2166136261u;
+                hash = (hash ^ SourceHash) * 16777619u;
+                hash = (hash ^ (uint)index) * 16777619u;
+                return hash;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        public unsafe struct PowerGridRelaxationJob : IJobParallelFor
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* NodesRead;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* NodesWrite;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public PowerEdgeDTO* Edges;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* Injections;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* ExternalHeat;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridVisualStateDTO* VisualState;
+            public SubmarineThermalGridTuningDTO Tuning;
+            public int NodeCount;
+            public int EdgeCount;
+            public float DeltaSeconds;
+            public uint Frame;
+            public int IterationIndex;
+
+            public void Execute(int nodeIndex)
+            {
+                if ((uint)nodeIndex >= (uint)NodeCount)
+                    return;
+
+                ref GridNodeDTO source = ref UnsafeUtility.AsRef<GridNodeDTO>(NodesRead + nodeIndex);
+                ref GridNodeDTO target = ref UnsafeUtility.AsRef<GridNodeDTO>(NodesWrite + nodeIndex);
+                float sourcePotential = math.saturate(FiniteOr(source.Potential, 0f));
+                float resistance = math.max(Epsilon, FiniteOr(source.Resistance, Tuning.BaseResistance));
+                float weightedPotential = 0f;
+                float conductanceSum = 0f;
+                float thermalLoad = math.max(0f, FiniteOr(source.ThermalLoad, 0f));
+                uint flags = source.Flags & ~(SubmarineThermalGridStatusFlags.Brownout | SubmarineThermalGridStatusFlags.Overheating | SubmarineThermalGridStatusFlags.ExternalHeat);
+                bool isolated = (source.Flags & (SubmarineThermalGridStatusFlags.Isolated | SubmarineThermalGridStatusFlags.ShortCircuit)) != 0;
+
+                int edgeStart = math.clamp(source.AdjacencyOffset, 0, EdgeCount);
+                int edgeEnd = math.clamp(edgeStart + math.max(0, source.AdjacencyCount), edgeStart, EdgeCount);
+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                {
+                    PowerEdgeDTO edge = Edges[edgeIndex];
+                    int targetIndex = edge.TargetIndex;
+                    if ((uint)targetIndex >= (uint)NodeCount)
+                        continue;
+
+                    float conductance = math.max(0f, FiniteOr(edge.Conductance, 0f));
+                    if (conductance <= Epsilon)
+                        continue;
+
+                    GridNodeDTO neighbor = NodesRead[targetIndex];
+                    if ((neighbor.Flags & (SubmarineThermalGridStatusFlags.Isolated | SubmarineThermalGridStatusFlags.ShortCircuit)) != 0)
+                        continue;
+
+                    float neighborPotential = math.saturate(FiniteOr(neighbor.Potential, 0f));
+                    float voltageDrop = sourcePotential - neighborPotential;
+                    float current = voltageDrop * conductance;
+                    thermalLoad += current * current * resistance * math.max(0f, DeltaSeconds) * Tuning.HeatGainScale;
+                    weightedPotential += conductance * neighborPotential;
+                    conductanceSum += conductance;
+                }
+
+                float externalHeat = math.max(0f, FiniteOr(ExternalHeat[nodeIndex], 0f));
+                if (externalHeat > Epsilon)
+                    flags |= SubmarineThermalGridStatusFlags.ExternalHeat;
+                thermalLoad += externalHeat * Tuning.ExternalHeatScale * math.max(0f, DeltaSeconds);
+                thermalLoad = math.max(0f, thermalLoad - Tuning.ThermalDissipationRate * math.max(0f, DeltaSeconds));
+
+                float nextPotential;
+                if (isolated)
+                {
+                    nextPotential = 0f;
+                }
+                else if ((source.Flags & SubmarineThermalGridStatusFlags.Source) != 0)
+                {
+                    nextPotential = 1f;
+                }
+                else
+                {
+                    float injection = FiniteOr(Injections[nodeIndex], 0f);
+                    float denominator = math.max(conductanceSum, Epsilon);
+                    nextPotential = (weightedPotential + injection) / denominator;
+                }
+
+                nextPotential = math.saturate(FiniteOr(nextPotential, 0f));
+                float damageThreshold = math.max(Epsilon, Tuning.DamageThreshold);
+                float criticalThreshold = math.max(damageThreshold + Epsilon, Tuning.CriticalThermalThreshold);
+                if (thermalLoad >= damageThreshold)
+                {
+                    flags |= SubmarineThermalGridStatusFlags.Overheating;
+                    float overheat01 = math.saturate((thermalLoad - damageThreshold) / math.max(Epsilon, criticalThreshold - damageThreshold));
+                    resistance = math.min(16f, resistance * (1f + Tuning.ResistanceDriftRate * math.max(0f, DeltaSeconds) * overheat01));
+                    nextPotential *= math.lerp(1f, 0.35f, overheat01);
+                    if (thermalLoad >= criticalThreshold)
+                        flags |= SubmarineThermalGridStatusFlags.MicroDamage | SubmarineThermalGridStatusFlags.ShortCircuit;
+                }
+
+                if (nextPotential < math.saturate(Tuning.BrownoutVoltageThreshold))
+                    flags |= SubmarineThermalGridStatusFlags.Brownout;
+
+                target = source;
+                target.Potential = nextPotential;
+                target.Resistance = resistance;
+                target.ThermalLoad = FiniteOr(thermalLoad, 0f);
+                target.Flags = flags;
+
+                float thermal01 = math.saturate(target.ThermalLoad / criticalThreshold);
+                float flicker = Triangle01((Frame * 0.017f) + (nodeIndex * 0.071f) + IterationIndex * 0.013f);
+                flicker *= math.saturate(1f - nextPotential) * math.saturate(Tuning.FlickerScale);
+                VisualState[nodeIndex] = new ThermalGridVisualStateDTO
+                {
+                    NodeHash = target.NodeHash,
+                    Voltage01 = nextPotential,
+                    Thermal01 = thermal01,
+                    FlickerPhase01 = flicker,
+                    Flags = flags,
+                    VisualOverkill01 = math.saturate(Tuning.VisualOverkillScalar)
+                };
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct ShortCircuitIsolationJob : IJobParallelFor
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* Nodes;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public PowerEdgeDTO* Edges;
+            public int NodeCount;
+
+            public void Execute(int nodeIndex)
+            {
+                if ((uint)nodeIndex >= (uint)NodeCount)
+                    return;
+
+                GridNodeDTO node = Nodes[nodeIndex];
+                bool isolateSource = (node.Flags & (SubmarineThermalGridStatusFlags.MicroDamage | SubmarineThermalGridStatusFlags.Isolated | SubmarineThermalGridStatusFlags.ShortCircuit)) != 0;
+                int edgeStart = node.AdjacencyOffset;
+                int edgeEnd = edgeStart + math.max(0, node.AdjacencyCount);
+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                {
+                    PowerEdgeDTO edge = Edges[edgeIndex];
+                    bool isolateEdge = isolateSource;
+                    if ((uint)edge.TargetIndex < (uint)NodeCount)
+                    {
+                        GridNodeDTO target = Nodes[edge.TargetIndex];
+                        isolateEdge |= (target.Flags & (SubmarineThermalGridStatusFlags.MicroDamage | SubmarineThermalGridStatusFlags.Isolated | SubmarineThermalGridStatusFlags.ShortCircuit)) != 0;
+                    }
+
+                    if (isolateEdge)
+                    {
+                        edge.Conductance = 0f;
+                        Edges[edgeIndex] = edge;
+                    }
+                }
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct ExternalThermalInjectionJob : IJobParallelFor
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* ExternalHeat;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridAnchorDTO* Anchors;
+            public int NodeCount;
+            public double3 SubmarineBaseAup;
+            public double3 HazardAup;
+            public float HazardTemperatureCelsius;
+            public float HazardRadiusMeters;
+            public float GlobalQualityWeight;
+
+            public void Execute(int nodeIndex)
+            {
+                if ((uint)nodeIndex >= (uint)NodeCount)
+                    return;
+
+                float3 local = Anchors[nodeIndex].LocalOffset;
+                double3 nodeAup = SubmarineBaseAup + new double3(local);
+                float3 localDelta = (float3)(HazardAup - nodeAup);
+                float distanceSq = math.lengthsq(localDelta);
+                float radius = math.max(1f, HazardRadiusMeters);
+                float near01 = math.saturate(1f - distanceSq / math.max(Epsilon, radius * radius));
+                float cheapStep = math.step(0.02f, near01);
+                float smooth = near01 * near01 * (3f - 2f * near01);
+                float sample01 = math.lerp(cheapStep, smooth, math.saturate((GlobalQualityWeight - 0.3f) * 1.4285715f));
+                ExternalHeat[nodeIndex] = math.max(0f, HazardTemperatureCelsius - 40f) * 0.01f * sample01;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct ThermalGridTelemetryJob : IJob
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* Nodes;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* PreviousNodes;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public PowerEdgeDTO* Edges;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* Injections;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalPowerGridTelemetrySnapshot* Telemetry;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public int* Counters;
+            public int NodeCount;
+            public int EdgeCount;
+            public int Iterations;
+            public uint Frame;
+
+            public void Execute()
+            {
+                float totalGenerated = 0f;
+                float totalLoad = 0f;
+                float maxThermal = 0f;
+                float residual = 0f;
+                int microDamage = 0;
+                int brownout = 0;
+                int externalHeat = 0;
+                ulong hash = 1469598103934665603UL;
+                uint flags = 0u;
+
+                for (int i = 0; i < NodeCount; i++)
+                {
+                    GridNodeDTO node = Nodes[i];
+                    float injection = Injections[i];
+                    if (injection > 0f)
+                        totalGenerated += injection;
+                    else
+                        totalLoad += -injection;
+                    maxThermal = math.max(maxThermal, math.max(0f, node.ThermalLoad));
+                    residual = math.max(residual, math.abs(node.Potential - PreviousNodes[i].Potential));
+                    if ((node.Flags & SubmarineThermalGridStatusFlags.MicroDamage) != 0)
+                        microDamage++;
+                    if ((node.Flags & SubmarineThermalGridStatusFlags.Brownout) != 0)
+                        brownout++;
+                    if ((node.Flags & SubmarineThermalGridStatusFlags.ExternalHeat) != 0)
+                        externalHeat++;
+                    if (!math.isfinite(node.Potential) || !math.isfinite(node.ThermalLoad) || !math.isfinite(node.Resistance))
+                        flags |= (uint)SubmarineThermalGridFaultFlags.NonFinite;
+                    hash = HashNode(hash, node);
+                }
+
+                if (maxThermal >= 1f || microDamage > 0)
+                    flags |= (uint)SubmarineThermalGridFaultFlags.CriticalThermalFailure;
+                if ((flags & (uint)SubmarineThermalGridFaultFlags.NonFinite) != 0)
+                    Counters[CounterFaultFlags] |= (int)SubmarineThermalGridFaultFlags.NonFinite;
+                if ((flags & (uint)SubmarineThermalGridFaultFlags.CriticalThermalFailure) != 0)
+                    Counters[CounterFaultFlags] |= (int)SubmarineThermalGridFaultFlags.CriticalThermalFailure;
+
+                int cursor = Counters[CounterTelemetryCursor];
+                int writeIndex = math.abs(cursor) % TelemetryFrameCount;
+                Telemetry[writeIndex] = new ThermalPowerGridTelemetrySnapshot
+                {
+                    StateHash = hash,
+                    Frame = Frame,
+                    Flags = flags,
+                    TotalGeneratedPower = totalGenerated,
+                    TotalLoad = totalLoad,
+                    MaximumThermalStress = maxThermal,
+                    JacobiResidual = residual,
+                    IterationCount = Iterations,
+                    NodeCount = NodeCount,
+                    EdgeCount = EdgeCount,
+                    MicroDamageCount = microDamage,
+                    BrownoutCount = brownout,
+                    ExternalHeatNodeCount = externalHeat
+                };
+                Counters[CounterTelemetryCursor] = (cursor + 1) % TelemetryFrameCount;
+            }
+
+            private static ulong HashNode(ulong hash, in GridNodeDTO node)
+            {
+                hash = (hash ^ node.NodeHash) * 1099511628211UL;
+                hash = (hash ^ math.asuint(node.Potential)) * 1099511628211UL;
+                hash = (hash ^ math.asuint(node.ThermalLoad)) * 1099511628211UL;
+                hash = (hash ^ node.Flags) * 1099511628211UL;
+                return hash;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Triangle01(float value)
+        {
+            float t = math.frac(value);
+            return 1f - math.abs(t * 2f - 1f);
+        }
+    }
+
+    public static class SubmarineThermalGridCsvParser
+    {
+        public static int ParseGridSpecsCsv(
+            ReadOnlySpan<byte> csv,
+            NativeArray<SubmarineGridSpecDTO> specs,
+            NativeArray<SubmarineThermalGridTuningDTO> tuning,
+            int existingCount)
+        {
+            if (csv.Length <= 0 || !specs.IsCreated)
+                return math.max(0, existingCount);
+
+            int writeIndex = math.clamp(existingCount, 0, specs.Length);
+            int index = 0;
+            while (index < csv.Length && writeIndex < specs.Length)
+            {
+                SkipLineNoise(csv, ref index);
+                if (index >= csv.Length)
+                    break;
+
+                int nameStart = index;
+                int nameLength = ReadToken(csv, ref index);
+                if (nameLength <= 0)
+                {
+                    SkipLine(csv, ref index);
+                    continue;
+                }
+
+                if (IsHeaderName(csv, nameStart, nameLength))
+                {
+                    SkipLine(csv, ref index);
+                    continue;
+                }
+
+                float conductance = ReadFloat(csv, ref index);
+                float thermalLimit = ReadFloat(csv, ref index);
+                float resistance = ReadFloat(csv, ref index);
+                float externalHeatScale = ReadFloat(csv, ref index);
+                SkipLine(csv, ref index);
+
+                uint hash = HashToken(csv, nameStart, nameLength);
+                specs[writeIndex++] = new SubmarineGridSpecDTO
+                {
+                    ComponentHash = hash,
+                    BaseConductance = math.max(0f, conductance),
+                    ThermalLimit = math.max(0.001f, thermalLimit),
+                    BaseResistance = math.max(0.0001f, resistance),
+                    ExternalHeatScale = math.max(0f, externalHeatScale)
+                };
+            }
+
+            if (tuning.IsCreated && tuning.Length > 0)
+            {
+                SubmarineThermalGridTuningDTO value = tuning[0];
+                value.CsvRevision++;
+                tuning[0] = value;
+            }
+
+            return writeIndex;
+        }
+
+        public static uint HashToken(ReadOnlySpan<byte> bytes, int start, int length)
+        {
+            uint hash = 2166136261u;
+            int end = math.min(bytes.Length, start + math.max(0, length));
+            for (int i = start; i < end; i++)
+            {
+                byte value = bytes[i];
+                if (value == (byte)'_' || value == (byte)' ' || value == (byte)'-')
+                    continue;
+                if (value >= (byte)'A' && value <= (byte)'Z')
+                    value = (byte)(value + 32);
+                hash = (hash ^ value) * 16777619u;
+            }
+
+            return hash;
+        }
+
+        private static void SkipLineNoise(ReadOnlySpan<byte> csv, ref int index)
+        {
+            while (index < csv.Length)
+            {
+                byte value = csv[index];
+                if (value == (byte)' ' || value == (byte)'\t' || value == (byte)'\r' || value == (byte)'\n' || value == (byte)',')
+                {
+                    index++;
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        private static int ReadToken(ReadOnlySpan<byte> csv, ref int index)
+        {
+            int start = index;
+            while (index < csv.Length)
+            {
+                byte value = csv[index];
+                if (value == (byte)',' || value == (byte)'=' || value == (byte)'\n' || value == (byte)'\r')
+                    break;
+                index++;
+            }
+
+            int end = index;
+            while (end > start && (csv[end - 1] == (byte)' ' || csv[end - 1] == (byte)'\t'))
+                end--;
+            if (index < csv.Length && (csv[index] == (byte)',' || csv[index] == (byte)'='))
+                index++;
+            return math.max(0, end - start);
+        }
+
+        private static float ReadFloat(ReadOnlySpan<byte> csv, ref int index)
+        {
+            while (index < csv.Length && (csv[index] == (byte)' ' || csv[index] == (byte)'\t' || csv[index] == (byte)','))
+                index++;
+
+            bool negative = false;
+            if (index < csv.Length && csv[index] == (byte)'-')
+            {
+                negative = true;
+                index++;
+            }
+
+            float value = 0f;
+            while (index < csv.Length && csv[index] >= (byte)'0' && csv[index] <= (byte)'9')
+            {
+                value = value * 10f + (csv[index] - (byte)'0');
+                index++;
+            }
+
+            if (index < csv.Length && csv[index] == (byte)'.')
+            {
+                index++;
+                float scale = 0.1f;
+                while (index < csv.Length && csv[index] >= (byte)'0' && csv[index] <= (byte)'9')
+                {
+                    value += (csv[index] - (byte)'0') * scale;
+                    scale *= 0.1f;
+                    index++;
+                }
+            }
+
+            return negative ? -value : value;
+        }
+
+        private static bool IsHeaderName(ReadOnlySpan<byte> csv, int start, int length)
+        {
+            return length == 4 &&
+                   start + 3 < csv.Length &&
+                   ToLower(csv[start]) == (byte)'n' &&
+                   ToLower(csv[start + 1]) == (byte)'a' &&
+                   ToLower(csv[start + 2]) == (byte)'m' &&
+                   ToLower(csv[start + 3]) == (byte)'e';
+        }
+
+        private static byte ToLower(byte value)
+        {
+            return value >= (byte)'A' && value <= (byte)'Z' ? (byte)(value + 32) : value;
+        }
+
+        private static void SkipLine(ReadOnlySpan<byte> csv, ref int index)
+        {
+            while (index < csv.Length && csv[index] != (byte)'\n')
+                index++;
+            if (index < csv.Length)
+                index++;
+        }
+    }
+}

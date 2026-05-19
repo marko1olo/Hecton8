@@ -47,7 +47,7 @@ namespace Hecton8.Graphics.Scalability
         private const uint ScaleContextHash = 0x5343414Cu; // SCAL
         private const uint DrsWarningHash = 0x44525357u; // DRSW
         private const uint UpscalerNativeHash = 0x4E415456u; // NATV
-        private const uint UpscalerBilinearTaaHash = 0x424C5441u; // BLTA
+        private const uint UpscalerBilateralTaaHash = 0x42494C55u; // BILU
         private const uint UpscalerFsrTaaHash = 0x46535254u; // FSRT
         private const uint CsvMinScaleLimitHash = 0xF3608E52u;
         private const uint CsvSmoothingFactorHash = 0x6D58F632u;
@@ -209,12 +209,16 @@ namespace Hecton8.Graphics.Scalability
         public byte HardwareTier => _hardwareTier;
         public bool StpActive => _stpActive;
 
-        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct DrsScaleLimitsDTO
         {
+            [FieldOffset(0)]
             public float LowMinScale;
+            [FieldOffset(4)]
             public float MiddleMinScale;
+            [FieldOffset(8)]
             public float HighMinScale;
+            [FieldOffset(12)]
             public float UltraMinScale;
         }
 
@@ -296,7 +300,7 @@ namespace Hecton8.Graphics.Scalability
 
                 ref DrsStateDTO state = ref UnsafeUtility.AsRef<DrsStateDTO>(State);
                 state.TargetRenderScale = math.lerp(MinScaleLimit, PolicyMaxScale, 0.2f);
-                state.UpscalerTypeHash = UpscalerBilinearTaaHash;
+                state.UpscalerTypeHash = UpscalerBilateralTaaHash;
             }
         }
 
@@ -722,6 +726,34 @@ namespace Hecton8.Graphics.Scalability
             _mockQualityWeightActive = true;
             _mockQualityWeight01 = math.saturate(signal.GlobalQualityWeight);
             _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
+            if (signal.FrameTimeMs > 0f && math.isfinite(signal.FrameTimeMs))
+                _latestFrameTimeEwmaMs = math.max(_latestFrameTimeEwmaMs, signal.FrameTimeMs);
+        }
+
+        public void ConsumeMockReconstructionInputSignal(in MockReconstructionInputSignal signal)
+        {
+            if (!math.isfinite(signal.RenderScale01) ||
+                !math.isfinite(signal.GlobalQualityWeight01))
+            {
+                return;
+            }
+
+            _mockQualityWeightActive = true;
+            _mockQualityWeight01 = math.saturate(signal.GlobalQualityWeight01);
+            _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
+            float forcedScale = math.clamp(signal.RenderScale01, 0.3f, PolicyMaxScale);
+            _drsState.CurrentRenderScale = forcedScale;
+            _drsState.TargetRenderScale = forcedScale;
+            _drsState.UpscalerTypeHash = forcedScale < PolicyMaxScale - ScaleEpsilon
+                ? UpscalerBilateralTaaHash
+                : UpscalerNativeHash;
+            if (_scaleStateMirrorValid)
+            {
+                _scaleStateMirror.CurrentRenderScale01 = forcedScale;
+                _scaleStateMirror.TargetRenderScale01 = forcedScale;
+                _scaleStateMirror.GlobalQualityWeight01 = _latestGlobalQualityWeight01;
+            }
+
             if (signal.FrameTimeMs > 0f && math.isfinite(signal.FrameTimeMs))
                 _latestFrameTimeEwmaMs = math.max(_latestFrameTimeEwmaMs, signal.FrameTimeMs);
         }
@@ -2124,7 +2156,7 @@ namespace Hecton8.Graphics.Scalability
                 return UpscalerNativeHash;
 
             if (IsLowTier(tier) || !_fsrUpscalerAllowed)
-                return UpscalerBilinearTaaHash;
+                return UpscalerBilateralTaaHash;
 
             return UpscalerFsrTaaHash;
         }
@@ -2144,8 +2176,8 @@ namespace Hecton8.Graphics.Scalability
                 return 0f;
 
             float deficit = math.saturate(PolicyMaxScale - math.min(PolicyMaxScale, ClampRenderScale(renderScale)));
-            if (upscalerHash == UpscalerBilinearTaaHash)
-                return 0.03f + deficit * 0.04f;
+            if (upscalerHash == UpscalerBilateralTaaHash)
+                return 0.045f + deficit * 0.055f;
 
             return 0.12f + deficit * 0.10f;
         }
@@ -2236,11 +2268,13 @@ namespace Hecton8.Graphics.Scalability
             float multiplier = math.isfinite(_sharpeningMultiplier)
                 ? math.clamp(_sharpeningMultiplier, 0f, 2f)
                 : DefaultSharpeningMultiplier;
-            float linearDeficit = math.saturate((PolicyMaxScale - safeScale) * math.rcp(math.max(0.0001f, PolicyMaxScale - MinScale)));
-            float inverseDeficit = math.saturate((math.rcp(safeScale) - 1f) * math.rcp(math.max(0.0001f, math.rcp(MinScale) - 1f)));
-            float taaResolve = math.lerp(Smooth01(linearDeficit), inverseDeficit, 0.65f);
-            float qualityRingingGuard = math.lerp(0.78f, 1f, Sanitize01(_latestGlobalQualityWeight01));
-            return math.clamp(taaResolve * multiplier * qualityRingingGuard, 0f, 0.85f);
+            float scaleDeficit = math.saturate((PolicyMaxScale - safeScale) * math.rcp(math.max(0.0001f, PolicyMaxScale - MinScale)));
+            float varianceProxy = Smooth01(scaleDeficit);
+            float quality01 = Sanitize01(_latestGlobalQualityWeight01);
+            float reconstructionNeed = math.saturate(math.lerp(varianceProxy, math.max(varianceProxy, 1f - quality01), 0.35f));
+            float ringingGuard = math.lerp(0.58f, 0.88f, quality01);
+            float scaleClamp = math.lerp(0.38f, 0.78f, varianceProxy);
+            return math.clamp(reconstructionNeed * multiplier * ringingGuard, 0f, scaleClamp);
         }
 
         private void UpdateVisualBudget(HectonQualityTier tier, float stress01, float renderScale)

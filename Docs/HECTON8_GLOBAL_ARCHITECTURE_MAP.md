@@ -315,10 +315,10 @@ Bootstrap
 | 84 | QA Watchdog Bot | long-run validation |
 | 85 | Tech Researcher | mandate evolution |
 
-## 2026-05-13 Current-State Boundary
+## 2026-05-19 R31 Current-State Boundary
 
 - This stable map is the architecture authority. Dated reports are evidence/counter snapshots only.
-- Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R26_ROOT_ARCHITECTURE_HFI_PROMOTION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R25_ROOT_ARCHITECTURE_LONGTAIL_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older dated evidence reports before using this map as current architecture orientation.
+- Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R30_ROOT_ARCHITECTURE_INTERNAL_CURRENTNESS_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R26_ROOT_ARCHITECTURE_HFI_PROMOTION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R25_ROOT_ARCHITECTURE_LONGTAIL_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older dated evidence reports before using this map as current architecture orientation.
 - This map is source-backed architecture orientation, not Play Mode proof, profiler proof, console certification, or scene/prefab wiring proof.
 - Line counts and interface counts are orientation data only; source files and fresh verification logs win.
 
@@ -417,7 +417,7 @@ Current source-backed facts:
 
 - R27 static source scan of `GlobalSignals.InitializeAllQueues()` sees `73` direct `CreateQueue(...)` native queue slots
 - R27 static source scan of `GlobalSignals.cs` sees `133` `SignalBus<T>.EnsureInitialized()` typed lanes, including `ConfigureDebugSignalLane()` for `DebugSignal`
-- Current Mod API static validator now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`); source-level `ISignal` struct counts are schema/input-surface evidence and static validator proof only, not runtime-lane proof.
+- R30 reported the Mod API static validator pass (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`); this line links no standalone artifact tuple, so treat it as static schema/input-surface orientation only, not runtime-lane, profiler, mod-smoke, or current rerun proof.
 - signal payloads are unmanaged structs; sizes are source-validated by `ValidateSignalSize`/`ValidateSignalPayload` calls, not profiler proof
 - `SpscSignalRingBuffer<T>` exists for SPSC-only cases
 
@@ -429,11 +429,11 @@ Current rule:
 - Local owner callbacks and async completion callbacks do not become event architecture authority by appearing in code.
 - Source scan found one static `Action`-typed GPU readback callback bridge in `SaveThumbnailSystem.cs`; it is not a first-party cross-domain bus lane.
 
-## 5. Current Editor Readback
+## 5. Current Documentation And Proof Boundary
 
 Current documentation pass status:
 
-- Current DOC_GLOBAL documentation boundary starts at `Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`; R28 remains the prior root/architecture interior-boundary correction, R27 remains the latest source-counter/index boundary, R26, R25, and R24 remain prior root/architecture boundaries, `Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` is the current static HFI/H-Phi/global-authority risk snapshot, R23 remains the proof-language/navigation residue boundary, R22 remains a prior source-counter/validation boundary, then R21, R20, R19, R18, R17, R16, R15, R14, R13, R12, R11, R10, and R9 remain subordinate correction layers.
+- Current DOC_GLOBAL documentation boundary starts at `Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`; R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior root/architecture interior-boundary correction, R27 remains the latest source-counter/index boundary, R26, R25, and R24 remain prior root/architecture boundaries, `Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` is the current static HFI/H-Phi/global-authority risk snapshot, R23 remains the proof-language/navigation residue boundary, R22 remains a prior source-counter/validation boundary, then R21, R20, R19, R18, R17, R16, R15, R14, R13, R12, R11, R10, and R9 remain subordinate correction layers.
 - `Reports/2026-05-13_DOC_AUDIT_XRAY.md` is a historical documentation counter/missing-artifact override
 - `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` is a historical machine-readable active documentation manifest; its counters are superseded where newer DOC_GLOBAL or DOC_AUDIT passes reran them
 - `Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is a historical `.agents-skills` visual-fake doctrine boundary; stable doctrine now lives in `AGENTS.md` and `.agents-skills`
@@ -456,7 +456,7 @@ Historical Unity Editor readback from older rechecks:
 - Loaded active scene: `02_HECTON_WORLD`
 - Older console readback: `15` errors, but all `15` were package-side MCP `ManageAsset` conversion errors, not first-party compile errors
 
-Latest console slice observed:
+Historical console slice observed:
 
 - tool/package source: `./Library/PackageCache/com.coplaydev.unity-mcp.../Editor/Tools/ManageAsset.cs`
 - repeated message pattern: `Failed to convert -1 to a unsigned 32 bit int`

@@ -1,6 +1,7 @@
 using System;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
@@ -11,12 +12,10 @@ namespace Hecton8.UI
     /// Hash-bound PDA label for scanner archaeology names. Writes TMP text from pooled char buffers only.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PDADataArchaeologyDecryptLabel : MonoBehaviour, ILateFrameTickable
+    public sealed class PDADataArchaeologyDecryptLabel : MonoBehaviour, ILateFrameTickable, IScalabilityChangedEventListener
     {
         private const int RevealBucketCount = 64;
         private const float ScrambleSpeed = 37f;
-        private const float ScrambleTierProbeIntervalSeconds = 0.5f;
-        private const float ScrambleTierHysteresisSeconds = 2f;
         private static readonly char[] EmptyText = Array.Empty<char>();
 
         [Header("Data Archaeology")]
@@ -29,12 +28,9 @@ namespace Hecton8.UI
         private int _lastHash;
         private int _lastProgressBucket = -1;
         private bool _registered;
+        private bool _registeredScalabilityListener;
         private bool _dirty;
-        private bool _scrambleTierInitialized;
         private bool _scrambleAllowed;
-        private bool _scrambleCandidate;
-        private float _scrambleProbeCountdown;
-        private float _scrambleCandidateAge;
 
         /// <summary>
         /// Binds this PDA label to a scanner entity hash and progress value.
@@ -69,12 +65,15 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            RefreshCachedScalabilityTier();
+            TryRegisterScalabilityListener();
             TryRegister();
             _dirty = true;
         }
 
         private void OnDisable()
         {
+            TryUnregisterScalabilityListener();
             Unregister();
         }
 
@@ -88,7 +87,6 @@ namespace Hecton8.UI
             }
 
             float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
-            RefreshScrambleAllowed(deltaTime);
             bool scramble = _scrambleAllowed && ShouldScramble(_progress01);
             _scramblePhase += deltaTime * ScrambleSpeed;
             int hash = unchecked((int)_entityHash);
@@ -160,53 +158,41 @@ namespace Hecton8.UI
             return progress01 < 0.999f;
         }
 
-        private void RefreshScrambleAllowed(float deltaTime)
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            if (!_scrambleTierInitialized)
-            {
-                bool requested = IsScrambleAllowedForCurrentTier();
-                _scrambleAllowed = requested;
-                _scrambleCandidate = requested;
-                _scrambleCandidateAge = 0f;
-                _scrambleProbeCountdown = ScrambleTierProbeIntervalSeconds;
-                _scrambleTierInitialized = true;
-                return;
-            }
-
-            _scrambleProbeCountdown -= math.max(0f, deltaTime);
-            if (_scrambleProbeCountdown > 0f)
-                return;
-
-            _scrambleProbeCountdown = ScrambleTierProbeIntervalSeconds;
-            bool requestedAllowed = IsScrambleAllowedForCurrentTier();
-            if (requestedAllowed == _scrambleAllowed)
-            {
-                _scrambleCandidate = requestedAllowed;
-                _scrambleCandidateAge = 0f;
-                return;
-            }
-
-            if (requestedAllowed != _scrambleCandidate)
-            {
-                _scrambleCandidate = requestedAllowed;
-                _scrambleCandidateAge = 0f;
-                return;
-            }
-
-            _scrambleCandidateAge += ScrambleTierProbeIntervalSeconds;
-            if (_scrambleCandidateAge >= ScrambleTierHysteresisSeconds)
-            {
-                _scrambleAllowed = requestedAllowed;
-                _scrambleCandidateAge = 0f;
-            }
+            _scrambleAllowed = IsScrambleAllowed(payload.CurrentQualityTier);
+            _dirty = true;
         }
 
-        private static bool IsScrambleAllowedForCurrentTier()
+        private void RefreshCachedScalabilityTier()
         {
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            _scrambleAllowed = IsScrambleAllowed(tier);
+        }
+
+        private static bool IsScrambleAllowed(HectonQualityTier tier)
+        {
             return tier != HectonQualityTier.Unknown &&
                    tier != HectonQualityTier.Low &&
                    tier != HectonQualityTier.Mx350;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_registeredScalabilityListener || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
         }
 
         private void TryRegister()
@@ -234,11 +220,7 @@ namespace Hecton8.UI
             _lastHash = 0;
             _lastProgressBucket = -1;
             _dirty = false;
-            _scrambleTierInitialized = false;
             _scrambleAllowed = false;
-            _scrambleCandidate = false;
-            _scrambleProbeCountdown = 0f;
-            _scrambleCandidateAge = 0f;
 
             if (targetText != null)
                 targetText.SetCharArray(EmptyText, 0, 0);

@@ -5061,7 +5061,7 @@ namespace Hecton8.Physics
                 direction = Vector3.up;
 
             Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
-            damage.WorldPoint = new float3(center.x, center.y, center.z);
+            damage.ImpactAup = Hecton8.Core.Contracts.Signals.CombatDamageSignalCodec.FromRuntimePoint(center);
             damage.Direction = new float3(direction.x, direction.y, direction.z);
             damage.Magnitude = MaelstromDamageMagnitude * math.max(0.25f, math.saturate(intensity01));
             damage.DamageType = CombatDamageTypes.Pressure;

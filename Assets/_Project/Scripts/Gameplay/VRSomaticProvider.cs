@@ -7,6 +7,7 @@ using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -74,11 +75,14 @@ namespace Hecton8.Gameplay
         private const float Quest3ComfortFrameSafetyMinOpacity = 0.10f;
         private const int Quest3ComfortFrameSafetyConsecutiveFrames = 2;
         private const int Quest3ComfortFrameSafetyReleaseStableFrames = 12;
+        private const float KccAngularVelocityMaxRadiansPerSecond = 16f;
+        private const float KccAngularAccelerationMaxRadiansPerSecondSq = 240f;
+        private const int KccVelocitySignalStaleFrameLimit = 12;
         private const uint VrComfortTelemetryContextHash = 0x56524346u; // VRCF
         private const uint VrComfortJerkEventHash = 0x4A524B31u; // JRK1
         private const uint VrComfortMaxVignetteHash = 0x4D565231u; // MVR1
         private const uint BlackBoxMagic = 0x5652534Du; // VRSM
-        private const uint BlackBoxVersion = 1u;
+        private const uint BlackBoxVersion = 3u;
         private const int BlackBoxFrameCapacity = 300;
         private const ushort BlackBoxFlagActive = 1 << 0;
         private const ushort BlackBoxFlagNonFinite = 1 << 1;
@@ -92,7 +96,10 @@ namespace Hecton8.Gameplay
         private const ushort BlackBoxFlagFramePressure = 1 << 9;
         private const ushort BlackBoxFlagQuest2Fallback = 1 << 10;
         private const ushort BlackBoxFlagAccelerationTunnel = 1 << 11;
-        private const string BlackBoxDumpFileName = "Dump_VR_SOMATIC_ENGINEER.bin";
+        private const ushort BlackBoxFlagKccSignal = 1 << 12;
+        private const ushort BlackBoxFlagKccAccelerationTunnel = 1 << 13;
+        private const ushort BlackBoxFlagDynamicHorizonLock = 1 << 14;
+        private const string BlackBoxDumpFileName = "Dump_SHINOBU_126.bin";
         private const uint StateHeadCollisionScheduled = 1u << 0;
         private const uint StateRegisteredService = 1u << 1;
         private const uint StateRegisteredUpdate = 1u << 2;
@@ -106,11 +113,13 @@ namespace Hecton8.Gameplay
         private const uint StateHandKinematicsScheduled = 1u << 10;
         private const uint StateHandsInitialized = 1u << 11;
         private const uint StateRootInitialized = 1u << 12;
+        private const uint StateHasPreviousKccPlanarDirection = 1u << 13;
 
         private static readonly int NearCollisionIntensityId = Shader.PropertyToID("_HectonVRNearCollisionIntensity");
         private static readonly int SomaticCondensationId = Shader.PropertyToID("_HectonVRSomaticCondensation");
         private static readonly int SomaticStateId = Shader.PropertyToID("_HectonVRSomaticState");
         private static readonly int VrComfortJerkStateId = Shader.PropertyToID("_HectonVRComfortJerkState");
+        private static readonly int VrComfortKccStateId = Shader.PropertyToID("_HectonVRComfortKccState");
         private static readonly int VrComfortVignetteId = Shader.PropertyToID("_VRComfortVignette");
 
         private struct VaultNativeArray<T> where T : struct
@@ -213,6 +222,24 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.001f, 0.1f), Tooltip("Maximum acceleration tunnel opacity decrease per VR frame.")]
         private float comfortVignetteReleaseSlewPerFrame = 0.022f;
 
+        [Header("KCC Comfort")]
+        [SerializeField, Range(0.01f, 1.5f), Tooltip("Minimum KCC planar speed required before body-turn angular acceleration affects VR comfort.")]
+        private float kccMinimumPlanarSpeedMetersPerSecond = 0.18f;
+        [SerializeField, Range(5f, 180f), Tooltip("KCC angular acceleration where camera-independent FOV narrowing begins.")]
+        private float kccAngularAccelerationSoftTunnelStartRadS2 = 34f;
+        [SerializeField, Range(20f, 280f), Tooltip("KCC angular acceleration where camera-independent FOV narrowing reaches its maximum contribution.")]
+        private float kccAngularAccelerationEmergencyClampRadS2 = 140f;
+        [SerializeField, Range(0f, 120f), Tooltip("KCC angular acceleration below which the KCC tunnel can release after hysteresis.")]
+        private float kccAngularAccelerationReleaseBelowRadS2 = 18f;
+        [SerializeField, Range(0f, 1f), Tooltip("Seconds KCC acceleration must stay below release threshold before KCC tunnel release.")]
+        private float kccAccelerationReleaseHysteresisSeconds = 0.18f;
+        [SerializeField, Range(0f, 1f), Tooltip("Maximum additional FOV narrowing contributed by KCC body-turn acceleration.")]
+        private float kccAngularAccelerationVignetteContribution = 0.34f;
+        [SerializeField, Range(10f, 240f), Tooltip("KCC angular acceleration that reaches full dynamic horizon lock assistance.")]
+        private float kccHorizonLockFullAccelerationRadS2 = 95f;
+        [SerializeField, Range(0f, 1f), Tooltip("Maximum horizon lock assistance contributed by KCC body-turn acceleration.")]
+        private float kccHorizonLockMaximum01 = 0.72f;
+
         [Header("Chest Sockets")]
         [SerializeField] private Vector3 pdaChestOffset = new Vector3(-0.18f, -0.34f, 0.22f);
         [SerializeField] private Vector3 pdaChestRotationEuler = new Vector3(8f, -12f, -6f);
@@ -276,6 +303,17 @@ namespace Hecton8.Gameplay
         private float _headAngularJerk01;
         private float _accelerationComfortVignette01;
         private float _accelerationReleaseBelowTimer;
+        private float2 _previousKccPlanarDirection;
+        private float _previousKccAngularVelocityRadiansPerSecond;
+        private float _kccAngularVelocityRadiansPerSecond;
+        private float _kccAngularAccelerationRadiansPerSecondSq;
+        private float _kccAngularComfortVignette01;
+        private float _kccHorizonLock01;
+        private float _kccAccelerationReleaseBelowTimer;
+        private float _globalQualityWeight01 = 1f;
+        private uint _lastConsumedKccVelocitySequence;
+        private uint _lastConsumedKccVelocityFrame;
+        private uint _lastConsumedKccVelocitySourceId;
         private int _comfortFramePressureConsecutiveFrames;
         private int _comfortFramePressureStableFrames;
         private float _jerkCullBlend01;
@@ -302,6 +340,7 @@ namespace Hecton8.Gameplay
         private float _playerSignalSampleRemaining;
         private Vector4 _lastPublishedSomaticState = Vector4.positiveInfinity;
         private Vector4 _lastPublishedJerkState = Vector4.positiveInfinity;
+        private Vector4 _lastPublishedKccComfortState = Vector4.positiveInfinity;
         private uint _lastObservedAupShiftSequence;
         private uint _handGhostMask;
         private int _blackBoxCursor;
@@ -432,6 +471,7 @@ namespace Hecton8.Gameplay
             _headAngularJerkRadiansPerSecondCubed = 0f;
             _headAngularJerk01 = 0f;
             _accelerationComfortVignette01 = 0f;
+            ResetKccAngularComfortState();
             _accelerationReleaseBelowTimer = 0f;
             ResetComfortFramePressureState();
             _jerkCullBlend01 = 0f;
@@ -481,6 +521,10 @@ namespace Hecton8.Gameplay
                 : AbsoluteUniversePosition.FromRuntimePosition(headPosition);
             ResetHeadMotionIfAupShifted(headPosition, headRotation);
             UpdateHeadMotion(headPosition, headRotation, safeDeltaTime);
+            UpdateKccAngularComfortState(safeDeltaTime);
+            if (_decoupledRootTransform == null)
+                PublishComfortVignette(_kccAngularComfortVignette01);
+
             ScheduleRootSync(headPosition, headRotation, safeDeltaTime);
             ScheduleHandKinematics(headPosition, headRotation, safeDeltaTime);
             RefreshPlayerSignalsIfDue();
@@ -531,6 +575,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            ValidateNativeLayouts();
             CacheSocketRotations();
             RefreshCachedGlobalState();
         }
@@ -576,6 +621,7 @@ namespace Hecton8.Gameplay
 
         private void OnValidate()
         {
+            ValidateNativeLayouts();
             CacheSocketRotations();
         }
 
@@ -588,6 +634,7 @@ namespace Hecton8.Gameplay
         {
             _cachedQualityTier = GlobalRegistry.ScalabilityTier;
             _cachedLowMemoryProfile = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+            _globalQualityWeight01 = ResolveGlobalQualityWeight01();
             _cachedPlayerCamera = null;
             if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
                 _cachedPlayerCamera = runtimeContext.PlayerCamera;
@@ -899,6 +946,7 @@ namespace Hecton8.Gameplay
             _headAngularJerkRadiansPerSecondCubed = 0f;
             _headAngularJerk01 = 0f;
             _accelerationComfortVignette01 = 0f;
+            ResetKccAngularComfortState();
             _accelerationReleaseBelowTimer = 0f;
             ResetComfortFramePressureState();
             _jerkCullBlend01 = 0f;
@@ -919,6 +967,7 @@ namespace Hecton8.Gameplay
 
             _lastObservedAupShiftSequence = currentShiftSequence;
             ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);
+            ResetKccAngularComfortState();
         }
 
         private void UpdateRotationJerkState(float deltaTime, float3 headAngularVelocityRadiansPerSecond)
@@ -1027,6 +1076,230 @@ namespace Hecton8.Gameplay
             _comfortFramePressureConsecutiveFrames = 0;
             _comfortFramePressureStableFrames = 0;
             _comfortFramePressureActive = false;
+        }
+
+        private void UpdateKccAngularComfortState(float deltaTime)
+        {
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(deltaTime, MinimumDeltaTime) : MinimumDeltaTime;
+            _globalQualityWeight01 = ResolveGlobalQualityWeight01();
+            if (!TryResolveLatestKccVelocitySignal(out KccVelocitySignal signal))
+            {
+                ReleaseKccAngularComfortState(safeDeltaTime, _lastConsumedKccVelocityFrame == 0u || IsKccVelocitySignalStale(_lastConsumedKccVelocityFrame));
+                return;
+            }
+
+            if (signal.Sequence == 0u || IsKccVelocitySignalStale(signal.Frame))
+            {
+                ReleaseKccAngularComfortState(safeDeltaTime, true);
+                return;
+            }
+
+            if (signal.Sequence == _lastConsumedKccVelocitySequence &&
+                signal.Frame == _lastConsumedKccVelocityFrame &&
+                signal.SourceId == _lastConsumedKccVelocitySourceId)
+            {
+                ReleaseKccAngularComfortState(safeDeltaTime, false);
+                return;
+            }
+
+            uint previousSignalFrame = _lastConsumedKccVelocityFrame;
+            _lastConsumedKccVelocitySequence = signal.Sequence;
+            _lastConsumedKccVelocityFrame = signal.Frame;
+            _lastConsumedKccVelocitySourceId = signal.SourceId;
+            if (!TryResolveKccPlanarDirection(in signal, out float2 planarDirection))
+            {
+                ReleaseKccAngularComfortState(safeDeltaTime, true);
+                return;
+            }
+
+            if ((_stateFlags & StateHasPreviousKccPlanarDirection) == 0u)
+            {
+                _previousKccPlanarDirection = planarDirection;
+                _previousKccAngularVelocityRadiansPerSecond = 0f;
+                _stateFlags |= StateHasPreviousKccPlanarDirection;
+                ReleaseKccAngularComfortState(safeDeltaTime, false);
+                return;
+            }
+
+            float signalDeltaTime = ResolveKccSignalDeltaTime(previousSignalFrame, signal.Frame, safeDeltaTime);
+            float signedYawDelta = ResolveSignedPlanarAngleRadians(_previousKccPlanarDirection, planarDirection);
+            float angularVelocity = signedYawDelta * math.rcp(signalDeltaTime);
+            angularVelocity = math.clamp(angularVelocity, -KccAngularVelocityMaxRadiansPerSecond, KccAngularVelocityMaxRadiansPerSecond);
+            float angularAcceleration = (angularVelocity - _previousKccAngularVelocityRadiansPerSecond) * math.rcp(signalDeltaTime);
+            float angularAccelerationMagnitude = math.min(
+                math.abs(math.select(angularAcceleration, 0f, !math.isfinite(angularAcceleration))),
+                KccAngularAccelerationMaxRadiansPerSecondSq);
+
+            _previousKccPlanarDirection = planarDirection;
+            _previousKccAngularVelocityRadiansPerSecond = angularVelocity;
+            _kccAngularVelocityRadiansPerSecond = angularVelocity;
+            _kccAngularAccelerationRadiansPerSecondSq = angularAccelerationMagnitude;
+            UpdateKccAccelerationComfortOutput(safeDeltaTime, angularAccelerationMagnitude);
+        }
+
+        private void ReleaseKccAngularComfortState(float deltaTime, bool clearDirectionHistory)
+        {
+            if (clearDirectionHistory)
+            {
+                _stateFlags &= ~StateHasPreviousKccPlanarDirection;
+                _previousKccPlanarDirection = float2.zero;
+                _previousKccAngularVelocityRadiansPerSecond = 0f;
+            }
+
+            float blend = ResolveCinematicBlendApprox(18f, deltaTime);
+            _kccAngularVelocityRadiansPerSecond = math.lerp(_kccAngularVelocityRadiansPerSecond, 0f, blend);
+            _kccAngularAccelerationRadiansPerSecondSq = math.lerp(_kccAngularAccelerationRadiansPerSecondSq, 0f, blend);
+            UpdateKccAccelerationComfortOutput(deltaTime, 0f);
+        }
+
+        private void ResetKccAngularComfortState()
+        {
+            _stateFlags &= ~StateHasPreviousKccPlanarDirection;
+            _previousKccPlanarDirection = float2.zero;
+            _previousKccAngularVelocityRadiansPerSecond = 0f;
+            _kccAngularVelocityRadiansPerSecond = 0f;
+            _kccAngularAccelerationRadiansPerSecondSq = 0f;
+            _kccAngularComfortVignette01 = 0f;
+            _kccHorizonLock01 = 0f;
+            _kccAccelerationReleaseBelowTimer = 0f;
+            _lastConsumedKccVelocitySequence = 0u;
+            _lastConsumedKccVelocityFrame = 0u;
+            _lastConsumedKccVelocitySourceId = 0u;
+        }
+
+        private void UpdateKccAccelerationComfortOutput(float deltaTime, float angularAccelerationRadS2)
+        {
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(deltaTime, 0f) : 0f;
+            float quality = Sanitize01(_globalQualityWeight01, 1f);
+            float lowAssist01 = 1f - quality;
+            float softStart = SanitizeMinimum(kccAngularAccelerationSoftTunnelStartRadS2, 0.01f) * math.lerp(0.82f, 1.12f, quality);
+            float emergencyClamp = SanitizeMinimum(kccAngularAccelerationEmergencyClampRadS2, softStart + 0.01f) * math.lerp(0.88f, 1.10f, quality);
+            emergencyClamp = math.max(softStart + 0.01f, emergencyClamp);
+            float releaseBelow = math.min(softStart, SanitizeNonNegative(kccAngularAccelerationReleaseBelowRadS2));
+            float hysteresisSeconds = SanitizeNonNegative(kccAccelerationReleaseHysteresisSeconds);
+            float safeAcceleration = SanitizeNonNegative(angularAccelerationRadS2);
+
+            if (safeAcceleration <= releaseBelow)
+                _kccAccelerationReleaseBelowTimer = math.min(hysteresisSeconds, _kccAccelerationReleaseBelowTimer + safeDeltaTime);
+            else
+                _kccAccelerationReleaseBelowTimer = 0f;
+
+            bool canRelease = _kccAccelerationReleaseBelowTimer >= hysteresisSeconds;
+            float targetVignette = 0f;
+            if (safeAcceleration > softStart || !canRelease)
+            {
+                float acceleration01 = math.saturate((math.min(safeAcceleration, emergencyClamp) - softStart) * math.rcp(math.max(0.001f, emergencyClamp - softStart)));
+                float maximum = Sanitize01(kccAngularAccelerationVignetteContribution, 0f) * math.lerp(1.15f, 0.85f, quality);
+                targetVignette = Smoothstep01(acceleration01) * maximum;
+                if (!canRelease && targetVignette < _kccAngularComfortVignette01)
+                    targetVignette = _kccAngularComfortVignette01;
+            }
+
+            float fullLockAcceleration = SanitizeMinimum(kccHorizonLockFullAccelerationRadS2, 0.01f) * math.lerp(0.85f, 1.15f, quality);
+            float horizonTarget = Smoothstep01(math.saturate(safeAcceleration * math.rcp(fullLockAcceleration))) *
+                                  Sanitize01(kccHorizonLockMaximum01, 0f) *
+                                  math.lerp(1.10f, 0.92f, quality);
+            horizonTarget = math.max(horizonTarget, targetVignette * math.lerp(0.28f, 0.18f, lowAssist01));
+
+            float maxDelta = targetVignette > _kccAngularComfortVignette01
+                ? math.min(SanitizeMinimum(ResolveComfortVignetteAttackSlewPerFrame(), 0.001f), 0.1f)
+                : math.min(SanitizeMinimum(ResolveComfortVignetteReleaseSlewPerFrame(), 0.001f), 0.1f);
+            float vignetteDelta = math.clamp(targetVignette - _kccAngularComfortVignette01, -maxDelta, maxDelta);
+            _kccAngularComfortVignette01 = Sanitize01(_kccAngularComfortVignette01 + vignetteDelta, 0f);
+
+            float horizonBlend = ResolveCinematicBlendApprox(math.lerp(10f, 22f, quality), math.max(safeDeltaTime, MinimumDeltaTime));
+            _kccHorizonLock01 = Sanitize01(math.lerp(_kccHorizonLock01, horizonTarget, horizonBlend), 0f);
+        }
+
+        private static bool TryResolveLatestKccVelocitySignal(out KccVelocitySignal signal)
+        {
+            global::System.ReadOnlySpan<KccVelocitySignal> signals = SignalBus<KccVelocitySignal>.GetFrameSnapshot();
+            signal = default;
+            if (signals.Length == 0)
+                return false;
+
+            bool found = false;
+            for (int i = 0; i < signals.Length; i++)
+            {
+                KccVelocitySignal candidate = signals[i];
+                if (candidate.Sequence == 0u)
+                    continue;
+
+                if (!found || IsKccVelocitySignalNewer(in candidate, in signal))
+                {
+                    signal = candidate;
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
+        private static bool IsKccVelocitySignalNewer(in KccVelocitySignal candidate, in KccVelocitySignal current)
+        {
+            if (candidate.Frame != current.Frame)
+                return candidate.Frame > current.Frame;
+
+            if (candidate.Sequence != current.Sequence)
+                return candidate.Sequence > current.Sequence;
+
+            return candidate.SourceId >= current.SourceId;
+        }
+
+        private bool TryResolveKccPlanarDirection(in KccVelocitySignal signal, out float2 direction)
+        {
+            float2 planar = new float2(signal.Velocity.x, signal.Velocity.z);
+            float speedSq = math.lengthsq(planar);
+            float speedMinimum = SanitizeMinimum(kccMinimumPlanarSpeedMetersPerSecond, 0.01f);
+            if (!math.isfinite(speedSq) || speedSq < speedMinimum * speedMinimum)
+            {
+                direction = float2.zero;
+                return false;
+            }
+
+            direction = planar * math.rsqrt(math.max(speedSq, 0.000001f));
+            if (math.all(math.isfinite(direction)))
+                return true;
+
+            direction = float2.zero;
+            return false;
+        }
+
+        private static float ResolveSignedPlanarAngleRadians(float2 previousDirection, float2 currentDirection)
+        {
+            float cross = (previousDirection.x * currentDirection.y) - (previousDirection.y * currentDirection.x);
+            float dot = math.clamp(math.dot(previousDirection, currentDirection), -1f, 1f);
+            if (!math.isfinite(cross) || !math.isfinite(dot))
+                return 0f;
+
+            return math.atan2(cross, dot);
+        }
+
+        private static bool IsKccVelocitySignalStale(uint signalFrame)
+        {
+            if (signalFrame == 0u)
+                return true;
+
+            int currentFrame = Time.frameCount;
+            if (signalFrame > (uint)currentFrame)
+                return false;
+
+            return (uint)currentFrame - signalFrame > KccVelocitySignalStaleFrameLimit;
+        }
+
+        private static float ResolveKccSignalDeltaTime(uint previousSignalFrame, uint currentSignalFrame, float fallbackDeltaTime)
+        {
+            float safeFallback = math.isfinite(fallbackDeltaTime) ? math.max(fallbackDeltaTime, MinimumDeltaTime) : MinimumDeltaTime;
+            if (previousSignalFrame == 0u)
+                return safeFallback;
+
+            if (currentSignalFrame > previousSignalFrame)
+            {
+                uint frameDelta = math.min(currentSignalFrame - previousSignalFrame, (uint)KccVelocitySignalStaleFrameLimit);
+                return math.max(MinimumDeltaTime, safeFallback * frameDelta);
+            }
+
+            return safeFallback;
         }
 
         private float ResolveComfortVignetteMaximum()
@@ -1341,7 +1614,8 @@ namespace Hecton8.Gameplay
                 VignetteAngularSpeedStart = SanitizeMinimum(comfortVignetteAngularSpeedStart, 0.01f),
                 VignetteAngularSpeedFull = SanitizeMinimum(comfortVignetteAngularSpeedFull, 0.02f),
                 VignetteMaximum = Sanitize01(ResolveComfortVignetteMaximum(), 0f),
-                AccelerationVignette01 = Sanitize01(_accelerationComfortVignette01, 0f)
+                AccelerationVignette01 = math.max(Sanitize01(_accelerationComfortVignette01, 0f), Sanitize01(_kccAngularComfortVignette01, 0f)),
+                KccHorizonLock01 = Sanitize01(_kccHorizonLock01, 0f)
             };
 
             VRSomaticRootSyncJob job = new VRSomaticRootSyncJob
@@ -1686,6 +1960,7 @@ namespace Hecton8.Gameplay
             _headAngularJerkRadiansPerSecondCubed = 0f;
             _headAngularJerk01 = 0f;
             _accelerationComfortVignette01 = 0f;
+            ResetKccAngularComfortState();
             _accelerationReleaseBelowTimer = 0f;
             ResetComfortFramePressureState();
             _jerkCullBlend01 = 0f;
@@ -1697,7 +1972,7 @@ namespace Hecton8.Gameplay
             _handGhostMask = 0u;
             _collisionState = default;
             _snapshot = VRSomaticSnapshot.Inactive;
-            _stateFlags &= ~(StateHasPreviousHeadPose | StateHandsInitialized | StateRootInitialized);
+            _stateFlags &= ~(StateHasPreviousHeadPose | StateHandsInitialized | StateRootInitialized | StateHasPreviousKccPlanarDirection);
             PublishComfortVignette(0f);
             if (breathingSource != null)
             {
@@ -1731,6 +2006,7 @@ namespace Hecton8.Gameplay
             _lastPublishedComfortVignette01 = float.PositiveInfinity;
             _lastPublishedSomaticState = Vector4.positiveInfinity;
             _lastPublishedJerkState = Vector4.positiveInfinity;
+            _lastPublishedKccComfortState = Vector4.positiveInfinity;
         }
 
         private void ResetBreathingAudioPublishCache()
@@ -1779,11 +2055,22 @@ namespace Hecton8.Gameplay
                 Shader.SetGlobalVector(VrComfortJerkStateId, jerkState);
                 _lastPublishedJerkState = jerkState;
             }
+
+            Vector4 kccState = new Vector4(
+                math.isfinite(_kccAngularVelocityRadiansPerSecond) ? _kccAngularVelocityRadiansPerSecond : 0f,
+                SanitizeNonNegative(_kccAngularAccelerationRadiansPerSecondSq),
+                Sanitize01(_kccAngularComfortVignette01, 0f),
+                Sanitize01(_kccHorizonLock01, 0f));
+            if (!Approximately(in kccState, in _lastPublishedKccComfortState))
+            {
+                Shader.SetGlobalVector(VrComfortKccStateId, kccState);
+                _lastPublishedKccComfortState = kccState;
+            }
         }
 
         private void PublishComfortVignette(float vignette01)
         {
-            float sanitized = Sanitize01(vignette01, 0f);
+            float sanitized = math.max(Sanitize01(vignette01, 0f), Sanitize01(_kccAngularComfortVignette01, 0f));
             if (math.abs(sanitized - _lastPublishedComfortVignette01) <= ShaderPublishEpsilon)
                 return;
 
@@ -1864,6 +2151,10 @@ namespace Hecton8.Gameplay
 
             float leftHandSeparationSq = ResolveHandSeparationSq(0);
             float rightHandSeparationSq = ResolveHandSeparationSq(1);
+            float kccAngularVelocity = math.isfinite(_kccAngularVelocityRadiansPerSecond) ? _kccAngularVelocityRadiansPerSecond : 0f;
+            float kccAngularAcceleration = SanitizeNonNegative(_kccAngularAccelerationRadiansPerSecondSq);
+            float kccComfortVignette = Sanitize01(_kccAngularComfortVignette01, 0f);
+            float kccHorizonLock = Sanitize01(_kccHorizonLock01, 0f);
             int frame = Time.frameCount;
             int index;
             if (_blackBoxCursor > 0 && _blackBoxLastRecordedFrame == frame)
@@ -1881,7 +2172,19 @@ namespace Hecton8.Gameplay
             VRSomaticBlackBoxEntry entry = new VRSomaticBlackBoxEntry
             {
                 Frame = frame,
-                StateHash = ResolveBlackBoxStateHash(headPosition, headRotationValue, leftHandSeparationSq, rightHandSeparationSq, flags),
+                StateHash = ResolveBlackBoxStateHash(
+                    headPosition,
+                    headRotationValue,
+                    leftHandSeparationSq,
+                    rightHandSeparationSq,
+                    kccAngularVelocity,
+                    kccAngularAcceleration,
+                    kccComfortVignette,
+                    kccHorizonLock,
+                    _lastConsumedKccVelocitySequence,
+                    _lastConsumedKccVelocityFrame,
+                    _lastConsumedKccVelocitySourceId,
+                    flags),
                 Flags = flags,
                 HandGhostMask = (ushort)(_handGhostMask & 0xFFFFu),
                 HeadPosition = new float3(headPosition.x, headPosition.y, headPosition.z),
@@ -1891,7 +2194,16 @@ namespace Hecton8.Gameplay
                 LeftHandSeparationSq = leftHandSeparationSq,
                 RightHandSeparationSq = rightHandSeparationSq,
                 HeadAngularSpeedRadiansPerSecond = SanitizeNonNegative(_headAngularSpeedRadiansPerSecond),
-                AupShiftSequence = _lastObservedAupShiftSequence
+                AupShiftSequence = _lastObservedAupShiftSequence,
+                KccAngularVelocityRadiansPerSecond = kccAngularVelocity,
+                KccAngularAccelerationRadiansPerSecondSq = kccAngularAcceleration,
+                KccComfortVignette01 = kccComfortVignette,
+                KccHorizonLock01 = kccHorizonLock,
+                KccVelocitySequence = _lastConsumedKccVelocitySequence,
+                KccVelocityFrame = _lastConsumedKccVelocityFrame,
+                KccVelocitySourceId = _lastConsumedKccVelocitySourceId,
+                Reserved0 = 0u,
+                Reserved1 = 0ul
             };
 
             _blackBox[index] = entry;
@@ -1924,6 +2236,12 @@ namespace Hecton8.Gameplay
                 flags |= BlackBoxFlagQuest2Fallback;
             if (_accelerationComfortVignette01 > 0.001f)
                 flags |= BlackBoxFlagAccelerationTunnel;
+            if (_lastConsumedKccVelocitySequence != 0u)
+                flags |= BlackBoxFlagKccSignal;
+            if (_kccAngularComfortVignette01 > 0.001f)
+                flags |= BlackBoxFlagKccAccelerationTunnel;
+            if (_kccHorizonLock01 > 0.001f)
+                flags |= BlackBoxFlagDynamicHorizonLock;
 
             return (ushort)(flags & 0xFFFFu);
         }
@@ -1949,6 +2267,13 @@ namespace Hecton8.Gameplay
             float4 headRotation,
             float leftHandSeparationSq,
             float rightHandSeparationSq,
+            float kccAngularVelocity,
+            float kccAngularAcceleration,
+            float kccComfortVignette,
+            float kccHorizonLock,
+            uint kccVelocitySequence,
+            uint kccVelocityFrame,
+            uint kccVelocitySourceId,
             ushort flags)
         {
             uint hash = 2166136261u;
@@ -1961,6 +2286,13 @@ namespace Hecton8.Gameplay
             hash = MixHash(hash, math.asuint(headRotation.w));
             hash = MixHash(hash, math.asuint(leftHandSeparationSq));
             hash = MixHash(hash, math.asuint(rightHandSeparationSq));
+            hash = MixHash(hash, math.asuint(kccAngularVelocity));
+            hash = MixHash(hash, math.asuint(kccAngularAcceleration));
+            hash = MixHash(hash, math.asuint(kccComfortVignette));
+            hash = MixHash(hash, math.asuint(kccHorizonLock));
+            hash = MixHash(hash, kccVelocitySequence);
+            hash = MixHash(hash, kccVelocityFrame);
+            hash = MixHash(hash, kccVelocitySourceId);
             return MixHash(hash, flags);
         }
 
@@ -2015,6 +2347,18 @@ namespace Hecton8.Gameplay
                         writer.Write(entry.RightHandSeparationSq);
                         writer.Write(entry.HeadAngularSpeedRadiansPerSecond);
                         writer.Write(entry.AupShiftSequence);
+                        writer.Write(entry.KccAngularVelocityRadiansPerSecond);
+                        writer.Write(entry.KccAngularAccelerationRadiansPerSecondSq);
+                        writer.Write(entry.KccComfortVignette01);
+                        writer.Write(entry.KccHorizonLock01);
+                        writer.Write(entry.KccVelocitySequence);
+                        writer.Write(entry.KccVelocityFrame);
+                        writer.Write(entry.KccVelocitySourceId);
+                        writer.Write(entry.Reserved0);
+                        writer.Write(entry.Reserved1);
+                        writer.Write(entry.Reserved2);
+                        writer.Write(entry.Reserved3);
+                        writer.Write(entry.Reserved4);
                     }
                 }
             }
@@ -2039,6 +2383,25 @@ namespace Hecton8.Gameplay
         private static float SanitizeMinimum(float value, float minimum)
         {
             return math.isfinite(value) ? math.max(minimum, value) : minimum;
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float value = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(value) ? value : 1f);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void ValidateNativeLayouts()
+        {
+            if (UnsafeUtility.SizeOf<VRSomaticBlackBoxEntry>() != 128 ||
+                UnsafeUtility.SizeOf<VRSomaticRootSyncInput>() != 80 ||
+                UnsafeUtility.SizeOf<VRSomaticRootSyncOutput>() != 32 ||
+                UnsafeUtility.SizeOf<HeadCastSample>() != 48)
+            {
+                Debug.LogError("[VRSomaticProvider] Native layout contract drift.");
+            }
         }
 
         private static float SanitizeAudioCutoffHz(float value)
@@ -2445,12 +2808,12 @@ namespace Hecton8.Gameplay
             _stateFlags &= ~(StateHeadCollisionScheduled | StateRootSyncScheduled | StateHandKinematicsScheduled | StateHandsInitialized | StateRootInitialized);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct VRSomaticRootSyncJob : IJob
         {
-            [ReadOnly] public NativeArray<VRSomaticRootSyncInput> Input;
-            [WriteOnly] public NativeArray<VRSomaticRootSyncOutput> Output;
+            [ReadOnly, NoAlias] public NativeArray<VRSomaticRootSyncInput> Input;
+            [WriteOnly, NoAlias] public NativeArray<VRSomaticRootSyncOutput> Output;
 
             public void Execute()
             {
@@ -2465,12 +2828,19 @@ namespace Hecton8.Gameplay
                 float3 correctionAxis = math.cross(headUp, worldUp);
                 float axisLenSq = math.lengthsq(correctionAxis);
                 quaternion horizonCorrection = quaternion.identity;
-                if (math.isfinite(axisLenSq) && axisLenSq > HorizonLockStartSinSq)
+                float kccLock01 = math.saturate(input.KccHorizonLock01);
+                if (math.isfinite(axisLenSq) && axisLenSq > 0.000001f)
                 {
-                    float3 axis = correctionAxis * math.rsqrt(math.max(axisLenSq, 0.000001f));
-                    float correctionRcp = math.rcp(math.max(0.000001f, 1f - HorizonLockStartSinSq));
-                    float correction01 = math.saturate((axisLenSq - HorizonLockStartSinSq) * correctionRcp);
-                    horizonCorrection = quaternion.AxisAngle(axis, HorizonLockMaxCorrectionRadians * correction01);
+                    float dynamicStart = math.max(0.000001f, HorizonLockStartSinSq * (1f - (0.85f * kccLock01)));
+                    if (axisLenSq > dynamicStart || kccLock01 > 0.001f)
+                    {
+                        float3 axis = correctionAxis * math.rsqrt(axisLenSq);
+                        float correctionRcp = math.rcp(math.max(0.000001f, 1f - dynamicStart));
+                        float correction01 = math.saturate((axisLenSq - dynamicStart) * correctionRcp);
+                        correction01 = math.max(correction01, kccLock01 * 0.65f);
+                        float maxCorrection = HorizonLockMaxCorrectionRadians * (1f + (0.25f * kccLock01));
+                        horizonCorrection = quaternion.AxisAngle(axis, maxCorrection * correction01);
+                    }
                 }
 
                 quaternion desiredRootRotation = SanitizeQuaternion(math.mul(horizonCorrection, headRotation), headRotation);
@@ -2519,14 +2889,14 @@ namespace Hecton8.Gameplay
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct VRSomaticHandKinematicsJob : IJobParallelFor
         {
             public float DeltaTime;
             public float SpringForce;
-            [ReadOnly] public NativeArray<float3> HandTargets;
-            public NativeArray<float3> HandPhysicalPositions;
+            [ReadOnly, NoAlias] public NativeArray<float3> HandTargets;
+            [NoAlias] public NativeArray<float3> HandPhysicalPositions;
 
             public void Execute(int index)
             {
@@ -2543,47 +2913,61 @@ namespace Hecton8.Gameplay
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 128)]
         private struct VRSomaticBlackBoxEntry
         {
-            public int Frame;
-            public uint StateHash;
-            public ushort Flags;
-            public ushort HandGhostMask;
-            public float3 HeadPosition;
-            public float4 HeadRotation;
-            public float NearCollision01;
-            public float ComfortVignette01;
-            public float LeftHandSeparationSq;
-            public float RightHandSeparationSq;
-            public float HeadAngularSpeedRadiansPerSecond;
-            public uint AupShiftSequence;
+            [FieldOffset(0)] public ulong Reserved1;
+            [FieldOffset(8)] public float4 HeadRotation;
+            [FieldOffset(24)] public float3 HeadPosition;
+            [FieldOffset(36)] public float NearCollision01;
+            [FieldOffset(40)] public float ComfortVignette01;
+            [FieldOffset(44)] public float LeftHandSeparationSq;
+            [FieldOffset(48)] public float RightHandSeparationSq;
+            [FieldOffset(52)] public float HeadAngularSpeedRadiansPerSecond;
+            [FieldOffset(56)] public float KccAngularVelocityRadiansPerSecond;
+            [FieldOffset(60)] public float KccAngularAccelerationRadiansPerSecondSq;
+            [FieldOffset(64)] public float KccComfortVignette01;
+            [FieldOffset(68)] public float KccHorizonLock01;
+            [FieldOffset(72)] public int Frame;
+            [FieldOffset(76)] public uint StateHash;
+            [FieldOffset(80)] public uint AupShiftSequence;
+            [FieldOffset(84)] public uint KccVelocitySequence;
+            [FieldOffset(88)] public uint KccVelocityFrame;
+            [FieldOffset(92)] public uint KccVelocitySourceId;
+            [FieldOffset(96)] public uint Reserved0;
+            [FieldOffset(100)] public ushort Flags;
+            [FieldOffset(102)] public ushort HandGhostMask;
+            [FieldOffset(104)] public ulong Reserved2;
+            [FieldOffset(112)] public ulong Reserved3;
+            [FieldOffset(120)] public ulong Reserved4;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct VRSomaticRootSyncInput
         {
-            public float3 HeadPosition;
-            public quaternion HeadRotation;
-            public quaternion PreviousRootRotation;
-            public float DeltaTime;
-            public float HeadAngularSpeed;
-            public float RootRotationSharpness;
-            public float VignetteAngularSpeedStart;
-            public float VignetteAngularSpeedFull;
-            public float VignetteMaximum;
-            public float AccelerationVignette01;
+            [FieldOffset(0)] public quaternion HeadRotation;
+            [FieldOffset(16)] public quaternion PreviousRootRotation;
+            [FieldOffset(32)] public float3 HeadPosition;
+            [FieldOffset(44)] public float DeltaTime;
+            [FieldOffset(48)] public float HeadAngularSpeed;
+            [FieldOffset(52)] public float RootRotationSharpness;
+            [FieldOffset(56)] public float VignetteAngularSpeedStart;
+            [FieldOffset(60)] public float VignetteAngularSpeedFull;
+            [FieldOffset(64)] public float VignetteMaximum;
+            [FieldOffset(68)] public float AccelerationVignette01;
+            [FieldOffset(72)] public float KccHorizonLock01;
+            [FieldOffset(76)] public uint Reserved0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct VRSomaticRootSyncOutput
         {
-            public float3 RootPosition;
-            public quaternion RootRotation;
-            public float ComfortVignette01;
+            [FieldOffset(0)] public quaternion RootRotation;
+            [FieldOffset(16)] public float3 RootPosition;
+            [FieldOffset(28)] public float ComfortVignette01;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct BuildHeadCapsulecastCommandsJob : IJobParallelFor
         {
@@ -2595,7 +2979,7 @@ namespace Hecton8.Gameplay
             public float CastDistance;
             public QueryParameters QueryParameters;
 
-            [WriteOnly] public NativeArray<CapsulecastCommand> Commands;
+            [WriteOnly, NoAlias] public NativeArray<CapsulecastCommand> Commands;
 
             public void Execute(int index)
             {
@@ -2628,12 +3012,12 @@ namespace Hecton8.Gameplay
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct ProcessHeadCapsulecastHitsJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<RaycastHit> Hits;
-            [WriteOnly] public NativeArray<HeadCastSample> Samples;
+            [ReadOnly, NoAlias] public NativeArray<RaycastHit> Hits;
+            [WriteOnly, NoAlias] public NativeArray<HeadCastSample> Samples;
 
             public void Execute(int index)
             {
@@ -2664,7 +3048,9 @@ namespace Hecton8.Gameplay
                     Distance = hasHit ? math.max(0f, hit.distance) : 0f,
                     Point = hasHit ? point : float3.zero,
                     Normal = safeNormal,
-                    LocalSide = ResolveLocalSide(index)
+                    LocalSide = ResolveLocalSide(index),
+                    Reserved0 = 0u,
+                    Reserved1 = 0ul
                 };
             }
 
@@ -2684,14 +3070,16 @@ namespace Hecton8.Gameplay
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct HeadCastSample
         {
-            public float3 Point;
-            public float3 Normal;
-            public float Distance;
-            public float LocalSide;
-            public int HasHit;
+            [FieldOffset(0)] public float3 Point;
+            [FieldOffset(12)] public float3 Normal;
+            [FieldOffset(24)] public float Distance;
+            [FieldOffset(28)] public float LocalSide;
+            [FieldOffset(32)] public int HasHit;
+            [FieldOffset(36)] public uint Reserved0;
+            [FieldOffset(40)] public ulong Reserved1;
         }
     }
 }

@@ -623,6 +623,7 @@ namespace Hecton8.Physics
         private ISubmarineRuntimeContext _submarineRuntime;
         private HectonFluidEngine _fluidRuntime;
         private IPowerGridService _powerGridService;
+        private IThermodynamicsService _thermodynamicsService;
         private byte _cachedFloodStateMathLod;
         private bool _registered;
         private bool _registeredOriginShiftListener;
@@ -1387,6 +1388,12 @@ namespace Hecton8.Physics
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsService)
+            {
+                _thermodynamicsService = currentService as IThermodynamicsService;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -1970,6 +1977,9 @@ namespace Hecton8.Physics
             RefreshRuntimeActorContextsIfMissing();
             if (_powerGridService == null || IsUnityObjectInvalid(_powerGridService))
                 _powerGridService = GlobalRegistry.PowerGrid;
+
+            if (_thermodynamicsService == null || IsUnityObjectInvalid(_thermodynamicsService))
+                _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
 
             if (_structuralBreachReadModel == null)
             {
@@ -4529,7 +4539,16 @@ namespace Hecton8.Physics
                 {
                     float intensity = math.saturate((currentTemperature - boilingPointCelsius) * 0.028571428f);
                     int hazardId = ResolveExteriorThermalHazardId(slotIndex);
-                    HectonHazardManager.Register(hazardId, cellCenter, intensity, ExteriorBoilingImpulseRadiusMeters, HazardType.Heat);
+                    IThermodynamicsService thermodynamics = ResolveThermodynamicsService();
+                    if (thermodynamics != null && thermodynamics.IsInitialized)
+                    {
+                        thermodynamics.TryInjectTransientHeatSource(
+                            cellCenter,
+                            ExteriorBoilingImpulseRadiusMeters,
+                            intensity,
+                            unchecked((uint)hazardId));
+                    }
+
                     ApplyExteriorBoilingUpdraft(cellCenter, intensity, fixedDeltaTime);
                 }
                 else if (_exteriorThermalHazardIds[slotIndex] != 0)
@@ -5297,6 +5316,17 @@ namespace Hecton8.Physics
             return _powerGridService;
         }
 
+        private IThermodynamicsService ResolveThermodynamicsService()
+        {
+            if (IsUnityObjectInvalid(_thermodynamicsService))
+            {
+                _thermodynamicsService = null;
+                return null;
+            }
+
+            return _thermodynamicsService;
+        }
+
         private byte ResolveFloodStateMathLod()
         {
             return _cachedFloodStateMathLod;
@@ -5320,6 +5350,7 @@ namespace Hecton8.Physics
             _submarineRuntime = null;
             _fluidRuntime = null;
             _powerGridService = null;
+            _thermodynamicsService = null;
             _resourceDistributionRuntime = null;
             _vocalWarningSystem = null;
         }

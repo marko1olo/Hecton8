@@ -1,0 +1,10 @@
+# key,value
+prune_threshold01,0.0001
+lz4_min_effort01,0.12
+lz4_max_effort01,0.92
+low_quality_write_hz,5
+high_quality_write_hz,30
+chunk_unload_distance_m,1800
+io_pressure_bias01,0.35
+max_wal_write_ms,0.35
+max_bytes_per_frame,65536

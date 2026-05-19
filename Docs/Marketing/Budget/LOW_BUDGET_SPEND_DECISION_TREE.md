@@ -129,6 +129,25 @@ Stop if:
 - comments show confusion;
 - page changes are clearly needed.
 
+## 2026-05-19 Current Spend Release Ladder
+
+Status: all cash spend frozen until asset gates pass.
+
+| Release step | Max spend | Required proof | Allowed spend | Stop condition |
+|---:|---:|---|---|---|
+| 0 | 0 USD | No public assets yet. | Agent prep, copy, CRM, QA, cold-read setup. | Stop making docs if no row, asset gate, or decision changes. |
+| 1 | 0-50 USD | `PLAN-SHOT-001/003` captured and AB-001/AB-002 ready. | Human cold-reader pool or tiny feedback tool cost. | Under 70% genre clarity or capsule unreadable. |
+| 2 | 50-150 USD | Campaign 01 returns `KEEP`, Steam page exists, UTM works. | One PMT row only: PMT-001 or PMT-002. | No useful Steam behavior or dominant confusion within 48h. |
+| 3 | 300-800 USD | Capsule AB-002 winner is clear and Steam page warm traffic is not failing. | Capsule/key-art polish. | No variant beats plain readable logo/silhouette. |
+| 4 | 300-1000 USD | `PLAN-CLIP-*` has a strong first 3 seconds and demo/route footage exists. | Trailer edit/audio polish. | Clip needs fake cinematics or cannot show player verb. |
+| 5 | 250-1500 USD | Organic creator replies prove fit and demo/preview build is stable. | 1-3 paid creator tests, disclosed. | Creator requires false framing or demo cannot survive coverage. |
+
+Do not buy Step 3/4/5 before Step 2 proves the Steam page can receive traffic without obvious confusion.
+
+### Current Recommendation
+
+As of 2026-05-19: spend `0 USD`. Use agent labor to get asset IDs, QA gates, creator packet, Steam assembly, and response matrices ready. The first cash outlay should be cold-reader help or one capped PMT smoke test only after real assets and official links exist.
+
 ## What Not To Buy
 
 - Fake wishlists.
@@ -153,4 +172,3 @@ Before any spend:
 - [ ] Does it imply co-op?
 - [ ] Does it make us look derivative?
 - [ ] Is there a cheaper agent/manual version first?
-

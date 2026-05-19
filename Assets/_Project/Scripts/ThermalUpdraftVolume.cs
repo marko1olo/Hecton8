@@ -6,7 +6,7 @@ namespace Hecton8.Physics
 {
     /// <summary>
     /// Semantic thermal plume wrapper over <see cref="CurrentVolume"/>.
-    /// CurrentVolume owns the water transport. This wrapper adds heat hazard registration for survival systems.
+    /// CurrentVolume owns water transport. Heat is published as thermodynamics field data, not a PhysX hazard volume.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CurrentVolume))]
@@ -21,7 +21,7 @@ namespace Hecton8.Physics
         [SerializeField, Range(-1f, 1f)] private float swirlBias = 0.12f;
 
         [Header("Heat")]
-        [Tooltip("Heat hazard intensity registered in HectonHazardManager.")]
+        [Tooltip("Heat intensity injected into the thermodynamics field.")]
         [SerializeField, Min(0f)] private float heatIntensity = 18f;
 
         [Tooltip("Multiplies the CurrentVolume radius when publishing the survival heat hazard.")]
@@ -90,12 +90,11 @@ namespace Hecton8.Physics
                 ? _currentVolume.GetApproximateInfluenceRadius() * Mathf.Max(0.1f, hazardRadiusScale)
                 : Mathf.Max(1f, hazardRadiusScale);
 
-            HectonHazardManager.Register(
-                _hazardSourceId,
-                transform.position,
-                heatIntensity,
-                radius,
-                HazardType.Heat);
+            IThermodynamicsService thermodynamics = GlobalRegistry.ThermodynamicsService;
+            if (thermodynamics != null && thermodynamics.IsInitialized)
+                thermodynamics.TryInjectTransientHeatSource(transform.position, radius, heatIntensity, unchecked((uint)_hazardSourceId));
+            else
+                HectonHazardManager.Unregister(_hazardSourceId);
         }
 
         private void TryRegisterToTick()

@@ -37,6 +37,47 @@ Examples:
 - `utm_source=reddit&utm_medium=post&utm_campaign=screenshot_drop_01&utm_content=base_pressure_vessel&utm_term=visual_critique`
 - `utm_source=press&utm_medium=article&utm_campaign=steam_page_launch&utm_content=rockpapershotgun&utm_term=pc_indie_press`
 
+## 2026-05-19 Experiment And Asset UTM Registry
+
+Status: pre-public / use only after official link exists.
+
+Use the same IDs across experiment docs, ad docs, asset metadata, and reports. Do not invent per-platform names.
+
+### `utm_content` Format
+
+| Use case | Format | Example |
+|---|---|---|
+| Organic screenshot post | `[asset_id]_[hook]` | `plan-shot-001_pressure_identity` |
+| Organic clip post | `[asset_id]_[hook]` | `plan-clip-003_salvage_failure` |
+| A/B test | `[experiment_id]_[asset_id]_[variant]` | `ab-001_plan-shot-001_a` |
+| Paid microtest | `[pmt_id]_[asset_id]_[hook]` | `pmt-001_plan-shot-001_pressure_identity` |
+| Creator outreach | `[creator_slug]_[asset_id_or_demo]` | `wanderbots_plan-clip-003` |
+| Press beat | `[outlet_slug]_[beat]` | `pcgamer_steam_page_launch` |
+
+### Canonical Test IDs
+
+| ID | Measurement meaning |
+|---|---|
+| `ab-001` | First screenshot identity vs verb cold-read test. |
+| `ab-002` | Capsule rough readability/preference test. |
+| `ab-003` | Base risk vs heavy machinery organic post test. |
+| `ab-004` | Short description clarity test. |
+| `ab-005` | Creator micro-pitch asset fit test. |
+| `ab-006` | Trailer opening hook test. |
+| `ab-007` | Steam tag proof test. |
+| `ab-008` | Paid micro-test gate. |
+| `pmt-001` | Pressure identity paid smoke test. |
+| `pmt-002` | Clip hook paid smoke test. |
+| `pmt-003` | Steam copy/capsule paid smoke test. |
+| `pmt-004` | Creator-retarget paid support test. |
+
+### UTM Kill Rules
+
+- Do not use `subnautica`, `sn2`, `coop`, `zero_stutter`, or `100km` in UTM names.
+- Do not use a creator name in `utm_content` unless the creator actually received a link.
+- Do not reuse an `ab-*` or `pmt-*` ID for a different asset or audience.
+- Do not shorten links through opaque services until raw UTM behavior has been checked.
+
 ## Campaign IDs
 
 | Campaign ID | Meaning |
@@ -141,4 +182,3 @@ Template:
 - No screenshot direction survives if cold viewers cannot read it.
 - No performance copy goes live without proof artifact.
 - No co-op-related UTM terms or campaigns.
-

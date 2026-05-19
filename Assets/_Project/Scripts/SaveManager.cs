@@ -1130,7 +1130,6 @@ namespace Hecton8.SaveSystem
                 _lastWfcOutpostSectorHash,
                 _lastWfcOutpostPayloadHash,
                 flags: BuildWfcOutpostFrameBlackBoxFlags());
-            DrainSaveRequestSignals();
             DrainWfcOutpostStateChangedSignals();
             DrainWfcSectorHydratedSignals();
             DrainChunkDehydratedSignals();
@@ -1157,8 +1156,8 @@ namespace Hecton8.SaveSystem
                 SlotIndex = slotIndex,
                 Flags = SaveRequestSignal.ManualSlotFlag
             };
-            SignalBus<SaveRequestSignal>.Push(in signal);
             PublishSaveStatus(slotIndex, signal.OperationId, SaveStatusSignal.Queued, 0f, 0u);
+            ProcessSaveRequest(in signal);
             return true;
         }
 
@@ -1202,32 +1201,27 @@ namespace Hecton8.SaveSystem
             _compressionThrottleLateFrameArmed = false;
         }
 
-        private void DrainSaveRequestSignals()
+        private void ProcessSaveRequest(in SaveRequestSignal signal)
         {
-            int drained = 0;
-            while (drained < SaveEvents.ManualSlotCount && SignalBus<SaveRequestSignal>.TryReadFrame(out SaveRequestSignal signal))
+            byte slotIndex = signal.SlotIndex;
+            uint operationId = ResolveOperationId(signal.OperationId);
+            if (slotIndex >= SaveEvents.ManualSlotCount)
             {
-                drained++;
-                byte slotIndex = signal.SlotIndex;
-                uint operationId = ResolveOperationId(signal.OperationId);
-                if (slotIndex >= SaveEvents.ManualSlotCount)
-                {
-                    PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);
-                    continue;
-                }
-
-                string slotName = SaveEvents.ResolveManualSlotName(slotIndex);
-                if (_isBusy)
-                {
-                    const string reason = "Save already in progress.";
-                    LastOperationError = reason;
-                    SaveEvents.RaiseSaveFailed(slotName, reason);
-                    PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);
-                    continue;
-                }
-
-                _ = SaveGameAsyncInternal(slotName, slotIndex, operationId);
+                PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);
+                return;
             }
+
+            string slotName = SaveEvents.ResolveManualSlotName(slotIndex);
+            if (_isBusy)
+            {
+                const string reason = "Save already in progress.";
+                LastOperationError = reason;
+                SaveEvents.RaiseSaveFailed(slotName, reason);
+                PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);
+                return;
+            }
+
+            _ = SaveGameAsyncInternal(slotName, slotIndex, operationId);
         }
 
         private void DrainWfcOutpostStateChangedSignals()

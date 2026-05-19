@@ -1,19 +1,36 @@
 using System;
 using System.Runtime.InteropServices;
+using Hecton8.Core.Memory.Layout;
 using Unity.Mathematics;
 
 namespace Hecton8.SaveSystem
 {
 #pragma warning disable CS0649
     [Serializable]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct VoxelDeltaCellDTO
     {
+        [FieldOffset(0)]
         public ulong universeKey;
+
+        [FieldOffset(8)]
         public float sdfValue;
+
+        [FieldOffset(12)]
         public byte materialId;
+
+        [FieldOffset(13)]
         public byte flags;
+
+        [FieldOffset(14)]
         public ushort metadata;
+
+        [FieldOffset(16)]
         public uint reserved;
+
+        [FieldOffset(20)]
+        public uint _pad0;
     }
 
     [Serializable]
@@ -84,14 +101,26 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 24)]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct VoxelCarvingOperationDTO
     {
+        [FieldOffset(0)]
         public float3 localPosition;
+
+        [FieldOffset(12)]
         public float radius;
+
+        [FieldOffset(16)]
         public VoxelCarvingOperationKind operation;
+
+        [FieldOffset(17)]
         public byte materialId;
+
+        [FieldOffset(18)]
         public ushort flags;
+
+        [FieldOffset(20)]
         public uint sequence;
     }
 

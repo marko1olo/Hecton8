@@ -340,6 +340,17 @@ global-authority surface is still a migration risk. Use
 `GLOBAL_AUTHORITY_BOUNDARIES.md` and `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`
 before treating H-Phi movement as architectural acceptance.
 
+## 2026-05-19 SHINOBU_02 Signal Audit And Trend Overlay
+
+Evidence class: `STATIC_SOURCE_HISTORY` / `STATIC_SOURCE_CLASSIFIED`.
+
+- `../AgentLogs/HPhiTrend_SHINOBU_02_current21.md` scanned `131` artifacts and `393` metric series with signal-audit inclusion. It is history analysis only, not a fresh H-Phi run.
+- Latest artifact-backed SHINOBU_02 SignalCritical audit is `../AgentLogs/SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.md`: files `7`, shaders `62`, errors `0`, warnings `0`, infos `10`, runtime signal `Pack = 1` layouts `0`, and transitive runtime signal `Pack = 1` field hits `0`.
+- Latest artifact-backed SHINOBU_02 Full audit is `../AgentLogs/SignalBusContractAuditCli_SHINOBU_02_full_current21.md`: files `1761`, shaders `62`, errors `0`, warnings `432`, infos `454`, confirmed/probable errors at confidence `>= 90` `0`, and project-wide `Pack = 1` layouts `230`.
+- The same current21 trend still reports duplicate signal-name debt at `10` against the hard `MaxDuplicateSignalNames=0` budget. Do not mistake the clean SignalCritical lane for full-project duplicate closeout.
+- SHINOBU_02 Current22 source inspection reduced Core exact `Pack = 1` rows from `9` to `3`; Current22 is not yet an H-Phi/audit trend point because CPU guard blocked the rerun.
+- Do not tighten or report current H-Phi budgets from Current22 source-only movement until the guarded audit/trend scripts run and produce fresh artifacts.
+
 ## 2026-05-15 DOC_HONEST_ANALYSIS R3 Core Graph Prune
 
 Artifact: `../Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json`

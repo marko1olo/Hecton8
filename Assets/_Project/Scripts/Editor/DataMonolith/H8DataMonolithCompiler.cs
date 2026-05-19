@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Hecton8.Data;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -19,14 +20,16 @@ namespace Hecton8.EditorValidation
     /// <summary>
     /// Editor compiler that bakes authored CSV/JSON source data into one Data Monolith blob.
     /// </summary>
-    internal static unsafe class H8DataMonolithCompiler
+    public static unsafe class H8DataMonolithCompiler
     {
-        private const string SourceFolder = "Assets/_SourceData";
-        private const string BalanceSourceFolder = "Data/Balance";
-        private const string OutputAssetPath = "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin";
+        internal const string SourceFolder = "Assets/_SourceData";
+        internal const string BalanceSourceFolder = "Data/Balance";
+        internal const string OutputAssetPath = "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin";
         private const string MenuPath = "Hecton8/Data Monolith/Bake Static Data";
         private const int InitialBlobCapacity = 128 * 1024;
         private const int Utf8ScratchBytes = 2048;
+
+        internal static string LastError;
 
         private static readonly H8DataSectionId[] SectionOrder =
         {
@@ -53,44 +56,51 @@ namespace Hecton8.EditorValidation
             H8DataSectionId.SopErrors,
             H8DataSectionId.HudLayouts,
             H8DataSectionId.LocalizationUtf8,
-            H8DataSectionId.SectorPageDirectory
+            H8DataSectionId.SectorPageDirectory,
+            H8DataSectionId.Economy,
+            H8DataSectionId.PhysicsConstants
         };
 
         [MenuItem(MenuPath)]
-        internal static void BakeFromMenu()
+        public static void BakeFromMenu()
         {
             BakeAll(logSummary: true);
         }
 
         internal static bool BakeAll(bool logSummary)
         {
-            if (!H8DataLayoutAudit.ValidateBlittableSizes())
-            {
-                Debug.LogError("[H8DataMonolithCompiler] Blittable layout audit failed. Bake aborted.");
-                return false;
-            }
-
-            Directory.CreateDirectory(SourceFolder);
-            Directory.CreateDirectory(BalanceSourceFolder);
-            Directory.CreateDirectory(Path.GetDirectoryName(OutputAssetPath));
-
-            DataSet dataSet = new DataSet();
-            LocalizationPool localizationPool = new LocalizationPool();
-
-            string[] csvFiles = CollectSourceFiles("*.csv");
-            Array.Sort(csvFiles, StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < csvFiles.Length; i++)
-                ParseCsv(csvFiles[i], dataSet, localizationPool);
-
-            string[] jsonFiles = CollectSourceFiles("*.json");
-            Array.Sort(jsonFiles, StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < jsonFiles.Length; i++)
-                ParseJson(jsonFiles[i], dataSet, localizationPool);
-
-            FinalizeGeneratedTables(dataSet);
-
+            LastError = string.Empty;
             try
             {
+                if (!H8DataLayoutAudit.ValidateBlittableSizes())
+                {
+                    LastError = "Blittable layout audit failed.";
+                    Debug.LogError("[H8DataMonolithCompiler] " + LastError + " Bake aborted.");
+                    return false;
+                }
+
+                EnsureLittleEndianEditorHost();
+                Directory.CreateDirectory(SourceFolder);
+                Directory.CreateDirectory(BalanceSourceFolder);
+                Directory.CreateDirectory(Path.GetDirectoryName(OutputAssetPath));
+
+                DataSet dataSet = new DataSet();
+                LocalizationPool localizationPool = new LocalizationPool();
+
+                string[] csvFiles = CollectSourceFiles("*.csv");
+                Array.Sort(csvFiles, StringComparer.OrdinalIgnoreCase);
+                CsvFileRows[] csvSources = ReadCsvSourcesParallel(csvFiles);
+                for (int i = 0; i < csvSources.Length; i++)
+                    ParseCsv(csvSources[i], dataSet, localizationPool);
+
+                string[] jsonFiles = CollectSourceFiles("*.json");
+                Array.Sort(jsonFiles, StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < jsonFiles.Length; i++)
+                    ParseJson(jsonFiles[i], dataSet, localizationPool);
+
+                FinalizeGeneratedTables(dataSet);
+                ValidateCrossReferences(dataSet);
+
                 byte[] blob = BuildBlob(dataSet, localizationPool);
                 File.WriteAllBytes(OutputAssetPath, blob);
                 AssetDatabase.ImportAsset(OutputAssetPath, ImportAssetOptions.ForceUpdate);
@@ -107,6 +117,10 @@ namespace Hecton8.EditorValidation
                         dataSet.Creatures.Count +
                         ", biomes=" +
                         dataSet.Biomes.Count +
+                        ", economy=" +
+                        dataSet.Economy.Count +
+                        ", physics=" +
+                        dataSet.PhysicsConstants.Count +
                         ", sections=" +
                         SectionOrder.Length +
                         ".");
@@ -116,6 +130,7 @@ namespace Hecton8.EditorValidation
             }
             catch (Exception ex)
             {
+                LastError = ex.Message;
                 Debug.LogException(ex);
                 return false;
             }
@@ -124,6 +139,7 @@ namespace Hecton8.EditorValidation
         internal static bool IsSourcePath(string assetPath)
         {
             return !string.IsNullOrEmpty(assetPath) &&
+                   !IsGeneratedBalancePath(assetPath) &&
                    (IsUnderSourceRoot(assetPath, SourceFolder) ||
                     IsUnderSourceRoot(assetPath, BalanceSourceFolder));
         }
@@ -136,6 +152,24 @@ namespace Hecton8.EditorValidation
             return files.ToArray();
         }
 
+        private static CsvFileRows[] ReadCsvSourcesParallel(string[] csvFiles)
+        {
+            CsvFileRows[] results = new CsvFileRows[csvFiles.Length]; // COLD ALLOC: CsvFileRows[source file count] - editor-only parallel CSV import results - owner: H8DataMonolithCompiler
+            Task[] workers = new Task[csvFiles.Length]; // COLD ALLOC: Task[source file count] - editor-only CSV import workers - owner: H8DataMonolithCompiler
+            for (int i = 0; i < csvFiles.Length; i++)
+            {
+                int workerIndex = i;
+                workers[i] = Task.Run(() =>
+                {
+                    string path = csvFiles[workerIndex];
+                    results[workerIndex] = new CsvFileRows(path, ReadCsvRows(path));
+                });
+            }
+
+            Task.WaitAll(workers);
+            return results;
+        }
+
         private static void AppendSourceFiles(List<string> files, string relativeFolder, string searchPattern)
         {
             string absoluteFolder = Path.GetFullPath(relativeFolder);
@@ -144,7 +178,27 @@ namespace Hecton8.EditorValidation
 
             string[] discovered = Directory.GetFiles(absoluteFolder, searchPattern, SearchOption.AllDirectories);
             for (int i = 0; i < discovered.Length; i++)
-                files.Add(discovered[i]);
+            {
+                if (!IsGeneratedBalancePath(discovered[i]))
+                    files.Add(discovered[i]);
+            }
+        }
+
+        internal static bool IsGeneratedBalancePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            return IsUnderAbsoluteRoot(path, Path.Combine(BalanceSourceFolder, "Baked")) ||
+                   IsUnderAbsoluteRoot(path, Path.Combine(BalanceSourceFolder, "Schemas"));
+        }
+
+        private static bool IsUnderAbsoluteRoot(string path, string relativeRoot)
+        {
+            string normalizedPath = Path.GetFullPath(path).Replace('\\', '/').TrimEnd('/');
+            string normalizedRoot = Path.GetFullPath(relativeRoot).Replace('\\', '/').TrimEnd('/');
+            return normalizedPath.StartsWith(normalizedRoot + "/", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(normalizedPath, normalizedRoot, StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsUnderSourceRoot(string path, string relativeRoot)
@@ -243,6 +297,12 @@ namespace Hecton8.EditorValidation
                     case H8DataSectionId.SectorPageDirectory:
                         entries[i] = AppendSection(stream, sectionId, dataSet.SectorPages, UnsafeUtility.SizeOf<H8SectorPageRecord>());
                         break;
+                    case H8DataSectionId.Economy:
+                        entries[i] = AppendSection(stream, sectionId, dataSet.Economy, H8DataLayoutConstants.EconomyRecordSize);
+                        break;
+                    case H8DataSectionId.PhysicsConstants:
+                        entries[i] = AppendSection(stream, sectionId, dataSet.PhysicsConstants, H8DataLayoutConstants.PhysicsConstantsRecordSize);
+                        break;
                 }
             }
 
@@ -254,7 +314,9 @@ namespace Hecton8.EditorValidation
                 SectionTableOffset = (uint)sectionTableOffset,
                 SectionTableBytes = (uint)sectionTableBytes,
                 BlobBytes = (uint)stream.Length,
-                DataStartOffset = (uint)(sectionTableOffset + sectionTableBytes)
+                DataStartOffset = (uint)(sectionTableOffset + sectionTableBytes),
+                WorldSeed = 0u,
+                AppVersionHash = H8DataHash.ComputeFnv1A32(Application.version.AsSpan())
             };
 
             for (int i = 0; i < entries.Length; i++)
@@ -269,24 +331,22 @@ namespace Hecton8.EditorValidation
 
             long previousPosition = stream.Position;
             stream.Position = H8DataLayoutConstants.HeaderSizeBytes;
-            WriteStruct(stream, directory);
+            WriteDirectory(stream, in directory);
             stream.Position = sectionTableOffset;
             for (int i = 0; i < entries.Length; i++)
-                WriteStruct(stream, entries[i]);
+                WriteSectionEntry(stream, in entries[i]);
             stream.Position = previousPosition;
 
             byte[] blob = stream.ToArray();
             H8DataBlobHeader header = new H8DataBlobHeader
             {
-                WorldSeed = 0u,
-                AppVersionHash = H8DataHash.ComputeFnv1A32(Application.version.AsSpan()),
+                Magic = H8DataLayoutConstants.BlobMagic,
+                FormatVersion = H8DataLayoutConstants.FormatVersion,
+                HeaderBytes = H8DataLayoutConstants.HeaderSizeMarker,
                 Checksum64 = ComputeHash64(blob, H8DataLayoutConstants.HeaderSizeBytes, blob.Length - H8DataLayoutConstants.HeaderSizeBytes)
             };
 
-            fixed (byte* blobPtr = blob)
-            {
-                UnsafeUtility.CopyStructureToPtr(ref header, blobPtr);
-            }
+            WriteHeader(blob, in header);
 
             return blob;
         }
@@ -335,17 +395,57 @@ namespace Hecton8.EditorValidation
             dataSet.AudioClips.Sort(CompareAudioClipRecords);
             dataSet.HullConstants.Sort(CompareHullConstantRecords);
             dataSet.PhysicsMaterials.Sort(ComparePhysicsMaterialRecords);
+            dataSet.Economy.Sort(CompareEconomyRecords);
+            dataSet.PhysicsConstants.Sort(ComparePhysicsConstantsRecords);
+
+            for (int i = 1; i < dataSet.Economy.Count; i++)
+                if (dataSet.Economy[i - 1].HashId == dataSet.Economy[i].HashId)
+                    throw new InvalidOperationException("[H8DataMonolithCompiler] Duplicate economy hash detected: 0x" + dataSet.Economy[i].HashId.ToString("X8"));
+
+            for (int i = 1; i < dataSet.PhysicsConstants.Count; i++)
+                if (dataSet.PhysicsConstants[i - 1].HashId == dataSet.PhysicsConstants[i].HashId)
+                    throw new InvalidOperationException("[H8DataMonolithCompiler] Duplicate physics constant hash detected: 0x" + dataSet.PhysicsConstants[i].HashId.ToString("X8"));
         }
 
-        private static void ParseCsv(string absolutePath, DataSet dataSet, LocalizationPool localizationPool)
+        private static void ValidateCrossReferences(DataSet dataSet)
         {
-            string tableName = Path.GetFileNameWithoutExtension(absolutePath).ToLowerInvariant();
-            List<CsvRow> rows = ReadCsvRows(absolutePath);
-            bool requireHashPairs = IsBalanceSourceFile(absolutePath);
-            for (int i = 0; i < rows.Count; i++)
+            HashSet<uint> itemHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[item count] - editor-only cross-reference validation - owner: H8DataMonolithCompiler
+            for (int i = 0; i < dataSet.Items.Count; i++)
+                itemHashes.Add(dataSet.Items[i].HashId);
+
+            for (int i = 0; i < dataSet.Recipes.Count; i++)
             {
-                ValidateCsvRowHashes(absolutePath, i + 2, rows[i], requireHashPairs);
-                ParseRow(tableName, rows[i], dataSet, localizationPool);
+                H8RecipeRecord recipe = dataSet.Recipes[i];
+                if (recipe.OutputHash != 0u && !itemHashes.Contains(recipe.OutputHash))
+                    ThrowBrokenReference("recipe.output", recipe.OutputHash);
+                ValidateItemReference("recipe.ingredient0", recipe.IngredientHash0, itemHashes);
+                ValidateItemReference("recipe.ingredient1", recipe.IngredientHash1, itemHashes);
+                ValidateItemReference("recipe.ingredient2", recipe.IngredientHash2, itemHashes);
+                ValidateItemReference("recipe.ingredient3", recipe.IngredientHash3, itemHashes);
+            }
+
+            for (int i = 0; i < dataSet.LootCdf.Count; i++)
+                ValidateItemReference("loot.item", dataSet.LootCdf[i].ItemHash, itemHashes);
+        }
+
+        private static void ValidateItemReference(string owner, uint hash, HashSet<uint> itemHashes)
+        {
+            if (hash != 0u && !itemHashes.Contains(hash))
+                ThrowBrokenReference(owner, hash);
+        }
+
+        private static void ThrowBrokenReference(string owner, uint hash)
+        {
+            throw new InvalidOperationException("[H8DataMonolithCompiler] Broken static-data cross-reference: owner=" + owner + ", hash=0x" + hash.ToString("X8"));
+        }
+
+        private static void ParseCsv(CsvFileRows source, DataSet dataSet, LocalizationPool localizationPool)
+        {
+            string tableName = Path.GetFileNameWithoutExtension(source.AbsolutePath).ToLowerInvariant();
+            for (int i = 0; i < source.Rows.Count; i++)
+            {
+                ValidateCsvRowHashes(source.AbsolutePath, i + 2, source.Rows[i], requireHashPairs: false);
+                ParseRow(tableName, source.Rows[i], dataSet, localizationPool);
             }
         }
 
@@ -381,10 +481,18 @@ namespace Hecton8.EditorValidation
                 case "item":
                     dataSet.Items.Add(ParseItem(row, localizationPool));
                     break;
+                case "fauna":
                 case "creatures":
                 case "creature_traits":
                 case "genome":
                     dataSet.Creatures.Add(ParseCreature(row, localizationPool));
+                    break;
+                case "economy":
+                    dataSet.Economy.Add(ParseEconomy(row, localizationPool));
+                    break;
+                case "physics":
+                case "physics_constants":
+                    dataSet.PhysicsConstants.Add(ParsePhysicsConstants(row, localizationPool));
                     break;
                 case "biomes":
                     dataSet.Biomes.Add(ParseBiome(row, localizationPool));
@@ -454,32 +562,45 @@ namespace Hecton8.EditorValidation
         private static H8ItemRecord ParseItem(CsvRow row, LocalizationPool localizationPool)
         {
             string id = Get(row, "id", Get(row, "item_id", string.Empty));
+            string name = Get(row, "name", id);
+            string description = Get(row, "description", string.Empty);
             ulong mask0 = 0UL;
             ulong mask1 = 0UL;
             int ingredientCount = AddRecipeMask(Get(row, "recipe", string.Empty), ref mask0, ref mask1);
+            int nameOffset = localizationPool.Add(name, out int nameBytes);
+            int descriptionOffset = localizationPool.Add(description, out int descriptionBytes);
 
             return new H8ItemRecord
             {
                 HashId = Hash(id),
-                CategoryHash = Hash(Get(row, "category", string.Empty)),
+                CategoryHash = Hash(Get(row, "category", Get(row, "categoryid", string.Empty))),
                 Flags = ParseUInt(row, "flags", 0u),
-                MaxStack = (ushort)Mathf.Clamp(ParseInt(row, "max_stack", 1), 0, ushort.MaxValue),
+                MaxStack = (ushort)Mathf.Clamp(ParseInt(row, "max_stack", ParseInt(row, "stackmax", 1)), 0, ushort.MaxValue),
                 RecipeIngredientCount = (ushort)Mathf.Clamp(ingredientCount, 0, ushort.MaxValue),
                 RecipeMask0 = mask0,
                 RecipeMask1 = mask1,
-                MassKg = ParseFloat(row, "mass_kg", 1f),
+                MassKg = ParseFloat(row, "mass_kg", ParseFloat(row, "masskg", 1f)),
                 VolumeM3 = ParseFloat(row, "volume_m3", 0.001f),
                 BaseQuality = ParseFloat(row, "quality", 1f),
                 HeatCapacity = ParseFloat(row, "heat_capacity", 0f),
                 YieldHash = Hash(Get(row, "yield_id", string.Empty)),
-                NameUtf8Offset = localizationPool.Add(Get(row, "name", id)),
-                DescriptionUtf8Offset = localizationPool.Add(Get(row, "description", string.Empty))
+                NameUtf8Offset = nameOffset,
+                DescriptionUtf8Offset = descriptionOffset,
+                NameUtf8ByteLength = (uint)nameBytes,
+                DescriptionUtf8ByteLength = (uint)descriptionBytes,
+                Cost = ParseUInt(row, "cost", 0u),
+                AccessFrequency = ParseFloat(row, "accessfrequency", 0f)
             };
         }
 
         private static H8CreatureTraitRecord ParseCreature(CsvRow row, LocalizationPool localizationPool)
         {
             string id = Get(row, "id", Get(row, "species_id", string.Empty));
+            float swimSpeed = ParseFloat(row, "swimspeed", ParseFloat(row, "cruise_speed", 1f));
+            float turnRate = ParseFloat(row, "turnrate", ParseFloat(row, "metabolism", 1f));
+            float aggression = ParseFloat(row, "aggression01", ParseFloat(row, "aggression", 0f));
+            float fleeDistance = ParseFloat(row, "fleedistancem", ParseFloat(row, "max_depth", 0f));
+            float biolumIntensity = ParseFloat(row, "biolumintensity", 0f);
             return new H8CreatureTraitRecord
             {
                 SpeciesHash = Hash(id),
@@ -488,17 +609,66 @@ namespace Hecton8.EditorValidation
                 Flags = ParseUInt(row, "flags", 0u),
                 Genome = new H8CreatureGenomeTraitBlock
                 {
-                    Aggression = ParseFloat(row, "aggression", 0f),
-                    Metabolism = ParseFloat(row, "metabolism", 1f),
+                    Aggression = aggression,
+                    Metabolism = turnRate,
                     MaxHealth = ParseFloat(row, "max_health", 1f),
-                    CruiseSpeed = ParseFloat(row, "cruise_speed", 1f),
-                    BurstSpeed = ParseFloat(row, "burst_speed", 1f),
-                    SpawnCreditCost = ParseFloat(row, "spawn_credit", 1f),
+                    CruiseSpeed = swimSpeed,
+                    BurstSpeed = ParseFloat(row, "burst_speed", Mathf.Max(swimSpeed * 1.35f, swimSpeed)),
+                    SpawnCreditCost = ParseFloat(row, "spawn_credit", ParseFloat(row, "accessfrequency", Mathf.Max(1f, biolumIntensity))),
                     PressureMinMeters = ParseFloat(row, "min_depth", 0f),
-                    PressureMaxMeters = ParseFloat(row, "max_depth", 0f)
+                    PressureMaxMeters = ParseFloat(row, "max_depth", fleeDistance)
                 },
                 DisplayNameUtf8Offset = localizationPool.Add(Get(row, "name", id)),
                 LootTableHash = Hash(Get(row, "loot_table", string.Empty))
+            };
+        }
+
+        private static H8EconomyRecord ParseEconomy(CsvRow row, LocalizationPool localizationPool)
+        {
+            string id = Get(row, "id", string.Empty);
+            string name = Get(row, "name", id);
+            string description = Get(row, "description", string.Empty);
+            int nameOffset = localizationPool.Add(name, out int nameBytes);
+            int descriptionOffset = localizationPool.Add(description, out int descriptionBytes);
+            return new H8EconomyRecord
+            {
+                HashId = Hash(id),
+                NameUtf8Offset = nameOffset,
+                DescriptionUtf8Offset = descriptionOffset,
+                BasePrice = ParseFloat(row, "baseprice", ParseFloat(row, "base_price", 0f)),
+                Scarcity01 = Saturate(ParseFloat(row, "scarcity01", ParseFloat(row, "scarcity", 0f))),
+                Demand01 = Saturate(ParseFloat(row, "demand01", ParseFloat(row, "demand", 0f))),
+                SupplyRefreshSeconds = ParseFloat(row, "supplyrefreshseconds", ParseFloat(row, "supply_refresh_seconds", 0f)),
+                AccessFrequency = ParseFloat(row, "accessfrequency", 0f),
+                NameUtf8ByteLength = (uint)nameBytes,
+                DescriptionUtf8ByteLength = (uint)descriptionBytes,
+                Flags = ParseUInt(row, "flags", 0u)
+            };
+        }
+
+        private static H8PhysicsConstantsRecord ParsePhysicsConstants(CsvRow row, LocalizationPool localizationPool)
+        {
+            string id = Get(row, "id", string.Empty);
+            string name = Get(row, "name", id);
+            string description = Get(row, "description", string.Empty);
+            int nameOffset = localizationPool.Add(name, out int nameBytes);
+            int descriptionOffset = localizationPool.Add(description, out int descriptionBytes);
+            return new H8PhysicsConstantsRecord
+            {
+                HashId = Hash(id),
+                NameUtf8Offset = nameOffset,
+                DescriptionUtf8Offset = descriptionOffset,
+                NameUtf8ByteLength = (uint)nameBytes,
+                DescriptionUtf8ByteLength = (uint)descriptionBytes,
+                MassKg = ParseFloat(row, "masskg", ParseFloat(row, "mass_kg", 0f)),
+                AddedMass = ParseFloat(row, "addedmass", ParseFloat(row, "added_mass", 0f)),
+                LinearDrag = ParseFloat(row, "lineardrag", ParseFloat(row, "linear_drag", 0f)),
+                Buoyancy = ParseFloat(row, "buoyancy", 0f),
+                CrushDepthM = ParseFloat(row, "crushdepthm", ParseFloat(row, "crush_depth_m", ParseFloat(row, "crush_depth", 0f))),
+                AupSectorSizeMeters = ParseFloat(row, "aupsectorsizemeters", ParseFloat(row, "aup_sector_size_meters", 1000f)),
+                MaxWorldBoundsMeters = ParseFloat(row, "maxworldboundsmeters", ParseFloat(row, "max_world_bounds_meters", 100000f)),
+                AccessFrequency = ParseFloat(row, "accessfrequency", 0f),
+                Flags = ParseUInt(row, "flags", 0u)
             };
         }
 
@@ -660,9 +830,9 @@ namespace Hecton8.EditorValidation
             return new H8NarrativeTriggerRecord
             {
                 TriggerHash = Hash(Get(row, "id", string.Empty)),
-                AupX = ParseLong(row, "aup_x", 0L),
-                AupY = ParseLong(row, "aup_y", 0L),
-                AupZ = ParseLong(row, "aup_z", 0L),
+                AupX = ParseDouble(row, "aup_x", 0d),
+                AupY = ParseDouble(row, "aup_y", 0d),
+                AupZ = ParseDouble(row, "aup_z", 0d),
                 RadiusMeters = ParseFloat(row, "radius", 1f)
             };
         }
@@ -916,17 +1086,104 @@ namespace Hecton8.EditorValidation
                 stream.WriteByte(0);
         }
 
+        private static void EnsureLittleEndianEditorHost()
+        {
+            if (!BitConverter.IsLittleEndian)
+                throw new PlatformNotSupportedException("[H8DataMonolithCompiler] Big-endian editor hosts are not allowed to emit static_data.h8bin without explicit per-record byte swapping.");
+        }
+
+        private static void WriteHeader(byte[] blob, in H8DataBlobHeader header)
+        {
+            WriteUInt32(blob, 0, header.Magic);
+            WriteUInt16(blob, 4, header.FormatVersion);
+            WriteUInt16(blob, 6, header.HeaderBytes);
+            WriteUInt64(blob, 8, header.Checksum64);
+        }
+
+        private static void WriteDirectory(MemoryStream stream, in H8DataBlobDirectory directory)
+        {
+            WriteUInt32(stream, directory.Magic);
+            WriteUInt16(stream, directory.FormatVersion);
+            WriteUInt16(stream, directory.SectionCount);
+            WriteUInt32(stream, directory.SectionTableOffset);
+            WriteUInt32(stream, directory.SectionTableBytes);
+            WriteUInt32(stream, directory.BlobBytes);
+            WriteUInt32(stream, directory.DataStartOffset);
+            WriteUInt32(stream, directory.LocalizationOffset);
+            WriteUInt32(stream, directory.LocalizationBytes);
+            WriteUInt32(stream, directory.Flags);
+            WriteUInt32(stream, directory.WorldSeed);
+            WriteUInt32(stream, directory.AppVersionHash);
+            WriteUInt32(stream, directory.Reserved0);
+            WriteUInt32(stream, directory.Reserved1);
+            WriteUInt32(stream, directory.Reserved2);
+            WriteUInt32(stream, directory.Reserved3);
+            WriteUInt32(stream, directory.Reserved4);
+        }
+
+        private static void WriteSectionEntry(MemoryStream stream, in H8DataSectionEntry entry)
+        {
+            WriteUInt32(stream, entry.SectionId);
+            WriteUInt32(stream, entry.RecordSize);
+            WriteUInt32(stream, entry.Count);
+            WriteUInt32(stream, entry.OffsetBytes);
+        }
+
+        private static void WriteUInt16(MemoryStream stream, ushort value)
+        {
+            stream.WriteByte((byte)value);
+            stream.WriteByte((byte)(value >> 8));
+        }
+
+        private static void WriteUInt32(MemoryStream stream, uint value)
+        {
+            stream.WriteByte((byte)value);
+            stream.WriteByte((byte)(value >> 8));
+            stream.WriteByte((byte)(value >> 16));
+            stream.WriteByte((byte)(value >> 24));
+        }
+
+        private static void WriteUInt16(byte[] bytes, int offset, ushort value)
+        {
+            bytes[offset] = (byte)value;
+            bytes[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static void WriteUInt32(byte[] bytes, int offset, uint value)
+        {
+            bytes[offset] = (byte)value;
+            bytes[offset + 1] = (byte)(value >> 8);
+            bytes[offset + 2] = (byte)(value >> 16);
+            bytes[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64(byte[] bytes, int offset, ulong value)
+        {
+            bytes[offset] = (byte)value;
+            bytes[offset + 1] = (byte)(value >> 8);
+            bytes[offset + 2] = (byte)(value >> 16);
+            bytes[offset + 3] = (byte)(value >> 24);
+            bytes[offset + 4] = (byte)(value >> 32);
+            bytes[offset + 5] = (byte)(value >> 40);
+            bytes[offset + 6] = (byte)(value >> 48);
+            bytes[offset + 7] = (byte)(value >> 56);
+        }
+
         private static void WriteStruct<T>(MemoryStream stream, T value)
             where T : unmanaged
         {
+            EnsureLittleEndianEditorHost();
             int size = UnsafeUtility.SizeOf<T>();
-            byte[] scratch = new byte[size]; // COLD ALLOC: byte[struct size] - editor-only binary struct emission scratch - owner: H8DataMonolithCompiler
+            if (size > 256)
+                throw new InvalidOperationException("[H8DataMonolithCompiler] Record struct exceeds stack emission scratch limit: " + typeof(T).Name);
+
+            Span<byte> scratch = stackalloc byte[size];
             fixed (byte* ptr = scratch)
             {
                 UnsafeUtility.CopyStructureToPtr(ref value, ptr);
             }
 
-            stream.Write(scratch, 0, size);
+            stream.Write(scratch);
         }
 
         private static ulong ComputeHash64(byte[] bytes, int offset, int count)
@@ -941,7 +1198,7 @@ namespace Hecton8.EditorValidation
         private static List<CsvRow> ReadCsvRows(string absolutePath)
         {
             string[] lines = File.ReadAllLines(absolutePath, Encoding.UTF8);
-            List<CsvRow> rows = new List<CsvRow>(Mathf.Max(0, lines.Length - 1)); // COLD ALLOC: List<CsvRow>[csv row count] - editor-only source data import - owner: H8DataMonolithCompiler
+            List<CsvRow> rows = new List<CsvRow>(Math.Max(0, lines.Length - 1)); // COLD ALLOC: List<CsvRow>[csv row count] - editor-only source data import - owner: H8DataMonolithCompiler
             if (lines.Length <= 1)
                 return rows;
 
@@ -1147,11 +1404,15 @@ namespace Hecton8.EditorValidation
             if (string.IsNullOrWhiteSpace(packedIds))
                 return 0;
 
-            string[] tokens = packedIds.Split(';');
             int count = 0;
-            for (int i = 0; i < tokens.Length; i++)
+            ReadOnlySpan<char> ids = packedIds.AsSpan();
+            int start = 0;
+            while (start <= ids.Length)
             {
-                string token = tokens[i].Trim();
+                int separator = start < ids.Length ? ids.Slice(start).IndexOf(';') : -1;
+                int length = separator >= 0 ? separator : ids.Length - start;
+                ReadOnlySpan<char> token = TrimAscii(ids.Slice(start, length));
+                start = separator >= 0 ? start + separator + 1 : ids.Length + 1;
                 if (token.Length == 0)
                     continue;
 
@@ -1191,11 +1452,15 @@ namespace Hecton8.EditorValidation
             if (string.IsNullOrWhiteSpace(packedIds))
                 return 0;
 
-            string[] tokens = packedIds.Split(';');
             int count = 0;
-            for (int i = 0; i < tokens.Length; i++)
+            ReadOnlySpan<char> ids = packedIds.AsSpan();
+            int start = 0;
+            while (start <= ids.Length)
             {
-                string token = tokens[i].Trim();
+                int separator = start < ids.Length ? ids.Slice(start).IndexOf(';') : -1;
+                int length = separator >= 0 ? separator : ids.Length - start;
+                ReadOnlySpan<char> token = TrimAscii(ids.Slice(start, length));
+                start = separator >= 0 ? start + separator + 1 : ids.Length + 1;
                 if (token.Length == 0)
                     continue;
 
@@ -1233,6 +1498,22 @@ namespace Hecton8.EditorValidation
             return string.IsNullOrWhiteSpace(value) ? 0u : H8DataHash.ComputeFnv1A32(value.AsSpan());
         }
 
+        private static uint Hash(ReadOnlySpan<char> value)
+        {
+            return value.Length == 0 ? 0u : H8DataHash.ComputeFnv1A32(value);
+        }
+
+        private static ReadOnlySpan<char> TrimAscii(ReadOnlySpan<char> value)
+        {
+            int start = 0;
+            int end = value.Length - 1;
+            while (start <= end && value[start] <= ' ')
+                start++;
+            while (end >= start && value[end] <= ' ')
+                end--;
+            return start > end ? ReadOnlySpan<char>.Empty : value.Slice(start, (end - start) + 1);
+        }
+
         private static uint ParseUInt(CsvRow row, string key, uint fallback)
         {
             string value = Get(row, key, string.Empty);
@@ -1258,6 +1539,18 @@ namespace Hecton8.EditorValidation
         private static float ParseFloat(CsvRow row, string key, float fallback)
         {
             return float.TryParse(Get(row, key, string.Empty), NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed) ? parsed : fallback;
+        }
+
+        private static double ParseDouble(CsvRow row, string key, double fallback)
+        {
+            return double.TryParse(Get(row, key, string.Empty), NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed) ? parsed : fallback;
+        }
+
+        private static float Saturate(float value)
+        {
+            if (value <= 0f)
+                return 0f;
+            return value >= 1f ? 1f : value;
         }
 
         private static int CompareItemRecords(H8ItemRecord left, H8ItemRecord right)
@@ -1306,11 +1599,23 @@ namespace Hecton8.EditorValidation
             return left.SurfaceHash.CompareTo(right.SurfaceHash);
         }
 
+        private static int CompareEconomyRecords(H8EconomyRecord left, H8EconomyRecord right)
+        {
+            return left.HashId.CompareTo(right.HashId);
+        }
+
+        private static int ComparePhysicsConstantsRecords(H8PhysicsConstantsRecord left, H8PhysicsConstantsRecord right)
+        {
+            return left.HashId.CompareTo(right.HashId);
+        }
+
         private static H8ItemRecord ToItemRecord(JsonItem item, LocalizationPool localizationPool)
         {
             ulong mask0 = 0UL;
             ulong mask1 = 0UL;
             int ingredientCount = AddRecipeMask(item.recipe, ref mask0, ref mask1);
+            int nameOffset = localizationPool.Add(item.name, out int nameBytes);
+            int descriptionOffset = localizationPool.Add(item.description, out int descriptionBytes);
             return new H8ItemRecord
             {
                 HashId = Hash(item.id),
@@ -1325,8 +1630,10 @@ namespace Hecton8.EditorValidation
                 BaseQuality = item.quality,
                 HeatCapacity = item.heatCapacity,
                 YieldHash = Hash(item.yieldId),
-                NameUtf8Offset = localizationPool.Add(item.name),
-                DescriptionUtf8Offset = localizationPool.Add(item.description)
+                NameUtf8Offset = nameOffset,
+                DescriptionUtf8Offset = descriptionOffset,
+                NameUtf8ByteLength = (uint)nameBytes,
+                DescriptionUtf8ByteLength = (uint)descriptionBytes
             };
         }
 
@@ -1409,15 +1716,27 @@ namespace Hecton8.EditorValidation
 
             internal int Add(string value)
             {
+                return Add(value, out _);
+            }
+
+            internal int Add(string value, out int byteCount)
+            {
                 if (string.IsNullOrEmpty(value))
+                {
+                    byteCount = 0;
                     return -1;
+                }
+
+                byteCount = Encoding.UTF8.GetByteCount(value);
+                if (byteCount > _scratch.Length)
+                    throw new InvalidOperationException("[H8DataMonolithCompiler] UTF-8 localization entry exceeds scratch capacity: bytes=" + byteCount);
 
                 if (_offsetByValue.TryGetValue(value, out int offset))
                     return offset;
 
                 offset = (int)_bytes.Position;
-                int byteCount = Encoding.UTF8.GetBytes(value, 0, value.Length, _scratch, 0);
-                _bytes.Write(_scratch, 0, byteCount);
+                int written = Encoding.UTF8.GetBytes(value, 0, value.Length, _scratch, 0);
+                _bytes.Write(_scratch, 0, written);
                 _bytes.WriteByte(0);
                 _offsetByValue[value] = offset;
                 return offset;
@@ -1432,6 +1751,18 @@ namespace Hecton8.EditorValidation
         private sealed class CsvRow
         {
             internal readonly Dictionary<string, string> Fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private sealed class CsvFileRows
+        {
+            internal readonly string AbsolutePath;
+            internal readonly List<CsvRow> Rows;
+
+            internal CsvFileRows(string absolutePath, List<CsvRow> rows)
+            {
+                AbsolutePath = absolutePath;
+                Rows = rows;
+            }
         }
 
         private sealed class DataSet
@@ -1460,6 +1791,8 @@ namespace Hecton8.EditorValidation
             internal readonly List<H8SopErrorRecord> SopErrors = new List<H8SopErrorRecord>(128);
             internal readonly List<H8HudLayoutRecord> HudLayouts = new List<H8HudLayoutRecord>(64);
             internal readonly List<H8SectorPageRecord> SectorPages = new List<H8SectorPageRecord>(64);
+            internal readonly List<H8EconomyRecord> Economy = new List<H8EconomyRecord>(128);
+            internal readonly List<H8PhysicsConstantsRecord> PhysicsConstants = new List<H8PhysicsConstantsRecord>(64);
         }
 
         [Serializable] private sealed class JsonRoot { public JsonItem[] items; public JsonCreature[] creatures; public JsonBiome[] biomes; public JsonRecipe[] recipes; }
@@ -1575,8 +1908,9 @@ namespace Hecton8.EditorValidation
             if (string.IsNullOrEmpty(path))
                 return false;
 
-            return path.EndsWith(".csv", StringComparison.OrdinalIgnoreCase) ||
-                   path.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
+            return !H8DataMonolithCompiler.IsGeneratedBalancePath(path) &&
+                   (path.EndsWith(".csv", StringComparison.OrdinalIgnoreCase) ||
+                    path.EndsWith(".json", StringComparison.OrdinalIgnoreCase));
         }
 
         private static void DrainPendingBake()

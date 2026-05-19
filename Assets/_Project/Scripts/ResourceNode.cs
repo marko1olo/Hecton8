@@ -127,6 +127,10 @@ namespace Hecton8.Scavenging
         private bool _isDepleted;
         private bool _despawnRequested;
         private bool _lootSpawnBlockedLogged;
+        private uint _lastLootOracleToolMask = ScavengingLootOracleConstants.ToolMaskAny;
+        private GameObject _cachedLootOraclePrefab;
+        private uint _cachedLootOracleItemHash;
+        private uint _cachedLootOracleUnitQuantity;
         private bool _registeredToWorldStateRegistry;
         private int _spatialHandle;
         private ulong _persistentTombstoneId;
@@ -273,6 +277,9 @@ namespace Hecton8.Scavenging
 
             maxHealth = template.MaxIntegrity;
             lootPrefab = template.LootPickupPrefab;
+            _cachedLootOraclePrefab = null;
+            _cachedLootOracleItemHash = 0u;
+            _cachedLootOracleUnitQuantity = 0u;
             lootCount = template.DefaultLootCount;
             ApplyPresentation(template, fallbackMesh, fallbackMaterial);
             _currentHealth = Mathf.Clamp(_currentHealth, 0f, maxHealth);
@@ -326,6 +333,7 @@ namespace Hecton8.Scavenging
 
         public void ApplyCutDamage(float damage, Vector3 hitPoint)
         {
+            _lastLootOracleToolMask = ScavengingLootOracleConstants.ToolMaskCutter;
             TakeDamage(
                 damage,
                 damage,
@@ -343,6 +351,7 @@ namespace Hecton8.Scavenging
             if (_isDepleted || _despawnRequested || signal.PowerDelivered <= 0f)
                 return;
 
+            _lastLootOracleToolMask = ResolveLootOracleToolMask((InteractionEffectType)signal.EffectType);
             if (ShouldTriggerSteamExplosion(in signal))
             {
                 TriggerSteamExplosion(runtimeHitPoint);
@@ -365,6 +374,7 @@ namespace Hecton8.Scavenging
 
         public void TakeDamage(float amount)
         {
+            _lastLootOracleToolMask = ScavengingLootOracleConstants.ToolMaskAny;
             TakeDamage(
                 amount,
                 amount,
@@ -456,13 +466,12 @@ namespace Hecton8.Scavenging
             if (lootPrefab == null || lootCount <= 0)
                 return true;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
-            if (pool == null)
+            if (!TryResolveLootOraclePayload(out uint itemHash, out uint quantity))
             {
                 if (!_lootSpawnBlockedLogged)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError("[ResourceNode] ObjectPoolManager unavailable. Depletion aborted to prevent loot loss.", this);
+                    Debug.LogError("[ResourceNode] Loot prefab has no PickupItem/HectonItem payload. Depletion aborted to prevent loot loss.", this);
 #endif
                     _lootSpawnBlockedLogged = true;
                 }
@@ -470,30 +479,100 @@ namespace Hecton8.Scavenging
                 return false;
             }
 
-            Vector3 origin = _cachedTransform.position;
-            uint state = BuildDeterministicScatterSeed(0xD1B54A32u);
-            for (int i = 0; i < lootCount; i++)
+            AbsoluteUniversePosition aup = _hasPersistentAup
+                ? _persistentAup
+                : AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform != null ? _cachedTransform.position : transform.position);
+            if (!IsFiniteAup(in aup))
+                return false;
+
+            var inventory = GlobalRegistry.PlayerInventoryRuntime;
+            int quantityForCapacity = quantity > int.MaxValue ? int.MaxValue : (int)quantity;
+            bool capacityAvailable = inventory == null ||
+                                     inventory.CanAcceptItemQuantity(unchecked((int)itemHash), quantityForCapacity);
+            bool accepted = ScavengingLootOracleRuntime.TryQueueResourceNodeLoot(
+                in aup,
+                itemHash,
+                itemHash,
+                quantity,
+                _lastLootOracleToolMask,
+                capacityAvailable);
+            if (!accepted && capacityAvailable && !_lootSpawnBlockedLogged)
             {
-                Vector3 offset = NextScatterVector(ref state) * scatterRadius;
-                Vector3 spawnPosition = origin + offset;
-                Quaternion spawnRotation = NextCardinalRotation(ref state);
-                GameObject loot = pool.Spawn(lootPrefab, spawnPosition, spawnRotation);
-                if (loot == null)
-                    continue;
-
-                if (loot.TryGetComponent(out Rigidbody rigidbody))
-                {
-                    Vector3 force = NextScatterVector(ref state) * scatterForce;
-                    force.y = Mathf.Abs(force.y) + upwardBias;
-                    PhysicsForceRouter.QueueForce(rigidbody, force, ForceMode.Impulse);
-                    PhysicsForceRouter.QueueTorque(rigidbody, NextScatterVector(ref state) * (scatterForce * 0.5f), ForceMode.Impulse);
-                }
-
-                if (lootLifetime > 0f)
-                    pool.Despawn(loot, lootLifetime);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[ResourceNode] Loot oracle unavailable. Depletion aborted to prevent loot loss.", this);
+#endif
+                _lootSpawnBlockedLogged = true;
             }
 
+            return accepted;
+        }
+
+        private bool TryResolveLootOraclePayload(out uint itemHash, out uint quantity)
+        {
+            itemHash = 0u;
+            quantity = 0u;
+            if (lootPrefab == null || lootCount <= 0)
+                return false;
+
+            if (_cachedLootOraclePrefab == lootPrefab && _cachedLootOracleItemHash != 0u && _cachedLootOracleUnitQuantity != 0u)
+            {
+                itemHash = _cachedLootOracleItemHash;
+                quantity = (uint)Mathf.Max(1, lootCount) * _cachedLootOracleUnitQuantity;
+                return true;
+            }
+
+            if (lootPrefab.TryGetComponent(out PickupItem pickupItem) && pickupItem.ItemData != null)
+            {
+                return CacheLootOraclePayload(lootPrefab, unchecked((uint)pickupItem.ItemData.PersistentHashId), pickupItem.Quantity, out itemHash, out quantity);
+            }
+
+            PickupItem childPickup = lootPrefab.GetComponentInChildren<PickupItem>(true);
+            if (childPickup != null && childPickup.ItemData != null)
+            {
+                return CacheLootOraclePayload(lootPrefab, unchecked((uint)childPickup.ItemData.PersistentHashId), childPickup.Quantity, out itemHash, out quantity);
+            }
+
+            if (lootPrefab.TryGetComponent(out HectonItem hectonItem) && hectonItem.Data != null)
+            {
+                return CacheLootOraclePayload(lootPrefab, unchecked((uint)hectonItem.Data.PersistentHashId), hectonItem.Quantity, out itemHash, out quantity);
+            }
+
+            HectonItem childHectonItem = lootPrefab.GetComponentInChildren<HectonItem>(true);
+            if (childHectonItem != null && childHectonItem.Data != null)
+            {
+                return CacheLootOraclePayload(lootPrefab, unchecked((uint)childHectonItem.Data.PersistentHashId), childHectonItem.Quantity, out itemHash, out quantity);
+            }
+
+            return false;
+        }
+
+        private bool CacheLootOraclePayload(GameObject prefab, uint resolvedItemHash, int unitQuantity, out uint itemHash, out uint quantity)
+        {
+            itemHash = resolvedItemHash;
+            uint safeUnitQuantity = (uint)Mathf.Max(1, unitQuantity);
+            quantity = (uint)Mathf.Max(1, lootCount) * safeUnitQuantity;
+            if (itemHash == 0u)
+                return false;
+
+            _cachedLootOraclePrefab = prefab;
+            _cachedLootOracleItemHash = itemHash;
+            _cachedLootOracleUnitQuantity = safeUnitQuantity;
             return true;
+        }
+
+        private static uint ResolveLootOracleToolMask(InteractionEffectType effectType)
+        {
+            switch (effectType)
+            {
+                case InteractionEffectType.Drill:
+                    return ScavengingLootOracleConstants.ToolMaskDrill;
+                case InteractionEffectType.PlasmaCut:
+                case InteractionEffectType.Torch:
+                case InteractionEffectType.Boil:
+                    return ScavengingLootOracleConstants.ToolMaskCutter;
+                default:
+                    return ScavengingLootOracleConstants.ToolMaskKnife;
+            }
         }
 
         private bool ShouldTriggerSteamExplosion(in Hecton8.Interaction.InteractionSignal signal)
@@ -643,6 +722,7 @@ namespace Hecton8.Scavenging
             _isDepleted = false;
             _despawnRequested = false;
             _lootSpawnBlockedLogged = false;
+            _lastLootOracleToolMask = ScavengingLootOracleConstants.ToolMaskAny;
             _lastYieldSampleTimeSeconds = -1f;
             _pressureMetamorphismProgressSeconds = 0f;
             _fractionalYieldRemainderGrams = 0L;
@@ -1475,6 +1555,7 @@ namespace Hecton8.Scavenging
                 ? new Color(1f, 0.35f, 0.1f, 0.35f)
                 : new Color(0.6f, 0.6f, 0.6f, 0.2f);
             Gizmos.DrawWireCube(transform.position, halfExtents * 2f);
+            ScavengingLootOracleRuntime.DrawHighestProbabilityGizmo(this, transform.position);
         }
 #endif
     }

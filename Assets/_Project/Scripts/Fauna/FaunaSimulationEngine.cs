@@ -1,31 +1,40 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.AI
 {
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     internal struct FaunaParasiteAttachInput
     {
-        public AbsoluteUniversePositionBlit128 HostAup;
-        public float3 HostLocalAttachOffset;
-        public float HostHealth;
-        public float ParasiteHunger01;
-        public float DrainPerSecond;
-        public float DeltaTimeSeconds;
-        public byte Attached;
+        [FieldOffset(0)] public AbsoluteUniversePositionBlit128 HostAup;
+        [FieldOffset(48)] public float3 HostLocalAttachOffset;
+        [FieldOffset(60)] public float HostHealth;
+        [FieldOffset(64)] public float ParasiteHunger01;
+        [FieldOffset(68)] public float DrainPerSecond;
+        [FieldOffset(72)] public float DeltaTimeSeconds;
+        [FieldOffset(76)] public byte Attached;
+        [FieldOffset(77)] private byte _pad0;
+        [FieldOffset(78)] private ushort _pad1;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct FaunaParasiteAttachResult
     {
-        public AbsoluteUniversePositionBlit128 ParasiteAup;
-        public float HostHealth;
-        public float ParasiteHunger01;
-        public byte Attached;
+        [FieldOffset(0)] public AbsoluteUniversePositionBlit128 ParasiteAup;
+        [FieldOffset(48)] public float HostHealth;
+        [FieldOffset(52)] public float ParasiteHunger01;
+        [FieldOffset(56)] public byte Attached;
+        [FieldOffset(57)] private byte _pad0;
+        [FieldOffset(58)] private ushort _pad1;
+        [FieldOffset(60)] private uint _pad2;
     }
 
     /// <summary>
@@ -138,12 +147,12 @@ namespace Hecton8.AI
             return job.Schedule(safeCount, 32, dependency);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct DataOnlyFaunaLodJob : IJobParallelFor
         {
-            public NativeArray<PoolSlotData> PoolSlots;
-            public NativeArray<float3> LinearVelocities;
-            [ReadOnly] public NativeArray<byte> SimulationFlags;
+            [NoAlias] public NativeArray<PoolSlotData> PoolSlots;
+            [NoAlias] public NativeArray<float3> LinearVelocities;
+            [ReadOnly, NoAlias] public NativeArray<byte> SimulationFlags;
             public double3 PlayerAbsolutePosition;
             public float DeltaTime;
             public double DehydrationDistanceSq;
@@ -261,11 +270,11 @@ namespace Hecton8.AI
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ParasiteAttachJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<FaunaParasiteAttachInput> Inputs;
-            public NativeArray<FaunaParasiteAttachResult> Results;
+            [ReadOnly, NoAlias] public NativeArray<FaunaParasiteAttachInput> Inputs;
+            [NoAlias] public NativeArray<FaunaParasiteAttachResult> Results;
 
             public void Execute(int index)
             {
@@ -333,17 +342,41 @@ namespace Hecton8.AI
         public FaunaSimulationFreeSlotStack FreeSlots;
         public int Capacity;
 
-        public NativeArray<PoolSlotData> PoolSlots => ResolveBuffer(_vault ?? GlobalRegistry.DataVault, ref _poolSlotsHandle);
+        public NativeArray<PoolSlotData> PoolSlots => ResolveBuffer(_vault, ref _poolSlotsHandle);
 
-        public NativeArray<float3> LinearVelocities => ResolveBuffer(_vault ?? GlobalRegistry.DataVault, ref _linearVelocitiesHandle);
+        public NativeArray<float3> LinearVelocities => ResolveBuffer(_vault, ref _linearVelocitiesHandle);
 
-        public NativeArray<byte> SimulationFlags => ResolveBuffer(_vault ?? GlobalRegistry.DataVault, ref _simulationFlagsHandle);
+        public NativeArray<byte> SimulationFlags => ResolveBuffer(_vault, ref _simulationFlagsHandle);
 
         public bool IsCreated =>
             PoolSlots.IsCreated &&
             LinearVelocities.IsCreated &&
             SimulationFlags.IsCreated &&
             FreeSlots.IsCreated;
+
+        public ref PoolSlotData GetStateAsRef(int index)
+        {
+            if (_vault == null)
+                FatalMemoryException.ThrowStaleVaultHandle();
+
+            return ref _poolSlotsHandle.GetElementAsRef(_vault, index);
+        }
+
+        public ref float3 GetLinearVelocityAsRef(int index)
+        {
+            if (_vault == null)
+                FatalMemoryException.ThrowStaleVaultHandle();
+
+            return ref _linearVelocitiesHandle.GetElementAsRef(_vault, index);
+        }
+
+        public ref byte GetSimulationFlagAsRef(int index)
+        {
+            if (_vault == null)
+                FatalMemoryException.ThrowStaleVaultHandle();
+
+            return ref _simulationFlagsHandle.GetElementAsRef(_vault, index);
+        }
 
         public void Allocate(int capacity)
         {
@@ -352,8 +385,7 @@ namespace Hecton8.AI
             if (Capacity <= 0)
                 return;
 
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null || vault.IsAllocationLocked)
+            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault) || vault.IsAllocationLocked)
             {
                 Capacity = 0;
                 return;
@@ -472,7 +504,7 @@ namespace Hecton8.AI
         private int _count;
         private int _capacity;
 
-        public bool IsCreated => _slotsHandle.IsCreated && _capacity > 0 && ResolveSlots(_vault ?? GlobalRegistry.DataVault, ref _slotsHandle).IsCreated;
+        public bool IsCreated => _slotsHandle.IsCreated && _capacity > 0 && ResolveSlots(_vault, ref _slotsHandle).IsCreated;
 
         public void Allocate(IDataVault vault, int capacity, BufferID bufferId, SystemID owner)
         {
@@ -503,7 +535,7 @@ namespace Hecton8.AI
         public void Reset()
         {
             Clear();
-            NativeArray<int> slots = ResolveSlots(_vault ?? GlobalRegistry.DataVault, ref _slotsHandle);
+            NativeArray<int> slots = ResolveSlots(_vault, ref _slotsHandle);
             if (!slots.IsCreated)
                 return;
 
@@ -523,7 +555,7 @@ namespace Hecton8.AI
         public bool TryDequeue(out int slotIndex)
         {
             slotIndex = -1;
-            NativeArray<int> slots = ResolveSlots(_vault ?? GlobalRegistry.DataVault, ref _slotsHandle);
+            NativeArray<int> slots = ResolveSlots(_vault, ref _slotsHandle);
             if (!slots.IsCreated || _count <= 0)
                 return false;
 
@@ -540,7 +572,7 @@ namespace Hecton8.AI
 
         public void Enqueue(int slotIndex)
         {
-            NativeArray<int> slots = ResolveSlots(_vault ?? GlobalRegistry.DataVault, ref _slotsHandle);
+            NativeArray<int> slots = ResolveSlots(_vault, ref _slotsHandle);
             if (!slots.IsCreated ||
                 (uint)slotIndex >= (uint)_capacity ||
                 _count >= _capacity ||

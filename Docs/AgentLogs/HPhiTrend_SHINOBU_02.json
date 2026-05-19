@@ -1,10 +1,10 @@
 ﻿{
-    "GeneratedUtc":  "2026-05-18T23:55:05.7147066+00:00",
+    "GeneratedUtc":  "2026-05-19T00:53:15.0677997+00:00",
     "ProjectRoot":  "C:\\hades\\Hecton8",
     "EvidenceClass":  "STATIC_SOURCE_HISTORY",
     "IncludeSignalAudit":  true,
     "IncludeReports":  false,
-    "ArtifactCount":  123,
+    "ArtifactCount":  131,
     "MetricSeriesCount":  393,
     "KeyTrends":  [
                       {
@@ -452,6 +452,19 @@
                                         "LastPath":  "Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_current_after_bridge_prune.json"
                                     },
                                     {
+                                        "Metric":  "scannedFiles",
+                                        "Samples":  28,
+                                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
+                                        "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
+                                        "First":  7,
+                                        "Last":  1761,
+                                        "Delta":  1754,
+                                        "Min":  7,
+                                        "Max":  1761,
+                                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
+                                        "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
+                                    },
+                                    {
                                         "Metric":  "Counts.NativeOwnershipRisk",
                                         "Samples":  63,
                                         "FirstTimestamp":  "2026-05-15 12:37:53 +04:00",
@@ -634,6 +647,19 @@
                                         "LastPath":  "Docs\\Archive\\Batch007\\AgentLogs\\HPhi_RESOURCE_SPAWN_LCG_TABLES.json"
                                     },
                                     {
+                                        "Metric":  "reviewOnlyFindings",
+                                        "Samples":  28,
+                                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
+                                        "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
+                                        "First":  1,
+                                        "Last":  584,
+                                        "Delta":  583,
+                                        "Min":  1,
+                                        "Max":  856,
+                                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
+                                        "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
+                                    },
+                                    {
                                         "Metric":  "AllSourceCounts.GlobalRegistrySurface",
                                         "Samples":  5,
                                         "FirstTimestamp":  "2026-05-15 18:45:15 +04:00",
@@ -647,46 +673,68 @@
                                         "LastPath":  "Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_current2.json"
                                     },
                                     {
-                                        "Metric":  "Counts.GlobalRegistrySurface",
-                                        "Samples":  78,
-                                        "FirstTimestamp":  "2026-05-15 03:47:18 +04:00",
-                                        "LastTimestamp":  "2026-05-18 18:15:42 +04:00",
-                                        "First":  5139,
-                                        "Last":  5552,
-                                        "Delta":  413,
-                                        "Min":  5049,
-                                        "Max":  5552,
-                                        "FirstPath":  "Docs\\Archive\\Batch006\\AgentLogs\\HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_PostPatchBudgetPass.json",
-                                        "LastPath":  "Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_current2.json"
-                                    },
-                                    {
-                                        "Metric":  "Budgets.GlobalRegistrySurface.Actual",
-                                        "Samples":  77,
-                                        "FirstTimestamp":  "2026-05-15 04:58:22 +04:00",
-                                        "LastTimestamp":  "2026-05-18 18:15:42 +04:00",
-                                        "First":  5146,
-                                        "Last":  5552,
-                                        "Delta":  406,
-                                        "Min":  5049,
-                                        "Max":  5552,
-                                        "FirstPath":  "Docs\\Archive\\Batch006\\AgentLogs\\HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_DuplicateZero.json",
-                                        "LastPath":  "Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_current2.json"
-                                    },
-                                    {
-                                        "Metric":  "Budgets.PrimaryManagedRuntimeRisk.Max",
-                                        "Samples":  76,
-                                        "FirstTimestamp":  "2026-05-15 05:31:09 +04:00",
-                                        "LastTimestamp":  "2026-05-18 18:15:42 +04:00",
-                                        "First":  353,
-                                        "Last":  -1,
-                                        "Delta":  -354,
-                                        "Min":  -1,
-                                        "Max":  353,
-                                        "FirstPath":  "Docs\\Archive\\Batch006\\AgentLogs\\HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_UnityLoopDebtZero.json",
-                                        "LastPath":  "Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_current2.json"
+                                        "Metric":  "infos",
+                                        "Samples":  28,
+                                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
+                                        "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
+                                        "First":  1,
+                                        "Last":  454,
+                                        "Delta":  453,
+                                        "Min":  1,
+                                        "Max":  467,
+                                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
+                                        "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                                     }
                                 ],
     "RecentArtifacts":  [
+                            {
+                                "Timestamp":  "2026-05-19 00:52:49 +00:00",
+                                "ArtifactType":  "SignalAudit",
+                                "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json",
+                                "MetricCount":  21
+                            },
+                            {
+                                "Timestamp":  "2026-05-19 00:52:39 +00:00",
+                                "ArtifactType":  "SignalAudit",
+                                "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.json",
+                                "MetricCount":  21
+                            },
+                            {
+                                "Timestamp":  "2026-05-19 00:27:54 +00:00",
+                                "ArtifactType":  "SignalAudit",
+                                "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current20.json",
+                                "MetricCount":  21
+                            },
+                            {
+                                "Timestamp":  "2026-05-19 00:27:27 +00:00",
+                                "ArtifactType":  "SignalAudit",
+                                "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current20.json",
+                                "MetricCount":  21
+                            },
+                            {
+                                "Timestamp":  "2026-05-19 00:04:51 +00:00",
+                                "ArtifactType":  "SignalAudit",
+                                "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current19.json",
+                                "MetricCount":  21
+                            },
+                            {
+                                "Timestamp":  "2026-05-19 00:04:48 +00:00",
+                                "ArtifactType":  "SignalAudit",
+                                "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current19.json",
+                                "MetricCount":  21
+                            },
+                            {
+                                "Timestamp":  "2026-05-19 00:02:29 +00:00",
+                                "ArtifactType":  "SignalAudit",
+                                "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current18.json",
+                                "MetricCount":  21
+                            },
+                            {
+                                "Timestamp":  "2026-05-19 00:02:26 +00:00",
+                                "ArtifactType":  "SignalAudit",
+                                "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current18.json",
+                                "MetricCount":  21
+                            },
                             {
                                 "Timestamp":  "2026-05-18 23:53:38 +00:00",
                                 "ArtifactType":  "SignalAudit",
@@ -710,54 +758,6 @@
                                 "ArtifactType":  "SignalAudit",
                                 "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current16.json",
                                 "MetricCount":  21
-                            },
-                            {
-                                "Timestamp":  "2026-05-18 23:23:06 +00:00",
-                                "ArtifactType":  "SignalAudit",
-                                "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current15.json",
-                                "MetricCount":  21
-                            },
-                            {
-                                "Timestamp":  "2026-05-18 23:22:51 +00:00",
-                                "ArtifactType":  "SignalAudit",
-                                "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current15.json",
-                                "MetricCount":  21
-                            },
-                            {
-                                "Timestamp":  "2026-05-18 14:16:17 +00:00",
-                                "ArtifactType":  "SignalAudit",
-                                "Path":  "Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_hotpath_current2.json",
-                                "MetricCount":  20
-                            },
-                            {
-                                "Timestamp":  "2026-05-18 18:15:42 +04:00",
-                                "ArtifactType":  "HPhiRuntimeSummary",
-                                "Path":  "Docs\\Archive\\Batch009\\AgentLogs\\HPhi_SHINOBU_02_current2.json",
-                                "MetricCount":  219
-                            },
-                            {
-                                "Timestamp":  "2026-05-18 14:13:44 +00:00",
-                                "ArtifactType":  "SignalAudit",
-                                "Path":  "Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current2.json",
-                                "MetricCount":  20
-                            },
-                            {
-                                "Timestamp":  "2026-05-18 14:13:28 +00:00",
-                                "ArtifactType":  "SignalAudit",
-                                "Path":  "Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current2.json",
-                                "MetricCount":  20
-                            },
-                            {
-                                "Timestamp":  "2026-05-18 13:53:35 +00:00",
-                                "ArtifactType":  "SignalAudit",
-                                "Path":  "Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current.json",
-                                "MetricCount":  20
-                            },
-                            {
-                                "Timestamp":  "2026-05-18 13:52:59 +00:00",
-                                "ArtifactType":  "SignalAudit",
-                                "Path":  "Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current.json",
-                                "MetricCount":  20
                             }
                         ],
     "Trends":  [
@@ -1764,16 +1764,16 @@
                    },
                    {
                        "Metric":  "asmdefContractBoundaryHits",
-                       "Samples":  17,
+                       "Samples":  25,
                        "FirstTimestamp":  "2026-05-18 12:45:33 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  0,
                        "Last":  0,
                        "Delta":  0,
                        "Min":  0,
                        "Max":  0,
                        "FirstPath":  "Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "asmdefs.count",
@@ -2739,55 +2739,55 @@
                    },
                    {
                        "Metric":  "coldSyncIoReviewHits",
-                       "Samples":  17,
+                       "Samples":  25,
                        "FirstTimestamp":  "2026-05-18 12:45:33 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  9,
-                       "Last":  9,
-                       "Delta":  0,
+                       "Last":  375,
+                       "Delta":  366,
                        "Min":  9,
                        "Max":  375,
                        "FirstPath":  "Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "computeThreadGroupRiskHits",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  0,
                        "Last":  0,
                        "Delta":  0,
                        "Min":  0,
                        "Max":  0,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "confirmedErrors",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  164,
                        "Last":  0,
                        "Delta":  -164,
                        "Min":  0,
                        "Max":  194,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "coreGlobalSignalDefinitions",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  173,
                        "Last":  162,
                        "Delta":  -11,
                        "Min":  162,
                        "Max":  173,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "CoreGraph.Budgets.CoreAsmdefDebtReferences.Actual",
@@ -4624,16 +4624,16 @@
                    },
                    {
                        "Metric":  "errors",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  164,
                        "Last":  0,
                        "Delta":  -164,
                        "Min":  0,
                        "Max":  194,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "graph.edges",
@@ -4715,107 +4715,107 @@
                    },
                    {
                        "Metric":  "hotPathRiskHits",
-                       "Samples":  17,
+                       "Samples":  25,
                        "FirstTimestamp":  "2026-05-18 12:45:33 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  0,
                        "Last":  0,
                        "Delta":  0,
                        "Min":  0,
                        "Max":  228,
                        "FirstPath":  "Docs\\Archive\\Batch009\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "infos",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  1,
-                       "Last":  10,
-                       "Delta":  9,
+                       "Last":  454,
+                       "Delta":  453,
                        "Min":  1,
                        "Max":  467,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "localNativeSignalQueues",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  0,
-                       "Last":  0,
-                       "Delta":  0,
+                       "Last":  37,
+                       "Delta":  37,
                        "Min":  0,
                        "Max":  38,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "localNativeTelemetryRings",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  1,
-                       "Last":  1,
-                       "Delta":  0,
+                       "Last":  75,
+                       "Delta":  74,
                        "Min":  1,
                        "Max":  77,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "managedEventSurfaceHits",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  0,
                        "Last":  0,
                        "Delta":  0,
                        "Min":  0,
                        "Max":  0,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "pack1Layouts",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  164,
-                       "Last":  0,
-                       "Delta":  -164,
+                       "Last":  230,
+                       "Delta":  66,
                        "Min":  0,
                        "Max":  571,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "registeredLocalTelemetryRings",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  0,
-                       "Last":  0,
-                       "Delta":  0,
+                       "Last":  55,
+                       "Delta":  55,
                        "Min":  0,
                        "Max":  55,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "reviewOnlyFindings",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  1,
-                       "Last":  10,
-                       "Delta":  9,
+                       "Last":  584,
+                       "Delta":  583,
                        "Min":  1,
                        "Max":  856,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "RiskSums.NativeOwnershipRisk",
@@ -5430,16 +5430,16 @@
                    },
                    {
                        "Metric":  "runtimeSignalPack1Layouts",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  164,
                        "Last":  0,
                        "Delta":  -164,
                        "Min":  0,
                        "Max":  176,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "scalability_payload.main_mx350.graph_required",
@@ -5521,16 +5521,16 @@
                    },
                    {
                        "Metric":  "scannedFiles",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  7,
-                       "Last":  7,
-                       "Delta":  0,
+                       "Last":  1761,
+                       "Delta":  1754,
                        "Min":  7,
                        "Max":  1761,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "schema_version",
@@ -5729,42 +5729,42 @@
                    },
                    {
                        "Metric":  "shaderFilesScanned",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  61,
                        "Last":  62,
                        "Delta":  1,
                        "Min":  61,
                        "Max":  62,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "signalDefinitions",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  188,
-                       "Last":  177,
-                       "Delta":  -11,
+                       "Last":  585,
+                       "Delta":  397,
                        "Min":  177,
                        "Max":  585,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "signalsWithoutLayout",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  1,
-                       "Last":  1,
-                       "Delta":  0,
+                       "Last":  34,
+                       "Delta":  33,
                        "Min":  1,
                        "Max":  34,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "SourceScanAudit.AllSourceAuditLiteralCandidateFileCount",
@@ -5846,29 +5846,29 @@
                    },
                    {
                        "Metric":  "transitivePack1FieldHits",
-                       "Samples":  6,
+                       "Samples":  14,
                        "FirstTimestamp":  "2026-05-18 23:22:51 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  0,
                        "Last":  0,
                        "Delta":  0,
                        "Min":  0,
                        "Max":  0,
                        "FirstPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current15.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    },
                    {
                        "Metric":  "warnings",
-                       "Samples":  20,
+                       "Samples":  28,
                        "FirstTimestamp":  "2026-05-17 23:02:29 +00:00",
-                       "LastTimestamp":  "2026-05-18 23:53:38 +00:00",
+                       "LastTimestamp":  "2026-05-19 00:52:49 +00:00",
                        "First":  9,
-                       "Last":  0,
-                       "Delta":  -9,
+                       "Last":  432,
+                       "Delta":  423,
                        "Min":  0,
                        "Max":  828,
                        "FirstPath":  "Docs\\Archive\\Batch008\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical.json",
-                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json"
+                       "LastPath":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json"
                    }
                ],
     "Artifacts":  [
@@ -6608,6 +6608,54 @@
                           "Timestamp":  "2026-05-18 23:53:38 +00:00",
                           "ArtifactType":  "SignalAudit",
                           "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json",
+                          "MetricCount":  21
+                      },
+                      {
+                          "Timestamp":  "2026-05-19 00:02:26 +00:00",
+                          "ArtifactType":  "SignalAudit",
+                          "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current18.json",
+                          "MetricCount":  21
+                      },
+                      {
+                          "Timestamp":  "2026-05-19 00:02:29 +00:00",
+                          "ArtifactType":  "SignalAudit",
+                          "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current18.json",
+                          "MetricCount":  21
+                      },
+                      {
+                          "Timestamp":  "2026-05-19 00:04:48 +00:00",
+                          "ArtifactType":  "SignalAudit",
+                          "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current19.json",
+                          "MetricCount":  21
+                      },
+                      {
+                          "Timestamp":  "2026-05-19 00:04:51 +00:00",
+                          "ArtifactType":  "SignalAudit",
+                          "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current19.json",
+                          "MetricCount":  21
+                      },
+                      {
+                          "Timestamp":  "2026-05-19 00:27:27 +00:00",
+                          "ArtifactType":  "SignalAudit",
+                          "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current20.json",
+                          "MetricCount":  21
+                      },
+                      {
+                          "Timestamp":  "2026-05-19 00:27:54 +00:00",
+                          "ArtifactType":  "SignalAudit",
+                          "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current20.json",
+                          "MetricCount":  21
+                      },
+                      {
+                          "Timestamp":  "2026-05-19 00:52:39 +00:00",
+                          "ArtifactType":  "SignalAudit",
+                          "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.json",
+                          "MetricCount":  21
+                      },
+                      {
+                          "Timestamp":  "2026-05-19 00:52:49 +00:00",
+                          "ArtifactType":  "SignalAudit",
+                          "Path":  "Docs\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json",
                           "MetricCount":  21
                       }
                   ]

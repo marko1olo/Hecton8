@@ -19,7 +19,7 @@ namespace Hecton8.Core
         Line = 2
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     internal struct SplineDescriptor
     {
         public float3 Start;
@@ -30,6 +30,9 @@ namespace Hecton8.Core
         public float RuptureStartTimeSeconds;
         public float FlowScalar;
         public PipeRenderFlags Flags;
+        private byte _pad0;
+        private byte _pad1;
+        private byte _pad2;
     }
 
     /// <summary>

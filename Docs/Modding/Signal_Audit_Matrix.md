@@ -33,7 +33,7 @@ Command used:
 rg -o "public struct [A-Za-z0-9_]+ : ISignal" Assets/_Project/Scripts/Core/GlobalSignals.cs
 ```
 
-Result: 160 unique `ISignal` structs in `GlobalSignals.cs`.
+Result: 161 unique `ISignal` structs in `GlobalSignals.cs`.
 
 Projection bridge source check: `Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs` consumes only `SignalBus<CombatDamageSignal>` and `SignalBus<WeatherChangedSignal>` for `ModEventDto` projection.
 
@@ -48,7 +48,7 @@ Only signals listed in `Signal_Schema.json.allowedSignalBuses` are public to mod
 
 ## Denied-By-Default Inventory
 
-The following 158 current `ISignal` structs are not public mod subscriptions. Any future exposure requires schema update, projection/copy wrapper, cap, telemetry, finite guards, runtime profiling, and Integrator approval.
+The following 159 current `ISignal` structs are not public mod subscriptions. Any future exposure requires schema update, projection/copy wrapper, cap, telemetry, finite guards, runtime profiling, and Integrator approval.
 
 ```text
 AcousticPingSignal
@@ -102,6 +102,7 @@ FocusBrokenSignal
 FramePacingWarningSignal
 GlobalWorldStateSignal
 HabitatConstructionSignal
+HabitatFloodAcousticMuffleSignal
 HapticRequest
 HighSpeedImpactSignal
 HUDNotificationSignal
@@ -223,7 +224,7 @@ WfcOutpostStateChangedSignal
 
 ## Consistency Gate
 
-If the source inventory count changes from 160, the mod signal schema and this audit must be updated before the mod API can be marked runtime verified. A new `SignalBus<T>` exposure is not valid until `Signal_Schema.json.allowedSignalBuses`, `Mod_API_Specification.md`, and this audit matrix all name it explicitly.
+If the source inventory count changes from 161, the mod signal schema and this audit must be updated before the mod API can be marked runtime verified. A new `SignalBus<T>` exposure is not valid until `Signal_Schema.json.allowedSignalBuses`, `Mod_API_Specification.md`, and this audit matrix all name it explicitly.
 
 Run the static drift gate after any signal or mod bridge edit:
 

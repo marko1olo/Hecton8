@@ -1341,7 +1341,7 @@ namespace Hecton8.Audio
                 return;
 
             AcousticZoneChangedEvent signal = signals[signals.Length - 1];
-            HandleAcousticZoneChanged(signal.IsInterior);
+            HandleAcousticZoneChanged(signal.IsInterior != 0);
         }
 
         private void DrainDirectorAISignals()
@@ -1364,7 +1364,7 @@ namespace Hecton8.Audio
                         HandleRareDiscoveryRequested(signal.Position);
                         break;
                     case DirectorAIMusicSignal.PredatorPressureEventType:
-                        HandlePredatorPressureChanged(signal.BoolValue);
+                        HandlePredatorPressureChanged(signal.BoolValue != 0);
                         break;
                     case DirectorAIMusicSignal.ThreatSpikeEventType:
                         HandleThreatSpike(signal.Position, signal.Value);

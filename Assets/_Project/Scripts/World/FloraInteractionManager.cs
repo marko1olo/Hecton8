@@ -17,6 +17,7 @@ using Hecton8.VFX.Wakes;
 using Hecton.Localization;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -38,20 +39,56 @@ namespace Hecton8.World
 
         private static FloraInteractionManager s_ActiveRuntimeInstance;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct FloraInteractionPointGpuData
         {
             public Vector4 PositionRadius;
             public Vector4 VelocitySpeed;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct WakeTrailStampCommand
         {
             [FieldOffset(0)]
             public Vector4 UvEllipse;
             [FieldOffset(16)]
             public Vector4 DirectionStrengthVertical;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        private struct FloraDisplacementDTO
+        {
+            [FieldOffset(0)] public float3 ForceVector;
+            [FieldOffset(12)] public float DecayTimer;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        private struct FloraStiffnessRuleDTO
+        {
+            [FieldOffset(0)] public uint PlantHash;
+            [FieldOffset(4)] public float Stiffness01;
+            [FieldOffset(8)] public float Damping;
+            [FieldOffset(12)] public uint Flags;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        private struct FloraSwayFieldTelemetryEntry
+        {
+            [FieldOffset(0)] public uint Frame;
+            [FieldOffset(4)] public ushort Resolution;
+            [FieldOffset(6)] public ushort ActiveWakeSourcesCount;
+            [FieldOffset(8)] public uint NonZeroCellsCount;
+            [FieldOffset(12)] public uint Flags;
+            [FieldOffset(16)] public float3 FieldCenterWS;
+            [FieldOffset(28)] public float CellSize;
+            [FieldOffset(32)] public float MaxMagnitude;
+            [FieldOffset(36)] public float GlobalQualityWeight;
+            [FieldOffset(40)] public float UpdateIntervalSeconds;
+            [FieldOffset(44)] public float SystemStress01;
+            [FieldOffset(48)] public uint StateHash;
+            [FieldOffset(52)] public uint DataVaultGeneration;
+            [FieldOffset(56)] public uint AupShiftSequence;
+            [FieldOffset(60)] public uint CpuMicroseconds;
         }
 
         private struct ModuleParasiteState
@@ -67,24 +104,40 @@ namespace Hecton8.World
             public int ParasiteCount;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct ParasiteNode
         {
-            public float3 PositionWS;
-            public int HostModuleRuntimeId;
-            public float GrowthLevel;
+            [FieldOffset(0)]
             public double BirthTimeSeconds;
+            [FieldOffset(8)]
+            public float3 PositionWS;
+            [FieldOffset(20)]
+            public int HostModuleRuntimeId;
+            [FieldOffset(24)]
+            public float GrowthLevel;
+            [FieldOffset(28)]
             public float PowerDrainWatts;
+            [FieldOffset(32)]
             public float InfectionStrength;
+            [FieldOffset(36)]
             public float RootDrainMultiplier;
+            [FieldOffset(40)]
             public float RadiusMeters;
+            [FieldOffset(44)]
             public float PulseFrequency;
+            [FieldOffset(48)]
             public float ThermalGrowthFlag;
+            [FieldOffset(52)]
             public float MatureAttachedSeconds;
+            [FieldOffset(56)]
             public float AddedMassKilograms;
+            [FieldOffset(60)]
             public byte State;
+            [FieldOffset(61)]
             public byte Padding0;
+            [FieldOffset(62)]
             public byte Padding1;
+            [FieldOffset(63)]
             public byte Padding2;
         }
 
@@ -106,7 +159,7 @@ namespace Hecton8.World
             public float CriticalityWeight { get; }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct FloraCascadeEventPayload
         {
             public float3 Center;
@@ -117,7 +170,7 @@ namespace Hecton8.World
             public float Padding2;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct DefensiveSporeBurstState
         {
             public Vector3 PositionWS;
@@ -297,13 +350,335 @@ namespace Hecton8.World
             }
         }
 
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct DecayFloraForcesJob : IJobParallelFor
+        {
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDisplacementDTO> FieldValues;
+            public int NodeCount;
+            public float DeltaTime;
+            public float DecayRate;
+            public byte ResetField;
+
+            public void Execute(int index)
+            {
+                if ((uint)index >= (uint)NodeCount || index >= FieldValues.Length)
+                    return;
+
+                if (ResetField != 0)
+                {
+                    FieldValues[index] = default;
+                    return;
+                }
+
+                FloraDisplacementDTO value = FieldValues[index];
+                float safeDeltaTime = math.isfinite(DeltaTime) ? math.clamp(DeltaTime, 0f, 0.2f) : 0f;
+                float safeDecayRate = math.isfinite(DecayRate) ? math.max(0f, DecayRate) : 0f;
+                float decay = math.exp(-safeDeltaTime * safeDecayRate);
+                float3 force = math.select(float3.zero, value.ForceVector * decay, math.all(math.isfinite(value.ForceVector)));
+                float magnitudeSq = math.lengthsq(force);
+                if (!math.isfinite(magnitudeSq) || magnitudeSq <= 0.0000001f)
+                {
+                    value.ForceVector = float3.zero;
+                    value.DecayTimer = 0f;
+                }
+                else
+                {
+                    value.ForceVector = force;
+                    value.DecayTimer = math.saturate(value.DecayTimer * decay);
+                }
+
+                FieldValues[index] = value;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct AccumulateFloraForcesJob : IJobParallelFor
+        {
+            [ReadOnly, NoAlias] public NativeArray<WakeSource> WakeSources;
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDisplacementDTO> FieldValues;
+            public AbsoluteUniversePosition FieldCenterAup;
+            public float3 AmbientCurrentWS;
+            public int Resolution;
+            public int NodeCount;
+            public int SourceLimit;
+            public float CellSize;
+            public float QualityWeight;
+            public float EntityMassMultiplier;
+            public float GlobalCurrentInfluence;
+            public float MaxDisplacement;
+            public float FramePhase;
+
+            public void Execute(int index)
+            {
+                if ((uint)index >= (uint)NodeCount || index >= FieldValues.Length)
+                    return;
+
+                int safeResolution = math.max(1, Resolution);
+                int xy = safeResolution * safeResolution;
+                int z = index / xy;
+                int rem = index - (z * xy);
+                int y = rem / safeResolution;
+                int x = rem - (y * safeResolution);
+                float halfIndex = (safeResolution - 1) * 0.5f;
+                float safeCellSize = math.max(0.05f, CellSize);
+                float3 sampleLocal = new float3(
+                    (x - halfIndex) * safeCellSize,
+                    (y - halfIndex) * safeCellSize,
+                    (z - halfIndex) * safeCellSize);
+
+                FloraDisplacementDTO value = FieldValues[index];
+                float3 displacement = math.select(float3.zero, value.ForceVector, math.all(math.isfinite(value.ForceVector)));
+                float energy = math.select(0f, math.saturate(value.DecayTimer), math.isfinite(value.DecayTimer));
+                float qualityCurve = SmoothStepJob(QualityWeight);
+                float maxDisplacement = math.max(0.02f, MaxDisplacement);
+
+                float3 ambient = ResolveAmbientCurrent(sampleLocal, AmbientCurrentWS, qualityCurve, GlobalCurrentInfluence, FramePhase);
+                displacement += ambient;
+                energy = math.max(energy, math.saturate(math.lengthsq(ambient) * 28f));
+
+                int safeSourceLimit = math.min(math.min(SourceLimit, WakeSources.IsCreated ? WakeSources.Length : 0), MaxProceduralWakePoints);
+                for (int sourceIndex = 0; sourceIndex < safeSourceLimit; sourceIndex++)
+                {
+                    WakeSource source = WakeSources[sourceIndex];
+                    if (source.Active == 0 ||
+                        source.Intensity <= WakeMinimumPublishedIntensity ||
+                        source.Radius <= 0.01f ||
+                        !math.all(math.isfinite(source.VelocityWS)) ||
+                        !math.isfinite(source.Radius) ||
+                        !math.isfinite(source.Intensity))
+                    {
+                        continue;
+                    }
+
+                    AbsoluteUniversePosition sourceAup = source.PositionAup;
+                    float3 sourceLocal = ResolveAupLocalDelta(in sourceAup, in FieldCenterAup);
+                    if (!math.all(math.isfinite(sourceLocal)))
+                        continue;
+
+                    float radius = math.max(source.Radius, 0.001f);
+                    float3 delta = sampleLocal - sourceLocal;
+                    delta.y *= 0.55f;
+                    float distanceSq = math.lengthsq(delta);
+                    float radiusSq = radius * radius;
+                    if (!math.isfinite(distanceSq) || distanceSq >= radiusSq)
+                        continue;
+
+                    float falloff = 1f - SmoothStepJob(distanceSq / math.max(radiusSq, 0.0001f));
+                    float3 wakeDirection = ResolveSafeDirectionJob(source.VelocityWS, float3.zero);
+                    float3 radialDirection = ResolveSafeDirectionJob(delta, -wakeDirection);
+                    float3 bendDirection = ResolveSafeDirectionJob(wakeDirection * 0.72f + radialDirection * 0.28f, radialDirection);
+                    float speedGain = math.saturate(EstimateLengthJob(source.VelocityWS) * 0.075f + 0.22f);
+                    float sourceGain = ResolveSourceGainJob(source.SourceKind) * math.max(0f, EntityMassMultiplier);
+                    float strength = falloff * math.saturate(source.Intensity) * sourceGain * speedGain * math.lerp(0.42f, 0.96f, qualityCurve);
+                    displacement += bendDirection * (strength * maxDisplacement);
+                    displacement.y -= strength * math.lerp(0.025f, 0.085f, qualityCurve) * falloff;
+                    energy = math.max(energy, falloff * math.saturate(source.Intensity));
+                }
+
+                float magnitudeSq = math.lengthsq(displacement);
+                float maxDisplacementSq = maxDisplacement * maxDisplacement;
+                if (!math.isfinite(magnitudeSq))
+                {
+                    displacement = float3.zero;
+                    energy = 0f;
+                }
+                else if (magnitudeSq > maxDisplacementSq)
+                {
+                    displacement *= maxDisplacement * math.rsqrt(math.max(magnitudeSq, 0.0001f));
+                    magnitudeSq = maxDisplacementSq;
+                }
+
+                value.ForceVector = displacement;
+                value.DecayTimer = math.saturate(energy);
+                FieldValues[index] = value;
+            }
+
+            private static float3 ResolveAmbientCurrent(float3 sampleLocal, float3 currentWS, float qualityCurve, float influence, float framePhase)
+            {
+                float safeInfluence = math.saturate(math.isfinite(influence) ? influence : 0f);
+                float3 current = math.select(float3.zero, currentWS, math.all(math.isfinite(currentWS)));
+                float currentMagnitudeSq = math.lengthsq(current);
+                float3 currentDirection = currentMagnitudeSq > 0.000001f
+                    ? current * math.rsqrt(currentMagnitudeSq)
+                    : new float3(0.35f, 0.04f, 0.72f);
+                float currentMagnitude = math.min(1.75f, currentMagnitudeSq * math.rsqrt(math.max(currentMagnitudeSq, 0.0001f)));
+                float noiseScale = math.lerp(0.032f, 0.074f, qualityCurve);
+                float n0 = Triangle01(sampleLocal.x * noiseScale + sampleLocal.z * 0.013f + framePhase);
+                float n1 = Triangle01(sampleLocal.z * noiseScale * 0.73f - sampleLocal.y * 0.017f + framePhase * 0.61f);
+                float n2 = Triangle01(sampleLocal.y * noiseScale * 0.41f + sampleLocal.x * 0.011f - framePhase * 0.37f);
+                float3 curlFake = new float3(n0 - 0.5f, (n2 - 0.5f) * 0.35f, n1 - 0.5f);
+                float ambientMagnitude = safeInfluence * math.lerp(0.018f, 0.075f, qualityCurve);
+                return (currentDirection * (currentMagnitude * 0.045f) + curlFake * math.lerp(0.28f, 1.0f, qualityCurve)) * ambientMagnitude;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct MockDisplacementInjectorJob : IJobParallelFor
+        {
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDisplacementDTO> FieldValues;
+            public int Resolution;
+            public int NodeCount;
+            public float CellSize;
+            public float QualityWeight;
+            public float FramePhase;
+
+            public void Execute(int index)
+            {
+                if ((uint)index >= (uint)NodeCount || index >= FieldValues.Length)
+                    return;
+
+                int safeResolution = math.max(1, Resolution);
+                int xy = safeResolution * safeResolution;
+                int z = index / xy;
+                int rem = index - (z * xy);
+                int y = rem / safeResolution;
+                int x = rem - (y * safeResolution);
+                float halfIndex = (safeResolution - 1) * 0.5f;
+                float safeCellSize = math.max(0.05f, CellSize);
+                float3 sampleLocal = new float3(
+                    (x - halfIndex) * safeCellSize,
+                    (y - halfIndex) * safeCellSize,
+                    (z - halfIndex) * safeCellSize);
+
+                float q = SmoothStepJob(QualityWeight);
+                float fieldRadius = safeResolution * safeCellSize * math.lerp(0.11f, 0.19f, q);
+                float3 ghostCenter = new float3(
+                    (Triangle01(FramePhase * 0.31f) - 0.5f) * safeResolution * safeCellSize * 0.42f,
+                    (Triangle01(FramePhase * 0.19f + 0.27f) - 0.5f) * safeResolution * safeCellSize * 0.18f,
+                    (Triangle01(FramePhase * 0.23f + 0.61f) - 0.5f) * safeResolution * safeCellSize * 0.42f);
+                float3 delta = sampleLocal - ghostCenter;
+                delta.y *= 0.55f;
+                float distanceSq = math.lengthsq(delta);
+                float radiusSq = math.max(fieldRadius * fieldRadius, 0.0001f);
+                if (!math.isfinite(distanceSq) || distanceSq >= radiusSq)
+                    return;
+
+                float falloff = 1f - SmoothStepJob(distanceSq / radiusSq);
+                float3 direction = ResolveSafeDirectionJob(new float3(0.42f, -0.08f, 0.82f), new float3(1f, 0f, 0f));
+                FloraDisplacementDTO value = FieldValues[index];
+                value.ForceVector += direction * (falloff * math.lerp(0.08f, 0.24f, q));
+                value.DecayTimer = math.max(value.DecayTimer, falloff * 0.72f);
+                FieldValues[index] = value;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct UploadDisplacementTextureJob : IJob
+        {
+            [ReadOnly, NoAlias] public NativeArray<FloraDisplacementDTO> FieldValues;
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<float4> FieldMeta;
+            public int Resolution;
+            public int NodeCount;
+            public float CellSize;
+            public float QualityWeight;
+            public float UpdateIntervalSeconds;
+            public int ActiveWakeCount;
+            public float3 FieldCenterWS;
+            public int FrameIndex;
+            public uint AupShiftSequence;
+            public int BlackBoxCursor;
+            public uint Flags;
+
+            public void Execute()
+            {
+                float maxMagnitude = 0f;
+                uint nonZeroCells = 0u;
+                uint outputFlags = Flags;
+                int safeCount = math.min(NodeCount, FieldValues.IsCreated ? FieldValues.Length : 0);
+                for (int i = 0; i < safeCount; i++)
+                {
+                    FloraDisplacementDTO value = FieldValues[i];
+                    float magnitudeSq = math.lengthsq(value.ForceVector);
+                    if (!math.isfinite(magnitudeSq))
+                    {
+                        outputFlags |= FloraSwayFieldNaNFlag;
+                        continue;
+                    }
+
+                    if (magnitudeSq > 0.0000001f)
+                    {
+                        nonZeroCells++;
+                        maxMagnitude = math.max(maxMagnitude, math.sqrt(magnitudeSq));
+                    }
+                }
+
+                if (!FieldMeta.IsCreated || FieldMeta.Length < FloraSwayFieldMetaVectorCount)
+                    return;
+
+                FieldMeta[0] = new float4(FieldCenterWS.x, FieldCenterWS.y, FieldCenterWS.z, CellSize);
+                FieldMeta[1] = new float4(Resolution, maxMagnitude > 0.0001f ? 1f : 0f, QualityWeight, maxMagnitude);
+                FieldMeta[2] = new float4(NodeCount, UpdateIntervalSeconds, ActiveWakeCount, nonZeroCells);
+                FieldMeta[3] = new float4(
+                    math.max(0, FrameIndex),
+                    AupShiftSequence,
+                    math.max(0, BlackBoxCursor),
+                    outputFlags);
+            }
+        }
+
+        private static float SmoothStepJob(float value)
+        {
+            float t = math.saturate(math.isfinite(value) ? value : 0f);
+            return t * t * (3f - 2f * t);
+        }
+
+        private static float Triangle01(float value)
+        {
+            float t = math.frac(value);
+            return 1f - math.abs(t * 2f - 1f);
+        }
+
+        private static float EstimateLengthJob(float3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxAxis = math.max(ax, math.max(ay, az));
+            float minAxis = math.min(ax, math.min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
+        }
+
+        private static float ResolveSourceGainJob(byte sourceKind)
+        {
+            return sourceKind == WakeSourceVehicle
+                ? 1.22f
+                : sourceKind == WakeSourceApexPredator
+                    ? 1.05f
+                    : 0.72f;
+        }
+
+        private static float3 ResolveSafeDirectionJob(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            if (math.isfinite(lengthSq) && lengthSq > 0.000001f)
+                return value * math.rsqrt(lengthSq);
+
+            float fallbackLengthSq = math.lengthsq(fallback);
+            if (math.isfinite(fallbackLengthSq) && fallbackLengthSq > 0.000001f)
+                return fallback * math.rsqrt(fallbackLengthSq);
+
+            return float3.zero;
+        }
+
+        private static float3 ResolveAupLocalDelta(in AbsoluteUniversePosition source, in AbsoluteUniversePosition origin)
+        {
+            const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+            double3 delta = new double3(
+                (((double)source.GridX - origin.GridX) * cellSize) + ((double)source.LocalX - origin.LocalX),
+                (((double)source.GridY - origin.GridY) * cellSize) + ((double)source.LocalY - origin.LocalY),
+                (((double)source.GridZ - origin.GridZ) * cellSize) + ((double)source.LocalZ - origin.LocalZ));
+            float3 result = new float3((float)delta.x, (float)delta.y, (float)delta.z);
+            return math.all(math.isfinite(result)) ? result : float3.zero;
+        }
+
         private const int MaxPublishedInteractionPoints = 12;
         private const int MaxExternalInteractionPoints = 4;
         private const int MaxProceduralWakePoints = 16;
         private const int LowTierWakeSlotLimit = 4;
         private const int WakeBlackBoxCapacity = 300;
+        private const int FloraSwayFieldBlackBoxCapacity = 300;
         private const int MaxWakeSignalsPerFrame = 64;
-        private const int MaxQueryColliders = 32;
         private const int MaxModuleQueryHits = 32;
         private const int MaxPredatorThreatQueryHits = 16;
         private const int MaxParasiteAnchors = 16;
@@ -312,10 +687,22 @@ namespace Hecton8.World
         private const int MaxDefensiveSporeBursts = 6;
         private const int InteractionPointStride = 32;
         private const int FlowFieldStride = sizeof(float) * 2;
+        private const int FloraSwayFieldMinResolution = 16;
+        private const int FloraSwayFieldMaxResolution = 64;
+        private const int FloraSwayFieldMaxNodeCount = FloraSwayFieldMaxResolution * FloraSwayFieldMaxResolution * FloraSwayFieldMaxResolution;
+        private const int FloraSwayFieldMetaVectorCount = 4;
+        private const int FloraSwayFieldJobBatchSize = 64;
+        private const int FloraStiffnessRuleCapacity = 16;
+        private const int FloraCsvScratchBytes = 16384;
         private const int CascadePhaseSeedJobBatchSize = 64;
         private const float DefaultVegetationWaterLevel = 4900f;
         private const float FlowFieldUploadIntervalSeconds = 0.1f;
         private const float FlowFieldRecenterThresholdCells = 0.5f;
+        private const float FloraSwayFieldMinCellSize = 2.05f;
+        private const float FloraSwayFieldMaxCellSize = 4.6f;
+        private const float FloraSwayFieldMinUpdateIntervalSeconds = 0.04f;
+        private const float FloraSwayFieldMaxUpdateIntervalSeconds = 0.14f;
+        private const float FloraSwayFieldMaxDisplacementMeters = 1.35f;
         private const int WakeTrailStampCommandCapacity = 4;
         private const int WakeTrailThreadGroupSize = 8;
         private const byte WakeSourcePlayer = 1;
@@ -329,7 +716,18 @@ namespace Hecton8.World
         private const uint WakeBlackBoxNaNFlag = 1u << 1;
         private const uint WakeBlackBoxLowTierFlag = 1u << 2;
         private const uint WakeBlackBoxStressCapFlag = 1u << 3;
+        private const uint FloraSwayFieldInvalidInputFlag = 1u << 0;
+        private const uint FloraSwayFieldNaNFlag = 1u << 1;
+        private const uint FloraSwayFieldVaultMissingFlag = 1u << 2;
+        private const uint FloraSwayFieldEmptyWakeFlag = 1u << 3;
+        private const uint FloraSwayFieldUploadStallFlag = 1u << 4;
         private const uint WakeFluidImpulseSourceHash = 0x57414B45u;
+        private const uint FloraSwayFieldSourceHash = 0x46535759u;
+        private const BufferID FloraSwayDisplacementFieldBufferId = (BufferID)71580;
+        private const BufferID FloraSwayFieldMetaBufferId = (BufferID)71581;
+        private const BufferID FloraSwayFieldBlackBoxBufferId = (BufferID)71582;
+        private const BufferID FloraStiffnessRulesBufferId = (BufferID)71583;
+        private const BufferID FloraStiffnessCsvScratchBufferId = (BufferID)71584;
         private const float ApexPredatorWakeMinSpeed = 3f;
         private const float DefaultPlayerWakeRadius = 2.4f;
         private const float DefaultMaxBendRadius = 2.9f;
@@ -420,6 +818,9 @@ namespace Hecton8.World
         private static readonly int _GlobalWakeBufferId = Shader.PropertyToID("_GlobalWakeBuffer");
         private static readonly int _GlobalWakeVectorBufferId = Shader.PropertyToID("_GlobalWakeVectors");
         private static readonly int _GlobalWakeParamsId = Shader.PropertyToID("_GlobalWakeParams");
+        private static readonly int _FloraSwayDisplacementFieldId = Shader.PropertyToID("_HectonFloraSwayDisplacementField");
+        private static readonly int _FloraSwayFieldCenterCellSizeId = Shader.PropertyToID("_HectonFloraSwayFieldCenterCellSize");
+        private static readonly int _FloraSwayFieldParamsId = Shader.PropertyToID("_HectonFloraSwayFieldParams");
         private static readonly int _CulledFloraVisibleInstancesId = Shader.PropertyToID("_HectonCulledFloraVisibleInstances");
         private static readonly int _CulledFloraVisibleCountId = Shader.PropertyToID("_HectonCulledFloraVisibleCount");
         private static readonly int _ShearFoamAmountId = Shader.PropertyToID("_ShearFoamAmount");
@@ -470,17 +871,9 @@ namespace Hecton8.World
         [Tooltip("Maximum number of interaction points published to the global vegetation buffer, including the player.")]
         private int _maxInteractionPoints = 12;
 
-        [SerializeField, Range(4f, 20f)]
-        [Tooltip("Attention radius for collecting dynamic object interaction points around the player.")]
-        private float _dynamicInteractionRadius = 15f;
-
         [SerializeField, Range(1.5f, 3f)]
         [Tooltip("Base true-bend radius used for the player interaction point.")]
         private float _playerBendRadius = 2.4f;
-
-        [SerializeField, Range(1.5f, 3f)]
-        [Tooltip("Base true-bend radius used for non-player dynamic objects.")]
-        private float _dynamicObjectBaseRadius = 2.2f;
 
         [SerializeField, Range(0f, 0.5f)]
         [Tooltip("Extra true-bend radius per meter per second of velocity.")]
@@ -514,9 +907,26 @@ namespace Hecton8.World
         [Tooltip("Velocity threshold below which a recovered interaction point is dropped from publication.")]
         private float _interactionReleaseSpeed = 0.08f;
 
+        [Header("Procedural Flora Sway Field")]
+        [SerializeField, Range(0.1f, 12f)]
+        [Tooltip("Exponential spring-back rate applied to the Vault-owned 3D displacement field.")]
+        private float _floraSwaySpringDecayRate = 3.8f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("How strongly abyssal/global current contributes to the base displacement field.")]
+        private float _floraSwayGlobalCurrentInfluence = 0.18f;
+
+        [SerializeField, Range(0f, 4f)]
+        [Tooltip("Multiplier applied to entity velocity/mass injection into the displacement field.")]
+        private float _floraSwayEntityMassMultiplier = 1f;
+
         [SerializeField]
-        [Tooltip("Physics layers considered for dynamic vegetation interaction queries.")]
-        private LayerMask _dynamicInteractionMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [Tooltip("Editor and CI stress lane: deterministic invisible-object injection into the field.")]
+        private bool _enableMockDisplacementInjector;
+
+        [SerializeField]
+        [Tooltip("Editor-only live x-ray of the Vault displacement field.")]
+        private bool _drawFloraSwayDebugGizmos;
 
         [Header("Biolum Stealth")]
         [SerializeField, Range(2f, 48f)]
@@ -869,6 +1279,7 @@ namespace Hecton8.World
         private Vector3 _lastPublishedPlayerVelocity;
         private Vector3 _lastPublishedScooterWakePosition;
         private Vector3 _lastPublishedSubmarineWakePosition;
+        private Vector3 _lastVegetationCurrentVector;
         private Vector3 _smoothedPlayerVelocity;
         private Vector3 _smoothedPlayerVelocityDamp;
         private Vector3 _smoothedScooterVelocity;
@@ -890,10 +1301,11 @@ namespace Hecton8.World
 
         private FloraInteractionPointGpuData[] _interactionPoints;
         private FloraInteractionPointGpuData[] _externalInteractionPoints;
-        private Collider[] _interactionColliders;
-        private Rigidbody[] _interactionBodies;
         private GraphicsBuffer _interactionBuffer;
         private GraphicsBuffer _flowFieldBuffer;
+        private GraphicsBuffer _floraSwayFieldBufferA;
+        private GraphicsBuffer _floraSwayFieldBufferB;
+        private GraphicsBuffer _floraSwayFieldReadBuffer;
         private GraphicsBuffer _wakeTrailStampCommandBuffer;
         private IInstanceCullingService _instanceCullingService;
         private bool _cullingHotSwapRegistered;
@@ -907,6 +1319,11 @@ namespace Hecton8.World
         private VaultBufferHandle<float4> _globalWakeBufferHandle;
         private VaultBufferHandle<float4> _globalWakeVectorBufferHandle;
         private VaultBufferHandle<WakeTelemetryEntry> _wakeBlackBoxHandle;
+        private VaultBufferHandle<FloraDisplacementDTO> _floraSwayFieldHandle;
+        private VaultBufferHandle<float4> _floraSwayFieldMetaHandle;
+        private VaultBufferHandle<FloraSwayFieldTelemetryEntry> _floraSwayFieldBlackBoxHandle;
+        private VaultBufferHandle<FloraStiffnessRuleDTO> _floraStiffnessRulesHandle;
+        private VaultBufferHandle<byte> _floraStiffnessCsvScratchHandle;
         private IDataVault _wakeDataVault;
         private Vector4[] _proceduralWakeShaderBuffer;
         private Vector4[] _globalWakeShaderBuffer;
@@ -914,8 +1331,18 @@ namespace Hecton8.World
         private int _publishedProceduralWakeCount;
         private float _publishedShearFoamAmount;
         private int _wakeBlackBoxCursor;
+        private int _floraSwayFieldBlackBoxCursor;
+        private uint _floraSwayFieldPendingFlags;
+        private int _floraSwayFieldPendingActiveWakeCount;
+        private int _floraSwayFieldPendingNonZeroCells;
+        private uint _floraSwayFieldLastCpuMicroseconds;
+        private double _floraSwayFieldScheduleTimestampSeconds;
         private bool _wakeBlackBoxDumped;
+        private bool _floraSwayFieldBlackBoxDumped;
         private bool _proceduralWakeGlobalsInitialized;
+        private bool _floraSwayFieldGlobalsInitialized;
+        private bool _floraSwayFieldActive;
+        private bool _floraSwayFieldUseBufferA;
         private float _wakeTrailRuntimeWorldSize;
         private float _wakeTrailEnergy;
         private float _playerSedimentCooldownRemaining;
@@ -927,13 +1354,22 @@ namespace Hecton8.World
         private int _wakeTrailQualityLevel = -1;
         private int _wakeTrailSimulationKernel = -1;
         private int _flowFieldResolution;
+        private int _floraSwayFieldResolution;
+        private int _floraSwayFieldNodeCount;
         private float _flowFieldCellSize;
+        private float _floraSwayFieldCellSize;
+        private float _floraSwayFieldQualityWeight;
+        private float _floraSwayFieldMaxMagnitude;
+        private float _floraSwayFieldUpdateTimer;
+        private float _floraSwayFieldUpdateIntervalSeconds;
         private float _flowFieldUploadTimer;
         private HectonMapMagicVegetationBridge _vegetationBridge;
         private DestructibleOrganicManager _destructibleOrganicManager;
         private IHectonOceanKinematics _oceanKinematicsProvider;
         private Vector3 _flowFieldCenterWS;
+        private Vector3 _floraSwayFieldCenterWS;
         private Vector3 _lastUploadedFlowFieldCenterWS;
+        private Vector3 _lastUploadedFloraSwayFieldCenterWS;
         private NativeArray<Vector3> _oceanFlowSamplePositions;
         private NativeArray<Vector3> _oceanFlowSampleResults;
         private ParticleSystem.EmitParams _sedimentEmitParams;
@@ -998,10 +1434,12 @@ namespace Hecton8.World
         private int _underwaterCascadeEventCount;
         private JobHandle _surfaceCascadePhaseSeedHandle;
         private JobHandle _underwaterCascadePhaseSeedHandle;
+        private JobHandle _floraSwayFieldBuildHandle;
         private int _surfaceCascadePhaseSeedUploadCount;
         private int _underwaterCascadePhaseSeedUploadCount;
         private bool _surfaceCascadePhaseSeedScheduled;
         private bool _underwaterCascadePhaseSeedScheduled;
+        private bool _floraSwayFieldBuildScheduled;
 
         /// <summary>Last interaction point count pushed into the global flora buffer.</summary>
         public int PublishedInteractionCount => _lastPublishedInteractionCount;
@@ -1009,7 +1447,13 @@ namespace Hecton8.World
         /// <summary>True when the active Manta scooter wake point is currently being published.</summary>
         public bool HasActiveScooterWake => _hasActiveScooterWake;
 
-        internal static FloraInteractionManager ActiveRuntimeInstance => s_ActiveRuntimeInstance;
+        public static FloraInteractionManager ActiveRuntimeInstance => s_ActiveRuntimeInstance;
+
+#if UNITY_EDITOR
+        public float FloraSwayMaxMagnitudeForEditor => _floraSwayFieldMaxMagnitude;
+        public int FloraSwayResolutionForEditor => _floraSwayFieldResolution;
+        public int FloraSwayNonZeroCellsForEditor => _floraSwayFieldPendingNonZeroCells;
+#endif
 
         /// <summary>Last published player velocity vector.</summary>
         public Vector3 LastPublishedPlayerVelocity => _lastPublishedPlayerVelocity;
@@ -1018,7 +1462,7 @@ namespace Hecton8.World
         public Vector3 LastPublishedScooterWakePosition => _lastPublishedScooterWakePosition;
 
         /// <inheritdoc />
-        public bool IsInitialized => _proceduralWakePointsHandle.IsCreated && _proceduralWakeShaderBuffer != null;
+        public bool IsInitialized => _proceduralWakePointsHandle.IsCreated && _floraSwayFieldHandle.IsCreated && _proceduralWakeShaderBuffer != null;
 
         /// <inheritdoc />
         public int ActiveWakeCount => _publishedProceduralWakeCount;
@@ -1029,6 +1473,8 @@ namespace Hecton8.World
             long totalBytes = 0L;
             totalBytes += EstimateGraphicsBufferBytes(_interactionBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_flowFieldBuffer);
+            totalBytes += EstimateGraphicsBufferBytes(_floraSwayFieldBufferA);
+            totalBytes += EstimateGraphicsBufferBytes(_floraSwayFieldBufferB);
             totalBytes += EstimateGraphicsBufferBytes(_surfaceCascadePhaseSeedBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_underwaterCascadePhaseSeedBuffer);
             totalBytes += EstimateRenderTextureBytes(_wakeTrailRead);
@@ -1097,6 +1543,9 @@ namespace Hecton8.World
             _defensiveSporeBurstLifetimeSeconds = Mathf.Max(1f, _defensiveSporeBurstLifetimeSeconds);
             _defensiveSporeHazardIntensity = Mathf.Max(0f, _defensiveSporeHazardIntensity);
             _defensiveSporeVisorGlitchBias = Mathf.Max(0f, _defensiveSporeVisorGlitchBias);
+            _floraSwaySpringDecayRate = Mathf.Clamp(_floraSwaySpringDecayRate, 0.1f, 12f);
+            _floraSwayGlobalCurrentInfluence = Mathf.Clamp01(_floraSwayGlobalCurrentInfluence);
+            _floraSwayEntityMassMultiplier = Mathf.Clamp(_floraSwayEntityMassMultiplier, 0f, 4f);
             _wakeTrailQualityLevel = QualitySettings.GetQualityLevel();
             _wakeTrailRuntimeResolution = ResolveWakeTrailResolutionForQuality(_wakeTrailQualityLevel);
             _vegetationBridge = ResolveVegetationBridge();
@@ -1121,10 +1570,6 @@ namespace Hecton8.World
             _globalWakeShaderBuffer = new Vector4[MaxProceduralWakePoints];
             // COLD ALLOC: Vector4[16] - global wake direction/radius payload for shader and compute consumers - owner: FloraInteractionManager
             _globalWakeVectorShaderBuffer = new Vector4[MaxProceduralWakePoints];
-            // COLD ALLOC: Collider[32] - NonAlloc interaction query results - owner: FloraInteractionManager
-            _interactionColliders = new Collider[MaxQueryColliders];
-            // COLD ALLOC: Rigidbody[32] - duplicate suppression for interaction query results - owner: FloraInteractionManager
-            _interactionBodies = new Rigidbody[MaxQueryColliders];
             // COLD ALLOC: SpatialQueryHit[32] - module-contact query results for parasitic flora host resolution - owner: FloraInteractionManager
             _moduleQueryHits = new SpatialQueryHit[MaxModuleQueryHits];
             // COLD ALLOC: SpatialQueryHit[16] - predator bioform query results for flora bioluminescence stealth - owner: FloraInteractionManager
@@ -1135,6 +1580,9 @@ namespace Hecton8.World
             // COLD ALLOC: NativeArray<Vector3>[1] - caller-owned ocean provider sample results for vegetation flow publishing - owner: FloraInteractionManager
             _oceanFlowSampleResults = new NativeArray<Vector3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             ResolveProceduralWakeVaultBuffer(clearExisting: true);
+            ResolveFloraSwayFieldVaultBuffer(clearExisting: false);
+            GenerateEmergencyMockStiffness();
+            EnsureFloraSwayFieldGraphicsBuffers();
             _reactiveFloraQueryHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - shared reactive flora spatial-query handle staging - owner: FloraInteractionManager
             _surfaceReactiveFloraHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - registered surface reactive-flora spatial handles - owner: FloraInteractionManager
             _underwaterReactiveFloraHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - registered underwater reactive-flora spatial handles - owner: FloraInteractionManager
@@ -1146,6 +1594,7 @@ namespace Hecton8.World
 
             Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
             PublishFlowFieldGlobals();
+            PublishFloraSwayFieldGlobals(forceUpload: true);
             CreateWakeTrailResources();
             EnsureSedimentParticleSystem();
             RefreshToxicSporeTemplateMask(force: true);
@@ -1167,10 +1616,13 @@ namespace Hecton8.World
             HectonFloatingOrigin.RegisterListener(this);
             GlobalRegistry.RegisterWakeDisplacementService(this);
             ResolveProceduralWakeVaultBuffer(clearExisting: false);
+            ResolveFloraSwayFieldVaultBuffer(clearExisting: false);
+            EnsureFloraSwayFieldGraphicsBuffers();
             RefreshInstanceCullingService();
             TryRegisterCullingHotSwapListener();
             RefreshCachedSubmarineContext();
             PublishFlowFieldGlobals();
+            PublishFloraSwayFieldGlobals(forceUpload: true);
             PublishWakeTrailGlobals();
             PublishProceduralWakeBuffer(forceUpload: true);
             TryRegister();
@@ -1186,6 +1638,7 @@ namespace Hecton8.World
             GlobalRegistry.UnregisterWakeDisplacementService(this);
             TryUnregisterCullingHotSwapListener();
             CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
+            CompleteFloraSwayFieldJob(forceComplete: true, uploadAfterComplete: true);
             _instanceCullingService = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
@@ -1207,6 +1660,7 @@ namespace Hecton8.World
             GlobalRegistry.UnregisterWakeDisplacementService(this);
             TryUnregisterCullingHotSwapListener();
             CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
+            CompleteFloraSwayFieldJob(forceComplete: true, uploadAfterComplete: true);
             _instanceCullingService = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
@@ -1224,6 +1678,11 @@ namespace Hecton8.World
             _globalWakeBufferHandle = default;
             _globalWakeVectorBufferHandle = default;
             _wakeBlackBoxHandle = default;
+            _floraSwayFieldHandle = default;
+            _floraSwayFieldMetaHandle = default;
+            _floraSwayFieldBlackBoxHandle = default;
+            _floraStiffnessRulesHandle = default;
+            _floraStiffnessCsvScratchHandle = default;
             _wakeDataVault = null;
 
             DisposeNativeArray(ref _cascadeReactiveTemplateMask);
@@ -1253,6 +1712,7 @@ namespace Hecton8.World
             }
 
             ReleaseFlowFieldBuffer();
+            ReleaseFloraSwayFieldBuffers();
             ReleaseWakeTrailResources();
         }
 
@@ -1263,6 +1723,7 @@ namespace Hecton8.World
                 return;
 
             CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
+            CompleteFloraSwayFieldJob(forceComplete: true, uploadAfterComplete: true);
             ApplyRuntimeOffsetToCachedState(-shiftOffset);
         }
 
@@ -1356,6 +1817,7 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: true);
+            CompleteFloraSwayFieldJob(forceComplete: false, uploadAfterComplete: true);
             CompleteCascadePhaseSeedJob(underwater: false, forceComplete: false, uploadAfterComplete: true);
             CompleteCascadePhaseSeedJob(underwater: true, forceComplete: false, uploadAfterComplete: true);
             CompleteHeadlessParasiteSimulation(force: false);
@@ -1546,48 +2008,6 @@ namespace Hecton8.World
 
         private int CollectDynamicInteractionPoints(Vector3 targetPosition, int interactionCount)
         {
-            int hitCount = global::UnityEngine.Physics.OverlapSphereNonAlloc(
-                targetPosition,
-                _dynamicInteractionRadius,
-                _interactionColliders,
-                _dynamicInteractionMask,
-                QueryTriggerInteraction.Ignore);
-
-            int uniqueBodyCount = 0;
-            for (int i = 0; i < hitCount && interactionCount < _maxInteractionPoints; i++)
-            {
-                Collider hitCollider = _interactionColliders[i];
-                if (hitCollider == null)
-                    continue;
-
-                Rigidbody hitBody = hitCollider.attachedRigidbody;
-                if (hitBody == null || hitBody == _playerRb || hitBody.transform == _playerTransform)
-                    continue;
-
-                bool duplicate = false;
-                for (int j = 0; j < uniqueBodyCount; j++)
-                {
-                    if (_interactionBodies[j] == hitBody)
-                    {
-                        duplicate = true;
-                        break;
-                    }
-                }
-
-                if (duplicate)
-                    continue;
-
-                if (uniqueBodyCount < _interactionBodies.Length)
-                    _interactionBodies[uniqueBodyCount++] = hitBody;
-
-                Vector3 velocity = hitBody.linearVelocity;
-                float radius = Mathf.Clamp(
-                    _dynamicObjectBaseRadius + EstimateLength3D(velocity) * _dynamicVelocityRadiusMultiplier,
-                    0.5f,
-                    _maxBendRadius);
-                interactionCount = AppendInteractionPoint(hitBody.worldCenterOfMass, velocity, radius, interactionCount);
-            }
-
             return interactionCount;
         }
 
@@ -1923,6 +2343,7 @@ namespace Hecton8.World
             HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
             float waterLevel = fluidEngine != null ? fluidEngine.WaterLevel : DefaultVegetationWaterLevel;
             Vector3 currentVector = ResolveGlobalOceanFlow(samplePositionWS, fluidEngine);
+            _lastVegetationCurrentVector = IsFiniteVector3(currentVector) ? currentVector : Vector3.zero;
             float currentStrength = EstimateLength3D(currentVector);
             float currentNoiseScale = fluidEngine != null && fluidEngine.EnablePhantomCurrent ? fluidEngine.CurrentNoiseScale : 0f;
             float currentTimeScale = fluidEngine != null && fluidEngine.EnablePhantomCurrent ? fluidEngine.CurrentTimeScale : 0f;
@@ -2169,6 +2590,7 @@ namespace Hecton8.World
 
             _publishedProceduralWakeCount = 0;
             _publishedShearFoamAmount = 0f;
+            ClearFloraSwayDisplacementField(forceUpload: true);
             PublishProceduralWakeBuffer(forceUpload: true);
         }
 
@@ -2179,6 +2601,7 @@ namespace Hecton8.World
 
             DrainWakeGeneratedSignals();
             UpdateProceduralWakeBuffer(deltaTime);
+            UpdateFloraSwayDisplacementField(deltaTime);
             PublishProceduralWakeBuffer();
         }
 
@@ -2543,6 +2966,718 @@ namespace Hecton8.World
                 ResolveWakeTelemetryFlags());
         }
 
+        private void UpdateFloraSwayDisplacementField(float deltaTime)
+        {
+            if (_floraSwayFieldBuildScheduled && !_floraSwayFieldBuildHandle.IsCompleted)
+                return;
+
+            CompleteFloraSwayFieldJob(forceComplete: false, uploadAfterComplete: true);
+
+            float safeDeltaTime = float.IsFinite(deltaTime) ? math.clamp(deltaTime, 0f, 0.1f) : 0f;
+            _floraSwayFieldUpdateTimer = math.max(0f, _floraSwayFieldUpdateTimer - safeDeltaTime);
+
+            if (!EnsureFloraSwayFieldResources())
+            {
+                _floraSwayFieldActive = false;
+                _floraSwayFieldResolution = 0;
+                _floraSwayFieldNodeCount = 0;
+                _floraSwayFieldMaxMagnitude = 0f;
+                PublishFloraSwayFieldGlobals(forceUpload: true);
+                return;
+            }
+
+            float qualityWeight = ResolveFloraSwayGlobalQualityWeight();
+            int resolution = ResolveFloraSwayResolution(qualityWeight);
+            float cellSize = ResolveFloraSwayCellSize(qualityWeight);
+            float updateInterval = ResolveFloraSwayUpdateInterval(qualityWeight);
+            int slotLimit = ResolveWakeSlotLimit();
+
+            if (!TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources))
+            {
+                ClearFloraSwayDisplacementField(forceUpload: true);
+                RecordFloraSwayFieldBlackBox(0, 0, resolution, cellSize, qualityWeight, updateInterval, 0f, float3.zero, FloraSwayFieldVaultMissingFlag);
+                return;
+            }
+
+            uint flags = 0u;
+            if (!TryResolveFloraSwayFieldCenter(
+                    wakeSources,
+                    slotLimit,
+                    qualityWeight,
+                    cellSize,
+                    out AbsoluteUniversePosition fieldCenterAup,
+                    out float3 fieldCenter,
+                    out int activeWakeCount,
+                    out flags))
+            {
+                ClearFloraSwayDisplacementField(forceUpload: true);
+                RecordFloraSwayFieldBlackBox(0, 0, resolution, cellSize, qualityWeight, updateInterval, 0f, float3.zero, flags | FloraSwayFieldEmptyWakeFlag);
+                return;
+            }
+
+            float recenterThreshold = math.max(0.05f, cellSize * 0.45f);
+            bool resolutionChanged = resolution != _floraSwayFieldResolution || _floraSwayFieldNodeCount <= 0;
+            bool centerChanged = !_floraSwayFieldActive ||
+                                 math.distancesq(fieldCenter, new float3(_lastUploadedFloraSwayFieldCenterWS.x, _lastUploadedFloraSwayFieldCenterWS.y, _lastUploadedFloraSwayFieldCenterWS.z)) >= recenterThreshold * recenterThreshold;
+            bool dueForUpdate = _floraSwayFieldUpdateTimer <= 0f;
+            if (!resolutionChanged && !centerChanged && !dueForUpdate)
+                return;
+
+            ScheduleFloraSwayDisplacementField(
+                wakeSources,
+                slotLimit,
+                resolution,
+                cellSize,
+                qualityWeight,
+                updateInterval,
+                fieldCenterAup,
+                fieldCenter,
+                activeWakeCount,
+                flags,
+                safeDeltaTime,
+                resolutionChanged || centerChanged);
+        }
+
+        private bool TryResolveFloraSwayFieldCenter(
+            NativeArray<WakeSource> wakeSources,
+            int slotLimit,
+            float qualityWeight,
+            float cellSize,
+            out AbsoluteUniversePosition fieldCenterAup,
+            out float3 fieldCenter,
+            out int activeWakeCount,
+            out uint flags)
+        {
+            fieldCenterAup = default;
+            fieldCenter = float3.zero;
+            activeWakeCount = 0;
+            flags = 0u;
+
+            if (!TryResolveFloraSwayAnchorAup(cellSize, out fieldCenterAup, out fieldCenter))
+                return false;
+
+            if (!wakeSources.IsCreated || wakeSources.Length == 0)
+                return true;
+
+            int sourceLimit = ResolveFloraSwaySourceLimit(slotLimit, qualityWeight);
+            int safeLimit = math.min(wakeSources.Length, sourceLimit);
+            for (int i = 0; i < safeLimit; i++)
+            {
+                WakeSource point = wakeSources[i];
+                if (point.Active == 0)
+                    continue;
+
+                if (!math.all(math.isfinite(point.VelocityWS)) ||
+                    !math.isfinite(point.Radius) ||
+                    !math.isfinite(point.Intensity))
+                {
+                    flags |= FloraSwayFieldInvalidInputFlag | FloraSwayFieldNaNFlag;
+                    continue;
+                }
+
+                if (point.Intensity <= WakeMinimumPublishedIntensity || point.Radius <= 0.01f)
+                    continue;
+
+                activeWakeCount++;
+            }
+
+            if (activeWakeCount == 0)
+                flags |= FloraSwayFieldEmptyWakeFlag;
+
+            return true;
+        }
+
+        private bool TryResolveFloraSwayAnchorAup(float cellSize, out AbsoluteUniversePosition fieldCenterAup, out float3 fieldCenter)
+        {
+            AbsoluteUniversePosition rawAup;
+            if (_playerMovement != null)
+            {
+                rawAup = _playerMovement.CurrentAup;
+            }
+            else if (_playerTransform != null && IsFiniteVector3(_playerTransform.position))
+            {
+                rawAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+            }
+            else if (IsFiniteVector3(_floraSwayFieldCenterWS))
+            {
+                rawAup = AbsoluteUniversePosition.FromRuntimePosition(_floraSwayFieldCenterWS);
+            }
+            else
+            {
+                fieldCenterAup = default;
+                fieldCenter = float3.zero;
+                return false;
+            }
+
+            fieldCenterAup = QuantizeFloraSwayAup(rawAup, cellSize);
+            fieldCenter = fieldCenterAup.ToRuntimeFloat3();
+            return math.all(math.isfinite(fieldCenter));
+        }
+
+        private static AbsoluteUniversePosition QuantizeFloraSwayAup(in AbsoluteUniversePosition rawAup, float cellSize)
+        {
+            double3 absolute = rawAup.ToAbsoluteDouble3();
+            double safeCellSize = math.max(0.125d, (double)(math.isfinite(cellSize) ? cellSize : FloraSwayFieldMaxCellSize));
+            double3 quantized = math.floor(absolute / safeCellSize) * safeCellSize;
+            return AbsoluteUniversePosition.FromAbsolutePosition(quantized);
+        }
+
+        private void ScheduleFloraSwayDisplacementField(
+            NativeArray<WakeSource> wakeSources,
+            int slotLimit,
+            int resolution,
+            float cellSize,
+            float qualityWeight,
+            float updateInterval,
+            AbsoluteUniversePosition fieldCenterAup,
+            float3 fieldCenter,
+            int activeWakeCount,
+            uint flags,
+            float deltaTime,
+            bool resetField)
+        {
+            if (!TryResolveFloraSwayFieldBuffers(out NativeArray<FloraDisplacementDTO> fieldValues, out NativeArray<float4> fieldMeta) ||
+                !EnsureFloraSwayFieldGraphicsBuffers())
+            {
+                RecordFloraSwayFieldBlackBox(activeWakeCount, 0, resolution, cellSize, qualityWeight, updateInterval, 0f, fieldCenter, flags | FloraSwayFieldVaultMissingFlag);
+                return;
+            }
+
+            int safeResolution = math.clamp(resolution, FloraSwayFieldMinResolution, FloraSwayFieldMaxResolution);
+            int nodeCount = math.min(safeResolution * safeResolution * safeResolution, math.min(fieldValues.Length, FloraSwayFieldMaxNodeCount));
+            int sourceLimit = ResolveFloraSwaySourceLimit(slotLimit, qualityWeight);
+            float qualityCurve = SmoothStep01(qualityWeight);
+            float maxDisplacement = math.lerp(0.28f, FloraSwayFieldMaxDisplacementMeters, qualityCurve);
+            float3 ambientCurrent = ResolveFloraSwayAmbientCurrent();
+            float framePhase = Mathf.Max(0, Time.frameCount) * math.lerp(0.0075f, 0.0275f, qualityCurve);
+
+            JobHandle decayHandle = new DecayFloraForcesJob
+            {
+                FieldValues = fieldValues,
+                NodeCount = nodeCount,
+                DeltaTime = deltaTime,
+                DecayRate = _floraSwaySpringDecayRate,
+                ResetField = resetField ? (byte)1 : (byte)0
+            }.Schedule(nodeCount, FloraSwayFieldJobBatchSize);
+
+            JobHandle accumulateHandle = new AccumulateFloraForcesJob
+            {
+                WakeSources = wakeSources,
+                FieldValues = fieldValues,
+                FieldCenterAup = fieldCenterAup,
+                AmbientCurrentWS = ambientCurrent,
+                Resolution = safeResolution,
+                NodeCount = nodeCount,
+                SourceLimit = sourceLimit,
+                CellSize = cellSize,
+                QualityWeight = qualityWeight,
+                EntityMassMultiplier = _floraSwayEntityMassMultiplier,
+                GlobalCurrentInfluence = _floraSwayGlobalCurrentInfluence,
+                MaxDisplacement = maxDisplacement,
+                FramePhase = framePhase
+            }.Schedule(nodeCount, FloraSwayFieldJobBatchSize, decayHandle);
+
+            if (_enableMockDisplacementInjector)
+            {
+                accumulateHandle = new MockDisplacementInjectorJob
+                {
+                    FieldValues = fieldValues,
+                    Resolution = safeResolution,
+                    NodeCount = nodeCount,
+                    CellSize = cellSize,
+                    QualityWeight = qualityWeight,
+                    FramePhase = framePhase
+                }.Schedule(nodeCount, FloraSwayFieldJobBatchSize, accumulateHandle);
+            }
+
+            _floraSwayFieldBuildHandle = new UploadDisplacementTextureJob
+            {
+                FieldValues = fieldValues,
+                FieldMeta = fieldMeta,
+                Resolution = safeResolution,
+                NodeCount = nodeCount,
+                CellSize = cellSize,
+                QualityWeight = qualityWeight,
+                UpdateIntervalSeconds = updateInterval,
+                ActiveWakeCount = activeWakeCount,
+                FieldCenterWS = fieldCenter,
+                FrameIndex = Mathf.Max(0, Time.frameCount),
+                AupShiftSequence = HectonFloatingOrigin.CurrentShiftSequence,
+                BlackBoxCursor = _floraSwayFieldBlackBoxCursor,
+                Flags = flags
+            }.Schedule(accumulateHandle);
+
+            _floraSwayFieldBuildScheduled = true;
+            _floraSwayFieldPendingFlags = flags;
+            _floraSwayFieldPendingActiveWakeCount = activeWakeCount;
+            _floraSwayFieldScheduleTimestampSeconds = Time.realtimeSinceStartupAsDouble;
+            _floraSwayFieldUpdateTimer = updateInterval;
+        }
+
+        private bool CompleteFloraSwayFieldJob(bool forceComplete, bool uploadAfterComplete)
+        {
+            if (!_floraSwayFieldBuildScheduled)
+                return true;
+
+            if (!forceComplete && !_floraSwayFieldBuildHandle.IsCompleted)
+                return false;
+
+            _floraSwayFieldBuildHandle.Complete();
+            _floraSwayFieldBuildScheduled = false;
+            double elapsedSeconds = math.max(0d, Time.realtimeSinceStartupAsDouble - _floraSwayFieldScheduleTimestampSeconds);
+            _floraSwayFieldLastCpuMicroseconds = (uint)math.clamp(elapsedSeconds * 1000000d, 0d, uint.MaxValue);
+
+            if (!uploadAfterComplete ||
+                !TryResolveFloraSwayFieldBuffers(out NativeArray<FloraDisplacementDTO> fieldValues, out NativeArray<float4> fieldMeta) ||
+                fieldMeta.Length < FloraSwayFieldMetaVectorCount ||
+                !EnsureFloraSwayFieldGraphicsBuffers())
+            {
+                return true;
+            }
+
+            int safeResolution = math.clamp((int)math.round(fieldMeta[1].x), 0, FloraSwayFieldMaxResolution);
+            int nodeCount = math.clamp((int)math.round(fieldMeta[2].x), 0, math.min(fieldValues.Length, FloraSwayFieldMaxNodeCount));
+            float maxMagnitude = math.max(0f, fieldMeta[1].w);
+            uint flags = (uint)math.max(0, (int)math.round(fieldMeta[3].w));
+            _floraSwayFieldPendingNonZeroCells = math.max(0, (int)math.round(fieldMeta[2].w));
+
+            GraphicsBuffer writeBuffer = _floraSwayFieldUseBufferA ? _floraSwayFieldBufferA : _floraSwayFieldBufferB;
+            if (writeBuffer == null)
+            {
+                flags |= FloraSwayFieldVaultMissingFlag | FloraSwayFieldUploadStallFlag;
+                RecordFloraSwayFieldBlackBox(_floraSwayFieldPendingActiveWakeCount, _floraSwayFieldPendingNonZeroCells, safeResolution, _floraSwayFieldCellSize, _floraSwayFieldQualityWeight, _floraSwayFieldUpdateIntervalSeconds, maxMagnitude, new float3(_floraSwayFieldCenterWS.x, _floraSwayFieldCenterWS.y, _floraSwayFieldCenterWS.z), flags);
+                return true;
+            }
+
+            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, fieldValues, nodeCount);
+            _floraSwayFieldReadBuffer = writeBuffer;
+            _floraSwayFieldUseBufferA = !_floraSwayFieldUseBufferA;
+            _floraSwayFieldResolution = safeResolution;
+            _floraSwayFieldNodeCount = nodeCount;
+            _floraSwayFieldCellSize = math.max(0f, fieldMeta[0].w);
+            _floraSwayFieldQualityWeight = math.saturate(fieldMeta[1].z);
+            _floraSwayFieldUpdateIntervalSeconds = math.max(0f, fieldMeta[2].y);
+            _floraSwayFieldMaxMagnitude = maxMagnitude;
+            _floraSwayFieldCenterWS = new Vector3(fieldMeta[0].x, fieldMeta[0].y, fieldMeta[0].z);
+            _lastUploadedFloraSwayFieldCenterWS = _floraSwayFieldCenterWS;
+            _floraSwayFieldActive = fieldMeta[1].y > 0.0001f;
+            PublishFloraSwayFieldGlobals(forceUpload: true);
+            RecordFloraSwayFieldBlackBox(
+                _floraSwayFieldPendingActiveWakeCount,
+                _floraSwayFieldPendingNonZeroCells,
+                safeResolution,
+                _floraSwayFieldCellSize,
+                _floraSwayFieldQualityWeight,
+                _floraSwayFieldUpdateIntervalSeconds,
+                maxMagnitude,
+                new float3(_floraSwayFieldCenterWS.x, _floraSwayFieldCenterWS.y, _floraSwayFieldCenterWS.z),
+                flags | _floraSwayFieldPendingFlags);
+            return true;
+        }
+
+        private float3 ResolveFloraSwayAmbientCurrent()
+        {
+            Vector3 current = _lastVegetationCurrentVector;
+            if (!IsFiniteVector3(current))
+                current = Vector3.zero;
+
+            return new float3(current.x, current.y, current.z);
+        }
+
+        public static bool ValidateFloraDisplacementDtoLayout(out int size, out int forceOffset, out int decayOffset)
+        {
+            size = UnsafeUtility.SizeOf<FloraDisplacementDTO>();
+            forceOffset = UnsafeUtility.GetFieldOffset(typeof(FloraDisplacementDTO).GetField(nameof(FloraDisplacementDTO.ForceVector)));
+            decayOffset = UnsafeUtility.GetFieldOffset(typeof(FloraDisplacementDTO).GetField(nameof(FloraDisplacementDTO.DecayTimer)));
+            return size == 16 && forceOffset == 0 && decayOffset == 12;
+        }
+
+        public static bool ValidateFloraSwayTelemetryLayout(out int size)
+        {
+            size = UnsafeUtility.SizeOf<FloraSwayFieldTelemetryEntry>();
+            return size == 64;
+        }
+
+        private void GenerateEmergencyMockStiffness()
+        {
+            if (!TryResolveFloraStiffnessRules(out NativeArray<FloraStiffnessRuleDTO> rules) || rules.Length == 0)
+                return;
+
+            for (int i = 0; i < rules.Length; i++)
+                rules[i] = default;
+
+            rules[0] = BuildFloraStiffnessRule(HashAsciiLiteral("flora.grass"), 0.28f, 3.2f);
+            if (rules.Length > 1)
+                rules[1] = BuildFloraStiffnessRule(HashAsciiLiteral("flora.kelp"), 0.46f, 2.1f);
+            if (rules.Length > 2)
+                rules[2] = BuildFloraStiffnessRule(HashAsciiLiteral("flora.coral_soft"), 0.72f, 4.8f);
+            if (rules.Length > 3)
+                rules[3] = BuildFloraStiffnessRule(HashAsciiLiteral("flora.sargassum"), 0.34f, 2.7f);
+        }
+
+        public bool TryReloadFloraStiffnessProfilesCsvForEditor(string path)
+        {
+            return TryIngestFloraStiffnessProfilesCsv(path);
+        }
+
+        private unsafe bool TryIngestFloraStiffnessProfilesCsv(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            if (!TryResolveFloraStiffnessRules(out NativeArray<FloraStiffnessRuleDTO> rules) ||
+                !TryResolveFloraCsvScratch(out NativeArray<byte> scratch) ||
+                rules.Length == 0 ||
+                scratch.Length == 0)
+            {
+                return false;
+            }
+
+            int byteCount;
+            try
+            {
+                using FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                int safeLength = math.min(scratch.Length, (int)math.min(stream.Length, int.MaxValue));
+                void* scratchPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
+                byteCount = stream.Read(new Span<byte>(scratchPtr, safeLength));
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            int cursor = 0;
+            int ruleIndex = 0;
+            while (cursor < byteCount && ruleIndex < rules.Length)
+            {
+                SkipCsvLineWhitespace(scratch, byteCount, ref cursor);
+                if (cursor >= byteCount)
+                    break;
+
+                if (scratch[cursor] == (byte)'#')
+                {
+                    SkipCsvLine(scratch, byteCount, ref cursor);
+                    continue;
+                }
+
+                uint hash = ParseCsvFnvHash(scratch, byteCount, ref cursor);
+                if (!TryConsumeCsvComma(scratch, byteCount, ref cursor) ||
+                    !TryParseCsvFloat(scratch, byteCount, ref cursor, out float stiffness) ||
+                    !TryConsumeCsvComma(scratch, byteCount, ref cursor) ||
+                    !TryParseCsvFloat(scratch, byteCount, ref cursor, out float damping))
+                {
+                    SkipCsvLine(scratch, byteCount, ref cursor);
+                    continue;
+                }
+
+                SkipCsvLine(scratch, byteCount, ref cursor);
+                if (hash == 0u || hash == HashAsciiLiteral("name"))
+                    continue;
+
+                rules[ruleIndex++] = BuildFloraStiffnessRule(hash, stiffness, damping);
+            }
+
+            for (int i = ruleIndex; i < rules.Length; i++)
+                rules[i] = default;
+
+            return ruleIndex > 0;
+        }
+
+        private bool TryResolveFloraStiffnessRules(out NativeArray<FloraStiffnessRuleDTO> rules)
+        {
+            rules = default;
+            IDataVault dataVault = _wakeDataVault ?? GlobalRegistry.DataVault;
+            if (dataVault == null)
+                return false;
+
+            if (!_floraStiffnessRulesHandle.IsCreated)
+                _floraStiffnessRulesHandle = dataVault.GetBufferHandle<FloraStiffnessRuleDTO>(
+                    FloraStiffnessRulesBufferId,
+                    FloraStiffnessRuleCapacity,
+                    SystemID.Vfx,
+                    NativeArrayOptions.UninitializedMemory);
+
+            rules = _floraStiffnessRulesHandle.Resolve(dataVault);
+            return rules.IsCreated;
+        }
+
+        private bool TryResolveFloraCsvScratch(out NativeArray<byte> scratch)
+        {
+            scratch = default;
+            IDataVault dataVault = _wakeDataVault ?? GlobalRegistry.DataVault;
+            if (dataVault == null)
+                return false;
+
+            if (!_floraStiffnessCsvScratchHandle.IsCreated)
+                _floraStiffnessCsvScratchHandle = dataVault.GetBufferHandle<byte>(
+                    FloraStiffnessCsvScratchBufferId,
+                    FloraCsvScratchBytes,
+                    SystemID.Vfx,
+                    NativeArrayOptions.UninitializedMemory);
+
+            scratch = _floraStiffnessCsvScratchHandle.Resolve(dataVault);
+            return scratch.IsCreated;
+        }
+
+        private static FloraStiffnessRuleDTO BuildFloraStiffnessRule(uint plantHash, float stiffness, float damping)
+        {
+            return new FloraStiffnessRuleDTO
+            {
+                PlantHash = plantHash,
+                Stiffness01 = math.saturate(math.isfinite(stiffness) ? stiffness : 0.5f),
+                Damping = math.max(0.01f, math.isfinite(damping) ? damping : 1f),
+                Flags = 1u
+            };
+        }
+
+        private static uint ParseCsvFnvHash(NativeArray<byte> bytes, int byteCount, ref int cursor)
+        {
+            uint hash = 2166136261u;
+            bool consumed = false;
+            while (cursor < byteCount)
+            {
+                byte value = bytes[cursor];
+                if (value == (byte)',' || value == (byte)'\r' || value == (byte)'\n')
+                    break;
+
+                if (value > (byte)' ')
+                {
+                    hash ^= ToLowerAscii(value);
+                    hash *= 16777619u;
+                    consumed = true;
+                }
+
+                cursor++;
+            }
+
+            return consumed ? hash : 0u;
+        }
+
+        private static bool TryParseCsvFloat(NativeArray<byte> bytes, int byteCount, ref int cursor, out float value)
+        {
+            value = 0f;
+            SkipCsvSpaces(bytes, byteCount, ref cursor);
+            bool negative = false;
+            if (cursor < byteCount && bytes[cursor] == (byte)'-')
+            {
+                negative = true;
+                cursor++;
+            }
+
+            float integer = 0f;
+            bool hasDigit = false;
+            while (cursor < byteCount)
+            {
+                byte c = bytes[cursor];
+                if (c < (byte)'0' || c > (byte)'9')
+                    break;
+
+                integer = integer * 10f + (c - (byte)'0');
+                hasDigit = true;
+                cursor++;
+            }
+
+            float fraction = 0f;
+            float divisor = 1f;
+            if (cursor < byteCount && bytes[cursor] == (byte)'.')
+            {
+                cursor++;
+                while (cursor < byteCount)
+                {
+                    byte c = bytes[cursor];
+                    if (c < (byte)'0' || c > (byte)'9')
+                        break;
+
+                    fraction = fraction * 10f + (c - (byte)'0');
+                    divisor *= 10f;
+                    hasDigit = true;
+                    cursor++;
+                }
+            }
+
+            if (!hasDigit)
+                return false;
+
+            value = integer + (fraction / math.max(divisor, 1f));
+            if (negative)
+                value = -value;
+
+            SkipCsvSpaces(bytes, byteCount, ref cursor);
+            return math.isfinite(value);
+        }
+
+        private static bool TryConsumeCsvComma(NativeArray<byte> bytes, int byteCount, ref int cursor)
+        {
+            SkipCsvSpaces(bytes, byteCount, ref cursor);
+            if (cursor >= byteCount || bytes[cursor] != (byte)',')
+                return false;
+
+            cursor++;
+            return true;
+        }
+
+        private static void SkipCsvLineWhitespace(NativeArray<byte> bytes, int byteCount, ref int cursor)
+        {
+            while (cursor < byteCount)
+            {
+                byte value = bytes[cursor];
+                if (value == (byte)' ' || value == (byte)'\t' || value == (byte)'\r' || value == (byte)'\n')
+                {
+                    cursor++;
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        private static void SkipCsvSpaces(NativeArray<byte> bytes, int byteCount, ref int cursor)
+        {
+            while (cursor < byteCount && (bytes[cursor] == (byte)' ' || bytes[cursor] == (byte)'\t'))
+                cursor++;
+        }
+
+        private static void SkipCsvLine(NativeArray<byte> bytes, int byteCount, ref int cursor)
+        {
+            while (cursor < byteCount && bytes[cursor] != (byte)'\n')
+                cursor++;
+            if (cursor < byteCount)
+                cursor++;
+        }
+
+        private static uint HashAsciiLiteral(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return 0u;
+
+            uint hash = 2166136261u;
+            for (int i = 0; i < value.Length; i++)
+            {
+                hash ^= ToLowerAscii((byte)value[i]);
+                hash *= 16777619u;
+            }
+
+            return hash == 0u ? 1u : hash;
+        }
+
+        private static byte ToLowerAscii(byte value)
+        {
+            return value >= (byte)'A' && value <= (byte)'Z'
+                ? (byte)(value + 32)
+                : value;
+        }
+
+        private void ClearFloraSwayDisplacementField(bool forceUpload)
+        {
+            CompleteFloraSwayFieldJob(forceComplete: true, uploadAfterComplete: false);
+            _floraSwayFieldActive = false;
+            _floraSwayFieldResolution = 0;
+            _floraSwayFieldNodeCount = 0;
+            _floraSwayFieldCellSize = 0f;
+            _floraSwayFieldMaxMagnitude = 0f;
+            _floraSwayFieldUpdateTimer = 0f;
+
+            if (TryResolveFloraSwayFieldBuffers(out NativeArray<FloraDisplacementDTO> fieldValues, out NativeArray<float4> fieldMeta))
+            {
+                for (int i = 0; i < fieldValues.Length; i++)
+                    fieldValues[i] = default;
+                for (int i = 0; i < fieldMeta.Length; i++)
+                    fieldMeta[i] = default;
+
+                if (forceUpload && EnsureFloraSwayFieldGraphicsBuffers())
+                {
+                    GraphicsBuffer writeBuffer = _floraSwayFieldBufferA != null ? _floraSwayFieldBufferA : _floraSwayFieldBufferB;
+                    if (writeBuffer != null)
+                    {
+                        GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, fieldValues, math.min(fieldValues.Length, FloraSwayFieldMaxNodeCount));
+                        _floraSwayFieldReadBuffer = writeBuffer;
+                    }
+                }
+            }
+
+            PublishFloraSwayFieldGlobals(forceUpload);
+        }
+
+        private void PublishFloraSwayFieldGlobals(bool forceUpload = false)
+        {
+            if (!forceUpload &&
+                _floraSwayFieldGlobalsInitialized &&
+                !_floraSwayFieldActive &&
+                _floraSwayFieldResolution == 0)
+            {
+                return;
+            }
+
+            GraphicsBuffer readBuffer = _floraSwayFieldReadBuffer ?? _floraSwayFieldBufferA;
+            if (readBuffer != null)
+                Shader.SetGlobalBuffer(_FloraSwayDisplacementFieldId, readBuffer);
+
+            Shader.SetGlobalVector(
+                _FloraSwayFieldCenterCellSizeId,
+                new Vector4(_floraSwayFieldCenterWS.x, _floraSwayFieldCenterWS.y, _floraSwayFieldCenterWS.z, _floraSwayFieldCellSize));
+            Shader.SetGlobalVector(
+                _FloraSwayFieldParamsId,
+                new Vector4(
+                    _floraSwayFieldResolution,
+                    _floraSwayFieldActive ? 1f : 0f,
+                    _floraSwayFieldQualityWeight,
+                    _floraSwayFieldMaxMagnitude));
+            _floraSwayFieldGlobalsInitialized = true;
+        }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if (!_drawFloraSwayDebugGizmos ||
+                _floraSwayFieldBuildScheduled ||
+                _floraSwayFieldResolution <= 1 ||
+                _floraSwayFieldNodeCount <= 0 ||
+                !TryResolveFloraSwayFieldBuffers(out NativeArray<FloraDisplacementDTO> fieldValues, out _))
+            {
+                return;
+            }
+
+            int resolution = math.clamp(_floraSwayFieldResolution, 1, FloraSwayFieldMaxResolution);
+            int stride = math.max(1, resolution / 8);
+            float halfIndex = (resolution - 1) * 0.5f;
+            Vector3 center = _floraSwayFieldCenterWS;
+            float cellSize = math.max(0.05f, _floraSwayFieldCellSize);
+            float maxMagnitude = math.max(0.001f, _floraSwayFieldMaxMagnitude);
+            int resolutionSq = resolution * resolution;
+            for (int z = 0; z < resolution; z += stride)
+            {
+                for (int y = 0; y < resolution; y += stride)
+                {
+                    for (int x = 0; x < resolution; x += stride)
+                    {
+                        int index = x + (y * resolution) + (z * resolutionSq);
+                        if ((uint)index >= (uint)fieldValues.Length)
+                            continue;
+
+                        float3 force = fieldValues[index].ForceVector;
+                        float magnitudeSq = math.lengthsq(force);
+                        if (!math.isfinite(magnitudeSq) || magnitudeSq <= 0.000001f)
+                            continue;
+
+                        float magnitude = math.sqrt(magnitudeSq);
+                        Vector3 start = center + new Vector3(
+                            (x - halfIndex) * cellSize,
+                            (y - halfIndex) * cellSize,
+                            (z - halfIndex) * cellSize);
+                        Vector3 end = start + new Vector3(force.x, force.y, force.z);
+                        float t = Mathf.Clamp01(magnitude / maxMagnitude);
+                        Gizmos.color = Color.Lerp(Color.blue, Color.red, t);
+                        Gizmos.DrawLine(start, end);
+                    }
+                }
+            }
+        }
+#endif
+
         private float ResolveWakeRadius(byte sourceKind, float speed)
         {
             float safeSpeed = float.IsFinite(speed) ? Mathf.Max(0f, speed) : 0f;
@@ -2623,6 +3758,61 @@ namespace Hecton8.World
                    HomeostasisBrain.SystemHealthIndex01 > 0.8f
                 ? 1f
                 : 0f;
+        }
+
+        private static float ResolveFloraSwayGlobalQualityWeight()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            if (!float.IsFinite(weight))
+            {
+                byte tier = ScalabilityTierProfiles.Normalize(GlobalRegistry.ScalabilityTierProfileByte);
+                weight = tier == ScalabilityTierProfiles.LowMx350 ? 0.25f : 1f;
+            }
+
+            float stress01 = float.IsFinite(HomeostasisBrain.SystemHealthIndex01)
+                ? math.saturate(HomeostasisBrain.SystemHealthIndex01)
+                : 0f;
+            float stressRelief = math.lerp(1f, 0.72f, SmoothStep01(stress01));
+            return math.saturate(weight * stressRelief);
+        }
+
+        private static int ResolveFloraSwayResolution(float qualityWeight)
+        {
+            float q = SmoothStep01(qualityWeight);
+            return math.clamp(
+                FloraSwayFieldMinResolution + Mathf.RoundToInt((FloraSwayFieldMaxResolution - FloraSwayFieldMinResolution) * q),
+                FloraSwayFieldMinResolution,
+                FloraSwayFieldMaxResolution);
+        }
+
+        private static int ResolveFloraSwaySourceLimit(int slotLimit, float qualityWeight)
+        {
+            int safeSlotLimit = math.clamp(slotLimit, 1, MaxProceduralWakePoints);
+            float q = SmoothStep01(qualityWeight);
+            return math.clamp(1 + Mathf.RoundToInt((safeSlotLimit - 1) * q), 1, safeSlotLimit);
+        }
+
+        private static float ResolveFloraSwayCellSize(float qualityWeight)
+        {
+            return math.lerp(FloraSwayFieldMaxCellSize, FloraSwayFieldMinCellSize, SmoothStep01(qualityWeight));
+        }
+
+        private static float ResolveFloraSwayUpdateInterval(float qualityWeight)
+        {
+            return math.lerp(FloraSwayFieldMaxUpdateIntervalSeconds, FloraSwayFieldMinUpdateIntervalSeconds, SmoothStep01(qualityWeight));
+        }
+
+        private static float ResolveFloraSwaySourceGain(byte sourceKind)
+        {
+            switch (sourceKind)
+            {
+                case WakeSourceVehicle:
+                    return 1.22f;
+                case WakeSourceApexPredator:
+                    return 1.05f;
+                default:
+                    return 0.72f;
+            }
         }
 
         private static uint ResolveWakeTelemetryFlags()
@@ -2750,6 +3940,112 @@ namespace Hecton8.World
                     writer.Write(entry.AupShiftSequence);
                     writer.Write(entry.SystemStress01);
                     writer.Write(entry.LowTier01);
+                }
+            }
+            catch (IOException)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+        }
+
+        private void RecordFloraSwayFieldBlackBox(
+            int activeWakeCount,
+            int nonZeroCells,
+            int resolution,
+            float cellSize,
+            float qualityWeight,
+            float updateInterval,
+            float maxMagnitude,
+            float3 fieldCenter,
+            uint flags)
+        {
+            if (!TryResolveFloraSwayFieldBlackBox(out NativeArray<FloraSwayFieldTelemetryEntry> blackBox) || blackBox.Length == 0)
+                return;
+
+            int cursor = _floraSwayFieldBlackBoxCursor;
+            if ((uint)cursor >= (uint)blackBox.Length)
+                cursor = 0;
+
+            uint stateHash = 2166136261u;
+            stateHash = MixWakeHash(stateHash, (uint)math.max(0, activeWakeCount));
+            stateHash = MixWakeHash(stateHash, (uint)math.max(0, nonZeroCells));
+            stateHash = MixWakeHash(stateHash, (uint)math.max(0, resolution));
+            stateHash = MixWakeHash(stateHash, (uint)math.asint(cellSize));
+            stateHash = MixWakeHash(stateHash, (uint)math.asint(qualityWeight));
+            stateHash = MixWakeHash(stateHash, (uint)math.asint(maxMagnitude));
+
+            FloraSwayFieldTelemetryEntry entry = default;
+            entry.Frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            entry.Resolution = (ushort)math.clamp(resolution, 0, ushort.MaxValue);
+            entry.ActiveWakeSourcesCount = (ushort)math.clamp(activeWakeCount, 0, ushort.MaxValue);
+            entry.NonZeroCellsCount = (uint)math.max(0, nonZeroCells);
+            entry.FieldCenterWS = fieldCenter;
+            entry.CellSize = cellSize;
+            entry.MaxMagnitude = maxMagnitude;
+            entry.GlobalQualityWeight = qualityWeight;
+            entry.UpdateIntervalSeconds = updateInterval;
+            entry.SystemStress01 = HomeostasisBrain.SystemHealthIndex01;
+            entry.Flags = flags;
+            entry.StateHash = stateHash;
+            entry.DataVaultGeneration = _floraSwayFieldHandle.GenerationID;
+            entry.AupShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            entry.CpuMicroseconds = _floraSwayFieldLastCpuMicroseconds;
+            blackBox[cursor] = entry;
+
+            cursor++;
+            if (cursor >= blackBox.Length)
+                cursor = 0;
+            _floraSwayFieldBlackBoxCursor = cursor;
+
+            if ((flags & (FloraSwayFieldInvalidInputFlag | FloraSwayFieldNaNFlag | FloraSwayFieldUploadStallFlag)) != 0u)
+                DumpFloraSwayFieldBlackBoxOnce();
+        }
+
+        private void DumpFloraSwayFieldBlackBoxOnce()
+        {
+            if (_floraSwayFieldBlackBoxDumped ||
+                !TryResolveFloraSwayFieldBlackBox(out NativeArray<FloraSwayFieldTelemetryEntry> blackBox) ||
+                !blackBox.IsCreated)
+                return;
+
+            _floraSwayFieldBlackBoxDumped = true;
+            try
+            {
+                string root = Directory.GetCurrentDirectory();
+                if (!string.Equals(Path.GetFileName(root), "Hecton8", StringComparison.OrdinalIgnoreCase))
+                    root = Path.Combine(root, "Hecton8");
+
+                string directory = Path.Combine(root, "Docs", "AgentLogs");
+                Directory.CreateDirectory(directory);
+                string path = Path.Combine(directory, "Dump_FLORA_SWAY_DIRECTOR.bin");
+                using BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read));
+                writer.Write(FloraSwayFieldSourceHash);
+                writer.Write(blackBox.Length);
+                writer.Write(_floraSwayFieldBlackBoxCursor);
+                for (int i = 0; i < blackBox.Length; i++)
+                {
+                    FloraSwayFieldTelemetryEntry entry = blackBox[i];
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.Resolution);
+                    writer.Write(entry.ActiveWakeSourcesCount);
+                    writer.Write(entry.NonZeroCellsCount);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.FieldCenterWS.x);
+                    writer.Write(entry.FieldCenterWS.y);
+                    writer.Write(entry.FieldCenterWS.z);
+                    writer.Write(entry.CellSize);
+                    writer.Write(entry.MaxMagnitude);
+                    writer.Write(entry.GlobalQualityWeight);
+                    writer.Write(entry.UpdateIntervalSeconds);
+                    writer.Write(entry.SystemStress01);
+                    writer.Write(entry.StateHash);
+                    writer.Write(entry.DataVaultGeneration);
+                    writer.Write(entry.AupShiftSequence);
+                    writer.Write(entry.CpuMicroseconds);
                 }
             }
             catch (IOException)
@@ -5686,6 +6982,13 @@ namespace Hecton8.World
                 PublishFlowFieldGlobals();
             }
 
+            if (_floraSwayFieldResolution > 0 || _floraSwayFieldCellSize > 0f || _floraSwayFieldActive)
+            {
+                _floraSwayFieldCenterWS += runtimeOffset;
+                _lastUploadedFloraSwayFieldCenterWS += runtimeOffset;
+                PublishFloraSwayFieldGlobals(forceUpload: true);
+            }
+
             if (_wakeTrailWorldRect.z > 0f && _wakeTrailWorldRect.w > 0f)
             {
                 _wakeTrailCenterXZ += new Vector2(runtimeOffset.x, runtimeOffset.z);
@@ -5917,6 +7220,136 @@ namespace Hecton8.World
             return wakeBlackBox.IsCreated;
         }
 
+        private bool EnsureFloraSwayFieldResources()
+        {
+            if (!_floraSwayFieldHandle.IsCreated || !_floraSwayFieldMetaHandle.IsCreated || !_floraSwayFieldBlackBoxHandle.IsCreated)
+            {
+                if (!ResolveFloraSwayFieldVaultBuffer(clearExisting: false))
+                    return false;
+            }
+
+            return TryResolveFloraSwayFieldBuffers(out _, out _) &&
+                   EnsureFloraSwayFieldGraphicsBuffers();
+        }
+
+        private bool ResolveFloraSwayFieldVaultBuffer(bool clearExisting)
+        {
+            return ResolveFloraSwayFieldVaultBuffer(GlobalRegistry.DataVault, clearExisting);
+        }
+
+        private bool ResolveFloraSwayFieldVaultBuffer(IDataVault dataVault, bool clearExisting)
+        {
+            if (dataVault == null)
+            {
+                _floraSwayFieldHandle = default;
+                _floraSwayFieldMetaHandle = default;
+                _floraSwayFieldBlackBoxHandle = default;
+                _floraStiffnessRulesHandle = default;
+                _floraStiffnessCsvScratchHandle = default;
+                return false;
+            }
+
+            if (_wakeDataVault == null)
+                _wakeDataVault = dataVault;
+
+            NativeArrayOptions options = clearExisting
+                ? NativeArrayOptions.ClearMemory
+                : NativeArrayOptions.UninitializedMemory;
+            _floraSwayFieldHandle = dataVault.GetBufferHandle<FloraDisplacementDTO>(
+                FloraSwayDisplacementFieldBufferId,
+                FloraSwayFieldMaxNodeCount,
+                SystemID.Vfx,
+                options);
+            _floraSwayFieldMetaHandle = dataVault.GetBufferHandle<float4>(
+                FloraSwayFieldMetaBufferId,
+                FloraSwayFieldMetaVectorCount,
+                SystemID.Vfx,
+                options);
+            _floraSwayFieldBlackBoxHandle = dataVault.GetBufferHandle<FloraSwayFieldTelemetryEntry>(
+                FloraSwayFieldBlackBoxBufferId,
+                FloraSwayFieldBlackBoxCapacity,
+                SystemID.Vfx,
+                options);
+            _floraStiffnessRulesHandle = dataVault.GetBufferHandle<FloraStiffnessRuleDTO>(
+                FloraStiffnessRulesBufferId,
+                FloraStiffnessRuleCapacity,
+                SystemID.Vfx,
+                options);
+            _floraStiffnessCsvScratchHandle = dataVault.GetBufferHandle<byte>(
+                FloraStiffnessCsvScratchBufferId,
+                FloraCsvScratchBytes,
+                SystemID.Vfx,
+                options);
+
+            if (!TryResolveFloraSwayFieldBuffers(out NativeArray<FloraDisplacementDTO> fieldValues, out NativeArray<float4> fieldMeta) ||
+                !TryResolveFloraSwayFieldBlackBox(out NativeArray<FloraSwayFieldTelemetryEntry> blackBox))
+            {
+                return false;
+            }
+
+            if (clearExisting)
+            {
+                for (int i = 0; i < fieldValues.Length; i++)
+                    fieldValues[i] = default;
+                for (int i = 0; i < fieldMeta.Length; i++)
+                    fieldMeta[i] = default;
+                for (int i = 0; i < blackBox.Length; i++)
+                    blackBox[i] = default;
+                _floraSwayFieldBlackBoxCursor = 0;
+                _floraSwayFieldBlackBoxDumped = false;
+            }
+
+            return true;
+        }
+
+        private bool TryResolveFloraSwayFieldBuffers(out NativeArray<FloraDisplacementDTO> fieldValues, out NativeArray<float4> fieldMeta)
+        {
+            fieldValues = default;
+            fieldMeta = default;
+            IDataVault dataVault = _wakeDataVault ?? GlobalRegistry.DataVault;
+            if (dataVault == null ||
+                !_floraSwayFieldHandle.IsCreated ||
+                !_floraSwayFieldMetaHandle.IsCreated)
+            {
+                return false;
+            }
+
+            fieldValues = _floraSwayFieldHandle.Resolve(dataVault);
+            fieldMeta = _floraSwayFieldMetaHandle.Resolve(dataVault);
+            return fieldValues.IsCreated && fieldMeta.IsCreated;
+        }
+
+        private bool TryResolveFloraSwayFieldBlackBox(out NativeArray<FloraSwayFieldTelemetryEntry> blackBox)
+        {
+            blackBox = default;
+            IDataVault dataVault = _wakeDataVault ?? GlobalRegistry.DataVault;
+            if (dataVault == null || !_floraSwayFieldBlackBoxHandle.IsCreated)
+                return false;
+
+            blackBox = _floraSwayFieldBlackBoxHandle.Resolve(dataVault);
+            return blackBox.IsCreated;
+        }
+
+        private bool EnsureFloraSwayFieldGraphicsBuffers()
+        {
+            if (_floraSwayFieldBufferA == null || _floraSwayFieldBufferA.count != FloraSwayFieldMaxNodeCount)
+            {
+                ReleaseGraphicsBuffer(ref _floraSwayFieldBufferA);
+                _floraSwayFieldBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FloraDisplacementDTO>(FloraSwayFieldMaxNodeCount); // COLD ALLOC: GraphicsBuffer[262144 x 16B] - Vault-backed 3D flora displacement field upload A - owner: FloraInteractionManager
+            }
+
+            if (_floraSwayFieldBufferB == null || _floraSwayFieldBufferB.count != FloraSwayFieldMaxNodeCount)
+            {
+                ReleaseGraphicsBuffer(ref _floraSwayFieldBufferB);
+                _floraSwayFieldBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FloraDisplacementDTO>(FloraSwayFieldMaxNodeCount); // COLD ALLOC: GraphicsBuffer[262144 x 16B] - Vault-backed 3D flora displacement field upload B - owner: FloraInteractionManager
+            }
+
+            if (_floraSwayFieldReadBuffer == null)
+                _floraSwayFieldReadBuffer = _floraSwayFieldBufferA;
+
+            return _floraSwayFieldBufferA != null && _floraSwayFieldBufferB != null;
+        }
+
         private bool EnsureWakeTrailStampCommandBuffer(bool clearExisting)
         {
             IDataVault dataVault = _wakeDataVault ?? GlobalRegistry.DataVault;
@@ -5984,6 +7417,8 @@ namespace Hecton8.World
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 ResolveProceduralWakeVaultBuffer(currentService as IDataVault, clearExisting: false);
+                ResolveFloraSwayFieldVaultBuffer(currentService as IDataVault, clearExisting: false);
+                PublishFloraSwayFieldGlobals(forceUpload: true);
                 return;
             }
 
@@ -6001,6 +7436,13 @@ namespace Hecton8.World
 
             _flowFieldBuffer.Release();
             _flowFieldBuffer = null;
+        }
+
+        private void ReleaseFloraSwayFieldBuffers()
+        {
+            ReleaseGraphicsBuffer(ref _floraSwayFieldBufferA);
+            ReleaseGraphicsBuffer(ref _floraSwayFieldBufferB);
+            _floraSwayFieldReadBuffer = null;
         }
 
         private void TryRegister()
@@ -6071,6 +7513,36 @@ namespace Hecton8.World
             float minAxis = Mathf.Min(ax, Mathf.Min(ay, az));
             float midAxis = ax + ay + az - maxAxis - minAxis;
             return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
+        }
+
+        private static float EstimateLength3D(float3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxAxis = math.max(ax, math.max(ay, az));
+            float minAxis = math.min(ax, math.min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(float.IsFinite(value) ? value : 0f);
+            return t * t * (3f - 2f * t);
+        }
+
+        private static float3 ResolveSafeDirectionOrFallback(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            if (math.isfinite(lengthSq) && lengthSq > 0.000001f)
+                return value * math.rsqrt(lengthSq);
+
+            float fallbackLengthSq = math.lengthsq(fallback);
+            if (math.isfinite(fallbackLengthSq) && fallbackLengthSq > 0.000001f)
+                return fallback * math.rsqrt(fallbackLengthSq);
+
+            return float3.zero;
         }
 
         private static float ClampFinite(float value, float fallback, float min, float max)

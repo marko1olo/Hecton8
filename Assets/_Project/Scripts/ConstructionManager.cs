@@ -34,6 +34,7 @@ using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -64,13 +65,11 @@ namespace Hecton8.Construction
         private const byte ModuleDeconstructFlagDfsSkippedLowTier = 1 << 1;
         private const byte DeconstructionDebrisKindDisintegrate = 10;
         private const int DeconstructionDfsResultLength = 4;
+        private const int DeconstructionRaycastCapacity = 1;
         private const int DeconstructionBlackBoxCapacity = 300;
         private const string DeconstructionDumpRelativePath = "Docs/AgentLogs/Dump_BASE_DECONSTRUCTION_SYS.bin";
         private const string NativeMemoryOwner = nameof(ConstructionManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
-
-        // COLD ALLOC: RaycastHit[4] - synchronous deconstruction ownership confirmation buffer - owner: ConstructionManager
-        private static readonly RaycastHit[] s_deconstructionRaycastHits = new RaycastHit[4];
 
         [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct HabitatDeconstructionTelemetryEntry
@@ -153,7 +152,13 @@ namespace Hecton8.Construction
         private NativeParallelHashSet<long> _deconstructionDfsVisited;
         private NativeArray<int> _deconstructionDfsResult;
         private NativeArray<HabitatDeconstructionTelemetryEntry> _deconstructionBlackBox;
+        private NativeArray<RaycastCommand> _deconstructionRaycastCommands;
+        private NativeArray<RaycastHit> _deconstructionRaycastHits;
+        private DeconstructRequestSignal _pendingDeconstructionRequest;
+        private BaseModule _pendingDeconstructionModule;
+        private JobHandle _deconstructionRaycastHandle;
         private int _deconstructionBlackBoxCursor;
+        private bool _deconstructionRaycastScheduled;
 
         // CONSTANTS - DEFAULT MODULE STATE
 
@@ -391,6 +396,7 @@ namespace Hecton8.Construction
             if (_habitatGraphDirty)
                 RefreshHabitatGraph();
 
+            FinalizeDeferredDeconstructionRaycast();
             DrainDeconstructionRequests();
         }
 
@@ -533,8 +539,15 @@ namespace Hecton8.Construction
 
         private void DrainDeconstructionRequests()
         {
+            if (_deconstructionRaycastScheduled)
+                return;
+
             while (GlobalSignals.TryDequeueDeconstructRequest(out DeconstructRequestSignal request))
+            {
                 ProcessDeconstructionRequest(in request);
+                if (_deconstructionRaycastScheduled)
+                    break;
+            }
         }
 
         private void ProcessDeconstructionRequest(in DeconstructRequestSignal request)
@@ -553,12 +566,18 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (!ValidateRayOwnership(in request, module))
+            if (request.MaxDistance > 0f)
             {
-                RejectDeconstruction(in request, DeconstructReasonRayMismatch, 0, 0, 0);
+                if (!TryScheduleDeferredDeconstructionRaycast(in request, module))
+                    RejectDeconstruction(in request, DeconstructReasonRayMismatch, 0, 0, 0);
                 return;
             }
 
+            ProcessDeconstructionRequestAfterRayValidated(in request, module);
+        }
+
+        private void ProcessDeconstructionRequestAfterRayValidated(in DeconstructRequestSignal request, BaseModule module)
+        {
             ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null || !pool.CanDespawnWithoutDestroy(module.gameObject))
             {
@@ -819,46 +838,105 @@ namespace Hecton8.Construction
             return distanceSq <= 9f;
         }
 
-        private static bool ValidateRayOwnership(in DeconstructRequestSignal request, BaseModule module)
+        private bool TryScheduleDeferredDeconstructionRaycast(in DeconstructRequestSignal request, BaseModule module)
         {
-            if (module == null)
+            if (module == null || _deconstructionRaycastScheduled)
                 return false;
 
-            if (request.MaxDistance <= 0f)
-                return true;
+            if (!_deconstructionRaycastCommands.IsCreated || !_deconstructionRaycastHits.IsCreated)
+                EnsureDeconstructionNativeBuffers(Mathf.Max(initialCapacity, ModuleCount));
 
+            if (!_deconstructionRaycastCommands.IsCreated ||
+                !_deconstructionRaycastHits.IsCreated ||
+                !TryCreateDeferredDeconstructionRaycastCommand(in request, out RaycastCommand command))
+            {
+                return false;
+            }
+
+            _deconstructionRaycastCommands[0] = command;
+            _deconstructionRaycastHits[0] = default;
+            _pendingDeconstructionRequest = request;
+            _pendingDeconstructionModule = module;
+            _deconstructionRaycastHandle = RaycastCommand.ScheduleBatch(
+                _deconstructionRaycastCommands,
+                _deconstructionRaycastHits,
+                DeconstructionRaycastCapacity,
+                default);
+            _deconstructionRaycastScheduled = true;
+            return true;
+        }
+
+        private static bool TryCreateDeferredDeconstructionRaycastCommand(
+            in DeconstructRequestSignal request,
+            out RaycastCommand command)
+        {
+            command = default;
             float3 direction = request.RayDirection;
             float directionLengthSq = math.lengthsq(direction);
             if (!math.all(math.isfinite(direction)) || directionLengthSq <= 0.0001f)
                 return false;
 
-            direction *= math.rsqrt(directionLengthSq);
+            direction *= math.rsqrt(math.max(directionLengthSq, 0.0001f));
             float3 origin3 = request.RayOriginAup.ToRuntimeFloat3();
             if (!math.all(math.isfinite(origin3)))
                 return false;
 
-            Vector3 origin = new Vector3(origin3.x, origin3.y, origin3.z);
-            Vector3 rayDirection = new Vector3(direction.x, direction.y, direction.z);
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                origin,
-                rayDirection,
-                s_deconstructionRaycastHits,
-                request.MaxDistance,
-                HectonLayerMasks.ConstructionSurfaceLayerMask,
-                QueryTriggerInteraction.Ignore);
-
-            for (int i = 0; i < hitCount; i++)
+            command = new RaycastCommand
             {
-                Collider hitCollider = s_deconstructionRaycastHits[i].collider;
-                if (hitCollider == null)
-                    continue;
+                from = new Vector3(origin3.x, origin3.y, origin3.z),
+                direction = new Vector3(direction.x, direction.y, direction.z),
+                distance = math.max(0.001f, request.MaxDistance),
+                queryParameters = new QueryParameters
+                {
+                    layerMask = HectonLayerMasks.ConstructionSurfaceLayerMask,
+                    hitTriggers = QueryTriggerInteraction.Ignore,
+                    hitBackfaces = false,
+                    hitMultipleFaces = false
+                }
+            };
+            return true;
+        }
 
-                BaseModule hitModule = hitCollider.GetComponentInParent<BaseModule>();
-                if (ReferenceEquals(hitModule, module))
-                    return true;
+        private void FinalizeDeferredDeconstructionRaycast()
+        {
+            if (!_deconstructionRaycastScheduled ||
+                !DispatcherJobSwap.TryFinalizeCompleted(ref _deconstructionRaycastHandle))
+            {
+                return;
             }
 
-            return false;
+            _deconstructionRaycastScheduled = false;
+            DeconstructRequestSignal request = _pendingDeconstructionRequest;
+            BaseModule module = _pendingDeconstructionModule;
+            _pendingDeconstructionRequest = default;
+            _pendingDeconstructionModule = null;
+
+            if (module == null || !ReferenceEquals(module, ResolveBaseModuleByEntityId(request.TargetEntityId)))
+            {
+                RejectDeconstruction(in request, DeconstructReasonNoTarget, 0, 0, 0);
+                return;
+            }
+
+            if (!IsDeferredDeconstructionRaycastOwnedBy(module))
+            {
+                RejectDeconstruction(in request, DeconstructReasonRayMismatch, 0, 0, 0);
+                return;
+            }
+
+            ProcessDeconstructionRequestAfterRayValidated(in request, module);
+        }
+
+        private bool IsDeferredDeconstructionRaycastOwnedBy(BaseModule module)
+        {
+            if (!_deconstructionRaycastHits.IsCreated || _deconstructionRaycastHits.Length == 0 || module == null)
+                return false;
+
+            Collider hitCollider = _deconstructionRaycastHits[0].collider;
+            if (hitCollider == null)
+                return false;
+
+            BaseModule hitModule = hitCollider.GetComponentInParent<BaseModule>();
+            return ReferenceEquals(hitModule, module);
         }
 
         private static bool ShouldSkipDeconstructionDfsForTier()
@@ -1070,10 +1148,30 @@ namespace Hecton8.Construction
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HabitatDeconstructionTelemetryEntry>[300] - deconstruction black box - owner: ConstructionManager
                 NativeMemorySentinel.RegisterNativeArray(_deconstructionBlackBox, NativeMemoryOwner, nameof(_deconstructionBlackBox), NativeMemoryLifetime);
             }
+
+            if (!_deconstructionRaycastCommands.IsCreated)
+            {
+                _deconstructionRaycastCommands = new NativeArray<RaycastCommand>(
+                    DeconstructionRaycastCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] - deferred deconstruction ownership query - owner: ConstructionManager
+                NativeMemorySentinel.RegisterNativeArray(_deconstructionRaycastCommands, NativeMemoryOwner, nameof(_deconstructionRaycastCommands), NativeMemoryLifetime);
+            }
+
+            if (!_deconstructionRaycastHits.IsCreated)
+            {
+                _deconstructionRaycastHits = new NativeArray<RaycastHit>(
+                    DeconstructionRaycastCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1] - deferred deconstruction ownership result - owner: ConstructionManager
+                NativeMemorySentinel.RegisterNativeArray(_deconstructionRaycastHits, NativeMemoryOwner, nameof(_deconstructionRaycastHits), NativeMemoryLifetime);
+            }
         }
 
         private void DisposeDeconstructionNativeBuffers()
         {
+            CompleteDeferredDeconstructionRaycastForTeardown();
+
             if (_deconstructionDfsStack.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_deconstructionDfsStack));
@@ -1102,7 +1200,34 @@ namespace Hecton8.Construction
                 _deconstructionBlackBox = default;
             }
 
+            if (_deconstructionRaycastCommands.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_deconstructionRaycastCommands);
+                _deconstructionRaycastCommands.Dispose();
+                _deconstructionRaycastCommands = default;
+            }
+
+            if (_deconstructionRaycastHits.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_deconstructionRaycastHits);
+                _deconstructionRaycastHits.Dispose();
+                _deconstructionRaycastHits = default;
+            }
+
             _deconstructionBlackBoxCursor = 0;
+            _pendingDeconstructionRequest = default;
+            _pendingDeconstructionModule = null;
+        }
+
+        private void CompleteDeferredDeconstructionRaycastForTeardown()
+        {
+            if (!_deconstructionRaycastScheduled)
+                return;
+
+            _deconstructionRaycastHandle.Complete();
+            _deconstructionRaycastScheduled = false;
+            _pendingDeconstructionRequest = default;
+            _pendingDeconstructionModule = null;
         }
 
         private int ReadDfsVisitedCount()

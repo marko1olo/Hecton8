@@ -10,7 +10,9 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using Hecton8.Physics.CCD;
+using Hecton8.Core.Memory;
 using Hecton8.World;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Hecton8.Gameplay
 {
@@ -21,30 +23,44 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Transport/Vehicle Motor")]
     public sealed class VehicleMotor : MonoBehaviour, IOriginShiftListener, ILateFrameTickable, IPostFixedTickable
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = SubmarineStateSizeBytes)]
         internal struct SubmarineState
         {
-            public float3 RuntimePosition;
-            public quaternion RuntimeRotation;
-            public float3 LinearVelocity;
-            public float3 AngularVelocityRadians;
-            public AbsoluteUniversePositionBlit128 Aup;
+            [FieldOffset(0)] public AbsoluteUniversePositionBlit128 Aup;
+            [FieldOffset(48)] public quaternion RuntimeRotation;
+            [FieldOffset(64)] public float3 RuntimePosition;
+            [FieldOffset(76)] public float3 LinearVelocity;
+            [FieldOffset(88)] public float3 AngularVelocityRadians;
+            [FieldOffset(100)] private uint _pad0;
+            [FieldOffset(104)] private ulong _pad1;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = ScheduledSweepStateSizeBytes)]
         private struct ScheduledSweepState
         {
-            public Vector3 StartPosition;
-            public Vector3 Direction;
-            public float Distance;
-            public float SkinWidth;
-            public int SelfColliderInstanceId;
+            [FieldOffset(0)] public float3 StartPosition;
+            [FieldOffset(12)] public float3 Direction;
+            [FieldOffset(24)] public float Distance;
+            [FieldOffset(28)] public float SkinWidth;
+            [FieldOffset(32)] public int SelfColliderInstanceId;
+            [FieldOffset(36)] private uint _pad0;
+            [FieldOffset(40)] private ulong _pad1;
         }
 
         private const float MinVectorMagnitudeSq = 0.000001f;
         private const int ScheduledSweepCommandCount = 1;
         private const int ScheduledSweepMaxHits = 8;
         private const int MaxRegisteredMotors = 32;
+        private const int SubmarineStateSizeBytes = 112;
+        private const int ScheduledSweepStateSizeBytes = 48;
+        private const int SubmarineStateAupOffset = 0;
+        private const int SubmarineStateRuntimeRotationOffset = 48;
+        private const int SubmarineStateRuntimePositionOffset = 64;
+        private const int SubmarineStateLinearVelocityOffset = 76;
+        private const int SubmarineStateAngularVelocityOffset = 88;
+        private const int SubmarineStatePad0Offset = 100;
+        private const int SubmarineStatePad1Offset = 104;
+        private const float VisualDeadReckonMaxSeconds = 0.06666667f;
         private const float Pi = 3.14159265359f;
         private const float TwoPi = 6.28318530718f;
         private const float HalfPi = 1.57079632679f;
@@ -61,8 +77,6 @@ namespace Hecton8.Gameplay
         private const float WakeEmitterOffsetMeters = 4f;
         private const float WakeSiltDecalCooldownSeconds = 0.24f;
         private const uint VehicleWakeSourceFlag = 2u;
-        private const string NativeMemoryOwner = nameof(VehicleMotor);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const float MinEntanglementTetherMeters = 1.25f;
         private const float EntanglementFacingSharpness = 8f;
         private const float KelpPushbackProbeRadiusMeters = 6f;
@@ -106,14 +120,16 @@ namespace Hecton8.Gameplay
         private CapsuleCollider _capsule;
         private float _brineViscosityQueryRadiusMeters = 0.5f;
         private float _brineViscosityVerticalHalfExtentMeters = 0.5f;
-        private NativeArray<SubmarineState> _submarineState;
-        private NativeArray<CapsulecastCommand> _scheduledSweepCommands;
-        private NativeArray<RaycastHit> _scheduledSweepResults;
+        private IDataVault _dataVault;
+        private VaultBufferHandle<SubmarineState> _submarineStateHandle;
+        private VaultBufferHandle<CapsulecastCommand> _scheduledSweepCommandsHandle;
+        private VaultBufferHandle<RaycastHit> _scheduledSweepResultsHandle;
         private JobHandle _scheduledSweepHandle;
         private ScheduledSweepState _scheduledSweepState;
         private bool _scheduledSweepPending;
         private bool _scheduledSweepReady;
         private bool _scheduledSweepDiscardAfterCompletion;
+        private bool _scheduledSweepBuffersLocked;
         private bool _safeTeleportCollisionModeCaptured;
         private Vector3 _linearVelocity;
         private Vector3 _localAngularVelocityDegrees;
@@ -127,6 +143,7 @@ namespace Hecton8.Gameplay
         private bool _registeredOriginShiftListener;
         private bool _registeredLateFrameTick;
         private bool _registeredPostFixedTick;
+        private int _motorRegistryIndex = -1;
         private bool _safeTeleportCollisionGuardActive;
         private bool _visualTeleportPending;
         private CollisionDetectionMode _collisionDetectionModeBeforeSafeTeleportGuard;
@@ -150,7 +167,15 @@ namespace Hecton8.Gameplay
         /// <summary>Current presentation velocity. Inertial history buffers are intentionally purged.</summary>
         public Vector3 PerceivedLinearVelocity => HectonPlayerMotor.SafeVelocity(_linearVelocity);
 
-        internal NativeArray<SubmarineState>.ReadOnly SubmarineStateNative => _submarineState.AsReadOnly();
+        internal NativeArray<SubmarineState>.ReadOnly SubmarineStateNative
+        {
+            get
+            {
+                return TryResolveSubmarineState(out NativeArray<SubmarineState> state)
+                    ? state.AsReadOnly()
+                    : default;
+            }
+        }
 
         /// <summary>True while a deferred capsule sweep is waiting for consumption.</summary>
         public bool HasPendingSweep => _scheduledSweepPending || _scheduledSweepReady;
@@ -200,8 +225,9 @@ namespace Hecton8.Gameplay
             _body = body;
             _capsule = capsule;
             CacheBrineViscosityQueryShape();
-            EnsureSubmarineState();
             RegisterMotor();
+            ResolveDataVault();
+            EnsureSubmarineState();
             TryRegisterOriginShiftListener();
             ResetRuntimeState();
             if (headlessVisualRoot != null)
@@ -212,6 +238,7 @@ namespace Hecton8.Gameplay
         {
             CacheBrineViscosityQueryShape();
             RegisterMotor();
+            ResolveDataVault();
             TryRegisterOriginShiftListener();
             if (headlessVisualRoot != null)
                 TryRegisterLateFrameTickable();
@@ -635,26 +662,35 @@ namespace Hecton8.Gameplay
             if (!float.IsFinite(displacementSqr) || displacementSqr <= MinVectorMagnitudeSq)
                 return false;
 
-            EnsureScheduledSweepState();
+            if (!TryResolveScheduledSweepBuffers(
+                    out NativeArray<CapsulecastCommand> scheduledSweepCommands,
+                    out NativeArray<RaycastHit> scheduledSweepResults))
+            {
+                return false;
+            }
+
             ResolveCapsulePoints(body, capsule, out Vector3 capsulePoint1, out Vector3 capsulePoint2, out float capsuleRadius);
             float inverseDistance = math.rsqrt(displacementSqr);
             float distance = displacementSqr * inverseDistance;
             if (!float.IsFinite(distance) || distance <= 0f)
+            {
+                UnlockScheduledSweepBuffers();
                 return false;
+            }
 
             float safeSkinWidth = float.IsFinite(skinWidth) ? math.max(0f, skinWidth) : 0f;
             Vector3 direction = displacement * inverseDistance;
 
             _scheduledSweepState = new ScheduledSweepState
             {
-                StartPosition = body.position,
-                Direction = direction,
+                StartPosition = ToFloat3(body.position),
+                Direction = ToFloat3(direction),
                 Distance = distance,
                 SkinWidth = safeSkinWidth,
                 SelfColliderInstanceId = selfColliderInstanceId
             };
 
-            _scheduledSweepCommands[0] = new CapsulecastCommand(
+            scheduledSweepCommands[0] = new CapsulecastCommand(
                 capsulePoint1,
                 capsulePoint2,
                 math.max(0.01f, capsuleRadius),
@@ -662,16 +698,17 @@ namespace Hecton8.Gameplay
                 new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore),
                 distance + safeSkinWidth);
             for (int i = 0; i < ScheduledSweepMaxHits; i++)
-                _scheduledSweepResults[i] = default;
+                scheduledSweepResults[i] = default;
 
             using (_scheduleProfilerMarker.Auto())
             {
                 _scheduledSweepHandle = CapsulecastCommand.ScheduleBatch(
-                    _scheduledSweepCommands,
-                    _scheduledSweepResults,
+                    scheduledSweepCommands,
+                    scheduledSweepResults,
                     ScheduledSweepCommandCount,
                     ScheduledSweepMaxHits,
                     default);
+                H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, _scheduledSweepHandle);
                 _scheduledSweepPending = true;
                 _scheduledSweepReady = false;
                 TryRegisterPostFixedTickable();
@@ -689,6 +726,12 @@ namespace Hecton8.Gameplay
             resolvedPosition = body != null ? body.position : Vector3.zero;
             if (!_scheduledSweepReady)
                 return false;
+            if (!TryResolveScheduledSweepResults(out NativeArray<RaycastHit> sweepResults))
+            {
+                _scheduledSweepReady = false;
+                _scheduledSweepState = default;
+                return false;
+            }
 
             using (_consumeProfilerMarker.Auto())
             {
@@ -699,7 +742,7 @@ namespace Hecton8.Gameplay
                 float maxHitDistance = _scheduledSweepState.Distance + _scheduledSweepState.SkinWidth + MinVectorMagnitudeSq;
                 for (int i = 0; i < ScheduledSweepMaxHits; i++)
                 {
-                    RaycastHit hit = _scheduledSweepResults[i];
+                    RaycastHit hit = sweepResults[i];
                     int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
                     if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
                         continue;
@@ -718,25 +761,26 @@ namespace Hecton8.Gameplay
                 if (nearestIndex < 0)
                 {
                     ClearBlockingImpactCache();
-                    resolvedPosition = _scheduledSweepState.StartPosition + (_scheduledSweepState.Direction * _scheduledSweepState.Distance);
+                    resolvedPosition = ToVector3(_scheduledSweepState.StartPosition + (_scheduledSweepState.Direction * _scheduledSweepState.Distance));
                     MovePosition(resolvedPosition);
                     _scheduledSweepState = default;
                     return true;
                 }
 
                 wasBlocked = true;
-                blockingHit = _scheduledSweepResults[nearestIndex];
+                blockingHit = sweepResults[nearestIndex];
                 Vector3 safeNormal = ResolveSafeNormal(blockingHit.normal, Vector3.up);
                 bool lowTierStop = KinematicCcdMath.IsLowTier(GlobalRegistry.ScalabilityTierProfileByte);
                 bool cornerHalt = !lowTierStop &&
-                                  HasScheduledSweepCornerHit(nearestIndex, safeNormal, blockingHit.distance);
+                                  HasScheduledSweepCornerHit(sweepResults, nearestIndex, safeNormal, blockingHit.distance);
                 float safeDistance = KinematicCcdMath.ResolveRollbackDistance(
                     blockingHit.distance,
                     _scheduledSweepState.Distance,
                     _scheduledSweepState.SkinWidth);
-                Vector3 resolvedDisplacement = _scheduledSweepState.Direction * safeDistance;
+                Vector3 sweepDirection = ToVector3(_scheduledSweepState.Direction);
+                Vector3 resolvedDisplacement = sweepDirection * safeDistance;
                 Vector3 projectedDisplacement = ProjectOnUnitPlane(
-                    _scheduledSweepState.Direction * _scheduledSweepState.Distance,
+                    sweepDirection * _scheduledSweepState.Distance,
                     safeNormal);
                 if (!lowTierStop && !cornerHalt)
                 {
@@ -751,7 +795,7 @@ namespace Hecton8.Gameplay
                     }
                 }
 
-                resolvedPosition = _scheduledSweepState.StartPosition + resolvedDisplacement;
+                resolvedPosition = ToVector3(_scheduledSweepState.StartPosition) + resolvedDisplacement;
                 MovePosition(resolvedPosition);
                 CacheGroundContact(safeNormal);
                 Vector3 previousVelocity = _linearVelocity;
@@ -1013,10 +1057,14 @@ namespace Hecton8.Gameplay
         internal bool TryResolveSubmarineAup(out AbsoluteUniversePosition submarineAup)
         {
             submarineAup = default;
-            if (!_submarineState.IsCreated || _submarineState.Length <= 0)
+            if (!TryResolveSubmarineState(out NativeArray<SubmarineState> submarineState))
                 return false;
 
-            SubmarineState state = _submarineState[0];
+            int stateIndex = ResolveMotorVaultIndex();
+            if ((uint)stateIndex >= (uint)submarineState.Length)
+                return false;
+
+            SubmarineState state = submarineState[stateIndex];
             if (!math.all(math.isfinite(state.Aup.Local)))
                 return false;
 
@@ -1270,6 +1318,7 @@ namespace Hecton8.Gameplay
 
                 _registeredMotors[i] = this;
                 _motorRegistryRegistered = true;
+                _motorRegistryIndex = i;
                 return;
             }
         }
@@ -1289,6 +1338,7 @@ namespace Hecton8.Gameplay
             }
 
             _motorRegistryRegistered = false;
+            _motorRegistryIndex = -1;
         }
 
         private void TryRegisterOriginShiftListener()
@@ -1385,7 +1435,7 @@ namespace Hecton8.Gameplay
 
         private void ApplyHeadlessVisualInterpolation()
         {
-            if (headlessVisualRoot == null || !_submarineState.IsCreated || _submarineState.Length <= 0)
+            if (headlessVisualRoot == null || !TryResolveSubmarineState(out NativeArray<SubmarineState> submarineState))
                 return;
 
             if (_body != null && ReferenceEquals(headlessVisualRoot, _body.transform))
@@ -1394,7 +1444,11 @@ namespace Hecton8.Gameplay
             if (ReferenceEquals(headlessVisualRoot, transform))
                 return;
 
-            SubmarineState state = _submarineState[0];
+            int stateIndex = ResolveMotorVaultIndex();
+            if ((uint)stateIndex >= (uint)submarineState.Length)
+                return;
+
+            SubmarineState state = submarineState[stateIndex];
             float3 targetPosition = state.RuntimePosition;
             quaternion targetRotation = state.RuntimeRotation;
             if (!math.all(math.isfinite(targetPosition)) || !math.all(math.isfinite(targetRotation.value)))
@@ -1420,8 +1474,17 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(currentPosition)) || !math.all(math.isfinite(currentRotation.value)))
                 return;
 
-            float alpha = math.saturate(SystemDispatcher.CurrentFrameDeltaTime * math.max(0.01f, headlessVisualInterpolationSharpness));
-            float3 nextPosition = math.lerp(currentPosition, targetPosition, alpha);
+            float frameDelta = math.clamp(SystemDispatcher.CurrentFrameDeltaTime, 0f, VisualDeadReckonMaxSeconds);
+            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            float interpolationSharpness = math.lerp(
+                math.max(0.01f, headlessVisualInterpolationSharpness * 0.5f),
+                math.max(0.01f, headlessVisualInterpolationSharpness),
+                quality);
+            float alpha = math.saturate(frameDelta * interpolationSharpness);
+            float3 targetVelocity = math.all(math.isfinite(state.LinearVelocity)) ? state.LinearVelocity : float3.zero;
+            float3 targetTangent = targetVelocity * frameDelta;
+            float3 currentTangent = math.lerp(float3.zero, targetTangent, quality);
+            float3 nextPosition = CubicHermite(currentPosition, currentTangent, targetPosition, targetTangent, alpha);
             quaternion nextRotation = math.slerp(currentRotation, targetRotation, alpha);
             headlessVisualRoot.SetPositionAndRotation(
                 new Vector3(nextPosition.x, nextPosition.y, nextPosition.z),
@@ -1430,48 +1493,166 @@ namespace Hecton8.Gameplay
 
         private void EnsureSubmarineState()
         {
-            if (_submarineState.IsCreated)
+            if (_submarineStateHandle.IsCreated)
                 return;
 
-            // COLD ALLOC: NativeArray<SubmarineState>[1] - authoritative headless submarine kinematic state lane - owner: VehicleMotor
-            _submarineState = new NativeArray<SubmarineState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _submarineState,
-                NativeMemoryOwner,
-                nameof(_submarineState),
-                NativeMemoryLifetime);
+            if (!ResolveDataVault())
+                return;
+
+            VerifySubmarineStateLayout();
+            _submarineStateHandle = _dataVault.GetBufferHandle<SubmarineState>(
+                BufferID.VehicleMotorSubmarineStates,
+                MaxRegisteredMotors,
+                SystemID.VehiclesPhysics,
+                NativeArrayOptions.ClearMemory);
+            NativeArray<SubmarineState> states = _submarineStateHandle.Resolve(_dataVault);
+            if (states.IsCreated && states.Length >= MaxRegisteredMotors)
+                GenerateEmergencyMockVaultState(states, ResolveMotorVaultIndex());
         }
 
         private void WriteSubmarineState(Vector3 runtimePosition, Quaternion runtimeRotation)
         {
-            EnsureSubmarineState();
+            if (!TryResolveSubmarineState(out NativeArray<SubmarineState> submarineState))
+                return;
+
+            int stateIndex = ResolveMotorVaultIndex();
+            if ((uint)stateIndex >= (uint)submarineState.Length)
+                return;
+
             float3 position3 = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             float4 rotation4 = new float4(runtimeRotation.x, runtimeRotation.y, runtimeRotation.z, runtimeRotation.w);
             if (!math.all(math.isfinite(position3)) || !math.all(math.isfinite(rotation4)))
                 return;
 
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-            _submarineState[0] = new SubmarineState
+            submarineState[stateIndex] = new SubmarineState
             {
+                Aup = aup.ToAlignedBlit(),
                 RuntimePosition = position3,
                 RuntimeRotation = new quaternion(runtimeRotation.x, runtimeRotation.y, runtimeRotation.z, runtimeRotation.w),
                 LinearVelocity = new float3(_linearVelocity.x, _linearVelocity.y, _linearVelocity.z),
                 AngularVelocityRadians = new float3(
                     _localAngularVelocityDegrees.x * DegreesToRadians,
                     _localAngularVelocityDegrees.y * DegreesToRadians,
-                    _localAngularVelocityDegrees.z * DegreesToRadians),
-                Aup = aup.ToAlignedBlit()
+                    _localAngularVelocityDegrees.z * DegreesToRadians)
             };
         }
 
         private void DisposeSubmarineState()
         {
-            if (!_submarineState.IsCreated)
+            if (TryResolveSubmarineState(out NativeArray<SubmarineState> submarineState, ensure: false))
+            {
+                int stateIndex = ResolveMotorVaultIndex();
+                if ((uint)stateIndex < (uint)submarineState.Length)
+                    submarineState[stateIndex] = default;
+            }
+
+            _submarineStateHandle = default;
+        }
+
+        internal ref SubmarineState GetStateAsRef(int index)
+        {
+            if (!ResolveDataVault())
+                FatalMemoryException.ThrowStaleVaultHandle();
+
+            if (!_submarineStateHandle.IsCreated)
+                EnsureSubmarineState();
+
+            return ref _submarineStateHandle.GetElementAsRef(_dataVault, index);
+        }
+
+        private bool TryResolveSubmarineState(out NativeArray<SubmarineState> submarineState, bool ensure = true)
+        {
+            submarineState = default;
+            if (ensure)
+                EnsureSubmarineState();
+            if (_dataVault == null || !_submarineStateHandle.IsCreated)
+                return false;
+
+            submarineState = _submarineStateHandle.Resolve(_dataVault);
+            return submarineState.IsCreated && submarineState.Length >= MaxRegisteredMotors;
+        }
+
+        private int ResolveMotorVaultIndex()
+        {
+            if (_motorRegistryIndex >= 0)
+                return _motorRegistryIndex;
+
+            RegisterMotor();
+            return _motorRegistryIndex >= 0 ? _motorRegistryIndex : 0;
+        }
+
+        private bool ResolveDataVault()
+        {
+            if (_dataVault != null)
+                return true;
+
+            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
+                _dataVault = latest;
+
+            return _dataVault != null;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void VerifySubmarineStateLayout()
+        {
+            if (UnsafeUtility.SizeOf<SubmarineState>() != SubmarineStateSizeBytes ||
+                UnsafeUtility.SizeOf<ScheduledSweepState>() != ScheduledSweepStateSizeBytes ||
+                SubmarineStateAupOffset != 0 ||
+                SubmarineStateRuntimeRotationOffset != 48 ||
+                SubmarineStateRuntimePositionOffset != 64 ||
+                SubmarineStateLinearVelocityOffset != 76 ||
+                SubmarineStateAngularVelocityOffset != 88 ||
+                SubmarineStatePad0Offset != 100 ||
+                SubmarineStatePad1Offset != 104)
+            {
+                Debug.LogError("VehicleMotor vault DTO layout drift detected.");
+            }
+        }
+
+        private static void GenerateEmergencyMockVaultState(NativeArray<SubmarineState> states, int stateIndex)
+        {
+            if ((uint)stateIndex >= (uint)states.Length)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(_submarineState);
-            _submarineState.Dispose();
-            _submarineState = default;
+            SubmarineState existing = states[stateIndex];
+            if (existing.Aup.Reserved != 0UL ||
+                math.any(existing.RuntimeRotation.value != float4.zero) ||
+                math.any(existing.RuntimePosition != float3.zero) ||
+                math.any(existing.LinearVelocity != float3.zero))
+            {
+                return;
+            }
+
+            uint hash = Hash32((uint)stateIndex ^ 0x564D4F54u);
+            float angle = (hash & 1023u) * (TwoPi / 1023f);
+            float radius = 2f + (((hash >> 10) & 255u) * (6f / 255f));
+            float3 local = new float3(math.cos(angle) * radius, -2f - stateIndex, math.sin(angle) * radius);
+            SubmarineState state = default;
+            state.Aup = new AbsoluteUniversePositionBlit128
+            {
+                GridX = 0L,
+                GridY = 0L,
+                GridZ = 0L,
+                Local = new float4(local, 0f),
+                Reserved = hash
+            };
+            state.RuntimePosition = local;
+            state.RuntimeRotation = quaternion.identity;
+            state.LinearVelocity = new float3(0f, 0f, 0.25f + ((hash & 15u) * 0.03125f));
+            state.AngularVelocityRadians = float3.zero;
+            states[stateIndex] = state;
+        }
+
+        private static uint Hash32(uint value)
+        {
+            value ^= value >> 16;
+            value *= 2246822519u;
+            value ^= value >> 13;
+            value *= 3266489917u;
+            value ^= value >> 16;
+            return value;
         }
 
         private static void ResolveCapsulePoints(Rigidbody body, CapsuleCollider capsule, out Vector3 point1, out Vector3 point2, out float radius)
@@ -1506,7 +1687,11 @@ namespace Hecton8.Gameplay
             return parentProvider != null ? parentProvider.ImpactAudioMaterialId : fallbackMaterialId;
         }
 
-        private bool HasScheduledSweepCornerHit(int nearestIndex, Vector3 primaryNormal, float nearestDistance)
+        private bool HasScheduledSweepCornerHit(
+            NativeArray<RaycastHit> sweepResults,
+            int nearestIndex,
+            Vector3 primaryNormal,
+            float nearestDistance)
         {
             float distanceWindow = math.max(_scheduledSweepState.SkinWidth + 0.05f, 0.1f);
             for (int i = 0; i < ScheduledSweepMaxHits; i++)
@@ -1514,7 +1699,7 @@ namespace Hecton8.Gameplay
                 if (i == nearestIndex)
                     continue;
 
-                RaycastHit hit = _scheduledSweepResults[i];
+                RaycastHit hit = sweepResults[i];
                 int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
                 if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
                     continue;
@@ -1602,7 +1787,7 @@ namespace Hecton8.Gameplay
             if (lostKineticEnergy >= KinematicCcdMath.MassiveLostKineticEnergyJoules)
             {
                 Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
-                damage.WorldPoint = new float3(point.x, point.y, point.z);
+                damage.ImpactAup = Hecton8.Core.Contracts.Signals.CombatDamageSignalCodec.FromRuntimePoint(point);
                 damage.Direction = new float3(safeNormal.x, safeNormal.y, safeNormal.z);
                 damage.Magnitude = math.min(500f, lostKineticEnergy * 0.005f);
                 damage.DamageType = (uint)DamageTypeMask.Impact;
@@ -1620,29 +1805,104 @@ namespace Hecton8.Gameplay
             GlobalPhysicsStateManager.ReportKinematicCcdIntervention();
         }
 
-        private void EnsureScheduledSweepState()
+        private bool EnsureScheduledSweepState()
         {
-            if (!_scheduledSweepCommands.IsCreated)
+            if (_scheduledSweepCommandsHandle.IsCreated && _scheduledSweepResultsHandle.IsCreated)
+                return true;
+
+            if (!ResolveDataVault())
+                return false;
+
+            _scheduledSweepCommandsHandle = _dataVault.GetBufferHandle<CapsulecastCommand>(
+                BufferID.VehicleMotorSweepCommands,
+                MaxRegisteredMotors,
+                SystemID.VehiclesPhysics,
+                NativeArrayOptions.ClearMemory);
+            _scheduledSweepResultsHandle = _dataVault.GetBufferHandle<RaycastHit>(
+                BufferID.VehicleMotorSweepResults,
+                MaxRegisteredMotors * ScheduledSweepMaxHits,
+                SystemID.VehiclesPhysics,
+                NativeArrayOptions.ClearMemory);
+            return _scheduledSweepCommandsHandle.IsCreated && _scheduledSweepResultsHandle.IsCreated;
+        }
+
+        private bool TryResolveScheduledSweepBuffers(
+            out NativeArray<CapsulecastCommand> scheduledSweepCommands,
+            out NativeArray<RaycastHit> scheduledSweepResults)
+        {
+            scheduledSweepCommands = default;
+            scheduledSweepResults = default;
+            if (!EnsureScheduledSweepState() || _dataVault == null)
+                return false;
+            if (!LockScheduledSweepBuffers())
+                return false;
+
+            int commandIndex = ResolveMotorVaultIndex();
+            int resultStart = commandIndex * ScheduledSweepMaxHits;
+            NativeArray<CapsulecastCommand> commandBuffer = _scheduledSweepCommandsHandle.Resolve(_dataVault);
+            NativeArray<RaycastHit> resultBuffer = _scheduledSweepResultsHandle.Resolve(_dataVault);
+            if (!commandBuffer.IsCreated ||
+                !resultBuffer.IsCreated ||
+                (uint)commandIndex >= (uint)commandBuffer.Length ||
+                resultStart < 0 ||
+                resultStart + ScheduledSweepMaxHits > resultBuffer.Length)
             {
-                // COLD ALLOC: NativeArray<CapsulecastCommand>[1] - deferred vehicle sweep command lane - owner: VehicleMotor
-                _scheduledSweepCommands = new NativeArray<CapsulecastCommand>(ScheduledSweepCommandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _scheduledSweepCommands,
-                    NativeMemoryOwner,
-                    nameof(_scheduledSweepCommands),
-                    NativeMemoryLifetime);
+                UnlockScheduledSweepBuffers();
+                return false;
             }
 
-            if (!_scheduledSweepResults.IsCreated)
+            scheduledSweepCommands = commandBuffer.GetSubArray(commandIndex, ScheduledSweepCommandCount);
+            scheduledSweepResults = resultBuffer.GetSubArray(resultStart, ScheduledSweepMaxHits);
+            if (scheduledSweepCommands.IsCreated && scheduledSweepResults.IsCreated)
+                return true;
+
+            UnlockScheduledSweepBuffers();
+            return false;
+        }
+
+        private bool TryResolveScheduledSweepResults(out NativeArray<RaycastHit> scheduledSweepResults)
+        {
+            scheduledSweepResults = default;
+            if (!EnsureScheduledSweepState() || _dataVault == null)
+                return false;
+
+            int commandIndex = ResolveMotorVaultIndex();
+            int resultStart = commandIndex * ScheduledSweepMaxHits;
+            NativeArray<RaycastHit> resultBuffer = _scheduledSweepResultsHandle.Resolve(_dataVault);
+            if (!resultBuffer.IsCreated || resultStart < 0 || resultStart + ScheduledSweepMaxHits > resultBuffer.Length)
+                return false;
+
+            scheduledSweepResults = resultBuffer.GetSubArray(resultStart, ScheduledSweepMaxHits);
+            return scheduledSweepResults.IsCreated;
+        }
+
+        private bool LockScheduledSweepBuffers()
+        {
+            if (_scheduledSweepBuffersLocked)
+                return true;
+            if (_dataVault == null)
+                return false;
+
+            if (!_dataVault.TryLockBuffer(BufferID.VehicleMotorSweepCommands, SystemID.VehiclesPhysics))
+                return false;
+            if (!_dataVault.TryLockBuffer(BufferID.VehicleMotorSweepResults, SystemID.VehiclesPhysics))
             {
-                // COLD ALLOC: NativeArray<RaycastHit>[8] - deferred vehicle sweep hit lane - owner: VehicleMotor
-                _scheduledSweepResults = new NativeArray<RaycastHit>(ScheduledSweepMaxHits, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _scheduledSweepResults,
-                    NativeMemoryOwner,
-                    nameof(_scheduledSweepResults),
-                    NativeMemoryLifetime);
+                _dataVault.TryUnlockBuffer(BufferID.VehicleMotorSweepCommands, SystemID.VehiclesPhysics);
+                return false;
             }
+
+            _scheduledSweepBuffersLocked = true;
+            return true;
+        }
+
+        private void UnlockScheduledSweepBuffers()
+        {
+            if (!_scheduledSweepBuffersLocked || _dataVault == null)
+                return;
+
+            _dataVault.TryUnlockBuffer(BufferID.VehicleMotorSweepResults, SystemID.VehiclesPhysics);
+            _dataVault.TryUnlockBuffer(BufferID.VehicleMotorSweepCommands, SystemID.VehiclesPhysics);
+            _scheduledSweepBuffersLocked = false;
         }
 
         private void TryFinalizeScheduledSweep()
@@ -1655,6 +1915,7 @@ namespace Hecton8.Gameplay
 
             _scheduledSweepPending = false;
             _scheduledSweepHandle = default;
+            UnlockScheduledSweepBuffers();
             if (_scheduledSweepDiscardAfterCompletion)
             {
                 _scheduledSweepDiscardAfterCompletion = false;
@@ -1668,30 +1929,41 @@ namespace Hecton8.Gameplay
 
         private void DisposeScheduledSweepState()
         {
-            if (_scheduledSweepCommands.IsCreated)
+            if (_scheduledSweepPending)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_scheduledSweepCommands);
-                if (_scheduledSweepPending)
-                    _scheduledSweepCommands.Dispose(_scheduledSweepHandle);
-                else
-                    _scheduledSweepCommands.Dispose();
-                _scheduledSweepCommands = default;
+                DispatcherJobSwap.TryComplete(ref _scheduledSweepHandle, forceComplete: true);
             }
 
-            if (_scheduledSweepResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_scheduledSweepResults);
-                if (_scheduledSweepPending)
-                    _scheduledSweepResults.Dispose(_scheduledSweepHandle);
-                else
-                    _scheduledSweepResults.Dispose();
-                _scheduledSweepResults = default;
-            }
-
+            UnlockScheduledSweepBuffers();
+            _scheduledSweepCommandsHandle = default;
+            _scheduledSweepResultsHandle = default;
             _scheduledSweepHandle = default;
             _scheduledSweepPending = false;
             _scheduledSweepReady = false;
             _scheduledSweepDiscardAfterCompletion = false;
+        }
+
+        private static float3 ToFloat3(Vector3 value)
+        {
+            return new float3(value.x, value.y, value.z);
+        }
+
+        private static float3 CubicHermite(float3 p0, float3 m0, float3 p1, float3 m1, float t)
+        {
+            float safeT = math.saturate(math.isfinite(t) ? t : 0f);
+            float t2 = safeT * safeT;
+            float t3 = t2 * safeT;
+            float h00 = (2f * t3) - (3f * t2) + 1f;
+            float h10 = t3 - (2f * t2) + safeT;
+            float h01 = (-2f * t3) + (3f * t2);
+            float h11 = t3 - t2;
+            float3 value = (h00 * p0) + (h10 * m0) + (h01 * p1) + (h11 * m1);
+            return math.all(math.isfinite(value)) ? value : p1;
+        }
+
+        private static Vector3 ToVector3(float3 value)
+        {
+            return new Vector3(value.x, value.y, value.z);
         }
     }
 }

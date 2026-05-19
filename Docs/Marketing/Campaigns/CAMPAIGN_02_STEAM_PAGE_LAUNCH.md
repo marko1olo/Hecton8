@@ -122,3 +122,42 @@ Pause outreach and revise page if:
 - co-op confusion appears repeatedly;
 - players think the screenshots are concept art or renders, not gameplay.
 
+## 2026-05-19 Steam Page Launch Gate V0
+
+Status: blocked until Campaign 01 returns `KEEP`.
+
+Do not launch the Steam page because assets exist. Launch only when the first screenshot campaign proves the page can be understood.
+
+### Required Upstream Decisions
+
+| Dependency | Required result | Source |
+|---|---|---|
+| Screenshot campaign | `KEEP` decision, not `REVISE` or `KILL` | `Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md` |
+| Steam page assembly | Candidate A/B/C selected by evidence | `Steam/STORE_PAGE_COPY_MATRIX.md` |
+| Steam asset ticket | 6+ public shots pass and rejects are logged | `Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md` |
+| Capsule test | AB-002 has a winner | `Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md` |
+| Tag proof | AB-007 does not create co-op/open-world/sim confusion | `SEO/STEAM_TAG_AND_SEARCH_STRATEGY.md` and experiment log |
+| UTM registry | Official Steam URL can be used with canonical names | `Analytics/MEASUREMENT_AND_UTM_PLAN.md` |
+| Objection handling | FAQ first-screenshot matrix is ready | `Community/PUBLIC_FAQ_AND_OBJECTION_HANDLING.md` |
+
+### Launch Asset Minimum
+
+| Steam surface | Minimum acceptable input |
+|---|---|
+| Short description | Candidate A unless first assets prove B or C harder. |
+| First screenshot | `PLAN-SHOT-001` or winning AB-001 asset. |
+| Player verb screenshot | `PLAN-SHOT-003`. |
+| Base/machinery screenshot | One of `PLAN-SHOT-002`, `PLAN-SHOT-004`, or `PLAN-SHOT-005`. |
+| Threat/anomaly shot | `PLAN-SHOT-006` or `PLAN-SHOT-007` only if readable. |
+| Capsule | AB-002 winner from `PLAN-CAPSULE-001`. |
+| Trailer | Optional; if included, first 3 seconds must be AB-006 winner. |
+
+### First 7 Days Decision Rule
+
+After launch, choose exactly one path:
+
+- `EXPAND`: warm traffic is at or above 5% visit-to-wishlist, page comments understand the player verb, no major co-op/AI/darkness confusion.
+- `REVISE_PAGE`: traffic exists but conversion/comments show capsule, screenshot order, or copy problem.
+- `STOP_OUTREACH`: warm traffic is below 3%, page is misunderstood, or official links/assets are broken.
+
+No press expansion, paid PMT test, or second creator batch before this decision.

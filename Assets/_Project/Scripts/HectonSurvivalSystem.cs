@@ -339,12 +339,10 @@ namespace Hecton8.Gameplay
         private const float RapidAscentRiskStartMetersPerSecond = 3.25f;
         private const float RapidAscentRiskMaxMetersPerSecond = 10.5f;
         private const float RapidAscentThermalBoostThreshold = 0.28f;
-        private const float RapidAscentDamagePerSecond = 1.6f;
         private const float RapidAscentRiskDecayPerSecond = 0.38f;
         private const float RapidAscentDamageThreshold = 0.52f;
         private const float ImmediateDecompressionDepthMeters = 100f;
         private const float ImmediateDecompressionAscentMetersPerSecond = 10f;
-        private const float ImmediateDecompressionHealthDamage = 8f;
         private const float ImmediateDecompressionDamageCooldownSeconds = 0.75f;
         private const float NitrogenAbsorptionRate = 0.065f;
         private const float NitrogenBaselinePressureAtm = 1f;
@@ -1335,15 +1333,35 @@ namespace Hecton8.Gameplay
             if (_decompressionImmediateDamageCooldown > 0f)
                 return;
 
-            if (_playerHealth == null)
-                TryGetComponent(out _playerHealth);
-
             float severity01 = ResolveImmediateDecompressionSeverity01(ascentMetersPerSecond, ascentOriginDepthMeters);
-            float damage = ImmediateDecompressionHealthDamage * math.max(0.25f, severity01);
-            if (_playerHealth != null && damage > 0f)
-                _playerHealth.TakeDamage(damage, true);
+            PublishDecompressionPhysiologySignal(severity01, ascentOriginDepthMeters, ascentMetersPerSecond);
 
             _decompressionImmediateDamageCooldown = ImmediateDecompressionDamageCooldownSeconds;
+        }
+
+        private void PublishDecompressionPhysiologySignal(float severity01, float ascentOriginDepthMeters, float ascentMetersPerSecond)
+        {
+            PhysiologyStateSignal signal = new PhysiologyStateSignal
+            {
+                PlayerStress01 = math.saturate(severity01),
+                O2DrainMultiplier = ResolveOxygenPressureScale(),
+                Recovery01 = 1f - math.saturate(severity01),
+                Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
+                Cause = PhysiologyStateSignal.CauseDecompression,
+                Flags = 1,
+                Supersaturation01 = math.saturate(severity01),
+                Narcosis01 = math.saturate(_nitrogenNarcosis01),
+                AmbientPressureAtm = math.max(1f, pressure),
+                NitrogenLoadAtm = math.max(0f, _nitrogenLoad),
+                AscentRateMetersPerSecond = math.max(0f, ascentMetersPerSecond),
+                TissueOverMValueMask = severity01 > 0f ? 1u : 0u,
+                SourceHash = 0x53485631u,
+                EntityIndex = 0,
+                ActiveCompartments = 0,
+                FatalSeverity = (byte)math.round(math.saturate(severity01) * 255f),
+                StatusFlags = severity01 > 0f ? 1u : 0u
+            };
+            GlobalSignals.Publish(in signal);
         }
 
         private void ApplyNitrogenMovementPenalty()
@@ -1472,9 +1490,7 @@ namespace Hecton8.Gameplay
             float severity = math.saturate(
                 (_decompressionRisk01 - RapidAscentDamageThreshold) /
                 math.max(0.01f, 1f - RapidAscentDamageThreshold));
-            float damage = RapidAscentDamagePerSecond * severity * dt;
-            integrity = math.max(0f, integrity - damage);
-            MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.PressureCollapse);
+            PublishDecompressionPhysiologySignal(severity, math.max(depth, _lastTrackedDepthMeters), _rapidAscentMetersPerSecond);
         }
 
         private void HandleRadiation(float dt)
@@ -1731,7 +1747,10 @@ namespace Hecton8.Gameplay
 
         private float ResolveOxygenPressureScale()
         {
-            return 1f + ResolveOverpressureSeverity01();
+            float ambientPressureAtm = math.isfinite(pressure) && pressure > 0f
+                ? pressure
+                : 1f + math.max(0f, depth) * 0.1f;
+            return math.clamp(ambientPressureAtm, 1f, 16f);
         }
 
         private float ResolveOxygenMovementScale()
@@ -2421,11 +2440,7 @@ namespace Hecton8.Gameplay
         {
             if (!alive || amount <= 0f) return;
 
-            PlayerTakeDamageEvent damageEvent = HectonEventBus.Publish(new PlayerTakeDamageEvent(this, amount));
-            if (damageEvent == null || damageEvent.IsCancelled)
-                return;
-
-            amount = damageEvent.DamageAmount;
+            amount = math.max(0f, amount);
             if (amount <= 0f)
                 return;
 

@@ -176,7 +176,7 @@ stored_le=6d24c9a87e8ec3322681980ad2b6b28c
 
 Binary/native DTOs must obey these rules before PHI_VOD or any runtime writer blits them:
 
-- Use `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = N)]` only when every 8-byte field starts at an offset divisible by `8`, or when the writer uses explicit little-endian field writes instead of unaligned loads.
+- Use `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = N)]` only for cold file/export records that never enter `NativeArray`, Burst jobs, SignalBus snapshots, telemetry rings, or GPU buffers. Runtime DTOs must use natural or explicit aligned layout with total size as a multiple of `8`; if a packed file record must become runtime state, copy it into an aligned runtime mirror first.
 - Prefer explicit `byte` flags over `bool`; managed `bool` layout is not a save ABI.
 - No `string`, managed array, `List<T>`, `Dictionary<K,V>`, `HashSet<T>`, `Vector3`, `Quaternion`, or Unity object reference inside a blitted DTO.
 - Pad to a `16` byte multiple for sector records and `64` byte multiple for high-frequency indexed blocks.

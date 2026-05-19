@@ -16,7 +16,7 @@ namespace Hecton8.Audio.Editor
         private const string ProfileAssetPath = "Assets/_Project/Data/Audio/audio_profiles.csv";
         private const float StatsRefreshSeconds = 0.25f;
 
-        private VirtualVoiceTuningSnapshot _tuning = VirtualVoiceTuningSnapshot.Default;
+        private VirtualVoiceTuningSnapshot _tuning = VirtualVoiceTuningSnapshot.CreateDefault();
         private VirtualVoiceStatistics _stats;
         private DateTime _profileLastWriteUtc;
         private string _profileAbsolutePath;
@@ -175,7 +175,7 @@ namespace Hecton8.Audio.Editor
                 return false;
 
             _profileLastWriteUtc = lastWriteUtc;
-            string csv = File.ReadAllText(_profileAbsolutePath); // COLD ALLOC: editor-only CSV text reload.
+            byte[] csv = File.ReadAllBytes(_profileAbsolutePath); // COLD ALLOC: editor-only byte reload, runtime parser stays span-based.
             VirtualVoiceTuningSnapshot parsed = _tuning;
             if (!VirtualVoiceProfileCsvParser.TryReadTuning(csv.AsSpan(), ref parsed))
                 return false;
@@ -193,7 +193,7 @@ namespace Hecton8.Audio.Editor
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            VirtualVoiceTuningSnapshot defaults = VirtualVoiceTuningSnapshot.Default;
+            VirtualVoiceTuningSnapshot defaults = VirtualVoiceTuningSnapshot.CreateDefault();
             File.WriteAllText(
                 _profileAbsolutePath,
                 "speed_of_sound," + defaults.SoundSpeedMetersPerSecond.ToString("0.###", CultureInfo.InvariantCulture) + System.Environment.NewLine +

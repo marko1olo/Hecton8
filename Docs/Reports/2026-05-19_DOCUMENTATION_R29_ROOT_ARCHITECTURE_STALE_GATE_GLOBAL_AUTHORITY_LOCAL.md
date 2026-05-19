@@ -93,10 +93,13 @@ R29 did not prove runtime zero-GC, frame time, visual quality, scene wiring, ass
 
 ## Validation
 
-Validation results are recorded in `Docs/Tasks/Status_DOC_GLOBAL_DOCS_REFRESH.md` and `Docs/AgentLogs/LOG_DOC_GLOBAL_DOCS_REFRESH.md` for this pass.
-
-Expected persistent blocker:
-
-- `python Tools\AtlasCheck.py` remains red on `ATLAS_CHECK_FAIL references=6549 missing=57`, all current missing refs in the known RealtimeCSG vendor icon/readme image class.
+- Targeted stale red-gate/proof-plan scan over active root/architecture/report surfaces: no hits for the R29 stale patterns.
+- Scoped R4 marker scan: `ScopeFiles=162`, `MissingCount=0`, `DuplicateCount=0`.
+- Scoped local markdown link scan: `ScopeFiles=162`, `MissingLinks=0`.
+- `python Tools\test_architecture_atlas.py`: exit `0`, `10` tests OK.
+- JSON parse spot check: `ok=5`, `bad=0`, `missing=0`.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: exit `0`, `Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`.
+- `python Tools\AtlasCheck.py`: exit `1`, `ATLAS_CHECK_FAIL references=6549 missing=57`; all printed missing refs remain in the known RealtimeCSG vendor icon/readme image class.
+- Scoped `git diff --check -- Docs Tools ':!Docs/Tasks/*' ':!Docs/AgentLogs/*' ':!Docs/Archive/**' ':!Docs/Modding/**'`: exit `0`, line-ending warnings only.
 
 STATUS: LOCAL STATIC DOC/SOURCE CORRECTION COMPLETE / RUNTIME PENDING VERIFICATION

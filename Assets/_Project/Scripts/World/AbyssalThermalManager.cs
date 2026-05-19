@@ -1492,7 +1492,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            return TrySampleDirectVentTemperatureCelsius(positionWS, out temperatureCelsius, out sourceId);
+            return false;
         }
 
         private bool TrySampleThermalMap(Vector3 positionWS, out float temperatureCelsius)
@@ -1514,38 +1514,6 @@ namespace Hecton8.World
             int z = math.clamp((int)localZ, 0, ThermalGridResolution - 1);
             temperatureCelsius = _thermalMapReadCelsius[ToThermalGridIndex(x, y, z)];
             return math.isfinite(temperatureCelsius);
-        }
-
-        private bool TrySampleDirectVentTemperatureCelsius(Vector3 positionWS, out float temperatureCelsius, out int sourceId)
-        {
-            temperatureCelsius = ResolveAmbientTemperatureCelsius(positionWS);
-            sourceId = 0;
-            bool found = false;
-            for (int i = 0; i < _activeVentCount; i++)
-            {
-                ThermalVentState vent = _ventStates[i];
-                double distanceSq = ComputeAupDistanceSq(positionWS, vent.PositionWS);
-                float radiusSq = math.max(1f, vent.RadiusWS * vent.RadiusWS);
-                float safeDistanceSq = (float)System.Math.Min(float.MaxValue, System.Math.Max(1d, distanceSq));
-                float inverseDistanceHeat01 = math.saturate(radiusSq * math.rcp(safeDistanceSq));
-                float heightGate = 1f - math.saturate((positionWS.y - vent.PositionWS.y) * math.rcp(math.max(0.001f, vent.HeightWS)));
-                float heatWeight = inverseDistanceHeat01 * heightGate;
-                if (heatWeight <= 0f)
-                    continue;
-
-                float eruptionHeatScale = ResolveVentHeatScale(i);
-                float ambient = ResolveAmbientTemperatureCelsius(positionWS);
-                float ventDeltaCelsius = math.max(ThermalVentInjectionDeltaCelsius, vent.HeatIntensity * ventHeatToCelsiusScale);
-                float candidate = ambient + (ventDeltaCelsius * eruptionHeatScale * heatWeight);
-                if (candidate > temperatureCelsius && math.isfinite(candidate))
-                {
-                    temperatureCelsius = candidate;
-                    sourceId = vent.HazardSourceId;
-                    found = true;
-                }
-            }
-
-            return found;
         }
 
         private int ResolveNearestVentSourceId(Vector3 positionWS)
@@ -1605,7 +1573,7 @@ namespace Hecton8.World
         {
             uint targetHash = targetObject != null ? unchecked((uint)EntityId.ToULong(targetObject.GetEntityId())) : 0u;
             Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
-            damage.WorldPoint = new float3(positionWS.x, positionWS.y, positionWS.z);
+            damage.ImpactAup = Hecton8.Core.Contracts.Signals.CombatDamageSignalCodec.FromRuntimePoint(positionWS);
             damage.Direction = new float3(0f, 1f, 0f);
             damage.Magnitude = ThermalShockDamageMagnitude;
             damage.DamageType = CombatDamageTypes.Thermal;
@@ -3120,15 +3088,9 @@ namespace Hecton8.World
                 if (i < _activeVentCount)
                 {
                     ThermalVentState vent = _ventStates[i];
-                    float eruptionBlend = ResolveVentEruptionBlend(i);
                     float eruptiveHeatScale = ResolveVentHeatScale(i);
                     float hazardRadius = Mathf.Max(vent.RadiusWS, vent.RadiusWS * ventHeatRadiusMultiplier);
-                    HectonHazardManager.Register(
-                        vent.HazardSourceId,
-                        vent.PositionWS,
-                        vent.HeatIntensity * eruptiveHeatScale,
-                        hazardRadius * LerpClamped(1f, 1.45f, eruptionBlend),
-                        HazardType.Heat);
+                    HectonHazardManager.Unregister(vent.HazardSourceId);
                     RegisterThermalSpatialEvent(vent.PositionWS, hazardRadius, vent.HeatIntensity * eruptiveHeatScale);
                 }
                 else

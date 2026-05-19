@@ -1,7 +1,7 @@
 # DOC_GLOBAL_DOCS_REFRESH Status
 
 Date: 2026-05-19
-Status: ACTIVE R27 STUB / PRIOR HISTORY ARCHIVED
+Status: ACTIVE R31 / PRIOR HISTORY ARCHIVED
 
 Prior full status history is archived at `Docs/Archive/Batch009/Tasks/Status_DOC_GLOBAL_DOCS_REFRESH.md`. The active file was absent during R27 closeout, so this file records the current live DOC_GLOBAL state without rewriting the archived history.
 
@@ -73,4 +73,86 @@ Prior full status history is archived at `Docs/Archive/Batch009/Tasks/Status_DOC
 - No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, mod runtime smoke, platform run, campaign telemetry, or visual-route proof exists for R28.
 - `Tools/AtlasCheck.py` remains red on `57` missing RealtimeCSG vendor icon/readme image references.
 - Mod API static validation is no longer a current red gate in the R28 local run; it is static validator proof only, not mod runtime proof.
+- Source counters remain the R27 capture-time static orientation until a newer counter pass is intentionally run.
+
+## R29 Checklist
+
+- [x] Re-read active status/rationale/log and attempted prompt extraction from `Docs/Tasks/CURRENT_BATCH.md`. DOD: prompt extraction returned `PROMPT_NOT_FOUND`; active R27/R28 disk memory and archived history were used. Rejected: relying on compacted chat only. Estimate: 0 us runtime.
+- [x] Integrated read-only root/architecture subagent audits. DOD: Franklin found stale Mod API validator wording, global-authority R27 boundary headings, proof-plan-as-proof wording, and route-card example mismatch; Maxwell found Trauma, Signal Corridor, and Dispatch source/proof wording drift. Rejected: ignoring subagent exact line findings. Estimate: 0 us runtime.
+- [x] Corrected active stale-gate wording. DOD: `HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `PROJECT_STATE_STATIC_XRAY.md`, `GLOBAL_SIGNAL_CORRIDOR.md`, and `Reports/README.md` now record Mod API static validation as PASS instead of current red gate. Rejected: preserving R27 stale ModCommand blocker after R28/R29 PASS output. Estimate: 0 us runtime.
+- [x] Tightened global-authority review semantics. DOD: `GLOBAL_AUTHORITY_*` docs now carry R28/R29 boundary context, `GREEN` requires attached runtime/profiler/player evidence for runtime-facing routes, and a proof plan alone is `YELLOW` unless documentation-only. Rejected: letting proof plans pass as proof. Estimate: 0 us runtime.
+- [x] Demoted remaining static proof overclaims. DOD: `TRAUMA_GLITCH_SYSTEM.md` no longer claims code-level validation proves compile/Console/GC cleanliness; `GLOBAL_SIGNAL_CORRIDOR.md` and `DISPATCH_PIPELINE.md` scope inventories to the R27 source-counter snapshot. Rejected: treating static source sweeps as Unity/runtime/profiler proof. Estimate: 0 us runtime.
+- [x] Promoted R29 through root/architecture/report entrypoints and wrote `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`. DOD: root README, governance, root reference, global architecture map, runtime plan, systems contracts, quality gates, project atlas, architecture README, actuality ledger, and Reports README now route current DOC_GLOBAL root/architecture order through R29 before R28/R27. Rejected: leaving R29 edits hidden behind R28 read order. Estimate: 0 us runtime.
+
+## R29 Validation
+
+- Targeted stale red-gate/proof-plan scan over active root/architecture/report surfaces: no hits.
+- Disallowed stale R28-latest scan: no disallowed hits; remaining R28 mentions are prior-boundary wording.
+- Scoped active root/architecture/report/Archivarius R4 marker scan: `ScopeFiles=162`, `MissingCount=0`, `DuplicateCount=0`.
+- Scoped local markdown link scan: `ScopeFiles=162`, `MissingLinks=0`.
+- `python Tools\test_architecture_atlas.py`: exit `0`, `10` tests OK.
+- JSON parse spot check: `ok=5`, `bad=0`, `missing=0`.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: exit `0`, `Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`.
+- `python Tools\AtlasCheck.py`: exit `1`, `ATLAS_CHECK_FAIL references=6549 missing=57`.
+- Scoped root/architecture `git diff --check -- Docs Tools ':!Docs/Tasks/*' ':!Docs/AgentLogs/*' ':!Docs/Archive/**' ':!Docs/Modding/**'`: exit `0`, line-ending warnings only.
+
+## R29 Current Blockers
+
+- No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, mod runtime smoke, platform run, campaign telemetry, or visual-route proof exists for R29.
+- `Tools/AtlasCheck.py` remains red on `57` missing RealtimeCSG vendor icon/readme image references.
+- Mod API static validation passes in R29, but this is static validator proof only, not mod runtime proof.
+- Source counters remain the R27 capture-time static orientation until a newer counter pass is intentionally run.
+
+## R30 Checklist
+
+- [x] Re-read active status/rationale and attempted prompt extraction from `Docs/Tasks/CURRENT_BATCH.md`. DOD: prompt extraction returned `PROMPT_NOT_FOUND`; active R29 disk memory and archived prior history were used. Rejected: relying on compacted chat only. Estimate: 0 us runtime.
+- [x] Ran three read-only subagent audits and integrated root/architecture findings. DOD: subagents found R28-as-current architecture residue, stale May 4/May 7 latest/current wording, global-authority heading drift, BinaryHygiene active-path absence, Dispatch R27-current wording, and static PASS portability gaps. Rejected: treating subagent output as advisory without line-level verification. Estimate: 0 us runtime.
+- [x] Corrected active architecture R28-as-current residue. DOD: active architecture docs now route current root/architecture boundary through R29/R30 context and retain R28 as prior interior-boundary correction. Rejected: leaving R28 wording because it was added intentionally in the prior pass. Estimate: 0 us runtime.
+- [x] Corrected root/report latest/current and proof wording. DOD: old May 4/May 7/May 13 entries are historical scoped evidence; BinaryHygiene row cites `Docs/Archive/Batch009/AgentLogs/BinaryHygiene_SHINOBU_50.json`; acoustic LUT row is static source/prefab evidence, not Unity proof. Rejected: preserving old `latest/current/clean` labels where they read as current proof. Estimate: 0 us runtime.
+- [x] Added static-tool caveats around Mod API PASS language. DOD: repeated architecture `Status=PASS` wording now says static-tool orientation only and requires artifact path, command, timestamp, environment, and output before reuse as proof. Rejected: claiming PASS output as portable runtime/mod proof. Estimate: 0 us runtime.
+- [x] Wrote `Docs/Reports/2026-05-19_DOCUMENTATION_R30_ROOT_ARCHITECTURE_INTERNAL_CURRENTNESS_LOCAL.md` and promoted R30 through root/architecture/report entrypoints. DOD: root README, governance, root reference, global architecture map, runtime plan, systems contracts, quality gates, project atlas, architecture README, actuality ledger, and Reports README now place R30 before R29/R28/R27. Rejected: leaving R30 hidden as an unindexed report. Estimate: 0 us runtime.
+
+## R30 Validation
+
+- Targeted stale R28/latest/proof-current scan over active root/architecture/report surfaces: `missing=0`.
+- Markdown/txt R4 marker scan: `ScopeFiles=88`, `MissingCount=0`, `DuplicateCount=0`.
+- Local markdown link scan: `ScopeFiles=88`, `MissingLinks=0`.
+- `python Tools\test_architecture_atlas.py`: exit `0`, `10` tests OK.
+- JSON parse spot check: `ok=5`, `bad=0`, `missing=0`.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: exit `0`, `Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`.
+- `python Tools\AtlasCheck.py`: exit `1`, `ATLAS_CHECK_FAIL references=6549 missing=57`.
+- Scoped root/architecture `git diff --check -- Docs Tools ':!Docs/Tasks/*' ':!Docs/AgentLogs/*' ':!Docs/Archive/**' ':!Docs/Modding/**'`: exit `0`, line-ending warnings only.
+
+## R30 Current Blockers
+
+- No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, mod runtime smoke, platform run, campaign telemetry, or visual-route proof exists for R30.
+- `Tools/AtlasCheck.py` remains red on `57` missing RealtimeCSG vendor icon/readme image references.
+- Mod API static validation passes in R30, but this is static validator proof only, not mod runtime proof.
+- Source counters remain the R27 capture-time static orientation until a newer counter pass is intentionally run.
+
+## R31 Checklist
+
+- [x] Re-read active status/rationale and attempted prompt extraction from `Docs/Tasks/CURRENT_BATCH.md`. DOD: prompt extraction returned `PROMPT_NOT_FOUND`; active R30 disk memory and archived prior history were used. Rejected: relying on compacted chat only. Estimate: 0 us runtime.
+- [x] Integrated read-only root/architecture subagent audits. DOD: Dirac found root latest/current/absent-artifact residue; Goodall found stale global-authority headings, Dispatch R29 boundary text, absent source/artifact paths, and a Mod API proof wording gap. Rejected: treating subagent output as advisory without local verification. Estimate: 0 us runtime.
+- [x] Propagated R31 through active root/architecture boundary lines. DOD: `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md` is now the latest root/architecture DOC_GLOBAL boundary; R30 is prior internal-currentness, R29 prior stale-gate/global-authority, R28 prior interior-boundary, and R27 latest source-counter/index snapshot. Rejected: creating a R31 report while leaving current lines pointed at R30. Estimate: 0 us runtime.
+- [x] Corrected root/report latest/current residue and absent artifact/source paths. DOD: May 3/May 11/May 17 rows in active entrypoints are historical; missing `Temp/CodexArtifacts/unity-batch-2026-05-03-foundation-hardening-after-watchdogs.log`, missing `CodexArtifacts/2026-05-07_ORPHANED_SCRIPT_AUDIT.csv`, missing `SaveCompressionDictionary.cs`, and shorthand source paths are now bounded. Rejected: creating placeholder artifacts or source files as fake proof. Estimate: 0 us runtime.
+- [x] Closed active architecture R4 marker gaps. DOD: seven active architecture docs received R4 actuality boundaries; final R4 scan reports `ScopeFiles=89`, missing `0`, duplicate `0`. Rejected: excluding those files from active architecture scope. Estimate: 0 us runtime.
+- [x] Wrote R31 report and ran static validation. DOD: targeted stale scan, R4 scan, local link scan, atlas tests, JSON parse, Mod API validator, AtlasCheck, and scoped diff-check results are recorded below. Rejected: claiming Unity/runtime/profiler/player-build proof. Estimate: 0 us runtime.
+
+## R31 Validation
+
+- Targeted stale-current/proof scan over active root/architecture/report surfaces: `missing=0`.
+- Markdown/txt R4 marker scan: `ScopeFiles=89`, `MissingCount=0`, `DuplicateCount=0`.
+- Local markdown link scan: `ScopeFiles=88`, `MissingLinks=0`.
+- `python Tools\test_architecture_atlas.py`: exit `0`, `10` tests OK.
+- JSON parse spot check: `ok=5`, `bad=0`, `missing=0`.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: exit `0`, `Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`.
+- `python Tools\AtlasCheck.py`: exit `1`, `ATLAS_CHECK_FAIL references=6549 missing=57`.
+- Scoped root/architecture `git diff --check -- Docs Tools ':!Docs/Tasks/*' ':!Docs/AgentLogs/*' ':!Docs/Archive/**' ':!Docs/Modding/**'`: exit `0`, line-ending warnings only.
+
+## R31 Current Blockers
+
+- No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, mod runtime smoke, platform run, campaign telemetry, or visual-route proof exists for R31.
+- `Tools/AtlasCheck.py` remains red on `57` missing RealtimeCSG vendor icon/readme image references.
+- Mod API static validation passes in R31, but this is static validator proof only, not mod runtime proof.
 - Source counters remain the R27 capture-time static orientation until a newer counter pass is intentionally run.

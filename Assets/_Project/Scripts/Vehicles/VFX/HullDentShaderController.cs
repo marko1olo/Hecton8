@@ -206,20 +206,15 @@ namespace Hecton8.Vehicles.VFX
         private bool TryResolveLocalImpact(in CombatDamageSignal signal, out float3 localPoint)
         {
             localPoint = default;
-            bool legacyLocal = acceptLegacyLocalPoints && (signal.Flags & CombatDamageSignal.LegacyMirrorFlag) != 0;
-            if (legacyLocal)
-            {
-                localPoint = signal.WorldPoint;
-            }
-            else
-            {
-                Vector3 worldPoint = new Vector3(signal.WorldPoint.x, signal.WorldPoint.y, signal.WorldPoint.z);
-                if (!IsFiniteVector(worldPoint))
-                    return false;
+            if (!CombatDamageSignalCodec.TryToRuntimePoint(in signal, out float3 runtimePoint))
+                return false;
 
-                if (!TryResolveLocalImpactAup(worldPoint, out localPoint))
-                    return false;
-            }
+            Vector3 worldPoint = new Vector3(runtimePoint.x, runtimePoint.y, runtimePoint.z);
+            if (!IsFiniteVector(worldPoint))
+                return false;
+
+            if (!TryResolveLocalImpactAup(worldPoint, out localPoint))
+                return false;
 
             if (!math.all(math.isfinite(localPoint)))
                 return false;

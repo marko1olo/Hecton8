@@ -2173,6 +2173,10 @@ namespace Hecton8.World
             preyBiomass01 = 0f;
             predatorBiomass01 = 0f;
             carryingCapacity01 = 0f;
+            float3 runtimePosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
+            if (MacroEcosystemMathematicianRuntime.TryGetBiomassAvailability(runtimePosition, out preyBiomass01, out predatorBiomass01, out carryingCapacity01))
+                return true;
+
             if (!IsInitialized || HasPendingSimulationJob())
                 return false;
 

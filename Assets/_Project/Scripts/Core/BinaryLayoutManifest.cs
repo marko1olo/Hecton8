@@ -125,6 +125,65 @@ namespace Hecton8.Core
             AssertOffset<SaveVoxelDeltaRun8>(nameof(SaveVoxelDeltaRun8.MaterialId), 5);
             AssertOffset<SaveVoxelDeltaRun8>(nameof(SaveVoxelDeltaRun8.Flags), 6);
 
+            AssertSize<VoxelDeltaCellDTO>(24);
+            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO.universeKey), 0);
+            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO.sdfValue), 8);
+            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO.materialId), 12);
+            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO.flags), 13);
+            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO.metadata), 14);
+            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO.reserved), 16);
+            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO._pad0), 20);
+
+            AssertSize<VoxelCarvingOperationDTO>(24);
+            AssertOffset<VoxelCarvingOperationDTO>(nameof(VoxelCarvingOperationDTO.localPosition), 0);
+            AssertOffset<VoxelCarvingOperationDTO>(nameof(VoxelCarvingOperationDTO.radius), 12);
+            AssertOffset<VoxelCarvingOperationDTO>(nameof(VoxelCarvingOperationDTO.operation), 16);
+            AssertOffset<VoxelCarvingOperationDTO>(nameof(VoxelCarvingOperationDTO.materialId), 17);
+            AssertOffset<VoxelCarvingOperationDTO>(nameof(VoxelCarvingOperationDTO.flags), 18);
+            AssertOffset<VoxelCarvingOperationDTO>(nameof(VoxelCarvingOperationDTO.sequence), 20);
+
+            AssertSize<VoxelDeltaRleRunDTO>(8);
+            AssertOffset<VoxelDeltaRleRunDTO>(nameof(VoxelDeltaRleRunDTO.StartIndex), 0);
+            AssertOffset<VoxelDeltaRleRunDTO>(nameof(VoxelDeltaRleRunDTO.RunLength), 2);
+            AssertOffset<VoxelDeltaRleRunDTO>(nameof(VoxelDeltaRleRunDTO.SdfValue), 4);
+            AssertOffset<VoxelDeltaRleRunDTO>(nameof(VoxelDeltaRleRunDTO.MaterialId), 5);
+            AssertOffset<VoxelDeltaRleRunDTO>(nameof(VoxelDeltaRleRunDTO.Flags), 6);
+
+            AssertSize<VoxelDeltaHeaderDTO>(32);
+            AssertOffset<VoxelDeltaHeaderDTO>(nameof(VoxelDeltaHeaderDTO.SectorHash), 0);
+            AssertOffset<VoxelDeltaHeaderDTO>(nameof(VoxelDeltaHeaderDTO.CompressedSize), 8);
+            AssertOffset<VoxelDeltaHeaderDTO>(nameof(VoxelDeltaHeaderDTO.UncompressedSize), 12);
+            AssertOffset<VoxelDeltaHeaderDTO>(nameof(VoxelDeltaHeaderDTO.XXHash3Checksum), 16);
+            AssertOffset<VoxelDeltaHeaderDTO>(nameof(VoxelDeltaHeaderDTO._pad0), 24);
+            AssertOffset<VoxelDeltaHeaderDTO>(nameof(VoxelDeltaHeaderDTO._pad1), 28);
+
+            AssertSize<VoxelDeltaBlockCounter64>(64);
+            AssertOffset<VoxelDeltaBlockCounter64>(nameof(VoxelDeltaBlockCounter64.RunCount), 0);
+            AssertOffset<VoxelDeltaBlockCounter64>(nameof(VoxelDeltaBlockCounter64.SectorHash), 16);
+
+            AssertSize<VoxelDeltaCompressionTelemetryEntry>(64);
+            AssertOffset<VoxelDeltaCompressionTelemetryEntry>(nameof(VoxelDeltaCompressionTelemetryEntry.SectorHash), 0);
+            AssertOffset<VoxelDeltaCompressionTelemetryEntry>(nameof(VoxelDeltaCompressionTelemetryEntry.PayloadHash), 8);
+            AssertOffset<VoxelDeltaCompressionTelemetryEntry>(nameof(VoxelDeltaCompressionTelemetryEntry.GlobalQualityWeight), 40);
+
+            AssertSize<VoxelDeltaCompressionTuningDTO>(64);
+            AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.ProfileHash), 0);
+            AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.PruneThreshold01), 16);
+            AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.MaxBytesPerFrame), 48);
+
+            AssertSize<VoxelDeltaSectorStatsDTO>(64);
+            AssertOffset<VoxelDeltaSectorStatsDTO>(nameof(VoxelDeltaSectorStatsDTO.SectorHash), 0);
+            AssertOffset<VoxelDeltaSectorStatsDTO>(nameof(VoxelDeltaSectorStatsDTO.ModifiedRatio01), 36);
+            AssertOffset<VoxelDeltaSectorStatsDTO>(nameof(VoxelDeltaSectorStatsDTO._pad1), 56);
+
+            AssertSize<VoxelDeltaDearLieStateDTO>(32);
+            AssertOffset<VoxelDeltaDearLieStateDTO>(nameof(VoxelDeltaDearLieStateDTO.SectorHash), 0);
+            AssertOffset<VoxelDeltaDearLieStateDTO>(nameof(VoxelDeltaDearLieStateDTO.VisualFade01), 16);
+
+            AssertSize<VoxelDeltaMockSchemaDTO>(64);
+            AssertOffset<VoxelDeltaMockSchemaDTO>(nameof(VoxelDeltaMockSchemaDTO.Magic), 0);
+            AssertOffset<VoxelDeltaMockSchemaDTO>(nameof(VoxelDeltaMockSchemaDTO.Seed), 40);
+
             AssertSize<PackedEntityState32>(8);
             AssertSize<PackedSuitUpgradeState64>(8);
             AssertSize<QuantizedLocalHalf3>(8);

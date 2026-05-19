@@ -4,7 +4,7 @@
 //
 // OTVETSTVENNOSTI:
 //   1. Pri spavne — chtenie bazovogo potrebleniya iz BuildableData.
-//   2. Pri spavne — poisk sosednih PowerNode (OverlapSphereNonAlloc).
+//   2. Pri spavne — podklyuchenie tolko k yavno zadannoy topologii.
 //   3. Sozdanie/vstuplenie v PowerGrid (ili obedinenie setey).
 //   4. Sbor vseh IPowerComponent na svoem GameObject.
 //   5. Pri despavne — vyhod iz PowerGrid (s proverkoy svyaznosti).
@@ -23,46 +23,43 @@
 // ARHITEKTURA:
 //   • IPoolable — korrektnaya rabota s ObjectPoolManager.
 //   • IPowerComponent — bazovoe potreblenie iz BuildableData.
-//   • OverlapSphereNonAlloc — zero GC poisk sosedey.
+//   • Authored/runtime neighbor links — bez physics-query poiskov.
 //   • _components — kesh vseh IPowerComponent na etom obekte.
 //   • _neighbors — kesh sosednih PowerNode (pryamye svyazi).
 //
 // ZERO GC:
-//   • Static Collider[] bufer dlya OverlapSphere — odna allokatsiya.
+//   • Bez physics-query graph discovery v runtime.
 //   • List<IPowerComponent> zapolnyaetsya GetComponents — zero GC.
 //   • List<PowerNode> _neighbors — pre-allocated.
 //   • ReferenceEquals dlya proverki dublikatov — zero GC.
 //
 // NASTROYKA PREFABA:
 //   1. Povesit PowerNode na finalPrefab modulya bazy.
-//   2. Ustanovit connectionRadius (chut bolshe snap-setki).
+//   2. Zapolnit authoredNeighborNodes ili podklyuchit sosedey iz ConstructionManager.
 //   3. ModuleMarker dolzhen byt nastroen s BuildableData.
 //   4. BuildableData dolzhna soderzhat powerRating i powerPriority.
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
 using Hecton8.Building;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Power
 {
     [DisallowMultipleComponent]
-    public sealed class PowerNode : MonoBehaviour, IPoolable, IPowerComponent
+    public sealed class PowerNode : MonoBehaviour, IPoolable, IPowerComponent, IContinuousPowerComponent
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
 
         [Header("── Connection ────────────────────────────────")]
-        [Tooltip("Radius poiska sosednih moduley (metry). " +
-                 "Dolzhen byt chut bolshe razmera snap-setki. " +
-                 "Rekomendatsiya: razmer modulya × 1.1")]
-        [SerializeField] private float connectionRadius = 5f;
-
-        [Tooltip("Sloi, na kotoryh ischutsya sosednie PowerNode.")]
-        [SerializeField] private LayerMask connectionMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [Tooltip("Explicit neighbor nodes provided by authored prefabs or ConstructionManager. No physics-radius graph discovery.")]
+        [SerializeField] private PowerNode[] authoredNeighborNodes;
 
         [Header("── Fallback (esli net ModuleMarker) ──────────")]
         [Tooltip("Bazovoe potreblenie esli ModuleMarker otsutstvuet. " +
@@ -101,18 +98,12 @@ namespace Hecton8.Power
 
         /// <summary>Tekuschee sostoyanie pitaniya.</summary>
         private bool _hasPower = true;
+        private float _voltage01 = 1f;
         private int _topologyRevision;
         private int _graphScratchIndex = -1;
         private int _graphScratchVersion;
         private bool _isRuptured;
         private bool _isShortCircuited;
-
-        /// <summary>
-        /// Staticheskiy bufer dlya OverlapSphereNonAlloc.
-        /// 32 kollaydera — dostatochno dlya lyubogo modulya.
-        /// Shared: tolko odin PowerNode spavnitsya za kadr.
-        /// </summary>
-        private static readonly Collider[] OverlapBuffer = new Collider[32];
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -203,6 +194,8 @@ namespace Hecton8.Power
         /// <summary>Tekuschee sostoyanie pitaniya (keshirovannoe).</summary>
         public bool HasPower => _hasPower;
 
+        public float Voltage01 => _voltage01;
+
         /// <summary>
         /// Uvedomlenie ob izmenenii pitaniya.
         /// Dlya bazovogo potrebleniya (PowerNode) — prosto keshiruem.
@@ -212,9 +205,16 @@ namespace Hecton8.Power
         public void OnPowerStatusChanged(bool hasPower)
         {
             _hasPower = hasPower;
+            _voltage01 = hasPower ? math.max(_voltage01, 0.2f) : math.min(_voltage01, 0.199f);
 
             // Buduschee: otklyuchenie/vklyuchenie bazovogo osvescheniya,
             // ventilyatsii, zvukov modulya
+        }
+
+        public void OnVoltageChanged(float voltage01)
+        {
+            _voltage01 = math.saturate(math.isfinite(voltage01) ? voltage01 : 0f);
+            _hasPower = _voltage01 >= 0.2f;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -223,7 +223,9 @@ namespace Hecton8.Power
 
         private void Awake()
         {
+            // COLD ALLOC: List<IPowerComponent>[4] - pooled component cache - owner: PowerNode
             _components = new List<IPowerComponent>(4);
+            // COLD ALLOC: List<PowerNode>[6] - authored neighbor cache, no physics discovery - owner: PowerNode
             _neighbors  = new List<PowerNode>(6);
         }
 
@@ -237,7 +239,7 @@ namespace Hecton8.Power
         /// Poryadok:
         ///   1. Chitaem BuildableData cherez ModuleMarker.
         ///   2. Sobiraem vse IPowerComponent na obekte.
-        ///   3. Ischem sosednie PowerNode.
+        ///   3. Connect authored PowerNode neighbors.
         ///   4. Podklyuchaemsya k seti (ili sozdaem novuyu).
         /// </summary>
         public void OnSpawn()
@@ -261,7 +263,7 @@ namespace Hecton8.Power
             else
                 _neighbors.Clear();
 
-            FindAndConnectNeighbors();
+            ConnectAuthoredTopology();
         }
 
         /// <summary>
@@ -320,41 +322,74 @@ namespace Hecton8.Power
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — NEIGHBOR DISCOVERY & GRID CONNECTION
+        //  PRIVATE — AUTHORED NEIGHBOR CONNECTION & GRID CONNECTION
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Ischet sosednie PowerNode cherez OverlapSphereNonAlloc.
+        /// Connects only authored or construction-provided PowerNode neighbors.
         /// Podklyuchaetsya k suschestvuyuschey seti ili sozdaet novuyu.
         /// Pri obnaruzhenii sosedey iz raznyh setey — obedinyaet.
         ///
-        /// ZERO GC: static Collider[] buffer, TryGetComponent,
-        /// ReferenceEquals dlya proverki dublikatov.
+        /// ZERO GC: authored array traversal plus ReferenceEquals duplicate checks.
         ///
         /// STsENARIY OBEDINENIYa:
         ///   Igrok stavit koridor mezhdu dvumya nezavisimymi komnatami.
         ///   Koridor nahodit sosedey iz GridA i GridB.
         ///   → MergeGrids(GridA, GridB) → odna obschaya set.
         /// </summary>
-        private void FindAndConnectNeighbors()
+        public bool ConnectAuthoredNeighbor(PowerNode neighbor)
+        {
+            if (neighbor == null || ReferenceEquals(neighbor, this))
+                return false;
+
+            if (_neighbors == null)
+                _neighbors = new List<PowerNode>(6);
+            if (neighbor._neighbors == null)
+                neighbor._neighbors = new List<PowerNode>(6);
+
+            bool changed = false;
+            if (!ContainsRef(_neighbors, neighbor))
+            {
+                _neighbors.Add(neighbor);
+                changed = true;
+            }
+
+            if (!ContainsRef(neighbor._neighbors, this))
+            {
+                neighbor._neighbors.Add(this);
+                neighbor._topologyRevision++;
+            }
+
+            if (!changed)
+                return false;
+
+            PowerGrid targetGrid = _grid;
+            if (neighbor._grid != null)
+                targetGrid = targetGrid == null ? neighbor._grid : PowerGridManager.MergeGrids(targetGrid, neighbor._grid);
+            if (targetGrid == null)
+                targetGrid = PowerGridManager.CreateGrid(this);
+            else
+                targetGrid.AddNode(this);
+            if (neighbor._grid == null)
+                targetGrid.AddNode(neighbor);
+            _grid = targetGrid;
+            _topologyRevision++;
+            targetGrid.MarkDirty();
+            return true;
+        }
+
+        private void ConnectAuthoredTopology()
         {
             bool topologyChanged = false;
-            int overlapCount = UnityEngine.Physics.OverlapSphereNonAlloc(
-                transform.position,
-                connectionRadius,
-                OverlapBuffer,
-                connectionMask,
-                QueryTriggerInteraction.Ignore);
+            PowerNode[] authored = authoredNeighborNodes;
+            int authoredCount = authored != null ? authored.Length : 0;
 
             PowerGrid targetGrid = null;
 
-            for (int i = 0; i < overlapCount; i++)
+            for (int i = 0; i < authoredCount; i++)
             {
-                Collider col = OverlapBuffer[i];
-                if (col == null) continue;
-                if (ReferenceEquals(col.gameObject, gameObject)) continue;
-
-                if (!col.TryGetComponent(out PowerNode neighbor)) continue;
+                PowerNode neighbor = authored[i];
+                if (neighbor == null) continue;
                 if (ReferenceEquals(neighbor, this)) continue;
 
                 // ── Registriruem kak soseda (dvustoronnyaya svyaz) ──
@@ -363,6 +398,9 @@ namespace Hecton8.Power
                     _neighbors.Add(neighbor);
                     topologyChanged = true;
                 }
+
+                if (neighbor._neighbors == null)
+                    neighbor._neighbors = new List<PowerNode>(6);
 
                 if (!ContainsRef(neighbor._neighbors, this))
                 {
@@ -520,15 +558,14 @@ namespace Hecton8.Power
                 UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
 #endif
-            if (connectionRadius < 0.5f) connectionRadius = 0.5f;
+            if (authoredNeighborNodes == null)
+                authoredNeighborNodes = Array.Empty<PowerNode>();
         }
 
         private void OnDrawGizmosSelected()
         {
-            // ── Radius podklyucheniya ──
+            // Authored links are drawn only in play mode below.
             Gizmos.color = new Color(1f, 0.8f, 0f, 0.12f);
-            Gizmos.DrawWireSphere(transform.position, connectionRadius);
-
             if (!Application.isPlaying) return;
 
             // ── Svyazi s sosedyami ──

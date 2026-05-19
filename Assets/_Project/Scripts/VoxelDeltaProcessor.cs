@@ -3929,6 +3929,18 @@ namespace Hecton8.Caves
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        private struct VoxelBlackBoxDumpHeader
+        {
+            [FieldOffset(0)] public uint Magic;
+            [FieldOffset(4)] public uint Capacity;
+            [FieldOffset(8)] public uint Stride;
+            [FieldOffset(12)] public uint Cursor;
+            [FieldOffset(16)] public uint ReasonFlags;
+            [FieldOffset(20)] public uint _pad0;
+            [FieldOffset(24)] public ulong _pad1;
+        }
+
         private void DumpBlackBoxOnce(uint reasonFlags)
         {
             if (_blackBoxDumpedThisActivation)
@@ -3952,18 +3964,23 @@ namespace Hecton8.Caves
                     Directory.CreateDirectory(directory);
 
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(VoxelBlackBoxDumpMagic);
-                    writer.Write((uint)VoxelBlackBoxCapacity);
-                    writer.Write((uint)UnsafeUtility.SizeOf<VoxelCarveTelemetryEntry>());
-                    writer.Write((uint)_blackBoxCursor);
-                    writer.Write(reasonFlags);
-
-                    for (int i = 0; i < VoxelBlackBoxCapacity; i++)
+                    unsafe
                     {
-                        int index = (_blackBoxCursor + i) % VoxelBlackBoxCapacity;
-                        WriteBlackBoxEntry(writer, blackBox[index]);
+                        VoxelBlackBoxDumpHeader header = new VoxelBlackBoxDumpHeader
+                        {
+                            Magic = VoxelBlackBoxDumpMagic,
+                            Capacity = (uint)VoxelBlackBoxCapacity,
+                            Stride = (uint)UnsafeUtility.SizeOf<VoxelCarveTelemetryEntry>(),
+                            Cursor = (uint)_blackBoxCursor,
+                            ReasonFlags = reasonFlags,
+                            _pad0 = 0u,
+                            _pad1 = 0UL
+                        };
+
+                        WriteUnmanagedBytes(stream, &header, UnsafeUtility.SizeOf<VoxelBlackBoxDumpHeader>());
+                        void* entries = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
+                        WriteUnmanagedBytes(stream, entries, VoxelBlackBoxCapacity * UnsafeUtility.SizeOf<VoxelCarveTelemetryEntry>());
                     }
                 }
             }
@@ -3973,27 +3990,12 @@ namespace Hecton8.Caves
             }
         }
 
-        private static void WriteBlackBoxEntry(BinaryWriter writer, VoxelCarveTelemetryEntry entry)
+        private static unsafe void WriteUnmanagedBytes(FileStream stream, void* source, int byteCount)
         {
-            writer.Write(entry.Frame);
-            writer.Write(entry.Flags);
-            writer.Write(entry.FocusVolumeId);
-            writer.Write(entry.LastHitAup.x);
-            writer.Write(entry.LastHitAup.y);
-            writer.Write(entry.LastHitAup.z);
-            writer.Write(entry.TouchedMinX);
-            writer.Write(entry.TouchedMinY);
-            writer.Write(entry.TouchedMinZ);
-            writer.Write(entry.TouchedMaxX);
-            writer.Write(entry.TouchedMaxY);
-            writer.Write(entry.TouchedMaxZ);
-            writer.Write(entry.QueuedCarves);
-            writer.Write(entry.PendingCarves);
-            writer.Write(entry.ScheduledWrites);
-            writer.Write(entry.DirtyChunks);
-            writer.Write(entry.ScheduledState);
-            writer.Write(entry.DrainBudget);
-            writer.Write(entry.StateHash16);
+            if (stream == null || source == null || byteCount <= 0)
+                return;
+
+            stream.Write(new ReadOnlySpan<byte>(source, byteCount));
         }
 #endif
 

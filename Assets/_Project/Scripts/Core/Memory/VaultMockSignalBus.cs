@@ -6,19 +6,26 @@ using Unity.Collections;
 namespace Hecton8.Core.Memory
 {
     /// <summary>
-    /// Local memory-assembly relocation signal used when the global signal lane is unavailable. Size: 32 bytes.
+    /// Local memory-assembly relocation signal used when the global signal lane is unavailable. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VaultMemoryAddressShiftSignal
     {
-        public long OldPointer;
-        public long NewPointer;
-        public int BufferId;
-        public int ByteLength;
-        public uint Version;
-        public byte Flags;
-        public byte SystemId;
-        private ushort _pad0;
+        [FieldOffset(0)] public long OldPointer;
+        [FieldOffset(8)] public long NewPointer;
+        [FieldOffset(16)] public int BufferId;
+        [FieldOffset(20)] public int ByteLength;
+        [FieldOffset(24)] public uint Version;
+        [FieldOffset(28)] public byte Flags;
+        [FieldOffset(29)] public byte SystemId;
+        [FieldOffset(30)] private ushort _pad0;
+        [FieldOffset(32)] public int OldIndex;
+        [FieldOffset(36)] public int NewIndex;
+        [FieldOffset(40)] public uint MovedEntityId;
+        [FieldOffset(44)] public uint SourceFrame;
+        [FieldOffset(48)] public uint SourceHash;
+        [FieldOffset(52)] public uint CompactedCount;
+        [FieldOffset(56)] private ulong _pad1;
     }
 
     /// <summary>

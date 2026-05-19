@@ -1,5 +1,8 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Mathematics;
+
+#pragma warning disable CS0618
 
 namespace Hecton8.Modding
 {
@@ -38,6 +41,7 @@ namespace Hecton8.Modding
     /// AUP-backed command wrapper for every mod request that touches position.
     /// The dispatcher rebases this payload against the current floating-origin offset at drain time.
     /// </summary>
+    [System.Obsolete("Legacy AUP mod command wrapper is quarantined. Use FutureCommandEnvelope through HectonAPI.Commands.RequestFuture.", false)]
     [StructLayout(LayoutKind.Sequential)]
     public struct ModAupCommand
     {
@@ -133,6 +137,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Matrix submission packet for the reserved mod instancing layer.
     /// </summary>
+    [System.Obsolete("Legacy render-instance mod command wrapper is quarantined. Use FutureCommandEnvelope plus an approved future kernel lane.", false)]
     [StructLayout(LayoutKind.Sequential)]
     public struct ModRenderInstanceCommand
     {
@@ -201,22 +206,31 @@ namespace Hecton8.Modding
     /// <summary>
     /// Unmanaged rejection event emitted when the security gate arbitrates a mod command out.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct ModInteractionRejectedPayload
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct ModInteractionRejectedPayload : ISignal
     {
         /// <summary>Stable mod hash.</summary>
+        [FieldOffset(0)]
         public uint ModHash;
 
         /// <summary>Mod-local request identifier.</summary>
+        [FieldOffset(4)]
         public uint RequestId;
 
-        /// <summary>Rejected opcode.</summary>
+        /// <summary>Rejected legacy opcode alias. Future kernels write <see cref="OpcodeHash"/>.</summary>
+        [FieldOffset(8)]
         public ushort Opcode;
 
         /// <summary>Rejected target system.</summary>
+        [FieldOffset(10)]
         public ushort TargetSystem;
 
+        /// <summary>Rejected 32-bit future opcode hash.</summary>
+        [FieldOffset(8)]
+        public uint OpcodeHash;
+
         /// <summary>Numeric <see cref="ModCommandRejectReason"/> code.</summary>
+        [FieldOffset(12)]
         public uint Reason;
     }
 

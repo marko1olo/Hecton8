@@ -54,7 +54,7 @@ namespace Hecton8.Construction
         Hostile = 2
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 328)]
+    [StructLayout(LayoutKind.Sequential, Size = 448)]
     internal struct HeadlessDroneState
     {
         public int DroneId;
@@ -99,6 +99,10 @@ namespace Hecton8.Construction
         public double3 DockControlP1;
         public double3 DockControlP2;
         public double3 DockControlP3;
+        public double3 PositionAup;
+        public double3 HomeAup;
+        public double3 TargetAup;
+        public double3 SupplyAup;
         public uint ReservedTail0;
         public uint ReservedTail1;
         public uint ReservedTail2;
@@ -121,7 +125,7 @@ namespace Hecton8.Construction
         public int ReservedTail;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct DroneFleetOriginShiftJob : IJobParallelFor
     {
         public NativeArray<HeadlessDroneState> DroneStates;
@@ -203,7 +207,7 @@ namespace Hecton8.Construction
         public float3 TargetPosition;
     }
 
-    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct DroneCognitionJob : IJobParallelFor
     {
         private const int UnclaimedTask = 0;
@@ -220,7 +224,6 @@ namespace Hecton8.Construction
         private const float CorridorCohesionWeight = 0.1f;
         private const float MaxSteering = 8f;
         private const float EmergencySpeedMultiplier = 3f;
-        private const float EmergencyBatteryDrainMultiplier = 5f;
         private const float DockingStartDistanceMeters = 2f;
         private const float DockingStartDistanceSq = DockingStartDistanceMeters * DockingStartDistanceMeters;
         private const float DockingStartForwardMeters = 10f;
@@ -238,7 +241,6 @@ namespace Hecton8.Construction
         private const float SpatialBoundsMin = -512f;
         private const int SpatialGridResolution = 512;
         private const int EmptyTaskIndex = -1;
-        private const float DroneReturnBatteryThresholdPercent = 10f;
         private const float FlowLowBatteryThresholdPercent = 20f;
         private const float FlowCriticalBatteryThresholdPercent = 8f;
         private const float FlowDefaultDragCoefficient = 0.85f;
@@ -250,6 +252,8 @@ namespace Hecton8.Construction
 
         [ReadOnly] public NativeArray<HeadlessDroneState> ReadDrones;
         public NativeArray<HeadlessDroneState> Drones;
+        [NativeDisableParallelForRestriction] public NativeArray<DroneStateDTO> DroneStatesDto;
+        [NativeDisableParallelForRestriction] public NativeArray<DroneTargetDTO> DroneTargets;
         public NativeArray<float4x4> RenderMatrices;
         [NativeDisableParallelForRestriction] public NativeArray<float3> DronePositions;
         [NativeDisableParallelForRestriction] public NativeArray<byte> DroneStates;
@@ -309,6 +313,7 @@ namespace Hecton8.Construction
             }
 
             SanitizeKinematics(ref drone);
+            SanitizeAupFields(ref drone);
             AccumulateTelemetry(in drone);
             drone.AvoidanceHysteresisSeconds = math.max(0f, drone.AvoidanceHysteresisSeconds - math.max(0f, DeltaTime));
 
@@ -335,16 +340,6 @@ namespace Hecton8.Construction
                 TrySelectTask(ref drone, emergency))
             {
                 drone.State = (byte)HeadlessDroneRuntimeState.Travel;
-            }
-
-            float drainScale = emergency ? EmergencyBatteryDrainMultiplier : 1f;
-            drone.BatteryPercent = math.max(0f, drone.BatteryPercent - (drone.BatteryDrainPerSecond * drainScale * DeltaTime));
-            if (ShouldForceBatteryReturn(in drone))
-            {
-                drone.TargetTaskIndex = EmptyTaskIndex;
-                drone.TargetModuleId = 0;
-                drone.TargetPosition = drone.HomePosition;
-                drone.State = (byte)HeadlessDroneRuntimeState.Return;
             }
 
             if (drone.State == (byte)HeadlessDroneRuntimeState.Docking)
@@ -402,6 +397,10 @@ namespace Hecton8.Construction
             float maxSpeed = math.max(0.1f, drone.MaxSpeed * (emergency ? EmergencySpeedMultiplier : 1f));
             float3 desiredVelocity = direction * maxSpeed;
             float3 flowVelocity = ResolveFlowVelocity(drone.Position);
+            float flowStress01 = math.saturate(math.length(flowVelocity) / math.max(0.1f, maxSpeed));
+            if (flowStress01 > 0.0001f)
+                drone.BatteryPercent = math.max(0f, drone.BatteryPercent - (drone.BatteryDrainPerSecond * flowStress01 * 0.15f * DeltaTime));
+
             float dragCoefficient = math.max(0f, FlowDragCoefficient > 0f ? FlowDragCoefficient : FlowDefaultDragCoefficient);
             float3 flowAcceleration = (flowVelocity - drone.Velocity) * dragCoefficient;
             float3 flowAdjustedVelocity = drone.Velocity + (flowAcceleration * DeltaTime);
@@ -409,7 +408,9 @@ namespace Hecton8.Construction
             float3 targetVelocity = BlendLinear(flowVelocity, desiredVelocity, counterFlow01);
             float velocityBlend = drone.AvoidanceHysteresisSeconds > 0f ? 4f : 8f;
             drone.Velocity = BlendLinear(flowAdjustedVelocity, targetVelocity, math.saturate(DeltaTime * velocityBlend));
-            drone.Position += drone.Velocity * DeltaTime;
+            float3 movementDelta = drone.Velocity * DeltaTime;
+            drone.Position += movementDelta;
+            drone.PositionAup = OffsetAupMeters(drone.PositionAup, movementDelta, drone.Position);
             if (math.lengthsq(drone.Velocity) > MinimumVectorLengthSq)
                 drone.Rotation = quaternion.LookRotationSafe(SafeNormalize(drone.Velocity, routeDirection), math.up());
 
@@ -420,6 +421,17 @@ namespace Hecton8.Construction
         {
             Drones[index] = drone;
             RenderMatrices[index] = renderMatrix;
+
+            if (DroneStatesDto.IsCreated && index < DroneStatesDto.Length)
+            {
+                DroneStateDTO* statePtr = (DroneStateDTO*)DroneStatesDto.GetUnsafePtr();
+                ref DroneStateDTO dto = ref UnsafeUtility.AsRef<DroneStateDTO>(statePtr + index);
+                dto.AUP_Position = IsFinite(drone.PositionAup) ? drone.PositionAup : ToDouble3(drone.Position);
+                dto.Velocity = drone.Velocity;
+                dto.CurrentTaskHash = ResolveCurrentTaskHash(index, in drone);
+                dto.BatteryLevel = math.clamp(drone.BatteryPercent, 0f, 100f);
+                dto.Flags = ((uint)drone.State) | ((uint)drone.FactionBit << 8) | ((uint)drone.CorridorTight << 16);
+            }
 
             if (DronePositions.IsCreated && index < DronePositions.Length)
                 DronePositions[index] = drone.Position;
@@ -468,25 +480,6 @@ namespace Hecton8.Construction
             return (byte)DroneFleetSoaState.Idle;
         }
 
-        private static bool ShouldForceBatteryReturn(in HeadlessDroneState drone)
-        {
-            if (drone.BatteryPercent > DroneReturnBatteryThresholdPercent)
-                return false;
-
-            if (drone.State == (byte)HeadlessDroneRuntimeState.Return ||
-                drone.State == (byte)HeadlessDroneRuntimeState.Docking ||
-                drone.State == (byte)HeadlessDroneRuntimeState.ResupplyTravel ||
-                drone.State == (byte)HeadlessDroneRuntimeState.ResupplyDocked ||
-                drone.State == (byte)HeadlessDroneRuntimeState.ResupplyCommitPending ||
-                drone.State == (byte)HeadlessDroneRuntimeState.Stasis ||
-                drone.State == (byte)HeadlessDroneRuntimeState.Reboot)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
         private bool ShouldRunSteeringTick(int index)
         {
             int modulo = math.max(1, SteeringTickModulo);
@@ -509,6 +502,9 @@ namespace Hecton8.Construction
             drone.TargetTaskIndex = EmptyTaskIndex;
             drone.TargetModuleId = 0;
             drone.TargetPosition = ResolveFormationDestination(index, FormationMode);
+            drone.TargetAup = IsFinite(drone.PositionAup)
+                ? drone.PositionAup + ToDouble3(drone.TargetPosition - drone.Position)
+                : ToDouble3(drone.TargetPosition);
             drone.State = FormationMode == (int)DroneFleetFormationMode.Escort
                 ? (byte)HeadlessDroneRuntimeState.Escort
                 : (byte)HeadlessDroneRuntimeState.SearchGrid;
@@ -717,11 +713,11 @@ namespace Hecton8.Construction
             if (drone.State == (byte)HeadlessDroneRuntimeState.Return ||
                 drone.State == (byte)HeadlessDroneRuntimeState.Docking)
             {
-                return drone.HomePosition;
+                return ResolveAupDestination(drone.HomeAup, drone.PositionAup, drone.Position, drone.HomePosition);
             }
 
             if (drone.State == (byte)HeadlessDroneRuntimeState.ResupplyTravel)
-                return drone.SupplyPosition;
+                return ResolveAupDestination(drone.SupplyAup, drone.PositionAup, drone.Position, drone.SupplyPosition);
 
             if (drone.State == (byte)HeadlessDroneRuntimeState.Wander)
                 return drone.TargetPosition;
@@ -734,31 +730,20 @@ namespace Hecton8.Construction
                     : (int)DroneFleetFormationMode.SearchGrid);
             }
 
-            return drone.TargetPosition;
+            if (DroneTargets.IsCreated && (uint)index < (uint)DroneTargets.Length)
+            {
+                DroneTargetDTO target = DroneTargets[index];
+                if ((target.Flags & 1u) != 0u)
+                    return ResolveAupDestination(target.TargetAUP, drone.PositionAup, drone.Position, target.LocalPosition);
+            }
+
+            return ResolveAupDestination(drone.TargetAup, drone.PositionAup, drone.Position, drone.TargetPosition);
         }
 
         private bool TryResolveMacroWaypoint(int index, in HeadlessDroneState drone, out float3 waypoint)
         {
             waypoint = default;
-            if (!MacroWaypoints.IsCreated ||
-                !MacroWaypointStates.IsCreated ||
-                (uint)index >= (uint)MacroWaypoints.Length ||
-                (uint)index >= (uint)MacroWaypointStates.Length ||
-                MacroWaypointStates[index] == 0)
-            {
-                return false;
-            }
-
-            if (drone.State != (byte)HeadlessDroneRuntimeState.Travel &&
-                drone.State != (byte)HeadlessDroneRuntimeState.Return &&
-                drone.State != (byte)HeadlessDroneRuntimeState.ResupplyTravel &&
-                drone.State != (byte)HeadlessDroneRuntimeState.Wander)
-            {
-                return false;
-            }
-
-            waypoint = MacroWaypoints[index].LocalPosition;
-            return IsFinite(waypoint);
+            return false;
         }
 
         private float3 ResolveFormationDestination(int index, int formationMode)
@@ -790,6 +775,9 @@ namespace Hecton8.Construction
             drone.RebootElapsed = 0f;
             drone.TargetTaskIndex = EmptyTaskIndex;
             drone.TargetPosition = drone.HubGridId != 0 ? drone.HomePosition : drone.Position + SafeNormalizeFallback;
+            drone.TargetAup = drone.HubGridId != 0
+                ? drone.HomeAup
+                : drone.PositionAup + ToDouble3(drone.TargetPosition - drone.Position);
             drone.State = drone.HubGridId != 0
                 ? (byte)HeadlessDroneRuntimeState.Return
                 : (byte)HeadlessDroneRuntimeState.Wander;
@@ -814,8 +802,10 @@ namespace Hecton8.Construction
             float t = math.saturate(progress + (math.max(0f, DeltaTime) * speed * math.rcp(pathLength)));
             EvaluateDockingBezier(in drone, t, out float3 targetPosition, out float3 tangent);
 
+            float3 dockingDelta = targetPosition - drone.Position;
             drone.DockingElapsed = t;
             drone.Position = targetPosition;
+            drone.PositionAup = OffsetAupMeters(drone.PositionAup, dockingDelta, drone.Position);
             drone.Velocity = tangent * speed;
             drone.Rotation = ResolveDockingVisualRotation(in drone, tangent, targetPosition);
 
@@ -829,6 +819,7 @@ namespace Hecton8.Construction
                 return;
 
             drone.Position = drone.HomePosition;
+            drone.PositionAup = drone.HomeAup;
             drone.Rotation = ResolveSafeRotation(drone.HomeRotation);
             drone.Velocity = float3.zero;
             drone.DockingElapsed = 1f;
@@ -1176,6 +1167,9 @@ namespace Hecton8.Construction
                 drone.TargetTaskIndex = task.TaskIndex;
                 drone.TargetModuleId = task.ModuleId;
                 drone.TargetPosition = task.Position;
+                drone.TargetAup = IsFinite(drone.PositionAup)
+                    ? drone.PositionAup + ToDouble3(task.Position - drone.Position)
+                    : ToDouble3(task.Position);
                 return true;
             }
 
@@ -1190,6 +1184,49 @@ namespace Hecton8.Construction
 
             if (!IsFinite(drone.Velocity))
                 drone.Velocity = float3.zero;
+        }
+
+        private static void SanitizeAupFields(ref HeadlessDroneState drone)
+        {
+            if (!IsFinite(drone.PositionAup))
+                drone.PositionAup = ToDouble3(drone.Position);
+
+            if (!IsFinite(drone.HomeAup))
+                drone.HomeAup = ToDouble3(IsFinite(drone.HomePosition) ? drone.HomePosition : drone.Position);
+
+            if (!IsFinite(drone.TargetAup))
+                drone.TargetAup = ToDouble3(IsFinite(drone.TargetPosition) ? drone.TargetPosition : drone.Position);
+
+            if (!IsFinite(drone.SupplyAup))
+                drone.SupplyAup = ToDouble3(IsFinite(drone.SupplyPosition) ? drone.SupplyPosition : drone.HomePosition);
+        }
+
+        private static float3 ResolveAupDestination(double3 targetAup, double3 originAup, float3 originLocal, float3 fallbackLocal)
+        {
+            if (IsFinite(targetAup) && IsFinite(originAup))
+            {
+                double3 delta = targetAup - originAup;
+                float3 localDelta = ToFloat3(delta);
+                if (IsFinite(localDelta))
+                    return originLocal + localDelta;
+            }
+
+            return IsFinite(fallbackLocal) ? fallbackLocal : originLocal;
+        }
+
+        private static double3 OffsetAupMeters(double3 originAup, float3 deltaMeters, float3 fallbackLocalPosition)
+        {
+            double3 delta = ToDouble3(deltaMeters);
+            double3 result = originAup + delta;
+            return IsFinite(result) ? result : ToDouble3(fallbackLocalPosition);
+        }
+
+        private static uint ResolveCurrentTaskHash(int index, in HeadlessDroneState drone)
+        {
+            return math.hash(new uint3(
+                (uint)math.max(0, index + 1),
+                (uint)math.max(0, drone.TargetTaskIndex + 1),
+                (uint)drone.State));
         }
 
         private static float3 SafeNormalize(float3 value)

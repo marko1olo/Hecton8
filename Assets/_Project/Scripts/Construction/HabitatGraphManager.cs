@@ -1245,8 +1245,8 @@ namespace Hecton8.Construction
                     continue;
 
                 bool allowNearest = (signal.Flags & CoreCombatDamageSignal.LegacyMirrorFlag) == 0 &&
-                                    math.all(math.isfinite(signal.WorldPoint));
-                if (!TryResolveModuleStressIndex(signal.TargetHash, signal.TargetId, signal.WorldPoint, allowNearest, moduleCount, out int moduleIndex))
+                                    CombatDamageSignalCodec.TryToRuntimePoint(in signal, out float3 runtimePoint);
+                if (!TryResolveModuleStressIndex(signal.TargetHash, signal.TargetId, runtimePoint, allowNearest, moduleCount, out int moduleIndex))
                     continue;
 
                 InjectModuleStressSpike(moduleIndex, signal.Magnitude);

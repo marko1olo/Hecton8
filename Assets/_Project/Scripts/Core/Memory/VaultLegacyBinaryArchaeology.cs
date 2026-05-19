@@ -2,6 +2,8 @@ using System;
 using System.Buffers.Binary;
 using System.IO;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
 
 namespace Hecton8.Core.Memory
 {
@@ -13,7 +15,7 @@ namespace Hecton8.Core.Memory
         private const ulong LegacyMagic = 0x4D454D4C41594F48UL; // HOYALMEM
         private const int MinimumLegacyHeaderBytes = 48;
         private const int FileStreamBufferBytes = 1024;
-        private const int CsvReadBufferBytes = 1024;
+        private const int CsvScratchBytes = 4096;
         private const int CsvMaxLineBytes = 256;
         private const uint SourceHashLegacy = 0x4F53484Fu; // OSHO
         private const uint SourceHashCsv = 0x4353564Fu; // CSVO
@@ -23,6 +25,7 @@ namespace Hecton8.Core.Memory
         private const uint HashColdCapacity = 0x4AA14DD4u;
         private const uint HashBucketCapacity = 0x5B8908DCu;
         private const uint HashScalabilityProfile = 0x9E7709EAu;
+        private const uint HashStrideAggressiveness = 0x12191D2Eu;
 
         /// <summary>
         /// Scans batch archives and StreamingAssets for an OSHINO memory-layout binary, then writes a vault config.
@@ -70,10 +73,50 @@ namespace Hecton8.Core.Memory
                 config = existing.GetElementAsReadOnlyRef(vault, 0);
             }
 
-            ParseCsvOverrideStream(csvPath, ref config);
+            NativeArray<byte> scratch = vault.GetBuffer<byte>(
+                BufferID.VaultMemoryProfileCsvScratch,
+                CsvScratchBytes,
+                SystemID.CoreDataVault,
+                NativeArrayOptions.UninitializedMemory);
+            if (!scratch.IsCreated || scratch.Length < CsvMaxLineBytes + 64)
+                return false;
+
+            ParseCsvOverrideStream(csvPath, scratch, ref config);
 
             config.SourceHash = SourceHashCsv;
             WriteConfigToVault(vault, in config);
+            return true;
+        }
+
+        /// <summary>
+        /// Slow-tick file monitor for play-mode memory profile overrides. The caller owns the last-write tick cache.
+        /// </summary>
+        public static bool TryPollMemoryOverridesCsv(IDataVault vault, string csvPath, ref long lastWriteTicks)
+        {
+            if (vault == null || string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
+                return false;
+
+            long ticks;
+            try
+            {
+                ticks = File.GetLastWriteTimeUtc(csvPath).Ticks;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            if (ticks == lastWriteTicks)
+                return false;
+
+            if (!TryApplyMemoryOverridesCsv(vault, csvPath))
+                return false;
+
+            lastWriteTicks = ticks;
             return true;
         }
 
@@ -110,10 +153,17 @@ namespace Hecton8.Core.Memory
             if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
                 return false;
 
-            foreach (string file in Directory.EnumerateFiles(root, "memory_layout_metrics.h8bin", SearchOption.AllDirectories))
+            System.Collections.Generic.IEnumerator<string> files = Directory
+                .EnumerateFiles(root, "memory_layout_metrics.h8bin", SearchOption.AllDirectories)
+                .GetEnumerator();
+            using (files)
             {
-                if (TryReadLegacyHeader(file, scalabilityProfile, out config))
-                    return true;
+                while (files.MoveNext())
+                {
+                    string file = files.Current;
+                    if (TryReadLegacyHeader(file, scalabilityProfile, out config))
+                        return true;
+                }
             }
 
             return false;
@@ -174,10 +224,16 @@ namespace Hecton8.Core.Memory
             return true;
         }
 
-        private static void ParseCsvOverrideStream(string csvPath, ref VaultMemoryLayoutConfig config)
+        private static unsafe void ParseCsvOverrideStream(string csvPath, NativeArray<byte> scratch, ref VaultMemoryLayoutConfig config)
         {
-            Span<byte> readBuffer = stackalloc byte[CsvReadBufferBytes];
-            Span<byte> lineBuffer = stackalloc byte[CsvMaxLineBytes];
+            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
+            int lineCapacity = math.min(CsvMaxLineBytes, scratch.Length >> 2);
+            int readCapacity = scratch.Length - lineCapacity;
+            if (basePtr == null || lineCapacity <= 0 || readCapacity <= 0)
+                return;
+
+            Span<byte> lineBuffer = new Span<byte>(basePtr, lineCapacity);
+            Span<byte> readBuffer = new Span<byte>(basePtr + lineCapacity, readCapacity);
             int lineLength = 0;
             bool lineOverflow = false;
 
@@ -186,7 +242,7 @@ namespace Hecton8.Core.Memory
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.ReadWrite,
-                CsvReadBufferBytes,
+                readCapacity,
                 FileOptions.SequentialScan);
 
             while (true)
@@ -266,6 +322,9 @@ namespace Hecton8.Core.Memory
                     break;
                 case HashScalabilityProfile:
                     config.ScalabilityProfile = (byte)Clamp((int)value, 0, 3);
+                    break;
+                case HashStrideAggressiveness:
+                    config.StrideAggressiveness = Clamp01Milli(value);
                     break;
             }
         }
@@ -353,6 +412,12 @@ namespace Hecton8.Core.Memory
         private static long Align16(long value)
         {
             return (value + 15L) & ~15L;
+        }
+
+        private static float Clamp01Milli(long value)
+        {
+            long clamped = value < 0L ? 0L : value > 1000L ? 1000L : value;
+            return clamped * 0.001f;
         }
     }
 }

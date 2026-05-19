@@ -914,7 +914,7 @@ namespace Hecton8.Atmosphere
 
                 var combat = new CombatDamageSignal
                 {
-                    WorldPoint = local,
+                    ImpactAup = staged.AUP,
                     Direction = new float3(0f, 1f, 0f),
                     Magnitude = math.max(0f, staged.Magnitude),
                     DamageType = staged.DamageType,

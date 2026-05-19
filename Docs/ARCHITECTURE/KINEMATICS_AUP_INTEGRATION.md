@@ -26,7 +26,7 @@ Verification: PENDING VERIFICATION
 - Current actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json`.
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 - Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current R28 static/tool boundary: AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`). Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
+- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current R31 static/tool boundary: R31 is the latest DOC_GLOBAL root/architecture current-boundary propagation layer; R30 remains the prior internal-currentness layer; AtlasCheck fails `57` RealtimeCSG refs; Mod API static validation now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 Historical 2026-05-04 boundary:
@@ -58,6 +58,14 @@ This document is the canonical runtime map for:
 
 If another document still describes a Unity `CharacterController` owner for player locomotion, that document is obsolete.
 Current runtime ownership is `Rigidbody + CapsuleCollider + HectonPlayerMovement + HectonPlayerMotor`.
+
+## 2026-05-19 SHINOBU_113 Hydrodynamic KCC Seam
+
+`Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs` adds the owner-local hydrodynamic KCC route. Its authoritative state is the 64-byte `KinematicStateDTO` stored in `GlobalDataVault` under `ShinobuHydroKcc*` buffer IDs. The state owns `double3 AUP_Position`, local velocity, angular velocity, mass, and drag scalar; no hot movement state is exposed through C# properties.
+
+The KCC path localizes every physics/collision calculation by subtracting the active sector/origin `double3` before casting to `float3`. Simulation schedules input, hydrodynamic integration, capsule command generation, and deferred `CapsulecastCommand.ScheduleBatch`; post-simulation jobs resolve wall projection and update quantized AUP. Visual sync is the final EWMA interpolation pass and writes local float output for transform presentation only.
+
+Legacy `Rigidbody.MovePosition` calls remain documented as presentation/compatibility debt until player prefab handoff is explicitly authorized. New integrations should consume Vault buffers or `SignalBus<WakeGeneratedSignal>` and must not call legacy movement MonoBehaviours directly.
 
 ## Ownership Map
 

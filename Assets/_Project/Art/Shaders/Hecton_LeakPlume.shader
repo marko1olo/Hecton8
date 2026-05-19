@@ -64,6 +64,23 @@ Shader "HECTON/VFX/LeakPlume"
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
             StructuredBuffer<float4> _LeakPlumeParticleBuffer;
+            struct H8BreachJetDTO
+            {
+                float3 LocalPosition;
+                float Radius;
+                float3 Normal;
+                float Intensity01;
+                float Age;
+                uint DamageTypeHash;
+                uint Frame;
+                uint Flags;
+                uint Reserved0;
+                uint Reserved1;
+                uint Reserved2;
+                uint Reserved3;
+            };
+            StructuredBuffer<H8BreachJetDTO> _HectonBreachJetBuffer;
+            float4 _HectonBreachJetParams; // x=count, y=capacity, z=quality, w=reserved
 
             struct Attributes
             {
@@ -106,6 +123,26 @@ Shader "HECTON/VFX/LeakPlume"
                 #if UNITY_ANY_INSTANCING_ENABLED
                     instanceID = unity_InstanceID;
                 #endif
+                    if (_HectonBreachJetParams.x > 0.5)
+                    {
+                        H8BreachJetDTO jet = _HectonBreachJetBuffer[instanceID];
+                        float2 corner = ResolveProceduralQuadCorner(input.vertexID);
+                        float intensity = saturate(jet.Intensity01);
+                        float size = max(_LeakPlumeParticleSize, 0.01) * lerp(0.8, 2.6, intensity) * max(jet.Radius, 0.05);
+                        float3 centerWS = mul(_SubmarineLocalToWorld, float4(jet.LocalPosition, 1.0)).xyz;
+                        float3 normalWSRaw = mul((float3x3)_SubmarineLocalToWorld, jet.Normal);
+                        float3 normalWS = normalWSRaw * rsqrt(max(dot(normalWSRaw, normalWSRaw), 0.0001));
+                        float forward = max(corner.y, 0.0) * size * lerp(2.0, 5.0, intensity);
+                        float3 worldPosition = centerWS +
+                            (_CameraRightWS * corner.x + _CameraUpWS * corner.y) * size +
+                            normalWS * forward;
+
+                        output.positionCS = TransformWorldToHClip(worldPosition);
+                        output.uv = corner * 0.5 + 0.5;
+                        output.color = half4(1.0h, 1.0h, 1.0h, (half)intensity);
+                        return output;
+                    }
+
                     float4 particle = _LeakPlumeParticleBuffer[instanceID];
                     float2 corner = ResolveProceduralQuadCorner(input.vertexID);
                     float size = max(_LeakPlumeParticleSize, 0.01) * lerp(0.55, 1.35, saturate(particle.w));

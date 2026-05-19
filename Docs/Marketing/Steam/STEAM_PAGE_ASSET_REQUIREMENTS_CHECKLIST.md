@@ -118,6 +118,39 @@ Reject any first-page screenshot if it is:
 - clean plastic lab;
 - lore-only.
 
+## 2026-05-19 Steam Page Build Ticket V0
+
+Status: pre-capture / not upload-ready / use only after real build evidence exists.
+
+This ticket converts the first `PLAN-*` metadata rows into a Steam page capture order. It exists so the first gameplay assets can be reviewed against a fixed bar instead of personal taste.
+
+### Capture Order And Gate
+
+| Order | Asset ID | Steam use | Required proof in frame/clip | Pass threshold | Reject code |
+|---:|---|---|---|---|---|
+| 1 | `PLAN-SHOT-001` | First screenshot / identity hero | Player-scale relation, black-water machinery silhouette, floodlight or pressure cue, no clean blue-ocean read. | 10/12 Steam QA and 4/5 cold readers can name genre plus mood. | `REJECT_EMPTY_DARK_WATER` or `REJECT_CLONE_FRAME` |
+| 2 | `PLAN-SHOT-003` | Second screenshot / player verb | Salvage target, tool/interact path, hazard, reward, or visible consequence. | 10/12 Steam QA and 4/5 cold readers can name the verb without caption. | `REJECT_NO_PLAYER_VERB` |
+| 3 | `PLAN-SHOT-002` | Third screenshot / pressure room | Gauges, seals, hatch/door, dirty glass, maintenance surfaces, pressure language visible. | 9/12 Steam QA; must not read as a clean sci-fi lounge. | `REJECT_CLEAN_SCI_FI` |
+| 4 | `PLAN-SHOT-006` | Fourth screenshot / threat read | Threat, scale, or anomaly read through instrument/floodlight relation. | 9/12 Steam QA and 3/5 cold readers can identify danger source. | `REJECT_RANDOM_MONSTER_POSE` |
+| 5 | `PLAN-SHOT-005` | Fifth screenshot / base under stress | Leak/flood/warning plus player response path; no purely decorative red UI. | 10/12 Steam QA only if the failure is honest in the current build. | `REJECT_FAKE_FAILURE` |
+| 6 | `PLAN-SHOT-004` | Sixth screenshot / heavy machine | Vehicle/tool/pump/ballast mass and readable scale. | 9/12 Steam QA and no toy/plastic read. | `REJECT_TOY_MACHINE` |
+| 7 | `PLAN-SHOT-007` | Seventh screenshot / Seed Ship signal | Instrument corruption, route pull, or anomaly effect visible in-world. | 8/12 Steam QA; promote earlier only if cold readers call it unique. | `REJECT_ABSTRACT_LORE_GLOW` |
+| 8 | `PLAN-SHOT-008` | Internal low-spec/readability check | Same identity/verb clarity at lower settings; no public FPS implication. | Internal only until hardware/settings/profiler proof exists. | `REJECT_UNPROVED_PERF_SIGNAL` |
+| 9 | `PLAN-CLIP-001` | Trailer beat / pressure leak | System problem, readable warning, player action, consequence. | First 3 seconds must work muted. | `REJECT_SLOW_START` |
+| 10 | `PLAN-CLIP-002` | Trailer beat / sonar threat | Sonar/contact/instrument first, threat second, no generic monster reveal. | Viewer understands danger before title card. | `REJECT_GENERIC_THREAT` |
+| 11 | `PLAN-CLIP-003` | Trailer beat / salvage failure | Attempt, friction, failure or near-failure, recovery hook. | Clip has a complete 5-12 second micro-story. | `REJECT_NO_ARC` |
+| 12 | `PLAN-CLIP-004` | Trailer beat / heavy machine startup | Mechanical mass, delay, sound, motion, risk. | Reads heavy without caption. | `REJECT_WEIGHTLESS_MACHINE` |
+| 13 | `PLAN-CAPSULE-001` | Capsule rough A/B/C | Logo readable, one unique HECTON-8 cue, not one-note blue/black. | Tiny-size cold read beats a plain logo and does not look derivative. | `REJECT_UNREADABLE_CAPSULE` |
+
+### Review Packet Required Before Steam Draft
+
+- Actual asset filename and build ID are filled in `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv`.
+- QA score and rejection code are filled for every kept or killed asset.
+- At least five cold-reader notes exist for the first capsule plus first three screenshots.
+- Steam asset specs are rechecked on the official Steamworks pages the same week.
+- No copy says co-op, multiplayer, 100km, zero stutter, infinite procedural world, or Subnautica killer.
+- If fewer than three screenshots pass 10/12, do not publish the Steam page; recapture instead.
+
 ## Trailer Structure
 
 Target: 55-75 seconds for reveal/trailer, 20 seconds for short-form cut.

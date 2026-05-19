@@ -1,0 +1,5 @@
+# signal,min_frame,max_frame,coalescing_radius,priority
+AcousticPingSignal,16,128,1.0,40
+CombatDamageSignal,16,128,1.0,100
+SignalWardenMockDamageSignal,8,64,0.5,100
+MockPlayerFootstepSignal,4,48,1.5,10

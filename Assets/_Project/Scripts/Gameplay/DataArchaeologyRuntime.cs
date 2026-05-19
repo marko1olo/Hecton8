@@ -275,7 +275,7 @@ namespace Hecton8.Gameplay
         /// Scanner-owned archaeology runtime: tuning state, discovery bits, fragment positions, persisted text reads, and hologram draw batches.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class DataArchaeologyRuntime : MonoBehaviour, ISaveable, IRenderable, ILateFrameTickable, IOriginShiftListener, IDisposable
+    public sealed class DataArchaeologyRuntime : MonoBehaviour, ISaveable, IRenderable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IDisposable
     {
         public const int MaxDiscoveryCount = DataArchaeologyDiscoveryBitMask.MaxDiscoveryCount;
         public const int DiscoveryWordCount = DataArchaeologyDiscoveryBitMask.WordCount;
@@ -372,6 +372,8 @@ namespace Hecton8.Gameplay
         private bool _mmfDirty;
         private float _nextMmfFlushTime = float.PositiveInfinity;
         private bool _disposed;
+        private bool _hotSwapListenerRegistered;
+        private LoreDatabaseManager _cachedLoreDatabase;
 
         /// <inheritdoc />
         public int SavePriority => 206;
@@ -492,8 +494,9 @@ namespace Hecton8.Gameplay
                 SetScanState(entityHash, ScanStateScanned);
                 SetNativeLoreBit(DataArchaeologyDiscoveryBitMask.ResolveBitIndex(entityHash));
                 RegisterFragmentPosition(entityHash, hitPosition);
-                if (GlobalRegistry.LoreDatabase != null)
-                    GlobalRegistry.LoreDatabase.TryUnlockByHash(entityHash);
+                LoreDatabaseManager loreDatabase = _cachedLoreDatabase;
+                if (loreDatabase != null)
+                    loreDatabase.TryUnlockByHash(entityHash);
 
                 PublishCompletionSignals(entityHash, hitPosition);
                 EnqueueNotification(entityHash, 1000, NotificationKindDiscovery, 0);
@@ -585,8 +588,8 @@ namespace Hecton8.Gameplay
             if (!changed && hasKnownPosition)
                 return;
 
-            if (changed && GlobalRegistry.LoreDatabase != null)
-                GlobalRegistry.LoreDatabase.TryUnlockByHash(hash);
+            if (changed && _cachedLoreDatabase != null)
+                _cachedLoreDatabase.TryUnlockByHash(hash);
 
             RegisterFragmentPosition(hash, fragmentPosition);
             RegisterHologram(fragment, fragmentPosition);
@@ -804,6 +807,8 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             EnsureNativeState();
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             RegisterOriginShiftListener();
             TryRegisterRuntime();
             TryLoadMmfCold();
@@ -817,6 +822,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             PersistMmfCold();
+            TryUnregisterHotSwapListener();
             UnregisterRuntime();
         }
 
@@ -844,7 +850,39 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             Dispose();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.LoreDatabaseRuntime)
+                _cachedLoreDatabase = currentService as LoreDatabaseManager;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedLoreDatabase = GlobalRegistry.LoreDatabase;
         }
 
         private void TryRegisterRuntime()

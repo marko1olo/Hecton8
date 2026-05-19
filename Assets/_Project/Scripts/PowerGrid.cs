@@ -37,7 +37,7 @@ namespace Hecton8.Power
         private const float OverloadThermalDamagePerSecond = 18f;
         private const float OverloadMeltdownTemperatureCelsius = 150f;
         private const float CableThermalConductivityWattsPerCelsius = 140f;
-        private const int CableThermalSharePassCount = 1;
+        private const int CableThermalSharePassCount = 8;
         private const float OceanThermalSinkTemperatureCelsius = 2f;
         private const float ThermalHeatInjectionScale = 0.001f;
         private const float ThermalDissipationApplyBlend = 0.25f;
@@ -96,7 +96,7 @@ namespace Hecton8.Power
             public int RoomIndex;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ThermalSharePassJob : IJobParallelFor
         {
             private const float MinConductance = 0.0001f;
@@ -867,6 +867,13 @@ namespace Hecton8.Power
                 if (!consumerVoltageResolved)
                     consumerVoltageSupplyRatio = _supplyRatio;
 
+                consumerVoltageSupplyRatio = math.saturate(math.isfinite(consumerVoltageSupplyRatio) ? consumerVoltageSupplyRatio : 0f);
+                if (consumer is IContinuousPowerComponent continuousPower &&
+                    math.abs(continuousPower.Voltage01 - consumerVoltageSupplyRatio) > 0.0005f)
+                {
+                    continuousPower.OnVoltageChanged(consumerVoltageSupplyRatio);
+                }
+
                 bool voltageBrownout = consumerVoltageSupplyRatio < BrownoutPotentialThreshold;
                 if (consumer is BaseModule baseModule)
                     baseModule.SetAmbientPowerVisualState(
@@ -919,7 +926,6 @@ namespace Hecton8.Power
                 float overloadHeatWatts = math.max(MinimumOverloadHeatWatts, ResolveNodeCapacity(node) * OverloadHeatWattsScale);
                 binding.Atmosphere.InjectRoomHeatEnergyJoules(binding.RoomIndex, overloadHeatWatts * BatteryDispatchDeltaTimeSeconds);
                 ApplySubmergedOverloadFluidHeating(binding, overloadHeatWatts);
-                node.SetShortCircuited(true);
 
                 float accumulatedThermalDamage = 0f;
                 _overloadThermalDamageByNode.TryGetValue(node, out accumulatedThermalDamage);
@@ -968,7 +974,7 @@ namespace Hecton8.Power
             uint nodeId = unchecked((uint)EntityId.ToULong(node.GetEntityId()));
             Hecton8.Core.Contracts.Signals.CombatDamageSignal signal = new Hecton8.Core.Contracts.Signals.CombatDamageSignal
             {
-                WorldPoint = float3.zero,
+                ImpactAup = double3.zero,
                 Direction = float3.zero,
                 Magnitude = math.max(0.01f, potential),
                 DamageType = (uint)DamageTypeMask.Emp,
@@ -1045,7 +1051,8 @@ namespace Hecton8.Power
             if (directedEdgeCount <= 0)
                 return false;
 
-            int iterationBudget = CableThermalSharePassCount;
+            int qualityIterationBudget = SubmarineOsThermalGridRuntime.ResolvePropagationIterations(HomeostasisBrain.GlobalQualityWeight);
+            int iterationBudget = math.clamp(_cableThermalIterationBudget, 1, qualityIterationBudget);
             NativeArray<float> inputTemperatures = _thermalTemperatureFront;
             NativeArray<float> outputTemperatures = _thermalTemperatureBack;
             JobHandle thermalHandle = default;
@@ -1290,25 +1297,25 @@ namespace Hecton8.Power
             {
                 DisposeThermalDissipationBuffers();
                 // COLD ALLOC: NativeArray<float>[nodeCount] - thermal sharing front buffer - owner: PowerGrid
-                _thermalTemperatureFront = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _thermalTemperatureFront = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 RegisterNativeArray(_thermalTemperatureFront, nameof(_thermalTemperatureFront));
                 // COLD ALLOC: NativeArray<float>[nodeCount] - thermal sharing back buffer - owner: PowerGrid
-                _thermalTemperatureBack = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _thermalTemperatureBack = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 RegisterNativeArray(_thermalTemperatureBack, nameof(_thermalTemperatureBack));
                 // COLD ALLOC: NativeArray<float>[nodeCount] - thermal heat injection buffer - owner: PowerGrid
-                _thermalHeatInjection = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _thermalHeatInjection = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 RegisterNativeArray(_thermalHeatInjection, nameof(_thermalHeatInjection));
                 // COLD ALLOC: NativeArray<float>[nodeCount] - hull/ocean thermal sink buffer - owner: PowerGrid
-                _thermalHullSinkConductance = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _thermalHullSinkConductance = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 RegisterNativeArray(_thermalHullSinkConductance, nameof(_thermalHullSinkConductance));
                 // COLD ALLOC: NativeArray<int>[nodeCount+1] - thermal CSR edge offsets - owner: PowerGrid
-                _thermalEdgeOffsets = new NativeArray<int>(safeNodeCount + 1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _thermalEdgeOffsets = new NativeArray<int>(safeNodeCount + 1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 RegisterNativeArray(_thermalEdgeOffsets, nameof(_thermalEdgeOffsets));
                 // COLD ALLOC: NativeArray<int>[edgeCount] - thermal CSR destinations - owner: PowerGrid
-                _thermalEdgeDestinations = new NativeArray<int>(safeEdgeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _thermalEdgeDestinations = new NativeArray<int>(safeEdgeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 RegisterNativeArray(_thermalEdgeDestinations, nameof(_thermalEdgeDestinations));
                 // COLD ALLOC: NativeArray<float>[edgeCount] - thermal CSR conductance - owner: PowerGrid
-                _thermalEdgeConductance = new NativeArray<float>(safeEdgeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _thermalEdgeConductance = new NativeArray<float>(safeEdgeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 RegisterNativeArray(_thermalEdgeConductance, nameof(_thermalEdgeConductance));
                 return;
             }
@@ -1318,10 +1325,10 @@ namespace Hecton8.Power
                 DisposeTrackedNativeArray(ref _thermalEdgeDestinations);
                 DisposeTrackedNativeArray(ref _thermalEdgeConductance);
                 // COLD ALLOC: NativeArray<int>[edgeCount] - expanded thermal CSR destinations - owner: PowerGrid
-                _thermalEdgeDestinations = new NativeArray<int>(safeEdgeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _thermalEdgeDestinations = new NativeArray<int>(safeEdgeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 RegisterNativeArray(_thermalEdgeDestinations, nameof(_thermalEdgeDestinations));
                 // COLD ALLOC: NativeArray<float>[edgeCount] - expanded thermal CSR conductance - owner: PowerGrid
-                _thermalEdgeConductance = new NativeArray<float>(safeEdgeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _thermalEdgeConductance = new NativeArray<float>(safeEdgeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 RegisterNativeArray(_thermalEdgeConductance, nameof(_thermalEdgeConductance));
             }
         }
@@ -1362,40 +1369,26 @@ namespace Hecton8.Power
                 binding.Atmosphere == null ||
                 binding.RoomIndex < 0 ||
                 roomTemperature < OverloadMeltdownTemperatureCelsius ||
-                node.IsRuptured)
+                node.IsRuptured ||
+                node.IsShortCircuited)
             {
                 return;
             }
 
             uint nodeId = unchecked((uint)EntityId.ToULong(node.GetEntityId()));
-            node.SetRuptured(true);
-            FatalPressureImplosionEvent implosionEvent = new FatalPressureImplosionEvent(
-                nodeId,
-                binding.RoomIndex,
-                roomTemperature,
-                binding.BaseModule.transform.position);
-            FatalPressureImplosionEvents.Notify(in implosionEvent);
-
-            if (binding.DamageReceiver == null)
-                return;
-
-            float previousIntegrity = binding.BaseModule.MaxRecoverableIntegrity > 0.01f
-                ? math.saturate(binding.BaseModule.CurrentIntegrity / binding.BaseModule.MaxRecoverableIntegrity)
-                : 0f;
-            DamagePacket packet = new DamagePacket
-            {
-                Channel = DamageChannel.HullBreach,
-                PreviousValue = previousIntegrity,
-                NextValue = 0f,
-                Magnitude = math.max(damageMagnitude, roomTemperature),
-                LocalPoint = float3.zero,
-                DamageType = 0u,
-                IntegrityDelta = byte.MaxValue,
-                Depth = 0f,
-                SourceId = 0,
-                TraumaLevel = 0
-            };
-            binding.DamageReceiver.ReceiveDamage(in packet);
+            float stress01 = math.saturate((math.max(damageMagnitude, roomTemperature) - OverloadMeltdownTemperatureCelsius) /
+                                           math.max(1f, OverloadMeltdownTemperatureCelsius));
+            node.SetShortCircuited(true);
+            binding.BaseModule.SetAmbientPowerVisualState(true, math.saturate(1f - stress01));
+            PublishNodeBrownoutSignal(nodeId, math.saturate(1f - stress01), 100);
+            global::Hecton8.Audio.StructuralStressAudioInfo structuralStress =
+                new global::Hecton8.Audio.StructuralStressAudioInfo(
+                    binding.BaseModule.transform.position,
+                    math.max(0.25f, stress01),
+                    math.lerp(0.95f, 0.55f, stress01));
+            global::Hecton8.Core.Contracts.Signals.AudioEvent audioEvent =
+                global::Hecton8.Core.Contracts.Signals.AudioEvent.FromStructuralStress(in structuralStress);
+            global::Hecton8.Core.Contracts.Signals.SignalBus<global::Hecton8.Core.Contracts.Signals.AudioEvent>.Push(in audioEvent);
         }
 
         private static float ResolveNodeCapacity(PowerNode node)
@@ -1453,7 +1446,9 @@ namespace Hecton8.Power
             return sourceNode != null &&
                    destinationNode != null &&
                    !sourceNode.IsRuptured &&
-                   !destinationNode.IsRuptured;
+                   !destinationNode.IsRuptured &&
+                   !sourceNode.IsShortCircuited &&
+                   !destinationNode.IsShortCircuited;
         }
 
         private static byte ResolveNodeStatusBits(PowerNode node)

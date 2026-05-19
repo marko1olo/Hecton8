@@ -73,6 +73,7 @@ namespace Hecton8.Editor
         private const string VolumetricFeatureTypeName = "Hecton8.Visor.HectonScooterVolumetricShaftsFeature";
         private const string SsdoFeatureTypeName = "Hecton8.Visor.HectonAbyssalSsdoFeature";
         private const string NoirDepthFogFeatureTypeName = "Hecton8.Visor.HectonNoirDepthFogFeature";
+        private const string VolumetricParticulateFogFeatureTypeName = "Hecton8.Visor.HectonVolumetricParticulateFogFeature";
         private const string StochasticSsrFeatureTypeName = "Hecton8.Visor.HectonStochasticSsrFeature";
         private const string HalfResParticlesFeatureTypeName = "Hecton8.Visor.HectonHalfResParticlesFeature";
         private const string VisorUberPostFeatureTypeName = "Hecton8.Visor.HectonVisorUberPostFeature";
@@ -81,6 +82,7 @@ namespace Hecton8.Editor
         private const string AtmosphereSootFeatureTypeName = "Hecton8.Visor.HectonAtmosphereSootFeature";
         private const string VisorUberPostShaderAssetPath = "Assets/_Project/Art/Shaders/HectonVisorUberPost.shader";
         private const string AtmosphereSootShaderAssetPath = "Assets/_Project/Art/Shaders/Hidden_Hecton_AtmosphereSootOverlay.shader";
+        private const string VolumetricParticulateFogComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_VolumetricFog.compute";
 
         [InitializeOnLoadMethod]
         private static void QueueInitialRepair()
@@ -326,12 +328,14 @@ namespace Hecton8.Editor
             rendererChanged |= RestoreSerializedRendererFeatures(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonAbyssalSsdoFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonNoirDepthFogFeature>(rendererData);
+            rendererChanged |= EnsureRequiredRendererFeature<HectonVolumetricParticulateFogFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonScooterVolumetricShaftsFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonVisorUberPostFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonHalfResParticlesFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonAtmosphereSootFeature>(rendererData);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, SsdoFeatureTypeName, RenderPassEvent.BeforeRenderingTransparents);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, NoirDepthFogFeatureTypeName, RenderPassEvent.BeforeRenderingTransparents);
+            rendererChanged |= EnsureRequiredFeatureState(rendererData, VolumetricParticulateFogFeatureTypeName, RenderPassEvent.BeforeRenderingPostProcessing);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, VolumetricFeatureTypeName, RenderPassEvent.BeforeRenderingTransparents);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, VisorUberPostFeatureTypeName, RenderPassEvent.BeforeRenderingPostProcessing);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, HalfResParticlesFeatureTypeName, RenderPassEvent.BeforeRenderingPostProcessing);
@@ -534,6 +538,9 @@ namespace Hecton8.Editor
             if (string.Equals(featureTypeName, VisorUberPostFeatureTypeName, StringComparison.Ordinal))
                 serializedChanged |= EnsureShaderReference(serializedFeature.FindProperty("settings.shader"), VisorUberPostShaderAssetPath);
 
+            if (string.Equals(featureTypeName, VolumetricParticulateFogFeatureTypeName, StringComparison.Ordinal))
+                serializedChanged |= EnsureComputeShaderReference(serializedFeature.FindProperty("settings.computeShader"), VolumetricParticulateFogComputeAssetPath);
+
             if (serializedChanged)
             {
                 serializedFeature.ApplyModifiedPropertiesWithoutUndo();
@@ -631,6 +638,7 @@ namespace Hecton8.Editor
             else if (string.Equals(featureTypeName, VisorUberPostFeatureTypeName, StringComparison.Ordinal) ||
                      string.Equals(featureTypeName, VisorFluidFeatureTypeName, StringComparison.Ordinal) ||
                      string.Equals(featureTypeName, HalfResParticlesFeatureTypeName, StringComparison.Ordinal) ||
+                     string.Equals(featureTypeName, VolumetricParticulateFogFeatureTypeName, StringComparison.Ordinal) ||
                      string.Equals(featureTypeName, AtmosphereSootFeatureTypeName, StringComparison.Ordinal))
             {
                 expectedInjectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
@@ -1108,6 +1116,19 @@ namespace Hecton8.Editor
                 return false;
 
             property.objectReferenceValue = shader;
+            return true;
+        }
+
+        private static bool EnsureComputeShaderReference(SerializedProperty property, string assetPath)
+        {
+            if (property == null || property.objectReferenceValue != null)
+                return false;
+
+            ComputeShader computeShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(assetPath);
+            if (computeShader == null)
+                return false;
+
+            property.objectReferenceValue = computeShader;
             return true;
         }
 

@@ -28,6 +28,37 @@ The press kit exists so creators and journalists can understand the game in 30 s
 - `feature_boundaries.md`
 - `performance_claims.md`
 
+## 2026-05-19 Press Kit Build Ticket V0
+
+Status: not buildable yet / asset-gated / do not send.
+
+The press kit becomes buildable only after the Steam page assembly and screenshot campaign produce a `KEEP` decision.
+
+| Press kit item | Source now | Required proof before publish | Reject condition |
+|---|---|---|---|
+| `factsheet.md` | Factsheet fields below | Contact, Steam URL, presskit URL, build/demo state are real. | Any TBD in public-facing fields. |
+| `short_description.txt` | `Steam/STORE_PAGE_COPY_MATRIX.md` | Candidate selected by cold read and no co-op/performance/large-world claim. | Viewers cannot name player verb. |
+| `long_description.md` | Steam copy matrix + feature boundaries | Only current-build or clearly scoped public facts. | Future roadmap sold as current feature. |
+| `screenshots/` | `PLAN-SHOT-001` through `PLAN-SHOT-007` | Public shots pass QA and have build IDs. | AI/concept-looking, unreadable, or generic clone frame. |
+| `trailer/` | `PLAN-CLIP-001` through `PLAN-CLIP-004` | First 3 seconds show player verb or system problem. | Beauty footage with no gameplay read. |
+| `logo/` | Brand asset source | Readable mark on dark/light backgrounds. | Tiny-size unreadable. |
+| `capsules/` | `PLAN-CAPSULE-001` winner | AB-002/cold-read winner exists. | Title unreadable or one-note blue/black. |
+| `contact.txt` | Owner-controlled email only | Project email and response owner exist. | Personal/orphan email or no owner. |
+| `key_request_policy.md` | Review-key protocol | Current Steamworks key rules rechecked. | Implies keys are available before approval. |
+| `feature_boundaries.md` | FAQ/roadmap policy | No co-op, no false performance, no unsupported scope. | Any vague "planned soon" promise. |
+| `performance_claims.md` | Profiler/hardware proof only | Build/settings/hardware/frame-time context exists. | Empty "runs well" language. |
+
+### Press Kit Publish Gate
+
+Do not publish or link a press kit until:
+
+- Campaign 01 is `KEEP`;
+- Steam page launch gate is passed or the kit clearly says Steam URL is not live;
+- at least 6 screenshots have asset metadata, QA score, and build ID;
+- contact route is owner-controlled;
+- review-key policy is included even if no keys exist;
+- every file says single-player-first and avoids competitor-war language.
+
 ## Factsheet Fields
 
 | Field | Current Draft |

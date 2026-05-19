@@ -189,7 +189,7 @@ namespace Hecton8.Power
             public LogisticsConsumerFlags Flags;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public struct JacobiPowerGridSolverJob : IJob
         {
             public const int FixedIterationCount = 3;
@@ -311,7 +311,7 @@ namespace Hecton8.Power
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct PublishNodeStatesJob : IJobParallelFor
         {
             private const float PublishEpsilon = 0.0001f;
@@ -381,7 +381,7 @@ namespace Hecton8.Power
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateGraphJob : IJob
         {
             public LogisticsNetworkType NetworkType;
@@ -872,9 +872,7 @@ namespace Hecton8.Power
 
                 NativeArray<float> input = PotentialFront;
                 NativeArray<float> output = PotentialBack;
-                int iterationBudget = topologyCycleCount > 0
-                    ? LoopedJacobiRelaxationIterations
-                    : RadialJacobiRelaxationIterations;
+                int iterationBudget = SubmarineOsThermalGridRuntime.ResolvePropagationIterations(HomeostasisBrain.GlobalQualityWeight);
                 for (int iteration = 0; iteration < iterationBudget; iteration++)
                 {
                     for (int nodeIndex = solveStartNode; nodeIndex < solveEndNode; nodeIndex++)
@@ -893,8 +891,8 @@ namespace Hecton8.Power
                             continue;
                         }
 
-                        float potentialSum = math.saturate(input[nodeIndex]);
-                        int neighborCount = 0;
+                        float weightedPotential = 0f;
+                        float conductanceSum = 0f;
                         int edgeStart = EdgeOffsets[nodeIndex];
                         int edgeEnd = EdgeOffsets[nodeIndex + 1];
                         for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
@@ -910,11 +908,15 @@ namespace Hecton8.Power
                             if ((destinationNode.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) != 0)
                                 continue;
 
-                            potentialSum += math.saturate(input[destinationNodeIndex]);
-                            neighborCount++;
+                            float conductance = math.max(0f, EdgeConductance[edgeIndex]);
+                            if (conductance <= Epsilon)
+                                continue;
+
+                            weightedPotential += conductance * math.saturate(input[destinationNodeIndex]);
+                            conductanceSum += conductance;
                         }
 
-                        float nextPotential = potentialSum * math.rcp(1 + neighborCount);
+                        float nextPotential = (weightedPotential + NodeNetInjection[nodeIndex]) * math.rcp(math.max(conductanceSum, Epsilon));
                         output[nodeIndex] = math.isfinite(nextPotential) ? math.saturate(nextPotential) : 0f;
                     }
 

@@ -9,6 +9,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -16,78 +17,81 @@ using UnityEngine;
 
 namespace Hecton8.AI.Sensory
 {
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct EchoTap
     {
-        public AbsoluteUniversePosition SourceAup;
-        public AbsoluteUniversePosition PortalAup;
-        public float Volume01;
-        public float Transmission01;
-        public float DelaySeconds;
-        public float LastHeardTime;
-        public uint SourceId;
-        public uint Sequence;
-        public byte Flags;
-        public byte QualityTier;
-        private ushort _pad0;
-        private uint _pad1;
+        [FieldOffset(0)] public AbsoluteUniversePosition SourceAup;
+        [FieldOffset(48)] public AbsoluteUniversePosition PortalAup;
+        [FieldOffset(96)] public float Volume01;
+        [FieldOffset(100)] public float Transmission01;
+        [FieldOffset(104)] public float DelaySeconds;
+        [FieldOffset(108)] public float LastHeardTime;
+        [FieldOffset(112)] public uint SourceId;
+        [FieldOffset(116)] public uint Sequence;
+        [FieldOffset(120)] public byte Flags;
+        [FieldOffset(121)] public byte QualityTier;
+        [FieldOffset(122)] private ushort _pad0;
+        [FieldOffset(124)] private uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 144)]
     public struct AcousticEchoHuntResult
     {
-        public AbsoluteUniversePosition InvestigateAup;
-        public AbsoluteUniversePosition SourceAup;
-        public float3 RuntimePosition;
-        public float Intensity01;
-        public float LastHeardTime;
-        public float SilenceSeconds;
-        public float HeadSweep01;
-        public uint SourceId;
-        public uint Sequence;
-        public byte Flags;
-        public byte QualityTier;
-        private ushort _pad0;
+        [FieldOffset(0)] public AbsoluteUniversePosition InvestigateAup;
+        [FieldOffset(48)] public AbsoluteUniversePosition SourceAup;
+        [FieldOffset(96)] public float3 RuntimePosition;
+        [FieldOffset(108)] public float Intensity01;
+        [FieldOffset(112)] public float LastHeardTime;
+        [FieldOffset(116)] public float SilenceSeconds;
+        [FieldOffset(120)] public float HeadSweep01;
+        [FieldOffset(124)] public uint SourceId;
+        [FieldOffset(128)] public uint Sequence;
+        [FieldOffset(132)] public byte Flags;
+        [FieldOffset(133)] public byte QualityTier;
+        [FieldOffset(134)] private ushort _pad0;
+        [FieldOffset(136)] private ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct AcousticEchoTrailState
     {
-        public AbsoluteUniversePosition InvestigateAup;
-        public AbsoluteUniversePosition SourceAup;
-        public float Intensity01;
-        public float LastHeardTime;
-        public uint SourceId;
-        public uint Sequence;
-        public uint AcousticHuntsTriggered;
-        public byte Flags;
-        public byte QualityTier;
-        private ushort _pad0;
+        [FieldOffset(0)] public AbsoluteUniversePosition InvestigateAup;
+        [FieldOffset(48)] public AbsoluteUniversePosition SourceAup;
+        [FieldOffset(96)] public float Intensity01;
+        [FieldOffset(100)] public float LastHeardTime;
+        [FieldOffset(104)] public uint SourceId;
+        [FieldOffset(108)] public uint Sequence;
+        [FieldOffset(112)] public uint AcousticHuntsTriggered;
+        [FieldOffset(116)] public byte Flags;
+        [FieldOffset(117)] public byte QualityTier;
+        [FieldOffset(118)] private ushort _pad0;
+        [FieldOffset(120)] private ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     internal struct AcousticEchoBlackBoxEntry
     {
-        public long PortalGridX;
-        public long PortalGridY;
-        public long PortalGridZ;
-        public float3 PortalLocal;
-        public float Intensity01;
-        public float LastHeardTime;
-        public float SilenceSeconds;
-        public int Frame;
-        public uint AcousticHuntsTriggered;
-        public uint SourceId;
-        public uint Sequence;
-        public uint Flags;
-        public uint StateHash;
+        [FieldOffset(0)] public long PortalGridX;
+        [FieldOffset(8)] public long PortalGridY;
+        [FieldOffset(16)] public long PortalGridZ;
+        [FieldOffset(24)] public float3 PortalLocal;
+        [FieldOffset(36)] public float Intensity01;
+        [FieldOffset(40)] public float LastHeardTime;
+        [FieldOffset(44)] public float SilenceSeconds;
+        [FieldOffset(48)] public int Frame;
+        [FieldOffset(52)] public uint AcousticHuntsTriggered;
+        [FieldOffset(56)] public uint SourceId;
+        [FieldOffset(60)] public uint Sequence;
+        [FieldOffset(64)] public uint Flags;
+        [FieldOffset(68)] public uint StateHash;
+        [FieldOffset(72)] private ulong _pad0;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct EchoTrackingJob : IJob
     {
-        [ReadOnly] public NativeArray<EchoTap> Taps;
-        public NativeArray<AcousticEchoTrailState> Result;
+        [ReadOnly, NoAlias] public NativeArray<EchoTap> Taps;
+        [NoAlias] public NativeArray<AcousticEchoTrailState> Result;
         public AcousticEchoTrailState Previous;
         public float CurrentTime;
         public int TapCount;
@@ -189,14 +193,13 @@ namespace Hecton8.AI.Sensory
         public const int BlackBoxFrameCount = 300;
         public const float SilenceTimeoutSeconds = 5f;
 
-        private const string NativeOwner = "ACOUSTIC_ECHO_LOCATION_AI";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_ACOUSTIC_ECHO_LOCATION_AI.bin";
         private const float MovementVelocityToVolume = 0.025f;
-        private const int MaxQueuedEchoTaps = 64;
+        private const int MaxQueuedEchoTaps = MaxEchoTapsPerFrame;
 
-        private static NativeQueue<EchoTap> _echoTapQueue;
         private static IDataVault _dataVault;
         private static VaultBufferHandle<EchoTap> _frameTapsHandle;
+        private static VaultBufferHandle<EchoTap> _pendingTapsHandle;
         private static VaultBufferHandle<AcousticEchoTrailState> _jobResultHandle;
         private static VaultBufferHandle<AcousticEchoBlackBoxEntry> _blackBoxHandle;
         private static JobHandle _trackingHandle;
@@ -221,9 +224,6 @@ namespace Hecton8.AI.Sensory
                 return;
             }
 
-            _echoTapQueue = new NativeQueue<EchoTap>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EchoTap>[64] - acoustic echo tap producer bridge - owner: ACOUSTIC_ECHO_LOCATION_AI
-            NativeMemorySentinel.RegisterNativeQueue(_echoTapQueue, 64, NativeOwner, nameof(_echoTapQueue), NativeAllocationLifetime.Session);
-            PrewarmEchoTapQueue();
             _cachedQualityTier = ResolveQualityTier();
             EnsureVaultBuffers();
             _initialized = 1;
@@ -238,13 +238,6 @@ namespace Hecton8.AI.Sensory
             {
                 _trackingHandle.Complete();
                 _trackingScheduled = 0;
-            }
-
-            if (_echoTapQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeOwner, nameof(_echoTapQueue));
-                _echoTapQueue.Dispose();
-                _echoTapQueue = default;
             }
 
             if (_dataVault != null)
@@ -274,7 +267,11 @@ namespace Hecton8.AI.Sensory
                 return false;
             }
 
-            _echoTapQueue.Enqueue(tap);
+            NativeArray<EchoTap> pendingTaps = _pendingTapsHandle.Resolve(_dataVault);
+            if (!pendingTaps.IsCreated || _queuedEchoTapCount >= pendingTaps.Length)
+                return false;
+
+            pendingTaps[_queuedEchoTapCount] = tap;
             _queuedEchoTapCount++;
             return true;
         }
@@ -284,10 +281,12 @@ namespace Hecton8.AI.Sensory
             IDataVault vault = _dataVault;
             if (vault == null ||
                 !_frameTapsHandle.IsCreated ||
+                !_pendingTapsHandle.IsCreated ||
                 !_jobResultHandle.IsCreated ||
                 !_blackBoxHandle.IsCreated)
             {
-                vault = GlobalRegistry.DataVault;
+                if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
+                    vault = latest;
             }
 
             if (vault == null)
@@ -304,6 +303,15 @@ namespace Hecton8.AI.Sensory
                 _frameTapsHandle = vault.GetBufferHandle<EchoTap>(
                     BufferID.AcousticEchoFrameTaps,
                     MaxEchoTapsPerFrame,
+                    SystemID.AISensory,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_pendingTapsHandle.IsCreated || _pendingTapsHandle.Length < MaxQueuedEchoTaps)
+            {
+                _pendingTapsHandle = vault.GetBufferHandle<EchoTap>(
+                    BufferID.AcousticEchoPendingTaps,
+                    MaxQueuedEchoTaps,
                     SystemID.AISensory,
                     NativeArrayOptions.ClearMemory);
             }
@@ -327,6 +335,7 @@ namespace Hecton8.AI.Sensory
             }
 
             return _frameTapsHandle.IsCreated &&
+                   _pendingTapsHandle.IsCreated &&
                    _jobResultHandle.IsCreated &&
                    _blackBoxHandle.IsCreated;
         }
@@ -334,6 +343,7 @@ namespace Hecton8.AI.Sensory
         private static void ClearVaultHandles()
         {
             _frameTapsHandle = default;
+            _pendingTapsHandle = default;
             _jobResultHandle = default;
             _blackBoxHandle = default;
         }
@@ -359,7 +369,9 @@ namespace Hecton8.AI.Sensory
                 return true;
             }
 
-            IDataVault refreshed = GlobalRegistry.DataVault;
+            IDataVault refreshed = GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest)
+                ? latest
+                : null;
             if (refreshed == null || ReferenceEquals(refreshed, vault))
                 return false;
 
@@ -386,7 +398,9 @@ namespace Hecton8.AI.Sensory
             if (blackBox.IsCreated && blackBox.Length > 0)
                 return true;
 
-            IDataVault refreshed = GlobalRegistry.DataVault;
+            IDataVault refreshed = GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest)
+                ? latest
+                : null;
             if (refreshed == null || ReferenceEquals(refreshed, _dataVault))
                 return false;
 
@@ -571,7 +585,7 @@ namespace Hecton8.AI.Sensory
                 }
             }
 
-            _cachedQualityTier = ResolveQualityTier();
+            ConsumeScalabilityChangedSignals();
             int tapCount = DrainEchoTapQueue(frameTaps, frame, currentTime);
             tapCount = AppendMovementSignals(frameTaps, tapCount, frame, currentTime);
             tapCount = AppendAcousticPingSignals(frameTaps, tapCount, frame, currentTime);
@@ -595,8 +609,11 @@ namespace Hecton8.AI.Sensory
         {
             int count = 0;
             int limit = math.min(MaxEchoTapsPerFrame, frameTaps.IsCreated ? frameTaps.Length : 0);
-            while (count < limit && _echoTapQueue.TryDequeue(out EchoTap tap))
+            NativeArray<EchoTap> pendingTaps = _pendingTapsHandle.Resolve(_dataVault);
+            int pendingCount = math.min(_queuedEchoTapCount, pendingTaps.IsCreated ? pendingTaps.Length : 0);
+            for (int i = 0; i < pendingCount && count < limit; i++)
             {
+                EchoTap tap = pendingTaps[i];
                 if (!IsValidTap(in tap))
                 {
                     WriteFaultBlackBox(frame, in tap.PortalAup);
@@ -609,8 +626,9 @@ namespace Hecton8.AI.Sensory
                 frameTaps[count++] = tap;
             }
 
-            while (_echoTapQueue.TryDequeue(out _))
+            for (int i = 0; i < pendingCount; i++)
             {
+                pendingTaps[i] = default;
             }
 
             _queuedEchoTapCount = 0;
@@ -721,25 +739,14 @@ namespace Hecton8.AI.Sensory
 
         private static void DropEchoTapQueue()
         {
-            if (!_echoTapQueue.IsCreated)
-                return;
-
-            while (_echoTapQueue.TryDequeue(out _))
+            NativeArray<EchoTap> pendingTaps = _pendingTapsHandle.Resolve(_dataVault);
+            int pendingCount = math.min(_queuedEchoTapCount, pendingTaps.IsCreated ? pendingTaps.Length : 0);
+            for (int i = 0; i < pendingCount; i++)
             {
+                pendingTaps[i] = default;
             }
 
             _queuedEchoTapCount = 0;
-        }
-
-        private static void PrewarmEchoTapQueue()
-        {
-            if (!_echoTapQueue.IsCreated)
-                return;
-
-            for (int i = 0; i < MaxQueuedEchoTaps; i++)
-                _echoTapQueue.Enqueue(default);
-
-            DropEchoTapQueue();
         }
 
         private static uint NextSequence(int frame)
@@ -754,6 +761,13 @@ namespace Hecton8.AI.Sensory
         private static byte ResolveQualityTier()
         {
             return ScalabilityTierProfiles.Normalize(GlobalRegistry.ScalabilityTierProfileByte);
+        }
+
+        private static void ConsumeScalabilityChangedSignals()
+        {
+            ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+                _cachedQualityTier = signals[i].CurrentTier;
         }
 
         private static AbsoluteUniversePosition ToAbsoluteUniversePosition(in AcousticAup aup)

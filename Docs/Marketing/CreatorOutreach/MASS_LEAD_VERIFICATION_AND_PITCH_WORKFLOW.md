@@ -158,6 +158,56 @@ After demo:
 - Use Steam keys only through the key policy.
 - Stop after two non-responses.
 
+## 2026-05-19 First Human-Send Packet After Assets
+
+Status: blocked until real screenshots/Steam page/demo proof exists. This is an execution queue, not permission to contact.
+
+Use this only after:
+
+- `PLAN-SHOT-001`, `PLAN-SHOT-003`, and one base/machinery shot pass QA;
+- official Steam page or presskit URL exists if the message mentions it;
+- YouTube About/site contact route is verified by the human owner where required;
+- the final email contains no co-op, clone-war, or performance claim;
+- exact sent row is logged back into `Data/CREATOR_VERIFICATION_TEMPLATE.csv`.
+
+### Wave A - Screenshot/Steam Proof, No Key
+
+Ask: "Would this be a fit for future coverage or feedback when the preview slice is ready?" Do not ask for coverage now.
+
+| Send order | Creator | Current CRM gate | Required asset before send | Pitch angle | Notes |
+|---:|---|---|---|---|---|
+| 1 | Kage848 | `VERIFY_BEFORE_CONTACT` | `PLAN-SHOT-001`, `PLAN-SHOT-003`, Steam/presskit link | UNDERWATER_SURVIVAL | Hot SN2-active draft exists; human must reveal gated YouTube email. |
+| 2 | AldemarHD | `VERIFY_BEFORE_CONTACT` | German-ready screenshot pack | REGIONAL_FIRST_LOOK | Use German draft; no auto-translated hype. |
+| 3 | Zombyra | `VERIFY_BEFORE_CONTACT` | German base/machinery screenshot | REGIONAL_FIRST_LOOK | Explicit no-coop line. |
+| 4 | SpielbaerLP | `VERIFY_BEFORE_CONTACT` | German machinery/base shot or clip | REGIONAL_FIRST_LOOK | Long-form fit; do not send without gameplay proof. |
+| 5 | Keith Ballard | `VERIFY_BEFORE_CONTACT` | Screenshot/Steam proof and no-pressure opener | UNDERWATER_SURVIVAL | Confirm official YouTube RSS/About first. |
+| 6 | Accurize2 | `VERIFY_BEFORE_CONTACT` | Survival screenshot plus Steam/presskit link | UNDERWATER_SURVIVAL | Verify official route before contact. |
+| 7 | Aavak | `NEEDS_ASSET` | Machinery/base gameplay clip | BASE_SYSTEMS | Do not use Twitch chat/DM as cold route. |
+| 8 | Wanderbots | `NEEDS_ASSET` | Real gameplay clip, no AI-looking asset risk | INDIE_DEMO | Confirm official contact policy and AI-asset boundary. |
+| 9 | GameEdged | `NEEDS_ASSET` | Steam page plus survival/base clip | SURVIVAL_ROUTE_RISK | Verify official YouTube route after asset exists. |
+| 10 | Splattercatgaming | `NEEDS_ASSET` | Strong indie first-look clip/Steam page | INDIE_DEMO | Needs asset strength; avoid generic email. |
+
+### Wave B - Demo/Preview Only
+
+Hold until stable demo/preview build exists: Neyreyan, Farket, IGP, Praetorian HiJynx, paulsoaresjr, TotalXclipse, Welonz, Dhalucard, STAF_52, Crowmeda.
+
+### Send Log Required Fields
+
+Append or update the CRM row with:
+
+```text
+outreach_batch:
+sent_date:
+contact_route_verified:
+asset_ids_sent:
+utm_content:
+reply_deadline:
+followup_allowed: yes/no
+notes:
+```
+
+One follow-up only, and only if a new asset or demo exists.
+
 ## What Agents Must Not Do
 
 - Do not fabricate emails.
@@ -177,4 +227,3 @@ Each agent must append a weekly table:
 |---|---|---:|---:|---:|---:|---:|---|
 
 Then list the 10 best verified leads with custom opener and required asset.
-

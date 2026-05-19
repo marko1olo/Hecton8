@@ -1,4 +1,5 @@
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -9,19 +10,19 @@ namespace Hecton8.Data
     /// <summary>
     /// Burst job that unpacks creature genome records from the monolithic AoS blob into SoA arrays.
     /// </summary>
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct H8CreatureSoAReconstructJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<byte> Blob;
+        [ReadOnly, NoAlias] public NativeArray<byte> Blob;
         public int CreatureSectionOffsetBytes;
         public int CreatureCount;
 
-        [WriteOnly] public NativeArray<float> Aggressions;
-        [WriteOnly] public NativeArray<float> Metabolisms;
-        [WriteOnly] public NativeArray<float> HealthCaps;
-        [WriteOnly] public NativeArray<float> CruiseSpeeds;
-        [WriteOnly] public NativeArray<float> BurstSpeeds;
-        [WriteOnly] public NativeArray<uint> MateMasks;
+        [WriteOnly, NoAlias] public NativeArray<float> Aggressions;
+        [WriteOnly, NoAlias] public NativeArray<float> Metabolisms;
+        [WriteOnly, NoAlias] public NativeArray<float> HealthCaps;
+        [WriteOnly, NoAlias] public NativeArray<float> CruiseSpeeds;
+        [WriteOnly, NoAlias] public NativeArray<float> BurstSpeeds;
+        [WriteOnly, NoAlias] public NativeArray<uint> MateMasks;
 
         /// <summary>
         /// Unpacks one creature record into parallel arrays.
@@ -48,22 +49,22 @@ namespace Hecton8.Data
     /// <summary>
     /// Burst job that unpacks item records from the monolithic AoS blob into cache-linear SoA arrays.
     /// </summary>
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct H8ItemSoAReconstructJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<byte> Blob;
+        [ReadOnly, NoAlias] public NativeArray<byte> Blob;
         public int ItemSectionOffsetBytes;
         public int ItemCount;
 
-        [WriteOnly] public NativeArray<uint> HashIds;
-        [WriteOnly] public NativeArray<uint> CategoryHashes;
-        [WriteOnly] public NativeArray<ushort> MaxStacks;
-        [WriteOnly] public NativeArray<ulong> RecipeMask0;
-        [WriteOnly] public NativeArray<ulong> RecipeMask1;
-        [WriteOnly] public NativeArray<float> MassKg;
-        [WriteOnly] public NativeArray<float> VolumeM3;
-        [WriteOnly] public NativeArray<float> BaseQualities;
-        [WriteOnly] public NativeArray<float> HeatCapacities;
+        [WriteOnly, NoAlias] public NativeArray<uint> HashIds;
+        [WriteOnly, NoAlias] public NativeArray<uint> CategoryHashes;
+        [WriteOnly, NoAlias] public NativeArray<ushort> MaxStacks;
+        [WriteOnly, NoAlias] public NativeArray<ulong> RecipeMask0;
+        [WriteOnly, NoAlias] public NativeArray<ulong> RecipeMask1;
+        [WriteOnly, NoAlias] public NativeArray<float> MassKg;
+        [WriteOnly, NoAlias] public NativeArray<float> VolumeM3;
+        [WriteOnly, NoAlias] public NativeArray<float> BaseQualities;
+        [WriteOnly, NoAlias] public NativeArray<float> HeatCapacities;
 
         /// <summary>
         /// Unpacks one item record into parallel arrays.

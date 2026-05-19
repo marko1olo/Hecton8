@@ -32,30 +32,30 @@ namespace Hecton8.Thermodynamics
         public const uint RadiationHazardHash = 0x52414453u;
         public const uint MixedHazardHash = 0x484D4958u;
 
-        private const SystemID MemoryOwner = SystemID.External;
+        private const SystemID MemoryOwner = SystemID.Thermodynamics;
         private const BufferID VaultConstantsBuffer = BufferID.ThermodynamicsHazardConstants;
         private const BufferID VaultTemperatureFrontMirror = BufferID.ThermodynamicsTemperatureFrontMirror;
         private const BufferID VaultRadiationFrontMirror = BufferID.ThermodynamicsRadiationFrontMirror;
-        private const BufferID VaultTemperatureFrontBuffer = (BufferID)70019;
-        private const BufferID VaultTemperatureBackBuffer = (BufferID)70020;
-        private const BufferID VaultRadiationFrontBuffer = (BufferID)70021;
-        private const BufferID VaultRadiationBackBuffer = (BufferID)70022;
-        private const BufferID VaultTemperatureSourcesBuffer = (BufferID)70023;
-        private const BufferID VaultRadiationSourcesBuffer = (BufferID)70024;
-        private const BufferID VaultSourcesBuffer = (BufferID)70025;
-        private const BufferID VaultSourceIdsBuffer = (BufferID)70026;
-        private const BufferID VaultEntityAupsBuffer = (BufferID)70027;
-        private const BufferID VaultEntityIdsBuffer = (BufferID)70028;
-        private const BufferID VaultEntityDamageTimersBuffer = (BufferID)70029;
-        private const BufferID VaultEntityDamageAccumulatorsBuffer = (BufferID)70030;
-        private const BufferID VaultMockDamageSignalsBuffer = (BufferID)70031;
-        private const BufferID VaultCombatDamageSignalsBuffer = (BufferID)70032;
-        private const BufferID VaultUpdraftSignalsBuffer = (BufferID)70033;
-        private const BufferID VaultSignalCountersBuffer = (BufferID)70034;
-        private const BufferID VaultTelemetryRingBuffer = (BufferID)70035;
-        private const BufferID VaultTelemetryScratchBuffer = (BufferID)70036;
-        private const BufferID VaultCsvBytesBuffer = (BufferID)70037;
-        private const BufferID VaultBinaryConstantBytesBuffer = (BufferID)70038;
+        private const BufferID VaultTemperatureFrontBuffer = BufferID.ThermodynamicsTemperatureFront;
+        private const BufferID VaultTemperatureBackBuffer = BufferID.ThermodynamicsTemperatureBack;
+        private const BufferID VaultRadiationFrontBuffer = BufferID.ThermodynamicsRadiationFront;
+        private const BufferID VaultRadiationBackBuffer = BufferID.ThermodynamicsRadiationBack;
+        private const BufferID VaultTemperatureSourcesBuffer = BufferID.ThermodynamicsTemperatureSources;
+        private const BufferID VaultRadiationSourcesBuffer = BufferID.ThermodynamicsRadiationSources;
+        private const BufferID VaultSourcesBuffer = BufferID.ThermodynamicsSources;
+        private const BufferID VaultSourceIdsBuffer = BufferID.ThermodynamicsSourceIds;
+        private const BufferID VaultEntityAupsBuffer = BufferID.ThermodynamicsEntityAups;
+        private const BufferID VaultEntityIdsBuffer = BufferID.ThermodynamicsEntityIds;
+        private const BufferID VaultEntityDamageTimersBuffer = BufferID.ThermodynamicsEntityDamageTimers;
+        private const BufferID VaultEntityDamageAccumulatorsBuffer = BufferID.ThermodynamicsEntityDamageAccumulators;
+        private const BufferID VaultMockDamageSignalsBuffer = BufferID.ThermodynamicsMockDamageSignals;
+        private const BufferID VaultCombatDamageSignalsBuffer = BufferID.ThermodynamicsCombatDamageSignals;
+        private const BufferID VaultUpdraftSignalsBuffer = BufferID.ThermodynamicsUpdraftSignals;
+        private const BufferID VaultSignalCountersBuffer = BufferID.ThermodynamicsSignalCounters;
+        private const BufferID VaultTelemetryRingBuffer = BufferID.ThermodynamicsTelemetryRing;
+        private const BufferID VaultTelemetryScratchBuffer = BufferID.ThermodynamicsTelemetryScratch;
+        private const BufferID VaultCsvBytesBuffer = BufferID.ThermodynamicsCsvBytes;
+        private const BufferID VaultBinaryConstantBytesBuffer = BufferID.ThermodynamicsBinaryConstantBytes;
         private const float DefaultCellSizeMeters = 10f;
         private const float TierSwitchHysteresisSeconds = 3f;
         private const float CsvPollSeconds = 1f;
@@ -982,7 +982,7 @@ namespace Hecton8.Thermodynamics
                 {
                     CombatDamageSignal signal = new CombatDamageSignal
                     {
-                        WorldPoint = staged.WorldPoint,
+                        ImpactAup = staged.ImpactAup,
                         Direction = staged.Direction,
                         Magnitude = staged.Magnitude,
                         DamageType = staged.DamageType,
@@ -1162,6 +1162,7 @@ namespace Hecton8.Thermodynamics
 
         private void DumpBlackBox()
         {
+            WriteDump("Dump_THERMO_SURGEON.bin");
             WriteDump("Dump_THERMODYNAMICS.bin");
             WriteDump("Dump_THERMODYNAMICS.h8dump");
             WriteDump("Dump_SHINOBU_16.bin");
@@ -1409,7 +1410,7 @@ namespace Hecton8.Thermodynamics
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ResetCountersJob : IJob
         {
             [NativeDisableUnsafePtrRestriction] public int* Counters;
@@ -1422,7 +1423,7 @@ namespace Hecton8.Thermodynamics
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ClearSourceGridJob : IJobParallelFor
         {
             [NativeDisableUnsafePtrRestriction] public float* TemperatureSources;
@@ -1435,7 +1436,7 @@ namespace Hecton8.Thermodynamics
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct EmissionJob : IJobParallelFor
         {
             [NativeDisableUnsafePtrRestriction] public HazardSourceDTO* Sources;
@@ -1492,7 +1493,7 @@ namespace Hecton8.Thermodynamics
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct DiffusionJob : IJobParallelFor
         {
             [NativeDisableUnsafePtrRestriction] public float* TemperatureFront;
@@ -1593,7 +1594,7 @@ namespace Hecton8.Thermodynamics
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct EntityDamageSamplingJob : IJobParallelFor
         {
             [NativeDisableUnsafePtrRestriction] public float* TemperatureBack;
@@ -1666,7 +1667,7 @@ namespace Hecton8.Thermodynamics
                 {
                     CombatSignals[combatIndex] = new ThermodynamicsCombatDamageSignal
                     {
-                        WorldPoint = (float3)(EntityAups[index] - GridOriginAup),
+                        ImpactAup = EntityAups[index],
                         Direction = new float3(0f, 1f, 0f),
                         Magnitude = burstDamage,
                         DamageType = MixedHazardHash,
@@ -1683,7 +1684,7 @@ namespace Hecton8.Thermodynamics
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct RebaseGridJob : IJobParallelFor
         {
             [NativeDisableUnsafePtrRestriction] public float* TemperatureFront;
@@ -1717,7 +1718,7 @@ namespace Hecton8.Thermodynamics
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ScanTelemetryJob : IJob
         {
             [NativeDisableUnsafePtrRestriction] public float* TemperatureBack;

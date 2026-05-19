@@ -151,7 +151,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Read-only orbital prologue snapshot for consumers that need telemetry without owning the simulation.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public readonly struct OrbitalDirectorSnapshot
     {
         public OrbitalDirectorSnapshot(
@@ -298,13 +298,16 @@ namespace Hecton8.Core
     /// <summary>
     /// Canonical damage packet routed through the global packet-based damage receiver contract.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct DamagePacket
     {
         /// <summary>
         /// Packet channel resolved by the emitting owner.
         /// </summary>
         public DamageChannel Channel;
+        private byte _pad0;
+        private byte _pad1;
+        private byte _pad2;
 
         /// <summary>
         /// Previous normalized channel value when the packet represents a continuous channel delta.
@@ -336,6 +339,9 @@ namespace Hecton8.Core
         /// Quantized integrity delta used by structural diffusion consumers.
         /// </summary>
         public byte IntegrityDelta;
+        private byte _pad3;
+        private byte _pad4;
+        private byte _pad5;
 
         /// <summary>
         /// Depth in meters associated with the damage event when relevant.
@@ -351,6 +357,11 @@ namespace Hecton8.Core
         /// Encoded trauma threshold when <see cref="Channel"/> is <see cref="DamageChannel.Trauma"/>.
         /// </summary>
         public byte TraumaLevel;
+        private byte _pad6;
+        private byte _pad7;
+        private byte _pad8;
+        private byte _pad9;
+        private byte _pad10;
     }
 
     /// <summary>
@@ -1472,7 +1483,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable AUP-backed chest socket pose.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 80)]
     public readonly struct VRSomaticChestSocketPose
     {
         public readonly AbsoluteUniversePosition SocketAup;
@@ -1493,19 +1504,21 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable near-field head contact state emitted by the VR somatic provider.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 96)]
     public readonly struct VRSomaticCollisionState
     {
         public readonly byte HasContactFlag;
         private readonly byte _reserved0;
         private readonly byte _reserved1;
         private readonly byte _reserved2;
+        private readonly int _pad0;
         public readonly AbsoluteUniversePosition ContactAup;
         public readonly Vector3 RuntimePoint;
         public readonly Vector3 RuntimeNormal;
         public readonly float DistanceMeters;
         public readonly float Intensity01;
         public readonly float ImpactSpeedMetersPerSecond;
+        private readonly int _pad1;
 
         public VRSomaticCollisionState(
             bool hasContact,
@@ -1520,12 +1533,14 @@ namespace Hecton8.Core
             _reserved0 = 0;
             _reserved1 = 0;
             _reserved2 = 0;
+            _pad0 = 0;
             ContactAup = contactAup;
             RuntimePoint = runtimePoint;
             RuntimeNormal = runtimeNormal;
             DistanceMeters = distanceMeters;
             Intensity01 = intensity01;
             ImpactSpeedMetersPerSecond = impactSpeedMetersPerSecond;
+            _pad1 = 0;
         }
 
         public bool HasContact => HasContactFlag != 0;
@@ -1534,13 +1549,14 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable frame snapshot for VR somatic suit systems.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 120)]
     public readonly struct VRSomaticSnapshot
     {
         public readonly byte IsActiveFlag;
         private readonly byte _reserved0;
         private readonly byte _reserved1;
         private readonly byte _reserved2;
+        private readonly int _pad0;
         public readonly AbsoluteUniversePosition HeadAup;
         public readonly Vector3 HeadRuntimePosition;
         public readonly Quaternion HeadRuntimeRotation;
@@ -1567,6 +1583,7 @@ namespace Hecton8.Core
             _reserved0 = 0;
             _reserved1 = 0;
             _reserved2 = 0;
+            _pad0 = 0;
             HeadAup = headAup;
             HeadRuntimePosition = headRuntimePosition;
             HeadRuntimeRotation = headRuntimeRotation;
@@ -2623,7 +2640,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable room gas snapshot expressed as Dalton partial pressures in kPa.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 40)]
     public readonly struct GasRoomSnapshot
     {
         public GasRoomSnapshot(
@@ -2662,7 +2679,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Cold-path hibernation snapshot for one habitat/base atmosphere island.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 88)]
     public readonly struct GasBaseHibernationSnapshot
     {
         public GasBaseHibernationSnapshot(
@@ -2677,28 +2694,43 @@ namespace Hecton8.Core
             float leakRatePerSecond,
             double hibernatedUnscaledTime)
         {
-            BaseId = baseId;
-            RoomStart = roomStart;
-            RoomCount = roomCount;
-            CenterAup = centerAup;
-            Awake = awake;
-            PlayerInside = playerInside;
-            BatteryWattSeconds = batteryWattSeconds;
-            IdleDrawWatts = idleDrawWatts;
-            LeakRatePerSecond = leakRatePerSecond;
-            HibernatedUnscaledTime = hibernatedUnscaledTime;
+            _centerAup = centerAup;
+            _hibernatedUnscaledTime = hibernatedUnscaledTime;
+            _batteryWattSeconds = batteryWattSeconds;
+            _idleDrawWatts = idleDrawWatts;
+            _leakRatePerSecond = leakRatePerSecond;
+            _baseId = baseId;
+            _roomStart = roomStart;
+            _roomCount = roomCount;
+            _awake = awake ? (byte)1 : (byte)0;
+            _playerInside = playerInside ? (byte)1 : (byte)0;
+            _pad0 = 0;
+            _pad1 = 0u;
         }
 
-        public int BaseId { get; }
-        public int RoomStart { get; }
-        public int RoomCount { get; }
-        public AbsoluteUniversePosition CenterAup { get; }
-        public bool Awake { get; }
-        public bool PlayerInside { get; }
-        public float BatteryWattSeconds { get; }
-        public float IdleDrawWatts { get; }
-        public float LeakRatePerSecond { get; }
-        public double HibernatedUnscaledTime { get; }
+        private readonly AbsoluteUniversePosition _centerAup;
+        private readonly double _hibernatedUnscaledTime;
+        private readonly float _batteryWattSeconds;
+        private readonly float _idleDrawWatts;
+        private readonly float _leakRatePerSecond;
+        private readonly int _baseId;
+        private readonly int _roomStart;
+        private readonly int _roomCount;
+        private readonly byte _awake;
+        private readonly byte _playerInside;
+        private readonly ushort _pad0;
+        private readonly uint _pad1;
+
+        public int BaseId => _baseId;
+        public int RoomStart => _roomStart;
+        public int RoomCount => _roomCount;
+        public AbsoluteUniversePosition CenterAup => _centerAup;
+        public bool Awake => _awake != 0;
+        public bool PlayerInside => _playerInside != 0;
+        public float BatteryWattSeconds => _batteryWattSeconds;
+        public float IdleDrawWatts => _idleDrawWatts;
+        public float LeakRatePerSecond => _leakRatePerSecond;
+        public double HibernatedUnscaledTime => _hibernatedUnscaledTime;
     }
 
     /// <summary>
@@ -2741,7 +2773,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Cold-path audit snapshot for the Dalton gas solver's persistent native memory.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public readonly struct GasDynamicsNativeMemoryAudit
     {
         public GasDynamicsNativeMemoryAudit(
@@ -2844,7 +2876,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable hardware profile captured during the bootstrap HardwareCheck phase.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public readonly struct HectonHardwareProfile
     {
         /// <summary>
@@ -3437,7 +3469,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable ecosystem population sample returned by <see cref="IEcosystemDirectorService"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct EcosystemSectorPopulationSample
     {
         /// <summary>
@@ -3478,7 +3510,11 @@ namespace Hecton8.Core
         /// <summary>
         /// True when the containing sector carries active apex pressure.
         /// </summary>
+        [MarshalAs(UnmanagedType.I1)]
         public bool ApexInSector;
+        private byte _pad0;
+        private byte _pad1;
+        private byte _pad2;
 
         /// <summary>
         /// Normalized prey biomass in the containing 50 m ecology macro-cell.
@@ -3494,15 +3530,17 @@ namespace Hecton8.Core
         /// Normalized kelp/flora overgrowth pressure derived from local prey depletion.
         /// </summary>
         public float FloraOvergrowth01;
+        private uint _pad3;
     }
 
     /// <summary>
     /// Allocation-free fauna genome mutation request passed through the ecosystem service boundary.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Size = 56)]
     public struct FaunaGenomeMutationRequest
     {
         public Vector3 RuntimePosition;
+        private int _pad0;
         public ulong Genome;
         public uint StableEntityHash;
         public int SpeciesId;
@@ -3513,6 +3551,7 @@ namespace Hecton8.Core
         public float RadiationRads;
         public float Toxicity01;
         public float BrineDepth01;
+        private int _pad1;
     }
 
     /// <summary>

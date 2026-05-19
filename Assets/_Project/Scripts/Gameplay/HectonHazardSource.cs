@@ -111,6 +111,15 @@ namespace Hecton8.Gameplay
             }
 
             RadiationHazardGrid.UnregisterSource(_instanceID);
+            if (resolvedType == HazardType.Heat)
+            {
+                HectonHazardManager.Unregister(_instanceID);
+                IThermodynamicsService thermodynamics = GlobalRegistry.ThermodynamicsService;
+                if (thermodynamics != null && thermodynamics.IsInitialized)
+                    thermodynamics.TryInjectTransientHeatSource(_tr.position, _radius, _intensity, unchecked((uint)_instanceID));
+                return;
+            }
+
             HectonHazardManager.Register(
                 _instanceID,
                 _tr.position,

@@ -4,7 +4,7 @@ Date: 2026-05-19
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-19 R28 Root/Architecture Interior Actuality Boundary
+## 2026-05-19 R31 Root/Architecture Current-Boundary Propagation
 
 This document is active only where it agrees with:
 
@@ -14,7 +14,7 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`. R27 remains the latest source-counter/index snapshot only until a newer counter pass reruns it.
+Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`. R30 remains the prior internal-currentness correction; R29 remains the prior stale-gate/global-authority correction; R28 remains the prior interior-boundary correction; R27 remains the latest source-counter/index snapshot only until a newer counter pass reruns it.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 Frame Debugger, player build, save/load route, or visual-route proof is implied

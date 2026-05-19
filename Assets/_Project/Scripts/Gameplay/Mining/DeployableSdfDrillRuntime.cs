@@ -1148,7 +1148,7 @@ namespace Hecton8.Gameplay.Mining
             float3 direction = NormalizeSafe(point - _anchorRuntimePosition, math.up());
             Hecton8.Core.Contracts.Signals.CombatDamageSignal signal = new Hecton8.Core.Contracts.Signals.CombatDamageSignal
             {
-                WorldPoint = point,
+                ImpactAup = Hecton8.Core.Contracts.Signals.CombatDamageSignalCodec.FromRuntimePoint(point),
                 Direction = direction,
                 Magnitude = damage,
                 DamageType = DrillDamageTypeHash,

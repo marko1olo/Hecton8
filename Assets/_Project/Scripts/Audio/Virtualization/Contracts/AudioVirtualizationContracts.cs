@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Hecton8.Audio.Propagation;
 using Hecton8.Core.Contracts;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -39,6 +38,17 @@ namespace Hecton8.Audio.Virtualization
         Delayed = 1 << 3
     }
 
+    [Flags]
+    public enum VirtualVoicePortalFlags : byte
+    {
+        None = 0,
+        Voxel = 1 << 0,
+        Habitat = 1 << 1,
+        SealedBulkhead = 1 << 2,
+        Solid = 1 << 3,
+        StationaryEmitter = 1 << 4
+    }
+
     /// <summary>
     /// Exact compact DTO used by external virtual emitters before AUP/grid expansion.
     /// Size: 48 bytes.
@@ -53,6 +63,65 @@ namespace Hecton8.Audio.Virtualization
         public uint SourceEntityID;
         public float Importance;
         public uint Padding;
+    }
+
+    /// <summary>
+    /// One-cache-line source DTO for SHINOBU SDF acoustic occlusion kernels.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct AcousticSourceDTO
+    {
+        [FieldOffset(0)] public uint SourceHash;
+        [FieldOffset(4)] public float BaseVolume;
+        [FieldOffset(8)] public float BasePitch;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public double3 AUP_Position;
+        [FieldOffset(40)] public float ComputedOcclusion;
+        [FieldOffset(44)] public float ComputedReverb;
+        [FieldOffset(48)] private uint _pad0;
+        [FieldOffset(52)] private uint _pad1;
+        [FieldOffset(56)] private uint _pad2;
+        [FieldOffset(60)] private uint _pad3;
+    }
+
+    /// <summary>
+    /// One-cache-line DSP upload row produced by the analytical SDF acoustic kernel.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct AcousticDspOutputDTO
+    {
+        [FieldOffset(0)] public uint SourceHash;
+        [FieldOffset(4)] public float Volume;
+        [FieldOffset(8)] public float Pitch;
+        [FieldOffset(12)] public float Occlusion01;
+        [FieldOffset(16)] public float ReverbRt60Seconds;
+        [FieldOffset(20)] public float LowPassHertz;
+        [FieldOffset(24)] public float DelaySeconds;
+        [FieldOffset(28)] public float DopplerRatio;
+        [FieldOffset(32)] public float ItdSeconds;
+        [FieldOffset(36)] public float Ild01;
+        [FieldOffset(40)] public float DistanceSq;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] private uint _pad0;
+        [FieldOffset(52)] private uint _pad1;
+        [FieldOffset(56)] private uint _pad2;
+        [FieldOffset(60)] private uint _pad3;
+    }
+
+    /// <summary>
+    /// Compact material absorption row for cold-loaded or emergency-mock acoustics.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct AcousticMaterialCoefficientDTO
+    {
+        [FieldOffset(0)] public uint MaterialHash;
+        [FieldOffset(4)] public float Absorption01;
+        [FieldOffset(8)] public float Scatter01;
+        [FieldOffset(12)] public float Density01;
+        [FieldOffset(16)] public float LowPassHertz;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] private uint _pad0;
+        [FieldOffset(28)] private uint _pad1;
     }
 
     /// <summary>
@@ -76,7 +145,7 @@ namespace Hecton8.Audio.Virtualization
         public uint ClipHash;
         public uint SourceEntityID;
         public int StationaryCacheKey;
-        public AcousticPortalFlags PortalFlags;
+        public VirtualVoicePortalFlags PortalFlags;
         public byte FoveatedTier;
         public byte AcousticEnvironment;
         public VirtualVoiceDspFlags DspFlags;
@@ -92,7 +161,7 @@ namespace Hecton8.Audio.Virtualization
             float pitch,
             float dopplerRatio,
             int stationaryCacheKey,
-            AcousticPortalFlags portalFlags,
+            VirtualVoicePortalFlags portalFlags,
             byte foveatedTier)
             : this(
                 eventID,
@@ -131,7 +200,7 @@ namespace Hecton8.Audio.Virtualization
             float lowPassCutoffHz,
             float delaySeconds,
             int stationaryCacheKey,
-            AcousticPortalFlags portalFlags,
+            VirtualVoicePortalFlags portalFlags,
             byte foveatedTier,
             byte acousticEnvironment,
             VirtualVoiceDspFlags dspFlags)
@@ -184,7 +253,7 @@ namespace Hecton8.Audio.Virtualization
         public uint StableKey;
         public uint SourceEntityID;
         public int StationaryCacheKey;
-        public AcousticPortalFlags PortalFlags;
+        public VirtualVoicePortalFlags PortalFlags;
         public byte FoveatedTier;
         public byte AcousticEnvironment;
         public VirtualVoiceDspFlags DspFlags;
@@ -211,6 +280,7 @@ namespace Hecton8.Audio.Virtualization
     public struct VirtualVoiceSelection
     {
         public AcousticAup SourceAup;
+        public float3 SourceVelocityMetersPerSecond;
         public float Volume;
         public float Pitch;
         public float DopplerRatio;
@@ -226,7 +296,7 @@ namespace Hecton8.Audio.Virtualization
         public uint StableKey;
         public uint SourceEntityID;
         public int StationaryCacheKey;
-        public AcousticPortalFlags PortalFlags;
+        public VirtualVoicePortalFlags PortalFlags;
         public byte FoveatedTier;
         public byte AcousticEnvironment;
         public VirtualVoiceDspFlags DspFlags;
@@ -301,20 +371,17 @@ namespace Hecton8.Audio.Virtualization
         private ushort _reserved1;
         private uint _reserved2;
 
-        public static VirtualVoiceTuningSnapshot Default
+        public static VirtualVoiceTuningSnapshot CreateDefault()
         {
-            get
+            return new VirtualVoiceTuningSnapshot
             {
-                return new VirtualVoiceTuningSnapshot
-                {
-                    SoundSpeedMetersPerSecond = VirtualVoiceUtility.DelaySpeedMetersPerSecond,
-                    GlobalOcclusionPenalty = VirtualVoiceUtility.DearLieOccludedGain,
-                    OccludedLowPassHertz = VirtualVoiceUtility.OccludedLowPassHertz,
-                    SabineDecayScale = 1f,
-                    MaxHydratedVoices = VirtualVoiceUtility.MaxPhysicalVoiceCount,
-                    DisableSdfOcclusion = 0
-                };
-            }
+                SoundSpeedMetersPerSecond = VirtualVoiceUtility.DelaySpeedMetersPerSecond,
+                GlobalOcclusionPenalty = VirtualVoiceUtility.DearLieOccludedGain,
+                OccludedLowPassHertz = VirtualVoiceUtility.OccludedLowPassHertz,
+                SabineDecayScale = 1f,
+                MaxHydratedVoices = VirtualVoiceUtility.MaxPhysicalVoiceCount,
+                DisableSdfOcclusion = 0
+            };
         }
 
         public static VirtualVoiceTuningSnapshot Sanitize(in VirtualVoiceTuningSnapshot tuning)
@@ -474,8 +541,8 @@ namespace Hecton8.Audio.Virtualization
     public static class VirtualVoiceUtility
     {
         public const int MaxVirtualVoiceCount = 1000;
-        public const int MaxPhysicalVoiceCount = 32;
-        public const int LowTierPhysicalVoiceCount = 16;
+        public const int MaxPhysicalVoiceCount = 64;
+        public const int LowTierPhysicalVoiceCount = 12;
         public const int FoveatedTierFrozen = 2;
         public const float MinimumAudibleEnergy = 0.01f;
         public const float MinimumDopplerRatio = 0.1f;
@@ -490,6 +557,9 @@ namespace Hecton8.Audio.Virtualization
         public const float SabineEquationConstant = 0.161f;
         public const float SabineMinimumRt60Seconds = 0.05f;
         public const float SabineMaximumRt60Seconds = 12f;
+        public const float AbyssLowPassHertz = 800f;
+        public const float MaximumDepthLowPassMeters = 6000f;
+        public const float MaximumUnderwaterItdSeconds = 0.00018f;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ComputeStableKey(uint eventID, uint clipHash, uint sourceEntityID, int stationaryCacheKey, in AcousticAup sourceAup)
@@ -583,6 +653,21 @@ namespace Hecton8.Audio.Virtualization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ComputeSabineRt60FromClearance(float clearanceMeters, float absorption01, float qualityWeight)
+        {
+            float clearance = math.clamp(SanitizeFinite(math.abs(clearanceMeters), 1f), 0.35f, 96f);
+            float quality = math.saturate(SanitizeFinite(qualityWeight, 0f));
+            float sideMeters = math.clamp(clearance * math.lerp(3f, 9f, quality), 1.5f, 160f);
+            float volume = sideMeters * sideMeters * sideMeters;
+            float surfaceArea = math.max(0.5f, 6f * sideMeters * sideMeters);
+            float absorption = math.clamp(SanitizeFinite(absorption01, 0.35f), 0.03f, 1f);
+            return math.clamp(
+                SabineEquationConstant * volume * math.rcp(math.max(surfaceArea * absorption, 0.0001f)),
+                SabineMinimumRt60Seconds,
+                SabineMaximumRt60Seconds);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ResolveDearLieOcclusion(float3 listenerToSource, in MockSDFSampler sampler, int disableSdfOcclusion)
         {
             if (disableSdfOcclusion != 0 || sampler.Enabled == 0)
@@ -590,6 +675,46 @@ namespace Hecton8.Audio.Virtualization
 
             float signedDistance = sampler.Sample(listenerToSource * 0.5f);
             return math.isfinite(signedDistance) && signedDistance < 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveContinuousVoiceBudget(float globalQualityWeight)
+        {
+            float quality = math.saturate(SanitizeFinite(globalQualityWeight, 0f));
+            return math.clamp(
+                (int)math.lerp((float)LowTierPhysicalVoiceCount, (float)MaxPhysicalVoiceCount, quality),
+                LowTierPhysicalVoiceCount,
+                MaxPhysicalVoiceCount);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveSdfTapCount(float globalQualityWeight)
+        {
+            float quality = math.saturate(SanitizeFinite(globalQualityWeight, 0f));
+            float curve = quality * quality * (3f - 2f * quality);
+            return math.clamp((int)math.round(math.lerp(1f, 8f, curve)), 1, 8);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveDepthLowPassHertz(float depthMeters, float globalQualityWeight)
+        {
+            float depth01 = math.saturate(SanitizeFinite(depthMeters, 0f) * math.rcp(MaximumDepthLowPassMeters));
+            float curvedDepth = depth01 * depth01 * (3f - 2f * depth01);
+            float quality = math.saturate(SanitizeFinite(globalQualityWeight, 0f));
+            float floor = math.lerp(AbyssLowPassHertz, 1400f, quality);
+            return math.clamp(math.lerp(OpenLowPassHertz, floor, curvedDepth), floor, OpenLowPassHertz);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ComputeUnderwaterItdSeconds(float3 listenerToSource, float3 listenerRight)
+        {
+            float distanceSq = math.lengthsq(listenerToSource);
+            if (distanceSq <= 0.0001f || !math.isfinite(distanceSq))
+                return 0f;
+
+            float3 direction = listenerToSource * math.rsqrt(math.max(distanceSq, 0.0001f));
+            float side = math.clamp(math.dot(direction, listenerRight), -1f, 1f);
+            return side * MaximumUnderwaterItdSeconds;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -638,6 +763,17 @@ namespace Hecton8.Audio.Virtualization
     {
         private const byte RowKindGlobalTuning = 1;
         private const byte RowKindSoundOverride = 2;
+        private const uint SpeedOfSoundHash = 0xFC39038Cu;
+        private const uint SoundSpeedHash = 0x6695CCACu;
+        private const uint GlobalOcclusionPenaltyHash = 0x05CDE0CAu;
+        private const uint OcclusionGainHash = 0xDCB4E1A0u;
+        private const uint OccludedLowPassHash = 0x7FF4AE83u;
+        private const uint LowPassHash = 0x2CBC6DB3u;
+        private const uint SabineDecayTimesHash = 0x739374A1u;
+        private const uint SabineDecayScaleHash = 0x52D55625u;
+        private const uint MaxHydratedVoicesHash = 0xFD9F8B83u;
+        private const uint PhysicalVoiceLimitHash = 0x48781CB9u;
+        private const uint DisableSdfOcclusionHash = 0x04D10E79u;
 
         public static bool TryReadTuning(ReadOnlySpan<char> csv, ref VirtualVoiceTuningSnapshot tuning)
         {
@@ -656,37 +792,32 @@ namespace Hecton8.Audio.Virtualization
                     continue;
 
                 uint keyHash = HashLowerAscii(key);
-                if (keyHash == HashLowerAscii("speed_of_sound".AsSpan()) ||
-                    keyHash == HashLowerAscii("sound_speed".AsSpan()))
+                if (keyHash == SpeedOfSoundHash || keyHash == SoundSpeedHash)
                 {
                     tuning.SoundSpeedMetersPerSecond = value;
                     any = true;
                 }
-                else if (keyHash == HashLowerAscii("global_occlusion_penalty".AsSpan()) ||
-                    keyHash == HashLowerAscii("occlusion_gain".AsSpan()))
+                else if (keyHash == GlobalOcclusionPenaltyHash || keyHash == OcclusionGainHash)
                 {
                     tuning.GlobalOcclusionPenalty = value;
                     any = true;
                 }
-                else if (keyHash == HashLowerAscii("occluded_lowpass_hz".AsSpan()) ||
-                    keyHash == HashLowerAscii("lowpass_hz".AsSpan()))
+                else if (keyHash == OccludedLowPassHash || keyHash == LowPassHash)
                 {
                     tuning.OccludedLowPassHertz = value;
                     any = true;
                 }
-                else if (keyHash == HashLowerAscii("sabine_decay_times".AsSpan()) ||
-                    keyHash == HashLowerAscii("sabine_decay_scale".AsSpan()))
+                else if (keyHash == SabineDecayTimesHash || keyHash == SabineDecayScaleHash)
                 {
                     tuning.SabineDecayScale = value;
                     any = true;
                 }
-                else if (keyHash == HashLowerAscii("max_hydrated_voices".AsSpan()) ||
-                    keyHash == HashLowerAscii("physical_voice_limit".AsSpan()))
+                else if (keyHash == MaxHydratedVoicesHash || keyHash == PhysicalVoiceLimitHash)
                 {
                     tuning.MaxHydratedVoices = (int)math.round(value);
                     any = true;
                 }
-                else if (keyHash == HashLowerAscii("disable_sdf_occlusion".AsSpan()))
+                else if (keyHash == DisableSdfOcclusionHash)
                 {
                     tuning.DisableSdfOcclusion = value > 0.5f ? (byte)1 : (byte)0;
                     any = true;
@@ -718,6 +849,216 @@ namespace Hecton8.Audio.Virtualization
             }
 
             return count;
+        }
+
+        public static bool TryReadTuning(ReadOnlySpan<byte> csv, ref VirtualVoiceTuningSnapshot tuning)
+        {
+            bool any = false;
+            int cursor = 0;
+            while (TryReadLine(csv, ref cursor, out ReadOnlySpan<byte> line))
+            {
+                line = Trim(line);
+                if (line.Length <= 0 || line[0] == (byte)'#')
+                    continue;
+
+                if (!TryReadKeyValue(line, out ReadOnlySpan<byte> key, out ReadOnlySpan<byte> valueSpan))
+                    continue;
+
+                if (!TryParseFloat(valueSpan, out float value))
+                    continue;
+
+                uint keyHash = HashLowerAscii(key);
+                if (keyHash == SpeedOfSoundHash || keyHash == SoundSpeedHash)
+                {
+                    tuning.SoundSpeedMetersPerSecond = value;
+                    any = true;
+                }
+                else if (keyHash == GlobalOcclusionPenaltyHash || keyHash == OcclusionGainHash)
+                {
+                    tuning.GlobalOcclusionPenalty = value;
+                    any = true;
+                }
+                else if (keyHash == OccludedLowPassHash || keyHash == LowPassHash)
+                {
+                    tuning.OccludedLowPassHertz = value;
+                    any = true;
+                }
+                else if (keyHash == SabineDecayTimesHash || keyHash == SabineDecayScaleHash)
+                {
+                    tuning.SabineDecayScale = value;
+                    any = true;
+                }
+                else if (keyHash == MaxHydratedVoicesHash || keyHash == PhysicalVoiceLimitHash)
+                {
+                    tuning.MaxHydratedVoices = (int)math.round(value);
+                    any = true;
+                }
+                else if (keyHash == DisableSdfOcclusionHash)
+                {
+                    tuning.DisableSdfOcclusion = value > 0.5f ? (byte)1 : (byte)0;
+                    any = true;
+                }
+            }
+
+            if (any)
+                tuning = VirtualVoiceTuningSnapshot.Sanitize(in tuning);
+            return any;
+        }
+
+        public static int ParseRows(ReadOnlySpan<byte> csv, NativeArray<AudioProfileCsvRow> rows)
+        {
+            if (!rows.IsCreated)
+                return 0;
+
+            int count = 0;
+            int cursor = 0;
+            while (count < rows.Length && TryReadLine(csv, ref cursor, out ReadOnlySpan<byte> line))
+            {
+                line = Trim(line);
+                if (line.Length <= 0 || line[0] == (byte)'#')
+                    continue;
+
+                if (!TryReadProfileRow(line, out AudioProfileCsvRow row))
+                    continue;
+
+                rows[count++] = row;
+            }
+
+            return count;
+        }
+
+        public static int ParseMaterialRows(ReadOnlySpan<byte> csv, NativeArray<AcousticMaterialCoefficientDTO> rows)
+        {
+            if (!rows.IsCreated)
+                return 0;
+
+            int count = 0;
+            int cursor = 0;
+            while (count < rows.Length && TryReadLine(csv, ref cursor, out ReadOnlySpan<byte> line))
+            {
+                line = Trim(line);
+                if (line.Length <= 0 || line[0] == (byte)'#')
+                    continue;
+
+                if (!TryReadMaterialRow(line, out AcousticMaterialCoefficientDTO row))
+                    continue;
+
+                rows[count++] = row;
+            }
+
+            return count;
+        }
+
+        public static int ParseMaterialRows(ReadOnlySpan<byte> csv, NativeParallelHashMap<uint, AcousticMaterialCoefficientDTO> rows)
+        {
+            if (!rows.IsCreated)
+                return 0;
+
+            rows.Clear();
+            int count = 0;
+            int cursor = 0;
+            while (TryReadLine(csv, ref cursor, out ReadOnlySpan<byte> line))
+            {
+                line = Trim(line);
+                if (line.Length <= 0 || line[0] == (byte)'#')
+                    continue;
+
+                if (!TryReadMaterialRow(line, out AcousticMaterialCoefficientDTO row))
+                    continue;
+
+                rows[row.MaterialHash] = row;
+                count++;
+            }
+
+            return count;
+        }
+
+        public static int GenerateEmergencyMockAcoustics(NativeArray<AcousticMaterialCoefficientDTO> rows)
+        {
+            if (!rows.IsCreated || rows.Length <= 0)
+                return 0;
+
+            int count = math.min(rows.Length, 3);
+            if (count > 0)
+            {
+                rows[0] = new AcousticMaterialCoefficientDTO
+                {
+                    MaterialHash = 0x3A1B4AB4u,
+                    Absorption01 = 0.32f,
+                    Scatter01 = 0.55f,
+                    Density01 = 0.85f,
+                    LowPassHertz = 2100f,
+                    Flags = 1u
+                };
+            }
+
+            if (count > 1)
+            {
+                rows[1] = new AcousticMaterialCoefficientDTO
+                {
+                    MaterialHash = 0xD756AEDCu,
+                    Absorption01 = 0.18f,
+                    Scatter01 = 0.28f,
+                    Density01 = 1f,
+                    LowPassHertz = 3400f,
+                    Flags = 1u
+                };
+            }
+
+            if (count > 2)
+            {
+                rows[2] = new AcousticMaterialCoefficientDTO
+                {
+                    MaterialHash = 0x02FC484Du,
+                    Absorption01 = 0.62f,
+                    Scatter01 = 0.75f,
+                    Density01 = 0.45f,
+                    LowPassHertz = 1200f,
+                    Flags = 1u
+                };
+            }
+
+            return count;
+        }
+
+        public static int GenerateEmergencyMockAcoustics(NativeParallelHashMap<uint, AcousticMaterialCoefficientDTO> rows)
+        {
+            if (!rows.IsCreated)
+                return 0;
+
+            rows.Clear();
+            AcousticMaterialCoefficientDTO rock = new AcousticMaterialCoefficientDTO
+            {
+                MaterialHash = 0x3A1B4AB4u,
+                Absorption01 = 0.32f,
+                Scatter01 = 0.55f,
+                Density01 = 0.85f,
+                LowPassHertz = 2100f,
+                Flags = 1u
+            };
+            AcousticMaterialCoefficientDTO metal = new AcousticMaterialCoefficientDTO
+            {
+                MaterialHash = 0xD756AEDCu,
+                Absorption01 = 0.18f,
+                Scatter01 = 0.28f,
+                Density01 = 1f,
+                LowPassHertz = 3400f,
+                Flags = 1u
+            };
+            AcousticMaterialCoefficientDTO flesh = new AcousticMaterialCoefficientDTO
+            {
+                MaterialHash = 0x02FC484Du,
+                Absorption01 = 0.62f,
+                Scatter01 = 0.75f,
+                Density01 = 0.45f,
+                LowPassHertz = 1200f,
+                Flags = 1u
+            };
+
+            rows[rock.MaterialHash] = rock;
+            rows[metal.MaterialHash] = metal;
+            rows[flesh.MaterialHash] = flesh;
+            return 3;
         }
 
         private static bool TryReadProfileRow(ReadOnlySpan<char> line, out AudioProfileCsvRow row)
@@ -760,6 +1101,98 @@ namespace Hecton8.Audio.Virtualization
             return true;
         }
 
+        private static bool TryReadProfileRow(ReadOnlySpan<byte> line, out AudioProfileCsvRow row)
+        {
+            row = default;
+            int firstDelimiter = IndexOfDelimiter(line, 0);
+            if (firstDelimiter < 0)
+                return false;
+
+            ReadOnlySpan<byte> first = Trim(line.Slice(0, firstDelimiter));
+            ReadOnlySpan<byte> remainder = line.Slice(firstDelimiter + 1);
+            int secondDelimiter = IndexOfDelimiter(remainder, 0);
+            if (secondDelimiter < 0)
+            {
+                if (!TryParseFloat(Trim(remainder), out float value))
+                    return false;
+
+                row = new AudioProfileCsvRow
+                {
+                    SoundHash = 0u,
+                    KeyHash = HashLowerAscii(first),
+                    Value = value,
+                    Kind = RowKindGlobalTuning
+                };
+                return true;
+            }
+
+            ReadOnlySpan<byte> key = Trim(remainder.Slice(0, secondDelimiter));
+            ReadOnlySpan<byte> valueSpan = Trim(remainder.Slice(secondDelimiter + 1));
+            if (!TryParseUInt(first, out uint soundHash) || !TryParseFloat(valueSpan, out float parsedValue))
+                return false;
+
+            row = new AudioProfileCsvRow
+            {
+                SoundHash = soundHash,
+                KeyHash = HashLowerAscii(key),
+                Value = parsedValue,
+                Kind = RowKindSoundOverride
+            };
+            return true;
+        }
+
+        private static bool TryReadMaterialRow(ReadOnlySpan<byte> line, out AcousticMaterialCoefficientDTO row)
+        {
+            row = default;
+            int firstDelimiter = IndexOfDelimiter(line, 0);
+            if (firstDelimiter < 0)
+                return false;
+
+            ReadOnlySpan<byte> material = Trim(line.Slice(0, firstDelimiter));
+            ReadOnlySpan<byte> rest = line.Slice(firstDelimiter + 1);
+            int secondDelimiter = IndexOfDelimiter(rest, 0);
+            if (secondDelimiter < 0)
+                return false;
+
+            ReadOnlySpan<byte> absorptionSpan = Trim(rest.Slice(0, secondDelimiter));
+            rest = rest.Slice(secondDelimiter + 1);
+            int thirdDelimiter = IndexOfDelimiter(rest, 0);
+            if (thirdDelimiter < 0)
+                return false;
+
+            ReadOnlySpan<byte> scatterSpan = Trim(rest.Slice(0, thirdDelimiter));
+            rest = rest.Slice(thirdDelimiter + 1);
+            int fourthDelimiter = IndexOfDelimiter(rest, 0);
+            ReadOnlySpan<byte> densitySpan = fourthDelimiter >= 0
+                ? Trim(rest.Slice(0, fourthDelimiter))
+                : Trim(rest);
+            ReadOnlySpan<byte> lowPassSpan = fourthDelimiter >= 0
+                ? Trim(rest.Slice(fourthDelimiter + 1))
+                : ReadOnlySpan<byte>.Empty;
+
+            if (!TryParseFloat(absorptionSpan, out float absorption) ||
+                !TryParseFloat(scatterSpan, out float scatter) ||
+                !TryParseFloat(densitySpan, out float density))
+            {
+                return false;
+            }
+
+            float lowPass = VirtualVoiceUtility.OpenLowPassHertz;
+            if (lowPassSpan.Length > 0)
+                TryParseFloat(lowPassSpan, out lowPass);
+
+            row = new AcousticMaterialCoefficientDTO
+            {
+                MaterialHash = HashLowerAscii(material),
+                Absorption01 = math.saturate(absorption),
+                Scatter01 = math.saturate(scatter),
+                Density01 = math.saturate(density),
+                LowPassHertz = math.clamp(lowPass, 80f, VirtualVoiceUtility.OpenLowPassHertz),
+                Flags = 0u
+            };
+            return true;
+        }
+
         private static bool TryReadLine(ReadOnlySpan<char> text, ref int cursor, out ReadOnlySpan<char> line)
         {
             line = default;
@@ -778,7 +1211,38 @@ namespace Hecton8.Audio.Virtualization
             return true;
         }
 
+        private static bool TryReadLine(ReadOnlySpan<byte> text, ref int cursor, out ReadOnlySpan<byte> line)
+        {
+            line = default;
+            if (cursor >= text.Length)
+                return false;
+
+            int start = cursor;
+            while (cursor < text.Length && text[cursor] != (byte)'\n' && text[cursor] != (byte)'\r')
+                cursor++;
+
+            int end = cursor;
+            while (cursor < text.Length && (text[cursor] == (byte)'\n' || text[cursor] == (byte)'\r'))
+                cursor++;
+
+            line = text.Slice(start, end - start);
+            return true;
+        }
+
         private static bool TryReadKeyValue(ReadOnlySpan<char> line, out ReadOnlySpan<char> key, out ReadOnlySpan<char> value)
+        {
+            key = default;
+            value = default;
+            int delimiter = IndexOfDelimiter(line, 0);
+            if (delimiter <= 0 || delimiter >= line.Length - 1)
+                return false;
+
+            key = Trim(line.Slice(0, delimiter));
+            value = Trim(line.Slice(delimiter + 1));
+            return key.Length > 0 && value.Length > 0;
+        }
+
+        private static bool TryReadKeyValue(ReadOnlySpan<byte> line, out ReadOnlySpan<byte> key, out ReadOnlySpan<byte> value)
         {
             key = default;
             value = default;
@@ -803,6 +1267,18 @@ namespace Hecton8.Audio.Virtualization
             return -1;
         }
 
+        private static int IndexOfDelimiter(ReadOnlySpan<byte> text, int start)
+        {
+            for (int i = start; i < text.Length; i++)
+            {
+                byte c = text[i];
+                if (c == (byte)',' || c == (byte)'=' || c == (byte)';')
+                    return i;
+            }
+
+            return -1;
+        }
+
         private static ReadOnlySpan<char> Trim(ReadOnlySpan<char> text)
         {
             int start = 0;
@@ -812,6 +1288,17 @@ namespace Hecton8.Audio.Virtualization
             while (end >= start && char.IsWhiteSpace(text[end]))
                 end--;
             return start <= end ? text.Slice(start, end - start + 1) : ReadOnlySpan<char>.Empty;
+        }
+
+        private static ReadOnlySpan<byte> Trim(ReadOnlySpan<byte> text)
+        {
+            int start = 0;
+            int end = text.Length - 1;
+            while (start <= end && IsAsciiWhiteSpace(text[start]))
+                start++;
+            while (end >= start && IsAsciiWhiteSpace(text[end]))
+                end--;
+            return start <= end ? text.Slice(start, end - start + 1) : ReadOnlySpan<byte>.Empty;
         }
 
         private static bool TryParseFloat(ReadOnlySpan<char> text, out float value)
@@ -862,6 +1349,54 @@ namespace Hecton8.Audio.Virtualization
             return math.isfinite(value);
         }
 
+        private static bool TryParseFloat(ReadOnlySpan<byte> text, out float value)
+        {
+            value = 0f;
+            text = Trim(text);
+            if (text.Length == 0)
+                return false;
+
+            int sign = 1;
+            int index = 0;
+            if (text[0] == (byte)'-')
+            {
+                sign = -1;
+                index = 1;
+            }
+            else if (text[0] == (byte)'+')
+            {
+                index = 1;
+            }
+
+            double result = 0d;
+            bool any = false;
+            while (index < text.Length && text[index] >= (byte)'0' && text[index] <= (byte)'9')
+            {
+                result = result * 10d + (text[index] - (byte)'0');
+                index++;
+                any = true;
+            }
+
+            if (index < text.Length && text[index] == (byte)'.')
+            {
+                index++;
+                double place = 0.1d;
+                while (index < text.Length && text[index] >= (byte)'0' && text[index] <= (byte)'9')
+                {
+                    result += (text[index] - (byte)'0') * place;
+                    place *= 0.1d;
+                    index++;
+                    any = true;
+                }
+            }
+
+            if (!any || index != text.Length)
+                return false;
+
+            value = (float)(result * sign);
+            return math.isfinite(value);
+        }
+
         private static bool TryParseUInt(ReadOnlySpan<char> text, out uint value)
         {
             value = 0u;
@@ -899,6 +1434,43 @@ namespace Hecton8.Audio.Virtualization
             return true;
         }
 
+        private static bool TryParseUInt(ReadOnlySpan<byte> text, out uint value)
+        {
+            value = 0u;
+            text = Trim(text);
+            if (text.Length == 0)
+                return false;
+
+            int index = 0;
+            if (text.Length > 2 && text[0] == (byte)'0' && (text[1] == (byte)'x' || text[1] == (byte)'X'))
+            {
+                index = 2;
+                uint hex = 0u;
+                for (; index < text.Length; index++)
+                {
+                    int digit = HexDigit((char)text[index]);
+                    if (digit < 0)
+                        return false;
+                    hex = (hex << 4) | (uint)digit;
+                }
+
+                value = hex;
+                return true;
+            }
+
+            uint parsed = 0u;
+            for (; index < text.Length; index++)
+            {
+                byte c = text[index];
+                if (c < (byte)'0' || c > (byte)'9')
+                    return false;
+                parsed = parsed * 10u + (uint)(c - (byte)'0');
+            }
+
+            value = parsed;
+            return true;
+        }
+
         private static int HexDigit(char c)
         {
             if (c >= '0' && c <= '9')
@@ -925,6 +1497,31 @@ namespace Hecton8.Audio.Virtualization
 
                 return hash != 0u ? hash : 1u;
             }
+        }
+
+        private static uint HashLowerAscii(ReadOnlySpan<byte> text)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                for (int i = 0; i < text.Length; i++)
+                {
+                    byte c = text[i];
+                    if (c >= (byte)'A' && c <= (byte)'Z')
+                        c = (byte)(c + 32);
+                    hash = (hash ^ c) * 16777619u;
+                }
+
+                return hash != 0u ? hash : 1u;
+            }
+        }
+
+        private static bool IsAsciiWhiteSpace(byte value)
+        {
+            return value == (byte)' ' ||
+                value == (byte)'\t' ||
+                value == (byte)'\r' ||
+                value == (byte)'\n';
         }
     }
 }

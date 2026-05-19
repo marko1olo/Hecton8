@@ -22,6 +22,7 @@ namespace Hecton8.Inventory
     using Hecton8.Modding;
     using Hecton8.Physics;
     using Hecton8.SaveSystem;
+    using Hecton8.Scavenging;
     using Hecton8.World;
     using Unity.Burst;
     using Unity.Collections;
@@ -134,7 +135,7 @@ namespace Hecton8.Inventory
             Harvestable = 1 << 3
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = InventoryBlackBoxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = InventoryBlackBoxEntrySizeBytes)]
         private struct InventoryTelemetryEntry
         {
             [FieldOffset(0)] public uint Frame;
@@ -155,7 +156,7 @@ namespace Hecton8.Inventory
             [FieldOffset(60)] public int DefragTimeMicroseconds;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = SalinityCorrosionBlackBoxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = SalinityCorrosionBlackBoxEntrySizeBytes)]
         private struct SalinityCorrosionTelemetryEntry
         {
             [FieldOffset(0)] public uint Frame;
@@ -430,12 +431,20 @@ namespace Hecton8.Inventory
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 12)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         public struct CraftReservation
         {
+            [FieldOffset(0)]
             public int AnchorIndex;
+
+            [FieldOffset(4)]
             public int Quantity;
+
+            [FieldOffset(8)]
             public int ItemHashId;
+
+            [FieldOffset(12)]
+            public int _pad0;
         }
 
         public readonly struct ScavengeAttemptResult
@@ -1311,6 +1320,7 @@ namespace Hecton8.Inventory
 
         public void LateFrameTick()
         {
+            DrainScavengingLootOracleSignals();
             ConsumeInventoryCommandSignals();
             CompleteInventoryMassRecomputeJob(forceComplete: false);
         }
@@ -4151,6 +4161,31 @@ namespace Hecton8.Inventory
 
                 _currentSalinityBiomeHash = signal.CurrentBiomeHash;
                 _currentSalinityFactor = ResolveSalinityFactor(signal.CurrentBiomeHash);
+            }
+        }
+
+        private void DrainScavengingLootOracleSignals()
+        {
+            ReadOnlySpan<ItemAcquiredSignal> signals = SignalBus<ItemAcquiredSignal>.GetFrameSnapshot();
+            if (signals.Length == 0)
+                return;
+
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ItemAcquiredSignal signal = signals[i];
+                if (signal.SourceKind != ScavengingLootOracleConstants.ItemSourceKind ||
+                    signal.ItemHash == 0u ||
+                    signal.Quantity == 0)
+                {
+                    continue;
+                }
+
+                TryAddItemWithStateInternal(
+                    unchecked((int)signal.ItemHash),
+                    signal.Quantity,
+                    0UL,
+                    DefaultQualityMilli,
+                    out _);
             }
         }
 

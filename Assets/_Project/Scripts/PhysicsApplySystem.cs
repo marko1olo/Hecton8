@@ -415,6 +415,44 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
+    /// Water-mass mutation payload published by scalar flood solvers.
+    /// </summary>
+    public readonly struct FloodMassShiftEvent
+    {
+        public readonly Vector3 DynamicCenterOfMassLocal;
+        public readonly Vector3 CenterOfMassOffsetLocal;
+        public readonly float TotalWaterMassKg;
+        public readonly float FillRatio01;
+        public readonly float AngularDragMultiplier;
+        public readonly int SourceBodyInstanceId;
+        public readonly uint Frame;
+        public readonly byte MathLod;
+        public readonly byte Flags;
+
+        public FloodMassShiftEvent(
+            Vector3 dynamicCenterOfMassLocal,
+            Vector3 centerOfMassOffsetLocal,
+            float totalWaterMassKg,
+            float fillRatio01,
+            float angularDragMultiplier,
+            int sourceBodyInstanceId,
+            uint frame,
+            byte mathLod,
+            byte flags)
+        {
+            DynamicCenterOfMassLocal = dynamicCenterOfMassLocal;
+            CenterOfMassOffsetLocal = centerOfMassOffsetLocal;
+            TotalWaterMassKg = totalWaterMassKg;
+            FillRatio01 = fillRatio01;
+            AngularDragMultiplier = angularDragMultiplier;
+            SourceBodyInstanceId = sourceBodyInstanceId;
+            Frame = frame;
+            MathLod = mathLod;
+            Flags = flags;
+        }
+    }
+
+    /// <summary>
     /// Typed signal-lane physics-domain event surface for transient physics signals.
     /// </summary>
     public static class PhysicsEventBus
@@ -720,6 +758,27 @@ namespace Hecton8.Physics
             NotifyAcousticImpulse(in acousticImpulseEvent);
         }
 
+        /// <summary>Broadcasts one scalar flood mass/center-of-mass mutation payload.</summary>
+        public static void NotifyFloodMassShift(in FloodMassShiftEvent massShiftEvent)
+        {
+            Enqueue(new PhysicsEventPayload
+            {
+                RuntimePosition = massShiftEvent.DynamicCenterOfMassLocal,
+                Direction = massShiftEvent.CenterOfMassOffsetLocal,
+                ForceVector = default,
+                ImpulseVector = default,
+                RadiusMeters = math.saturate(massShiftEvent.FillRatio01),
+                Scalar0 = math.max(0f, massShiftEvent.TotalWaterMassKg),
+                Scalar1 = math.max(0f, massShiftEvent.AngularDragMultiplier),
+                Scalar2 = math.saturate(massShiftEvent.FillRatio01),
+                PrimaryId = massShiftEvent.SourceBodyInstanceId,
+                DataHash = massShiftEvent.Frame,
+                StatusBits = PackFloodMassStatusBits(massShiftEvent.MathLod, massShiftEvent.Flags),
+                EventType = (ushort)PhysicsEventType.FloodMassShift,
+                Reserved = 0
+            });
+        }
+
         private static void EnsureInitialized()
         {
             if (_initialized)
@@ -799,6 +858,9 @@ namespace Hecton8.Physics
                         break;
                     case PhysicsEventType.AcousticImpulse:
                         DispatchAcousticImpulse(in payload);
+                        break;
+                    case PhysicsEventType.FloodMassShift:
+                        // Flood mass truth is consumed through SubmarineFloodStateSignal or raw PhysicsEventPayload snapshots.
                         break;
                 }
             }
@@ -905,6 +967,11 @@ namespace Hecton8.Physics
                 if (listener != null)
                     listener.OnAcousticImpulse(in impulseEvent);
             }
+        }
+
+        private static uint PackFloodMassStatusBits(byte mathLod, byte flags)
+        {
+            return (uint)(mathLod | (flags << 8));
         }
 
         private static void ReportOverflowOncePerFrame()

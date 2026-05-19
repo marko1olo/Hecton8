@@ -33,10 +33,10 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 
 ## Current Contract Snapshot
 
-- Schema revision: `14`
-- Source `ISignal` structs: `160`
+- Schema revision: `15`
+- Source `ISignal` structs: `161`
 - Mod-projected `SignalBus<T>` lanes: `2`
-- Denied-by-default `ISignal` structs: `158`
+- Denied-by-default `ISignal` structs: `159`
 - Accepted command opcodes: `8`
 - Public `HectonAPI` surfaces: `16`
 - Public event methods: `7`

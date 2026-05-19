@@ -4,6 +4,7 @@ using System.IO;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Hecton8.EditorTools
 {
@@ -12,16 +13,17 @@ namespace Hecton8.EditorTools
         private static readonly DroneFleetDebugRoute[] DebugRoutes = new DroneFleetDebugRoute[DroneFleetAutomationFacade.MaxDebugRoutes];
 
         private DroneFleetTuningConstants _tuning;
-        private string _csvPath = "drone_specs.csv";
+        private string _csvPath = "drone_chassis_specs.csv";
         private string _status = "Fleet not sampled.";
         private long _lastCsvTicks;
         private bool _autoMonitorCsv = true;
         private bool _drawRoutes = true;
+        private IMGUIContainer _inspectorContainer;
 
-        [MenuItem("Hecton8/AI/Fleet Automation Tuner")]
+        [MenuItem("Hecton8/AI/Drone Fleet Tuner")]
         private static void Open()
         {
-            GetWindow<FleetAutomationTunerWindow>("Fleet Automation");
+            GetWindow<FleetAutomationTunerWindow>("Drone Fleet");
         }
 
         private void OnEnable()
@@ -31,9 +33,18 @@ namespace Hecton8.EditorTools
             RefreshTuning();
         }
 
+        private void CreateGUI()
+        {
+            rootVisualElement.Clear();
+            _inspectorContainer = new IMGUIContainer(DrawInspector);
+            _inspectorContainer.style.flexGrow = 1f;
+            rootVisualElement.Add(_inspectorContainer);
+        }
+
         private void OnDisable()
         {
             SceneView.duringSceneGui -= DrawFleetRoutes;
+            _inspectorContainer = null;
         }
 
         private void OnInspectorUpdate()
@@ -59,7 +70,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private void OnGUI()
+        private void DrawInspector()
         {
             EditorGUILayout.LabelField("Fleet Automation Tuner", EditorStyles.boldLabel);
 
@@ -148,8 +159,13 @@ namespace Hecton8.EditorTools
                 Vector3 origin = ToVector3(route.Position);
                 Vector3 waypoint = ToVector3(route.Waypoint);
                 Vector3 target = ToVector3(route.Target);
+                Vector3 velocity = ToVector3(route.Velocity);
 
-                Handles.color = route.PathStatus == 1 ? Color.cyan : new Color(1f, 0.55f, 0.1f, 1f);
+                Handles.color = Color.green;
+                Handles.DrawLine(origin, target);
+                Handles.DrawWireDisc(target, Vector3.up, 0.3f);
+
+                Handles.color = route.PathStatus == 1 ? new Color(0.1f, 0.9f, 0.75f, 0.45f) : new Color(1f, 0.55f, 0.1f, 0.45f);
                 Handles.DrawLine(origin, waypoint);
                 Handles.DrawWireDisc(waypoint, Vector3.up, 0.25f);
 
@@ -158,8 +174,11 @@ namespace Hecton8.EditorTools
                 DrawRouteSegment(route.RoutePoint1, route.RoutePoint2, route.RoutePointCount, 2);
                 DrawRouteSegment(route.RoutePoint2, route.RoutePoint3, route.RoutePointCount, 3);
 
-                Handles.color = new Color(0.25f, 0.8f, 1f, 0.35f);
-                Handles.DrawLine(waypoint, target);
+                if (velocity.sqrMagnitude > 0.0001f)
+                {
+                    Handles.color = Color.blue;
+                    Handles.DrawLine(origin, origin + velocity);
+                }
 
                 if ((route.Flags & 1) != 0)
                 {

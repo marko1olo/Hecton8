@@ -14,6 +14,7 @@ namespace Hecton8.Animation.IK
     {
         public const int MaxSegments = 20;
         public const int LowTierSegments = 8;
+        public const int FallbackMockBoneCount = 10;
         public const int TerrainHugSegmentCount = 5;
         public const int TelemetryCapacity = 300;
         public const float DefaultSegmentLength = 2.5f;
@@ -32,15 +33,54 @@ namespace Hecton8.Animation.IK
 
     public static class LeviathanTerrainIkLayout
     {
+        public const int BoneDtoBytes = 64;
+        public const int BoneConstraintDtoBytes = 16;
+        public const int ColliderProxyDtoBytes = 64;
         public const int TelemetryEntryBytes = 96;
+        public const int MockTargetDtoBytes = 32;
 
         public static bool Validate()
         {
-            return UnsafeUtility.SizeOf<LeviathanTerrainIkTelemetryEntry>() == TelemetryEntryBytes;
+            return UnsafeUtility.SizeOf<LeviathanBoneDTO>() == BoneDtoBytes &&
+                   UnsafeUtility.SizeOf<LeviathanBoneConstraintsDTO>() == BoneConstraintDtoBytes &&
+                   UnsafeUtility.SizeOf<LeviathanCapsuleColliderDTO>() == ColliderProxyDtoBytes &&
+                   UnsafeUtility.SizeOf<LeviathanTerrainIkTelemetryEntry>() == TelemetryEntryBytes &&
+                   UnsafeUtility.SizeOf<LeviathanMockTargetDTO>() == MockTargetDtoBytes;
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct LeviathanBoneDTO
+    {
+        [FieldOffset(0)] public float4x4 LocalToWorld;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct LeviathanBoneConstraintsDTO
+    {
+        [FieldOffset(0)] public int ParentIndex;
+        [FieldOffset(4)] public ushort ChainId;
+        [FieldOffset(6)] public ushort Flags;
+        [FieldOffset(8)] public float SegmentLengthMeters;
+        [FieldOffset(12)] public float MaxBendRadians;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct LeviathanCapsuleColliderDTO
+    {
+        [FieldOffset(0)] public float3 Center;
+        [FieldOffset(12)] public float Radius;
+        [FieldOffset(16)] public float3 Axis;
+        [FieldOffset(28)] public float HalfHeight;
+        [FieldOffset(32)] public uint OwnerHash;
+        [FieldOffset(36)] public uint Flags;
+        [FieldOffset(40)] public int BoneIndex;
+        [FieldOffset(44)] public int FrameIndex;
+        [FieldOffset(48)] public float3 AabbExtents;
+        [FieldOffset(60)] public uint Padding0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     public struct LeviathanTerrainIkTelemetryEntry
     {
         [FieldOffset(0)] public int FrameIndex;
@@ -65,7 +105,7 @@ namespace Hecton8.Animation.IK
 
     public static class LeviathanTerrainIkBlackBox
     {
-        public const string DefaultDumpPath = "Docs/AgentLogs/Dump_GRAB_IK_PROJECTION_LeviathanTerrainIk.bin";
+        public const string DefaultDumpPath = "Docs/AgentLogs/Dump_LEVIATHAN_RIGGER.bin";
 
         public static bool TryDumpTelemetry(
             string path,
@@ -204,7 +244,9 @@ namespace Hecton8.Animation.IK
             int requestedTerrainSampleCount,
             out NativeArray<float3> segmentPositions,
             out NativeArray<float3> previousSegmentPositions,
-            out NativeArray<float4x4> leviathanBones,
+            out NativeArray<LeviathanBoneDTO> leviathanBones,
+            out NativeArray<LeviathanBoneConstraintsDTO> boneConstraints,
+            out NativeArray<LeviathanCapsuleColliderDTO> colliderProxies,
             out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
             out NativeArray<int> telemetryCursor,
             out NativeArray<byte> voxelSdfTexture3D,
@@ -213,6 +255,8 @@ namespace Hecton8.Animation.IK
             segmentPositions = default;
             previousSegmentPositions = default;
             leviathanBones = default;
+            boneConstraints = default;
+            colliderProxies = default;
             telemetryRing = default;
             telemetryCursor = default;
             voxelSdfTexture3D = default;
@@ -234,10 +278,20 @@ namespace Hecton8.Animation.IK
                 BufferID.LeviathanPreviousSegmentPositions,
                 segmentCapacity,
                 SystemID.AnimationFauna);
-            leviathanBones = vault.GetBuffer<float4x4>(
+            leviathanBones = vault.GetBuffer<LeviathanBoneDTO>(
                 BufferID.LeviathanBoneMatrices,
                 segmentCapacity,
                 SystemID.AnimationFauna);
+            boneConstraints = vault.GetBuffer<LeviathanBoneConstraintsDTO>(
+                BufferID.LeviathanProceduralBoneConstraints,
+                segmentCapacity,
+                SystemID.AnimationFauna,
+                NativeArrayOptions.UninitializedMemory);
+            colliderProxies = vault.GetBuffer<LeviathanCapsuleColliderDTO>(
+                BufferID.LeviathanCreatureColliderProxies,
+                segmentCapacity,
+                SystemID.AnimationFauna,
+                NativeArrayOptions.UninitializedMemory);
             telemetryRing = vault.GetBuffer<LeviathanTerrainIkTelemetryEntry>(
                 BufferID.LeviathanTerrainIkTelemetryRing,
                 LeviathanTerrainIkConstants.TelemetryCapacity,
@@ -268,11 +322,15 @@ namespace Hecton8.Animation.IK
             return segmentPositions.IsCreated &&
                    previousSegmentPositions.IsCreated &&
                    leviathanBones.IsCreated &&
+                   boneConstraints.IsCreated &&
+                   colliderProxies.IsCreated &&
                    telemetryRing.IsCreated &&
                    telemetryCursor.IsCreated &&
                    segmentPositions.Length >= segmentCapacity &&
                    previousSegmentPositions.Length >= segmentCapacity &&
                    leviathanBones.Length >= segmentCapacity &&
+                   boneConstraints.Length >= segmentCapacity &&
+                   colliderProxies.Length >= segmentCapacity &&
                    telemetryRing.Length >= LeviathanTerrainIkConstants.TelemetryCapacity &&
                    telemetryCursor.Length >= 1 &&
                    (sdfVoxelCount == 0 || (voxelSdfTexture3D.IsCreated && voxelSdfTexture3D.Length >= sdfVoxelCount)) &&
@@ -280,19 +338,21 @@ namespace Hecton8.Animation.IK
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
     public struct LeviathanTerrainIkJob : IJob
     {
         private const float MinLengthSq = 0.000001f;
         private const float InvEncodedByteMax = 0.0039215686274509803f;
 
-        public NativeArray<float3> SegmentPositions;
-        public NativeArray<float3> PreviousSegmentPositions;
-        public NativeArray<float4x4> LeviathanBones;
-        public NativeArray<LeviathanTerrainIkTelemetryEntry> TelemetryRing;
-        public NativeArray<int> TelemetryCursor;
-        [ReadOnly] public NativeArray<byte> VoxelSdfTexture3D;
-        [ReadOnly] public NativeArray<ushort> TerrainHeightSamples;
+        [NoAlias] public NativeArray<float3> SegmentPositions;
+        [NoAlias] public NativeArray<float3> PreviousSegmentPositions;
+        [NoAlias] public NativeArray<LeviathanBoneDTO> LeviathanBones;
+        [ReadOnly, NoAlias] public NativeArray<LeviathanBoneConstraintsDTO> BoneConstraints;
+        [NoAlias] public NativeArray<LeviathanCapsuleColliderDTO> ColliderProxies;
+        [NoAlias] public NativeArray<LeviathanTerrainIkTelemetryEntry> TelemetryRing;
+        [NoAlias] public NativeArray<int> TelemetryCursor;
+        [ReadOnly, NoAlias] public NativeArray<byte> VoxelSdfTexture3D;
+        [ReadOnly, NoAlias] public NativeArray<ushort> TerrainHeightSamples;
         public int3 VoxelSdfDimensions;
         public float3 VoxelSdfOrigin;
         public float3 VoxelSdfCellSize;
@@ -304,10 +364,14 @@ namespace Hecton8.Animation.IK
         public float Damping;
         public float SegmentLength;
         public float BodyRadius;
+        public float SwimWaveFrequencyHz;
+        public float SwimWaveAmplitudeMeters;
+        public float FabrikToleranceMeters;
         public float TerrainClearance;
         public float TailWhipSecondsRemaining;
         public float TailWhipDurationSeconds;
         public float TailWhipAmplitudeMeters;
+        public float GlobalQualityWeight;
         public float3 HeadTargetPosition;
         public float3 IntendedVelocity;
         public float3 OwnerForward;
@@ -330,16 +394,24 @@ namespace Hecton8.Animation.IK
             }
 
             int maxUsableSegments = math.min(LeviathanTerrainIkConstants.MaxSegments, math.min(SegmentPositions.Length, LeviathanBones.Length));
-            bool lowTier = (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagLowTier) != 0u;
-            int requested = lowTier
-                ? LeviathanTerrainIkConstants.LowTierSegments
-                : RequestedSegmentCount;
+            float qualityWeight = SanitizeQualityWeight(GlobalQualityWeight);
+            float qualityCurve = Smooth01(qualityWeight);
+            float survivalCollapse = 1f - math.step(0.3f, qualityWeight);
+            bool lowTier = survivalCollapse > 0.5f;
+            int qualitySegmentBudget = math.clamp(
+                (int)math.round(math.lerp(LeviathanTerrainIkConstants.LowTierSegments, LeviathanTerrainIkConstants.MaxSegments, qualityCurve)),
+                2,
+                maxUsableSegments);
+            int requested = math.min(RequestedSegmentCount, qualitySegmentBudget);
             int activeCount = math.clamp(requested, 2, maxUsableSegments);
-            int iterations = math.clamp(ConstraintIterations, 1, 4);
+            int continuousIterations = (int)math.round(math.lerp(1f, 10f, qualityCurve));
+            int iterations = math.clamp(math.min(math.max(1, ConstraintIterations), continuousIterations), 1, 10);
             float dt = math.select(0f, math.min(DeltaTime, 0.05f), math.isfinite(DeltaTime) && DeltaTime > 0f);
             float damping = SanitizeFiniteClamp(Damping, 0.87f, 0f, 1f);
             float segmentLength = SanitizePositiveFinite(SegmentLength, LeviathanTerrainIkConstants.DefaultSegmentLength, LeviathanTerrainIkConstants.MinSegmentLength);
             float bodyRadius = SanitizePositiveFinite(BodyRadius, 1.15f, 0.01f);
+            float swimFrequency = SanitizePositiveFinite(SwimWaveFrequencyHz, 0.55f, 0.01f);
+            float swimAmplitude = SanitizePositiveFinite(SwimWaveAmplitudeMeters, 1.1f, 0f);
             float clearance = SanitizePositiveFinite(TerrainClearance, 0f, 0f);
             float tailWhipSecondsRemaining = SanitizePositiveFinite(TailWhipSecondsRemaining, 0f, 0f);
             float tailWhipDurationSeconds = SanitizePositiveFinite(TailWhipDurationSeconds, 1f, 0.1f);
@@ -353,7 +425,7 @@ namespace Hecton8.Animation.IK
                 telemetryFlags |= LeviathanTerrainIkConstants.TelemetryFlagLowTier;
 
             MoveHead(dt, segmentLength, intended, ownerForward);
-            IntegrateFollowers(activeCount, dt, damping, intended);
+            IntegrateFollowers(activeCount, dt, damping, intended, ownerForward, up, swimFrequency, swimAmplitude, qualityCurve);
 
             for (int iteration = 0; iteration < iterations; iteration++)
                 PullDistanceConstraints(activeCount, segmentLength, ownerForward);
@@ -403,7 +475,7 @@ namespace Hecton8.Animation.IK
                 SegmentPositions[index] = position;
                 float appliedPush = 0f;
                 if (canUseSdf &&
-                    TrySampleSdfTrilinear(position, sdfInvCellSize, sdfRange, out float density) &&
+                    TrySampleSdfAdaptive(position, sdfInvCellSize, sdfRange, qualityWeight, out float density) &&
                     density > 0f &&
                     TryResolveSdfGradient(position, sdfInvCellSize, sdfRange, sdfGradientStep, out float3 normal))
                 {
@@ -433,7 +505,8 @@ namespace Hecton8.Animation.IK
             if (invalid)
                 telemetryFlags |= LeviathanTerrainIkConstants.TelemetryFlagInvalid;
 
-            WriteTelemetry(activeCount, telemetryFlags, intended, maxTerrainPush, tailWhipSecondsRemaining);
+            StageCreatureColliders(activeCount, segmentLength, bodyRadius, ownerForward);
+            WriteTelemetry(activeCount, telemetryFlags, intended, maxTerrainPush, tailWhipSecondsRemaining, qualityWeight, iterations);
         }
 
         private void MoveHead(float dt, float segmentLength, float3 intended, float3 ownerForward)
@@ -451,9 +524,21 @@ namespace Hecton8.Animation.IK
             PreviousSegmentPositions[0] = SegmentPositions[0];
         }
 
-        private void IntegrateFollowers(int activeCount, float dt, float damping, float3 intended)
+        private void IntegrateFollowers(
+            int activeCount,
+            float dt,
+            float damping,
+            float3 intended,
+            float3 ownerForward,
+            float3 up,
+            float swimFrequency,
+            float swimAmplitude,
+            float qualityCurve)
         {
             float dtSq = dt * dt;
+            float3 side = NormalizeSafe(math.cross(up, ownerForward), new float3(1f, 0f, 0f));
+            float intendedSpeed = ResolveLength(intended);
+            float velocityAmplitude = math.saturate(intendedSpeed * 0.18f + 0.1f);
             for (int i = 1; i < activeCount; i++)
             {
                 float3 current = SanitizeFinite(SegmentPositions[i], SegmentPositions[i - 1]);
@@ -461,6 +546,8 @@ namespace Hecton8.Animation.IK
                 float3 velocity = (current - previous) * damping;
                 float taper = 1f - i * math.rcp(math.max(1, activeCount - 1));
                 float3 drift = intended * (0.04f * taper) * dtSq;
+                float wave = CheapSinSigned(FrameIndex * dt * swimFrequency + i * 0.37f);
+                drift += side * (wave * swimAmplitude * velocityAmplitude * qualityCurve * taper * dt);
                 PreviousSegmentPositions[i] = current;
                 SegmentPositions[i] = SanitizeFinite(current + velocity + drift, current);
             }
@@ -472,12 +559,13 @@ namespace Hecton8.Animation.IK
             {
                 float3 parent = SegmentPositions[i - 1];
                 float3 child = SanitizeFinite(SegmentPositions[i], parent - ownerForward * segmentLength);
+                float resolvedSegmentLength = ResolveConstraintSegmentLength(i, segmentLength);
                 float3 delta = child - parent;
                 float lengthSq = math.lengthsq(delta);
                 float3 direction = math.isfinite(lengthSq) && lengthSq > MinLengthSq
                     ? delta * math.rsqrt(lengthSq)
                     : -ownerForward;
-                SegmentPositions[i] = SanitizeFinite(parent + direction * segmentLength, parent - ownerForward * segmentLength);
+                SegmentPositions[i] = SanitizeFinite(parent + direction * resolvedSegmentLength, parent - ownerForward * resolvedSegmentLength);
             }
         }
 
@@ -533,7 +621,7 @@ namespace Hecton8.Animation.IK
                 quaternion rotation = quaternion.LookRotationSafe(tangent, up);
                 usedFallback |= !IsValidQuaternion(rotation);
                 rotation = SanitizeQuaternion(rotation, quaternion.identity);
-                LeviathanBones[i] = float4x4.TRS(position, rotation, safeScale);
+                WriteBoneMatrix(i, float4x4.TRS(position, rotation, safeScale));
             }
 
             float3 rawTail = SegmentPositions[activeCount - 1];
@@ -549,10 +637,105 @@ namespace Hecton8.Animation.IK
                 quaternion rawRotation = quaternion.LookRotationSafe(tailForward, up);
                 usedFallback |= !IsValidQuaternion(rawRotation);
                 quaternion rotation = SanitizeQuaternion(rawRotation, quaternion.identity);
-                LeviathanBones[i] = float4x4.TRS(tail, rotation, safeScale);
+                WriteBoneMatrix(i, float4x4.TRS(tail, rotation, safeScale));
             }
 
             return usedFallback;
+        }
+
+        private void WriteBoneMatrix(int index, float4x4 matrix)
+        {
+            if ((uint)index >= (uint)LeviathanBones.Length)
+                return;
+
+            LeviathanBoneDTO dto = default;
+            dto.LocalToWorld = matrix;
+            LeviathanBones[index] = dto;
+        }
+
+        private float ResolveConstraintSegmentLength(int boneIndex, float fallback)
+        {
+            if (!BoneConstraints.IsCreated || (uint)boneIndex >= (uint)BoneConstraints.Length)
+                return fallback;
+
+            float length = BoneConstraints[boneIndex].SegmentLengthMeters;
+            return SanitizePositiveFinite(length, fallback, LeviathanTerrainIkConstants.MinSegmentLength);
+        }
+
+        private void StageCreatureColliders(int activeCount, float segmentLength, float bodyRadius, float3 ownerForward)
+        {
+            if (!ColliderProxies.IsCreated || ColliderProxies.Length <= 0)
+                return;
+
+            int colliderCount = math.min(ColliderProxies.Length, activeCount);
+            for (int i = 0; i < colliderCount; i++)
+            {
+                float3 position = SanitizeFinite(SegmentPositions[i], float3.zero);
+                float3 next = i + 1 < activeCount
+                    ? SanitizeFinite(SegmentPositions[i + 1], position - ownerForward * segmentLength)
+                    : position - ownerForward * segmentLength;
+                float3 axisDelta = next - position;
+                float lengthSq = math.lengthsq(axisDelta);
+                float length = lengthSq > MinLengthSq && math.isfinite(lengthSq)
+                    ? lengthSq * math.rsqrt(lengthSq)
+                    : segmentLength;
+                float3 axis = NormalizeSafe(axisDelta, -ownerForward);
+                LeviathanCapsuleColliderDTO proxy = default;
+                proxy.Center = position + axis * (length * 0.5f);
+                proxy.Radius = SanitizePositiveFinite(bodyRadius, 1f, 0.01f);
+                proxy.Axis = axis;
+                proxy.HalfHeight = math.max(proxy.Radius, length * 0.5f);
+                proxy.OwnerHash = ComputeTelemetryHash(SegmentPositions[0], SegmentPositions[activeCount - 1], IntendedVelocity, activeCount);
+                proxy.Flags = LeviathanTerrainIkConstants.TelemetryFlagActive;
+                proxy.BoneIndex = i;
+                proxy.FrameIndex = FrameIndex;
+                proxy.AabbExtents = new float3(proxy.Radius, proxy.Radius, proxy.HalfHeight);
+                proxy.Padding0 = 0u;
+                ColliderProxies[i] = proxy;
+            }
+
+            for (int i = colliderCount; i < ColliderProxies.Length; i++)
+                ColliderProxies[i] = default;
+        }
+
+        private bool TrySampleSdfAdaptive(float3 worldPosition, float3 invCellSize, float sdfRange, float qualityWeight, out float density)
+        {
+            float trilinearWeight = math.step(0.3f, SanitizeQualityWeight(qualityWeight));
+            if (trilinearWeight <= 0f)
+                return TrySampleSdfNearest(worldPosition, invCellSize, sdfRange, out density);
+
+            return TrySampleSdfTrilinear(worldPosition, invCellSize, sdfRange, out density);
+        }
+
+        private bool TrySampleSdfNearest(float3 worldPosition, float3 invCellSize, float sdfRange, out float density)
+        {
+            density = 0f;
+            if (!VoxelSdfTexture3D.IsCreated ||
+                VoxelSdfDimensions.x <= 1 ||
+                VoxelSdfDimensions.y <= 1 ||
+                VoxelSdfDimensions.z <= 1 ||
+                !math.all(math.isfinite(worldPosition)) ||
+                !math.all(math.isfinite(invCellSize)) ||
+                !math.isfinite(sdfRange) ||
+                sdfRange <= 0.0001f)
+            {
+                return false;
+            }
+
+            float3 sample = (worldPosition - VoxelSdfOrigin) * invCellSize;
+            if (sample.x < 0f || sample.y < 0f || sample.z < 0f ||
+                sample.x > VoxelSdfDimensions.x - 1f ||
+                sample.y > VoxelSdfDimensions.y - 1f ||
+                sample.z > VoxelSdfDimensions.z - 1f)
+            {
+                return false;
+            }
+
+            int x = math.clamp((int)math.round(sample.x), 0, VoxelSdfDimensions.x - 1);
+            int y = math.clamp((int)math.round(sample.y), 0, VoxelSdfDimensions.y - 1);
+            int z = math.clamp((int)math.round(sample.z), 0, VoxelSdfDimensions.z - 1);
+            density = DecodeSdf(SdfIndex(x, y, z), sdfRange);
+            return math.isfinite(density);
         }
 
         private bool TrySampleSdfTrilinear(float3 worldPosition, float3 invCellSize, float sdfRange, out float density)
@@ -733,7 +916,14 @@ namespace Hecton8.Animation.IK
             return (z * VoxelSdfDimensions.y + y) * VoxelSdfDimensions.x + x;
         }
 
-        private void WriteTelemetry(int activeCount, uint flags, float3 intended, float maxTerrainPush, float tailWhipSecondsRemaining)
+        private void WriteTelemetry(
+            int activeCount,
+            uint flags,
+            float3 intended,
+            float maxTerrainPush,
+            float tailWhipSecondsRemaining,
+            float qualityWeight,
+            int iterations)
         {
             if (!TelemetryRing.IsCreated || !TelemetryCursor.IsCreated || TelemetryRing.Length <= 0 || TelemetryCursor.Length <= 0)
                 return;
@@ -745,18 +935,18 @@ namespace Hecton8.Animation.IK
 
             float3 head = SegmentPositions[0];
             float3 tail = SegmentPositions[activeCount - 1];
-            LeviathanTerrainIkTelemetryEntry entry = new LeviathanTerrainIkTelemetryEntry
-            {
-                FrameIndex = FrameIndex,
-                ActiveSegmentCount = activeCount,
-                Flags = flags,
-                StateHash = ComputeTelemetryHash(head, tail, intended, activeCount),
-                HeadPosition = SanitizeFinite(head, float3.zero),
-                TailPosition = SanitizeFinite(tail, float3.zero),
-                IntendedVelocity = SanitizeFinite(intended, float3.zero),
-                MaxTerrainPushMeters = math.select(0f, maxTerrainPush, math.isfinite(maxTerrainPush)),
-                TailWhipSecondsRemaining = tailWhipSecondsRemaining
-            };
+            LeviathanTerrainIkTelemetryEntry entry = default;
+            entry.FrameIndex = FrameIndex;
+            entry.ActiveSegmentCount = activeCount;
+            entry.Flags = flags;
+            entry.StateHash = ComputeTelemetryHash(head, tail, intended, activeCount);
+            entry.HeadPosition = SanitizeFinite(head, float3.zero);
+            entry.TailPosition = SanitizeFinite(tail, float3.zero);
+            entry.IntendedVelocity = SanitizeFinite(intended, float3.zero);
+            entry.MaxTerrainPushMeters = math.select(0f, maxTerrainPush, math.isfinite(maxTerrainPush));
+            entry.TailWhipSecondsRemaining = tailWhipSecondsRemaining;
+            entry.Padding0 = SanitizeQualityWeight(qualityWeight);
+            entry.Padding1 = iterations;
             TelemetryRing[index] = entry;
             if (cursor == int.MaxValue)
             {
@@ -861,6 +1051,17 @@ namespace Hecton8.Animation.IK
         private static float SanitizePositiveFinite(float value, float fallback, float minValue)
         {
             return math.isfinite(value) ? math.max(value, minValue) : fallback;
+        }
+
+        private static float SanitizeQualityWeight(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float Smooth01(float value)
+        {
+            float weight = SanitizeQualityWeight(value);
+            return weight * weight * (3f - 2f * weight);
         }
 
         private static float3 SanitizePositiveFinite(float3 value, float3 fallback, float3 minValue)

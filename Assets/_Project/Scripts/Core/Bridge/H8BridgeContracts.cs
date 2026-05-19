@@ -31,7 +31,7 @@ namespace Hecton8.Core.Bridge
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct H8PrefabMappingEntry
     {
         public uint HashID;
@@ -45,10 +45,11 @@ namespace Hecton8.Core.Bridge
         public uint OneDimensionalLutHash;
         public uint HighTierVisualHash;
         public uint Reserved1;
+        private uint _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct H8PrefabLoreLinkEntry
     {
         public uint PrefabHash;
@@ -59,10 +60,11 @@ namespace Hecton8.Core.Bridge
         public ushort Flags;
         public ushort Reserved0;
         public uint Reserved1;
+        private uint _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct H8DesignValueEntry
     {
         public uint FieldHash;
@@ -77,7 +79,7 @@ namespace Hecton8.Core.Bridge
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
+    [StructLayout(LayoutKind.Sequential, Size = 40)]
     public struct H8FacadeTelemetryEntry
     {
         public uint Frame;
@@ -90,10 +92,11 @@ namespace Hecton8.Core.Bridge
         public uint LutSwapHash;
         public ushort Flags;
         public ushort Reserved;
+        private uint _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct H8FacadeTelemetryDumpHeader
     {
         public uint Magic;
@@ -107,7 +110,7 @@ namespace Hecton8.Core.Bridge
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct H8InputFacadeBindingEntry
     {
         public uint ActionNameHash;
@@ -119,10 +122,11 @@ namespace Hecton8.Core.Bridge
         public uint Reserved1;
         public uint Reserved2;
         public uint Reserved3;
+        private uint _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct H8FacadeMacroHeader
     {
         public uint Magic;

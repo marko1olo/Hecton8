@@ -48,7 +48,9 @@ namespace Hecton8.Core.Content
     /// Authoring-only registry row. This type holds managed Unity references and must not be marshalled.
     /// </summary>
     /// <remarks>
-    /// Binary/native consumers use <see cref="ContentAssetBinaryRecord"/> produced by <see cref="ToBinaryRecord"/>.
+    /// Cold export and validator paths may produce <see cref="ContentAssetBinaryRecord"/> via
+    /// <see cref="ToBinaryRecord"/>. Runtime NativeArray, Burst, or hot ARM64 use requires an
+    /// aligned runtime mirror, not the packed file/export record.
     /// </remarks>
     [Serializable]
     public struct ContentAssetEntry

@@ -14,6 +14,7 @@ using Hecton8.Core.Memory;
 using Hecton8.Logistics.Grid.Contracts;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -22,30 +23,55 @@ using UnityEngine;
 
 namespace Hecton8.Power
 {
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct LogisticsNodeDTO
     {
-        public int NodeIndex;
-        public int ParentIndex;
-        public ulong ConnectionMask;
-        public float PowerDemand;
-        public float OxygenDemand;
-        public ulong StateFlags;
+        [FieldOffset(0)] public uint NodeHash;
+        [FieldOffset(4)] public float Capacity;
+        [FieldOffset(8)] public float CurrentLoad;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public int EdgeStartIndex;
+        [FieldOffset(20)] public int EdgeCount;
+        [FieldOffset(24)] public uint _pad0;
+        [FieldOffset(28)] public uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
-    public struct ConnectionEdgeDTO
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct LogisticsEdgeDTO
     {
-        public int2 Nodes;
+        [FieldOffset(0)] public int2 Nodes;
+        [FieldOffset(8)] public float Capacity;
+        [FieldOffset(12)] public float Resistance;
+        [FieldOffset(16)] public float Flow01;
+        [FieldOffset(20)] public int LastMilliTransfer;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct LogisticsTuningDTO
     {
-        public float ReactorOutputWatts;
-        public float LifeSupportDrainWatts;
-        public float OxygenDiffusionRate;
-        public float CrushDepthMultiplier;
+        [FieldOffset(0)] public float ReactorOutputWatts;
+        [FieldOffset(4)] public float LifeSupportDrainWatts;
+        [FieldOffset(8)] public float OxygenDiffusionRate;
+        [FieldOffset(12)] public float CrushDepthMultiplier;
+        [FieldOffset(16)] public float BasePipeResistance;
+        [FieldOffset(20)] public float JacobiSmoothingFactor;
+        [FieldOffset(24)] public float GlobalQualityWeight;
+        [FieldOffset(28)] public uint Flags;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct LogisticsComponentSpecDTO
+    {
+        [FieldOffset(0)] public uint ModuleHash;
+        [FieldOffset(4)] public float Capacity;
+        [FieldOffset(8)] public float Resistance;
+        [FieldOffset(12)] public float OxygenDemand;
+        [FieldOffset(16)] public uint Flags;
+        [FieldOffset(20)] public uint _pad0;
+        [FieldOffset(24)] public uint _pad1;
+        [FieldOffset(28)] public uint _pad2;
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 64)]
@@ -63,39 +89,9 @@ namespace Hecton8.Power
         public int BreachedCount;
         public int UnpoweredCount;
         public int OxygenCadence;
-        public int Reserved0;
-        public int Reserved1;
-        public int Reserved2;
-    }
-
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
-    public partial struct MockModuleStateSignal : ISignal
-    {
-        public ulong SectorHash;
-        public ulong Reserved1;
-        public uint Frame;
-        public uint SourceHash;
-        public int NodeIndex;
-        public ushort Reserved0;
-        public byte Flags;
-        public byte State;
-    }
-
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
-    internal partial struct HullBreachSignal
-    {
-        public ulong SectorHash;
-        public ulong Reserved0;
-        public float3 Position;
-        public float PressureDeltaKpa;
-        public float Oxygen01;
-        public uint Frame;
-        public uint SourceHash;
-        public uint Flags;
-        public int NodeIndex;
-        public int Reserved1;
-        public int Reserved2;
-        public int Reserved3;
+        public int ComponentCount;
+        public int JacobiIterations;
+        public int SolverMicros;
     }
 
     public static class LogisticsStateFlags
@@ -130,11 +126,11 @@ namespace Hecton8.Power
 
     public sealed unsafe class ShinobuLogisticsRouter : IDisposable
     {
-        public const int MaxNodes = WfcOutpostGridConstants.MaxCellCount;
+        public const int MaxNodes = 1000;
         public const int MaxDirectedEdges = WfcOutpostGridConstants.MaxDirectedEdges;
         public const int MaxAdjacencyEntries = MaxDirectedEdges * 2;
         public const int TelemetryFrames = WfcOutpostGridConstants.TelemetryFrames;
-        public const string DumpRelativePath = "Docs/AgentLogs/Dump_LOGISTICS_GRAPH.bin";
+        public const string DumpRelativePath = "Docs/AgentLogs/Dump_LOGISTICS_SURGEON.bin";
         public const string DumpH8RelativePath = "Docs/AgentLogs/Dump_SHINOBU_13.h8dump";
 
         private const int PriorityLifeSupport = 0;
@@ -148,24 +144,28 @@ namespace Hecton8.Power
         private const int CounterBreachedCount = 4;
         private const int CounterUnpoweredCount = 5;
         private const int CounterAdjacencyEntryCount = 6;
-        private const int CounterCount = 8;
+        private const int CounterComponentCount = 7;
+        private const int CounterGeneratorComponent = 8;
+        private const int CounterJacobiIterations = 9;
+        private const int CounterSpecCount = 10;
+        private const int CounterBreachSignalCount = 11;
+        private const int CounterCount = 16;
         private const int EdgeOffsetsBase = CounterCount;
         private const int EdgeWriteCursorBase = EdgeOffsetsBase + MaxNodes + 1;
         private const int EdgeDestinationsBase = EdgeWriteCursorBase + MaxNodes;
-        private const int IntLaneCount = EdgeDestinationsBase + MaxAdjacencyEntries;
+        private const int BfsQueueBase = EdgeDestinationsBase + MaxAdjacencyEntries;
+        private const int ReachableOrderBase = BfsQueueBase + MaxNodes;
+        private const int BreachNodeBase = ReachableOrderBase + MaxNodes;
+        private const int IntLaneCount = BreachNodeBase + MaxNodes;
         private const int FluidIncursionSignalCapacity = MaxNodes;
         private const int CsvBufferBytes = 16 * 1024;
         private const int LowTierOxygenCadence = 5;
         private const int NormalOxygenCadence = 1;
         private const float OxygenTickSeconds = 0.1f;
         private const float MockDockingWatts = 400f;
+        private const float DefaultBasePipeResistance = 0.35f;
+        private const float DefaultJacobiSmoothing = 0.82f;
         private const uint SourceHash = 0x5348494Eu; // SHIN
-        private const string SentinelOwner = "SHINOBU_13";
-        private const string NeighborLabel = "ShinobuNeighbors";
-        private const string BfsQueueLabel = "ShinobuBfsQueue";
-        private const string MockSignalQueueLabel = "ShinobuMockModuleSignals";
-        private const string BreachSignalQueueLabel = "ShinobuHullBreachSignals";
-        private const string ReachableListLabel = "ShinobuReachableOrder";
 
         private static ShinobuLogisticsRouter _active;
         private static LogisticsTuningDTO _offlineTuning = EmergencyTuning();
@@ -180,7 +180,7 @@ namespace Hecton8.Power
 
         private IDataVault _dataVault;
         private VaultBufferHandle<LogisticsNodeDTO> _nodesHandle;
-        private VaultBufferHandle<ConnectionEdgeDTO> _edgesHandle;
+        private VaultBufferHandle<LogisticsEdgeDTO> _edgesHandle;
         private VaultBufferHandle<ulong> _stateFlagsHandle;
         private VaultBufferHandle<float> _oxygenFrontHandle;
         private VaultBufferHandle<float> _oxygenBackHandle;
@@ -196,9 +196,16 @@ namespace Hecton8.Power
         private VaultBufferHandle<int> _countersHandle;
         private VaultBufferHandle<LogisticsTuningDTO> _tuningHandle;
         private VaultBufferHandle<LogisticsGraphTelemetryEntry> _blackBoxHandle;
+        private VaultBufferHandle<int> _componentIdsHandle;
+        private VaultBufferHandle<float> _pressureFrontHandle;
+        private VaultBufferHandle<float> _pressureBackHandle;
+        private VaultBufferHandle<float> _edgeRemainderMilliHandle;
+        private VaultBufferHandle<float> _csrEdgeCapacitiesHandle;
+        private VaultBufferHandle<float> _csrEdgeFlow01Handle;
+        private VaultBufferHandle<LogisticsComponentSpecDTO> _componentSpecsHandle;
 
         internal NativeArray<LogisticsNodeDTO> _nodes;
-        internal NativeArray<ConnectionEdgeDTO> _edges;
+        internal NativeArray<LogisticsEdgeDTO> _edges;
         internal NativeArray<ulong> _stateFlags;
         internal NativeArray<float> _oxygenFront;
         internal NativeArray<float> _oxygenBack;
@@ -214,16 +221,19 @@ namespace Hecton8.Power
         internal NativeArray<int> _counters;
         internal NativeArray<LogisticsTuningDTO> _tuning;
         internal NativeArray<LogisticsGraphTelemetryEntry> _blackBox;
-
-        private NativeParallelMultiHashMap<int, int> _neighbors;
-        private NativeQueue<int> _bfsQueue;
-        private NativeQueue<MockModuleStateSignal> _mockStateSignals;
-        private NativeQueue<HullBreachSignal> _breachSignals;
-        private NativeList<int> _reachableOrder;
+        internal NativeArray<int> _componentIds;
+        internal NativeArray<float> _pressureFront;
+        internal NativeArray<float> _pressureBack;
+        internal NativeArray<float> _edgeRemainderMilli;
+        internal NativeArray<float> _csrEdgeCapacities;
+        internal NativeArray<float> _csrEdgeFlow01;
+        internal NativeArray<LogisticsComponentSpecDTO> _componentSpecs;
 
         private JobHandle _solveHandle;
+        private JobHandle _csrRebuildHandle;
         private JobHandle _localShiftHandle;
         private bool _solvePending;
+        private bool _csrRebuildPending;
         private bool _localShiftPending;
         private bool _initialized;
         private bool _hasGraph;
@@ -233,6 +243,9 @@ namespace Hecton8.Power
         private int _frameIndex;
         private int _oxygenCadenceCounter;
         private int _oxygenCadenceDivisor = NormalOxygenCadence;
+        private int _jacobiIterations = 10;
+        private float _globalQualityWeight = 1f;
+        private long _solveStartTimestamp;
         private uint _activeGridHandle;
         private ulong _activeSectorHash;
         private uint _activeGridHash;
@@ -291,28 +304,17 @@ namespace Hecton8.Power
                 !_oxygenBack.IsCreated || !_internalPressureKpa.IsCreated || !_externalPressureKpa.IsCreated ||
                 !_yieldThresholdKpa.IsCreated || !_reinforcement.IsCreated || !_nodeAup.IsCreated ||
                 !_localPositions.IsCreated || !_priorityTier.IsCreated || !_visited.IsCreated ||
-                !_cellToNode.IsCreated || !_counters.IsCreated || !_tuning.IsCreated || !_blackBox.IsCreated)
+                !_cellToNode.IsCreated || !_counters.IsCreated || !_tuning.IsCreated || !_blackBox.IsCreated ||
+                !_componentIds.IsCreated || !_pressureFront.IsCreated || !_pressureBack.IsCreated ||
+                !_edgeRemainderMilli.IsCreated || !_csrEdgeCapacities.IsCreated || !_csrEdgeFlow01.IsCreated ||
+                !_componentSpecs.IsCreated)
             {
                 _hasFatalLayoutFault = true;
                 return;
             }
 
-            _neighbors = new NativeParallelMultiHashMap<int, int>(MaxAdjacencyEntries, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[MaxDirectedEdges*2] - cold adjacency splice mirror - owner: SHINOBU_13
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_neighbors, SentinelOwner, NeighborLabel, NativeAllocationLifetime.Session);
-            _bfsQueue = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[500] - BFS traversal queue - owner: SHINOBU_13
-            NativeMemorySentinel.RegisterNativeQueue(_bfsQueue, MaxNodes, SentinelOwner, BfsQueueLabel, NativeAllocationLifetime.Session);
-            _mockStateSignals = new NativeQueue<MockModuleStateSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<MockModuleStateSignal>[32] - local dependency mock lane - owner: SHINOBU_13
-            NativeMemorySentinel.RegisterNativeQueue(_mockStateSignals, 32, SentinelOwner, MockSignalQueueLabel, NativeAllocationLifetime.Session);
-            _breachSignals = new NativeQueue<HullBreachSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<HullBreachSignal>[MaxNodes] - local breach payload queue - owner: SHINOBU_13
-            NativeMemorySentinel.RegisterNativeQueue(_breachSignals, MaxNodes, SentinelOwner, BreachSignalQueueLabel, NativeAllocationLifetime.Session);
-            _reachableOrder = new NativeList<int>(MaxNodes, Allocator.Persistent); // COLD ALLOC: NativeList<int>[500] - BFS reachable order scratch - owner: SHINOBU_13
-            NativeMemorySentinel.RegisterNativeList(_reachableOrder, SentinelOwner, ReachableListLabel, NativeAllocationLifetime.Session);
-
             ConfigurePublicSignalLanes();
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
-            PrewarmQueue(ref _bfsQueue, MaxNodes);
-            PrewarmQueue(ref _mockStateSignals, 32);
-            PrewarmQueue(ref _breachSignals, MaxNodes);
 
             _tuning[0] = _offlineTuning;
             new LogisticsGraphInitializeJob
@@ -329,13 +331,23 @@ namespace Hecton8.Power
                 LocalPositions = _localPositions,
                 PriorityTier = _priorityTier,
                 Visited = _visited,
-                CellToNode = _cellToNode
-            }.Schedule(MaxNodes, 64).Complete();
+                CellToNode = _cellToNode,
+                ComponentIds = _componentIds,
+                PressureFront = _pressureFront,
+                PressureBack = _pressureBack
+            }.Run(MaxNodes); // COLD SYNC JOB: boot-only deterministic overwrite of Vault-owned lanes before first graph publication.
 
             for (int i = 0; i < _counters.Length; i++)
                 _counters[i] = 0;
             for (int i = 0; i < _blackBox.Length; i++)
                 _blackBox[i] = default;
+            for (int i = 0; i < _csrEdgeCapacities.Length; i++)
+            {
+                _csrEdgeCapacities[i] = 0f;
+                _csrEdgeFlow01[i] = 0f;
+            }
+            for (int i = 0; i < _edgeRemainderMilli.Length; i++)
+                _edgeRemainderMilli[i] = 0f;
 
             _initialized = true;
             _missingVaultWarned = false;
@@ -352,6 +364,8 @@ namespace Hecton8.Power
                 return;
             if (!RefreshVaultAliases())
                 return;
+            if (_solvePending)
+                return;
 
             TryConsumeGeneratedSignals();
             TryConsumeStateSignals();
@@ -364,21 +378,24 @@ namespace Hecton8.Power
             if (!_hasGraph)
                 BuildEmergencyMockGraph();
 
-            if (_solvePending)
+            if (_csrRebuildPending && _counters[CounterAdjacencyEntryCount] <= 0)
                 return;
 
             ApplyQueuedTuning();
-            ScheduleMockModuleSignal();
+            ApplyDeterministicMockModuleToggle();
 
             _frameIndex++;
             bool runOxygen = ShouldRunOxygenSolver();
-            _solveHandle = new LogisticsSolveJob
+            _solveStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            _solveHandle = new LogisticsFlowSolverJob
             {
                 NodesPtr = (LogisticsNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),
                 NodeCount = _nodeCount,
                 EdgeCount = _edgeCount,
                 FrameIndex = _frameIndex,
                 RunOxygen = runOxygen ? 1 : 0,
+                JacobiIterations = _jacobiIterations,
+                GlobalQualityWeight = _globalQualityWeight,
                 OxygenDeltaSeconds = OxygenTickSeconds * _oxygenCadenceDivisor,
                 DockingPowerWatts = MockDockingWatts,
                 SectorHash = _activeSectorHash,
@@ -387,8 +404,12 @@ namespace Hecton8.Power
                 EdgeOffsetsBaseIndex = EdgeOffsetsBase,
                 EdgeDestinationsBaseIndex = EdgeDestinationsBase,
                 AdjacencyEntryCount = _counters[CounterAdjacencyEntryCount],
-                TraversalQueue = _bfsQueue,
-                ReachableOrder = _reachableOrder,
+                ComponentIds = _componentIds,
+                PressureFront = _pressureFront,
+                PressureBack = _pressureBack,
+                EdgeRemainderMilli = _edgeRemainderMilli,
+                CsrEdgeCapacities = _csrEdgeCapacities,
+                CsrEdgeFlow01 = _csrEdgeFlow01,
                 Visited = _visited,
                 PriorityTier = _priorityTier,
                 OxygenFront = _oxygenFront,
@@ -399,9 +420,11 @@ namespace Hecton8.Power
                 Reinforcement = _reinforcement,
                 LocalPositions = _localPositions,
                 Counters = _counters,
+                BfsQueueBaseIndex = BfsQueueBase,
+                ReachableBaseIndex = ReachableOrderBase,
+                BreachNodeBaseIndex = BreachNodeBase,
                 Tuning = _tuning,
-                BlackBox = _blackBox,
-                BreachSignals = _breachSignals
+                BlackBox = _blackBox
             }.Schedule();
             _solvePending = true;
         }
@@ -411,11 +434,19 @@ namespace Hecton8.Power
             if (!_initialized)
                 return;
 
+            if (_csrRebuildPending && _csrRebuildHandle.IsCompleted)
+            {
+                _csrRebuildHandle.Complete();
+                _csrRebuildPending = false;
+            }
+
             if (_solvePending && _solveHandle.IsCompleted)
             {
                 _solveHandle.Complete();
                 _solvePending = false;
+                PatchLatestTelemetryMicros();
                 PublishSolveSideEffects();
+                PublishFlowVisuals();
             }
 
             if (_hasGraph && !_localShiftPending)
@@ -463,14 +494,77 @@ namespace Hecton8.Power
         public static bool ValidateLayouts(out int nodeBytes, out int edgeBytes, out int tuningBytes)
         {
             nodeBytes = UnsafeUtility.SizeOf<LogisticsNodeDTO>();
-            edgeBytes = UnsafeUtility.SizeOf<ConnectionEdgeDTO>();
+            edgeBytes = UnsafeUtility.SizeOf<LogisticsEdgeDTO>();
             tuningBytes = UnsafeUtility.SizeOf<LogisticsTuningDTO>();
-            return nodeBytes == 32 &&
-                   edgeBytes == 8 &&
-                   tuningBytes == 16 &&
-                   UnsafeUtility.SizeOf<LogisticsGraphTelemetryEntry>() == 64 &&
-                   UnsafeUtility.SizeOf<MockModuleStateSignal>() == 32 &&
-                   UnsafeUtility.SizeOf<HullBreachSignal>() == 64;
+            bool sizesValid = nodeBytes == 32 &&
+                              edgeBytes == 32 &&
+                              tuningBytes == 32 &&
+                              UnsafeUtility.SizeOf<LogisticsComponentSpecDTO>() == 32 &&
+                              UnsafeUtility.SizeOf<LogisticsGraphTelemetryEntry>() == 64;
+#if UNITY_EDITOR
+            return sizesValid && ValidateLogisticsNodeOffsets() && ValidateLogisticsEdgeOffsets();
+#else
+            return sizesValid;
+#endif
+        }
+
+        public static bool ValidateLogisticsNodeOffsets()
+        {
+            return OffsetOf<LogisticsNodeDTO>(nameof(LogisticsNodeDTO.NodeHash)) == 0 &&
+                   OffsetOf<LogisticsNodeDTO>(nameof(LogisticsNodeDTO.Capacity)) == 4 &&
+                   OffsetOf<LogisticsNodeDTO>(nameof(LogisticsNodeDTO.CurrentLoad)) == 8 &&
+                   OffsetOf<LogisticsNodeDTO>(nameof(LogisticsNodeDTO.Flags)) == 12 &&
+                   OffsetOf<LogisticsNodeDTO>(nameof(LogisticsNodeDTO.EdgeStartIndex)) == 16 &&
+                   OffsetOf<LogisticsNodeDTO>(nameof(LogisticsNodeDTO.EdgeCount)) == 20 &&
+                   OffsetOf<LogisticsNodeDTO>(nameof(LogisticsNodeDTO._pad0)) == 24 &&
+                   OffsetOf<LogisticsNodeDTO>(nameof(LogisticsNodeDTO._pad1)) == 28;
+        }
+
+        private static bool ValidateLogisticsEdgeOffsets()
+        {
+            return OffsetOf<LogisticsEdgeDTO>(nameof(LogisticsEdgeDTO.Nodes)) == 0 &&
+                   OffsetOf<LogisticsEdgeDTO>(nameof(LogisticsEdgeDTO.Capacity)) == 8 &&
+                   OffsetOf<LogisticsEdgeDTO>(nameof(LogisticsEdgeDTO.Resistance)) == 12 &&
+                   OffsetOf<LogisticsEdgeDTO>(nameof(LogisticsEdgeDTO.Flow01)) == 16 &&
+                   OffsetOf<LogisticsEdgeDTO>(nameof(LogisticsEdgeDTO.LastMilliTransfer)) == 20 &&
+                   OffsetOf<LogisticsEdgeDTO>(nameof(LogisticsEdgeDTO.Flags)) == 24;
+        }
+
+        public static bool SelfAuditArchitecture(out uint auditHash)
+        {
+            bool layoutsValid = ValidateLayouts(out int nodeBytes, out int edgeBytes, out int tuningBytes);
+            auditHash = 2166136261u;
+            auditHash = (auditHash ^ (uint)nodeBytes) * 16777619u;
+            auditHash = (auditHash ^ (uint)edgeBytes) * 16777619u;
+            auditHash = (auditHash ^ (uint)tuningBytes) * 16777619u;
+            auditHash = (auditHash ^ (uint)BufferID.ShinobuLogisticsNodes) * 16777619u;
+            auditHash = (auditHash ^ (uint)BufferID.ShinobuLogisticsEdges) * 16777619u;
+            auditHash = (auditHash ^ (uint)BufferID.ShinobuLogisticsComponentIds) * 16777619u;
+            auditHash = (auditHash ^ (uint)BufferID.ShinobuLogisticsPressureFront) * 16777619u;
+            auditHash = (auditHash ^ (uint)BufferID.ShinobuLogisticsPressureBack) * 16777619u;
+            auditHash = (auditHash ^ (uint)BufferID.ShinobuLogisticsEdgeRemainderMilli) * 16777619u;
+            auditHash = (auditHash ^ (uint)BufferID.ShinobuLogisticsCsrEdgeCapacities) * 16777619u;
+            auditHash = (auditHash ^ (uint)BufferID.ShinobuLogisticsCsrEdgeFlow01) * 16777619u;
+            auditHash = (auditHash ^ (uint)BufferID.ShinobuLogisticsBlackBox) * 16777619u;
+            auditHash = (auditHash ^ (uint)BfsQueueBase) * 16777619u;
+            auditHash = (auditHash ^ (uint)ReachableOrderBase) * 16777619u;
+            auditHash = (auditHash ^ (uint)BreachNodeBase) * 16777619u;
+            auditHash = (auditHash ^ (uint)IntLaneCount) * 16777619u;
+            return layoutsValid &&
+                   MaxNodes == 1000 &&
+                   MaxDirectedEdges >= 2500 &&
+                   MaxAdjacencyEntries >= 5000 &&
+                   BfsQueueBase >= EdgeDestinationsBase + MaxAdjacencyEntries &&
+                   ReachableOrderBase >= BfsQueueBase + MaxNodes &&
+                   BreachNodeBase >= ReachableOrderBase + MaxNodes &&
+                   IntLaneCount >= BreachNodeBase + MaxNodes &&
+                   TelemetryFrames == 300;
+        }
+
+        private static int OffsetOf<T>(string fieldName) where T : struct
+        {
+            var field = typeof(T).GetField(fieldName);
+            return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
 
         private bool ResolveVaultBuffers()
@@ -495,7 +589,14 @@ namespace Hecton8.Power
                    ResolveVaultBuffer(vault, ref _cellToNodeHandle, BufferID.ShinobuLogisticsCellToNode, MaxNodes, out _cellToNode) &&
                    ResolveVaultBuffer(vault, ref _countersHandle, BufferID.ShinobuLogisticsCounters, IntLaneCount, out _counters) &&
                    ResolveVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuLogisticsTuning, 1, out _tuning) &&
-                   ResolveVaultBuffer(vault, ref _blackBoxHandle, BufferID.ShinobuLogisticsBlackBox, TelemetryFrames, out _blackBox);
+                   ResolveVaultBuffer(vault, ref _blackBoxHandle, BufferID.ShinobuLogisticsBlackBox, TelemetryFrames, out _blackBox) &&
+                   ResolveVaultBuffer(vault, ref _componentIdsHandle, BufferID.ShinobuLogisticsComponentIds, MaxNodes, out _componentIds) &&
+                   ResolveVaultBuffer(vault, ref _pressureFrontHandle, BufferID.ShinobuLogisticsPressureFront, MaxNodes, out _pressureFront) &&
+                   ResolveVaultBuffer(vault, ref _pressureBackHandle, BufferID.ShinobuLogisticsPressureBack, MaxNodes, out _pressureBack) &&
+                   ResolveVaultBuffer(vault, ref _edgeRemainderMilliHandle, BufferID.ShinobuLogisticsEdgeRemainderMilli, MaxAdjacencyEntries, out _edgeRemainderMilli) &&
+                   ResolveVaultBuffer(vault, ref _csrEdgeCapacitiesHandle, BufferID.ShinobuLogisticsCsrEdgeCapacities, MaxAdjacencyEntries, out _csrEdgeCapacities) &&
+                   ResolveVaultBuffer(vault, ref _csrEdgeFlow01Handle, BufferID.ShinobuLogisticsCsrEdgeFlow01, MaxAdjacencyEntries, out _csrEdgeFlow01) &&
+                   ResolveVaultBuffer(vault, ref _componentSpecsHandle, BufferID.ShinobuLogisticsComponentSpecs, MaxNodes, out _componentSpecs);
         }
 
         private static bool ResolveVaultBuffer<T>(
@@ -545,7 +646,14 @@ namespace Hecton8.Power
                    RefreshVaultBuffer(vault, ref _cellToNodeHandle, MaxNodes, out _cellToNode) &&
                    RefreshVaultBuffer(vault, ref _countersHandle, IntLaneCount, out _counters) &&
                    RefreshVaultBuffer(vault, ref _tuningHandle, 1, out _tuning) &&
-                   RefreshVaultBuffer(vault, ref _blackBoxHandle, TelemetryFrames, out _blackBox);
+                   RefreshVaultBuffer(vault, ref _blackBoxHandle, TelemetryFrames, out _blackBox) &&
+                   RefreshVaultBuffer(vault, ref _componentIdsHandle, MaxNodes, out _componentIds) &&
+                   RefreshVaultBuffer(vault, ref _pressureFrontHandle, MaxNodes, out _pressureFront) &&
+                   RefreshVaultBuffer(vault, ref _pressureBackHandle, MaxNodes, out _pressureBack) &&
+                   RefreshVaultBuffer(vault, ref _edgeRemainderMilliHandle, MaxAdjacencyEntries, out _edgeRemainderMilli) &&
+                   RefreshVaultBuffer(vault, ref _csrEdgeCapacitiesHandle, MaxAdjacencyEntries, out _csrEdgeCapacities) &&
+                   RefreshVaultBuffer(vault, ref _csrEdgeFlow01Handle, MaxAdjacencyEntries, out _csrEdgeFlow01) &&
+                   RefreshVaultBuffer(vault, ref _componentSpecsHandle, MaxNodes, out _componentSpecs);
         }
 
         private static bool RefreshVaultBuffer<T>(
@@ -600,10 +708,26 @@ namespace Hecton8.Power
             out ulong flagsA,
             out ulong flagsB)
         {
+            return TryGetDebugEdge(index, out nodeA, out nodeB, out flagsA, out flagsB, out _, out _, out _);
+        }
+
+        public static bool TryGetDebugEdge(
+            int index,
+            out float3 nodeA,
+            out float3 nodeB,
+            out ulong flagsA,
+            out ulong flagsB,
+            out int componentA,
+            out int componentB,
+            out float flow01)
+        {
             nodeA = default;
             nodeB = default;
             flagsA = 0UL;
             flagsB = 0UL;
+            componentA = -1;
+            componentB = -1;
+            flow01 = 0f;
 
             ShinobuLogisticsRouter active = _active;
             if (active == null || !active._initialized || active._solvePending || active._localShiftPending)
@@ -619,7 +743,26 @@ namespace Hecton8.Power
             nodeB = active._localPositions[edge.y];
             flagsA = active._stateFlags[edge.x];
             flagsB = active._stateFlags[edge.y];
+            componentA = active._componentIds.IsCreated ? active._componentIds[edge.x] : -1;
+            componentB = active._componentIds.IsCreated ? active._componentIds[edge.y] : -1;
+            flow01 = math.saturate(active._edges[index].Flow01);
             return true;
+        }
+
+        public static bool TryGetLatestTelemetry(out LogisticsGraphTelemetryEntry entry)
+        {
+            entry = default;
+            ShinobuLogisticsRouter active = _active;
+            if (active == null || !active._initialized || !active._blackBox.IsCreated)
+                return false;
+
+            int frame = math.max(0, active._frameIndex);
+            int index = frame % TelemetryFrames;
+            if ((uint)index >= (uint)active._blackBox.Length)
+                return false;
+
+            entry = active._blackBox[index];
+            return entry.FrameIndex != 0;
         }
 
         public static int DebugNodeCount()
@@ -647,6 +790,12 @@ namespace Hecton8.Power
                 _solvePending = false;
             }
 
+            if (_csrRebuildPending)
+            {
+                _csrRebuildHandle.Complete();
+                _csrRebuildPending = false;
+            }
+
             if (_localShiftPending)
             {
                 _localShiftHandle.Complete();
@@ -655,36 +804,6 @@ namespace Hecton8.Power
 
             if (ReferenceEquals(_active, this))
                 _active = null;
-
-            if (_reachableOrder.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(SentinelOwner, ReachableListLabel);
-                _reachableOrder.Dispose();
-            }
-
-            if (_breachSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(SentinelOwner, BreachSignalQueueLabel);
-                _breachSignals.Dispose();
-            }
-
-            if (_mockStateSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(SentinelOwner, MockSignalQueueLabel);
-                _mockStateSignals.Dispose();
-            }
-
-            if (_bfsQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(SentinelOwner, BfsQueueLabel);
-                _bfsQueue.Dispose();
-            }
-
-            if (_neighbors.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(SentinelOwner, NeighborLabel);
-                _neighbors.Dispose();
-            }
 
             ClearVaultAliases();
 
@@ -696,6 +815,13 @@ namespace Hecton8.Power
 
         private void ClearVaultAliases()
         {
+            _componentSpecs = default;
+            _csrEdgeFlow01 = default;
+            _csrEdgeCapacities = default;
+            _edgeRemainderMilli = default;
+            _pressureBack = default;
+            _pressureFront = default;
+            _componentIds = default;
             _blackBox = default;
             _tuning = default;
             _counters = default;
@@ -714,6 +840,13 @@ namespace Hecton8.Power
             _edges = default;
             _nodes = default;
 
+            _componentSpecsHandle = default;
+            _csrEdgeFlow01Handle = default;
+            _csrEdgeCapacitiesHandle = default;
+            _edgeRemainderMilliHandle = default;
+            _pressureBackHandle = default;
+            _pressureFrontHandle = default;
+            _componentIdsHandle = default;
             _blackBoxHandle = default;
             _tuningHandle = default;
             _countersHandle = default;
@@ -789,29 +922,8 @@ namespace Hecton8.Power
                     flags |= LogisticsStateFlags.Flooded;
                 _stateFlags[nodeIndex] = flags;
                 LogisticsNodeDTO node = _nodes[nodeIndex];
-                node.StateFlags = flags;
+                node.Flags = (uint)flags;
                 _nodes[nodeIndex] = node;
-                _neighbors.Remove(nodeIndex);
-                rebuildAdjacency = true;
-            }
-
-            while (_mockStateSignals.TryDequeue(out MockModuleStateSignal signal))
-            {
-                if ((uint)signal.NodeIndex >= _nodeCount)
-                    continue;
-
-                ulong flags = _stateFlags[signal.NodeIndex];
-                if ((signal.Flags & 0x01) != 0)
-                    flags |= LogisticsStateFlags.Destroyed;
-                if ((signal.Flags & 0x02) != 0)
-                    flags ^= LogisticsStateFlags.DoorLocked;
-                if ((signal.Flags & 0x04) != 0)
-                    flags |= LogisticsStateFlags.Flooded;
-                _stateFlags[signal.NodeIndex] = flags;
-                LogisticsNodeDTO node = _nodes[signal.NodeIndex];
-                node.StateFlags = flags;
-                _nodes[signal.NodeIndex] = node;
-                _neighbors.Remove(signal.NodeIndex);
                 rebuildAdjacency = true;
             }
 
@@ -832,25 +944,38 @@ namespace Hecton8.Power
             ulong flags = _stateFlags[dockingNode] | LogisticsStateFlags.SubmarineAttached | LogisticsStateFlags.DockingPort;
             _stateFlags[dockingNode] = flags;
             LogisticsNodeDTO node = _nodes[dockingNode];
-            node.StateFlags = flags;
+            node.Flags = (uint)flags;
             _nodes[dockingNode] = node;
         }
 
         private void RefreshHardwareCadence()
         {
-            bool lowTier = SignalBusRegistry.LowTierMode || SignalBusRegistry.SystemStress01 > 0.72f;
+            float quality = ResolveGlobalQualityWeight();
             ReadOnlySpan<SystemHealthSignal> healthSignals = SignalBus<SystemHealthSignal>.GetFrameSnapshot();
             for (int i = 0; i < healthSignals.Length; i++)
             {
                 SystemHealthSignal signal = healthSignals[i];
-                if (signal.SystemHealthIndex01 < 0.42f || signal.PressureLevel >= 2)
-                {
-                    lowTier = true;
-                    break;
-                }
+                float health = math.saturate(signal.SystemHealthIndex01);
+                float pressurePenalty = math.saturate(signal.PressureLevel * 0.22f);
+                quality = math.min(quality, math.saturate(health - pressurePenalty));
             }
 
-            _oxygenCadenceDivisor = lowTier ? LowTierOxygenCadence : NormalOxygenCadence;
+            float qualityCurve = quality * quality * (3f - (2f * quality));
+            _globalQualityWeight = quality;
+            _jacobiIterations = math.clamp((int)math.floor(math.lerp(1f, 10.999f, qualityCurve)), 1, 10);
+            _oxygenCadenceDivisor = math.clamp((int)math.round(math.lerp(LowTierOxygenCadence, NormalOxygenCadence, qualityCurve)), NormalOxygenCadence, LowTierOxygenCadence);
+            if (_tuning.IsCreated)
+            {
+                LogisticsTuningDTO tuning = _tuning[0];
+                tuning.GlobalQualityWeight = quality;
+                _tuning[0] = SanitizeTuning(tuning);
+            }
+        }
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(weight) ? weight : 1f);
         }
 
         private bool ShouldRunOxygenSolver()
@@ -874,25 +999,27 @@ namespace Hecton8.Power
             _hasQueuedTuning = false;
         }
 
-        private void ScheduleMockModuleSignal()
+        private void ApplyDeterministicMockModuleToggle()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_nodeCount <= 2 || (_frameIndex % 240) != 0)
                 return;
 
-            new MockModuleStateSignalJob
-            {
-                Frame = (uint)_frameIndex,
-                NodeCount = _nodeCount,
-                SectorHash = _activeSectorHash,
-                Output = _mockStateSignals.AsParallelWriter()
-            }.Schedule().Complete();
+            uint frame = (uint)_frameIndex;
+            int nodeIndex = 1 + (int)((frame * 1103515245u + 12345u) % (uint)(_nodeCount - 1));
+            ulong flags = _stateFlags[nodeIndex] ^ LogisticsStateFlags.DoorLocked;
+            _stateFlags[nodeIndex] = flags;
+            LogisticsNodeDTO node = _nodes[nodeIndex];
+            node.Flags = (uint)flags;
+            _nodes[nodeIndex] = node;
+            RebuildAdjacencyFromEdges();
 #endif
         }
 
         private void BuildFromWfcGrid(in WfcOutpostGridLease lease, in WfcOutpostGeneratedSignal signal)
         {
-            ResetGraphBuffers();
+            if (!ResetGraphBuffers())
+                return;
 
             WfcOutpostGridDescriptor descriptor = lease.Descriptor;
             int3 dimensions = descriptor.Dimensions;
@@ -921,12 +1048,12 @@ namespace Hecton8.Power
                 ulong flags = ResolveInitialStateFlags(kind, cell, dimensions);
                 _nodes[nodeIndex] = new LogisticsNodeDTO
                 {
-                    NodeIndex = nodeIndex,
-                    ParentIndex = -1,
-                    ConnectionMask = 0UL,
-                    PowerDemand = ResolvePowerDemand(kind),
-                    OxygenDemand = ResolveOxygenDemand(kind),
-                    StateFlags = flags
+                    NodeHash = ComputeNodeHash(signal.SectorHash, nodeIndex, kind),
+                    Capacity = ResolvePowerDemand(kind),
+                    CurrentLoad = 0f,
+                    Flags = (uint)flags,
+                    EdgeStartIndex = -1,
+                    EdgeCount = 0
                 };
                 _stateFlags[nodeIndex] = flags;
                 _oxygenFront[nodeIndex] = 100f;
@@ -975,56 +1102,39 @@ namespace Hecton8.Power
 
         private void BuildEmergencyMockGraph()
         {
-            ResetGraphBuffers();
+            if (!ResetGraphBuffers())
+                return;
             GenerateEmergencyMockProfiles();
 
-            const int mockCount = MockWFCGraphGenerator.RoomCount;
-            _nodeCount = mockCount;
             _activeGridHandle = 0x53484D47u;
             _activeSectorHash = 0x5348494E4F425531UL;
             _activeGridHash = 0x4D4F434Bu;
             _activeGenerationSequence = 1u;
 
-            for (int i = 0; i < mockCount; i++)
+            new GenerateMockLogisticsGraphJob
             {
-                byte kind = MockWFCGraphGenerator.ResolveKind(i);
-                ulong flags = ResolveInitialStateFlags(kind, new int3(i, 0, 0), new int3(mockCount, 1, 1));
-                _nodes[i] = new LogisticsNodeDTO
-                {
-                    NodeIndex = i,
-                    ParentIndex = -1,
-                    ConnectionMask = 0UL,
-                    PowerDemand = ResolvePowerDemand(kind),
-                    OxygenDemand = ResolveOxygenDemand(kind),
-                    StateFlags = flags
-                };
-                _stateFlags[i] = flags;
-                _oxygenFront[i] = i == mockCount - 1 ? 55f : 100f;
-                _oxygenBack[i] = _oxygenFront[i];
-                _internalPressureKpa[i] = 101.3f;
-                _externalPressureKpa[i] = 101.3f + (i * 17f);
-                _yieldThresholdKpa[i] = 650f + ResolveReinforcement(kind) * 220f;
-                _reinforcement[i] = ResolveReinforcement(kind);
-                _nodeAup[i] = new double3(i * 6.0, 0.0, (i & 1) * 4.0);
-                _localPositions[i] = new float3(i * 6f, 0f, (i & 1) * 4f);
-                _priorityTier[i] = ResolvePriority(kind);
-                _cellToNode[i] = i;
-            }
+                SectorHash = _activeSectorHash,
+                Nodes = _nodes,
+                Edges = _edges,
+                StateFlags = _stateFlags,
+                OxygenFront = _oxygenFront,
+                OxygenBack = _oxygenBack,
+                InternalPressureKpa = _internalPressureKpa,
+                ExternalPressureKpa = _externalPressureKpa,
+                YieldThresholdKpa = _yieldThresholdKpa,
+                Reinforcement = _reinforcement,
+                NodeAup = _nodeAup,
+                LocalPositions = _localPositions,
+                PriorityTier = _priorityTier,
+                CellToNode = _cellToNode,
+                Counters = _counters
+            }.Run(); // COLD SYNC JOB: emergency mock topology is generated once before any solver snapshot can exist.
 
-            uint lcg = 0x13B5u;
-            for (int i = 0; i < mockCount - 1; i++)
-                AddUndirectedEdge(i, i + 1);
-            for (int i = 0; i < mockCount; i++)
-            {
-                int target = MockWFCGraphGenerator.ResolveExtraTarget(ref lcg, mockCount);
-                if (target != i && math.abs(target - i) > 1)
-                    AddUndirectedEdge(i, target);
-            }
+            _nodeCount = _counters[CounterNodeCount];
+            _edgeCount = _counters[CounterEdgeCount];
 
             _hasGraph = true;
-            RebuildCsrFromEdges();
-            _counters[CounterNodeCount] = _nodeCount;
-            _counters[CounterEdgeCount] = _edgeCount;
+            ScheduleCsrRebuild();
         }
 
         private void GenerateEmergencyMockProfiles()
@@ -1041,21 +1151,23 @@ namespace Hecton8.Power
                 ReactorOutputWatts = 1000f,
                 LifeSupportDrainWatts = 12f,
                 OxygenDiffusionRate = 0.18f,
-                CrushDepthMultiplier = 1f
+                CrushDepthMultiplier = 1f,
+                BasePipeResistance = DefaultBasePipeResistance,
+                JacobiSmoothingFactor = DefaultJacobiSmoothing,
+                GlobalQualityWeight = 1f,
+                Flags = 0u
             };
         }
 
-        private void ResetGraphBuffers()
+        private bool ResetGraphBuffers()
         {
-            if (_solvePending)
+            if (_solvePending || _csrRebuildPending || _localShiftPending)
             {
-                _solveHandle.Complete();
-                _solvePending = false;
+                if (_counters.IsCreated)
+                    _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.LayoutFault;
+                return false;
             }
 
-            _neighbors.Clear();
-            _bfsQueue.Clear();
-            _reachableOrder.Clear();
             _nodeCount = 0;
             _edgeCount = 0;
             _hasGraph = false;
@@ -1063,95 +1175,42 @@ namespace Hecton8.Power
                 _cellToNode[i] = -1;
             for (int i = 0; i < _counters.Length; i++)
                 _counters[i] = 0;
+            return true;
         }
 
         private void RebuildAdjacencyFromEdges()
         {
-            _neighbors.Clear();
-            for (int i = 0; i < _edgeCount; i++)
-            {
-                int2 edge = _edges[i].Nodes;
-                if ((uint)edge.x >= _nodeCount || (uint)edge.y >= _nodeCount)
-                    continue;
-
-                if ((_stateFlags[edge.x] & LogisticsStateFlags.Destroyed) != 0 ||
-                    (_stateFlags[edge.y] & LogisticsStateFlags.Destroyed) != 0)
-                {
-                    continue;
-                }
-
-                _neighbors.Add(edge.x, edge.y);
-                _neighbors.Add(edge.y, edge.x);
-            }
-
-            RebuildCsrFromEdges();
+            ScheduleCsrRebuild();
         }
 
         private void RebuildCsrFromEdges()
         {
-            if (!_counters.IsCreated)
+            ScheduleCsrRebuild();
+        }
+
+        private void ScheduleCsrRebuild()
+        {
+            if (!_counters.IsCreated || !_csrEdgeCapacities.IsCreated || !_csrEdgeFlow01.IsCreated || !_nodes.IsCreated)
                 return;
 
-            int nodeCount = math.clamp(_nodeCount, 0, MaxNodes);
-            int maxEntries = math.min(MaxAdjacencyEntries, _counters.Length - EdgeDestinationsBase);
-            if (nodeCount <= 0 || maxEntries <= 0)
-            {
-                _counters[CounterAdjacencyEntryCount] = 0;
+            if (_csrRebuildPending)
                 return;
-            }
 
-            for (int i = 0; i <= nodeCount; i++)
-                _counters[EdgeOffsetsBase + i] = 0;
-            for (int i = 0; i < nodeCount; i++)
-                _counters[EdgeWriteCursorBase + i] = 0;
-
-            int adjacencyCount = 0;
-            for (int i = 0; i < _edgeCount; i++)
+            _csrRebuildHandle = new BuildCsrGraphJob
             {
-                int2 edge = _edges[i].Nodes;
-                if (!IsTraversableEdge(edge, nodeCount))
-                    continue;
-
-                if (adjacencyCount + 2 > maxEntries)
-                {
-                    _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.CapacityExceeded;
-                    break;
-                }
-
-                _counters[EdgeOffsetsBase + edge.x + 1]++;
-                _counters[EdgeOffsetsBase + edge.y + 1]++;
-                adjacencyCount += 2;
-            }
-
-            int prefix = 0;
-            for (int i = 0; i < nodeCount; i++)
-            {
-                int count = _counters[EdgeOffsetsBase + i + 1];
-                _counters[EdgeOffsetsBase + i] = prefix;
-                _counters[EdgeWriteCursorBase + i] = prefix;
-                prefix += count;
-            }
-
-            _counters[EdgeOffsetsBase + nodeCount] = prefix;
-            int writtenEntries = 0;
-            for (int i = 0; i < _edgeCount; i++)
-            {
-                int2 edge = _edges[i].Nodes;
-                if (!IsTraversableEdge(edge, nodeCount))
-                    continue;
-                if (writtenEntries + 2 > adjacencyCount)
-                    break;
-
-                int writeA = _counters[EdgeWriteCursorBase + edge.x]++;
-                int writeB = _counters[EdgeWriteCursorBase + edge.y]++;
-                if ((uint)writeA < (uint)maxEntries)
-                    _counters[EdgeDestinationsBase + writeA] = edge.y;
-                if ((uint)writeB < (uint)maxEntries)
-                    _counters[EdgeDestinationsBase + writeB] = edge.x;
-                writtenEntries += 2;
-            }
-
-            _counters[CounterAdjacencyEntryCount] = prefix;
+                NodesPtr = (LogisticsNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),
+                NodeCount = math.clamp(_nodeCount, 0, MaxNodes),
+                EdgeCount = math.clamp(_edgeCount, 0, MaxDirectedEdges),
+                Edges = _edges,
+                StateFlags = _stateFlags,
+                Counters = _counters,
+                CsrEdgeCapacities = _csrEdgeCapacities,
+                CsrEdgeFlow01 = _csrEdgeFlow01,
+                EdgeOffsetsBaseIndex = EdgeOffsetsBase,
+                EdgeWriteCursorBaseIndex = EdgeWriteCursorBase,
+                EdgeDestinationsBaseIndex = EdgeDestinationsBase
+            }.Schedule();
+            _csrRebuildPending = true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1178,21 +1237,15 @@ namespace Hecton8.Power
                     return;
             }
 
-            _edges[_edgeCount++] = new ConnectionEdgeDTO { Nodes = new int2(low, high) };
-            _neighbors.Add(low, high);
-            _neighbors.Add(high, low);
-            SetConnectionMaskBit(low, high);
-            SetConnectionMaskBit(high, low);
-        }
-
-        private void SetConnectionMaskBit(int source, int destination)
-        {
-            if ((uint)destination >= 64u)
-                return;
-
-            LogisticsNodeDTO node = _nodes[source];
-            node.ConnectionMask |= 1UL << destination;
-            _nodes[source] = node;
+            _edges[_edgeCount++] = new LogisticsEdgeDTO
+            {
+                Nodes = new int2(low, high),
+                Capacity = ResolveEdgeCapacity(low, high),
+                Resistance = ResolveEdgeResistance(low, high),
+                Flow01 = 0f,
+                LastMilliTransfer = 0,
+                Flags = 0u
+            };
         }
 
         private void TryConnectPlanar(
@@ -1265,11 +1318,17 @@ namespace Hecton8.Power
 
         private void PublishSolveSideEffects()
         {
-            while (_breachSignals.TryDequeue(out HullBreachSignal breach))
+            int breachSignalCount = _counters.IsCreated
+                ? math.clamp(_counters[CounterBreachSignalCount], 0, MaxNodes)
+                : 0;
+            for (int i = 0; i < breachSignalCount; i++)
             {
-                if (!PublishFluidIncursion(in breach))
+                int nodeIndex = _counters[BreachNodeBase + i];
+                if (!PublishFluidIncursion(nodeIndex))
                     _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.SignalOverflow;
             }
+            if (_counters.IsCreated)
+                _counters[CounterBreachSignalCount] = 0;
 
             int faultFlags = _counters[CounterFaultFlags];
             if ((faultFlags & (LogisticsGraphFaultFlags.InfiniteLoopGuard | LogisticsGraphFaultFlags.OxygenNan)) != 0)
@@ -1290,6 +1349,41 @@ namespace Hecton8.Power
                     Flags = 1 << 2
                 };
                 SignalBus<BrownoutSignal>.Push(in signal);
+            }
+        }
+
+        private void PatchLatestTelemetryMicros()
+        {
+            if (!_blackBox.IsCreated)
+                return;
+
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _solveStartTimestamp;
+            long frequency = System.Diagnostics.Stopwatch.Frequency;
+            int micros = frequency > 0 ? (int)math.min(int.MaxValue, (elapsedTicks * 1000000L) / frequency) : 0;
+            int index = _frameIndex % TelemetryFrames;
+            if ((uint)index >= (uint)_blackBox.Length)
+                return;
+
+            LogisticsGraphTelemetryEntry entry = _blackBox[index];
+            entry.SolverMicros = micros;
+            _blackBox[index] = entry;
+        }
+
+        private void PublishFlowVisuals()
+        {
+            if (!_edges.IsCreated || !_nodes.IsCreated)
+                return;
+
+            int edgeCount = math.min(_edgeCount, _edges.Length);
+            for (int i = 0; i < edgeCount; i++)
+            {
+                LogisticsEdgeDTO edge = _edges[i];
+                int2 nodes = edge.Nodes;
+                float flow = math.saturate(edge.Flow01);
+                if ((uint)nodes.x < (uint)_nodeCount)
+                    ConnectionSplineBatchRenderer.SetPipeNodeFlow((uint)nodes.x, flow);
+                if ((uint)nodes.y < (uint)_nodeCount)
+                    ConnectionSplineBatchRenderer.SetPipeNodeFlow((uint)nodes.y, flow);
             }
         }
 
@@ -1332,6 +1426,9 @@ namespace Hecton8.Power
                         writer.Write(entry.BreachedCount);
                         writer.Write(entry.UnpoweredCount);
                         writer.Write(entry.OxygenCadence);
+                        writer.Write(entry.ComponentCount);
+                        writer.Write(entry.JacobiIterations);
+                        writer.Write(entry.SolverMicros);
                     }
                 }
             }
@@ -1341,18 +1438,26 @@ namespace Hecton8.Power
             }
         }
 
-        private bool PublishFluidIncursion(in HullBreachSignal breach)
+        private bool PublishFluidIncursion(int nodeIndex)
         {
-            if ((uint)breach.NodeIndex >= (uint)_nodeCount)
+            if ((uint)nodeIndex >= (uint)_nodeCount)
                 return false;
 
-            AbsoluteUniversePosition leakAup = AbsoluteUniversePosition.FromAbsolutePosition(_nodeAup[breach.NodeIndex]);
+            float pressureDeltaKpa = 0f;
+            if (_externalPressureKpa.IsCreated && _internalPressureKpa.IsCreated &&
+                (uint)nodeIndex < (uint)_externalPressureKpa.Length &&
+                (uint)nodeIndex < (uint)_internalPressureKpa.Length)
+            {
+                pressureDeltaKpa = math.max(0f, _externalPressureKpa[nodeIndex] - _internalPressureKpa[nodeIndex]);
+            }
+
+            AbsoluteUniversePosition leakAup = AbsoluteUniversePosition.FromAbsolutePosition(_nodeAup[nodeIndex]);
             FluidIncursionSignal incursion = new FluidIncursionSignal
             {
                 LeakAup = leakAup,
-                CompartmentId = (uint)breach.NodeIndex,
+                CompartmentId = (uint)nodeIndex,
                 FloodLevel01 = 1f,
-                FlowRate01 = math.saturate(breach.PressureDeltaKpa * 0.001f),
+                FlowRate01 = math.saturate(pressureDeltaKpa * 0.001f),
                 Flags = 1
             };
             return SignalBus<FluidIncursionSignal>.TryPush(in incursion);
@@ -1402,12 +1507,12 @@ namespace Hecton8.Power
 
         private string ResolveCsvPath()
         {
-            string streamingPath = Path.Combine(Application.streamingAssetsPath, "base_module_stats.csv");
+            string streamingPath = Path.Combine(Application.streamingAssetsPath, "logistics_components.csv");
             if (File.Exists(streamingPath))
                 return streamingPath;
 
             string root = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-            string rootStreamingPath = Path.Combine(root, "StreamingAssets", "base_module_stats.csv");
+            string rootStreamingPath = Path.Combine(root, "StreamingAssets", "logistics_components.csv");
             return File.Exists(rootStreamingPath) ? rootStreamingPath : streamingPath;
         }
 
@@ -1446,12 +1551,112 @@ namespace Hecton8.Power
                     tuning.OxygenDiffusionRate = value;
                 else if (KeyEquals(keyStart, keyLength, "crushdepthmultiplier", keyHash))
                     tuning.CrushDepthMultiplier = value;
+                else if (KeyEquals(keyStart, keyLength, "basepiperesistance", keyHash))
+                    tuning.BasePipeResistance = value;
+                else if (KeyEquals(keyStart, keyLength, "jacobismoothingfactor", keyHash))
+                    tuning.JacobiSmoothingFactor = value;
+                else if (KeyEquals(keyStart, keyLength, "globalqualityweight", keyHash))
+                    tuning.GlobalQualityWeight = value;
 
                 while (index < length && (_csvBuffer[index] == (byte)'\n' || _csvBuffer[index] == (byte)'\r' || _csvBuffer[index] == (byte)','))
                     index++;
             }
 
             SetTuning(tuning);
+            ParseComponentSpecs(length);
+        }
+
+        private void ParseComponentSpecs(int length)
+        {
+            if (!_componentSpecs.IsCreated || length <= 0)
+                return;
+
+            for (int i = 0; i < _componentSpecs.Length; i++)
+                _componentSpecs[i] = default;
+
+            int write = 0;
+            int index = 0;
+            while (index < length && write < _componentSpecs.Length)
+            {
+                int nameStart = index;
+                while (index < length && _csvBuffer[index] != (byte)',' && _csvBuffer[index] != (byte)'\n' && _csvBuffer[index] != (byte)'\r')
+                    index++;
+                int nameLength = index - nameStart;
+                if (index >= length || _csvBuffer[index] != (byte)',')
+                {
+                    while (index < length && _csvBuffer[index] != (byte)'\n' && _csvBuffer[index] != (byte)'\r')
+                        index++;
+                    while (index < length && (_csvBuffer[index] == (byte)'\n' || _csvBuffer[index] == (byte)'\r'))
+                        index++;
+                    continue;
+                }
+
+                index++;
+                int capacityStart = index;
+                while (index < length && _csvBuffer[index] != (byte)',' && _csvBuffer[index] != (byte)'\n' && _csvBuffer[index] != (byte)'\r')
+                    index++;
+                int capacityLength = index - capacityStart;
+                if (index >= length || _csvBuffer[index] != (byte)',')
+                    continue;
+
+                index++;
+                int resistanceStart = index;
+                while (index < length && _csvBuffer[index] != (byte)',' && _csvBuffer[index] != (byte)'\n' && _csvBuffer[index] != (byte)'\r')
+                    index++;
+                int resistanceLength = index - resistanceStart;
+
+                float oxygenDemand = 0.08f;
+                if (index < length && _csvBuffer[index] == (byte)',')
+                {
+                    index++;
+                    int oxygenStart = index;
+                    while (index < length && _csvBuffer[index] != (byte)'\n' && _csvBuffer[index] != (byte)'\r')
+                        index++;
+                    oxygenDemand = ParseFloatAscii(oxygenStart, index - oxygenStart);
+                }
+
+                uint hash = HashCsvKey(nameStart, nameLength);
+                if (hash != 0u && capacityLength > 0 && resistanceLength > 0)
+                {
+                    LogisticsComponentSpecDTO spec = new LogisticsComponentSpecDTO
+                    {
+                        ModuleHash = hash,
+                        Capacity = math.max(0f, ParseFloatAscii(capacityStart, capacityLength)),
+                        Resistance = math.max(0.001f, ParseFloatAscii(resistanceStart, resistanceLength)),
+                        OxygenDemand = math.max(0f, oxygenDemand),
+                        Flags = 0u
+                    };
+                    if (TryInsertComponentSpec(in spec))
+                        write++;
+                }
+
+                while (index < length && (_csvBuffer[index] == (byte)'\n' || _csvBuffer[index] == (byte)'\r'))
+                    index++;
+            }
+
+            _counters[CounterSpecCount] = write;
+        }
+
+        private bool TryInsertComponentSpec(in LogisticsComponentSpecDTO spec)
+        {
+            if (!_componentSpecs.IsCreated || spec.ModuleHash == 0u)
+                return false;
+
+            int length = _componentSpecs.Length;
+            int slot = (int)(spec.ModuleHash % (uint)length);
+            for (int probe = 0; probe < length; probe++)
+            {
+                int index = (slot + probe) % length;
+                uint existing = _componentSpecs[index].ModuleHash;
+                if (existing == 0u || existing == spec.ModuleHash)
+                {
+                    _componentSpecs[index] = spec;
+                    return existing == 0u;
+                }
+            }
+
+            _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.CsvParseFault;
+            return false;
         }
 
         private bool KeyEquals(int start, int length, string literal, uint keyHash)
@@ -1548,7 +1753,11 @@ namespace Hecton8.Power
                 ReactorOutputWatts = math.clamp(FiniteOr(tuning.ReactorOutputWatts, 1000f), 0f, 100000f),
                 LifeSupportDrainWatts = math.clamp(FiniteOr(tuning.LifeSupportDrainWatts, 12f), 0f, 1000f),
                 OxygenDiffusionRate = math.clamp(FiniteOr(tuning.OxygenDiffusionRate, 0.18f), 0.01f, 2f),
-                CrushDepthMultiplier = math.clamp(FiniteOr(tuning.CrushDepthMultiplier, 1f), 0.1f, 10f)
+                CrushDepthMultiplier = math.clamp(FiniteOr(tuning.CrushDepthMultiplier, 1f), 0.1f, 10f),
+                BasePipeResistance = math.clamp(FiniteOr(tuning.BasePipeResistance, DefaultBasePipeResistance), 0.001f, 8f),
+                JacobiSmoothingFactor = math.clamp(FiniteOr(tuning.JacobiSmoothingFactor, DefaultJacobiSmoothing), 0.05f, 1f),
+                GlobalQualityWeight = math.saturate(FiniteOr(tuning.GlobalQualityWeight, 1f)),
+                Flags = tuning.Flags
             };
         }
 
@@ -1605,6 +1814,41 @@ namespace Hecton8.Power
             return 18f;
         }
 
+        private static uint ComputeNodeHash(ulong sectorHash, int nodeIndex, byte kind)
+        {
+            uint hash = 2166136261u;
+            hash = (hash ^ (uint)sectorHash) * 16777619u;
+            hash = (hash ^ (uint)(sectorHash >> 32)) * 16777619u;
+            hash = (hash ^ (uint)nodeIndex) * 16777619u;
+            hash = (hash ^ kind) * 16777619u;
+            return hash != 0u ? hash : 1u;
+        }
+
+        private float ResolveEdgeCapacity(int nodeA, int nodeB)
+        {
+            float demandA = (uint)nodeA < (uint)_nodes.Length ? math.max(1f, _nodes[nodeA].Capacity) : 1f;
+            float demandB = (uint)nodeB < (uint)_nodes.Length ? math.max(1f, _nodes[nodeB].Capacity) : 1f;
+            return math.max(1f, 120f - math.min(80f, (demandA + demandB) * 0.25f));
+        }
+
+        private float ResolveEdgeResistance(int nodeA, int nodeB)
+        {
+            if ((uint)nodeA >= (uint)_nodeAup.Length || (uint)nodeB >= (uint)_nodeAup.Length)
+                return DefaultBasePipeResistance;
+
+            float length = CalculateAupEdgeLength(_nodeAup[nodeA], _nodeAup[nodeB]);
+            return math.max(0.001f, DefaultBasePipeResistance + length * 0.0025f);
+        }
+
+        public static float CalculateAupEdgeLength(double3 nodeAup, double3 nodeBup)
+        {
+            double3 delta = nodeBup - nodeAup;
+            if (!math.all(math.isfinite(delta)))
+                return 0f;
+
+            return math.length(new float3((float)delta.x, (float)delta.y, (float)delta.z));
+        }
+
         private static float ResolveOxygenDemand(byte kind)
         {
             if (kind == WfcOutpostGridConstants.Room)
@@ -1636,60 +1880,60 @@ namespace Hecton8.Power
             return PriorityOptional;
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-            while (queue.TryDequeue(out _))
-            {
-            }
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, CompileSynchronously = false)]
+        [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
         private struct LogisticsGraphInitializeJob : IJobParallelFor
         {
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<LogisticsNodeDTO> Nodes;
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<ulong> StateFlags;
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<float> OxygenFront;
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<float> OxygenBack;
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<float> InternalPressureKpa;
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<float> ExternalPressureKpa;
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<float> YieldThresholdKpa;
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<float> Reinforcement;
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<double3> NodeAup;
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<float3> LocalPositions;
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<byte> PriorityTier;
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<byte> Visited;
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
             public NativeArray<int> CellToNode;
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
+            public NativeArray<int> ComponentIds;
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
+            public NativeArray<float> PressureFront;
+            [NativeDisableContainerSafetyRestriction] [NoAlias]
+            public NativeArray<float> PressureBack;
 
             public void Execute(int index)
             {
                 Nodes[index] = new LogisticsNodeDTO
                 {
-                    NodeIndex = index,
-                    ParentIndex = -1,
-                    ConnectionMask = 0UL,
-                    PowerDemand = 0f,
-                    OxygenDemand = 0f,
-                    StateFlags = LogisticsStateFlags.Unpowered
+                    NodeHash = (uint)(index + 1),
+                    Capacity = 0f,
+                    CurrentLoad = 0f,
+                    Flags = (uint)LogisticsStateFlags.Unpowered,
+                    EdgeStartIndex = -1,
+                    EdgeCount = 0,
+                    _pad0 = 0u,
+                    _pad1 = 0u
                 };
                 StateFlags[index] = LogisticsStateFlags.Unpowered;
                 OxygenFront[index] = 100f;
                 OxygenBack[index] = 100f;
+                PressureFront[index] = 0f;
+                PressureBack[index] = 0f;
                 InternalPressureKpa[index] = 101.3f;
                 ExternalPressureKpa[index] = 101.3f;
                 YieldThresholdKpa[index] = 650f;
@@ -1698,211 +1942,400 @@ namespace Hecton8.Power
                 LocalPositions[index] = default;
                 PriorityTier[index] = PriorityOptional;
                 Visited[index] = 0;
+                ComponentIds[index] = -1;
                 CellToNode[index] = -1;
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, CompileSynchronously = false)]
-        private struct MockModuleStateSignalJob : IJob
+        [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+        private struct GenerateMockLogisticsGraphJob : IJob
         {
-            public uint Frame;
-            public int NodeCount;
             public ulong SectorHash;
-            public NativeQueue<MockModuleStateSignal>.ParallelWriter Output;
+            [NoAlias] public NativeArray<LogisticsNodeDTO> Nodes;
+            [NoAlias] public NativeArray<LogisticsEdgeDTO> Edges;
+            [NoAlias] public NativeArray<ulong> StateFlags;
+            [NoAlias] public NativeArray<float> OxygenFront;
+            [NoAlias] public NativeArray<float> OxygenBack;
+            [NoAlias] public NativeArray<float> InternalPressureKpa;
+            [NoAlias] public NativeArray<float> ExternalPressureKpa;
+            [NoAlias] public NativeArray<float> YieldThresholdKpa;
+            [NoAlias] public NativeArray<float> Reinforcement;
+            [NoAlias] public NativeArray<double3> NodeAup;
+            [NoAlias] public NativeArray<float3> LocalPositions;
+            [NoAlias] public NativeArray<byte> PriorityTier;
+            [NoAlias] public NativeArray<int> CellToNode;
+            [NoAlias] public NativeArray<int> Counters;
 
             public void Execute()
             {
-                if (NodeCount <= 2)
+                int nodeCount = math.min(1000, Nodes.Length);
+                int targetEdges = math.min(2500, Edges.Length);
+                double3 origin = new double3(25000.0, -480.0, 25000.0);
+
+                for (int i = 0; i < nodeCount; i++)
+                {
+                    byte kind = MockWFCGraphGenerator.ResolveKind(i);
+                    ulong flags = ResolveInitialStateFlags(kind, new int3(i % 40, i / 400, (i / 10) % 40), new int3(40, 3, 40));
+                    uint nodeHash = ComputeNodeHash(SectorHash, i, kind);
+                    float demand = ResolvePowerDemand(kind);
+                    Nodes[i] = new LogisticsNodeDTO
+                    {
+                        NodeHash = nodeHash,
+                        Capacity = demand,
+                        CurrentLoad = 0f,
+                        Flags = (uint)flags,
+                        EdgeStartIndex = -1,
+                        EdgeCount = 0,
+                        _pad0 = 0u,
+                        _pad1 = 0u
+                    };
+                    StateFlags[i] = flags;
+                    OxygenFront[i] = i == nodeCount - 1 ? 55f : 100f;
+                    OxygenBack[i] = OxygenFront[i];
+                    InternalPressureKpa[i] = 101.3f;
+                    ExternalPressureKpa[i] = 101.3f + ((i % 71) * 11f);
+                    float reinforcement = ResolveReinforcement(kind);
+                    YieldThresholdKpa[i] = 650f + reinforcement * 220f;
+                    Reinforcement[i] = reinforcement;
+                    double3 local = new double3((i % 40) * 6.0, (i / 400) * 4.0, ((i / 40) % 25) * 6.0);
+                    NodeAup[i] = origin + local;
+                    LocalPositions[i] = new float3((float)local.x, (float)local.y, (float)local.z);
+                    PriorityTier[i] = ResolvePriority(kind);
+                    CellToNode[i] = i;
+                }
+
+                int edgeCount = 0;
+                for (int i = 0; i < nodeCount - 1 && edgeCount < targetEdges; i++)
+                    AddEdge(ref edgeCount, i, i + 1);
+
+                for (int i = 0; i < nodeCount && edgeCount < targetEdges; i++)
+                    AddEdge(ref edgeCount, i, (i + 37) % nodeCount);
+
+                uint lcg = 0xA1145EEDu;
+                int guard = 0;
+                while (edgeCount < targetEdges && guard < targetEdges * 8)
+                {
+                    lcg = (lcg * 1664525u) + 1013904223u;
+                    int a = (int)(lcg % (uint)nodeCount);
+                    lcg = (lcg * 1664525u) + 1013904223u;
+                    int b = (int)(lcg % (uint)nodeCount);
+                    AddEdge(ref edgeCount, a, b);
+                    guard++;
+                }
+
+                Counters[CounterNodeCount] = nodeCount;
+                Counters[CounterEdgeCount] = edgeCount;
+                if (edgeCount < targetEdges)
+                    Counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.CapacityExceeded;
+            }
+
+            private void AddEdge(ref int edgeCount, int nodeA, int nodeB)
+            {
+                if ((uint)nodeA >= (uint)Nodes.Length || (uint)nodeB >= (uint)Nodes.Length || nodeA == nodeB || edgeCount >= Edges.Length)
                     return;
 
-                int nodeIndex = 1 + (int)((Frame * 1103515245u + 12345u) % (uint)(NodeCount - 1));
-                Output.Enqueue(new MockModuleStateSignal
+                int low = math.min(nodeA, nodeB);
+                int high = math.max(nodeA, nodeB);
+                for (int i = 0; i < edgeCount; i++)
                 {
-                    Frame = Frame,
-                    NodeIndex = nodeIndex,
-                    Flags = (Frame & 1u) == 0u ? (byte)0x02 : (byte)0x00,
-                    State = 1,
-                    SourceHash = SourceHash,
-                    SectorHash = SectorHash
-                });
+                    int2 existing = Edges[i].Nodes;
+                    if (existing.x == low && existing.y == high)
+                        return;
+                }
+
+                double3 delta = NodeAup[high] - NodeAup[low];
+                float length = math.length(new float3((float)delta.x, (float)delta.y, (float)delta.z));
+                float resistance = math.max(0.001f, DefaultBasePipeResistance + length * 0.0025f);
+                float capacity = math.max(1f, 120f - math.min(80f, (Nodes[low].Capacity + Nodes[high].Capacity) * 0.25f));
+                Edges[edgeCount++] = new LogisticsEdgeDTO
+                {
+                    Nodes = new int2(low, high),
+                    Capacity = capacity,
+                    Resistance = resistance,
+                    Flow01 = 0f,
+                    LastMilliTransfer = 0,
+                    Flags = 0u,
+                    _pad0 = 0u
+                };
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, CompileSynchronously = false)]
-        private unsafe struct LogisticsSolveJob : IJob
+        [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+        private unsafe struct BuildCsrGraphJob : IJob
         {
-            [NativeDisableUnsafePtrRestriction] public LogisticsNodeDTO* NodesPtr;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public LogisticsNodeDTO* NodesPtr;
             public int NodeCount;
             public int EdgeCount;
-            public int FrameIndex;
-            public int RunOxygen;
-            public float OxygenDeltaSeconds;
-            public float DockingPowerWatts;
-            public ulong SectorHash;
-            public NativeArray<ulong> StateFlags;
-            [ReadOnly] public NativeArray<ConnectionEdgeDTO> Edges;
+            [ReadOnly] [NoAlias] public NativeArray<LogisticsEdgeDTO> Edges;
+            [ReadOnly] [NoAlias] public NativeArray<ulong> StateFlags;
+            [NoAlias] public NativeArray<int> Counters;
+            [NoAlias] public NativeArray<float> CsrEdgeCapacities;
+            [NoAlias] public NativeArray<float> CsrEdgeFlow01;
             public int EdgeOffsetsBaseIndex;
+            public int EdgeWriteCursorBaseIndex;
             public int EdgeDestinationsBaseIndex;
-            public int AdjacencyEntryCount;
-            public NativeQueue<int> TraversalQueue;
-            public NativeList<int> ReachableOrder;
-            public NativeArray<byte> Visited;
-            [ReadOnly] public NativeArray<byte> PriorityTier;
-            public NativeArray<float> OxygenFront;
-            public NativeArray<float> OxygenBack;
-            [ReadOnly] public NativeArray<float> InternalPressureKpa;
-            [ReadOnly] public NativeArray<float> ExternalPressureKpa;
-            [ReadOnly] public NativeArray<float> YieldThresholdKpa;
-            [ReadOnly] public NativeArray<float> Reinforcement;
-            [ReadOnly] public NativeArray<float3> LocalPositions;
-            public NativeArray<int> Counters;
-            [ReadOnly] public NativeArray<LogisticsTuningDTO> Tuning;
-            public NativeArray<LogisticsGraphTelemetryEntry> BlackBox;
-            public NativeQueue<HullBreachSignal> BreachSignals;
 
             public void Execute()
             {
                 int nodeCount = math.clamp(NodeCount, 0, MaxNodes);
-                TraversalQueue.Clear();
-                ReachableOrder.Clear();
+                int edgeCount = math.clamp(EdgeCount, 0, math.min(MaxDirectedEdges, Edges.Length));
+                int maxEntries = math.min(MaxAdjacencyEntries, math.min(CsrEdgeCapacities.Length, CsrEdgeFlow01.Length));
+                int faultFlags = Counters[CounterFaultFlags];
+
+                for (int i = 0; i <= nodeCount; i++)
+                    Counters[EdgeOffsetsBaseIndex + i] = 0;
+                for (int i = 0; i < nodeCount; i++)
+                {
+                    Counters[EdgeWriteCursorBaseIndex + i] = 0;
+                    ref LogisticsNodeDTO node = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + i);
+                    node.EdgeStartIndex = -1;
+                    node.EdgeCount = 0;
+                }
+
+                int adjacencyCount = 0;
+                for (int i = 0; i < edgeCount; i++)
+                {
+                    int2 edge = Edges[i].Nodes;
+                    if (!IsTraversable(edge, nodeCount))
+                        continue;
+
+                    if (adjacencyCount + 2 > maxEntries)
+                    {
+                        faultFlags |= LogisticsGraphFaultFlags.CapacityExceeded;
+                        break;
+                    }
+
+                    Counters[EdgeOffsetsBaseIndex + edge.x + 1]++;
+                    Counters[EdgeOffsetsBaseIndex + edge.y + 1]++;
+                    adjacencyCount += 2;
+                }
+
+                int prefix = 0;
+                for (int i = 0; i < nodeCount; i++)
+                {
+                    int degree = Counters[EdgeOffsetsBaseIndex + i + 1];
+                    Counters[EdgeOffsetsBaseIndex + i] = prefix;
+                    Counters[EdgeWriteCursorBaseIndex + i] = prefix;
+                    ref LogisticsNodeDTO node = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + i);
+                    node.EdgeStartIndex = prefix;
+                    node.EdgeCount = degree;
+                    prefix += degree;
+                }
+
+                Counters[EdgeOffsetsBaseIndex + nodeCount] = prefix;
+                for (int i = 0; i < edgeCount; i++)
+                {
+                    LogisticsEdgeDTO edgeDto = Edges[i];
+                    int2 edge = edgeDto.Nodes;
+                    if (!IsTraversable(edge, nodeCount))
+                        continue;
+
+                    int writeA = Counters[EdgeWriteCursorBaseIndex + edge.x]++;
+                    int writeB = Counters[EdgeWriteCursorBaseIndex + edge.y]++;
+                    float conductance = edgeDto.Capacity / math.max(0.001f, edgeDto.Resistance);
+                    if ((uint)writeA < (uint)maxEntries)
+                    {
+                        Counters[EdgeDestinationsBaseIndex + writeA] = edge.y;
+                        CsrEdgeCapacities[writeA] = conductance;
+                        CsrEdgeFlow01[writeA] = 0f;
+                    }
+
+                    if ((uint)writeB < (uint)maxEntries)
+                    {
+                        Counters[EdgeDestinationsBaseIndex + writeB] = edge.x;
+                        CsrEdgeCapacities[writeB] = conductance;
+                        CsrEdgeFlow01[writeB] = 0f;
+                    }
+                }
+
+                Counters[CounterNodeCount] = nodeCount;
+                Counters[CounterEdgeCount] = edgeCount;
+                Counters[CounterAdjacencyEntryCount] = prefix;
+                Counters[CounterFaultFlags] = faultFlags;
+            }
+
+            private bool IsTraversable(int2 edge, int nodeCount)
+            {
+                if ((uint)edge.x >= (uint)nodeCount || (uint)edge.y >= (uint)nodeCount)
+                    return false;
+
+                ulong blocked = LogisticsStateFlags.Destroyed;
+                return (StateFlags[edge.x] & blocked) == 0UL && (StateFlags[edge.y] & blocked) == 0UL;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+        private unsafe struct LogisticsFlowSolverJob : IJob
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public LogisticsNodeDTO* NodesPtr;
+            public int NodeCount;
+            public int EdgeCount;
+            public int FrameIndex;
+            public int RunOxygen;
+            public int JacobiIterations;
+            public float GlobalQualityWeight;
+            public float OxygenDeltaSeconds;
+            public float DockingPowerWatts;
+            public ulong SectorHash;
+            [NoAlias] public NativeArray<ulong> StateFlags;
+            [NoAlias] public NativeArray<LogisticsEdgeDTO> Edges;
+            public int EdgeOffsetsBaseIndex;
+            public int EdgeDestinationsBaseIndex;
+            public int AdjacencyEntryCount;
+            [NoAlias] public NativeArray<int> ComponentIds;
+            [NoAlias] public NativeArray<float> PressureFront;
+            [NoAlias] public NativeArray<float> PressureBack;
+            [NoAlias] public NativeArray<float> EdgeRemainderMilli;
+            [NoAlias] public NativeArray<float> CsrEdgeCapacities;
+            [NoAlias] public NativeArray<float> CsrEdgeFlow01;
+            [NoAlias] public NativeArray<byte> Visited;
+            [ReadOnly] [NoAlias] public NativeArray<byte> PriorityTier;
+            [NoAlias] public NativeArray<float> OxygenFront;
+            [NoAlias] public NativeArray<float> OxygenBack;
+            [ReadOnly] [NoAlias] public NativeArray<float> InternalPressureKpa;
+            [ReadOnly] [NoAlias] public NativeArray<float> ExternalPressureKpa;
+            [ReadOnly] [NoAlias] public NativeArray<float> YieldThresholdKpa;
+            [ReadOnly] [NoAlias] public NativeArray<float> Reinforcement;
+            [ReadOnly] [NoAlias] public NativeArray<float3> LocalPositions;
+            [NoAlias] public NativeArray<int> Counters;
+            public int BfsQueueBaseIndex;
+            public int ReachableBaseIndex;
+            public int BreachNodeBaseIndex;
+            [ReadOnly] [NoAlias] public NativeArray<LogisticsTuningDTO> Tuning;
+            [NoAlias] public NativeArray<LogisticsGraphTelemetryEntry> BlackBox;
+
+            public void Execute()
+            {
+                int nodeCount = math.clamp(NodeCount, 0, MaxNodes);
+                int edgeCount = math.clamp(EdgeCount, 0, math.min(MaxDirectedEdges, Edges.Length));
+                int adjacencyCount = math.clamp(AdjacencyEntryCount, 0, math.min(MaxAdjacencyEntries, CsrEdgeCapacities.Length));
+                int iterations = math.clamp(JacobiIterations, 1, 10);
+                LogisticsTuningDTO tuning = Tuning[0];
+                float qualityCurve = math.saturate(GlobalQualityWeight);
+                qualityCurve = qualityCurve * qualityCurve * (3f - (2f * qualityCurve));
+                float smoothing = math.clamp(tuning.JacobiSmoothingFactor * math.lerp(0.72f, 1f, qualityCurve), 0.05f, 1f);
 
                 float totalGenerated = 0f;
                 float totalConsumed = 0f;
                 int faultFlags = Counters[CounterFaultFlags];
+                Counters[CounterBreachSignalCount] = 0;
                 int activeCount = 0;
-                int unpoweredCount = 0;
-                int breachedCount = 0;
                 ulong stateHash = 1469598103934665603UL;
 
                 for (int i = 0; i < nodeCount; i++)
                 {
-                    Visited[i] = 0;
                     ref LogisticsNodeDTO node = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + i);
-                    node.ParentIndex = -1;
-                    node.StateFlags &= ~(LogisticsStateFlags.Powered | LogisticsStateFlags.Unpowered);
-                    if ((node.StateFlags & LogisticsStateFlags.Destroyed) == 0)
-                        node.StateFlags |= LogisticsStateFlags.Unpowered;
-                    StateFlags[i] = node.StateFlags;
+                    uint flags = node.Flags;
+                    flags &= ~((uint)LogisticsStateFlags.Powered | (uint)LogisticsStateFlags.Unpowered);
+                    if (!HasFlag(flags, LogisticsStateFlags.Destroyed))
+                        flags |= (uint)LogisticsStateFlags.Unpowered;
+                    node.Flags = flags;
+                    node.CurrentLoad = Sanitize01(node.CurrentLoad);
+                    StateFlags[i] = flags;
+                    PressureFront[i] = IsSource(flags) ? 1f : node.CurrentLoad;
+                    PressureBack[i] = 0f;
+                    ComponentIds[i] = -1;
+                    Visited[i] = 0;
                 }
+
+                int componentCount = IdentifyComponents(nodeCount, adjacencyCount, ref faultFlags);
 
                 for (int i = 0; i < nodeCount; i++)
                 {
                     ref LogisticsNodeDTO node = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + i);
-                    if ((node.StateFlags & LogisticsStateFlags.Destroyed) != 0)
-                        continue;
-
-                    bool generator = (node.StateFlags & LogisticsStateFlags.PowerGenerator) != 0;
-                    bool dockedSub = (node.StateFlags & (LogisticsStateFlags.DockingPort | LogisticsStateFlags.SubmarineAttached)) ==
-                                      (LogisticsStateFlags.DockingPort | LogisticsStateFlags.SubmarineAttached);
-                    if (!generator && !dockedSub)
-                        continue;
-
-                    Visited[i] = 1;
-                    TraversalQueue.Enqueue(i);
-                    ReachableOrder.Add(i);
-                    totalGenerated += generator ? Tuning[0].ReactorOutputWatts : DockingPowerWatts;
-                }
-
-                int adjacencyCount = math.clamp(AdjacencyEntryCount, 0, MaxAdjacencyEntries);
-                int guard = 0;
-                while (TraversalQueue.TryDequeue(out int current))
-                {
-                    guard++;
-                    if (guard > nodeCount * 8 + 8)
+                    int componentId = ComponentIds[i];
+                    if ((uint)componentId >= (uint)componentCount || Visited[componentId] == 0)
                     {
-                        faultFlags |= LogisticsGraphFaultFlags.InfiniteLoopGuard;
-                        break;
-                    }
-
-                    if ((uint)current >= nodeCount)
-                        continue;
-
-                    ref LogisticsNodeDTO currentNode = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + current);
-                    if ((currentNode.StateFlags & (LogisticsStateFlags.Destroyed | LogisticsStateFlags.DoorLocked)) != 0)
-                        continue;
-
-                    int start = math.clamp(Counters[EdgeOffsetsBaseIndex + current], 0, adjacencyCount);
-                    int end = math.clamp(Counters[EdgeOffsetsBaseIndex + current + 1], start, adjacencyCount);
-                    for (int edgeCursor = start; edgeCursor < end; edgeCursor++)
-                    {
-                        int neighbor = Counters[EdgeDestinationsBaseIndex + edgeCursor];
-                        if ((uint)neighbor >= nodeCount || Visited[neighbor] != 0)
-                            continue;
-
-                        ref LogisticsNodeDTO neighborNode = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + neighbor);
-                        if ((neighborNode.StateFlags & (LogisticsStateFlags.Destroyed | LogisticsStateFlags.DoorLocked)) != 0)
-                            continue;
-
-                        Visited[neighbor] = 1;
-                        neighborNode.ParentIndex = current;
-                        TraversalQueue.Enqueue(neighbor);
-                        ReachableOrder.Add(neighbor);
+                        node.CurrentLoad = 0f;
+                        PressureFront[i] = 0f;
+                        node.Flags = (node.Flags | (uint)LogisticsStateFlags.Unpowered) & ~(uint)LogisticsStateFlags.Powered;
+                        StateFlags[i] = node.Flags;
                     }
                 }
 
-                float remainingWatts = totalGenerated;
-                for (int priority = PriorityLifeSupport; priority <= PriorityOptional; priority++)
+                for (int iteration = 0; iteration < iterations; iteration++)
                 {
-                    int reachableCount = ReachableOrder.Length;
-                    for (int i = 0; i < reachableCount; i++)
+                    for (int i = 0; i < nodeCount; i++)
                     {
-                        int nodeIndex = ReachableOrder[i];
-                        if ((uint)nodeIndex >= nodeCount || PriorityTier[nodeIndex] != priority)
-                            continue;
-
-                        ref LogisticsNodeDTO node = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + nodeIndex);
-                        if ((node.StateFlags & LogisticsStateFlags.Destroyed) != 0)
-                            continue;
-
-                        float demand = math.max(0f, node.PowerDemand);
-                        bool isGenerator = (node.StateFlags & LogisticsStateFlags.PowerGenerator) != 0;
-                        if (isGenerator || demand <= 0f || remainingWatts >= demand)
+                        ref LogisticsNodeDTO node = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + i);
+                        uint flags = node.Flags;
+                        int componentId = ComponentIds[i];
+                        if (IsClosed(flags) || (uint)componentId >= (uint)componentCount || Visited[componentId] == 0)
                         {
-                            remainingWatts -= isGenerator ? 0f : demand;
-                            totalConsumed += isGenerator ? 0f : demand;
-                            activeCount++;
-                            node.StateFlags |= LogisticsStateFlags.Powered;
-                            node.StateFlags &= ~LogisticsStateFlags.Unpowered;
-                        }
-                        else
-                        {
-                            unpoweredCount++;
-                            node.StateFlags &= ~LogisticsStateFlags.Powered;
-                            node.StateFlags |= LogisticsStateFlags.Unpowered;
+                            PressureBack[i] = 0f;
+                            continue;
                         }
 
-                        StateFlags[nodeIndex] = node.StateFlags;
+                        bool source = IsSource(flags);
+                        float sum = source ? 1f : 0f;
+                        float weight = source ? 1f : 0f;
+                        int start = math.clamp(Counters[EdgeOffsetsBaseIndex + i], 0, adjacencyCount);
+                        int end = math.clamp(Counters[EdgeOffsetsBaseIndex + i + 1], start, adjacencyCount);
+                        for (int edgeCursor = start; edgeCursor < end; edgeCursor++)
+                        {
+                            int neighbor = Counters[EdgeDestinationsBaseIndex + edgeCursor];
+                            if ((uint)neighbor >= (uint)nodeCount || ComponentIds[neighbor] != componentId)
+                                continue;
+
+                            float conductance = math.max(0f, CsrEdgeCapacities[edgeCursor]);
+                            sum += conductance * PressureFront[neighbor];
+                            weight += conductance;
+                        }
+
+                        float relaxed = weight > 0.00001f ? sum / weight : 0f;
+                        if (!source)
+                        {
+                            float demand01 = math.saturate(node.Capacity / math.max(1f, tuning.ReactorOutputWatts));
+                            relaxed = math.max(0f, relaxed - demand01 * 0.08f);
+                        }
+
+                        float pressure = math.lerp(PressureFront[i], math.saturate(relaxed), smoothing);
+                        if (!math.isfinite(pressure))
+                        {
+                            pressure = 0f;
+                            faultFlags |= LogisticsGraphFaultFlags.OxygenNan;
+                        }
+
+                        PressureBack[i] = pressure;
                     }
+
+                    for (int i = 0; i < nodeCount; i++)
+                        PressureFront[i] = PressureBack[i];
                 }
+
+                QuantizeLoadsAndFlows(nodeCount, edgeCount, adjacencyCount, componentCount, tuning, ref totalGenerated, ref totalConsumed, ref activeCount, ref faultFlags, ref stateHash);
 
                 if (RunOxygen != 0)
                     SolveOxygenAndPressure(nodeCount, ref faultFlags);
 
                 float totalOxygen01 = 0f;
-                breachedCount = 0;
-                unpoweredCount = 0;
+                int breachedCount = 0;
+                int unpoweredCount = 0;
                 for (int i = 0; i < nodeCount; i++)
                 {
                     ref LogisticsNodeDTO node = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + i);
-                    if ((node.StateFlags & LogisticsStateFlags.Destroyed) == 0 &&
-                        (node.StateFlags & LogisticsStateFlags.Unpowered) != 0)
+                    if (!HasFlag(node.Flags, LogisticsStateFlags.Destroyed) &&
+                        HasFlag(node.Flags, LogisticsStateFlags.Unpowered))
                     {
                         unpoweredCount++;
                     }
 
-                    if ((node.StateFlags & LogisticsStateFlags.Breached) != 0)
+                    if (HasFlag(node.Flags, LogisticsStateFlags.Breached))
                         breachedCount++;
-                    StateFlags[i] = node.StateFlags;
-                    stateHash = (stateHash ^ node.StateFlags) * 1099511628211UL;
+                    StateFlags[i] = node.Flags;
+                    stateHash = (stateHash ^ node.Flags) * 1099511628211UL;
+                    stateHash = (stateHash ^ (uint)math.round(node.CurrentLoad * 1000f)) * 1099511628211UL;
                     totalOxygen01 += OxygenFront[i] * 0.01f;
                 }
 
                 Counters[CounterNodeCount] = nodeCount;
-                Counters[CounterEdgeCount] = EdgeCount;
+                Counters[CounterEdgeCount] = edgeCount;
                 Counters[CounterFaultFlags] = faultFlags;
                 Counters[CounterActiveNodeCount] = activeCount;
                 Counters[CounterBreachedCount] = breachedCount;
                 Counters[CounterUnpoweredCount] = unpoweredCount;
+                Counters[CounterComponentCount] = componentCount;
+                Counters[CounterJacobiIterations] = iterations;
 
                 int telemetryIndex = FrameIndex % TelemetryFrames;
                 BlackBox[telemetryIndex] = new LogisticsGraphTelemetryEntry
@@ -1918,8 +2351,207 @@ namespace Hecton8.Power
                     StateHash = stateHash,
                     BreachedCount = breachedCount,
                     UnpoweredCount = unpoweredCount,
-                    OxygenCadence = RunOxygen
+                    OxygenCadence = RunOxygen,
+                    ComponentCount = componentCount,
+                    JacobiIterations = iterations,
+                    SolverMicros = 0
                 };
+            }
+
+            private int IdentifyComponents(int nodeCount, int adjacencyCount, ref int faultFlags)
+            {
+                int componentCount = 0;
+                for (int startNode = 0; startNode < nodeCount; startNode++)
+                {
+                    if (ComponentIds[startNode] >= 0)
+                        continue;
+
+                    ref LogisticsNodeDTO start = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + startNode);
+                    if (IsClosed(start.Flags))
+                    {
+                        ComponentIds[startNode] = -1;
+                        continue;
+                    }
+
+                    int queueHead = 0;
+                    int queueTail = 0;
+                    int reachableCount = 0;
+                    Counters[BfsQueueBaseIndex + queueTail] = startNode;
+                    queueTail++;
+                    ComponentIds[startNode] = componentCount;
+                    bool hasSource = false;
+                    int guard = 0;
+
+                    while (queueHead < queueTail)
+                    {
+                        int current = Counters[BfsQueueBaseIndex + queueHead];
+                        queueHead++;
+                        guard++;
+                        if (guard > nodeCount * 8 + 8)
+                        {
+                            faultFlags |= LogisticsGraphFaultFlags.InfiniteLoopGuard;
+                            break;
+                        }
+
+                        if ((uint)current >= (uint)nodeCount)
+                            continue;
+
+                        ref LogisticsNodeDTO currentNode = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + current);
+                        if (IsClosed(currentNode.Flags))
+                            continue;
+
+                        if (reachableCount < MaxNodes)
+                        {
+                            Counters[ReachableBaseIndex + reachableCount] = current;
+                            reachableCount++;
+                        }
+                        else
+                        {
+                            faultFlags |= LogisticsGraphFaultFlags.CapacityExceeded;
+                            break;
+                        }
+
+                        hasSource |= IsSource(currentNode.Flags);
+                        int edgeStart = math.clamp(Counters[EdgeOffsetsBaseIndex + current], 0, adjacencyCount);
+                        int edgeEnd = math.clamp(Counters[EdgeOffsetsBaseIndex + current + 1], edgeStart, adjacencyCount);
+                        for (int edgeCursor = edgeStart; edgeCursor < edgeEnd; edgeCursor++)
+                        {
+                            int neighbor = Counters[EdgeDestinationsBaseIndex + edgeCursor];
+                            if ((uint)neighbor >= (uint)nodeCount || ComponentIds[neighbor] >= 0)
+                                continue;
+
+                            ref LogisticsNodeDTO neighborNode = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + neighbor);
+                            if (IsClosed(neighborNode.Flags))
+                                continue;
+
+                            ComponentIds[neighbor] = componentCount;
+                            if (queueTail < MaxNodes)
+                            {
+                                Counters[BfsQueueBaseIndex + queueTail] = neighbor;
+                                queueTail++;
+                            }
+                            else
+                            {
+                                faultFlags |= LogisticsGraphFaultFlags.CapacityExceeded;
+                                break;
+                            }
+                        }
+                    }
+
+                    Visited[componentCount] = hasSource ? (byte)1 : (byte)0;
+                    if (!hasSource)
+                    {
+                        for (int i = 0; i < reachableCount; i++)
+                        {
+                            int nodeIndex = Counters[ReachableBaseIndex + i];
+                            ref LogisticsNodeDTO node = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + nodeIndex);
+                            node.CurrentLoad = 0f;
+                            node.Flags = (node.Flags | (uint)LogisticsStateFlags.Unpowered) & ~(uint)LogisticsStateFlags.Powered;
+                            StateFlags[nodeIndex] = node.Flags;
+                            PressureFront[nodeIndex] = 0f;
+                        }
+                    }
+
+                    componentCount++;
+                    if (componentCount >= nodeCount)
+                        break;
+                }
+
+                return componentCount;
+            }
+
+            private void QuantizeLoadsAndFlows(
+                int nodeCount,
+                int edgeCount,
+                int adjacencyCount,
+                int componentCount,
+                in LogisticsTuningDTO tuning,
+                ref float totalGenerated,
+                ref float totalConsumed,
+                ref int activeCount,
+                ref int faultFlags,
+                ref ulong stateHash)
+            {
+                totalGenerated = 0f;
+                totalConsumed = 0f;
+                activeCount = 0;
+                stateHash = 1469598103934665603UL;
+
+                for (int i = 0; i < nodeCount; i++)
+                {
+                    ref LogisticsNodeDTO node = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + i);
+                    uint flags = node.Flags;
+                    bool source = IsSource(flags);
+                    int componentId = ComponentIds[i];
+                    float load = ((uint)componentId < (uint)componentCount && Visited[componentId] != 0) ? PressureFront[i] : 0f;
+                    if (source)
+                    {
+                        load = 1f;
+                        totalGenerated += HasFlag(flags, LogisticsStateFlags.PowerGenerator) ? tuning.ReactorOutputWatts : DockingPowerWatts;
+                    }
+
+                    int loadMilli = (int)math.round(math.saturate(load) * 1000f);
+                    load = loadMilli * 0.001f;
+                    node.CurrentLoad = load;
+
+                    if (load > 0.20f || source)
+                    {
+                        flags |= (uint)LogisticsStateFlags.Powered;
+                        flags &= ~(uint)LogisticsStateFlags.Unpowered;
+                        activeCount++;
+                        if (!source)
+                            totalConsumed += node.Capacity * load;
+                    }
+                    else
+                    {
+                        flags &= ~(uint)LogisticsStateFlags.Powered;
+                        flags |= (uint)LogisticsStateFlags.Unpowered;
+                    }
+
+                    node.Flags = flags;
+                    StateFlags[i] = flags;
+                }
+
+                for (int source = 0; source < nodeCount; source++)
+                {
+                    int start = math.clamp(Counters[EdgeOffsetsBaseIndex + source], 0, adjacencyCount);
+                    int end = math.clamp(Counters[EdgeOffsetsBaseIndex + source + 1], start, adjacencyCount);
+                    for (int edgeCursor = start; edgeCursor < end; edgeCursor++)
+                    {
+                        int destination = Counters[EdgeDestinationsBaseIndex + edgeCursor];
+                        if ((uint)destination >= (uint)nodeCount || ComponentIds[source] != ComponentIds[destination])
+                        {
+                            CsrEdgeFlow01[edgeCursor] = 0f;
+                            EdgeRemainderMilli[edgeCursor] = 0f;
+                            continue;
+                        }
+
+                        float delta = (PressureFront[source] - PressureFront[destination]) * CsrEdgeCapacities[edgeCursor];
+                        float rawMilli = delta * 1000f + EdgeRemainderMilli[edgeCursor];
+                        int milli = (int)math.trunc(rawMilli);
+                        EdgeRemainderMilli[edgeCursor] = rawMilli - milli;
+                        CsrEdgeFlow01[edgeCursor] = math.saturate(math.abs(milli) * 0.001f / math.max(1f, CsrEdgeCapacities[edgeCursor]));
+                    }
+                }
+
+                for (int i = 0; i < edgeCount; i++)
+                {
+                    LogisticsEdgeDTO edge = Edges[i];
+                    int2 nodes = edge.Nodes;
+                    if ((uint)nodes.x >= (uint)nodeCount || (uint)nodes.y >= (uint)nodeCount || ComponentIds[nodes.x] != ComponentIds[nodes.y])
+                    {
+                        edge.Flow01 = 0f;
+                        edge.LastMilliTransfer = 0;
+                        Edges[i] = edge;
+                        continue;
+                    }
+
+                    float flow = (PressureFront[nodes.x] - PressureFront[nodes.y]) * edge.Capacity / math.max(0.001f, edge.Resistance);
+                    int milli = (int)math.trunc(flow * 1000f);
+                    edge.LastMilliTransfer = milli;
+                    edge.Flow01 = math.saturate(math.abs(milli) * 0.001f / math.max(1f, edge.Capacity));
+                    Edges[i] = edge;
+                }
             }
 
             private void SolveOxygenAndPressure(int nodeCount, ref int faultFlags)
@@ -1931,12 +2563,13 @@ namespace Hecton8.Power
                 {
                     ref LogisticsNodeDTO node = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + i);
                     float oxygen = OxygenFront[i];
-                    if ((node.StateFlags & LogisticsStateFlags.Powered) != 0)
-                        oxygen -= node.OxygenDemand * OxygenDeltaSeconds;
+                    float demand = math.max(0.08f, node.Capacity * 0.01f);
+                    if (HasFlag(node.Flags, LogisticsStateFlags.Powered))
+                        oxygen -= demand * OxygenDeltaSeconds;
                     else
-                        oxygen -= node.OxygenDemand * OxygenDeltaSeconds * 2f;
+                        oxygen -= demand * OxygenDeltaSeconds * 2f;
 
-                    if ((node.StateFlags & LogisticsStateFlags.Breached) != 0)
+                    if (HasFlag(node.Flags, LogisticsStateFlags.Breached))
                         oxygen -= 18f * OxygenDeltaSeconds;
 
                     OxygenBack[i] = math.clamp(oxygen, 0f, 100f);
@@ -1950,8 +2583,7 @@ namespace Hecton8.Power
 
                     ref LogisticsNodeDTO a = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + edge.x);
                     ref LogisticsNodeDTO b = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + edge.y);
-                    ulong closedMask = LogisticsStateFlags.Destroyed | LogisticsStateFlags.DoorLocked;
-                    if ((a.StateFlags & closedMask) != 0 || (b.StateFlags & closedMask) != 0)
+                    if (IsClosed(a.Flags) || IsClosed(b.Flags))
                         continue;
 
                     float delta = (OxygenBack[edge.x] - OxygenBack[edge.y]) * diffusionRate * OxygenDeltaSeconds;
@@ -1971,40 +2603,67 @@ namespace Hecton8.Power
 
                     OxygenFront[i] = oxygen;
                     if (oxygen < 21f)
-                        node.StateFlags |= LogisticsStateFlags.LowOxygen;
+                        node.Flags |= (uint)LogisticsStateFlags.LowOxygen;
                     else
-                        node.StateFlags &= ~LogisticsStateFlags.LowOxygen;
+                        node.Flags &= ~(uint)LogisticsStateFlags.LowOxygen;
 
                     float pressureDelta = (ExternalPressureKpa[i] * crushMultiplier) - InternalPressureKpa[i];
                     float yield = YieldThresholdKpa[i] * math.max(0.25f, Reinforcement[i]);
-                    bool breachedBefore = (node.StateFlags & LogisticsStateFlags.Breached) != 0;
+                    bool breachedBefore = HasFlag(node.Flags, LogisticsStateFlags.Breached);
                     if (pressureDelta > yield)
                     {
-                        node.StateFlags |= LogisticsStateFlags.Breached | LogisticsStateFlags.Flooded;
+                        node.Flags |= (uint)(LogisticsStateFlags.Breached | LogisticsStateFlags.Flooded);
                         if (!breachedBefore)
                         {
-                            BreachSignals.Enqueue(new HullBreachSignal
+                            int breachSlot = Counters[CounterBreachSignalCount];
+                            if (breachSlot < MaxNodes)
                             {
-                                Frame = (uint)FrameIndex,
-                                NodeIndex = i,
-                                Position = LocalPositions[i],
-                                PressureDeltaKpa = pressureDelta,
-                                Oxygen01 = oxygen * 0.01f,
-                                SectorHash = SectorHash,
-                                SourceHash = SourceHash,
-                                Flags = 1u
-                            });
+                                Counters[BreachNodeBaseIndex + breachSlot] = i;
+                                Counters[CounterBreachSignalCount] = breachSlot + 1;
+                            }
+                            else
+                            {
+                                faultFlags |= LogisticsGraphFaultFlags.SignalOverflow;
+                            }
                         }
                     }
+
+                    StateFlags[i] = node.Flags;
                 }
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static bool HasFlag(uint flags, ulong mask)
+            {
+                return (flags & (uint)mask) != 0u;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static bool IsSource(uint flags)
+            {
+                bool generator = HasFlag(flags, LogisticsStateFlags.PowerGenerator);
+                bool docked = HasFlag(flags, LogisticsStateFlags.DockingPort) && HasFlag(flags, LogisticsStateFlags.SubmarineAttached);
+                return generator || docked;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static bool IsClosed(uint flags)
+            {
+                return HasFlag(flags, LogisticsStateFlags.Destroyed) || HasFlag(flags, LogisticsStateFlags.DoorLocked);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float Sanitize01(float value)
+            {
+                return math.saturate(math.isfinite(value) ? value : 0f);
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, CompileSynchronously = false)]
+        [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
         private struct LocalShiftResolverJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<double3> NodeAup;
-            public NativeArray<float3> LocalPositions;
+            [ReadOnly] [NoAlias] public NativeArray<double3> NodeAup;
+            [NoAlias] public NativeArray<float3> LocalPositions;
             public double3 CameraAup;
 
             public void Execute(int index)
@@ -2023,7 +2682,7 @@ namespace Hecton8.Power
 
     public static class MockWFCGraphGenerator
     {
-        public const int RoomCount = 10;
+        public const int RoomCount = ShinobuLogisticsRouter.MaxNodes;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte ResolveKind(int index)

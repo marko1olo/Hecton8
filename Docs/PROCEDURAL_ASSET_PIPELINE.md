@@ -22,10 +22,10 @@ Target: NVIDIA MX350 2GB VRAM · i5-1135G7 · 12GB RAM
 Engine: Unity 6000.x · URP Forward+
 Tools: MapMagic 2.1.18 · GPU Instancer Pro · Mantis LOD · Mesh Baker
 
-2026-05-11 current-state boundary:
+2026-05-19 R31-subordinate current-state boundary:
 
 - This is the procedural asset production contract, not proof that a specific generated asset exists or is wired.
-- Historical conceptual background includes `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`, `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`; current authority starts at `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, current source, and the latest DOC_GLOBAL R24/R23/R22/R21/R20/R19/R18 boundaries.
+- Historical conceptual background includes `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`, `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`; current authority starts at `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, current source, then DOC_GLOBAL R31 -> R30 -> R29 -> R28 -> R27 -> R26 -> R25 -> R24 -> subordinate correction layers.
 - For procedural world placement ownership, read `Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`.
 - For readable geology/seismic ownership, read `Docs/ARCHITECTURE/SEISMIC_GEOLOGY_SYSTEM.md`.
 - The deprecated `Docs/HECTON8_GEOLOGY_PRODUCTION_PLAN.md` path must not be used as active authority.

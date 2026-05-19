@@ -1,7 +1,9 @@
 using System.Runtime.InteropServices;
+using Hecton8.Animation.IK;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -43,7 +45,7 @@ namespace Hecton8.Animation.Fauna
     /// <summary>
     /// Vault-owned target packet for one procedural predator bite solve. Size: 128 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct JawIkTarget
     {
         [FieldOffset(0)] public AbsoluteUniversePosition CenterAup;
@@ -62,7 +64,7 @@ namespace Hecton8.Animation.Fauna
     /// <summary>
     /// Vault-owned previous/current bite pose cache. Size: 128 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct CurrentJawPos
     {
         [FieldOffset(0)] public float3 HeadPosition;
@@ -86,7 +88,7 @@ namespace Hecton8.Animation.Fauna
     /// <summary>
     /// Fixed black-box entry for the last 300 bite IK solves. Size: 128 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct BiteIkSolveEvent
     {
         [FieldOffset(0)] public int FrameIndex;
@@ -111,14 +113,14 @@ namespace Hecton8.Animation.Fauna
     /// <summary>
     /// Burst-only jaw and appendage bite solver. Inputs are AUP + bounds packets; outputs mutate the shared Leviathan bone SOA.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
     public struct ProceduralBiteJob : IJob
     {
-        [ReadOnly] public NativeArray<JawIkTarget> JawIkTargets;
-        public NativeArray<CurrentJawPos> CurrentJawPos;
-        public NativeArray<float4x4> LeviathanBones;
-        public NativeArray<BiteIkSolveEvent> BiteIkSolveEvents;
-        public NativeArray<int> TelemetryCursor;
+        [ReadOnly, NoAlias] public NativeArray<JawIkTarget> JawIkTargets;
+        [NoAlias] public NativeArray<CurrentJawPos> CurrentJawPos;
+        [NoAlias] public NativeArray<LeviathanBoneDTO> LeviathanBones;
+        [NoAlias] public NativeArray<BiteIkSolveEvent> BiteIkSolveEvents;
+        [NoAlias] public NativeArray<int> TelemetryCursor;
         public AbsoluteUniversePosition PredatorAup;
         public float3 PredatorPosition;
         public float3 PredatorForward;
@@ -333,7 +335,9 @@ namespace Hecton8.Animation.Fauna
         {
             int index = math.clamp(HeadBoneIndex, 0, LeviathanBones.Length - 1);
             float zScale = lowTier ? segmentLength * 1.08f : segmentLength;
-            LeviathanBones[index] = float4x4.TRS(rootWorld, rotation, new float3(bodyRadius, bodyRadius, zScale));
+            LeviathanBoneDTO dto = default;
+            dto.LocalToWorld = float4x4.TRS(rootWorld, rotation, new float3(bodyRadius, bodyRadius, zScale));
+            LeviathanBones[index] = dto;
         }
 
         private void SolveMandibles(
@@ -422,7 +426,9 @@ namespace Hecton8.Animation.Fauna
             float3 forward = NormalizeSafe(direction, new float3(0f, 0f, 1f));
             float safeRadius = SanitizePositive(radius, 0.35f, 0.01f);
             float safeLength = SanitizePositive(length, 0.5f, 0.05f);
-            LeviathanBones[index] = float4x4.TRS(SanitizeFinite(position, float3.zero), quaternion.LookRotationSafe(forward, up), new float3(safeRadius, safeRadius, safeLength));
+            LeviathanBoneDTO dto = default;
+            dto.LocalToWorld = float4x4.TRS(SanitizeFinite(position, float3.zero), quaternion.LookRotationSafe(forward, up), new float3(safeRadius, safeRadius, safeLength));
+            LeviathanBones[index] = dto;
         }
 
         private float3 ResolveBonePosition(int index, float3 fallback)
@@ -430,7 +436,7 @@ namespace Hecton8.Animation.Fauna
             if ((uint)index >= (uint)LeviathanBones.Length)
                 return SanitizeFinite(fallback, float3.zero);
 
-            float4 c3 = LeviathanBones[index].c3;
+            float4 c3 = LeviathanBones[index].LocalToWorld.c3;
             return SanitizeFinite(new float3(c3.x, c3.y, c3.z), fallback);
         }
 

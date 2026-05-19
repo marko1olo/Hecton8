@@ -97,6 +97,7 @@ namespace Hecton8.Core
         private const float MasterDispatcherStallDumpThresholdMs = 8f;
         private const string MasterDispatcherDumpPath = "Docs/AgentLogs/Dump_SYSTEM_DISPATCHER.bin";
         private const string MasterDispatcherPriorityCsvPath = "Docs/Tasks/execution_priorities.csv";
+        private const string VaultMemoryProfileCsvPath = "memory_overrides.csv";
         private const ulong DispatcherBlackBoxDumpMagic = 0x00384E4F54434548ul; // HECTON8\0
         private const uint DispatcherBlackBoxDumpVersion = 1u;
         private const uint MasterDispatcherDumpVersion = 1u;
@@ -395,6 +396,9 @@ namespace Hecton8.Core
         private double _unscaledFastTickAccumulator;
         private double _fixedStepAccumulator;
         private IDataVault _dataVault;
+        private int _lastVaultGenerationMissCount;
+        private float _lastVaultMemoryJobUs;
+        private uint _lastVaultMaintenanceFlags;
         private ISimulationBucketer _simulationBucketer;
         private IJobAdmissionService _jobAdmission;
         private IInputDeterminismService _inputDeterminism;
@@ -440,6 +444,7 @@ namespace Hecton8.Core
         private int _masterDisabledSystemCount;
         private int _masterCsvPollFrame = -1;
         private DateTime _masterPriorityCsvLastWriteUtc;
+        private long _vaultMemoryProfileCsvLastWriteTicks;
         private bool _dispatcherBlackBoxDumped;
         private bool _masterSimulationJobsPending;
         private bool _masterFixedJobsPending;
@@ -1813,6 +1818,9 @@ namespace Hecton8.Core
             ClearCoreTickDilationBurst();
             ClearAdrenalineDilation();
             _dataVault = null;
+            _lastVaultGenerationMissCount = 0;
+            _lastVaultMemoryJobUs = 0f;
+            _lastVaultMaintenanceFlags = 0u;
             _cachedDispatcherDataVault = null;
             _cachedCameraJuiceSystem = null;
             _nextCameraJuiceResolveFrame = 0;
@@ -2379,6 +2387,7 @@ namespace Hecton8.Core
             _masterLastPostSimulationMs = ElapsedMilliseconds(_masterPostSimulationStartTimestamp);
             _masterPhaseTimingSnapshotMs[1] = _masterLastSimWaitMs;
             _masterPhaseTimingSnapshotMs[2] = _masterLastPostSimulationMs;
+            RecordVaultSovereigntyPostSimulationHeartbeat();
         }
 
         private void RunMasterVisualSyncPhase()
@@ -2949,6 +2958,7 @@ namespace Hecton8.Core
             {
                 _dataVault = dataVault;
                 _cachedDispatcherDataVault = dataVault;
+                VaultSovereigntyTelemetry.EnsureRing(dataVault);
             }
         }
 
@@ -3114,6 +3124,8 @@ namespace Hecton8.Core
             float compactionStress01 = ResolveMemoryCompactionStress01(unscaledDeltaTime);
             uint activeBurstLockMask = dataVault.ActiveBurstLockMask;
             long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            VaultSovereigntyMaintenanceStats sovereigntyStats = default;
+            TryPollVaultMemoryProfileCsv(dataVault);
             using (_memoryDefragProfilerMarker.Auto())
             {
                 dataVault.FrostTickDefrag(
@@ -3121,14 +3133,86 @@ namespace Hecton8.Core
                     compactionStress01,
                     MemoryDefragPhase.PreSimulation,
                     activeBurstLockMask);
+                sovereigntyStats = VaultSovereigntyMaintenance.RunPreSimulationFrost(
+                    dataVault,
+                    HomeostasisBrain.GlobalQualityWeight,
+                    unchecked((uint)Time.frameCount));
             }
 
             double elapsedMilliseconds =
                 (System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0d /
                 System.Diagnostics.Stopwatch.Frequency;
             PublishMemoryAddressShiftSignals(dataVault);
+            RecordVaultSovereigntyTelemetry(dataVault, elapsedMilliseconds, in sovereigntyStats);
             PublishDataVaultDefragTelemetry(dataVault, elapsedMilliseconds);
             EmitVramPressureDefragSignalIfNeeded();
+        }
+
+        private void TryPollVaultMemoryProfileCsv(IDataVault dataVault)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (dataVault == null || dataVault.IsAllocationLocked)
+                return;
+
+            VaultLegacyBinaryArchaeology.TryPollMemoryOverridesCsv(
+                dataVault,
+                VaultMemoryProfileCsvPath,
+                ref _vaultMemoryProfileCsvLastWriteTicks);
+#endif
+        }
+
+        private void RecordVaultSovereigntyTelemetry(
+            IDataVault dataVault,
+            double elapsedMilliseconds,
+            in VaultSovereigntyMaintenanceStats sovereigntyStats)
+        {
+            if (dataVault == null)
+                return;
+
+            int generationMissCount = dataVault.GenerationHandleMissCount;
+            int generationMissDelta = math.max(0, generationMissCount - _lastVaultGenerationMissCount);
+            _lastVaultGenerationMissCount = generationMissCount;
+
+            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight)
+                ? HomeostasisBrain.GlobalQualityWeight
+                : 1f);
+            int stride = ResolveVaultTelemetryStride(quality);
+            float defragUs = (float)math.max(0.0d, elapsedMilliseconds * 1000.0d);
+            float maxJobUs = math.max(defragUs, sovereigntyStats.MaxJobUs);
+            if (maxJobUs > 0f)
+                _lastVaultMemoryJobUs = maxJobUs;
+            uint flags = (uint)dataVault.LastDefragFlags | sovereigntyStats.Flags;
+            if (flags != 0u)
+                _lastVaultMaintenanceFlags = flags;
+            VaultSovereigntyTelemetry.TryRecord(
+                dataVault,
+                unchecked((uint)Time.frameCount),
+                generationMissDelta,
+                stride,
+                maxJobUs > 0f ? maxJobUs : _lastVaultMemoryJobUs,
+                quality,
+                VaultSovereigntyMaintenance.SourceHash,
+                flags != 0u ? flags : _lastVaultMaintenanceFlags);
+        }
+
+        private static int ResolveVaultTelemetryStride(float quality)
+        {
+            float curved = quality * quality * (3f - (2f * quality));
+            return math.clamp((int)math.round(math.lerp(4f, 1f, curved)), 1, 4);
+        }
+
+        private void RecordVaultSovereigntyPostSimulationHeartbeat()
+        {
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null && TryResolveCachedDataVault(out dataVault))
+                _dataVault = dataVault;
+            if (dataVault == null)
+                return;
+
+            VaultSovereigntyMaintenanceStats stats = default;
+            stats.MaxJobUs = _lastVaultMemoryJobUs;
+            stats.Flags = _lastVaultMaintenanceFlags;
+            RecordVaultSovereigntyTelemetry(dataVault, 0.0d, in stats);
         }
 
         private void RecordMemoryBlackBoxHeartbeat()

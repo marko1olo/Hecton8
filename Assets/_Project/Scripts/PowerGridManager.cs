@@ -59,9 +59,13 @@ namespace Hecton8.Power
         private bool _slowTickFinalizationPending;
         private float _pendingWirelessToolDemandWattSeconds;
         private float _nextPowerColdTickTime;
+        private float _nextSubmarineThermalGridTickTime;
         private WfcOutpostPowerBootRuntime _wfcOutpostPowerBoot; // COLD ALLOC: WfcOutpostPowerBootRuntime[1] - WFC outpost signal boot owner - owner: PowerGridManager
         private ShinobuLogisticsRouter _shinobuLogisticsRouter; // COLD ALLOC: ShinobuLogisticsRouter[1] - zero-GC WFC logistics BFS owner - owner: PowerGridManager
+        private SubmarineOsThermalGridRuntime _submarineThermalGridRuntime; // COLD ALLOC: SubmarineOsThermalGridRuntime[1] - submarine OS thermal grid owner - owner: PowerGridManager
         private const float PowerGridColdTickSeconds = 1f;
+        private const float SubmarineThermalGridLowCadenceSeconds = 0.2f;
+        private const float SubmarineThermalGridHighCadenceSeconds = 1f / 60f;
         private const float MaxPendingWirelessToolDemandWattSeconds = 4096f;
 
         /// <inheritdoc />
@@ -86,6 +90,7 @@ namespace Hecton8.Power
             EnsureStorage();
             EnsureWfcOutpostPowerBoot();
             EnsureShinobuLogisticsRouter();
+            EnsureSubmarineThermalGridRuntime();
             TryRegister();
             TryRegisterService();
         }
@@ -134,6 +139,7 @@ namespace Hecton8.Power
 
             EnsureWfcOutpostPowerBoot();
             EnsureShinobuLogisticsRouter();
+            EnsureSubmarineThermalGridRuntime();
         }
 
         private void OnEnable()
@@ -141,6 +147,7 @@ namespace Hecton8.Power
             ActiveRuntimeInstance = this;
             EnsureWfcOutpostPowerBoot();
             EnsureShinobuLogisticsRouter();
+            EnsureSubmarineThermalGridRuntime();
             TryRegister();
             TryRegisterService();
         }
@@ -168,6 +175,8 @@ namespace Hecton8.Power
             _wfcOutpostPowerBoot = null;
             _shinobuLogisticsRouter?.Dispose();
             _shinobuLogisticsRouter = null;
+            _submarineThermalGridRuntime?.Dispose();
+            _submarineThermalGridRuntime = null;
             _pendingWirelessToolDemandWattSeconds = 0f;
             _debugPendingWirelessToolDemandWattSeconds = 0f;
             _slowTickFinalizationPending = false;
@@ -190,6 +199,10 @@ namespace Hecton8.Power
             float now = Time.unscaledTime;
             _wfcOutpostPowerBoot?.SlowTick(now);
             _shinobuLogisticsRouter?.SlowTick(now);
+            _submarineThermalGridRuntime?.TryCompleteExternalThermalInjectionPostSimulation();
+            _submarineThermalGridRuntime?.TryCommitTopologyRebuildPostSimulation();
+            _submarineThermalGridRuntime?.TryCompleteSolvePostSimulation();
+            ScheduleSubmarineThermalGridIfDue(now);
 
             if (_slowTickFinalizationPending)
                 return;
@@ -222,6 +235,11 @@ namespace Hecton8.Power
         {
             _wfcOutpostPowerBoot?.LateFrameTick(Time.unscaledTime);
             _shinobuLogisticsRouter?.LateFrameTick(Time.unscaledTime);
+            _submarineThermalGridRuntime?.TryCompleteExternalThermalInjectionPostSimulation();
+            _submarineThermalGridRuntime?.TryCommitTopologyRebuildPostSimulation();
+            _submarineThermalGridRuntime?.TryCompleteSolvePostSimulation();
+            ScheduleSubmarineThermalGridIfDue(Time.unscaledTime);
+            _submarineThermalGridRuntime?.TryPublishVisualShaderScalars();
             if (!_slowTickFinalizationPending)
                 return;
 
@@ -248,8 +266,13 @@ namespace Hecton8.Power
             {
                 _shinobuLogisticsRouter?.Dispose();
                 _shinobuLogisticsRouter = null;
+                _submarineThermalGridRuntime?.Dispose();
+                _submarineThermalGridRuntime = null;
                 if (currentService is IDataVault)
+                {
                     EnsureShinobuLogisticsRouter();
+                    EnsureSubmarineThermalGridRuntime();
+                }
             }
         }
 
@@ -664,6 +687,42 @@ namespace Hecton8.Power
 
             _shinobuLogisticsRouter.InjectDataVault(GlobalRegistry.DataVault);
             _shinobuLogisticsRouter.EnsureInitialized();
+        }
+
+        private void EnsureSubmarineThermalGridRuntime()
+        {
+            if (_submarineThermalGridRuntime == null)
+                _submarineThermalGridRuntime = new SubmarineOsThermalGridRuntime();
+
+            _submarineThermalGridRuntime.InjectDataVault(GlobalRegistry.DataVault);
+            _submarineThermalGridRuntime.EnsureInitialized();
+        }
+
+        private void ScheduleSubmarineThermalGridIfDue(float now)
+        {
+            SubmarineOsThermalGridRuntime runtime = _submarineThermalGridRuntime;
+            if (runtime == null)
+                return;
+
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            float cadenceSeconds = ResolveSubmarineThermalGridCadenceSeconds(quality);
+            if (now + 0.0001f < _nextSubmarineThermalGridTickTime)
+                return;
+
+            if (runtime.ScheduleSolve(cadenceSeconds, quality, (uint)Time.frameCount, default, out _))
+            {
+                _nextSubmarineThermalGridTickTime = now + cadenceSeconds;
+                return;
+            }
+
+            _nextSubmarineThermalGridTickTime = now + math.min(cadenceSeconds, 0.05f);
+        }
+
+        internal static float ResolveSubmarineThermalGridCadenceSeconds(float globalQualityWeight)
+        {
+            float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
+            float smooth = weight * weight * (3f - 2f * weight);
+            return math.lerp(SubmarineThermalGridLowCadenceSeconds, SubmarineThermalGridHighCadenceSeconds, smooth);
         }
 
         private void TryRegisterHotSwapListener()

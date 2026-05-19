@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts.Signals;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Hecton8.Physiology
 {
@@ -9,6 +10,8 @@ namespace Hecton8.Physiology
     public static class ShinobuPhysiologyConstants
     {
         public const int TissueCompartmentCount = 16;
+        public const int TissueCompartmentStrideBytes = 16;
+        public const int TissueCompartmentBytesPerEntity = TissueCompartmentCount * TissueCompartmentStrideBytes;
         public const int TelemetryFrameCount = 300;
         public const int DefaultEntityCapacity = 64;
         public const int FrameJobBatchSize = 16;
@@ -16,6 +19,7 @@ namespace Hecton8.Physiology
         public const float AtmosphericPressureAtSurfaceAtm = 1f;
         public const float NitrogenFraction = 0.7902f;
         public const float OxygenDeathThreshold = 0.0001f;
+        public const float MaxSimulationStepSeconds = 0.25f;
     }
 
     /// <summary>
@@ -52,6 +56,8 @@ namespace Hecton8.Physiology
         public const uint CsvOverride = 1u << 7;
         public const uint AdrenalineSeen = 1u << 8;
         public const uint AdrenalineCrash = 1u << 9;
+        public const uint HyperbaricOverride = 1u << 10;
+        public const uint FatalBends = 1u << 11;
     }
 
     /// <summary>
@@ -91,6 +97,30 @@ namespace Hecton8.Physiology
         public float AmbientPressure;
         public float AscentRate;
         public ulong _pad0;
+    }
+
+    /// <summary>
+    /// One active Haldanean tissue compartment row. Size: 16 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct TissueCompartmentDTO
+    {
+        [FieldOffset(0)] public float NitrogenTension;
+        [FieldOffset(4)] public float Halftime;
+        [FieldOffset(8)] public float MValue;
+        [FieldOffset(12)] public uint Flags;
+    }
+
+    public static class ShinobuPhysiologyLayoutGuards
+    {
+        public static bool ValidateTissueCompartmentLayout()
+        {
+            return UnsafeUtility.SizeOf<TissueCompartmentDTO>() == ShinobuPhysiologyConstants.TissueCompartmentStrideBytes &&
+                   Marshal.OffsetOf<TissueCompartmentDTO>(nameof(TissueCompartmentDTO.NitrogenTension)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<TissueCompartmentDTO>(nameof(TissueCompartmentDTO.Halftime)).ToInt32() == 4 &&
+                   Marshal.OffsetOf<TissueCompartmentDTO>(nameof(TissueCompartmentDTO.MValue)).ToInt32() == 8 &&
+                   Marshal.OffsetOf<TissueCompartmentDTO>(nameof(TissueCompartmentDTO.Flags)).ToInt32() == 12;
+        }
     }
 
     /// <summary>
@@ -151,6 +181,10 @@ namespace Hecton8.Physiology
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct MockPressureSignal
     {
+        public const uint ActiveFlag = 1u << 0;
+        public const uint HabitatOverrideFlag = 1u << 1;
+        public const uint HyperbaricTreatmentFlag = 1u << 2;
+
         [FieldOffset(0)] public float DepthMeters;
         [FieldOffset(4)] public float AmbientPressureAtm;
         [FieldOffset(8)] public float AscentRateMetersPerSecond;
@@ -158,6 +192,22 @@ namespace Hecton8.Physiology
         [FieldOffset(16)] public uint Flags;
         [FieldOffset(20)] public float AmbientTemperatureCelsius;
         [FieldOffset(24)] public uint InventoryMask;
+    }
+
+    /// <summary>
+    /// Synthetic dive profile sample for deterministic editor/runtime smoke tests. Size: 32 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct DiveProfileSampleDTO
+    {
+        [FieldOffset(0)] public float TimeSeconds;
+        [FieldOffset(4)] public float DepthMeters;
+        [FieldOffset(8)] public float AmbientPressureAtm;
+        [FieldOffset(12)] public float AscentRateMetersPerSecond;
+        [FieldOffset(16)] public uint Frame;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public uint ProfileHash;
+        [FieldOffset(28)] public uint SampleIndex;
     }
 
     /// <summary>
@@ -259,13 +309,13 @@ namespace Hecton8.Physiology
         [FieldOffset(24)] public float CoreTemperature;
         [FieldOffset(28)] public float AmbientPressureAtm;
         [FieldOffset(32)] public float NarcosisSeverity;
-        [FieldOffset(36)] public float Toxemia;
+        [FieldOffset(36)] public float SupersaturationScalar;
         [FieldOffset(40)] public float HeartRate;
         [FieldOffset(44)] public float Adrenaline;
         [FieldOffset(48)] public uint FatalFlags;
         [FieldOffset(52)] public uint TissueOverMValueMask;
         [FieldOffset(56)] public float DepthMeters;
-        [FieldOffset(60)] public uint Sequence;
+        [FieldOffset(60)] public float ExecutionMicroseconds;
     }
 
     /// <summary>

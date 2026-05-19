@@ -14,11 +14,8 @@ namespace Hecton8.Physics.Vehicles
 {
     public sealed class SubmarineDynamicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, ISlowTickable, IVehicleCommandSignalListener
     {
-        private const string NativeOwner = "SHINOBU_11_SUBMARINE_DYNAMICS";
-        private const string FloodQueueLabel = "MockFloodSignalQueue";
-        private const string ImpactQueueLabel = "MockImpactSignalQueue";
-        private const string CavitationQueueLabel = "CavitationAcousticSignalQueue";
-        private const int MockQueueCapacity = 64;
+        private const int MockSignalCapacity = 64;
+        private const int LowTierMockSignalCapacity = 8;
         private const long MaxCsvOverrideBytes = 4096L;
         private const uint HashBaseMassKg = 0xA5F7F6FCu;
         private const uint HashDragScale = 0x681E390Eu;
@@ -71,9 +68,6 @@ namespace Hecton8.Physics.Vehicles
         private VaultBufferHandle<SubmarineKinematicTelemetry> _telemetryHandle;
         private VaultBufferHandle<SubmarineKinematicConfig> _configHandle;
         private VaultBufferHandle<float> _dragLutHandle;
-        private NativeQueue<MockFloodSignal> _mockFloodQueue;
-        private NativeQueue<MockImpactSignal> _mockImpactQueue;
-        private NativeQueue<CavitationAcousticSignal> _cavitationQueue;
         private JobHandle _integratorHandle;
         private bool _integratorPending;
         private bool _buffersLocked;
@@ -98,7 +92,7 @@ namespace Hecton8.Physics.Vehicles
         {
             _projectRoot = ResolveProjectRoot();
             _csvPath = Path.Combine(_projectRoot, "sub_physics_overrides.csv");
-            EnsureQueues();
+            EnsureSignalLanes();
             RefreshCommandTargetIds();
             VehicleCommandSignalBus.Register(this);
             ResolveDataVault();
@@ -133,7 +127,6 @@ namespace Hecton8.Physics.Vehicles
             _registeredPostFixed = false;
             _registeredLateFrame = false;
             _registeredSlow = false;
-            DisposeQueues();
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -142,6 +135,9 @@ namespace Hecton8.Physics.Vehicles
                 return;
 
             if (!_buffersReady)
+                return;
+
+            if (!LockSimulationBuffers())
                 return;
 
             if (!TryResolveArrays(
@@ -155,11 +151,9 @@ namespace Hecton8.Physics.Vehicles
                     out NativeArray<float> dragLut))
             {
                 _buffersReady = false;
+                UnlockSimulationBuffers();
                 return;
             }
-
-            if (!LockSimulationBuffers())
-                return;
 
             VehicleCommandSignalBus.FlushPending();
             ConsumeSignals(controls, masses, forces, configs);
@@ -170,7 +164,7 @@ namespace Hecton8.Physics.Vehicles
             {
                 MockFloodSignalSeederJob mockFloodJob = new MockFloodSignalSeederJob
                 {
-                    FloodWriter = _mockFloodQueue.AsParallelWriter(),
+                    FloodWriter = SignalBus<MockFloodSignal>.ParallelWriter,
                     Frame = frame,
                     Seed = 0x5EED110Bu,
                     LocalCompartment = ToFloat3(mockFloodLocal),
@@ -190,8 +184,9 @@ namespace Hecton8.Physics.Vehicles
                 Telemetry = telemetry,
                 Configs = configs,
                 DragLut = dragLut,
-                CavitationWriter = _cavitationQueue.AsParallelWriter(),
+                CavitationWriter = SignalBus<CavitationAcousticSignal>.ParallelWriter,
                 FixedDeltaTime = fixedDeltaTime,
+                GlobalQualityWeight = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f),
                 Frame = frame,
                 VehicleCount = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles)
             };
@@ -206,6 +201,7 @@ namespace Hecton8.Physics.Vehicles
                 fixedDeltaTime,
                 frame,
                 integratorJob.VehicleCount);
+            H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, _integratorHandle);
             _integratorPending = true;
         }
 
@@ -219,8 +215,10 @@ namespace Hecton8.Physics.Vehicles
 
             _integratorPending = false;
             UnlockSimulationBuffers();
-            DrainCavitationQueue();
-            DumpBlackBoxIfFaulted();
+            DrainCavitationSignals();
+            bool faulted = DumpBlackBoxIfFaulted();
+            if (!faulted)
+                RecordVaultSovereigntyTelemetry(0u);
         }
 
         public void LateFrameTick()
@@ -265,10 +263,6 @@ namespace Hecton8.Physics.Vehicles
 
         private bool ResolveDataVault()
         {
-            if (_dataVault != null)
-                return true;
-
-            _dataVault = GlobalRegistry.DataVault;
             if (_dataVault != null)
                 return true;
 
@@ -416,9 +410,11 @@ namespace Hecton8.Physics.Vehicles
                 control.FloodWaterMassKg = mass.FloodMassKg;
             }
 
-            int guard = 0;
-            while (_mockFloodQueue.TryDequeue(out MockFloodSignal mockFlood) && guard++ < MockQueueCapacity)
+            ReadOnlySpan<MockFloodSignal> mockFloodSignals = SignalBus<MockFloodSignal>.GetFrameSnapshot();
+            int mockFloodCount = math.min(mockFloodSignals.Length, MockSignalCapacity);
+            for (int i = 0; i < mockFloodCount; i++)
             {
+                MockFloodSignal mockFlood = mockFloodSignals[i];
                 mass.FloodMassKg = math.max(0f, mockFlood.WaterMassKg);
                 mass.FloodCenterLocal = mockFlood.LocalCompartment;
                 control.FloodWaterMassKg = mass.FloodMassKg;
@@ -439,9 +435,13 @@ namespace Hecton8.Physics.Vehicles
                     normalIsLocal: true);
             }
 
-            guard = 0;
-            while (_mockImpactQueue.TryDequeue(out MockImpactSignal mockImpact) && guard++ < MockQueueCapacity)
+            ReadOnlySpan<MockImpactSignal> mockImpactSignals = SignalBus<MockImpactSignal>.GetFrameSnapshot();
+            int mockImpactCount = math.min(mockImpactSignals.Length, MockSignalCapacity);
+            for (int i = 0; i < mockImpactCount; i++)
+            {
+                MockImpactSignal mockImpact = mockImpactSignals[i];
                 ApplyImpactSignal(ref force, mockImpact.LocalPoint, mockImpact.NormalWorld, mockImpact.Magnitude, mockImpact.Frame, mockImpact.TraumaLevel, normalIsLocal: false);
+            }
 
             controls[0] = control;
             masses[0] = mass;
@@ -926,14 +926,14 @@ namespace Hecton8.Physics.Vehicles
             }
         }
 
-        private void DumpBlackBoxIfFaulted()
+        private bool DumpBlackBoxIfFaulted()
         {
             if (_dumpWritten || _dataVault == null || !_stateHandle.IsCreated)
-                return;
+                return false;
 
             NativeArray<SubmarineKinematicState> states = _stateHandle.Resolve(_dataVault);
             if (!states.IsCreated || states.Length == 0)
-                return;
+                return false;
 
             bool fatal = false;
             int capacity = math.min(states.Length, math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles));
@@ -947,11 +947,14 @@ namespace Hecton8.Physics.Vehicles
             }
 
             if (!fatal)
-                return;
+                return false;
+
+            RecordVaultSovereigntyTelemetry(VaultSovereigntyTelemetry.FaultFlag);
+            VaultSovereigntyTelemetry.TryDump(_dataVault, _projectRoot);
 
             NativeArray<SubmarineKinematicTelemetry> telemetry = _telemetryHandle.Resolve(_dataVault);
             if (!telemetry.IsCreated)
-                return;
+                return true;
 
             string logRoot = Path.Combine(_projectRoot, "Docs", "AgentLogs");
             try
@@ -960,20 +963,42 @@ namespace Hecton8.Physics.Vehicles
             }
             catch (IOException)
             {
-                return;
+                return true;
             }
             catch (UnauthorizedAccessException)
             {
-                return;
+                return true;
             }
 
             string h8DumpPath = Path.Combine(logRoot, "Dump_SHINOBU_11.h8dump");
             string legacyBinPath = Path.Combine(logRoot, "Dump_SUB_KINEMATICS.bin");
             if (!TryWriteBlackBoxDump(h8DumpPath, telemetry))
-                return;
+                return true;
 
             TryWriteBlackBoxDump(legacyBinPath, telemetry);
             _dumpWritten = true;
+            return true;
+        }
+
+        private void RecordVaultSovereigntyTelemetry(uint flags)
+        {
+            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            VaultSovereigntyTelemetry.TryRecord(
+                _dataVault,
+                _frameCounter,
+                generationMisses: 0,
+                strideMultiplier: ResolveVaultTelemetryStride(quality),
+                maxMemoryJobUs: 0f,
+                globalQualityWeight: quality,
+                sourceHash: VaultSovereigntyTelemetry.PhysicsSourceHash,
+                flags: flags);
+        }
+
+        private static int ResolveVaultTelemetryStride(float globalQualityWeight)
+        {
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float inverse = 1f - quality;
+            return math.clamp(1 + (int)math.floor(inverse * 3.333334f), 1, 4);
         }
 
         private static bool TryWriteBlackBoxDump(string path, NativeArray<SubmarineKinematicTelemetry> telemetry)
@@ -1018,45 +1043,24 @@ namespace Hecton8.Physics.Vehicles
             }
         }
 
-        private void EnsureQueues()
+        private static void EnsureSignalLanes()
         {
-            if (!_mockFloodQueue.IsCreated)
-            {
-                _mockFloodQueue = new NativeQueue<MockFloodSignal>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(_mockFloodQueue, MockQueueCapacity, NativeOwner, FloodQueueLabel, NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _mockFloodQueue, MockQueueCapacity);
-            }
-
-            if (!_mockImpactQueue.IsCreated)
-            {
-                _mockImpactQueue = new NativeQueue<MockImpactSignal>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(_mockImpactQueue, MockQueueCapacity, NativeOwner, ImpactQueueLabel, NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _mockImpactQueue, MockQueueCapacity);
-            }
-
-            if (!_cavitationQueue.IsCreated)
-            {
-                _cavitationQueue = new NativeQueue<CavitationAcousticSignal>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(_cavitationQueue, MockQueueCapacity, NativeOwner, CavitationQueueLabel, NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _cavitationQueue, MockQueueCapacity);
-            }
+            SignalBus<MockFloodSignal>.Configure(MockSignalCapacity, MockSignalCapacity, LowTierMockSignalCapacity, 0x4D464C44u);
+            SignalBus<MockImpactSignal>.Configure(MockSignalCapacity, MockSignalCapacity, LowTierMockSignalCapacity, 0x4D494D50u);
+            SignalBus<CavitationAcousticSignal>.Configure(MockSignalCapacity, MockSignalCapacity, LowTierMockSignalCapacity, 0x43564156u);
+            SignalBus<MockFloodSignal>.EnsureInitialized();
+            SignalBus<MockImpactSignal>.EnsureInitialized();
+            SignalBus<CavitationAcousticSignal>.EnsureInitialized();
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity) where T : unmanaged
-        {
-            T item = default;
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(item);
-            for (int i = 0; i < capacity; i++)
-                queue.TryDequeue(out item);
-        }
-
-        private void DrainCavitationQueue()
+        private void DrainCavitationSignals()
         {
             bool hasConfig = TryReadConfigForSignalBridge(out SubmarineKinematicConfig config);
-            int guard = 0;
-            while (_cavitationQueue.TryDequeue(out CavitationAcousticSignal signal) && guard++ < MockQueueCapacity)
+            ReadOnlySpan<CavitationAcousticSignal> signals = SignalBus<CavitationAcousticSignal>.GetFrameSnapshot();
+            int count = math.min(signals.Length, MockSignalCapacity);
+            for (int i = 0; i < count; i++)
             {
+                CavitationAcousticSignal signal = signals[i];
                 if (!hasConfig || signal.Intensity01 <= 0.001f)
                     continue;
 
@@ -1096,27 +1100,6 @@ namespace Hecton8.Physics.Vehicles
             _visualCommandTargetInstanceId = visualRoot != null
                 ? unchecked((int)EntityId.ToULong(visualRoot.gameObject.GetEntityId()))
                 : 0;
-        }
-
-        private void DisposeQueues()
-        {
-            if (_mockFloodQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeOwner, FloodQueueLabel);
-                _mockFloodQueue.Dispose();
-            }
-
-            if (_mockImpactQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeOwner, ImpactQueueLabel);
-                _mockImpactQueue.Dispose();
-            }
-
-            if (_cavitationQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeOwner, CavitationQueueLabel);
-                _cavitationQueue.Dispose();
-            }
         }
 
         private static uint ReadUInt32At(FileStream stream, long offset)

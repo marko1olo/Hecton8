@@ -86,6 +86,9 @@ namespace Hecton8.Core.Memory
         /// <summary>Global vault generation for black-box telemetry and stale-handle audits.</summary>
         uint VaultGenerationID { get; }
 
+        /// <summary>Total generation-checked handles refreshed after a vault generation change.</summary>
+        int GenerationHandleMissCount { get; }
+
         /// <summary>Bitmask describing the most recent starvation fallback path.</summary>
         byte MemoryStarvationWarnings { get; }
 
@@ -517,6 +520,7 @@ namespace Hecton8.Core.Memory
         private int _defragBlackBoxCursor;
         private int _defragBlackBoxRecordedCount;
         private int _lastRelocationRecordCount;
+        private int _generationHandleMissCount;
         private int _compactionWatchdogBreachCount;
         private long _totalDefragMovedBytes;
         private uint _defragTickSequence;
@@ -590,6 +594,9 @@ namespace Hecton8.Core.Memory
 
         /// <inheritdoc />
         public uint VaultGenerationID => _vaultGenerationId;
+
+        /// <inheritdoc />
+        public int GenerationHandleMissCount => Volatile.Read(ref _generationHandleMissCount);
 
         /// <inheritdoc />
         public byte MemoryStarvationWarnings => _memoryStarvationWarnings;
@@ -694,6 +701,7 @@ namespace Hecton8.Core.Memory
             _defragBlackBoxCursor = 0;
             _defragBlackBoxRecordedCount = 0;
             _lastRelocationRecordCount = 0;
+            _generationHandleMissCount = 0;
             _compactionWatchdogBreachCount = 0;
             _totalDefragMovedBytes = 0L;
             _defragTickSequence = 0u;
@@ -1212,6 +1220,8 @@ namespace Hecton8.Core.Memory
                 handle.BufferId = (BufferID)key;
                 handle.Length = meta.Length;
                 handle.Stride = meta.Stride;
+                if (hasCachedIdentity)
+                    Interlocked.Increment(ref _generationHandleMissCount);
             }
 
             SanitizeFinitePayload<T>(pointer, meta.Length);
@@ -1962,6 +1972,7 @@ namespace Hecton8.Core.Memory
             _defragBlackBoxCursor = 0;
             _defragBlackBoxRecordedCount = 0;
             _lastRelocationRecordCount = 0;
+            _generationHandleMissCount = 0;
             _compactionWatchdogBreachCount = 0;
             _totalDefragMovedBytes = 0L;
             _defragTickSequence = 0u;

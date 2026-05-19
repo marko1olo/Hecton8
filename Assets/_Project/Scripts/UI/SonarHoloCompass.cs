@@ -15,7 +15,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Sonar Holo Compass")]
-    public sealed class SonarHoloCompass : MonoBehaviour, ITickable, ILateFrameTickable, ISonarPingEventListener
+    public sealed class SonarHoloCompass : MonoBehaviour, ITickable, ILateFrameTickable, ISonarPingEventListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxDots = 16;
         private const int ProjectionBatchSize = 4;
@@ -60,8 +60,11 @@ namespace Hecton8.UI
         private bool _registeredLateFrame;
         private bool _uiBuilt;
         private bool _projectionScheduled;
+        private bool _hotSwapListenerRegistered;
         private Canvas _targetCanvas;
         private Camera _viewCamera;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private SpatialAudioManager _cachedAudioManager;
         private RectTransform _root;
         private CanvasGroup _canvasGroup;
         private RectTransform[] _dotRects;
@@ -85,11 +88,13 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
             EnsureProjectionBuffers();
             ResolveOwners(allowHierarchySearch: true);
             EnsureUiBuilt(allowCreate: true);
             SpectrumEvents.RegisterSonarPingListener(this);
             RegisterToTickManager();
+            TryRegisterHotSwapListener();
         }
 
         private void Start()
@@ -102,6 +107,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             SpectrumEvents.UnregisterSonarPingListener(this);
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
             HideDots();
             ApplyRootAlpha(0f);
@@ -110,6 +116,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             SpectrumEvents.UnregisterSonarPingListener(this);
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
             DisposeProjectionBuffers();
         }
@@ -142,7 +149,8 @@ namespace Hecton8.UI
             if (_projectionScheduled)
                 return;
 
-            if (!(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager audioManager))
+            SpatialAudioManager audioManager = _cachedAudioManager;
+            if (audioManager == null)
             {
                 HideDots();
                 ApplyRootAlpha(0f);
@@ -180,7 +188,7 @@ namespace Hecton8.UI
         {
             if (_viewCamera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
                 if (playerContext != null && playerContext.PlayerCamera != null)
                 {
                     _viewCamera = playerContext.PlayerCamera;
@@ -417,7 +425,7 @@ namespace Hecton8.UI
             return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
         }
 
-        private static bool TryResolveViewAup(Vector3 viewPosition, out AbsoluteUniversePosition viewAup)
+        private bool TryResolveViewAup(Vector3 viewPosition, out AbsoluteUniversePosition viewAup)
         {
             if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
             {
@@ -431,7 +439,7 @@ namespace Hecton8.UI
                 }
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
             if (movement != null)
             {
@@ -680,6 +688,45 @@ namespace Hecton8.UI
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
                 _registeredToTick = false;
             }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                _viewCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+            {
+                _cachedAudioManager = currentService as SpatialAudioManager;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedAudioManager = GlobalRegistry.Audio as SpatialAudioManager;
         }
 
         private static Canvas ResolveTargetCanvas(bool allowComponentFallback)

@@ -19,6 +19,7 @@ using Hecton8.VFX;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -57,13 +58,15 @@ namespace Hecton8.AI
             Starving
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 68)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         internal struct PackCoordinator
         {
             [FieldOffset(0)] public AbsoluteUniversePosition TargetAup;
             [FieldOffset(48)] public float3 TargetVelocity;
             [FieldOffset(60)] public float InterceptTimeSeconds;
             [FieldOffset(64)] public float FlankDistanceMeters;
+            [FieldOffset(68)] public uint Padding0;
+            [FieldOffset(72)] public ulong Padding1;
 
             public float3 ResolveFlankRuntimePosition(float3 predatorPosition, int packOrdinal, double3 floatingOriginOffset)
             {
@@ -102,7 +105,7 @@ namespace Hecton8.AI
             }
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 88)]
+        [StructLayout(LayoutKind.Explicit, Size = 88)]
         private struct CorpseSinkKinematicInput
         {
             [FieldOffset(0)] public AbsoluteUniversePositionBlit128 PositionAup;
@@ -113,7 +116,7 @@ namespace Hecton8.AI
             [FieldOffset(84)] public float FloorSettleOffsetMeters;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct CorpseSinkKinematicOutput
         {
             [FieldOffset(0)] public AbsoluteUniversePositionBlit128 PositionAup;
@@ -121,11 +124,11 @@ namespace Hecton8.AI
             [FieldOffset(60)] public int FreezeMotion;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CorpseSinkKinematicJob : IJob
         {
-            [ReadOnly] public NativeArray<CorpseSinkKinematicInput> Input;
-            public NativeArray<CorpseSinkKinematicOutput> Output;
+            [ReadOnly, NoAlias] public NativeArray<CorpseSinkKinematicInput> Input;
+            [NoAlias] public NativeArray<CorpseSinkKinematicOutput> Output;
 
             public void Execute()
             {
@@ -195,14 +198,13 @@ namespace Hecton8.AI
         public uint ThreatPredictionLoreHash => _faunaDataTemplate != null ? _faunaDataTemplate.FullLoreHash : 0u;
 
         /// <summary>
-        /// [REQ] Eye Tracking vector for Animator/Bones.
-        /// Feed this to a procedural head-look system or animator layer.
+        /// [REQ] Eye Tracking vector for procedural bone jobs.
+        /// Feed this to the Vault-backed fauna kinematics owner.
         /// </summary>
         public Vector3 LookDirection { get; private set; }
 
         // --- INTERNAL ---
         private Rigidbody _rb;
-        private Animator _animator;
         private bool _isDead;
         private bool _dispatcherRegistered;
         private int _spatialHandle;
@@ -430,7 +432,6 @@ namespace Hecton8.AI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextSlowTickWatchdogLogTime;
 #endif
-        private static readonly int PredatorGlancingBlowAnimatorHash = Animator.StringToHash("GlancingBlow");
         
         // --- LOD & Stagger ---
         private bool _lodDisabled;
@@ -686,7 +687,6 @@ namespace Hecton8.AI
             CacheBiolumPresentationLights();
             EnsureFaunaPresentationMaterials();
             ApplyFaunaPresentationShaderState(1f, 0f, 0f, 0f);
-            TryGetComponent(out _animator);
             CacheLogicalLodComponents();
             TryGetComponent(out _faunaKinematicsRuntime);
             TryGetComponent(out _simplifiedRagdollHandoff);
@@ -1758,7 +1758,7 @@ namespace Hecton8.AI
                 return;
 
             Hecton8.Core.Contracts.Signals.CombatDamageSignal empSignal = default;
-            empSignal.WorldPoint = new float3(selfPosition.x, selfPosition.y, selfPosition.z);
+            empSignal.ImpactAup = Hecton8.Core.Contracts.Signals.CombatDamageSignalCodec.FromRuntimePoint(selfPosition);
             empSignal.Direction = (float3)ResolveSelfLogicForward();
             empSignal.Magnitude = math.max(0f, radiusMeters) * math.max(0.1f, _faunaDataTemplate.EmpClaritySuppression01);
             empSignal.DamageType = (uint)DamageTypeMask.Emp;
@@ -3188,8 +3188,7 @@ namespace Hecton8.AI
         {
             ClearPredatorLungeCheat();
             _attackBurstUntilTime = 0f;
-            if (_animator != null)
-                _animator.SetTrigger(PredatorGlancingBlowAnimatorHash);
+            ClearProceduralStrikeIntent();
         }
 
         private void ClearPredatorDeafening()
@@ -3254,20 +3253,20 @@ namespace Hecton8.AI
                 new float3(hitNormal.x, hitNormal.y, hitNormal.z),
                 new float3(-direction.x, -direction.y, -direction.z));
             Vector3 safeNormal = new Vector3(normal3.x, normal3.y, normal3.z);
-            bool lowTierStop = KinematicCcdMath.IsLowTier(GlobalRegistry.ScalabilityTierProfileByte);
             bool cornerHalt = false;
+            float slideWeight = math.saturate(HomeostasisBrain.GlobalQualityWeight);
             float safeDistance = KinematicCcdMath.ResolveRollbackDistance(
                 distance * hitFraction,
                 distance,
                 PredatorLungeCcdSkinWidth);
             Vector3 resolvedDisplacement = direction * safeDistance;
-            if (!lowTierStop && !cornerHalt)
+            if (!cornerHalt && slideWeight > 0f)
             {
                 Vector3 slide = displacement - safeNormal * Vector3.Dot(displacement, safeNormal);
                 float slideSq = slide.sqrMagnitude;
                 float remainingDistance = math.max(0f, distance - safeDistance);
                 if (math.isfinite(slideSq) && slideSq > 0.000001f && remainingDistance > 0f)
-                    resolvedDisplacement += slide * (remainingDistance * math.rsqrt(slideSq));
+                    resolvedDisplacement += slide * (remainingDistance * math.rsqrt(slideSq) * slideWeight);
             }
 
             resolvedPosition = startPosition + resolvedDisplacement;
@@ -3529,7 +3528,7 @@ namespace Hecton8.AI
             if (signal.TargetHash != 0u && lostKineticEnergy >= KinematicCcdMath.MassiveLostKineticEnergyJoules)
             {
                 Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
-                damage.WorldPoint = new float3(point.x, point.y, point.z);
+                damage.ImpactAup = Hecton8.Core.Contracts.Signals.CombatDamageSignalCodec.FromRuntimePoint(point);
                 damage.Direction = signal.Normal;
                 damage.Magnitude = math.min(600f, lostKineticEnergy * 0.004f);
                 damage.DamageType = (uint)DamageTypeMask.Impact;
@@ -5850,9 +5849,6 @@ namespace Hecton8.AI
             UnregisterSpatialHandle();
             _utilityBrain.SetRuntimeActive(false);
 
-            if (_animator != null)
-                _animator.enabled = false;
-
             CaptureBaseRigidbodyPresentationState();
             ApplySimplifiedRagdollHandoff();
             _deathSpiralActive = true;
@@ -6542,9 +6538,6 @@ namespace Hecton8.AI
                 return;
 
             _logicalLodPresentationSuppressed = suppressPresentation;
-            if (_animator != null)
-                _animator.enabled = !suppressPresentation;
-
             for (int i = 0; i < _logicalLodColliders.Length; i++)
             {
                 Collider cachedCollider = _logicalLodColliders[i];

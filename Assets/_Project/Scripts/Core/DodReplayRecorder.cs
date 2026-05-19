@@ -120,7 +120,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Fixed job-completion sample stored in replay sidecars.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct DodReplayJobProfileRecord
     {
         /// <summary>Frame index.</summary>
@@ -135,6 +135,7 @@ namespace Hecton8.Core
         public ushort Flags;
         /// <summary>Error code when completion represents a stall.</summary>
         public uint ErrorCode;
+        private uint _pad0;
         /// <summary>Reserved.</summary>
         public ulong Reserved;
     }
@@ -142,31 +143,39 @@ namespace Hecton8.Core
     /// <summary>
     /// Burst panic capture header. Full job-data bytes are stored in the panic payload sidecar.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DodReplayBurstPanicRecord
     {
         /// <summary>Frame index.</summary>
+        [FieldOffset(8)]
         public uint FrameIndex;
         /// <summary>Faulting job or system hash.</summary>
+        [FieldOffset(12)]
         public uint SubjectHash;
         /// <summary>Numeric panic code.</summary>
+        [FieldOffset(16)]
         public uint ErrorCode;
         /// <summary>Byte offset into the panic payload ring.</summary>
+        [FieldOffset(20)]
         public uint PayloadOffsetBytes;
         /// <summary>Copied job-data bytes.</summary>
+        [FieldOffset(28)]
         public ushort PayloadBytes;
         /// <summary>Total job-data size.</summary>
+        [FieldOffset(30)]
         public ushort SourceBytes;
         /// <summary>FNV64 hash of full job data.</summary>
+        [FieldOffset(0)]
         public ulong JobDataHash;
         /// <summary>Flags.</summary>
+        [FieldOffset(24)]
         public uint Flags;
     }
 
     /// <summary>
     /// AUP drift detector result over a 1000-frame sample window.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct DodReplayAupDriftRecord
     {
         /// <summary>Frame index where drift was evaluated.</summary>
@@ -192,7 +201,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Entity ghost breadcrumb for editor replay overlays.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct DodReplayEntityGhostRecord
     {
         /// <summary>Frame index.</summary>
@@ -205,12 +214,13 @@ namespace Hecton8.Core
         public uint Flags;
         /// <summary>Sequence.</summary>
         public uint Sequence;
+        private uint _pad0;
     }
 
     /// <summary>
     /// Debug vector for logistics Jacobi flow visualization.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct DodReplayLogisticFlowRecord
     {
         /// <summary>Frame index.</summary>
@@ -225,12 +235,13 @@ namespace Hecton8.Core
         public float Potential;
         /// <summary>Flags.</summary>
         public uint Flags;
+        private ulong _pad0;
     }
 
     /// <summary>
     /// Atmosphere pressure/gas grid cell sample.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
+    [StructLayout(LayoutKind.Sequential, Size = 40)]
     public struct DodReplayAtmosphereCellRecord
     {
         /// <summary>Frame index.</summary>
@@ -256,7 +267,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Graphics buffer allocation sample captured near faults.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct DodReplayVramAllocationRecord
     {
         /// <summary>Frame index.</summary>
@@ -265,6 +276,7 @@ namespace Hecton8.Core
         public uint OwnerHash;
         /// <summary>Label hash.</summary>
         public uint LabelHash;
+        private uint _pad0;
         /// <summary>Allocation byte count.</summary>
         public long Bytes;
         /// <summary>Graphics buffer stride.</summary>
@@ -276,7 +288,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Deterministic physics smoke-test result.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 56)]
+    [StructLayout(LayoutKind.Sequential, Size = 56)]
     public struct DodReplayPhysicsSmokeRecord
     {
         /// <summary>Frame index.</summary>
@@ -318,7 +330,7 @@ namespace Hecton8.Core
         private const int AupDriftWindowFrames = 1000;
         private const int HeaderSizeBytes = 128;
         private const int SegmentHeaderSizeBytes = 64;
-        private const int ReplayVersion = 2;
+        private const int ReplayVersion = 3;
         private const long ReplayFileCapacityBytes = 499L * 1024L * 1024L;
         private const ulong ReplayMagic = 0x48385245504C4159ul;
         private const ulong FnvOffset = 14695981039346656037ul;
@@ -1793,7 +1805,7 @@ namespace Hecton8.Core
             array = default;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         private struct ReplaySourceHash
         {
             public uint OwnerHash;
@@ -1802,7 +1814,7 @@ namespace Hecton8.Core
             public ulong Hash;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential, Size = 48)]
         private struct AupDriftState
         {
             public uint SubjectHash;

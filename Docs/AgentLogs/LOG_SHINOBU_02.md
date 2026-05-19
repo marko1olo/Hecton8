@@ -763,6 +763,314 @@ Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE / STATIC_SOURCE_CLAS
   <compile_guard status="PENDING">Core build deferred by active compiler/CPU guard.</compile_guard>
 </SELF_AUDIT_UPDATE>
 
+<SELF_AUDIT_UPDATE current="24" date="2026-05-19" status="PENDING_VERIFICATION">
+  <summary>Static documentation/source actuality pass. No dotnet, Unity, profiler, GCMonitor, IL2CPP, or runtime frame-time proof was run in this pass.</summary>
+  <what_was_wrong>
+    Active docs still contained stale or over-strong evidence claims after Current22/23 source truth. Specific rot: ObjectBatch and SaveDelta docs still implied Pack=1 where current source no longer uses it; ContentAssetBinaryRecord wording looked like a generic runtime/native DTO; binary/content ledgers treated static source wiring or authored runtime intent as if runtime proof existed.
+  </what_was_wrong>
+  <what_was_done>
+    Patched active root/architecture/system/quality docs, binary/save ledgers, project content ledger, and the ContentAssetHashMap XML remark. Promoted only artifact-backed Current21 audit facts and Current22/23 source-only facts. Preserved Current22 compile/audit/H-Phi as pending.
+  </what_was_done>
+  <files_touched>
+    <file>Assets/_Project/Scripts/Core/Content/ContentAssetHashMap.cs</file>
+    <file>Docs/README.md</file>
+    <file>Docs/ARCHITECTURE/README.md</file>
+    <file>Docs/SYSTEMS_CONTRACTS.md</file>
+    <file>Docs/QUALITY_GATES.md</file>
+    <file>Docs/PROJECT_STATE_STATIC_XRAY.md</file>
+    <file>Docs/Design/Save_Binary_Header.md</file>
+    <file>Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md</file>
+    <file>Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md</file>
+    <file>Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md</file>
+    <file>Docs/ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md</file>
+    <file>Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md</file>
+    <file>Docs/ARCHITECTURE/SAVE_V8_BINARY_SPEC.md</file>
+    <file>Docs/ARCHITECTURE/SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md</file>
+    <file>Docs/ARCHITECTURE/SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md</file>
+    <file>Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md</file>
+    <file>Docs/Tasks/Status_SHINOBU_02.md</file>
+    <file>Docs/AgentLogs/Rationale_SHINOBU_02.md</file>
+  </files_touched>
+  <task_matrix>
+    <task id="01" status="UNCHANGED_PASS">Legacy binary event fallback remains documented from prior source proof.</task>
+    <task id="02" status="UNCHANGED_PARTIAL">Vault snapshot plus NativeQueue ingress caveat unchanged; no new queue ownership claim.</task>
+    <task id="03" status="PASS_STATIC_DOC_CURRENT24">Docs now say scoped Core SignalBus exact Pack=1 is zero; broader Core exact Pack=1 is three source rows.</task>
+    <task id="04" status="UNCHANGED_PASS">Queue cleanup unchanged.</task>
+    <task id="05" status="UNCHANGED_PASS">Fallback/mock lanes unchanged.</task>
+    <task id="06" status="UNCHANGED_PASS">ParallelWriter surface unchanged.</task>
+    <task id="07" status="UNCHANGED_PASS">Frame snapshot dispatch unchanged.</task>
+    <task id="08" status="UNCHANGED_PASS">Load-shedding status unchanged.</task>
+    <task id="09" status="UNCHANGED_PASS">Aggregation kernel unchanged.</task>
+    <task id="10" status="UNCHANGED_PASS">ReadOnlySpan consumer unchanged.</task>
+    <task id="11" status="UNCHANGED_PASS">Fatal interrupt bypass unchanged.</task>
+    <task id="12" status="UNCHANGED_PASS">Ghost filtering unchanged.</task>
+    <task id="13" status="UNCHANGED_PASS">NaN payload sanitation unchanged.</task>
+    <task id="14" status="UNCHANGED_PARTIAL">Compile-wall source status unchanged; Current22 build/audit rerun still pending.</task>
+    <task id="15" status="UNCHANGED_STATIC_PASS">IL2CPP preserve source unchanged; no player proof.</task>
+    <task id="16" status="UNCHANGED_STATIC_PASS">300-frame telemetry status unchanged; docs keep Blackbox pending for runtime proof.</task>
+    <task id="17" status="UNCHANGED_STATIC_PASS">Managed string signal payload gate unchanged.</task>
+    <task id="18" status="UNCHANGED_STATIC_PASS">Editor dashboard unchanged.</task>
+    <task id="19" status="UNCHANGED_STATIC_PASS">Live injection facade unchanged.</task>
+    <task id="20" status="UNCHANGED_STATIC_PASS">CSV priority hot-swap unchanged.</task>
+  </task_matrix>
+  <struct_layout_verification>
+    <primary_dto name="ContentAssetBinaryRecord" classification="COLD_FILE_EXPORT_ONLY" size="32" runtime_hot_path="FORBIDDEN">
+      <field offset="0" size="4">Hash:uint</field>
+      <field offset="4" size="8">EstimatedVramBytes:long - intentionally unaligned because this is packed file/export DTO only</field>
+      <field offset="12" size="4">DependencyOffset:uint</field>
+      <field offset="16" size="2">DependencyCount:ushort</field>
+      <field offset="18" size="1">Kind:ContentAssetKind</field>
+      <field offset="19" size="1">Tier:ContentTier</field>
+      <field offset="20" size="1">BiomeId:byte</field>
+      <field offset="21" size="1">LodLevel:byte</field>
+      <field offset="22" size="1">Flags:byte</field>
+      <field offset="23" size="1">Reserved0:byte</field>
+      <field offset="24" size="4">Reserved1:uint</field>
+      <field offset="28" size="4">tail padding from StructLayout Size=32</field>
+    </primary_dto>
+    <runtime_rule>If this record enters NativeArray/Burst/SignalBus/telemetry/GPU runtime storage, split schema into packed file record plus aligned runtime mirror before use.</runtime_rule>
+  </struct_layout_verification>
+  <hphi_status>
+    Artifact-backed Current21: SignalCritical files=7 shaders=62 errors=0 warnings=0 infos=10; Full files=1761 shaders=62 errors=0 warnings=432 infos=454 confirmed/probable=0 Pack1Layouts=230; H-Phi trend artifacts=131 series=393. Current22 source-only Core exact Pack=1 rows are three, but no fresh H-Phi/audit artifact exists yet. Duplicate signal-name debt remains 10 in current21 trend against MaxDuplicateSignalNames=0.
+  </hphi_status>
+  <dear_lie>
+    No new simulation was added. Binary ledger wording now correctly describes Biolum as a smoothed triangle/hash waveform and squared-distance presentation wavefront/falloff fake, while preserving the truth that damage-signal radius still has a cold/control-path sqrt from damage magnitude. Big-O claim remains source-level only, not profiled.
+  </dear_lie>
+  <blackbox>
+    No blackbox implementation changed in Current24. Prior 300-frame rings remain static-source documented; no dump/profiler/runtime crash proof was generated in this pass.
+  </blackbox>
+  <compile_guard>
+    Dotnet build/audit was intentionally not launched in Current24. Last known Current23 guard was saturated at 100 percent CPU with no compiler processes; launching build would violate the AGENTS hardware guard.
+  </compile_guard>
+  <microseconds_saved>0 measured us. This pass removed stale evidence debt, not runtime work. Any performance claim beyond prior static layout risk reduction is prohibited.</microseconds_saved>
+</SELF_AUDIT_UPDATE>
+
+## 2026-05-19 - SHINOBU_02 Current23 Guarded Verification Append
+
+What was wrong:
+- Current22 still lacked Core compile/audit/H-Phi verification because CPU guard blocked dotnet at 95-100%.
+
+What was done:
+- Re-read active SHINOBU status/rationale plus current project-state/binary ledgers.
+- Rechecked scoped Core/SignalBus exact `Pack = 1`: zero hits in SHINOBU signal surfaces.
+- Rechecked broader Core exact `Pack = 1`: three deliberate/deferred hits remain.
+- Rechecked compiler process surface: no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`.
+- Rechecked system load: CPU stayed at 100%, driven by non-compiler processes, so no build/audit was launched.
+
+Cinematic Cheats used:
+- None. Verification-only pass.
+
+Exact microseconds saved:
+- `0 us measured`. No runtime path was executed.
+
+<SELF_AUDIT_UPDATE current="23">
+  <task id="03" status="PASS_STATIC_RECONFIRMED">Scoped Core/SignalBus Pack=1 remains zero; broader Core remains three deliberate/deferred rows.</task>
+  <task id="14" status="PASS_STATIC_RECONFIRMED">No new assembly dependency was added; no build launched while CPU saturated.</task>
+  <task id="16" status="PENDING_RUNTIME">Blackbox source layout remains patched; compile/runtime proof pending.</task>
+  <arm64 status="PASS_STATIC_RECONFIRMED">Current22 DTO byte layouts unchanged; no new packed SHINOBU signal surface found.</arm64>
+  <zero_gc status="PASS_STATIC_RECONFIRMED">No code path changed in Current23; no allocation source was added.</zero_gc>
+  <compile_guard status="BLOCKED">Guard sampled CPU at 100%; no compiler processes were active, but build/audit were still forbidden by AGENTS.md.</compile_guard>
+</SELF_AUDIT_UPDATE>
+
+## 2026-05-19 - SHINOBU_02 Current22 Forensic Append
+
+What was wrong:
+- Core still had nine exact `Pack = 1` markers after Current21. Six were SHINOBU-safe after inspection and should not stay packed on ARM64-facing DTOs.
+- `DodReplayJobProfileRecord` and `DodReplayVramAllocationRecord` were fixed-size 32-byte sidecars but placed 8-byte values after 4/2-byte fields under packed layout.
+- `DodReplayBurstPanicRecord` was a raw sidecar header with mixed 32/16/64-bit fields; changing offsets without versioning would silently confuse replay readers.
+- `GasBaseHibernationSnapshot` used bool auto-properties under `Pack = 1`, producing opaque bool ABI and hidden property backing layout.
+- `EcosystemSectorPopulationSample` used a raw bool in a packed public DTO.
+
+What was done:
+- `MacroDatabaseTelemetryEntry`: removed `Pack = 1`, set sequential size 72, added explicit byte/ushort/uint padding.
+- `DodReplayJobProfileRecord`: removed `Pack = 1`, kept size 32, aligned `Reserved` at byte 24.
+- `DodReplayBurstPanicRecord`: changed to explicit size 32 and raised replay sidecar version `2 -> 3`.
+- `DodReplayVramAllocationRecord`: removed `Pack = 1`, kept size 32, aligned `Bytes` at byte 16.
+- `GasBaseHibernationSnapshot`: removed `Pack = 1`, set size 88, replaced public auto-property storage with ordered private readonly fields and byte flags while preserving public getter names.
+- `EcosystemSectorPopulationSample`: removed `Pack = 1`, set size 48, pinned `ApexInSector` with `UnmanagedType.I1`, added explicit padding.
+
+Cinematic Cheats used:
+- None added. This pass is Core ABI hygiene. The Dear Lie boundary is unchanged: no new physical simulation, no raycast/mesh/object-instantiation path.
+
+Exact microseconds saved:
+- `0 us measured`. No runtime benchmark was run. Expected benefit is risk reduction: fewer unaligned reads on ARM64 and fewer static Pack=1 audit rows.
+
+Verification:
+- Exact Core `Pack = 1` count: `3`.
+- Remaining exact packed surfaces: `ContentAssetBinaryRecord`, `GerstnerWaveComponent`, `WeatherRuntimeSnapshot`.
+- `ContentAssetBinaryRecord` remains packed intentionally because validators assert a 32-byte binary content record.
+- `GerstnerWaveComponent` and `WeatherRuntimeSnapshot` remain deferred to Fluid/Graphics ownership because changing their stride can break GPU/weather/Vault consumers.
+- Sidecar `SHINOBU_02_SIDE_CONTENT_RECORD` confirmed no active `NativeArray<ContentAssetBinaryRecord>` or raw reader/writer; keeping it packed is only acceptable as a cold file/export DTO.
+- Sidecar `SHINOBU_02_SIDE_GERSTNER_WEATHER` confirmed a proper wave fix requires `GerstnerWaveComponent` 28 -> 32, `WeatherRuntimeSnapshot` 140 -> 152, BinaryLayoutManifest sentinels, Fluid/Graphics compile, and a separate non-Core `HectonFluidEngine.WaveQueryJob` pack cleanup.
+- `git diff --check` on the three Current22 touched source files: exit 0, line-ending warnings only.
+- Core build/audit were blocked by AGENTS hardware guard: CPU avg `95.5`, then `100`, then final guarded retry `100`.
+
+<SELF_AUDIT_UPDATE current="22">
+  <task id="01" status="UNCHANGED">Legacy binary event fallback unchanged.</task>
+  <task id="02" status="UNCHANGED">SignalBus Vault snapshot caveat unchanged; no new private native array was added.</task>
+  <task id="03" status="PASS_IMPROVED">Six more Core packed DTOs removed; exact Core Pack=1 count is now three deliberate/deferred surfaces.</task>
+  <task id="04" status="UNCHANGED">Queue cleanup unchanged.</task>
+  <task id="05" status="UNCHANGED">Fallback/mock lanes unchanged.</task>
+  <task id="06" status="UNCHANGED">ParallelWriter API unchanged.</task>
+  <task id="07" status="UNCHANGED">Frame snapshot dispatch unchanged.</task>
+  <task id="08" status="UNCHANGED">Load shedding unchanged.</task>
+  <task id="09" status="UNCHANGED">Aggregation kernel unchanged.</task>
+  <task id="10" status="UNCHANGED">ReadOnlySpan consumer API unchanged.</task>
+  <task id="11" status="UNCHANGED">Fatal interrupt bypass unchanged.</task>
+  <task id="12" status="UNCHANGED">Ghost filtering unchanged.</task>
+  <task id="13" status="UNCHANGED">NaN payload sanitation unchanged; no math path was added.</task>
+  <task id="14" status="UNCHANGED">No new sibling runtime assembly dependency was added.</task>
+  <task id="15" status="UNCHANGED">No IL2CPP player proof; stripping config unchanged.</task>
+  <task id="16" status="PASS_STATIC">Macro blackbox telemetry entry is 72-byte aligned and still fixed-size; runtime dump proof pending.</task>
+  <task id="17" status="UNCHANGED">No managed string payload or logging path added.</task>
+  <task id="18" status="UNCHANGED">Editor dashboard unchanged.</task>
+  <task id="19" status="UNCHANGED">Live injection facade unchanged.</task>
+  <task id="20" status="UNCHANGED">CSV hot swap unchanged.</task>
+  <arm64 status="PASS_STATIC">Current22 primary DTOs are 32/48/72/88 byte multiples of 8; 64-bit fields are 8-byte aligned by source layout.</arm64>
+  <zero_gc status="PASS_STATIC">No Tick code, LINQ, foreach hot loop, closure, boxing, or string allocation was added.</zero_gc>
+  <aup status="PASS_STATIC">AUP storage remains 64-bit in snapshots; no absolute AUP-to-float cast path was introduced.</aup>
+  <dear_lie status="UNCHANGED">No physical calculation was simulated; no heavy CPU realism path was added.</dear_lie>
+  <dependency status="PASS_STATIC">No new direct sibling runtime dependency or asmdef reference was added.</dependency>
+  <blackbox status="PASS_STATIC">Macro blackbox entry is fixed-size and aligned; 300-frame ring runtime dump proof remains pending.</blackbox>
+  <compile_guard status="BLOCKED">Core build/audit not run because CPU guard stayed above 50%.</compile_guard>
+</SELF_AUDIT_UPDATE>
+
+---
+
+## 2026-05-19 Current21 Core Pack1 Sidecar Sweep
+
+Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE_CLASSIFIED / CLI_COMPILE / STATIC_SOURCE_HISTORY. Unity import, Unity Console, Play Mode, Profiler, GCMonitor, IL2CPP/ARM64 player build, and runtime frame-time proof are still not executed.
+
+### What Was Wrong
+
+- Current20 still had 43 exact Core `Pack = 1` markers.
+- Several were no longer defensible runtime/contract layouts after AUP/CurrentMeta cleanup, but the same list also contained real file/replay/dump/owner ABI surfaces where blind removal would corrupt data.
+
+### What Was Done
+
+- Used two read-only sidecars for classification, then patched only 85%+ candidates.
+- Removed exact `Pack = 1` from:
+  - `CompassStateDTO`, `InertialNavigationSnapshot`.
+  - `PrologueOrbitalSnapshot`, `PrologueAtmosphericReentrySnapshot`, `PrologueCompleteSnapshot`.
+  - H8 bridge records in `H8BridgeContracts.cs`, preserving declared 32/40/48/64 byte sizes.
+  - Safe macro database contracts: config, payload handle, native cache stats, stats, compaction snapshot, and sector hydrated signal.
+  - Safe DodReplay records: AUP drift, entity ghost, logistics flow, atmosphere cell, physics smoke, private source hash, private AUP drift state.
+  - Global registry snapshots/packets: `OrbitalDirectorSnapshot`, `DamagePacket`, `VRSomaticChestSocketPose`, `VRSomaticCollisionState`, `VRSomaticSnapshot`, `GasRoomSnapshot`, `GasDynamicsNativeMemoryAudit`, `HectonHardwareProfile`, `FaunaGenomeMutationRequest`.
+- Reverted the local `GerstnerWaveComponent`/`WeatherRuntimeSnapshot` stride patch after sidecar classification marked that as Fluid/Graphics owner work.
+
+### Struct Layout Evidence
+
+- `DamagePacket`: total 48. Offsets: 0 `Channel`, 1-3 pad, 4 `PreviousValue`, 8 `NextValue`, 12 `Magnitude`, 16 `LocalPoint`, 28 `DamageType`, 32 `IntegrityDelta`, 33-35 pad, 36 `Depth`, 40 `SourceId`, 42 `TraumaLevel`, 43-47 pad.
+- `VRSomaticCollisionState`: total 96. Offsets: 0-3 contact flags/reserved, 4-7 pad, 8 `ContactAup`, 56 `RuntimePoint`, 68 `RuntimeNormal`, 80 `DistanceMeters`, 84 `Intensity01`, 88 `ImpactSpeedMetersPerSecond`, 92-95 pad.
+- `VRSomaticSnapshot`: total 120. Offsets: 0-3 active flags/reserved, 4-7 pad, 8 `HeadAup`, 56 `HeadRuntimePosition`, 68 `HeadRuntimeRotation`, 84 `VisorHudWorldRotation`, 100/104/108/112/116 scalar state.
+- `FaunaGenomeMutationRequest`: total 56. Offsets: 0 `RuntimePosition`, 12-15 pad, 16 `Genome`, 24 `StableEntityHash`, 28 `SpeciesId`, 32 `RollIndex`, 36 `Slot`, 38 `Flags`, 39 `ResultFlags`, 40 `RadiationRads`, 44 `Toxicity01`, 48 `BrineDepth01`, 52-55 pad.
+- `MacroDatabaseStats`: total 80. Five `long` lanes 0-39, seven `int` lanes 40-67, `FrameIndex` 68, byte flags 72-75, pad 76-79.
+- Core exact `Pack = 1` count after patch: 9. Deferred: `ContentAssetBinaryRecord`, raw replay ABI records, `MacroDatabaseTelemetryEntry`, `GerstnerWaveComponent`, `WeatherRuntimeSnapshot`, `GasBaseHibernationSnapshot`, `EcosystemSectorPopulationSample`.
+
+### Verification
+
+- `git diff --check` on Current21 source files: exit 0; line-ending warnings only.
+- Guard before Core build: no compiler processes, CPU avg `21.1`.
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies -v:minimal /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1`: 0 errors, 8 known CS0649 warnings in `GlobalPhysicsStateManager.PhysicsDistanceCullingJob`.
+- SignalCritical current21 audit: files 7, shaders 62, errors 0, warnings 0, infos 10, confirmedErrors 0.
+- Full current21 audit: files 1761, shaders 62, errors 0, warnings 432, infos 454, confirmedErrors 0.
+- Warning delta current20 -> current21: `457 -> 432` (-25). Pack=1 layout count current20 -> current21: `264 -> 230`.
+- H-Phi trend current21: 131 artifacts, 393 metric series.
+
+### Microseconds Saved
+
+- Measured saved time: `0 us`.
+- Runtime path measured: no.
+- Expected value is reduced ARM64 unaligned-read risk and smaller static Pack=1 review debt. No frame-time claim is made.
+
+<SELF_AUDIT_UPDATE current="21">
+  <task id="01" status="UNCHANGED">Legacy binary event audit unchanged.</task>
+  <task id="02" status="UNCHANGED">SignalBus frame snapshots remain Vault-backed; producer NativeQueue caveat remains.</task>
+  <task id="03" status="PASS_IMPROVED">Core exact Pack=1 count reduced to 9; SignalCritical direct/transitive Pack=1 remains zero.</task>
+  <task id="04" status="UNCHANGED">Queue cleanup unchanged.</task>
+  <task id="05" status="UNCHANGED">Mock/fallback lanes retained.</task>
+  <task id="06" status="UNCHANGED">ParallelWriter surfaces unchanged.</task>
+  <task id="07" status="UNCHANGED">Frame snapshot dispatch unchanged.</task>
+  <task id="08" status="UNCHANGED">Load shedding unchanged.</task>
+  <task id="09" status="UNCHANGED">Aggregation kernel unchanged.</task>
+  <task id="10" status="UNCHANGED">ReadOnlySpan consumer API unchanged.</task>
+  <task id="11" status="UNCHANGED">Fatal interrupt bypass unchanged.</task>
+  <task id="12" status="UNCHANGED">Ghost filtering unchanged.</task>
+  <task id="13" status="UNCHANGED">NaN payload sanitation unchanged.</task>
+  <task id="14" status="PASS">No sibling runtime assembly reference was added; Core compile stayed green.</task>
+  <task id="15" status="UNCHANGED">IL2CPP stripping protection unchanged; no player build proof.</task>
+  <task id="16" status="UNCHANGED">Blackbox ring behavior unchanged; audit hard errors remain zero.</task>
+  <task id="17" status="UNCHANGED">Managed string signal payload hard gate remains zero in SignalCritical.</task>
+  <task id="18" status="UNCHANGED">Editor dashboard unchanged.</task>
+  <task id="19" status="UNCHANGED">Live signal injection facade unchanged.</task>
+  <task id="20" status="UNCHANGED">CSV priority hot swap unchanged.</task>
+  <arm64 status="PASS_STATIC">Current21 DTOs are explicit 16/24/32/40/48/56/64/80/96/120/176 byte layouts or preserved safe sizes; unsafe owner ABI surfaces remain deferred.</arm64>
+  <zero_gc status="PASS_STATIC">Layout-only patch; no Tick allocation, LINQ, foreach hot-loop, closure, boxing, or string formatting added.</zero_gc>
+  <aup status="PASS_STATIC">AUP-bearing VR snapshots now align AUP fields at offset 8 or 0; no absolute AUP-to-float path introduced.</aup>
+  <dear_lie status="UNCHANGED">No new physics simulation added; this pass spends performance budget on removing alignment risk, not visual features.</dear_lie>
+  <hphi status="IMPROVED_NOT_COMPLETE">Full audit warnings dropped to 432; remaining non-vault and owner Pack=1 warnings are still review debt.</hphi>
+  <blackbox status="UNCHANGED">No 300-frame ring removed; raw dump records that need owner migration were deferred.</blackbox>
+  <compile_guard status="PASS">Core build and audits ran only after CPU/compiler guard opened.</compile_guard>
+</SELF_AUDIT_UPDATE>
+
+---
+
+## 2026-05-19 Current20 Safe Core Pack1 Runtime/Contract Cleanup
+
+Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE / CLI_COMPILE / STATIC_SOURCE_CLASSIFIED / STATIC_SOURCE_HISTORY. Unity import, Play Mode, Profiler, GCMonitor, IL2CPP/ARM64 player build, and runtime frame-time proof are still not executed for this Current20 source patch.
+
+### What Was Wrong
+
+- Current19 had 0 audit hard errors, but Core still carried exact `Pack = 1` markers on safe local runtime/contract surfaces mixed among real ABI-risk records.
+- `SplineDescriptor` was an internal visual spline descriptor stored in `NativeArray<SplineDescriptor>` with a packed 61-byte payload shape. That is not acceptable for ARM64 runtime memory.
+- `BrineLayerSample` and `BatteryRuntimeSnapshot` were small public Core contracts with no size sentinels or binary writers found, but still used forbidden packed layout.
+- `MacroDatabaseSignalBridge` was an empty readonly bridge struct carrying a meaningless packed layout attribute.
+
+### What Was Done
+
+- `SplineDescriptor`: removed `Pack = 1`, set sequential `Size = 64`, added three private byte pads.
+- `BrineLayerSample`: removed `Pack = 1`, set sequential `Size = 32`, added private `uint _pad0`.
+- `BatteryRuntimeSnapshot`: removed `Pack = 1`, set sequential `Size = 16`, marshalled `EmergencyReserveActive` as `UnmanagedType.I1`, added three private byte pads.
+- `MacroDatabaseSignalBridge`: removed `System.Runtime.InteropServices` import and the packed layout attribute. No method or interface changed.
+
+### Struct Layout Evidence
+
+- `SplineDescriptor` total 64 bytes: 0-11 `Start`; 12-23 `End`; 24-35 `StartForward`; 36-47 `EndForward`; 48-51 `Radius`; 52-55 `RuptureStartTimeSeconds`; 56-59 `FlowScalar`; 60 `Flags`; 61-63 `_pad0.._pad2`.
+- `BrineLayerSample` total 32 bytes: 0-7 `CartographySector`; 8-11 `AbsoluteHeightY`; 12-15 `RuntimeHeightY`; 16-19 `DensityMultiplier`; 20-23 `Toxicity01`; 24 `Flags`; 25 `Reserved0`; 26-27 `SectorHash`; 28-31 `_pad0`.
+- `BatteryRuntimeSnapshot` total 16 bytes: 0-3 `TotalStoredEnergyWattSeconds`; 4-7 `TotalCapacityWattSeconds`; 8-11 `ChargeNormalized`; 12 `EmergencyReserveActive` (`UnmanagedType.I1`); 13-15 `_pad0.._pad2`.
+
+### Verification
+
+- STATIC_SOURCE: exact Pack=1 scan on the four touched files returned no hits.
+- STATIC_SOURCE: broader Core exact Pack=1 count is now 43. Remaining hits are deferred ABI-risk surfaces: bridge contracts, content binary records, replay records, macro database contracts, inertial navigation contracts, prologue sequence contracts, and owner-domain global contract DTOs.
+- STATIC_SOURCE: `BatteryRuntimeSnapshot` usage scan found managed getter/read sites only; no `NativeArray`, `UnsafeUtility.SizeOf`, `Marshal.SizeOf`, or binary writer use was found.
+- STATIC_SOURCE: `BrineLayerSample` usage scan found named-field sampling/consumer paths only; no size sentinel or binary writer was found.
+- `git diff --check` on the four touched source files returned exit 0; line-ending warnings only.
+- PROCESS_GUARD: Core build and audit refresh were initially blocked because CPU samples were `68.1, 69.7, 71, 70.9, 52.9`, then `54.8, 34.6, 48.4, 60.3, 51.7`.
+- CLI_COMPILE: guard later opened with no compiler processes and CPU samples `35.9, 36.1, 27.3, 31.8, 35.5`; `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies -v:minimal /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1` -> 0 errors, 8 known CS0649 warnings.
+- STATIC_SOURCE_CLASSIFIED: SignalCritical current20 audit -> files 7, shaders 62, errors 0, warnings 0, infos 10, confirmedErrors 0.
+- STATIC_SOURCE_CLASSIFIED: Full current20 audit -> files 1761, shaders 62, errors 0, warnings 457, infos 463, confirmedErrors 0.
+- STATIC_SOURCE_HISTORY: H-Phi trend current20 -> 129 artifacts, 393 metric series.
+
+### Microseconds Saved
+
+- Measured saved time: `0 us`.
+- Runtime path measured: no.
+- Expected value is lower ARM64 misalignment risk and a tighter static warning surface, not a claimed frame-time win.
+
+<SELF_AUDIT_UPDATE current="20">
+  <task id="03" status="PASS_STATIC_IMPROVED">Four additional Core runtime/contract surfaces no longer use Pack=1. SignalCritical status still needs fresh audit rerun.</task>
+  <task id="14" status="UNCHANGED">No new sibling runtime assembly reference added. Empty bridge struct kept contract-facing.</task>
+  <task id="16" status="UNCHANGED">No blackbox ring topology changed.</task>
+  <arm64 status="PASS_STATIC_AUDIT_PENDING">SplineDescriptor is 64 bytes; BrineLayerSample is 32 bytes; BatteryRuntimeSnapshot is 16 bytes; touched-file exact Pack=1 hits are zero.</arm64>
+  <zero_gc status="PASS_STATIC">Layout-only patch; no Tick, allocation, LINQ, closure, boxing, or string formatting introduced.</zero_gc>
+  <aup status="UNCHANGED">No AUP math path changed. BrineLayerSample continues to carry sector/height data only.</aup>
+  <dear_lie status="UNCHANGED">Spline rendering remains a visual descriptor path, not a physical pipe simulation expansion.</dear_lie>
+  <hphi status="UNCHANGED">No persistent native allocation ownership changed; existing DataVault and registered-non-vault debts remain.</hphi>
+  <blackbox status="UNCHANGED">No telemetry ring code changed in this pass.</blackbox>
+  <compile_guard status="PASS_CLI">Core build and audit rerun executed after CPU guard opened; Core build had 0 errors and 8 known CS0649 warnings.</compile_guard>
+</SELF_AUDIT_UPDATE>
+
 ---
 
 ## 2026-05-19 Current17 Core Layout Warning Prune + Current19 Classifier Root-Owner Patch
@@ -1218,4 +1526,13 @@ Status: PENDING VERIFICATION. Evidence class: STATIC_SOURCE_CLASSIFIED / CLI_COM
   <hphi status="IMPROVED_NOT_COMPLETE">Hard unowned telemetry rings are now Sentinel-tracked; 55 registered-non-vault warnings remain as explicit Vault migration debt.</hphi>
   <blackbox status="PASS_STATIC">The five 300-frame blackbox rings are still active and now Sentinel-registered.</blackbox>
   <compile_guard status="PASS">Core build green under CPU/process guard; 0 errors, 8 known warnings.</compile_guard>
+</SELF_AUDIT_UPDATE>
+
+<SELF_AUDIT_UPDATE current="24-tail" date="2026-05-19" status="PENDING_VERIFICATION">
+  <purpose>Bottom-of-file authority marker. The full Current24 forensic block was appended earlier in this file after an older self-audit block; this tail marker prevents tail readers from treating Current16 as latest.</purpose>
+  <what_was_wrong>Docs and source comments overstated stale or static-only evidence: object batches and save records no longer use Pack=1 where old docs said they did; ContentAssetBinaryRecord was described too broadly; binary/content ledgers treated static paths or authored intent as runtime proof.</what_was_wrong>
+  <what_was_done>Patched active docs and one source remark. Current docs now separate artifact-backed Current21 audit facts, source-only Current22/23 layout facts, and pending runtime proof.</what_was_done>
+  <evidence>git diff --check on touched files returned no whitespace errors, only CRLF warnings. Scoped Core SignalBus exact Pack=1 scan returned no hits. Broader Core exact Pack=1 scan returned only ContentAssetBinaryRecord, GerstnerWaveComponent, and WeatherRuntimeSnapshot.</evidence>
+  <pending>Current22 Core compile, SignalCritical re-audit, Full re-audit, H-Phi trend refresh, Unity import, Unity Console, Play Mode, profiler, GCMonitor, IL2CPP/ARM64 player build, and runtime frame-time proof remain pending.</pending>
+  <microseconds_saved>0 measured us. Documentation/source-boundary correction only.</microseconds_saved>
 </SELF_AUDIT_UPDATE>
