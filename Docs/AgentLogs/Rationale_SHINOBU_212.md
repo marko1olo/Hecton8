@@ -202,3 +202,11 @@ Solution: Add finite fallback guards at every SHINOBU-owned boundary: DTO creati
 Rejected Alternatives: Trusting imported prefab bounds, assuming replacement shaders cannot output NaN, or relying on `saturate` to clean non-finite values after the fact. `saturate(NaN)` is not a reliable architectural boundary, and late clipping does not protect `SV_Depth` or interpolated lighting.
 Scalability potential: Low devices get the same one-view sample-collapse path but now with deterministic finite fallbacks under malformed assets or thermal-quality input. Middle/High/Ultra keep two-view interpolation and richer atlas data without risking NaN contamination from a single bad tile.
 Hardware Impact: Adds a few scalar/vector finite checks in shader and editor compute paths. The cost is bounded and cheaper than a poisoned depth/color path causing overdraw artifacts or GPU debugging stalls; exact runtime microseconds remain pending profiler.
+
+## Decision 25 - Reversed-Z Depth Bias Direction
+
+Problem: The active and legacy impostor shaders finite-guarded `SV_Depth`, but still subtracted `depthOffset` when `UNITY_REVERSED_Z` was defined. Local render mandate Section10 forbids subtracting reversed-Z bias because it moves depth in the wrong direction for the project depth contract.
+Solution: Change both `Hecton_HLOD_Impostor.shader` and `Hecton_OctahedralImpostor.shader` to add `depthOffset` in the reversed-Z branch. The impostor still decodes captured depth from atlas alpha, but the bias sign now matches the engine-wide reversed-Z rule.
+Rejected Alternatives: Keeping the old sign because the value was finite, removing `SV_Depth`, or adding a runtime physics/depth proxy mesh. Those options either preserve incorrect occlusion/fog ordering or reintroduce geometry cost that SHINOBU exists to remove.
+Scalability potential: Low keeps the same one-view sample collapse and now gets stable depth ordering on cheap reversed-Z devices. Middle/High/Ultra keep two-view parallax and richer atlases without depth-bias sign drift against fog, DoF, and occlusion.
+Hardware Impact: No intentional ALU increase. This is a sign correction on an existing scalar path; the saved cost remains the Dear Lie geometry collapse to one quad and low-quality one-view sampling. Exact microseconds remain pending profiler.

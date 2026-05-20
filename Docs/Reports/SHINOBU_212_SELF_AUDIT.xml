@@ -129,4 +129,11 @@
     <DEAR_LIE status="UNCHANGED">No real-geometry simulation or runtime recapture was added; invalid capture pixels fall back to empty occupancy or stable normal defaults.</DEAR_LIE>
     <COMPILE_GATE status="DEFERRED_BY_CPU">Static checks were run only. Unity compile/import remains blocked by the >50 percent CPU rule.</COMPILE_GATE>
   </LOOP_11_NAN_SHADER_PAYLOAD_VACCINATION>
+
+  <LOOP_12_REVERSED_Z_DEPTH_BIAS evidence="STATIC_SOURCE">
+    <MANDATE status="READ">REND_URP_Graphics_HotPath_Optimization_HLOD Section10 requires adding, not subtracting, bias under reversed-Z.</MANDATE>
+    <SHADER_DEPTH status="PATCHED">Hecton_HLOD_Impostor.shader and Hecton_OctahedralImpostor.shader now add depthOffset when UNITY_REVERSED_Z is defined.</SHADER_DEPTH>
+    <DEAR_LIE status="PRESERVED">Captured depth alpha still drives SV_Depth on the card; no runtime depth proxy mesh or real-geometry recapture was introduced.</DEAR_LIE>
+    <STATIC_GATE status="PASS">Targeted scan finds deviceDepth + depthOffset in both reversed-Z branches and no deviceDepth - depthOffset in the active or legacy impostor shader.</STATIC_GATE>
+  </LOOP_12_REVERSED_Z_DEPTH_BIAS>
 </SELF_AUDIT>

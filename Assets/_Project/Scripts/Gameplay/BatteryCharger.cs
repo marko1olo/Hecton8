@@ -472,6 +472,9 @@ namespace Hecton8.Gameplay
             // Initialize slot charge flags
             int slotCount = slots?.Length ?? 0;
             _slotChargedFlags = new bool[slotCount]; // COLD ALLOC: bool[slotCount] — track charged state — owner: BatteryCharger
+            _registeredLinkIndices = new int[slotCount]; // COLD ALLOC: int[slotCount] - SHINOBU_230 DTO link handles
+            for (int i = 0; i < _registeredLinkIndices.Length; i++)
+                _registeredLinkIndices[i] = -1;
         }
 
         private void OnEnable()
@@ -503,11 +506,7 @@ namespace Hecton8.Gameplay
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = RegisterLogisticsLinks();
         }
 
         private void TryUnregister()
@@ -515,7 +514,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            UnregisterLogisticsLinks();
             _registered = false;
         }
 

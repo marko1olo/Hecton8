@@ -825,7 +825,7 @@ namespace Hecton8.Habitat.Deformation.Editor
 
         private static unsafe void WriteUInt32Le(FileStream stream, uint value)
         {
-            uint littleEndian = BitConverter.IsLittleEndian ? value : math.reversebytes(value);
+            uint littleEndian = BitConverter.IsLittleEndian ? value : ReverseBytes32(value);
             byte* bytes = (byte*)&littleEndian;
             for (int i = 0; i < 4; i++)
                 stream.WriteByte(bytes[i]);
@@ -843,7 +843,16 @@ namespace Hecton8.Habitat.Deformation.Editor
         {
             uint lo = (uint)value;
             uint hi = (uint)(value >> 32);
-            return ((ulong)math.reversebytes(lo) << 32) | math.reversebytes(hi);
+            return ((ulong)ReverseBytes32(lo) << 32) | ReverseBytes32(hi);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ReverseBytes32(uint value)
+        {
+            return ((value & 0x000000FFu) << 24) |
+                ((value & 0x0000FF00u) << 8) |
+                ((value & 0x00FF0000u) >> 8) |
+                ((value & 0xFF000000u) >> 24);
         }
 
         private static string EscapeJson(string value)

@@ -711,7 +711,8 @@ namespace Hecton8.Physiology
             mockJob.MedicalBays = bays;
             mockJob.FallbackLifepodAUP = defaultTuning.FallbackLifepodAUP;
             mockJob.ValidationClearanceMeters = defaultTuning.ValidationClearanceMeters;
-            mockJob.Run(bays.Length); // COLD SYNC JOB: mock medical bay Vault rows are generated once before runtime scheduling.
+            for (int i = 0; i < bays.Length; i++)
+                mockJob.Execute(i);
 
             _defaultsInitialized = true;
         }

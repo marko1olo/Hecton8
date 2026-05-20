@@ -68,13 +68,13 @@ namespace Hecton8.Gameplay
         HostileDroneDetected = 15
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public readonly struct HectonSubmarineOsSnapshot
     {
-        private const byte LowPowerModeFlag = 1 << 0;
-        private const byte LifeSupportCriticalFlag = 1 << 1;
-        private const byte StationKeepingFlag = 1 << 2;
-        private const byte SubOsPoweredFlag = 1 << 3;
+        private const uint LowPowerModeFlag = 1u << 8;
+        private const uint LifeSupportCriticalFlag = 1u << 9;
+        private const uint StationKeepingFlag = 1u << 10;
+        private const uint SubOsPoweredFlag = 1u << 11;
 
         public HectonSubmarineOsSnapshot(
             SubsystemStatus subsystemStatus,
@@ -93,6 +93,7 @@ namespace Hecton8.Gameplay
             bool stationKeepingActive,
             bool subOsPowered)
         {
+            this = default;
             PowerNormalized = powerNormalized;
             OxygenNormalized = oxygenNormalized;
             CarbonDioxideNormalized = carbonDioxideNormalized;
@@ -104,34 +105,53 @@ namespace Hecton8.Gameplay
             VocalWarningFlags = vocalWarningFlags;
             SubsystemStatus = subsystemStatus;
             EmergencyLevel = emergencyLevel;
-            _stateFlags = BuildStateFlags(lowPowerModeActive, lifeSupportCriticalActive, stationKeepingActive, subOsPowered);
+            StatusFlags = BuildStatusFlags(subsystemStatus, lowPowerModeActive, lifeSupportCriticalActive, stationKeepingActive, subOsPowered);
         }
 
-        public readonly float PowerNormalized;
-        public readonly float OxygenNormalized;
-        public readonly float CarbonDioxideNormalized;
-        public readonly float MaxPressureKPa;
-        public readonly float SpeedKnots;
-        public readonly float EngineHeat01;
-        public readonly int SonarContactCount;
-        public readonly int NearestSonarContactMeters;
-        public readonly SubmarineVwsFlags VocalWarningFlags;
-        public readonly SubsystemStatus SubsystemStatus;
-        public readonly SubmarineEmergencyLevel EmergencyLevel;
-        private readonly byte _stateFlags;
+        [FieldOffset(0)] public readonly float PowerNormalized;
+        [FieldOffset(4)] public readonly float OxygenNormalized;
+        [FieldOffset(8)] public readonly float CarbonDioxideNormalized;
+        [FieldOffset(12)] public readonly float MaxPressureKPa;
+        [FieldOffset(16)] public readonly float SpeedKnots;
+        [FieldOffset(20)] public readonly float EngineHeat01;
+        [FieldOffset(24)] public readonly int SonarContactCount;
+        [FieldOffset(28)] public readonly int NearestSonarContactMeters;
+        [FieldOffset(32)] public readonly uint StatusFlags;
+        [FieldOffset(36)] public readonly SubmarineVwsFlags VocalWarningFlags;
+        [FieldOffset(38)] public readonly SubsystemStatus SubsystemStatus;
+        [FieldOffset(39)] public readonly SubmarineEmergencyLevel EmergencyLevel;
+        [FieldOffset(40)] private readonly ulong _pad0;
+        [FieldOffset(48)] private readonly ulong _pad1;
+        [FieldOffset(56)] private readonly ulong _pad2;
 
-        public bool LowPowerModeActive => (_stateFlags & LowPowerModeFlag) != 0;
-        public bool LifeSupportCriticalActive => (_stateFlags & LifeSupportCriticalFlag) != 0;
-        public bool StationKeepingActive => (_stateFlags & StationKeepingFlag) != 0;
-        public bool SubOsPowered => (_stateFlags & SubOsPoweredFlag) != 0;
+        public static bool HasLowPowerMode(uint statusFlags)
+        {
+            return (statusFlags & LowPowerModeFlag) != 0u;
+        }
 
-        private static byte BuildStateFlags(
+        public static bool HasLifeSupportCritical(uint statusFlags)
+        {
+            return (statusFlags & LifeSupportCriticalFlag) != 0u;
+        }
+
+        public static bool HasStationKeeping(uint statusFlags)
+        {
+            return (statusFlags & StationKeepingFlag) != 0u;
+        }
+
+        public static bool HasSubOsPowered(uint statusFlags)
+        {
+            return (statusFlags & SubOsPoweredFlag) != 0u;
+        }
+
+        private static uint BuildStatusFlags(
+            SubsystemStatus subsystemStatus,
             bool lowPowerModeActive,
             bool lifeSupportCriticalActive,
             bool stationKeepingActive,
             bool subOsPowered)
         {
-            byte flags = 0;
+            uint flags = (uint)subsystemStatus;
             if (lowPowerModeActive)
                 flags |= LowPowerModeFlag;
             if (lifeSupportCriticalActive)
@@ -145,17 +165,21 @@ namespace Hecton8.Gameplay
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public readonly struct HectonSubmarineOsLogRequest
     {
         public HectonSubmarineOsLogRequest(HectonSubmarineOsLogCode code, byte priority)
         {
+            this = default;
             Code = code;
             Priority = priority;
         }
 
-        public readonly HectonSubmarineOsLogCode Code;
-        public readonly byte Priority;
+        [FieldOffset(0)] public readonly HectonSubmarineOsLogCode Code;
+        [FieldOffset(1)] public readonly byte Priority;
+        [FieldOffset(2)] private readonly ushort _pad0;
+        [FieldOffset(4)] private readonly uint _pad1;
+        [FieldOffset(8)] private readonly ulong _pad2;
     }
 
     /// <summary>
@@ -170,24 +194,27 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Unmanaged submarine OS event payload drained by <see cref="SystemDispatcher"/> in LateUpdate.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SubmarineOsEventPayload
     {
-        public float PowerNormalized;
-        public float OxygenNormalized;
-        public float CarbonDioxideNormalized;
-        public float MaxPressureKPa;
-        public float SpeedKnots;
-        public float EngineHeat01;
-        public int SonarContactCount;
-        public int NearestSonarContactMeters;
-        public uint ModuleId;
-        public uint StatusBits;
-        public ushort EmergencyLevel;
-        public ushort EventType;
-        public ushort LogCode;
-        public ushort Priority;
-        public ushort VocalWarningFlags;
+        [FieldOffset(0)] public float PowerNormalized;
+        [FieldOffset(4)] public float OxygenNormalized;
+        [FieldOffset(8)] public float CarbonDioxideNormalized;
+        [FieldOffset(12)] public float MaxPressureKPa;
+        [FieldOffset(16)] public float SpeedKnots;
+        [FieldOffset(20)] public float EngineHeat01;
+        [FieldOffset(24)] public int SonarContactCount;
+        [FieldOffset(28)] public int NearestSonarContactMeters;
+        [FieldOffset(32)] public uint ModuleId;
+        [FieldOffset(36)] public uint StatusBits;
+        [FieldOffset(40)] public ushort EmergencyLevel;
+        [FieldOffset(42)] public ushort EventType;
+        [FieldOffset(44)] public ushort LogCode;
+        [FieldOffset(46)] public ushort Priority;
+        [FieldOffset(48)] public ushort VocalWarningFlags;
+        [FieldOffset(50)] private ushort _pad0;
+        [FieldOffset(52)] private uint _pad1;
+        [FieldOffset(56)] private ulong _pad2;
     }
 
     /// <summary>

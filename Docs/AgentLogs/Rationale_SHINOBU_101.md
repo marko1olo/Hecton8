@@ -477,3 +477,41 @@ Rejected Alternatives: Rerunning a known pre-SHINOBU abort was rejected by user 
 Scalability potential: No extra runtime tier change beyond continuous bootstrap hardware/quality weighting.
 
 Hardware Impact: Avoids local CPU/IO burn while the compile wall remains external.
+
+## Bootstrap Default And Dispatcher Hardware Cache R38
+
+Problem: R37 made `VRAMEnforcer` continuous, but `_hardwareBudgetWeight` still had a CLR default of `0f` before SubsystemRegistration or runtime init. Any non-playing editor/offline call to `ApplyBoidPopulationBudget()` could therefore scale requested boids by the minimum 0.4 factor even though no runtime hardware budget had been measured. `AssetLoadDispatcher.EvaluateUiMipBiasGate()` also queried `SystemInfo.graphicsMemorySize` in tick cadence while resolving the UI mip response.
+
+Solution: Initialize `_hardwareBudgetWeight` to `1f` and return the clamped authored boid count when `ApplyBoidPopulationBudget()` is invoked outside Play Mode before runtime budget initialization. Add `_graphicsBudgetBytes` to `AssetLoadDispatcher`, refresh it on `OnEnable()` and `Start()`, and use that cached byte value in the UI mip gate. The gate can refresh only when the cache is invalid, preserving fail-closed fallback behavior without a normal tick hardware query.
+
+Rejected Alternatives: Keeping the zero CLR default was rejected because it hides an editor/offline authoring clamp behind an uninitialized scalar. Querying `SystemInfo.graphicsMemorySize` every frame was rejected because hardware classification is cold state, not UI mip gate cadence state. Moving the entire UI gate into `VRAMPressureMonitor` was rejected because dispatcher still owns UI group classification and request context, while the monitor already owns the global mip write.
+
+Scalability potential: Low devices still resolve to lower boid/mip budgets after runtime initialization through the continuous hardware/quality curve. Middle devices keep interpolated scale. High/ultra editor/offline tooling no longer gets accidentally reduced before hardware sampling. UI mip gate behavior remains continuous because the cached graphics budget feeds the same pressure fraction and `GlobalQualityWeight` curve.
+
+Hardware Impact: Static estimate only. R38 removes one normal-cadence `SystemInfo.graphicsMemorySize` read from dispatcher UI mip evaluation and prevents pre-init editor boid underpopulation. Claimed measured savings: 0 microseconds because no Unity Profiler/GCMonitor proof is available behind the compile wall. Expected impact is reduced tick jitter and correct cold authoring behavior.
+
+## R38 Verification
+
+- `rg -n "private static float _hardwareBudgetWeight|!_initialized && !Application\\.isPlaying|ResolveHardwareBudgetWeight|ApplyBoidPopulationBudget" Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - expected initialized weight, non-playing guard, and continuous budget helpers only.
+- `rg -n "_graphicsBudgetBytes|RefreshGraphicsBudgetBytes|SystemInfo\\.graphicsMemorySize|ResolveGraphicsBudgetBytes" Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs`
+  - `SystemInfo.graphicsMemorySize` now appears only inside `RefreshGraphicsBudgetBytes()`.
+- `rg -n "IsLowEndHardware|LowVramGraphicsMemoryMbThreshold|LowVramDeviceThresholdMb|UiMipDowngradeThresholdBytes|UiMipRestoreThresholdBytes|DetectedGraphicsMemoryMb > 0 &&|\\? SharedMemory|if \\(!_lowVramBudgetActive\\)|NativeParallelHashMap|Allocator\\.Persistent|List<|Dictionary<|HashSet<|Queue<" Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - no results.
+- `rg -n "Addressables\\.Release\\(|Addressables\\.ReleaseInstance\\(" Assets/_Project/Scripts`
+  - `Addressables.Release(` remains only at `Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs:4332`.
+  - `Addressables.ReleaseInstance(` remains only at `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2275`.
+- `git diff --check -- Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - LF-to-CRLF warnings only.
+
+## Compile Boundary R38
+
+Problem: Full compile verification remains blocked by the known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` item in `Hecton8.Core.csproj`.
+
+Solution: No build launched in R38. Static verification only.
+
+Rejected Alternatives: Rerunning a known pre-SHINOBU abort was rejected by user command discipline and AGENTS build discipline.
+
+Scalability potential: No extra runtime tier change beyond cold-cache hygiene.
+
+Hardware Impact: Avoids local CPU/IO burn while the compile wall remains external.

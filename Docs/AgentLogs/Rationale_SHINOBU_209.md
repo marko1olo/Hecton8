@@ -303,3 +303,11 @@ Solution: Wrap the first observed-state publish in a narrow retry path. If `File
 Rejected Alternatives: A global named mutex was rejected because it would serialize unrelated artifact writers and create a new lock-order surface. Blind repeated retries were rejected because locked files should fail visibly instead of spinning.
 Scalability potential: Runtime behavior unchanged across Low/Middle/High/Ultra; editor output artifacts remain stable under concurrent scan/bake/report tools.
 Hardware Impact: Runtime 0 us. Editor normal path unchanged; race path adds one filesystem recheck and one retry.
+
+## 2026-05-20 Ultra-Think Polish Pass 21 Decisions
+
+Problem: `RecalculateDeformedNormalsJob.Angle` used `math.rsqrt(la * lb)` after clamping only with `math.max`. If a corrupt imported/deformed edge produced non-finite dot products, the angle weight could become non-finite and poison normal accumulation.
+Solution: Check `la` and `lb` for finiteness and minimum length before reciprocal square root. The helper now returns zero angle weight for non-finite, zero-length, or non-finite dot results.
+Rejected Alternatives: Relying exclusively on upstream vertex sanitization was rejected because normal recomputation is a last defensive wall before baked mesh serialization. Throwing from the job was rejected because bad triangles should be skipped/zero-weighted, not abort an entire batch.
+Scalability potential: Runtime behavior unchanged across Low/Middle/High/Ultra; higher-tier dense source meshes gain stronger corrupt-import tolerance without changing the O(1) runtime mesh swap.
+Hardware Impact: Runtime 0 us. Editor adds finite checks inside the normal bake job; this is cold-path correctness cost.

@@ -411,14 +411,14 @@ Scalability potential: Low quality still gets a short pulse after preview re-ent
 
 Hardware Impact: Seven scalar writes on preview clear only. No Burst candidate cost and no additional material updates until the preview draws again.
 
-## Decision 34 - ModuleTemplate Ghost Prefab Spawn Is Bypassed
+## Decision 34 - ModuleTemplate Preview Is Data-Only
 
 Problem: `PlayerBuilder.SpawnGhost()` still used `ObjectPoolManager.Spawn(activeBuildable.ghostPrefab)` whenever an authored ghost prefab existed. For buildables with `ModuleTemplate`, that preserved a preview-prefab hierarchy path even though SHINOBU socket truth already comes from template socket definitions and Vault `GhostPreviewDTO`.
 
-Solution: Route every `ModuleTemplate` buildable through `ConstructionRuntimeProxyFactory.TryAcquireGhostProxy()` and keep the `ghostPrefab` pool branch only for non-template buildables. The reusable proxy is a cold singleton presentation shell; active socket matching continues to read `BaseModuleTemplate.SocketDefinitions`, `GhostPreviewDTO`, and CSR lanes, not preview-prefab `ModuleSocket` components.
+Solution: Make `SpawnGhost()` data-only for the builder preview. It now releases any legacy ghost object, sets `_builderGhostPreviewActive`, stores pose/rotation/scale fields, and leaves `_currentGhostObj` null. Active socket matching continues to read `BaseModuleTemplate.SocketDefinitions`, builder preview pose fields, Vault `GhostPreviewDTO`, and CSR lanes, not preview-prefab `ModuleSocket` components.
 
-Rejected Alternatives: Keeping authored ghost prefabs for nicer previews was rejected because Task 02 explicitly asks for data-driven preview authority during active snapping. Falling back to the prefab if proxy acquisition fails was rejected because it would hide a broken `ModuleTemplate` preview route and reintroduce object hierarchy dependence.
+Rejected Alternatives: Keeping authored ghost prefabs for nicer previews was rejected because Task 02 explicitly asks for data-driven preview authority during active snapping. Falling back to `ConstructionRuntimeProxyFactory.TryAcquireGhostProxy()` was rejected for the active preview because it still creates/owns a GameObject shell; that factory remains only for legacy/no-prefab placed module paths.
 
-Scalability potential: Low uses the same cheap proxy shell while the Vault preview and shader signal carry the snap truth. Middle/High/Ultra can still spend quality budget on Dear Lie shader response and batched preview rendering without instantiating a preview prefab for socket modules.
+Scalability potential: Low uses only pose/scale fields, Vault preview rows, and minimal shader feedback. Middle/High/Ultra can still spend quality budget on Dear Lie shader response and batched preview rendering without instantiating a preview prefab for socket modules.
 
-Hardware Impact: Avoids one preview prefab pool spawn/despawn cycle per armed `ModuleTemplate` buildable and removes ghost-prefab hierarchy traversal from the socket-module preview route. No Burst candidate cost changes.
+Hardware Impact: Avoids one preview prefab pool spawn/despawn cycle plus ghost hierarchy setup per armed `ModuleTemplate` buildable and removes ghost-prefab hierarchy traversal from the socket-module preview route. No Burst candidate cost changes.

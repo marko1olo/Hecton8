@@ -132,3 +132,6 @@ Status: STATIC IMPLEMENTATION / PROJECT COMPILE BLOCKED OUTSIDE DOMAIN
 
 ## Ultra-Think Polish Pass 20
 - [x] Atomic artifact publish race hardened | DOD: `OfflineWreckageAtomicFile.Publish` retries once against post-failure file state after `FileNotFoundException`/`IOException` if the owned temp still exists | Rejected: single `File.Exists` snapshot before `File.Replace`/`File.Move` under parallel Editor writers | Estimate: runtime 0 us, editor artifact publication resilience hardened
+
+## Ultra-Think Polish Pass 21
+- [x] Normal angle NaN guard hardened | DOD: `RecalculateDeformedNormalsJob.Angle` now rejects non-finite or near-zero edge lengths before `math.rsqrt` and returns 0 on non-finite dot products | Rejected: relying only on upstream vertex sanitization | Estimate: runtime 0 us, editor normal accumulation safety hardened

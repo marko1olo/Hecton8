@@ -63,7 +63,7 @@ First-20-minutes route blocker: unsafe cutter path can stall gameplay when the p
 - [x] Pass 1 read existing tool/cutter code
 - [x] Pass 2 implement bounded runtime DTO/jobs
 - [x] Pass 3 implement editor/static tooling
-- [ ] Pass 4 scan for forbidden patterns and compile if gate allows
+- [x] Pass 4 scan for forbidden patterns and compile if gate allows
 - [ ] Pass 5 self-review changed files and append final log
 
 ## Verification Notes
@@ -71,5 +71,5 @@ First-20-minutes route blocker: unsafe cutter path can stall gameplay when the p
 - Unity runtime proof: PENDING VERIFICATION.
 - GCMonitor proof: PENDING VERIFICATION.
 - Profiler microsecond proof: PENDING VERIFICATION.
-- Compile proof: BLOCKED at 2026-05-20 11:03 UTC by CPU guard; `Win32_Processor.LoadPercentage` returned 100 and no dotnet/csc process was active.
+- Compile proof: BLOCKED at 2026-05-20 11:09 UTC by CPU guard; `Win32_Processor.LoadPercentage` returned 100 and no dotnet/csc process was active.
 - Static scan proof: `Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_225.json` reports 0 focused cutter sync raycast, 0 `Instantiate`, 0 `ParticleSystem`, 0 mesh mutation text.

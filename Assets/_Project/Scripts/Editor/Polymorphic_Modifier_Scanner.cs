@@ -68,7 +68,7 @@ namespace Hecton8.Tools.Editor
                     continue;
 
                 scanned++;
-                string source = File.ReadAllText(file);
+                string source = StripEditorOnlyBlocks(File.ReadAllText(file));
                 string sanitized = StripCommentsAndStrings(source);
                 string relative = MakeRelative(projectRoot, file);
                 AppendMatches(relative, sanitized, VirtualApplyModifier, "VIRTUAL_APPLY_MODIFIER", ref findingsCount, findings);
@@ -188,6 +188,43 @@ namespace Hecton8.Tools.Editor
                 }
 
                 output.Append(c);
+            }
+
+            return output.ToString();
+        }
+
+        private static string StripEditorOnlyBlocks(string source)
+        {
+            StringBuilder output = new StringBuilder(source.Length);
+            string[] lines = source.Split('\n');
+            int editorDepth = 0;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i];
+                string trimmed = line.TrimStart();
+                if (trimmed.StartsWith("#if UNITY_EDITOR", StringComparison.Ordinal) ||
+                    trimmed.StartsWith("#if DEVELOPMENT_BUILD || UNITY_EDITOR", StringComparison.Ordinal) ||
+                    trimmed.StartsWith("#if UNITY_EDITOR || DEVELOPMENT_BUILD", StringComparison.Ordinal))
+                {
+                    editorDepth++;
+                    output.AppendLine();
+                    continue;
+                }
+
+                if (trimmed.StartsWith("#endif", StringComparison.Ordinal) && editorDepth > 0)
+                {
+                    editorDepth--;
+                    output.AppendLine();
+                    continue;
+                }
+
+                if (editorDepth > 0)
+                {
+                    output.AppendLine();
+                    continue;
+                }
+
+                output.AppendLine(line);
             }
 
             return output.ToString();

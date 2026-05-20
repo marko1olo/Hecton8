@@ -918,5 +918,6 @@ Exact Microseconds saved:
   <blackbox result="PASS_STATIC">`DumpRequested` is checked before `uploadShaderBuffer` and active-count visual fail-closed branches.</blackbox>
   <shader_dependency result="REMOVED">Black-box dumping no longer depends on successful `_GlobalBulkheadStates` upload.</shader_dependency>
   <blocking result="PASS_STATIC">No telemetry job completion wait was added to force dump timing.</blocking>
+  <build_gate result="NOT_RUN" cpu="100" active_processes="none">No rebuild launched because the CPU gate rejects it.</build_gate>
   <dear_lie result="UNCHANGED">Visual closure remains shader-side procedural deformation.</dear_lie>
 </SELF_AUDIT>

@@ -587,7 +587,9 @@ namespace Hecton8.Gameplay
                 return;
 
             float intensity = math.saturate(intensity01);
-            double3 centerAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_transform.position);
+            if (!TryResolveDoorAup(_transform.position, out double3 centerAup))
+                return;
+
             uint source = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId()));
             if (debrisKind == DebrisSpawnSignal.DebrisKindSparks)
             {
@@ -615,6 +617,27 @@ namespace Hecton8.Gameplay
                 Quantity = quantity
             };
             SignalBus<DebrisSpawnSignal>.TryPush(in debris);
+        }
+
+        private static bool TryResolveDoorAup(Vector3 runtimePosition, out double3 doorAup)
+        {
+            doorAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!MathGuard.IsFinite(in resolvedAup))
+                return false;
+
+            doorAup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(doorAup));
         }
 
         private void ApplyWfcOutpostFlagsToDoor(byte flags)

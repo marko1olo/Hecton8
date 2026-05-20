@@ -812,3 +812,31 @@ Verification:
   <CompileGuard status="PASS">No asmdef dependency changed. Edit is confined to owned offline baker atomic writer and owned docs/logs.</CompileGuard>
   <DearLieConfirmation status="PASS">Runtime structural deformation remains an O(1) mesh/collider state swap backed by offline visual deformation and 8-point collision hull proxies.</DearLieConfirmation>
 </SELF_AUDIT>
+
+## 2026-05-20 Ultra-Think Polish Pass 21
+
+What was wrong:
+- `RecalculateDeformedNormalsJob.Angle` guarded zero-length edges indirectly but did not explicitly fail closed on non-finite edge length products before `math.rsqrt`.
+
+What was done:
+- `Angle` now checks both edge length squares for finiteness and minimum size.
+- Non-finite dot/angle input returns zero angle weight instead of feeding NaN into accumulated normals.
+
+Cinematic Cheats used:
+- No runtime simulation changed. This hardens the offline normal bake that supports the immutable mesh-swap Dear Lie.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Editor: no speed claim. Cold normal recomputation adds finite guards per angle.
+
+Verification:
+- Pending targeted static scan after patch. No dotnet build/rebuild launched for this pass.
+
+<SELF_AUDIT phase="ULTRA_THINK_POLISH_PASS_21" agent="SHINOBU_209">
+  <Task20Reconciliation status="PASS">Tasks 01-20 remain implemented. This pass hardens Task 09 normal/tangent recalculation.</Task20Reconciliation>
+  <StructLayoutVerification status="PASS">No DTO layout changed. Primary payloads remain explicit 32-byte mapping rows and 64-byte vertex/counter/telemetry rows.</StructLayoutVerification>
+  <ScalabilityCurve status="PASS">Runtime quality behavior unchanged. Normal bake remains offline and quality-driven deformation still collapses continuously through existing `GlobalQualityWeight` curves.</ScalabilityCurve>
+  <HPhiVaultStatus status="PASS">No runtime Vault lane, persistent runtime NativeArray, or new editor native allocation was added.</HPhiVaultStatus>
+  <CompileGuard status="PASS">No asmdef dependency changed. Edit is confined to owned offline baker Burst jobs and owned docs/logs.</CompileGuard>
+  <DearLieConfirmation status="PASS">Runtime structural deformation remains an O(1) mesh/collider state swap backed by offline visual deformation and 8-point collision hull proxies.</DearLieConfirmation>
+</SELF_AUDIT>

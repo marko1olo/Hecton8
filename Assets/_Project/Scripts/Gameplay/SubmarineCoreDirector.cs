@@ -22,23 +22,32 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Submarine Core Director")]
     public sealed class SubmarineCoreDirector : MonoBehaviour, ISubmarineRuntimeContext, IFixedTickable
     {
-        [StructLayout(LayoutKind.Sequential, Size = 40)]
-        public struct SubmarinePhysicsBindingState
+        public static class SubmarineGridStateBits
         {
-            public float3 LinearVelocity;
-            public float3 AngularVelocity;
-            public float3 CenterOfMass;
-            private int _pad0;
+            public const uint StructuralGrid = 1u << 0;
+            public const uint FluidDynamics = 1u << 1;
+            public const uint AtmosphereSystem = 1u << 2;
+            public const uint TransportPlatformActive = 1u << 3;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 8)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        public struct SubmarinePhysicsBindingState
+        {
+            [FieldOffset(0)] public float3 LinearVelocity;
+            [FieldOffset(12)] public float3 AngularVelocity;
+            [FieldOffset(24)] public float3 CenterOfMass;
+            [FieldOffset(36)] private uint _pad0;
+            [FieldOffset(40)] private ulong _pad1;
+            [FieldOffset(48)] private ulong _pad2;
+            [FieldOffset(56)] private ulong _pad3;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         public struct SubmarineGridState
         {
-            public byte HasStructuralGrid;
-            public byte HasFluidDynamics;
-            public byte HasAtmosphereSystem;
-            public byte IsTransportPlatformActive;
-            private uint _pad0;
+            [FieldOffset(0)] public uint StatusFlags;
+            [FieldOffset(4)] private uint _pad0;
+            [FieldOffset(8)] private ulong _pad1;
         }
 
         private const int HullSummarySlotCount = 4;
@@ -462,10 +471,11 @@ namespace Hecton8.Gameplay
 
             _gridStatesNative[0] = new SubmarineGridState
             {
-                HasStructuralGrid = structuralGrid != null && structuralGrid.IsReady ? (byte)1 : (byte)0,
-                HasFluidDynamics = fluidDynamics != null && fluidDynamics.isActiveAndEnabled ? (byte)1 : (byte)0,
-                HasAtmosphereSystem = atmosphereSystem != null && atmosphereSystem.isActiveAndEnabled ? (byte)1 : (byte)0,
-                IsTransportPlatformActive = IsTransportPlatformActive ? (byte)1 : (byte)0
+                StatusFlags =
+                    (structuralGrid != null && structuralGrid.IsReady ? SubmarineGridStateBits.StructuralGrid : 0u) |
+                    (fluidDynamics != null && fluidDynamics.isActiveAndEnabled ? SubmarineGridStateBits.FluidDynamics : 0u) |
+                    (atmosphereSystem != null && atmosphereSystem.isActiveAndEnabled ? SubmarineGridStateBits.AtmosphereSystem : 0u) |
+                    (IsTransportPlatformActive ? SubmarineGridStateBits.TransportPlatformActive : 0u)
             };
 
             float totalBreachArea = 0f;

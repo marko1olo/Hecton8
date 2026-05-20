@@ -135,3 +135,10 @@ Relevant mandates read:
 - [x] Harden compute pack/dilation path | DOD: `PackImpostorAtlas.compute` and `DilateImpostorEdges.compute` sanitize atlas dimensions, source samples, masks, normals, depth, and dilation output | Rejected: assuming replacement shader captures cannot emit non-finite pixels | Estimate: editor-only robustness
 - [x] Static gates after Loop 11 | DOD: targeted scans show no raw `saturate(_HectonGlobalQualityWeight)`, `Mathf`, `double.Is*`, raw `BoundsCenter +`, raw `Center + shaped`, or raw `math.max(Extents...)` in the SHINOBU files; sample texture reads are wrapped by finite guards; `git diff --check` reports only LF-to-CRLF warnings | Rejected: visual inspection only | Estimate: static proof only
 - [x] Compile gate rechecked after Loop 11 | DOD: CPU sample 100%, compiler process count 0 | Rejected: launching Unity import/build under explicit >50% CPU ban | Estimate: protects parallel agent iteration
+
+## Loop 12 - Reversed-Z Depth Bias Law Pass
+
+- [x] Re-read status/rationale and SHINOBU prompt before patch | DOD: `Status_SHINOBU_212.md`, `Rationale_SHINOBU_212.md`, and the current XML block were reopened from disk | Rejected: patching from chat memory | Estimate: 70 us static recall
+- [x] Re-check local render mandate for reversed-Z bias | DOD: `REND_URP_Graphics_HotPath_Optimization_HLOD.txt` Section10 states reversed-Z bias must be added, not subtracted | Rejected: accepting prior shader sign because it was already finite-guarded | Estimate: prevents far-horizon depth sign regression; profiler pending
+- [x] Patch active and legacy impostor shader depth sign | DOD: `Hecton_HLOD_Impostor.shader` and `Hecton_OctahedralImpostor.shader` now add `depthOffset` under `UNITY_REVERSED_Z` | Rejected: runtime mesh fallback, physics depth proxy, or keeping the wrong sign behind a branch | Estimate: avoids incorrect occlusion/fog/DoF ordering on reversed-Z targets
+- [x] Static gate after Loop 12 | DOD: targeted scan finds both reversed-Z branches use `deviceDepth + depthOffset` and no `deviceDepth - depthOffset` remains in the two impostor shaders | Rejected: visual inspection only | Estimate: static proof only

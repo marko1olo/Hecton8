@@ -102,3 +102,15 @@ Cinematic Cheats used -> No physics or mesh simulation was added. The impostor r
 Exact Microseconds saved -> No direct savings claimed for this pass. It prevents poisoned depth/color paths and invalid matrices. Existing savings remain geometry collapse to two triangles and low-quality one-view sampling; profiler proof is still pending.
 
 Verification -> Re-extracted the SHINOBU_212 XML prompt and counted 20 `Task NN:` entries. Targeted scans show no raw `saturate(_HectonGlobalQualityWeight)`, `Mathf`, `double.Is*`, raw `BoundsCenter +`, raw `Center + shaped`, or raw `math.max(Extents...)` in the patched SHINOBU files. Texture samples in both impostor shaders are wrapped by finite guards. `git diff --check` reports only LF-to-CRLF working-copy warnings. Unity compile/import was not launched because the CPU gate still applies.
+
+## 2026-05-20 - Reversed-Z Depth Bias Law Pass
+
+What was wrong -> Active and legacy impostor shaders wrote finite `SV_Depth`, but the reversed-Z branch subtracted `depthOffset`. That contradicted the local render mandate requiring reversed-Z bias to be added.
+
+What was done -> Patched `Hecton_HLOD_Impostor.shader` and `Hecton_OctahedralImpostor.shader` so the `UNITY_REVERSED_Z` branch adds `depthOffset`. Updated status, rationale, architecture, and self-audit records.
+
+Cinematic Cheats used -> No new geometry or simulation. The impostor stays a baked card; captured atlas depth still sells volumetric scale and ordering without drawing the original giant mesh.
+
+Exact Microseconds saved -> No new measured savings. The correction protects depth/fog/DoF ordering while preserving the existing savings: O(1) quad vertices instead of O(V) far mesh vertices and one-view low-quality atlas sampling.
+
+Verification -> Targeted shader scan shows both reversed-Z branches now use `deviceDepth + depthOffset`; no `deviceDepth - depthOffset` remains in the active or legacy impostor shader.

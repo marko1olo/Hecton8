@@ -636,3 +636,18 @@ Mandates read before coding:
 - Targeted scan finds zero `VaultBufferHandle`, `GetBufferHandle`, `TryGetBufferHandle`, `ResolvePointer`, `.ptr`, `.Resolve(`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `ResolveBuffer`, `GenerationID`, or `NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray` hits in `ProceduralBoneBlenderRuntime.cs`.
 - `git diff --check` passed for `ProceduralBoneBlenderRuntime.cs`; CRLF warning only.
 - Build not relaunched; previous compile-wall blockers remain unchanged and the user explicitly forbade unnecessary rebuilds.
+
+## Loop 38 - Kinetic Character Animator Descriptor Migration
+- [x] Removed twelve legacy locomotion animation Vault descriptors from `KineticCharacterAnimatorRuntime.cs`.
+  DOD practice: rig/input/parent/bind-pose/bone-output/matrix/IK-target/stats/telemetry/tuning/CSV-scratch lanes now persist `VaultGenerationHandle<T>` and resolve method-local `NativeArray<T>` views before editor reads, CSV ingestion, mock rig generation, Burst scheduling, telemetry reads, blackbox dump, and GPU upload.
+  Rejected: retaining `.Resolve(vault)` because the runtime schedules locomotion and matrix jobs across frame boundaries and stale descriptor metadata can survive Vault relocation.
+  Estimate: twelve O(1) generation checks when staging the solve; no managed allocation.
+- [x] Removed transient legacy `TryGetBuffer` routes for player state and SDF input.
+  DOD practice: external `PlayerKinematicState` and `VoxelSdfTexture3D` views are acquired through method-local `TryGetGenerationHandle` + `TryResolveHandle` and are never stored on the manager.
+  Rejected: keeping `TryGetBuffer` as "local enough" because it bypasses the descriptor validation contract SHINOBU_202 is enforcing.
+  Estimate: two local generation checks on frames that need player/SDF reads.
+
+## Compile State Update 31
+- Targeted scan finds zero `VaultBufferHandle`, `GetBufferHandle`, `TryGetBufferHandle`, `TryGetBuffer`, `ResolvePointer`, `.ptr`, `.Resolve(`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `ResolveBuffer`, `GenerationID`, or `NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray` hits in `KineticCharacterAnimatorRuntime.cs`.
+- `git diff --check` passed for `KineticCharacterAnimatorRuntime.cs`; no whitespace errors.
+- Build not relaunched; previous compile-wall blockers remain unchanged and the user explicitly forbade unnecessary rebuilds.

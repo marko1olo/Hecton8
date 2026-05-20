@@ -28,4 +28,10 @@ Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTA
 - Invalid centers collapse to local zero, invalid sizes collapse to at least 0.5m, invalid quality resolves to the minimum-survival scalar, invalid atlas depth resolves to empty occupancy, and invalid normals resolve to an up-vector fallback.
 - The low-quality shader sample collapse remains intact: q below 0.22 keeps one atlas view, q 0.22..0.55 restores interpolation continuously, and higher quality keeps the richer two-view Dear Lie.
 
+## 2026-05-20 Loop 12 Reversed-Z Depth Bias Boundary
+
+- `Hecton_HLOD_Impostor.shader` and `Hecton_OctahedralImpostor.shader` now add depth bias under `UNITY_REVERSED_Z`; the previous subtract path contradicted the render mandate.
+- The impostor still writes finite `SV_Depth` from captured atlas alpha, preserving the Dear Lie depth interaction with fog, DoF, and occlusion without re-rendering source geometry.
+- Static proof is limited to source scan; Unity import, Frame Debugger, and profiler proof remain pending the project CPU gate.
+
 
