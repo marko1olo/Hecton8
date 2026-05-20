@@ -55,8 +55,8 @@ Developer: [Studio/team name]
 Platform: PC / Steam [confirm]
 Release window: [Only if real]
 Demo: [Yes/No/TBD]
-Steam: [approved Steam URL after CTA activation packet]
-Presskit: [approved presskit URL after CTA activation packet]
+Steam: [gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
+Presskit: [gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
 Contact: [owner-controlled email]
 ```
 
@@ -78,10 +78,10 @@ I am reaching out with the first in game look at HECTON-8, a single player first
 The angle is colder NASA punk survival: bases that feel like hardware, salvage routes that matter, and an ocean that reads as hostile before it reads as pretty.
 
 Presskit:
-[approved presskit URL after CTA activation packet]
+[gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
 
 Steam:
-[approved Steam URL after CTA activation packet]
+[gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
 
 If this fits your PC/indie/survival coverage, I can send a short preview build or a cleaner asset pack when it is ready.
 
@@ -116,10 +116,10 @@ What is outside the demo scope:
   [other honest exclusions].
 
 Presskit:
-[approved presskit URL after CTA activation packet]
+[gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
 
 Steam:
-[approved Steam URL after CTA activation packet]
+[gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
 
 Preview access:
 [Key/access method]
@@ -146,10 +146,10 @@ HECTON-8 puts players in [short player role if finalized], where survival depend
 Current public materials include [screenshots/trailer/demo status]. The team is currently focused on [honest current production focus].
 
 Steam:
-[approved Steam URL after CTA activation packet]
+[gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
 
 Presskit:
-[approved presskit URL after CTA activation packet]
+[gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
 
 About HECTON-8:
 [boilerplate]
@@ -174,10 +174,10 @@ The demo focuses on [3 real systems]. It does not include [honest exclusions].
 [Quote: what feedback the team wants.]
 
 Steam demo:
-[approved demo URL after CTA activation packet]
+[gated demo URL after `demo_public_access_permission_gate` and `public_cta_permission_gate` pass]
 
 Presskit:
-[approved presskit URL after CTA activation packet]
+[gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
 ```
 
 ## Quote Bank
@@ -221,10 +221,10 @@ Hi [Name],
 Quick follow up on HECTON-8. Since my first note, the most useful angle may be [one specific angle based on their outlet].
 
 Assets:
-[approved asset URL after CTA activation packet]
+[gated asset URL after asset metadata claim checks and `public_cta_permission_gate` pass]
 
 Steam:
-[approved Steam URL after CTA activation packet]
+[gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
 
 If this is not a fit, no problem. I will avoid further follow ups.
 

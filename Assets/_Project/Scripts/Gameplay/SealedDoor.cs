@@ -26,6 +26,9 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
+using Hecton8.Tools;
+using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -83,12 +86,6 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Color of the cutting glow effect.")]
         [SerializeField] private Color cutGlowColor = new Color(1f, 0.5f, 0f); // Orange
-
-        [Tooltip("Particle system for cutting sparks.")]
-        [SerializeField] private ParticleSystem cuttingSparks;
-
-        [Tooltip("Particle system for door opening.")]
-        [SerializeField] private ParticleSystem openParticles;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — AUDIO
@@ -402,12 +399,6 @@ namespace Hecton8.Gameplay
 
             _isBeingCut = false;
 
-            // Stop cutting particles
-            if (cuttingSparks != null)
-            {
-                cuttingSparks.Stop();
-            }
-
             // Fire stopped event
             OnCuttingStopped?.Invoke();
 
@@ -458,11 +449,7 @@ namespace Hecton8.Gameplay
             _state = DoorState.Cutting;
             _isBeingCut = true;
 
-            // Start cutting particles
-            if (cuttingSparks != null)
-            {
-                cuttingSparks.Play();
-            }
+            PublishDoorGpuVfx(0.55f, DebrisSpawnSignal.DebrisKindSparks);
 
             // Play cutting sound
             if (cuttingLoopSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
@@ -481,17 +468,7 @@ namespace Hecton8.Gameplay
             _state = DoorState.Opened;
             _isBeingCut = false;
 
-            // Stop cutting effects
-            if (cuttingSparks != null)
-            {
-                cuttingSparks.Stop();
-            }
-
-            // Play open particles
-            if (openParticles != null)
-            {
-                openParticles.Play();
-            }
+            PublishDoorGpuVfx(1f, DebrisSpawnSignal.DebrisKindRockShard);
 
             // Play open sound
             if (openSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
@@ -584,11 +561,6 @@ namespace Hecton8.Gameplay
             _lastVisualProgress = -1f;
             _isBeingCut = false;
 
-            if (cuttingSparks != null)
-                cuttingSparks.Stop();
-            if (openParticles != null)
-                openParticles.Stop();
-
             // Reset visuals
             ResetProgressVisuals();
 
@@ -608,6 +580,42 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  PRIVATE HELPERS
         // ══════════════════════════════════════════════════════════
+
+        private void PublishDoorGpuVfx(float intensity01, byte debrisKind)
+        {
+            if (_transform == null)
+                return;
+
+            float intensity = math.saturate(intensity01);
+            double3 centerAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_transform.position);
+            uint source = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId()));
+            if (debrisKind == DebrisSpawnSignal.DebrisKindSparks)
+            {
+                LaserCutterDodRuntime.StageGpuSparkSignal(
+                    centerAup,
+                    new float3(0f, 1f, 0f),
+                    ProgressNormalized,
+                    intensity,
+                    LaserCutterDodConstants.LaserCutterHash,
+                    source,
+                    unchecked((uint)Time.frameCount));
+                return;
+            }
+
+            float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            ushort quantity = (ushort)math.clamp((int)math.round(math.lerp(4f, 48f, quality) * intensity), 0, ushort.MaxValue);
+            DebrisSpawnSignal debris = new DebrisSpawnSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(centerAup),
+                SpeciesHash = LaserCutterDodConstants.LaserCutterHash,
+                SourceEntityId = source,
+                Intensity01 = intensity,
+                DebrisKind = debrisKind,
+                Flags = DebrisSpawnSignal.FlagComputeShard,
+                Quantity = quantity
+            };
+            SignalBus<DebrisSpawnSignal>.TryPush(in debris);
+        }
 
         private void ApplyWfcOutpostFlagsToDoor(byte flags)
         {
@@ -640,9 +648,6 @@ namespace Hecton8.Gameplay
             _currentProgress = requiredCuttingTime;
             _lastPublishedProgress = 1f;
             _lastVisualProgress = 1f;
-
-            if (cuttingSparks != null)
-                cuttingSparks.Stop();
 
             UpdateProgressVisuals(1f);
 

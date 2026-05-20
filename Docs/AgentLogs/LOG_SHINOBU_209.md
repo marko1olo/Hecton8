@@ -583,3 +583,232 @@ Verification:
   <CompileGuard status="PASS">Runtime asmdef remains isolated. Editor asmdef references `Hecton8.Core.Contracts` only for the bridge; no root Core or sibling runtime reference was added.</CompileGuard>
   <DearLieConfirmation status="PASS">Runtime remains O(1) damage-state mesh swap; diagnostic tracking does not alter the offline visual/physics lie.</DearLieConfirmation>
 </SELF_AUDIT>
+
+## 2026-05-20 Ultra-Think Polish Pass 14
+
+What was wrong:
+- `GenerateConvexHullsJob` treated any flat measured bounds axis as invalid and replaced the whole support hull with a generic unit cube.
+- That is wrong for thin wreckage inputs such as bulkheads, panels, and hull plates: it keeps runtime cheap but discards authored extents.
+
+What was done:
+- Valid support bounds now preserve measured min/max and expand only collapsed axes to a 0.01 m half-extent.
+- Added `WarningHullBoundsExpanded` and propagated counter warning flags into the report/black-box warning scalar after the hull job completes.
+
+Cinematic Cheats used:
+- The runtime Dear Lie remains an 8-point offline support hull and O(1) mesh/collider state swap. No detailed runtime MeshCollider rebuild, Rigidbody debris, or torn visual topology enters gameplay physics.
+
+Exact Microseconds saved:
+- Runtime: 0 us added; runtime still avoids detailed collision truth.
+- Editor: no speed claim. The fix adds three max comparisons and one warning OR after an existing O(n) bounds scan.
+
+Verification:
+- Static source scan finds `WarningHullBoundsExpanded`, `MinHullHalfExtent`, and `warningFlags |= stateCounters.WarningFlags`.
+- No runtime asmdef changed.
+
+<SELF_AUDIT phase="ULTRA_THINK_POLISH_PASS_14" agent="SHINOBU_209">
+  <Task20Reconciliation status="PASS">Tasks 01-20 remain implemented. This pass strengthens Task 08 collision Dear Lie and Task 15 warning telemetry.</Task20Reconciliation>
+  <StructLayoutVerification status="PASS">No DTO size changed. `OfflineWreckageBakeCounters64` remains explicit 64 bytes; `WarningFlags` remains at offset 16, size 4, now using bit 3 for thin-axis support hull expansion.</StructLayoutVerification>
+  <ScalabilityCurve status="PASS">Continuous quality deformation is unchanged. The hull proxy stays one 8-point support mesh across low/middle/high/ultra tiers; only editor warning evidence changes when a flat axis is expanded.</ScalabilityCurve>
+  <HPhiVaultStatus status="PASS">No runtime Vault lane or persistent runtime NativeArray was added.</HPhiVaultStatus>
+  <CompileGuard status="PASS">No runtime asmdef dependency changed. The edit is confined to owned offline baker source and owned docs/logs.</CompileGuard>
+  <DearLieConfirmation status="PASS">The rejected alternative remains runtime detailed collision rebuild O(n visual triangles). The implemented path is offline O(n vertices) support bounds plus runtime O(1) swap.</DearLieConfirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 Ultra-Think Polish Pass 15
+
+What was wrong:
+- The runtime destruction scanner embedded the entire previous canonical report as escaped JSON inside the next canonical report.
+- Repeated scanner runs can recursively grow `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json`.
+
+What was done:
+- Removed the recursive `previousReport` blob from canonical output.
+- Added bounded provenance fields: `previousReportBytes`, `previousReportHash`, and `previousReportAgent`.
+- Preserved the exact previous canonical JSON in `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_209.json` before replacing the canonical report.
+
+Cinematic Cheats used:
+- No runtime simulation changed. This hardens proof artifact publication for the static eradication scanner.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Editor: no speed claim. Canonical scanner report size now remains O(current findings) instead of growing with the prior-report chain.
+
+Verification:
+- Static source scan finds `PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_209.json`, `previousReportBytes`, `previousReportHash`, and no `"previousReport":` canonical blob writer.
+
+<SELF_AUDIT phase="ULTRA_THINK_POLISH_PASS_15" agent="SHINOBU_209">
+  <Task20Reconciliation status="PASS">Tasks 01-20 remain implemented. This pass strengthens Task 19 static scanner proof artifact hygiene.</Task20Reconciliation>
+  <StructLayoutVerification status="PASS">No DTO layout changed.</StructLayoutVerification>
+  <ScalabilityCurve status="PASS">Runtime quality behavior unchanged. Editor scanner proof remains bounded across repeated low/middle/high/ultra validation runs.</ScalabilityCurve>
+  <HPhiVaultStatus status="PASS">No runtime Vault lane or native allocation was added.</HPhiVaultStatus>
+  <CompileGuard status="PASS">No asmdef dependency changed.</CompileGuard>
+  <DearLieConfirmation status="PASS">Runtime structural deformation remains eradicated by the offline bake route; this pass only prevents recursive report bloat.</DearLieConfirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 Ultra-Think Polish Pass 16
+
+What was wrong:
+- `Runtime_Destruction_Scanner` wrote `previousReportBytes` from `previousReport.Length`.
+- That value is UTF-16 code-unit count, not the UTF-8 byte count produced by `OfflineWreckageAtomicFile.WriteTextUtf8`.
+
+What was done:
+- Added a scalar UTF-8 measurement/hash walk that handles ASCII, 2-byte, 3-byte, valid surrogate-pair 4-byte sequences, and replacement bytes for invalid surrogates.
+- `previousReportBytes` now reflects encoded bytes, and `previousReportHash` is derived from the same UTF-8 byte stream.
+
+Cinematic Cheats used:
+- No runtime simulation changed. This is proof-artifact hardening for the static scanner that protects the offline mesh-swap route.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Editor: no speed claim. One cold scalar pass over the previous report replaces misleading provenance metadata.
+
+Verification:
+- Static source scan finds `MeasureUtf8Text`, `HashUtf8Scalar`, and `previousReportBytes` sourced from the measured variable.
+- Scanner source scan found no remaining `HashText` method or `previousReport.Length` usage.
+- Owned-domain forbidden API scan still only finds scanner literal constants for `sharedMesh.vertices`, `.mesh.vertices`, and `AddComponent<Rigidbody>`.
+- Direct sibling runtime asmdef scan returned no findings.
+- `git diff --check` reports only existing LF->CRLF normalization warnings for touched owned files/docs.
+- No dotnet build/rebuild launched for this pass.
+
+<SELF_AUDIT phase="ULTRA_THINK_POLISH_PASS_16" agent="SHINOBU_209">
+  <Task20Reconciliation status="PASS">Tasks 01-20 remain implemented. This pass narrows Task 19 scanner evidence to byte-accurate provenance.</Task20Reconciliation>
+  <StructLayoutVerification status="PASS">No DTO layout changed. `MeshDamageStateMappingDTO` remains 32 bytes; telemetry and bake counters remain 64-byte rows.</StructLayoutVerification>
+  <ScalabilityCurve status="PASS">Runtime quality behavior unchanged. Scanner output remains bounded and byte-accurate for repeated low/middle/high/ultra validation runs.</ScalabilityCurve>
+  <HPhiVaultStatus status="PASS">No runtime Vault lane, persistent runtime NativeArray, or new editor native allocation was added.</HPhiVaultStatus>
+  <CompileGuard status="PASS">No asmdef dependency changed. Edit is confined to owned offline baker scanner and owned docs/logs.</CompileGuard>
+  <DearLieConfirmation status="PASS">Runtime structural deformation remains replaced by offline baked visual meshes and cheap collision support hulls; this pass only corrects scanner report provenance.</DearLieConfirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 Ultra-Think Polish Pass 17
+
+What was wrong:
+- Pass 16 measured UTF-8 byte count correctly, but `HashUtf8Scalar` still called `OfflineWreckageBakeMath.HashBytes`.
+- That helper lowercases ASCII and skips selected whitespace for asset/profile name hashing, so `previousReportHash` was not a raw byte-stream hash.
+
+What was done:
+- Added scanner-local `HashRawByte`.
+- `HashUtf8Scalar` now applies raw FNV update to every emitted UTF-8 byte before the final avalanche.
+
+Cinematic Cheats used:
+- No runtime simulation changed. This keeps static scanner provenance honest for the offline destruction-eradication proof.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Editor: no speed claim. Cold scanner hashing remains one XOR/multiply per encoded byte.
+
+Verification:
+- Static scanner source scan finds `HashRawByte` and `HashUtf8Scalar` feeding `previousReportHash`.
+- Static scanner source scan finds no `OfflineWreckageBakeMath.HashBytes` usage.
+- Owned-domain forbidden API scan still only finds scanner literal constants for `sharedMesh.vertices`, `.mesh.vertices`, and `AddComponent<Rigidbody>`.
+- Direct sibling runtime asmdef scan returned no findings.
+- `git diff --check` reports only existing LF->CRLF normalization warnings for touched owned files/docs.
+- No dotnet build/rebuild launched for this pass.
+
+<SELF_AUDIT phase="ULTRA_THINK_POLISH_PASS_17" agent="SHINOBU_209">
+  <Task20Reconciliation status="PASS">Tasks 01-20 remain implemented. This pass tightens Task 19 scanner report provenance.</Task20Reconciliation>
+  <StructLayoutVerification status="PASS">No DTO layout changed. Primary payloads remain explicit 32-byte mapping rows and 64-byte vertex/counter/telemetry rows.</StructLayoutVerification>
+  <ScalabilityCurve status="PASS">Runtime quality behavior unchanged. Scanner provenance remains bounded and now distinguishes byte-for-byte report differences.</ScalabilityCurve>
+  <HPhiVaultStatus status="PASS">No runtime Vault lane, persistent runtime NativeArray, or new editor native allocation was added.</HPhiVaultStatus>
+  <CompileGuard status="PASS">No asmdef dependency changed. Edit is confined to owned offline baker scanner and owned docs/logs.</CompileGuard>
+  <DearLieConfirmation status="PASS">Runtime structural deformation remains an O(1) mesh/collider state swap backed by offline visual deformation and 8-point collision hull proxies.</DearLieConfirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 Ultra-Think Polish Pass 18
+
+What was wrong:
+- `Runtime_Destruction_Scanner.AppendEscaped` only escaped quote and backslash.
+- `ExtractJsonStringValue` treated a quote as escaped if the immediately preceding character was a backslash, even when that backslash was itself escaped.
+
+What was done:
+- JSON string emission now escapes `\b`, `\f`, `\n`, `\r`, `\t`, quote, backslash, and generic control bytes via `\u00XX`.
+- Previous-agent extraction now uses backslash-run parity to identify real string terminators.
+
+Cinematic Cheats used:
+- No runtime simulation changed. This hardens the static report proof that protects the offline mesh-swap route.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Editor: no speed claim. Cold scanner report emission adds bounded branches per emitted character.
+
+Verification:
+- Static scanner source scan finds `IsEscaped`, `AppendHexByte`, `NibbleToHex`, and `HashRawByte`.
+- Static scanner source scan finds no `OfflineWreckageBakeMath.HashBytes` usage.
+- Owned-domain forbidden API scan still only finds scanner literal constants for `sharedMesh.vertices`, `.mesh.vertices`, and `AddComponent<Rigidbody>`.
+- Direct sibling runtime asmdef scan returned no findings.
+- `git diff --check` reports only existing LF->CRLF normalization warnings for touched owned files/docs.
+- No dotnet build/rebuild launched for this pass.
+
+<SELF_AUDIT phase="ULTRA_THINK_POLISH_PASS_18" agent="SHINOBU_209">
+  <Task20Reconciliation status="PASS">Tasks 01-20 remain implemented. This pass hardens Task 19 scanner report JSON validity.</Task20Reconciliation>
+  <StructLayoutVerification status="PASS">No DTO layout changed. Primary payloads remain explicit 32-byte mapping rows and 64-byte vertex/counter/telemetry rows.</StructLayoutVerification>
+  <ScalabilityCurve status="PASS">Runtime quality behavior unchanged. Scanner report correctness is tier-independent and stays bounded.</ScalabilityCurve>
+  <HPhiVaultStatus status="PASS">No runtime Vault lane, persistent runtime NativeArray, or new editor native allocation was added.</HPhiVaultStatus>
+  <CompileGuard status="PASS">No asmdef dependency changed. Edit is confined to owned offline baker scanner and owned docs/logs.</CompileGuard>
+  <DearLieConfirmation status="PASS">Runtime structural deformation remains an O(1) mesh/collider state swap backed by offline visual deformation and 8-point collision hull proxies.</DearLieConfirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 Ultra-Think Polish Pass 19
+
+What was wrong:
+- `ExtractJsonStringValue` searched for the first quote after the colon.
+- If a previous shared report had `"agent": null` or another non-string value, extraction could advance into the next quoted property and record false provenance.
+
+What was done:
+- Added JSON-whitespace skipping after the colon.
+- The extractor now requires the next non-whitespace byte to be a string quote; otherwise it returns `UNKNOWN`.
+
+Cinematic Cheats used:
+- No runtime simulation changed. This hardens static scanner evidence for the offline mesh-swap route.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Editor: no speed claim. Cold scanner extraction adds a bounded whitespace loop.
+
+Verification:
+- Static scanner source scan finds `IsJsonWhitespace`, `IsEscaped`, `HashRawByte`, and `start = colon + 1`.
+- Static scanner source scan finds no `OfflineWreckageBakeMath.HashBytes` usage.
+- Owned-domain forbidden API scan still only finds scanner literal constants for `sharedMesh.vertices`, `.mesh.vertices`, and `AddComponent<Rigidbody>`.
+- Direct sibling runtime asmdef scan returned no findings.
+- `git diff --check` reports only LF->CRLF normalization warnings for touched owned files/docs; no whitespace errors remain after removing two EOF blanks.
+- No dotnet build/rebuild launched for this pass.
+
+<SELF_AUDIT phase="ULTRA_THINK_POLISH_PASS_19" agent="SHINOBU_209">
+  <Task20Reconciliation status="PASS">Tasks 01-20 remain implemented. This pass hardens Task 19 previous-report provenance extraction.</Task20Reconciliation>
+  <StructLayoutVerification status="PASS">No DTO layout changed. Primary payloads remain explicit 32-byte mapping rows and 64-byte vertex/counter/telemetry rows.</StructLayoutVerification>
+  <ScalabilityCurve status="PASS">Runtime quality behavior unchanged. Scanner provenance fails closed under malformed shared reports.</ScalabilityCurve>
+  <HPhiVaultStatus status="PASS">No runtime Vault lane, persistent runtime NativeArray, or new editor native allocation was added.</HPhiVaultStatus>
+  <CompileGuard status="PASS">No asmdef dependency changed. Edit is confined to owned offline baker scanner and owned docs/logs.</CompileGuard>
+  <DearLieConfirmation status="PASS">Runtime structural deformation remains an O(1) mesh/collider state swap backed by offline visual deformation and 8-point collision hull proxies.</DearLieConfirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 Ultra-Think Polish Pass 20
+
+What was wrong:
+- `OfflineWreckageAtomicFile.Publish` used a single `File.Exists(finalPath)` check before choosing `File.Replace` or `File.Move`.
+- A parallel Editor scanner/baker/report writer can change the final-path existence between that observation and commit.
+
+What was done:
+- Added `PublishObservedState`.
+- `Publish` now retries once after `FileNotFoundException` or `IOException` if the owned temp still exists, re-observing the final path before the second commit attempt.
+
+Cinematic Cheats used:
+- No runtime simulation changed. This hardens editor artifact publication for the offline mesh-swap pipeline.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Editor: no speed claim. Normal path unchanged; race path adds one filesystem recheck and one retry.
+
+Verification:
+- Static source scan finds `PublishObservedState`, `FileNotFoundException`, `File.Replace`, and `File.Move` in `OfflineWreckageAtomicFile`.
+- Owned-domain forbidden API scan still only finds scanner literal constants for `sharedMesh.vertices`, `.mesh.vertices`, and `AddComponent<Rigidbody>`.
+- Direct sibling runtime asmdef scan returned no findings.
+- `git diff --check` reports only LF->CRLF normalization warnings for touched owned files/docs; no whitespace errors remain after removing EOF blanks.
+- No dotnet build/rebuild launched for this pass.
+
+<SELF_AUDIT phase="ULTRA_THINK_POLISH_PASS_20" agent="SHINOBU_209">
+  <Task20Reconciliation status="PASS">Tasks 01-20 remain implemented. This pass hardens atomic artifact publication used by Tasks 04, 15, and 19.</Task20Reconciliation>
+  <StructLayoutVerification status="PASS">No DTO layout changed. Primary payloads remain explicit 32-byte mapping rows and 64-byte vertex/counter/telemetry rows.</StructLayoutVerification>
+  <ScalabilityCurve status="PASS">Runtime quality behavior unchanged. Editor artifact publication is tier-independent and bounded.</ScalabilityCurve>
+  <HPhiVaultStatus status="PASS">No runtime Vault lane, persistent runtime NativeArray, or new editor native allocation was added.</HPhiVaultStatus>
+  <CompileGuard status="PASS">No asmdef dependency changed. Edit is confined to owned offline baker atomic writer and owned docs/logs.</CompileGuard>
+  <DearLieConfirmation status="PASS">Runtime structural deformation remains an O(1) mesh/collider state swap backed by offline visual deformation and 8-point collision hull proxies.</DearLieConfirmation>
+</SELF_AUDIT>

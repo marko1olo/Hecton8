@@ -336,3 +336,78 @@ field ownership growth. High/ultra targets also need the same Vault discipline
 for rollback, relocation, and memory-debug proof.
 
 Hardware Impact: 0 runtime us. Static audit finding only.
+
+## Decision 033 - Add DataVault Regression Drilldown Instead Of Resetting Baseline
+
+Problem: The HFI candidate DataVault baseline was already unapproved, and fresh
+no-regression runs now show broader growth: direct constructors and field-like
+`NativeArray<T>` declarations increased across Physics, Construction, Editor,
+Power, World, Core, and Habitat. A single FAIL line no longer gives enough
+owner-domain signal.
+
+Solution: Extend `DataVaultSovereigntyAudit.py` to produce a structured
+machine-readable report, including regression deltas by domain and exact
+file-level details. Write the current artifact to
+`Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md/json`.
+
+Rejected Alternatives: Refreshing the candidate baseline was rejected because it
+would normalize active growth. Patching owner-domain files from the HFI audit
+lane was rejected because the changed files belong to Physics, Construction,
+Editor baker, Power, World, Core data, and Habitat owners and need their own
+route-carded migration slices.
+
+Scalability potential: Low/Quest/Deck targets benefit because native ownership
+growth is now attributable before it becomes memory fragmentation, rollback
+state ambiguity, or warm-load spikes. Middle/high/ultra targets benefit because
+saved engineering time can target owner slices instead of reading flat grep
+output.
+
+Hardware Impact: 0 runtime us. Static tooling/reporting only.
+
+## Decision 034 - Keep No-Build Verification Narrow And Repeatable
+
+Problem: The worktree is changing under multiple agents. Running a Unity/dotnet
+build for audit-only Python/docs changes would add noise and violate the
+current no-rebuild mandate, while skipping tests would make the new gate output
+untrusted.
+
+Solution: Use `python -B` audit unit tests and static gates only. Keep build,
+Unity import, player artifact, profiler, GC, memory, headset, Deck, macOS,
+Linux, and console claims out of the report.
+
+Rejected Alternatives: Launching dotnet or Unity was rejected because no C#
+compile claim is needed for this slice. Treating older R26 counters as current
+was rejected because the fresh gates show changed C# file count, local BufferID
+casts, and DataVault regression domains.
+
+Scalability potential: Process/runtime-indirect. Weak-device readiness depends
+on current evidence rather than stale counters; high/ultra readiness still
+requires runtime artifacts before visual-overkill claims mean anything.
+
+Hardware Impact: 0 runtime us. Verification discipline only.
+
+## Decision 035 - Split DataVault Regression By Execution Surface
+
+Problem: The DataVault regression report grouped by domain, but that mixed
+runtime frame-path risk with editor/offline-baker risk. For platform direction,
+those are different failures: runtime native ownership growth can hurt Quest,
+Deck, and weak-PC memory/frame budgets; editor-baker growth can still violate
+Data Monolith discipline but does not directly execute in player frames.
+
+Solution: Add `extract_execution_surface(...)`, store `executionSurface` on
+each regression detail, aggregate `regressionByExecutionSurface` in the JSON
+report, and add a markdown section before the domain table.
+
+Rejected Alternatives: Leaving the report as domain-only was rejected because
+it overstates editor/baker allocations as runtime frame risk and understates
+new runtime regressions such as `Tools/LaserCutterDodJobs.cs` and
+`Gameplay/ScannerDataMiningRouter.cs`. Whitelisting editor files was rejected
+because offline binary generation still needs Data Monolith and alignment
+discipline.
+
+Scalability potential: Low/Quest/Deck targets get a sharper runtime burn-down
+queue. Middle/high/ultra targets still benefit because editor/offline payload
+hygiene prevents stale, misaligned, or unbounded baked data from becoming a
+runtime streaming problem.
+
+Hardware Impact: 0 runtime us. Static report-schema expansion only.

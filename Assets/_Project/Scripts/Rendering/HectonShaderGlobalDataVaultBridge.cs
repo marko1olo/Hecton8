@@ -291,7 +291,8 @@ namespace Hecton8.Core
                 vault,
                 RespawnDearLieSlot,
                 value,
-                ref _fallbackRespawnDearLie);
+                ref _fallbackRespawnDearLie,
+                allowAllocation: false);
 
             if (!_visualSyncDispatcherActive)
             {
@@ -308,7 +309,17 @@ namespace Hecton8.Core
 
         private static float4 WriteReadSlot(IDataVault vault, int slot, float4 value, ref float4 fallback)
         {
-            if (TryPrepareSlotsVault(vault) &&
+            return WriteReadSlot(vault, slot, value, ref fallback, allowAllocation: true);
+        }
+
+        private static float4 WriteReadSlot(
+            IDataVault vault,
+            int slot,
+            float4 value,
+            ref float4 fallback,
+            bool allowAllocation)
+        {
+            if (TryPrepareSlotsVault(vault, allowAllocation) &&
                 vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
             {
                 try
@@ -335,10 +346,10 @@ namespace Hecton8.Core
         private static IDataVault ResolveSlotsVault()
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            return TryPrepareSlotsVault(vault) ? vault : null;
+            return TryPrepareSlotsVault(vault, allowAllocation: true) ? vault : null;
         }
 
-        private static bool TryPrepareSlotsVault(IDataVault vault)
+        private static bool TryPrepareSlotsVault(IDataVault vault, bool allowAllocation)
         {
             if (vault == null)
                 return false;
@@ -365,7 +376,7 @@ namespace Hecton8.Core
                 return true;
             }
 
-            if (vault.IsAllocationLocked)
+            if (!allowAllocation || vault.IsAllocationLocked)
                 return false;
 
             VaultGenerationHandle<float4> allocated = vault.GetGenerationHandle<float4>(

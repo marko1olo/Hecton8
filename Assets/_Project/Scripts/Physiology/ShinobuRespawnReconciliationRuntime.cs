@@ -376,10 +376,14 @@ namespace Hecton8.Physiology
             flags = 0u;
             bayHash = 0u;
             NativeArray<RespawnTuningDTO> tuningArray = ResolveVaultBuffer(vault, in _tuningHandle);
-            RespawnTuningDTO tuning = tuningArray.IsCreated && tuningArray.Length > 0 ? tuningArray[0] : CreateDefaultTuning();
+            RespawnTuningDTO tuning = tuningArray.IsCreated && tuningArray.Length > 0 ? SanitizeTuning(tuningArray[0]) : CreateDefaultTuning();
             double3 fallback = SanitizeAup(tuning.FallbackLifepodAUP);
             double3 target = fallback;
+            uint rejectedCandidateFlags = 0u;
+            uint selectedCandidateFlags = 0u;
             double bestSq = double.MaxValue;
+            double radius = math.max((double)tuning.MedicalBaySearchRadiusMeters, 0.0001d);
+            double maxSearchSq = radius * radius;
             NativeArray<MedicalBayRespawnPointDTO> bays = ResolveVaultBuffer(vault, in _medicalBayHandle);
             if (bays.IsCreated)
             {
@@ -387,21 +391,36 @@ namespace Hecton8.Physiology
                 {
                     MedicalBayRespawnPointDTO bay = bays[i];
                     if (!math.all(math.isfinite(bay.BayAUP)))
+                    {
+                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
+                    }
 
                     if (!ValidateMedicalBay(in bay, tuning.ValidationClearanceMeters))
                     {
-                        flags |= ShinobuRespawnFlags.InvalidTargetAup;
+                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
                     }
 
                     double3 delta = bay.BayAUP - deathAup;
                     if (!math.all(math.isfinite(delta)))
+                    {
+                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
+                    }
 
                     float distanceSq = math.lengthsq(AupDeltaToFloat3(delta));
                     if (!math.isfinite(distanceSq))
+                    {
+                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
+                    }
+
+                    if ((double)distanceSq > maxSearchSq)
+                    {
+                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
+                        continue;
+                    }
 
                     if (distanceSq >= bestSq)
                         continue;
@@ -409,14 +428,18 @@ namespace Hecton8.Physiology
                     bestSq = distanceSq;
                     target = bay.BayAUP;
                     bayHash = bay.MedicalBayHashID;
-                    flags |= bay.Flags & ShinobuRespawnFlags.MockMedicalBay;
+                    selectedCandidateFlags = bay.Flags & ShinobuRespawnFlags.MockMedicalBay;
                 }
             }
 
             if (bayHash == 0u || !math.all(math.isfinite(target)))
             {
                 target = fallback;
-                flags |= ShinobuRespawnFlags.FallbackLifepod;
+                flags |= rejectedCandidateFlags | ShinobuRespawnFlags.FallbackLifepod;
+            }
+            else
+            {
+                flags |= selectedCandidateFlags;
             }
 
             return target;
@@ -688,8 +711,7 @@ namespace Hecton8.Physiology
             mockJob.MedicalBays = bays;
             mockJob.FallbackLifepodAUP = defaultTuning.FallbackLifepodAUP;
             mockJob.ValidationClearanceMeters = defaultTuning.ValidationClearanceMeters;
-            for (int i = 0; i < bays.Length; i++)
-                mockJob.Execute(i); // COLD SYNC JOB: mock medical bay Vault rows are generated once before runtime scheduling.
+            mockJob.Run(bays.Length); // COLD SYNC JOB: mock medical bay Vault rows are generated once before runtime scheduling.
 
             _defaultsInitialized = true;
         }
@@ -932,12 +954,7 @@ namespace Hecton8.Physiology
             if (!HasRequiredLength(tuningArray, 1))
                 return false;
 
-            RespawnTuningDTO sanitized = tuning;
-            sanitized.FallbackLifepodAUP = SanitizeAup(sanitized.FallbackLifepodAUP);
-            sanitized.HighQualityFadeRate = math.clamp(math.isfinite(sanitized.HighQualityFadeRate) ? sanitized.HighQualityFadeRate : 0.5f, 0.0001f, 16f);
-            sanitized.LowQualityFadeRate = math.clamp(math.isfinite(sanitized.LowQualityFadeRate) ? sanitized.LowQualityFadeRate : 2f, 0.0001f, 16f);
-            sanitized.PenaltyMultiplier = math.saturate(math.isfinite(sanitized.PenaltyMultiplier) ? sanitized.PenaltyMultiplier : 1f);
-            sanitized.ValidationClearanceMeters = math.clamp(math.isfinite(sanitized.ValidationClearanceMeters) ? sanitized.ValidationClearanceMeters : 1.5f, 0.25f, 16f);
+            RespawnTuningDTO sanitized = SanitizeTuning(tuning);
             sanitized.Flags |= ShinobuRespawnFlags.ManualTuning;
             tuningArray[0] = sanitized;
             return true;
@@ -1152,6 +1169,9 @@ namespace Hecton8.Physiology
 
         private static bool ValidateMedicalBay(in MedicalBayRespawnPointDTO bay, float clearanceMeters)
         {
+            if (bay.MedicalBayHashID == 0u)
+                return false;
+
             double3 delta = bay.BayAUP - bay.NearestTerrainAUP;
             if (!math.all(math.isfinite(delta)))
                 return false;
@@ -1184,6 +1204,18 @@ namespace Hecton8.Physiology
             double3 fallback = default;
             fallback.y = -18d;
             return fallback;
+        }
+
+        private static RespawnTuningDTO SanitizeTuning(RespawnTuningDTO tuning)
+        {
+            tuning.FallbackLifepodAUP = SanitizeAup(tuning.FallbackLifepodAUP);
+            tuning.HighQualityFadeRate = math.clamp(math.isfinite(tuning.HighQualityFadeRate) ? tuning.HighQualityFadeRate : 0.5f, 0.0001f, 16f);
+            tuning.LowQualityFadeRate = math.clamp(math.isfinite(tuning.LowQualityFadeRate) ? tuning.LowQualityFadeRate : 2f, 0.0001f, 16f);
+            tuning.PenaltyMultiplier = math.saturate(math.isfinite(tuning.PenaltyMultiplier) ? tuning.PenaltyMultiplier : 1f);
+            tuning.ValidationClearanceMeters = math.clamp(math.isfinite(tuning.ValidationClearanceMeters) ? tuning.ValidationClearanceMeters : 1.5f, 0.25f, 16f);
+            tuning.RespawnInvulnerabilitySeconds = math.clamp(math.isfinite(tuning.RespawnInvulnerabilitySeconds) ? tuning.RespawnInvulnerabilitySeconds : 1.5f, 0f, 60f);
+            tuning.MedicalBaySearchRadiusMeters = math.clamp(math.isfinite(tuning.MedicalBaySearchRadiusMeters) ? tuning.MedicalBaySearchRadiusMeters : 5000f, 1f, 50000f);
+            return tuning;
         }
 
         private static float3 AupDeltaToFloat3(double3 delta)

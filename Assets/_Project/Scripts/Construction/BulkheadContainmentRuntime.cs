@@ -746,36 +746,108 @@ namespace Hecton8.Construction
             float q = HomeostasisBrain.GlobalQualityWeight;
             float cadenceHz = ResolveAuthorityCadenceHz(q);
             float dt = math.max(0f, timing.FrameDelta);
+            _lastFrame = context.Frame;
             _authorityAccumulator += dt;
             float period = 1f / math.max(1f, cadenceHz);
-            if (_authorityAccumulator < period)
-                return dependency;
-
-            float authorityDelta = math.min(_authorityAccumulator, 0.2f);
-            _authorityAccumulator = 0f;
-            _lastFrame = context.Frame;
 
             if (!Resolve(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
-                !Resolve(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> csrEdges) ||
-                !Resolve(in _edgeConductivityHandle, out NativeArray<float> conductivity) ||
-                !Resolve(in _fluidFlowHandle, out NativeArray<float> fluidFlow) ||
-                !Resolve(in _moduleIntegrityHandle, out NativeArray<float> moduleIntegrity) ||
                 !Resolve(in _collisionResultsHandle, out NativeArray<BulkheadCollisionResultDTO> collisions) ||
                 !Resolve(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
                 !Resolve(in _telemetryCursorHandle, out NativeArray<uint> cursor))
             {
                 return dependency;
             }
-            if (!states.IsCreated || !csrEdges.IsCreated || !conductivity.IsCreated || !fluidFlow.IsCreated ||
-                !moduleIntegrity.IsCreated ||
-                !collisions.IsCreated || !telemetry.IsCreated || !cursor.IsCreated)
+            if (!states.IsCreated ||
+                !collisions.IsCreated ||
+                !telemetry.IsCreated ||
+                !cursor.IsCreated ||
+                states.Length <= 0 ||
+                collisions.Length <= 0 ||
+                telemetry.Length <= 0 ||
+                cursor.Length <= 0)
             {
                 return dependency;
             }
 
             int count = math.min(_activeCount, states.Length);
             if (count <= 0)
+            {
+                if (_preSimulationScheduled)
+                {
+                    long telemetryStart = Stopwatch.GetTimestamp();
+                    return ScheduleTelemetryJob(
+                        dependency,
+                        states,
+                        collisions,
+                        telemetry,
+                        cursor,
+                        0,
+                        context.Frame,
+                        q,
+                        cadenceHz,
+                        telemetryStart,
+                        BulkheadTelemetryFlags.ScheduleTimeOnly);
+                }
+
+                RecordEmptyTelemetryFrame(telemetry, cursor, collisions, context.Frame, q, cadenceHz);
                 return dependency;
+            }
+
+            if (_authorityAccumulator < period)
+            {
+                long telemetryStart = Stopwatch.GetTimestamp();
+                return ScheduleTelemetryJob(
+                    dependency,
+                    states,
+                    collisions,
+                    telemetry,
+                    cursor,
+                    count,
+                    context.Frame,
+                    q,
+                    cadenceHz,
+                    telemetryStart,
+                    BulkheadTelemetryFlags.ScheduleTimeOnly);
+            }
+
+            if (!Resolve(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> csrEdges) ||
+                !Resolve(in _edgeConductivityHandle, out NativeArray<float> conductivity) ||
+                !Resolve(in _fluidFlowHandle, out NativeArray<float> fluidFlow) ||
+                !Resolve(in _moduleIntegrityHandle, out NativeArray<float> moduleIntegrity))
+            {
+                long telemetryStart = Stopwatch.GetTimestamp();
+                return ScheduleTelemetryJob(
+                    dependency,
+                    states,
+                    collisions,
+                    telemetry,
+                    cursor,
+                    count,
+                    context.Frame,
+                    q,
+                    cadenceHz,
+                    telemetryStart,
+                    BulkheadTelemetryFlags.ScheduleTimeOnly);
+            }
+            if (!csrEdges.IsCreated || !conductivity.IsCreated || !fluidFlow.IsCreated || !moduleIntegrity.IsCreated)
+            {
+                long telemetryStart = Stopwatch.GetTimestamp();
+                return ScheduleTelemetryJob(
+                    dependency,
+                    states,
+                    collisions,
+                    telemetry,
+                    cursor,
+                    count,
+                    context.Frame,
+                    q,
+                    cadenceHz,
+                    telemetryStart,
+                    BulkheadTelemetryFlags.ScheduleTimeOnly);
+            }
+
+            float authorityDelta = math.min(_authorityAccumulator, 0.2f);
+            _authorityAccumulator = 0f;
 
             long start = Stopwatch.GetTimestamp();
             UpdateBulkheadClosureJob updateJob = new UpdateBulkheadClosureJob
@@ -811,6 +883,45 @@ namespace Hecton8.Construction
             };
             handle = lockJob.Schedule(count, 32, handle);
 
+            return ScheduleTelemetryJob(
+                handle,
+                states,
+                collisions,
+                telemetry,
+                cursor,
+                count,
+                context.Frame,
+                q,
+                cadenceHz,
+                start,
+                BulkheadTelemetryFlags.ScheduleTimeOnly);
+        }
+
+        private JobHandle ScheduleTelemetryJob(
+            JobHandle dependency,
+            NativeArray<BulkheadStateDTO> states,
+            NativeArray<BulkheadCollisionResultDTO> collisions,
+            NativeArray<BulkheadTelemetryEntry> telemetry,
+            NativeArray<uint> cursor,
+            int count,
+            uint frame,
+            float q,
+            float cadenceHz,
+            long scheduleStart,
+            uint flags)
+        {
+            if (!states.IsCreated ||
+                !collisions.IsCreated ||
+                !telemetry.IsCreated ||
+                !cursor.IsCreated ||
+                states.Length <= 0 ||
+                collisions.Length <= 0 ||
+                telemetry.Length <= 0 ||
+                cursor.Length <= 0)
+            {
+                return dependency;
+            }
+
             RecordBulkheadTelemetryJob telemetryJob = new RecordBulkheadTelemetryJob
             {
                 States = (BulkheadStateDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states),
@@ -819,18 +930,49 @@ namespace Hecton8.Construction
                 Cursor = (uint*)NativeArrayUnsafeUtility.GetUnsafePtr(cursor),
                 Count = count,
                 TelemetryCount = telemetry.Length,
-                Frame = context.Frame,
+                Frame = frame,
                 GlobalQualityWeight = q,
                 AuthorityCadenceHz = cadenceHz,
                 LastScheduleMicroseconds = _lastScheduleMicroseconds,
-                Flags = BulkheadTelemetryFlags.ScheduleTimeOnly
+                Flags = flags
             };
-            handle = telemetryJob.Schedule(handle);
-            _lastScheduleMicroseconds = ElapsedMicroseconds(start);
+            JobHandle handle = telemetryJob.Schedule(dependency);
+            _lastScheduleMicroseconds = ElapsedMicroseconds(scheduleStart);
             _simulationHandle = handle;
             _simulationScheduled = true;
             H8Memory.RegisterActiveJob(SystemID.Construction, handle);
             return handle;
+        }
+
+        private void RecordEmptyTelemetryFrame(
+            NativeArray<BulkheadTelemetryEntry> telemetry,
+            NativeArray<uint> cursor,
+            NativeArray<BulkheadCollisionResultDTO> collisions,
+            uint frame,
+            float q,
+            float cadenceHz)
+        {
+            if (!telemetry.IsCreated || !cursor.IsCreated || telemetry.Length <= 0 || cursor.Length <= 0)
+                return;
+
+            int telemetryIndex = (int)(cursor[0] % (uint)telemetry.Length);
+            BulkheadCollisionResultDTO collision = collisions.IsCreated && collisions.Length > 0 ? collisions[0] : default;
+            telemetry[telemetryIndex] = new BulkheadTelemetryEntry
+            {
+                Frame = frame,
+                ActiveCount = 0u,
+                SealedCount = 0u,
+                JammedCount = 0u,
+                AverageClosure = 0f,
+                AuthorityCadenceHz = cadenceHz,
+                GlobalQualityWeight = BulkheadContainmentMath.Sanitize01(q, 0f),
+                LastScheduleMicroseconds = _lastScheduleMicroseconds,
+                StateHash = 2166136261u,
+                CollisionEdgeHash = collision.EdgeHashID,
+                CollisionDepthMeters = collision.DepthMeters,
+                Flags = BulkheadTelemetryFlags.ScheduleTimeOnly
+            };
+            cursor[0] = unchecked(cursor[0] + 1u);
         }
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
@@ -848,6 +990,9 @@ namespace Hecton8.Construction
                 return;
             }
 
+            IDataVault vault = ResolveVault();
+            DumpBlackBoxIfRequested(vault);
+
             if (!uploadShaderBuffer)
             {
                 DisableShaderGlobals();
@@ -860,7 +1005,6 @@ namespace Hecton8.Construction
                 return;
             }
 
-            IDataVault vault = ResolveVault();
             if (vault == null || !EnsureVaultState(vault) || !EnsureGraphicsBuffers())
             {
                 DisableShaderGlobals();
@@ -874,7 +1018,12 @@ namespace Hecton8.Construction
                 DisableShaderGlobals();
                 return;
             }
-            if (!states.IsCreated || !telemetry.IsCreated || !cursor.IsCreated)
+            if (!states.IsCreated ||
+                !telemetry.IsCreated ||
+                !cursor.IsCreated ||
+                states.Length <= 0 ||
+                telemetry.Length <= 0 ||
+                cursor.Length <= 0)
             {
                 DisableShaderGlobals();
                 return;
@@ -914,8 +1063,28 @@ namespace Hecton8.Construction
             Shader.SetGlobalVector(GlobalBulkheadParamsId, new Vector4(uploadCount, uploadShaderBuffer ? 1f : 0f, _lastFrame, q));
             _shaderGlobalsActive = true;
 
+        }
+
+        private void DumpBlackBoxIfRequested(IDataVault vault)
+        {
+            if (vault == null ||
+                _telemetryHandle.Generation == 0u ||
+                _telemetryCursorHandle.Generation == 0u ||
+                !vault.TryResolveHandle(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
+                !vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<uint> cursor) ||
+                !telemetry.IsCreated ||
+                !cursor.IsCreated ||
+                telemetry.Length <= 0 ||
+                cursor.Length <= 0 ||
+                cursor[0] == 0u)
+            {
+                return;
+            }
+
+            uint cursorValue = cursor[0];
+            BulkheadTelemetryEntry entry = telemetry[(int)((cursorValue - 1u) % (uint)telemetry.Length)];
             if ((entry.Flags & BulkheadTelemetryFlags.DumpRequested) != 0u)
-                DumpBlackBox(telemetry, cursor[0]);
+                DumpBlackBox(telemetry, cursorValue);
         }
 
         private bool TryResolvePlayerState(IDataVault vault, out double3 playerAup, out float3 velocity, out uint frame)

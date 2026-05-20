@@ -1,9 +1,9 @@
-# Base Atmosphere Logistics Route Card - SHINOBU_221
+﻿# Base Atmosphere Logistics Route Card - SHINOBU_221
 
 Status: `YELLOW / STATIC SOURCE UPDATED / UNITY PROOF PENDING`
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -13,10 +13,10 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Owner: `Hecton8.Atmosphere.BaseAtmosphereLogisticsRuntime`
@@ -39,7 +39,7 @@ Compile-wall boundary: owned BaseAtmosphereLogistics runtime/gizmo/jobs/types im
 - Legacy oxygen bridge: `HabitatIntegrityManager` public global O2 reads route to `BaseAtmosphereLogisticsRuntime.TryGetGlobalOxygenSnapshot`; its old aggregate fields are fallback-only and stop receiving module contributions once the runtime snapshot is valid.
 - Cold tuning input: `Docs/Atmosphere/gas_diffusion_profiles.csv`, parsed from `ReadOnlySpan<byte>` into profile rows with numeric IDs or lowercase FNV-1a module-name hashes.
 - Editor facade: `BaseAtmosphereLogisticsTunerWindow` reads the telemetry ring directly for its efficiency graph and writes live tuning through the Vault `AtmosphereTuningDTO`.
-- Proof output: 300-frame telemetry ring `71513`, shader scalar payload `71520`, fault dump `Docs/AgentLogs/Dump_SHINOBU_221.bin`.
+- Proof/dump targets: 300-frame telemetry ring `71513`, shader scalar payload `71520`, and fault dump `Docs/AgentLogs/Dump_SHINOBU_221.bin`. The dump path is planned/generated on fault; no existing runtime artifact is implied unless a timestamped trigger/output is linked.
 
 ## Phase Ownership
 - `PreSimulation`: resolve Vault, smooth `GlobalQualityWeight`, apply tuning, ingest typed signal snapshots into Vault source rows.
@@ -88,6 +88,7 @@ Compile-wall boundary: owned BaseAtmosphereLogistics runtime/gizmo/jobs/types im
 |---|---|
 | Route ID | `SHINOBU_221_BASE_ATMOSPHERE_LOGISTICS` |
 | Owner | `Hecton8.Atmosphere.BaseAtmosphereLogisticsRuntime` |
+| Instrument | GlobalDataVault buffers `71500..71522`, typed SignalBus ingest snapshots, shader scalar payload `71520`, and black-box telemetry/fault-dump route |
 | Producer phase | `PreSimulation` signal ingest and `Simulation` atmosphere solver jobs |
 | Consumer phase | `PostSimulation` telemetry/fault readback and `VisualSync` shader scalar publication |
 | Cadence | Fixed simulation cadence for gas truth; visual scalar publication only after completed solver output |
@@ -96,5 +97,8 @@ Compile-wall boundary: owned BaseAtmosphereLogistics runtime/gizmo/jobs/types im
 | Overflow policy | CSR/source overflow clamps to bounded Vault rows and sets flags; no dynamic expansion is implied |
 | Failure mode | Empty graph, CSR overflow, source overflow, non-finite gas, or Vault lock failure fail closed and preserve bounded fallback behavior |
 | Shutdown/disposal | Vault-owned buffers and signal snapshots remain owner-local; teardown must not be owned by visual consumers |
+| Fault dump target | `Docs/AgentLogs/Dump_SHINOBU_221.bin` is planned/generated on fault; no existing artifact is implied unless a timestamped runtime trigger and output are linked |
 | Proof required before GREEN | Linked artifact path, command/tool, timestamp, environment, and output tuple for compile/import/runtime/profiler claims |
 | Review disposition | `YELLOW / STATIC_SOURCE_ONLY` until compile/import/runtime/profiler/player evidence exists |
+
+

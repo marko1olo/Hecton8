@@ -1,10 +1,10 @@
 {
   "schema": "hecton8.aup_precision_gate.shinobu_205.v1",
   "scannerId": "SHINOBU_205_AUP_PRECISION_INSPECTOR",
-  "generatedUtc": "2026-05-20T10:34:37.603767Z",
+  "generatedUtc": "2026-05-20T11:04:36.890516Z",
   "sourceRoot": "Assets/_Project/Scripts",
   "status": "FAIL_STATIC_GATE",
-  "hardBlockerCount": 18,
+  "hardBlockerCount": 3,
   "thresholds": {
     "maxDirectAupFloat3Casts": 0,
     "maxRuntimeComponentFloatAupCasts": 0,
@@ -15,15 +15,28 @@
   "ownedVaultIds": "73200..73208",
   "layoutValidationFailures": "PENDING_UNITY_EDITOR_RUN",
   "counts": {
-    "filesScanned": 1992,
-    "approvedHelperCalls": 54,
+    "filesScanned": 2013,
+    "approvedHelperCalls": 60,
     "directAupFloat3CastCount": 0,
-    "runtimeComponentFloatAupCastCount": 0,
+    "runtimeComponentFloatAupCastCount": 2,
     "editorComponentFloatAupCastReviewCount": 5,
-    "strictTransformAuthorityReadCount": 18,
-    "broadTransformPositionReviewCount": 966,
-    "floatDistanceReviewCount": 30,
-    "blockedCastFindings": [],
+    "strictTransformAuthorityReadCount": 1,
+    "broadTransformPositionReviewCount": 959,
+    "floatDistanceReviewCount": 29,
+    "blockedCastFindings": [
+      {
+        "file": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+        "line": 164,
+        "kind": "COMPONENT_FLOAT3_AUP_CAST",
+        "snippet": "float3 localAup = SanitizeFinite(new float3((float)(currentAup.x - sector.x), (float)(currentAup.y - sector.y), (float)(currentAup.z - sector.z)), float3.zero);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+        "line": 411,
+        "kind": "COMPONENT_FLOAT3_AUP_CAST",
+        "snippet": "float3 local = new float3((float)deltaAup.x, (float)deltaAup.y, (float)deltaAup.z);"
+      }
+    ],
     "editorComponentFloatAupCastReviews": [
       {
         "file": "Assets/_Project/Scripts/Editor/ResidencyStreamingTunerWindow.cs",
@@ -58,142 +71,40 @@
     ],
     "strictTransformAuthorityFindings": [
       {
-        "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 3086,
+        "file": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
+        "line": 590,
         "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(target.transform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 553,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(rootTransform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "line": 710,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(module.transform.position),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "line": 1446,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "graphNodeDto.SetAup(AbsoluteUniversePosition.FromRuntimePosition(t.position));"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
-        "line": 480,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "AbsoluteUniversePositionBlit origin = AbsoluteUniversePositionBlit.FromAup(AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform.position));"
-      },
-      {
-        "file": "Assets/_Project/Scripts/PlayerBuilder.cs",
-        "line": 2982,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "double3 pivotAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(ghostTransform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/PlayerBuilder.cs",
-        "line": 3060,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "double3 moduleAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(moduleTransform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/PlayerBuilder.cs",
-        "line": 3116,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "double3 moduleAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(moduleTransform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/PlayerBuilder.cs",
-        "line": 3182,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(module.transform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/ScannableTarget.cs",
-        "line": 377,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "s_loreEntityAups[index] = AbsoluteUniversePosition.FromRuntimePosition(target.transform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
-        "line": 1270,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(cachedTransform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
-        "line": 1599,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(cachedTransform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/ThermalGeyser.cs",
-        "line": 208,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.cs",
-        "line": 877,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "double3 anchorAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(transform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/UI/BaseIntegrityHUD.cs",
-        "line": 705,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(module.transform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
-        "line": 1935,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(submarine.PlatformTransform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/EmergencyServiceRelay.cs",
-        "line": 340,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "_cachedRelayAup = AbsoluteUniversePosition.FromRuntimePosition(relayTransform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
-        "line": 2899,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(sourceTransform.position);"
+        "snippet": "double3 centerAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_transform.position);"
       }
     ],
     "broadTransformPositionFindings": [
       {
         "file": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
-        "line": 781,
+        "line": 860,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 cameraPosition = _cameraTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
-        "line": 350,
+        "line": 352,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "ResolveLadderFrame(entryPoint.position, exitPoint.position, ladderTransform);"
       },
       {
         "file": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
-        "line": 351,
+        "line": 353,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "InitializePresentationAnchors(entryPoint.position, exitPoint.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
-        "line": 353,
+        "line": 355,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "if (!TryResolveEntryPointAup(entryPoint.position, out AbsoluteUniversePosition entryAup) ||"
       },
       {
         "file": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
-        "line": 579,
+        "line": 672,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float3 playerRoot = SanitizeFinite(ToFloat3(_playerRoot.position), float3.zero);"
       },
@@ -571,63 +482,57 @@
       },
       {
         "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 3086,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(target.transform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 3174,
+        "line": 3134,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 targetPosition = target.transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 3197,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 targetPosition = target.transform.position;"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 3846,
+        "line": 3916,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "position = platformTransform.position;"
       },
       {
+        "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+        "line": 5845,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "return TryResolveAupDoubleFromRuntimeOrigin(target.transform.position, out targetAup);"
+      },
+      {
         "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 201,
+        "line": 206,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 targetPosition = targetTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 203,
+        "line": 208,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 ghostPosition = ghostRoot.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 220,
+        "line": 225,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 localSocketPosition = ghostRoot.InverseTransformPoint(candidateTransform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 443,
+        "line": 448,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "WriteNodeRecord(candidateIndex++, moduleObject.transform.position, moduleData, false);"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 447,
+        "line": 452,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "WriteNodeRecord(candidateIndex, candidateGhost.transform.position, candidateData, true);"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 553,
+        "line": 558,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(rootTransform.position);"
+        "snippet": "if (!TryResolveAupFromRuntimeOrigin(rootTransform.position, out double3 rootAup))"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
@@ -679,13 +584,13 @@
       },
       {
         "file": "Assets/_Project/Scripts/Construction/RepairDroneHub.cs",
-        "line": 620,
+        "line": 638,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 candidatePosition = crate.transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/RepairDroneHub.cs",
-        "line": 774,
+        "line": 792,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "private Vector3 ResolvedDockSocketPosition => launchPoint != null ? launchPoint.position : _cachedTransform.position;"
       },
@@ -859,27 +764,27 @@
       },
       {
         "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "line": 710,
+        "line": 708,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(module.transform.position),"
+        "snippet": "AbsoluteUniversePosition positionAup = TryResolveAupFromRuntimeOrigin(module.transform.position, out AbsoluteUniversePosition resolvedPositionAup)"
       },
       {
         "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "line": 832,
+        "line": 835,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 modulePosition = module.transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "line": 1439,
+        "line": 1442,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "moduleDto.SetPosition(t.position);"
       },
       {
         "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "line": 1446,
+        "line": 1449,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "graphNodeDto.SetAup(AbsoluteUniversePosition.FromRuntimePosition(t.position));"
+        "snippet": "graphNodeDto.SetAup(TryResolveAupFromRuntimeOrigin(t.position, out AbsoluteUniversePosition moduleAup)"
       },
       {
         "file": "Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs",
@@ -949,13 +854,13 @@
       },
       {
         "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
-        "line": 475,
+        "line": 659,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "runtimePosition = playerContext.PlayerCamera.transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
-        "line": 507,
+        "line": 691,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "runtimePosition = playerContext.PlayerTransform.position;"
       },
@@ -973,13 +878,13 @@
       },
       {
         "file": "Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs",
-        "line": 653,
+        "line": 652,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "lookState.EyePosition = SafeFiniteVector((float3)playerCameraTransform.position, movementState.WorldPosition);"
       },
       {
         "file": "Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs",
-        "line": 658,
+        "line": 657,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "fallbackPlayerPosition = ToVector3(SafeFiniteVector((float3)_playerTransform.position, movementState.WorldPosition));"
       },
@@ -1003,7 +908,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
-        "line": 2654,
+        "line": 2665,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 runtimePosition = _playerTransform.position;"
       },
@@ -1303,43 +1208,43 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
-        "line": 598,
+        "line": 595,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "audio.PlayAtPoint(cycleStartSound, _cachedTransform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
-        "line": 631,
+        "line": 628,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "audio.PlayAtPoint(cycleEndSound, _cachedTransform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
-        "line": 661,
+        "line": 658,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "destinationPosition = destination.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
-        "line": 706,
+        "line": 703,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "if (frame == null || !IsFinite(frame.position) || !IsFinite(frame.rotation))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
-        "line": 710,
+        "line": 707,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 startPosition = playerBody != null ? playerBody.position : player.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
-        "line": 941,
+        "line": 933,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "if (!TryResolveAupFromRuntimeOrigin(frame.position, out AbsoluteUniversePosition centerAup))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
-        "line": 1327,
+        "line": 1319,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "owningModule.ForceFloodFromBulkheadOverride(_cachedTransform.position);"
       },
@@ -1837,13 +1742,13 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
-        "line": 916,
+        "line": 992,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "GameObject wreckInstance = poolManager.Spawn(wreckPrefab, spawnTransform.position, spawnTransform.rotation);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
-        "line": 1739,
+        "line": 1815,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 positionWs = headlightTransform.position;"
       },
@@ -2119,27 +2024,33 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
-        "line": 558,
+        "line": 756,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 toolPosition = transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
-        "line": 393,
+        "line": 390,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "ApplyCutting(amount, _transform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
-        "line": 470,
+        "line": 457,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "audio.PlayAtPoint(cuttingLoopSound, _transform.position, cuttingVolume);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
-        "line": 499,
+        "line": 476,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "audio.PlayAtPoint(openSound, _transform.position, openVolume);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
+        "line": 590,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "double3 centerAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_transform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/SolarPanel.cs",
@@ -2383,13 +2294,13 @@
       },
       {
         "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
-        "line": 1500,
+        "line": 1504,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 center = root != null ? root.position : transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
-        "line": 1868,
+        "line": 1872,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 runtime = root != null ? root.position : transform.position;"
       },
@@ -3243,7 +3154,7 @@
     "floatDistanceFindings": [
       {
         "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 3912,
+        "line": 3982,
         "kind": "FLOAT_DISTANCE_REVIEW",
         "snippet": "float exactDistanceSq = math.distancesq(drone.Position, anchor);"
       },
@@ -3288,12 +3199,6 @@
         "line": 66,
         "kind": "FLOAT_DISTANCE_REVIEW",
         "snippet": "float length = math.distance(new float2(x0, y0), new float2(x1, y1));"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
-        "line": 300,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "return math.distance(localA, localB);"
       },
       {
         "file": "Assets/_Project/Scripts/RepairTool.cs",
@@ -3357,7 +3262,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
-        "line": 2810,
+        "line": 2902,
         "kind": "FLOAT_DISTANCE_REVIEW",
         "snippet": "return math.distancesq(position, previousPosition) <= CopperClumpDistanceSq &&"
       },
@@ -3423,58 +3328,19 @@
       }
     ],
     "directAupFloat3CastByFile": [],
-    "runtimeComponentFloatAupCastByFile": [],
+    "runtimeComponentFloatAupCastByFile": [
+      {
+        "file": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+        "count": 1
+      }
+    ],
     "strictTransformAuthorityByFile": [
       {
-        "file": "Assets/_Project/Scripts/PlayerBuilder.cs",
-        "count": 4
-      },
-      {
-        "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "count": 2
-      },
-      {
-        "file": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
-        "count": 2
-      },
-      {
-        "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "count": 1
-      },
-      {
-        "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "count": 1
-      },
-      {
-        "file": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
-        "count": 1
-      },
-      {
-        "file": "Assets/_Project/Scripts/ScannableTarget.cs",
-        "count": 1
-      },
-      {
-        "file": "Assets/_Project/Scripts/ThermalGeyser.cs",
-        "count": 1
-      },
-      {
-        "file": "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.cs",
-        "count": 1
-      },
-      {
-        "file": "Assets/_Project/Scripts/UI/BaseIntegrityHUD.cs",
-        "count": 1
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
-        "count": 1
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/EmergencyServiceRelay.cs",
-        "count": 1
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+        "file": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
         "count": 1
       }
     ]

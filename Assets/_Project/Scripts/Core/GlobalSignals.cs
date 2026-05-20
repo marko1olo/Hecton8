@@ -125,11 +125,102 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(24)] public readonly ulong Reserved2;
     }
 
+    public enum AudioEventKind : byte
+    {
+        None = 0,
+        AudioPing = 1,
+        StructuralStress = 2
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    public readonly struct AudioPingTriggerPayload
+    {
+        [FieldOffset(0)] public readonly long StartSampleFrame;
+        [FieldOffset(8)] public readonly int SampleRate;
+        [FieldOffset(12)] public readonly float Intensity;
+        [FieldOffset(16)] public readonly float ChirpDurationSeconds;
+        [FieldOffset(20)] public readonly Vector3 WorldPosition;
+        [FieldOffset(32)] public readonly float AcousticTransmission01;
+        [FieldOffset(36)] public readonly float LowPassCutoffHz;
+        [FieldOffset(40)] public readonly byte Kind;
+        [FieldOffset(41)] public readonly byte Reserved0;
+        [FieldOffset(42)] public readonly ushort Reserved1;
+        [FieldOffset(44)] public readonly uint Reserved2;
+
+        public AudioPingTriggerPayload(
+            long startSampleFrame,
+            int sampleRate,
+            float intensity,
+            float chirpDurationSeconds,
+            Vector3 worldPosition,
+            float acousticTransmission01,
+            float lowPassCutoffHz,
+            byte kind)
+        {
+            StartSampleFrame = startSampleFrame;
+            SampleRate = sampleRate > 0 ? sampleRate : 1;
+            Intensity = math.saturate(SanitizeFinite(intensity));
+            ChirpDurationSeconds = math.max(0f, SanitizeFinite(chirpDurationSeconds));
+            WorldPosition = SanitizeFinite(worldPosition);
+            AcousticTransmission01 = math.saturate(SanitizeFinite(acousticTransmission01, 1f));
+            LowPassCutoffHz = math.clamp(SanitizeFinite(lowPassCutoffHz, 22000f), 80f, 22000f);
+            Kind = kind;
+            Reserved0 = 0;
+            Reserved1 = 0;
+            Reserved2 = 0u;
+        }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    public readonly struct StructuralStressAudioPayload
+    {
+        public const uint FlagHasSourceAup = 1u << 0;
+
+        [FieldOffset(0)] public readonly AcousticAup SourceAup;
+        [FieldOffset(40)] public readonly ulong SourceAupPad;
+        [FieldOffset(48)] public readonly Vector3 WorldPosition;
+        [FieldOffset(60)] public readonly float Stress01;
+        [FieldOffset(64)] public readonly float PitchScale;
+        [FieldOffset(68)] public readonly float PressureDelta;
+        [FieldOffset(72)] public readonly float DepthMeters;
+        [FieldOffset(76)] public readonly float AcousticTransmission01;
+        [FieldOffset(80)] public readonly float LowPassCutoffHz;
+        [FieldOffset(84)] public readonly float AcousticDelaySeconds;
+        [FieldOffset(88)] public readonly uint Flags;
+        [FieldOffset(92)] public readonly uint Reserved0;
+
+        public StructuralStressAudioPayload(
+            in AcousticAup sourceAup,
+            Vector3 worldPosition,
+            float stress01,
+            float pitchScale,
+            float pressureDelta,
+            float depthMeters,
+            float acousticTransmission01,
+            float lowPassCutoffHz,
+            float acousticDelaySeconds,
+            uint flags)
+        {
+            SourceAup = sourceAup;
+            SourceAupPad = 0ul;
+            WorldPosition = SanitizeFinite(worldPosition);
+            Stress01 = math.saturate(SanitizeFinite(stress01));
+            PitchScale = math.max(0.1f, SanitizeFinite(pitchScale, 1f));
+            PressureDelta = SanitizeFinite(pressureDelta);
+            DepthMeters = math.max(0f, SanitizeFinite(depthMeters));
+            AcousticTransmission01 = math.saturate(SanitizeFinite(acousticTransmission01, 1f));
+            LowPassCutoffHz = math.clamp(SanitizeFinite(lowPassCutoffHz, 22000f), 80f, 22000f);
+            AcousticDelaySeconds = math.max(0f, SanitizeFinite(acousticDelaySeconds));
+            Flags = flags;
+            Reserved0 = 0u;
+        }
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct AudioEvent : ISignal
     {
         [FieldOffset(0)]
-        public Hecton8.Audio.AudioEventKind Kind;
+        public AudioEventKind Kind;
         [FieldOffset(1)]
         public byte Reserved0;
         [FieldOffset(2)]
@@ -139,19 +230,19 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(8)]
         public ulong Reserved3;
         [FieldOffset(16)]
-        public Hecton8.Audio.AudioPingTriggerInfo AudioPing;
+        public AudioPingTriggerPayload AudioPing;
         [FieldOffset(16)]
-        public Hecton8.Audio.StructuralStressAudioInfo StructuralStress;
+        public StructuralStressAudioPayload StructuralStress;
         [FieldOffset(112)]
         private ulong _padTail0;
         [FieldOffset(120)]
         private ulong _padTail1;
 
-        public static AudioEvent FromAudioPing(in Hecton8.Audio.AudioPingTriggerInfo info)
+        public static AudioEvent FromAudioPing(in AudioPingTriggerPayload info)
         {
             return new AudioEvent
             {
-                Kind = Hecton8.Audio.AudioEventKind.AudioPing,
+                Kind = AudioEventKind.AudioPing,
                 AudioPing = info,
                 Reserved0 = 0,
                 Reserved1 = 0,
@@ -160,11 +251,11 @@ namespace Hecton8.Core.Contracts.Signals
             };
         }
 
-        public static AudioEvent FromStructuralStress(in Hecton8.Audio.StructuralStressAudioInfo info)
+        public static AudioEvent FromStructuralStress(in StructuralStressAudioPayload info)
         {
             return new AudioEvent
             {
-                Kind = Hecton8.Audio.AudioEventKind.StructuralStress,
+                Kind = AudioEventKind.StructuralStress,
                 StructuralStress = info,
                 Reserved0 = 0,
                 Reserved1 = 0,
@@ -175,9 +266,31 @@ namespace Hecton8.Core.Contracts.Signals
 
         public static AudioEvent FromStructuralStress(Vector3 worldPosition, float stress01, float pitchScale)
         {
-            Hecton8.Audio.StructuralStressAudioInfo info =
-                new Hecton8.Audio.StructuralStressAudioInfo(worldPosition, stress01, pitchScale);
+            StructuralStressAudioPayload info = new StructuralStressAudioPayload(
+                default,
+                worldPosition,
+                stress01,
+                pitchScale,
+                0f,
+                0f,
+                1f,
+                22000f,
+                0f,
+                0u);
             return FromStructuralStress(in info);
+        }
+
+        private static float SanitizeFinite(float value, float fallback = 0f)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        private static Vector3 SanitizeFinite(Vector3 value)
+        {
+            return new Vector3(
+                SanitizeFinite(value.x),
+                SanitizeFinite(value.y),
+                SanitizeFinite(value.z));
         }
     }
 
@@ -5505,6 +5618,7 @@ namespace Hecton8.Core
         private static int _signalTelemetryCursor;
         private static int _signalTelemetryLastCorruptedTotal;
         private static int _signalTelemetryLastDropStormDumpFrame;
+        private static int _signalTelemetryLastCorruptionDumpFrame;
 
         public static float TimeDilationScalar => Volatile.Read(ref _timeDilationScalarMilli) * 0.001f;
 
@@ -7498,21 +7612,33 @@ namespace Hecton8.Core
             int previousCorrupted = Volatile.Read(ref _signalTelemetryLastCorruptedTotal);
             if (corruptedSignals > previousCorrupted)
             {
-                SignalTelemetryRingBuffer.DumpToDisk();
+                if (ShouldDumpSignalCorruption(frame))
+                    SignalTelemetryRingBuffer.DumpToDisk();
+
                 Volatile.Write(ref _signalTelemetryLastCorruptedTotal, corruptedSignals);
             }
         }
 
         private static bool ShouldDumpSignalDropStorm(int frame)
         {
-            int lastFrame = Volatile.Read(ref _signalTelemetryLastDropStormDumpFrame);
+            return ShouldDumpSignalBlackBox(ref _signalTelemetryLastDropStormDumpFrame, frame);
+        }
+
+        private static bool ShouldDumpSignalCorruption(int frame)
+        {
+            return ShouldDumpSignalBlackBox(ref _signalTelemetryLastCorruptionDumpFrame, frame);
+        }
+
+        private static bool ShouldDumpSignalBlackBox(ref int lastDumpFrame, int frame)
+        {
+            int lastFrame = Volatile.Read(ref lastDumpFrame);
             if (lastFrame > 0 &&
                 unchecked((uint)(frame - lastFrame)) < SignalTelemetryRingBufferCapacity)
             {
                 return false;
             }
 
-            Volatile.Write(ref _signalTelemetryLastDropStormDumpFrame, frame);
+            Volatile.Write(ref lastDumpFrame, frame);
             return true;
         }
 
@@ -7896,6 +8022,7 @@ namespace Hecton8.Core
             Volatile.Write(ref _signalTelemetryCursor, 0);
             Volatile.Write(ref _signalTelemetryLastCorruptedTotal, 0);
             Volatile.Write(ref _signalTelemetryLastDropStormDumpFrame, 0);
+            Volatile.Write(ref _signalTelemetryLastCorruptionDumpFrame, 0);
         }
 
         private static void AdvanceSignalSequence(ref int sequence)

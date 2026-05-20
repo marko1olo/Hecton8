@@ -72,7 +72,20 @@ namespace Hecton8.Construction
                 return;
             }
 
-            int2 range = ResolveRange(ghostIndex);
+            if (!TryResolveRange(ghostIndex, out int2 range))
+            {
+                best.Flags = ConstructionSocketFlags.CapacityExceeded;
+                Results[ghostIndex] = best;
+                return;
+            }
+
+            if (!SocketCsrTargetIndices.IsCreated)
+            {
+                best.Flags = ConstructionSocketFlags.CapacityExceeded;
+                Results[ghostIndex] = best;
+                return;
+            }
+
             int safeStart = math.clamp(range.x, 0, math.max(0, TargetCount));
             int safeCount = math.clamp(range.y, 0, math.max(0, TargetCount - safeStart));
             int budget = math.min(
@@ -92,10 +105,14 @@ namespace Hecton8.Construction
             for (int offset = 0; offset < safeCount && evaluated < (uint)budget; offset++)
             {
                 int csrIndex = safeStart + offset;
-                int targetIndex = SocketCsrTargetIndices.IsCreated && (uint)csrIndex < (uint)SocketCsrTargetIndices.Length
-                    ? SocketCsrTargetIndices[csrIndex]
-                    : csrIndex;
                 evaluated++;
+                if ((uint)csrIndex >= (uint)SocketCsrTargetIndices.Length)
+                {
+                    best.Flags |= ConstructionSocketFlags.CapacityExceeded;
+                    continue;
+                }
+
+                int targetIndex = SocketCsrTargetIndices[csrIndex];
                 if ((uint)targetIndex >= (uint)TargetSockets.Length ||
                     (uint)targetIndex >= (uint)TargetSocketAups.Length)
                 {
@@ -191,13 +208,15 @@ namespace Hecton8.Construction
             Results[ghostIndex] = best;
         }
 
-        private int2 ResolveRange(int ghostIndex)
+        private bool TryResolveRange(int ghostIndex, out int2 range)
         {
+            range = default;
             int rangeIndex = SocketCsrRangeOffset + ghostIndex;
-            if (SocketCsrRanges.IsCreated && (uint)rangeIndex < (uint)SocketCsrRanges.Length)
-                return SocketCsrRanges[rangeIndex];
+            if (!SocketCsrRanges.IsCreated || (uint)rangeIndex >= (uint)SocketCsrRanges.Length)
+                return false;
 
-            return new int2(0, TargetCount);
+            range = SocketCsrRanges[rangeIndex];
+            return true;
         }
 
         private static float3 ResolveSafeNormal(SocketStateDTO socket)
@@ -419,6 +438,334 @@ namespace Hecton8.Construction
                 result.FailureFlags,
                 (uint)math.max(0, result.HitModuleIndex));
             Results[index] = result;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct BuildBuilderGhostStateJob : IJob
+    {
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<BuilderGhostStateDTO> States;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<BuilderGhostVisualDTO> Visuals;
+        public double3 TargetAup;
+        public double3 RuntimeOriginAup;
+        public quaternion Rotation;
+        public float3 BoundsScale;
+        public double GridSizeMeters;
+        public uint PrefabHashID;
+        public uint ValidationFlags;
+        public float AnimationPhase;
+        public float GlobalQualityWeight;
+        public float DearLieDampen;
+        public float DearLieWiggleSpeed;
+        public float4 ValidColor;
+        public float4 InvalidColor;
+        public uint Frame;
+        public int StateIndex;
+
+        public void Execute()
+        {
+            if (!States.IsCreated || States.Length <= 0)
+                return;
+
+            int index = math.clamp(StateIndex, 0, States.Length - 1);
+            double3 snappedAup = SnapAup(TargetAup, GridSizeMeters);
+            double3 runtimeDouble = snappedAup - RuntimeOriginAup;
+            float3 runtimePosition = new float3(
+                (float)runtimeDouble.x,
+                (float)runtimeDouble.y,
+                (float)runtimeDouble.z);
+            float3 safeScale = math.max(BoundsScale, new float3(0.001f));
+            uint flags = ValidationFlags |
+                         BuilderGhostValidationFlags.Active |
+                         BuilderGhostValidationFlags.PresentationOnly |
+                         BuilderGhostValidationFlags.RollbackExcluded;
+
+            if (!math.all(math.isfinite(snappedAup)) ||
+                !math.all(math.isfinite(runtimeDouble)) ||
+                !math.all(math.isfinite(runtimePosition)) ||
+                !math.all(math.isfinite(Rotation.value)) ||
+                !math.all(math.isfinite(safeScale)) ||
+                math.any(math.abs(runtimeDouble) > (double)float.MaxValue))
+            {
+                flags &= ~BuilderGhostValidationFlags.Valid;
+                flags |= BuilderGhostValidationFlags.NonFinite;
+                runtimePosition = float3.zero;
+                Rotation = quaternion.identity;
+                safeScale = new float3(0.001f);
+            }
+
+            BuilderGhostStateDTO state;
+            state.LocalToWorld = float4x4.TRS(runtimePosition, Rotation, safeScale);
+            state.AUP_TargetPosition = snappedAup;
+            state.PrefabHashID = PrefabHashID;
+            state.ValidationFlags = flags;
+            state.AnimationPhase = math.isfinite(AnimationPhase) ? AnimationPhase : 0f;
+            state.ValidationStateHash = MakeBuilderGhostHash(PrefabHashID, flags, state.AnimationPhase, Frame);
+            state._pad0 = 0u;
+            state._pad1 = 0u;
+            state._pad2 = 0u;
+            state._pad3 = 0u;
+            state._pad4 = 0u;
+            state._pad5 = 0u;
+            States[index] = state;
+
+            if (Visuals.IsCreated && (uint)index < (uint)Visuals.Length)
+            {
+                BuilderGhostVisualDTO visual;
+                visual.GlobalQualityWeight = ShinobuSocketConstructionRuntime.SanitizeQuality(GlobalQualityWeight);
+                visual.DearLieDampen = math.clamp(math.isfinite(DearLieDampen) ? DearLieDampen : 0f, 0f, 1f);
+                visual.DearLieWiggleSpeed = math.isfinite(DearLieWiggleSpeed) && DearLieWiggleSpeed > 0f ? DearLieWiggleSpeed : 18f;
+                visual.Alpha = 1f;
+                visual.ValidColor = ValidColor;
+                visual.InvalidColor = InvalidColor;
+                visual.Flags = flags;
+                visual.Frame = Frame;
+                visual._pad0 = 0u;
+                visual._pad1 = 0u;
+                Visuals[index] = visual;
+            }
+        }
+
+        private static double3 SnapAup(double3 aup, double gridSize)
+        {
+            if (!math.isfinite(gridSize) || gridSize <= 0.0001d)
+                return aup;
+
+            double inv = 1.0d / gridSize;
+            return math.round(aup * inv) * gridSize;
+        }
+
+        private static uint MakeBuilderGhostHash(uint prefabHash, uint flags, float phase, uint frame)
+        {
+            uint hash = ShinobuSocketConstructionRuntime.FoldHash(2166136261u, prefabHash);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, flags);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(phase));
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, frame);
+            return hash;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct ValidateBuilderGhostPlacementJob : IJob
+    {
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<BuilderGhostStateDTO> States;
+        [ReadOnly, NoAlias] public NativeArray<SocketModuleBoundsDTO> ExistingBounds;
+        [ReadOnly, NoAlias] public NativeArray<byte> VoxelSdfSamples;
+        public float3 BoundsExtents;
+        public int ExistingCount;
+        public float SolidSdfThreshold;
+        public int StateIndex;
+
+        public void Execute()
+        {
+            if (!States.IsCreated || States.Length <= 0)
+                return;
+
+            int index = math.clamp(StateIndex, 0, States.Length - 1);
+            BuilderGhostStateDTO state = States[index];
+            uint flags = state.ValidationFlags;
+            flags &= ~(BuilderGhostValidationFlags.Valid | BuilderGhostValidationFlags.SdfBlocked | BuilderGhostValidationFlags.BoundsBlocked);
+
+            float minSdf = float.MaxValue;
+            uint cornerChecks = 0u;
+            bool finite = IsFiniteState(in state) && math.all(math.isfinite(BoundsExtents)) && math.all(BoundsExtents >= 0f);
+            if (!finite)
+            {
+                flags |= BuilderGhostValidationFlags.NonFinite;
+                state.ValidationFlags = flags;
+                state.ValidationStateHash = MakeValidationHash(state.PrefabHashID, flags, 0u, 0u);
+                States[index] = state;
+                return;
+            }
+
+            float3 center = state.LocalToWorld.c3.xyz;
+            float3 axisX = state.LocalToWorld.c0.xyz * 0.5f;
+            float3 axisY = state.LocalToWorld.c1.xyz * 0.5f;
+            float3 axisZ = state.LocalToWorld.c2.xyz * 0.5f;
+            for (int corner = 0; corner < 8; corner++)
+            {
+                float sx = (corner & 1) == 0 ? -1f : 1f;
+                float sy = (corner & 2) == 0 ? -1f : 1f;
+                float sz = (corner & 4) == 0 ? -1f : 1f;
+                float3 runtimeCorner = center + axisX * sx + axisY * sy + axisZ * sz;
+                if (!math.all(math.isfinite(runtimeCorner)))
+                {
+                    flags |= BuilderGhostValidationFlags.NonFinite;
+                    continue;
+                }
+
+                cornerChecks++;
+                if (VoxelSdfSamples.IsCreated && corner < VoxelSdfSamples.Length)
+                {
+                    float sdf = (sbyte)VoxelSdfSamples[corner] * (1f / 127f);
+                    minSdf = math.min(minSdf, sdf);
+                    if (sdf <= SolidSdfThreshold)
+                        flags |= BuilderGhostValidationFlags.SdfBlocked;
+                }
+            }
+
+            if (ExistingBounds.IsCreated && ExistingCount > 0)
+            {
+                int count = math.min(ExistingCount, ExistingBounds.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    SocketModuleBoundsDTO existing = ExistingBounds[i];
+                    if ((existing.Flags & ConstructionSocketFlags.CollisionBlocked) != 0u ||
+                        !math.all(math.isfinite(existing.CenterAup)) ||
+                        !math.all(math.isfinite(existing.Extents)))
+                    {
+                        continue;
+                    }
+
+                    double3 delta = existing.CenterAup - state.AUP_TargetPosition;
+                    float3 absDelta = new float3(
+                        (float)math.abs(delta.x),
+                        (float)math.abs(delta.y),
+                        (float)math.abs(delta.z));
+                    if (math.all(absDelta <= existing.Extents + BoundsExtents))
+                    {
+                        flags |= BuilderGhostValidationFlags.BoundsBlocked;
+                        break;
+                    }
+                }
+            }
+
+            if ((flags & (BuilderGhostValidationFlags.NonFinite | BuilderGhostValidationFlags.SdfBlocked | BuilderGhostValidationFlags.BoundsBlocked)) == 0u)
+                flags |= BuilderGhostValidationFlags.Valid;
+
+            state.ValidationFlags = flags;
+            state.ValidationStateHash = MakeValidationHash(state.PrefabHashID, flags, cornerChecks, math.asuint(minSdf == float.MaxValue ? 0f : minSdf));
+            States[index] = state;
+        }
+
+        private static bool IsFiniteState(in BuilderGhostStateDTO state)
+        {
+            return math.all(math.isfinite(state.AUP_TargetPosition)) &&
+                   math.all(math.isfinite(state.LocalToWorld.c0)) &&
+                   math.all(math.isfinite(state.LocalToWorld.c1)) &&
+                   math.all(math.isfinite(state.LocalToWorld.c2)) &&
+                   math.all(math.isfinite(state.LocalToWorld.c3));
+        }
+
+        private static uint MakeValidationHash(uint prefabHash, uint flags, uint cornerChecks, uint sdfBits)
+        {
+            uint hash = ShinobuSocketConstructionRuntime.FoldHash(2166136261u, prefabHash);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, flags);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, cornerChecks);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, sdfBits);
+            return hash;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct GenerateMockBuilderGhostValidationJob : IJobParallelFor
+    {
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<BuilderGhostStateDTO> States;
+        public double3 RuntimeOriginAup;
+        public float GridSizeMeters;
+        public uint BasePrefabHash;
+        public uint Frame;
+
+        public void Execute(int index)
+        {
+            if (!States.IsCreated || (uint)index >= (uint)States.Length)
+                return;
+
+            int x = index % 100;
+            int z = index / 100;
+            double3 aup = new double3(x * GridSizeMeters, -40.0d, z * GridSizeMeters);
+            double3 runtimeDouble = aup - RuntimeOriginAup;
+            float3 runtime = new float3((float)runtimeDouble.x, (float)runtimeDouble.y, (float)runtimeDouble.z);
+            float terrainFake = math.sin((x * 0.173f) + (z * 0.097f));
+            uint flags = BuilderGhostValidationFlags.Active |
+                         BuilderGhostValidationFlags.PresentationOnly |
+                         BuilderGhostValidationFlags.RollbackExcluded |
+                         BuilderGhostValidationFlags.GridSnapped;
+            if (terrainFake < -0.72f)
+                flags |= BuilderGhostValidationFlags.SdfBlocked;
+            else
+                flags |= BuilderGhostValidationFlags.Valid;
+
+            BuilderGhostStateDTO state;
+            state.LocalToWorld = float4x4.TRS(runtime, quaternion.identity, new float3(4f, 3f, 4f));
+            state.AUP_TargetPosition = aup;
+            state.PrefabHashID = BasePrefabHash + (uint)index;
+            state.ValidationFlags = flags;
+            state.AnimationPhase = math.frac((Frame * 0.013f) + (index * 0.001f));
+            state.ValidationStateHash = ShinobuSocketConstructionRuntime.MakeResultHash(state.PrefabHashID, flags, (uint)index, Frame);
+            state._pad0 = 0u;
+            state._pad1 = 0u;
+            state._pad2 = 0u;
+            state._pad3 = 0u;
+            state._pad4 = 0u;
+            state._pad5 = 0u;
+            States[index] = state;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct BuildBuilderGhostIndirectArgsJob : IJob
+    {
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<BuilderGhostIndirectArgsDTO> Args;
+        public uint InstanceCount;
+
+        public void Execute()
+        {
+            if (!Args.IsCreated || Args.Length <= 0)
+                return;
+
+            BuilderGhostIndirectArgsDTO args;
+            args.VertexCountPerInstance = ShinobuSocketConstructionRuntime.BuilderGhostProceduralVertexCount;
+            args.InstanceCount = InstanceCount;
+            args.StartVertex = 0u;
+            args.StartInstance = 0u;
+            Args[0] = args;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct RecordHolographyTelemetryJob : IJob
+    {
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<HolographyTelemetryEntry> TelemetryRing;
+        [ReadOnly, NoAlias] public NativeArray<BuilderGhostStateDTO> States;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> DumpRequest;
+        public uint Frame;
+        public uint SdfCornerChecks;
+        public float SolverMicroseconds;
+        public float MinSdfDistance;
+        public float GlobalQualityWeight;
+        public int StateIndex;
+
+        public void Execute()
+        {
+            if (!TelemetryRing.IsCreated || TelemetryRing.Length <= 0 || !States.IsCreated || States.Length <= 0)
+                return;
+
+            int stateIndex = math.clamp(StateIndex, 0, States.Length - 1);
+            BuilderGhostStateDTO state = States[stateIndex];
+            int ringIndex = (int)(Frame % (uint)math.min(TelemetryRing.Length, ShinobuSocketConstructionRuntime.TelemetryCapacity));
+            HolographyTelemetryEntry entry;
+            entry.AUP_TargetPosition = state.AUP_TargetPosition;
+            entry.Frame = Frame;
+            entry.PrefabHashID = state.PrefabHashID;
+            entry.SdfCornerChecks = SdfCornerChecks;
+            entry.ValidationFlags = state.ValidationFlags;
+            entry.SolverMicroseconds = math.isfinite(SolverMicroseconds) ? SolverMicroseconds : -1f;
+            entry.MinSdfDistance = math.isfinite(MinSdfDistance) ? MinSdfDistance : -9999f;
+            entry.ValidationStateHash = state.ValidationStateHash;
+            entry.GlobalQualityWeight = ShinobuSocketConstructionRuntime.SanitizeQuality(GlobalQualityWeight);
+            entry._pad0 = 0u;
+            entry._pad1 = 0u;
+            TelemetryRing[ringIndex] = entry;
+
+            if (DumpRequest.IsCreated &&
+                DumpRequest.Length > 0 &&
+                (entry.SolverMicroseconds > 500f ||
+                 entry.SolverMicroseconds < 0f ||
+                 (state.ValidationFlags & BuilderGhostValidationFlags.NonFinite) != 0u))
+            {
+                DumpRequest[0] = 1;
+            }
         }
     }
 

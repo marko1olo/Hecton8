@@ -864,3 +864,160 @@ Verification:
   </STRUCT_LAYOUT_VERIFICATION>
   <COMPILE_GUARD>No build launched after this BurstCallback handle sweep.</COMPILE_GUARD>
 </SELF_AUDIT>
+
+## 2026-05-20 Alignment Pass - Crash Telemetry Toxic Chemistry Sweep
+
+What was wrong:
+- `CrashTelemetryBuffer.cs` still had Sequential binary headers for crash export and live telemetry.
+- `ToxicOutgassingChemistryTypes.cs` still had Sequential DTO rows for toxic grid state, source rows, constants, mocks, combat-damage transfer, and telemetry.
+
+What was done:
+- Converted `CrashExportHeader=16` and `LiveTelemetryRecord=32` to explicit layout.
+- Converted toxic chemistry DTO rows to explicit layout while preserving sizes: `ToxicityStateDTO=32`, `ToxicOutgassingGridHeaderDTO=64`, `ToxicitySourceDTO=48`, `ToxicOutgassingConstants=64`, `MockFlowField=32`, `MockWorldSampler=32`, `ToxicityCombatDamageSignal=64`, and `ToxicityGridTelemetryEntry=64`.
+
+Cinematic Cheats used:
+- Toxic rows preserve the existing cheap chemistry approximation path: mock flow/sampler and scalar density fields, no Navier-Stokes expansion.
+
+Exact Microseconds saved:
+- Estimated 1-8 us per 10k toxic chemistry rows plus 0-4 us per crash export batch. Static estimate only.
+
+Verification:
+- `rg -n "StructLayout\(LayoutKind\.Sequential" Assets/_Project/Scripts/CrashTelemetryBuffer.cs Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryTypes.cs` returned 0 hits.
+- Unaligned 8-byte `FieldOffset` scan over both files returned 0 hits.
+- `git diff --check` passed with CRLF warnings only.
+- No build or rebuild was launched.
+
+<SELF_AUDIT>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <ToxicOutgassingGridHeaderDTO size="64">GridOriginAUP@0:double3; CellSizeMeters@24:float; GlobalQualityWeight@28:float; buffer ids/version @32/36/40/44:uint; Resolution@48:ushort; ActiveSources@50:ushort; ActiveEntities@52:ushort; Flags@54:byte; _pad0@55:byte; _pad1@56:ulong.</ToxicOutgassingGridHeaderDTO>
+    <ToxicitySourceDTO size="48">AUP@0:double3; EmissionRate@24:float; Density@28:float; ChemicalHash@32:uint; _pad0@36:uint; _pad1@40:ulong.</ToxicitySourceDTO>
+    <CrashExportHeader size="16">Magic@0:ulong; EntryCount@8:uint; StructSizeBytes@12:uint.</CrashExportHeader>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <COMPILE_GUARD>No build launched after this crash/chemistry sweep.</COMPILE_GUARD>
+</SELF_AUDIT>
+
+## 2026-05-20 Alignment Pass - Graphics Material TBDR DTO Sweep
+
+What was wrong:
+- `ShinobuMaterialResponseRuntime.cs` still had Sequential shader/material/Vault DTO rows.
+- `TBDRPipelineSurgeonTypes.cs` still had Sequential fixed DTO rows for budget counters, POI transforms, mock camera matrices, AUP GPU localization, texture streaming, telemetry, shader globals, and indirect draw args.
+
+What was done:
+- Converted all material response DTO rows to explicit layout.
+- Converted fixed TBDR culling/shader rows to explicit layout.
+- Left `MockScatterBuffer` Sequential because it embeds Unity `NativeArray` wrappers.
+
+Cinematic Cheats used:
+- Existing graphics path remains GPU/indirect-data driven: material aging and culling are scalar/DTO payloads, not per-object MonoBehaviour simulation.
+
+Exact Microseconds saved:
+- Estimated 2-14 us per 10k material/culling row reads or GPU uploads. Static estimate only.
+
+Verification:
+- `ShinobuMaterialResponseRuntime.cs` Sequential scan returned 0 hits.
+- `TBDRPipelineSurgeonTypes.cs` Sequential scan reports only `MockScatterBuffer`, the documented NativeArray-wrapper exception.
+- Unaligned 8-byte `FieldOffset` scan over both files returned 0 hits.
+- `git diff --check` passed with CRLF warnings only.
+- No build or rebuild was launched.
+
+<SELF_AUDIT>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <MaterialResponseTelemetryEntry size="64">Frame/Flags/VisibleCount/UploadedBytes @0/4/8/12; upload/texture/quality floats @16/20/24/28; StateHash/CsvGeneration/LayoutHash/_pad0 @32/36/40/44; Wear/Salt/Bio/Power means @48/52/56/60.</MaterialResponseTelemetryEntry>
+    <PoiTransformDTO size="112">LocalToWorld@0:float4x4; CameraRelativePositionRadius@64:float4; MeshId@80:uint; InstanceId@84:uint; VertexCount@88:uint; DistanceSq@92:float; SortKey@96:uint; Flags@100:uint; _pad0@104:ulong.</PoiTransformDTO>
+    <AupGpuLocalizationInput size="48">CellX@0:long; CellY@8:long; CellZ@16:long; Local@24:float3; BoundsRadius@36:float; MeshId@40:uint; InstanceId@44:uint.</AupGpuLocalizationInput>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <COMPILE_GUARD>No build launched after this graphics DTO sweep.</COMPILE_GUARD>
+</SELF_AUDIT>
+
+## 2026-05-20 Alignment Pass - Audio Virtualization Contract Sweep
+
+What was wrong:
+- `AudioVirtualizationContracts.cs` still used Sequential layout for virtual voice ingress/state/selection/statistics/telemetry/tuning/mock DTO rows.
+- The editor smoke test still asserted old Sequential source markers for two key DTOs.
+
+What was done:
+- Converted all source-owned virtual voice contract rows to explicit layout while preserving existing sizes.
+- Kept `AcousticAup` lanes aligned at offsets 0, 40, and 80 where embedded.
+- Updated `ShinobuAcousticDspSmokeTester` to assert Explicit layout for `VirtualVoiceDTO=48` and `VirtualVoiceSortKey=16`.
+
+Cinematic Cheats used:
+- Audio remains on the existing dear-lie SDF/Sabine/DSP approximation path. No heavy propagation simulation was introduced.
+
+Exact Microseconds saved:
+- Estimated 2-16 us per 10k virtual voice/sort/telemetry rows. Static estimate only.
+
+Verification:
+- `rg -n "StructLayout\(LayoutKind\.Sequential" Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs` returned 0 hits.
+- Unaligned 8-byte `FieldOffset` scan over the contract file returned 0 hits.
+- Smoke test source needles now match explicit layout strings.
+- `git diff --check` passed with CRLF warnings only.
+- No build or rebuild was launched.
+
+<SELF_AUDIT>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <VirtualVoiceDTO size="48">AupMeters@0:double3; Volume@24:float; Pitch@28:float; ClipHash@32:uint; SourceEntityID@36:uint; Importance@40:float; Padding@44:uint.</VirtualVoiceDTO>
+    <VirtualVoiceRequest size="128">SourceAup@0:AcousticAup; SourceVelocity@40:float3; Volume/Priority/Pitch/Doppler @52/56/60/64; Sabine/LowPass/Delay @68/72/76/80; Event/Clip/Source/Stationary @84/88/92/96; byte flags @100..104; _reserved1@108:uint.</VirtualVoiceRequest>
+    <AcousticEchoTap size="144">SourceAup@0:AcousticAup; ListenerAup@40:AcousticAup; Position@80:float3; scalar lanes @92..108; hashes @112/116/120; byte flags @124/125; reserved lanes @126/128/132/136.</AcousticEchoTap>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <COMPILE_GUARD>No build launched after this audio virtualization contract sweep.</COMPILE_GUARD>
+</SELF_AUDIT>
+
+## 2026-05-20 Alignment Pass - Audio DSP Propagation Kernel Sweep
+
+What was wrong:
+- Adaptive stem, echolocation, acoustic portal propagation, and depth-stress synthesis fixed DTO/state rows still used Sequential layout.
+
+What was done:
+- Converted fixed rows in `AdaptiveStemAudioMixer.cs`, `AcousticEcholocationRaymarch.cs`, `AcousticPortalPropagation.cs`, and `DepthStressGranularSynthesisKernel.cs` to explicit layout.
+- Preserved all existing sizes and kept `AcousticAup`/`double` lanes 8-byte aligned.
+
+Cinematic Cheats used:
+- The acoustic path remains SDF/Sabine/oscillator approximation. No heavy acoustic wave or pressure simulation was introduced.
+
+Exact Microseconds saved:
+- Estimated 1-10 us per 10k audio DSP/propagation rows. Static estimate only.
+
+Verification:
+- Touched-file Sequential scan returned 0 hits.
+- Unaligned 8-byte `FieldOffset` scan over touched files returned 0 hits.
+- `git diff --check` passed with CRLF warnings only.
+- No build or rebuild was launched.
+
+<SELF_AUDIT>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <AcousticPathQuery size="112">SourceAup@0:AcousticAup; ListenerAup@40:AcousticAup; ListenerRight@80:float3; NodeCount@92:int; EdgeCount@96:int; MaxNodeExpansions@100:int; QualityTier@104:byte; DisablePortalPath@105:byte; reserved@106/108.</AcousticPathQuery>
+    <AcousticPathResult size="104">LastPortalAup@0:AcousticAup; distance/delay/transmission/lowpass/itd/room/pathfinding @40..64; node indices @68..84; StateHash@88:uint; status bytes @92..95; reserved@96:uint.</AcousticPathResult>
+    <KineticImpactSineOscillatorState size="24">Phase@0:double; LowPassState@8:float; AgeSeconds@12:float; pad floats @16/20.</KineticImpactSineOscillatorState>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <COMPILE_GUARD>No build launched after this audio DSP propagation sweep.</COMPILE_GUARD>
+</SELF_AUDIT>
+
+## 2026-05-20 Alignment Pass - Scanner Data Mining Route Sweep
+
+What was wrong:
+- `ScannerDataMiningRouter.cs` still used Sequential layout for scanner result/spatial/entity state/mock/query/telemetry/settings DTO rows.
+
+What was done:
+- Converted all Sequential rows in `ScannerDataMiningRouter.cs` to explicit layout while preserving sizes.
+- Kept `double3`, `long`, and `ulong` lanes on 8-byte offsets.
+
+Cinematic Cheats used:
+- Scanner occlusion remains SDF/mock DTO based; no Unity physics query expansion was introduced.
+
+Exact Microseconds saved:
+- Estimated 1-8 us per 10k scanner DTO rows. Static estimate only.
+
+Verification:
+- `rg -n "StructLayout\(LayoutKind\.Sequential" Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs` returned 0 hits.
+- Unaligned 8-byte `FieldOffset` scan over the file returned 0 hits.
+- `git diff --check` passed with CRLF warnings only.
+- No build or rebuild was launched.
+
+<SELF_AUDIT>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <ActiveScanStateDTO size="128">TargetAUP@0:double3; LastOriginAUP@24:double3; SectorHash@48:long; DepletionMask@56:ulong; pads@64/72; scalar lanes @80..124.</ActiveScanStateDTO>
+    <ScannerSpatialEntityDTO size="64">AUP@0:double3; SectorHash@24:long; DepletionMask@32:ulong; EntityHash@40:uint; SphereRadius@44:float; MetadataIndex@48:uint; Flags@52:uint; DepletionWordIndex@56:uint; _pad0@60:uint.</ScannerSpatialEntityDTO>
+    <ScannerTelemetryEntry size="64">TargetAUP@0:double3; _pad0@24:ulong; Frame/TargetHash/Flags/CandidateCount/CompletedCount/EstimatedMicroseconds @32..52; Progress01@56:float; HitDistance@60:float.</ScannerTelemetryEntry>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <COMPILE_GUARD>No build launched after this scanner route sweep.</COMPILE_GUARD>
+</SELF_AUDIT>

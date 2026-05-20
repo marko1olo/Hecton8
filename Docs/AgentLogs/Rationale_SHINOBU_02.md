@@ -807,3 +807,47 @@ Evidence:
 - Current46 report chronology was repaired after detecting the first insertion landed above older entries; `LOG_SHINOBU_02.md` now lists Current41 through Current46 in bottom-appended order.
 - Full Current46 `git diff --check` over code/status/rationale/log/audit artifacts returned exit 0 with line-ending warnings only.
 - Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT46 CPU=100 PROCS=0`; final retry `PRE_BUILD_GUARD_CURRENT46_FINAL2 CPU=78 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-20 - Current47 Signal Blackbox Backoff And R45 Boundary Repair
+
+Problem: Current46 SignalCritical audit left 15 sync-I/O review warnings. Bernoulli classified `SystemDispatcher` rows as one-shot fatal/stall blackbox dump paths except one editor/development CSV live-tuning path. Beauvoir classified `SignalWardenRuntime` rows as cold boot/manual CSV, editor/fatal dump, or a real runtime fault-path risk: SignalBus drop storms could call `SignalTelemetryRingBuffer.DumpToDisk()` every pre-simulation frame during a sustained storm. Archimedes found active docs still naming R44 as current after AGENTS and architecture docs moved the current static root/architecture boundary to R45.
+
+Solution: Added a Core-only, zero-allocation 300-frame backoff latch in `GlobalSignals.ReportSignalLaneTelemetry()` for drop-storm blackbox dumps. The latch uses `_signalTelemetryLastDropStormDumpFrame`, `Volatile.Read/Write`, and `SignalTelemetryRingBufferCapacity = 300`; it does not allocate, does not add a new queue, and does not move blackbox I/O to a background path without a copied snapshot contract. Corruption dumps remain immediate because they are fatal evidence. Updated the active R45 doc boundary in `Docs/Actual Domains of Project.txt`, `Docs/QUALITY_GATES.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/README.md`, `Docs/ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md`, and seven Core/SignalBus architecture note headings.
+
+Rejected Alternatives: Asynchronous blackbox dumping was rejected because `SignalTelemetryRingBuffer.DumpToDisk()` currently serializes a live Vault view; moving it off-thread without copying the 300-frame snapshot risks lifetime and generation-handle races. Removing `SystemDispatcher` fatal/stall dumps was rejected because those are required forensic artifacts. Narrowing execution-priority CSV from `UNITY_EDITOR || DEVELOPMENT_BUILD` to `UNITY_EDITOR` was rejected because it changes development-build live tuning behavior. Broad doc rewrites outside the R45-current drift rows were rejected because many docs already carry concurrent agent edits.
+
+Scalability potential: Low = sustained SignalBus drop storms no longer repeat the same synchronous dump every pre-simulation frame, reducing worst-case fault-path I/O pressure on weak storage. Middle = blackbox evidence still refreshes every 300 frames during a persistent storm, matching the ring capacity. High/Ultra = richer signal traffic can still emit immediate corruption dumps while normal lane transport remains typed and allocation-free.
+
+Hardware Impact: 0 measured us. No profiler/runtime build. Expected fault-path impact is bounding repeated drop-storm file writes from once per frame to at most once per 300 frames per storm path; no normal-frame performance claim is made.
+
+Evidence:
+- Bernoulli mapped `SystemDispatcher` warnings to current lines 3292/3293, 3345/3346, 3462, 4433, and 4450. Fatal/stall dump rows were kept; CSV reload was classified editor/development live tuning.
+- Beauvoir mapped `SignalWardenRuntime` warnings to cold/editor/fatal rows and identified the drop-storm caller at `GlobalSignals.cs:7488` before the patch.
+- Archimedes identified R44-current drift in root docs, quality/system/runtime docs, P0 proof matrix, and Core/SignalBus architecture note headings.
+- `SIGNAL_DROP_STORM_BACKOFF_SCAN=PASS`.
+- `R45_STALE_CURRENT_DOC_SCAN=PASS`.
+- `git diff --check` over touched source/docs/audit artifacts returned exit 0 with line-ending warnings only.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/SignalBusContractAudit.ps1 -ProjectRoot . -Scope SignalCritical -OutputJson Docs/AgentLogs/SignalBusContractAudit_Current47_SHINOBU_02.json -OutputMarkdown Docs/AgentLogs/SignalBusContractAudit_Current47_SHINOBU_02.md -FailOnError` -> files 9 C# / 68 compute, errors 0, warnings 15, infos 2, confirmedErrors 0.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT47 CPU=100 SAMPLES=100,100,100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-20 - Current48 Corruption Backoff And SignalCritical Audit Classifier
+
+Problem: Current47 bounded repeated drop-storm dumps, but Lagrange identified the sibling corruption path: every increase in `corruptedSignals` still called `SignalTelemetryRingBuffer.DumpToDisk()` immediately. In a persistent corruption cascade that could still rewrite the same 300-frame blackbox file every pre-simulation frame. Einstein also confirmed the SignalCritical audit tool had one broad sync-I/O regex that treated proven cold/editor/fatal blackbox I/O the same as unknown runtime persistence.
+
+Solution: Added `_signalTelemetryLastCorruptionDumpFrame`, `ShouldDumpSignalCorruption(frame)`, and shared `ShouldDumpSignalBlackBox(ref int, int)` in `GlobalSignals.cs`. The first corruption increase still dumps immediately; repeated corruption exports inside the same 300-frame ring window are suppressed. Added a fail-closed sync-I/O classifier to `Tools/SignalBusContractAudit.ps1` with method/class/preprocessor context tracking. It classifies exact dispatcher/SignalBus blackbox dump methods, boot config CSV/binary ingestion, and `UNITY_EDITOR || DEVELOPMENT_BUILD` CSV tuning as INFO. Unmatched runtime I/O remains WARN. The markdown writer now omits the trailing symbol column when `symbol` is empty, preventing generated audit whitespace debt.
+
+Rejected Alternatives: A blanket audit whitelist was rejected because it would hide real runtime save/WAL stalls. Making `SignalPriorityCsvHotSwap.TryLoad(string path)` INFO was rejected because the method is public, unguarded, and no current cold/editor/fatal call site proves its usage. Moving blackbox dumping to a background thread was rejected again because the dump serializes a live Vault view and needs a copied 300-frame snapshot contract before async export is safe. Suppressing corruption dumps completely was rejected because the first corruption is fatal diagnostic evidence.
+
+Scalability potential: Low = both drop storms and corruption cascades now avoid repeated fault-path disk writes on weak storage while preserving one immediate forensic sample. Middle = the 300-frame cadence matches the ring capacity and keeps evidence fresh during persistent faults. High/Ultra = rich signal telemetry remains recorded every frame in Vault-backed memory; only repeated disk export is throttled, leaving presentation systems unaffected.
+
+Hardware Impact: 0 measured us. No profiler/runtime build. Expected fault-path impact is bounding repeated corruption file writes from once per corruption-increment frame to at most once per 300 frames after the first immediate dump; no normal-frame performance claim is made.
+
+Evidence:
+- Lagrange classified 14/15 Current47 sync-I/O warnings as cold/editor/fatal blackbox and identified the corruption dump path as the remaining code risk.
+- Einstein specified the fail-closed audit classifier shape and required `SignalPriorityCsvHotSwap.TryLoad` to stay WARN.
+- Corruption backoff static scan: `{"Reset":1,"LastCorruptionFrame":3,"SharedGate":3,"ShouldDumpCorruption":2}`.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/SignalBusContractAudit.ps1 -ProjectRoot . -Scope SignalCritical -OutputJson Docs/AgentLogs/SignalBusContractAudit_Current48_SHINOBU_02.json -OutputMarkdown Docs/AgentLogs/SignalBusContractAudit_Current48_SHINOBU_02.md -FailOnError` -> files 9 C# / 68 compute, errors 0, warnings 1, infos 16, confirmedErrors 0.
+- Remaining warning: `Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs:921` `SignalPriorityCsvHotSwap.TryLoad(string path)`.
+- Current48 audit artifacts trailing-whitespace scan: `TRAILING_WS_OK` for `.md` and `.json`.
+- `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs Tools/SignalBusContractAudit.ps1 Docs/Tasks/Status_SHINOBU_02.md Docs/AgentLogs/Rationale_SHINOBU_02.md Docs/AgentLogs/LOG_SHINOBU_02.md` returned exit 0 with line-ending warnings only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT48 CPU=100 SAMPLES=100,100,100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.

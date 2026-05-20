@@ -175,8 +175,10 @@ We are investigating a launch build issue affecting [scope]. We will update this
 ### Performance Cluster
 
 ```text
-We are collecting hardware/settings reports for the performance issue in [area/build]. Please use the approved support route here: [approved support route]. We will not guess publicly without build and hardware context.
+We are collecting hardware/settings reports for the performance issue in [area/build]. Please use the support route gated by `steam_support_permission_gate` / `public_cta_permission_gate` here: [support route URL]. We will not guess publicly without build and hardware context.
 ```
+
+Replace `[support route URL]` only after `steam_support_permission_gate = ALLOW_STEAM_SUPPORT_ROUTE_VERIFIED` for the exact app/build/surface, owner-controlled inbox/form custody, `route_class = support_route`, `consent_provenance = support_report`, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` if the route is linked publicly.
 
 ### Misleading Expectation
 

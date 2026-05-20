@@ -67,7 +67,7 @@ No Steam policy, FTC/legal, creator-contact, key-distribution, runtime build, Un
 5. Check if they disclose sponsored/free-key content.
 6. Confirm `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED`.
 7. Confirm `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` for the exact recipient or batch.
-8. Confirm approved asset/build/access links only.
+8. Confirm asset/build/access links only after asset metadata claim checks, build/access owner custody, recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, disclosure, and exact access-log fields pass.
 9. Confirm AB-009/KPI decision-read proof for any gameplay/pressure/route-risk claim in the access message.
 10. Confirm press/curator `send_permission_gate` allow value if the recipient is from either tracker.
 11. Record `access_route_class` and `reply_consent_provenance`.

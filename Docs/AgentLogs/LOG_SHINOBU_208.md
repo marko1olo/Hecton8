@@ -632,3 +632,136 @@ Verification:
     <item>Runtime-wide mesh generation eradication remains false due 34 non-owned findings.</item>
   </remaining-failures>
 </SELF_AUDIT>
+
+## 2026-05-20 - Noise Quality Single Owner Tail Report
+
+What was wrong:
+- Full bake pre-scaled `Octaves` before assigning `GenerateMockFractalNoiseJob`, while the job also consumed `GlobalQualityWeight`. That created split ownership of SDF quality collapse.
+
+What was done:
+- `BakeSingle` now passes raw sanitized `profile.Octaves` to the Burst noise job.
+- The job remains the only owner of octave-span collapse; generator-level `qualityCurve` remains only for UV, AO, and LOD authoring costs.
+
+Cinematic cheats used:
+- Low quality still authors cheaper SDF detail offline instead of adding runtime topology or SSAO work.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime path changed.
+- Editor: prevents accidental double-collapse in low-quality bakes; exact bake milliseconds require Unity editor execution.
+
+Verification:
+- Static scan: no caller-side octave pre-collapse pattern remains in owned GeologyForge source.
+- Static scan: owned GeologyForge source remains clean for forbidden hot-path patterns and direct runtime-coupling symbols.
+- Static scan: `JOB_COUNT=10`, `MANDATED_BURST_ATTRS=10`.
+- Targeted `git diff --check` and trailing-whitespace scan passed for patched C#/docs files; Git reported only LF-to-CRLF working-copy warnings.
+- Build was not launched; CPU gate reported `CPU_AVERAGE=100`, `BUILD_PROCS=none`.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="NOISE_QUALITY_SINGLE_OWNER_TAIL" status="STATIC_PATCH_BUILD_NOT_RUN">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <quality-proof>`GenerateMockFractalNoiseJob` owns SDF octave quality collapse through `GlobalQualityWeight`; caller no longer pre-collapses `Octaves`.</quality-proof>
+  <remaining-failures>
+    <item>Compiler, Unity import, actual bake, Burst Inspector, mesh inspector, and profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - UI Progress Callback Tail Report
+
+What was wrong:
+- The Geology Forge UI progress bar reported only pre/post bake values; per-variation progress existed only in the modal EditorUtility progress UI.
+
+What was done:
+- Added an optional cold `Action<float>` progress callback to `BakeProfiles`.
+- Updated `GeologyForgeWindow` to pass `SetBakeProgress`, clamp values, mark the progress bar dirty, and repaint per completed bake variation.
+
+Cinematic cheats used:
+- None added in this tail patch; it is human-control facade accuracy for the offline bake pipeline.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime path changed.
+- Editor: O(1) UI update per completed variation; exact responsiveness requires Unity editor execution.
+
+Verification:
+- Static scan: `BakeProfiles(..., Action<float>)`, `CountTotalBakes`, and `SetBakeProgress` are present in owned source.
+- Static scan: owned GeologyForge source remains clean for forbidden hot-path patterns and direct runtime-coupling symbols.
+- Static scan: `JOB_COUNT=10`, `MANDATED_BURST_ATTRS=10`.
+- Targeted `git diff --check` and trailing-whitespace scan passed for patched C#/docs files; Git reported only LF-to-CRLF working-copy warnings.
+- Build was not launched; CPU gate reported `CPU_AVERAGE=100`, `BUILD_PROCS=none`.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="UI_PROGRESS_CALLBACK_TAIL" status="STATIC_PATCH_BUILD_NOT_RUN">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <facade-proof>UI Toolkit progress now receives completed-variation progress from the bake generator instead of reporting only 0/1.</facade-proof>
+  <remaining-failures>
+    <item>Compiler, Unity import, actual bake, UI repaint proof, Burst Inspector, mesh inspector, and profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - Editor Async Batch Runner Tail Report
+
+What was wrong:
+- `BakeAll` still invoked a synchronous full-batch call. The progress bar was truthful after the previous patch, but the Editor call stack remained occupied until all variations finished.
+
+What was done:
+- Added `BakeProfilesAsync`, driven by `EditorApplication.update`.
+- The async runner bakes one profile variation per editor tick, accumulates metrics and manifest records, writes the manifest/report once at finish or cancel, and keeps telemetry TempJob allocation local to each tick.
+- Updated the Geology Forge window to call `BakeProfilesAsync` for BAKE SELECTED and BAKE ALL.
+
+Cinematic cheats used:
+- None added in this tail patch; it is Editor facade scheduling for the existing offline bake fake.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime path changed.
+- Editor: avoids one monolithic UI call stack for large profile libraries; exact responsiveness requires Unity editor execution.
+
+Verification:
+- Static scan: `BakeProfilesAsync`, `EditorApplication.update`, per-tick `NativeArray<GeologyBakeTelemetryEntry>`, and window calls to `BakeProfilesAsync` are present.
+- Static scan: owned GeologyForge source remains clean for forbidden hot-path patterns and direct runtime-coupling symbols.
+- Static scan: `JOB_COUNT=10`, `MANDATED_BURST_ATTRS=10`.
+- Static scan: placeholder bake/layout reports remain valid JSON after async-runner report updates.
+- Targeted `git diff --check` and trailing-whitespace scan passed for patched C#/docs files; Git reported only LF-to-CRLF working-copy warnings.
+- Build was not launched; CPU gate reported `CPU_AVERAGE=100`, `BUILD_PROCS=none`.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="EDITOR_ASYNC_BATCH_RUNNER_TAIL" status="STATIC_PATCH_BUILD_NOT_RUN">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <facade-proof>`BakeProfilesAsync` advances one variation per `EditorApplication.update`; UI buttons no longer call the monolithic batch path.</facade-proof>
+  <native-lifetime-proof>Async runner does not hold a NativeArray field across editor frames; each telemetry ring is TempJob-local to one tick and disposed in `finally`.</native-lifetime-proof>
+  <remaining-failures>
+    <item>Compiler, Unity import, actual bake, UI responsiveness proof, Burst Inspector, mesh inspector, and profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - Async Bake Cancel Guard Tail Report
+
+What was wrong:
+- The async editor batch runner can span multiple editor updates while `AssetDatabase.StartAssetEditing` is open. A domain reload or operator abort needed an explicit close path.
+
+What was done:
+- Added `CancelAsyncBake`.
+- Registered cancel with `AssemblyReloadEvents.beforeAssemblyReload`.
+- Added a UI Toolkit `Cancel Bake` button that routes through the same finish/cleanup path.
+
+Cinematic cheats used:
+- None added in this tail patch; it is editor lifetime hygiene for the offline bake pipeline.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime path changed.
+- Editor: prevents asset-editing scope leakage on cancel/reload; exact abort behavior requires Unity editor execution.
+
+Verification:
+- Static scan: `CancelAsyncBake`, `AssemblyReloadEvents.beforeAssemblyReload`, `EditorApplication.update -= TickAsyncBake`, `AssetDatabase.StopAssetEditing`, and `Cancel Bake` button are present.
+- Static scan: owned GeologyForge source remains clean for forbidden hot-path patterns and direct runtime-coupling symbols.
+- Static scan: `JOB_COUNT=10`, `MANDATED_BURST_ATTRS=10`.
+- Static scan: placeholder bake/layout reports remain valid JSON after cancel-guard report updates.
+- Targeted `git diff --check` and trailing-whitespace scan passed for patched C#/docs files; Git reported only LF-to-CRLF working-copy warnings.
+- Build was not launched; CPU gate reported `CPU_AVERAGE=100`, `BUILD_PROCS=none`.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="ASYNC_BAKE_CANCEL_GUARD_TAIL" status="STATIC_PATCH_BUILD_NOT_RUN">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <lifetime-proof>`CancelAsyncBake` unsubscribes the update runner, clears progress UI, stops asset editing, writes partial artifacts, resets UI progress to 0, and clears static batch state.</lifetime-proof>
+  <remaining-failures>
+    <item>Compiler, Unity import, actual bake, cancel/reload proof, Burst Inspector, mesh inspector, and profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>

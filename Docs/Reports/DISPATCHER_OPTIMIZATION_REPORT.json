@@ -1,89 +1,94 @@
-{
-  "agent": "SHINOBU_206",
-  "status": "PENDING_VERIFICATION",
-  "scope": "Assets/_Project/Scripts",
-  "reportModel": "FAST_RG_GATES_WITH_LAST_COMPLETED_CALL_PROPAGATION_BASELINE",
-  "updatedUtc": "2026-05-20",
-  "fullTreeCallPropagatedScan": {
-    "status": "TIMEOUT",
-    "timeoutMs": 240000,
-    "reason": "PowerShell call-propagation scanner exceeded command budget on current multi-agent worktree. Report keeps the last completed call-propagated baseline and adds fast rg gates for current edits."
-  },
-  "lastCompletedCallPropagatedBaselineBeforeCurrentPass": {
-    "directCompleteTokens": 47,
-    "directCompleteHotPathTokens": 2,
-    "runtimeRunLexicalTokens": 3,
-    "runtimeRunTokens": 0,
-    "forcedFenceTokens": 248,
-    "forcedHotPathTokens": 36
-  },
-  "currentFastGates": {
-    "legacySharedCompleteHelperPatterns": 0,
-    "runtimeIJobRunTokensAfterExclusions": 0,
-    "runtimeScheduleCompleteTokensAfterExclusions": 0,
-    "oldSharedHelperRegex": "CompleteFrameJob|CompletePendingJobs|CompleteScheduledWork|CompleteActiveJob|CompleteScheduledSolver|CompleteScheduledJob|CompletePendingStressJob|CompletePendingFrame|CompletePendingSolver|CompleteDecayJobIfReady|CompleteRuntimeJobs"
-  },
-  "currentFastGateResidue": {
-    "managedTaskRun": [
-      "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs:359"
-    ],
-    "editorOrSmokeRunTokens": [
-      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:136",
-      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:142",
-      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:164",
-      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:170",
-      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:179",
-      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:191",
-      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:202",
-      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:257",
-      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:290",
-      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:297",
-      "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs:185-188"
-    ],
-    "coldSmokeScheduleComplete": [
-      "Assets/_Project/Scripts/World/BiomeTransitionSmokeTester.cs:142"
-    ]
-  },
-  "patchedThisPass": [
-    "AmbientBiotaDirector split active job completion into TryFinalizeActiveJobNoWait and CompleteActiveJobForTeardown",
-    "SumpPumpPipeGridRuntime split solver finalization and removed cold DrainageMockNetworkJob.Run via Execute",
-    "MacroEcosystemMathematicianRuntime split scheduled job finalization",
-    "BallisticsRuntime split scheduled finalization",
-    "ThermalDynamicResolutionAdapter split stress EWMA finalization",
-    "ToolKinematicsRuntime split pending frame finalization",
-    "DiegeticVisorLensRuntime split scheduled work finalization",
-    "BuoyancyDisplacementRuntime split pending solver finalization",
-    "ProceduralBoneBlenderRuntime split pending solver finalization",
-    "KineticCharacterAnimatorRuntime split pending solver finalization",
-    "ToxicOutgassingChemistryRuntime split scheduled work finalization",
-    "PlayerExplorationTracker moved cartography hard wait to teardown-only method",
-    "ShinobuPhysiologyRuntime split frame job finalization",
-    "RadioisotopeThermalGenerator split decay job finalization",
-    "HectonBiolumManager split predator/ripple job finalization",
-    "SeedShipAnomalyRuntime split frame job finalization",
-    "SubmarineAutopilotSdfNavigator split init/solver pending jobs into no-wait and teardown helpers",
-    "BaseAtmosphereLogisticsRuntime removed cold AtmosphereMockTopologyJob.Run and AtmosphereCsrBuildJob.Run via Execute",
-    "ShinobuFloraFaunaSymbiosisSolver split frame job finalization",
-    "ShinobuEcosystemBalancer split frame job finalization",
-    "EcosystemPopulationBalancer renamed hard completion to teardown-only method",
-    "ShinobuMetabolismRuntime split frame job finalization",
-    "BiolumPulseSyncRuntime renamed hard completion to teardown-only method"
-  ],
-  "knownHardBarrierOrOwnerReviewResidue": [
-    "DispatcherJobFence and DispatcherJobSwap remain the central raw hard-fence surface for teardown, AUP, memory release, and deterministic barriers.",
-    "PersistentWorldRegistry tombstone sweep still requires owner-level snapshot/deferred mutation design before live delta mutation can avoid all hard fences.",
-    "GlobalPhysicsStateManager tracked body mutation still requires owner-level pending body-delta buffer.",
-    "LockstepStateValidator POST_SIM hash validation is an explicit deterministic blocking proof point unless netcode owner accepts delayed validation.",
-    "HectonFloatingOrigin transform shift is an AUP hard barrier.",
-    "WorldChunkResidencyManager teleport/residency barriers remain owner-review because chunk memory can be replaced under readers."
-  ],
-  "verification": {
-    "dotnetBuild": "NOT_RUN_BY_INSTRUCTION",
-    "buildGateRequired": "Do not launch build while CPU > 50 percent or dotnet/csc is active.",
-    "staticGates": [
-      "rg legacy shared helper patterns returned no matches",
-      "rg runtime .Run returned only Task.Run, smoke literal, and UNITY_EDITOR tool-window residue",
-      "rg Schedule().Complete returned only cold smoke tester residue"
-    ]
-  }
+﻿{
+    "agent":  "SHINOBU_206",
+    "status":  "PENDING_VERIFICATION",
+    "scope":  "Assets/_Project/Scripts",
+    "reportModel":  "FAST_TOKEN_CONTEXT_SCAN_WITH_LEGACY_HELPER_GATE",
+    "scannedTokenFiles":  242,
+    "totalSyncTokens":  398,
+    "coldOrEditorTokens":  192,
+    "directCompleteTokens":  102,
+    "directCompleteHotPathTokens":  0,
+    "runtimeRunLexicalTokens":  30,
+    "runtimeRunTokens":  0,
+    "forcedFenceTokens":  204,
+    "forcedHotPathTokens":  0,
+    "hotPathTokens":  0,
+    "methodScopedHotPathTokens":  0,
+    "unclassifiedRuntimeTokens":  206,
+    "hotPathOffenders":  [
+
+                         ],
+    "forcedHotPathSamples":  [
+
+                             ],
+    "runtimeRunTokenSamples":  [
+
+                               ],
+    "editorOrToolRunResidue":  [
+                                   "Assets/_Project/Scripts/QA/Headless/Editor/Shinobu38QaWatchdogCommanderWindow.cs:43",
+                                   "Assets/_Project/Scripts/Editor/TechArtPipelineSmokeTestAutoRunner.cs:42",
+                                   "Assets/_Project/Scripts/Graphics/Materials/Editor/Visual_Aging_Inquisition.cs:15",
+                                   "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs:185",
+                                   "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs:186",
+                                   "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs:187",
+                                   "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs:188",
+                                   "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs:714",
+                                   "Assets/_Project/Scripts/Global/FutureSeams/Editor/FutureSystemSeamStaticValidator.cs:32",
+                                   "Assets/_Project/Scripts/Editor/SignalCryptographySmokeTester.cs:251",
+                                   "Assets/_Project/Scripts/Editor/SignalCryptographySmokeTester.cs:533",
+                                   "Assets/_Project/Scripts/Editor/TechArtPipelineSmokeTester.cs:175",
+                                   "Assets/_Project/Scripts/Gameplay/Editor/ScannerLoreDatabaseSyncTunerWindow.cs:114",
+                                   "Assets/_Project/Scripts/Editor/SpaceEngine098TerrainSmokeTestRunner.cs:21",
+                                   "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:136",
+                                   "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:142",
+                                   "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:164",
+                                   "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:170",
+                                   "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:179",
+                                   "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:191",
+                                   "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:202",
+                                   "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:257",
+                                   "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:290",
+                                   "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:297",
+                                   "Assets/_Project/Scripts/Editor/OmegaAutonomySmokeTestRunner.cs:21",
+                                   "Assets/_Project/Scripts/Editor/InventoryRouting/InventoryRoutingNetworkTunerWindow.cs:148",
+                                   "Assets/_Project/Scripts/Editor/SpaceEngineResearchSmokeTester.cs:343",
+                                   "Assets/_Project/Scripts/Audio/Editor/DSPThreadSafetySmokeTester.cs:154",
+                                   "Assets/_Project/Scripts/Editor/LSystemGenomeLabWindow.cs:159",
+                                   "Assets/_Project/Scripts/Editor/LSystemGenomeLabWindow.cs:180"
+                               ],
+    "coldScheduleCompleteResidue":  [
+                                        "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeWindow.cs:223",
+                                        "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalStructureForgeWindow.cs:347",
+                                        "Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs:143",
+                                        "Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs:154",
+                                        "Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs:252",
+                                        "Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs:385",
+                                        "Assets/_Project/Scripts/Editor/Arm64MemoryAlignmentXRayWindow.cs:87",
+                                        "Assets/_Project/Scripts/Editor/TextureChannelPacker/TextureChannelPackerWindow.cs:409",
+                                        "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs:337",
+                                        "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs:384",
+                                        "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs:404",
+                                        "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs:692",
+                                        "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs:784",
+                                        "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs:350",
+                                        "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs:365",
+                                        "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs:414",
+                                        "Assets/_Project/Scripts/World/BiomeTransitionSmokeTester.cs:142",
+                                        "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs:414",
+                                        "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs:501",
+                                        "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs:782",
+                                        "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs:811",
+                                        "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForgeSupport.cs:521",
+                                        "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs:170",
+                                        "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs:185",
+                                        "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs:204",
+                                        "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs:214"
+                                    ],
+    "knownHardBarrierOrOwnerReviewResidue":  [
+                                                 "DispatcherJobFence and DispatcherJobSwap remain the central raw hard-fence surfaces for teardown, AUP, memory release, and deterministic barriers.",
+                                                 "PersistentWorldRegistry tombstone sweep requires owner-level snapshot/deferred mutation design before live delta mutation can avoid all hard fences.",
+                                                 "GlobalPhysicsStateManager tracked body mutation requires owner-level pending body-delta buffer.",
+                                                 "LockstepStateValidator POST_SIM hash validation is an explicit deterministic blocking proof point unless netcode owner accepts delayed validation.",
+                                                 "HectonFloatingOrigin transform shift is an AUP hard barrier."
+                                             ]
 }

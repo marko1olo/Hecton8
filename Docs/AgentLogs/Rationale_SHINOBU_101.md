@@ -378,3 +378,102 @@ Rejected Alternatives: Rerunning a known pre-SHINOBU abort was rejected by user 
 Scalability potential: No extra runtime tier change beyond the monitor response curve.
 
 Hardware Impact: Avoids local CPU/IO burn while the compile wall remains external.
+
+## VRAMPressureMonitor Continuous Mip Bias Closure R35
+
+Problem: R34 replaced most hard pressure gates, but `ApplyMipBias()` still had a discrete mip branch. Any positive soft-pressure response or forced-mip byte threshold crossing produced the same single-step downgrade through `Mathf.Max(_baselineMipLimit, 1)`. That preserved a visible quality cliff and could restore an already downgraded mip limit as soon as pressure dropped below the old byte threshold instead of the restore band.
+
+Solution: Replace the boolean/byte-threshold mip path with scalar response math. `ApplyMipBias()` now computes `softPressureResponse`, `forcedMipResponse`, and final `mipPressureResponse`, all quality-adjusted through `HomeostasisBrain.GlobalQualityWeight` and `math.smoothstep`. `ResolveMipLimitDelta()` converts that scalar into the final integer Unity mip-limit delta at the last possible boundary. Red-zone pressure forces a two-step collapse; small nonzero response values hold the active mip limit instead of restoring early.
+
+Rejected Alternatives: Keeping `IsSoftVramPressureActive()` was rejected because it made any soft pressure binary. Keeping `ResolveForcedMipDropThresholdBytes()` was rejected because it hid another branch cliff in a byte comparison. Driving per-texture mips directly was rejected for this pass because the global monitor already owns the active `QualitySettings.globalTextureMipmapLimit`, and per-texture migration would require a wider texture-ledger route card.
+
+Scalability potential: Low devices enter mip downgrade progressively as quality falls and pressure rises, with red-zone forcing a stronger two-step collapse. Middle devices hold intermediate global mips without flickering at the soft boundary. High devices keep authored baseline longer because quality-adjusted fractions stay near authored thresholds. Ultra devices retain full mip residency unless real pressure rises, preserving visual overkill.
+
+Hardware Impact: Static estimate only. R35 removes one boolean soft-pressure route and one forced-mip byte cliff from the 90-frame pressure sample path. Claimed measured savings: 0 microseconds because no Unity Profiler/GCMonitor proof is available behind the compile wall. Expected impact is lower mip-thrash and fewer abrupt texture residency changes under MX350/Quest-class pressure.
+
+## R35 Verification
+
+- `rg -n "softVramPressure|forcedMipThresholdBytes|ResolveForcedMipDropThresholdBytes|IsSoftVramPressureActive|Mathf.Max\\(_baselineMipLimit, 1\\)|LastUsedVramBytes >= forced" Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs`
+  - no results.
+- `rg -n "ResolveForcedMipResponse|ResolveMipLimitDelta|mipPressureResponse|math\\.lerp\\(0f, 2f|ResolveQualityAdjustedFraction|VramPressureFactor >= 1f" Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs`
+  - expected continuous mip-response helpers and one red-zone fail-safe only.
+- `git diff --check -- Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs`
+  - LF-to-CRLF warning only.
+
+## Compile Boundary R35
+
+Problem: Full compile verification remains blocked by the known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` item in `Hecton8.Core.csproj`.
+
+Solution: No build launched in R35. Static verification only.
+
+Rejected Alternatives: Rerunning a known pre-SHINOBU abort was rejected by user command discipline and AGENTS build discipline.
+
+Scalability potential: No extra runtime tier change beyond the continuous mip-bias closure.
+
+Hardware Impact: Avoids local CPU/IO burn while the compile wall remains external.
+
+## Dispatcher UI Mip Gate Ownership Collapse R36
+
+Problem: R35 closed the monitor mip cliff, but R36 scan found that `AssetLoadDispatcher` still wrote `QualitySettings.globalTextureMipmapLimit` directly. That made global texture mip state a two-owner fact between dispatcher and monitor. The dispatcher also kept private baseline/active mip state and a binary low-VRAM device gate from the old route.
+
+Solution: Remove dispatcher-owned mip baseline/active state and route the UI mip response into `VRAMPressureMonitor.SetExternalMipPressureResponse(...)`. Dispatcher now computes only a scalar `gateResponse` from current VRAM pressure, graphics budget, and continuous `GlobalQualityWeight`. `VRAMPressureMonitor` owns `_externalMipPressureResponse`, refreshes current VRAM pressure from the dispatcher-fed byte count, combines external/soft/forced/red-zone pressure in `ApplyMipBias()`, and remains the writer for `QualitySettings.globalTextureMipmapLimit`.
+
+Rejected Alternatives: Leaving direct dispatcher writes was rejected because it violates one fact -> one owner. Moving all UI gate math into the monitor was rejected because dispatcher owns the UI group classification cache and request-context telemetry. Keeping the binary `LowVramDeviceThresholdMb` early return was rejected because it is an explicit low-end hardware switch. Removing the UI gate entirely was rejected because it protects UI icons under pressure without raw release churn.
+
+Scalability potential: Low devices now feed a larger scalar external pressure into the monitor and collapse mips via the same global response path as normal pressure. Middle devices get hysteresis through active external response plus restore fraction instead of byte cliffs. High/ultra devices keep full UI texture residency until actual pressure fraction and quality curve demand shedding.
+
+Hardware Impact: Static estimate only. R36 removes two direct `QualitySettings.globalTextureMipmapLimit` writes and three dispatcher mip-state fields, replacing them with one scalar call into the monitor. Claimed measured savings: 0 microseconds because no Unity Profiler/GCMonitor proof is available behind the compile wall. Expected impact is authority correctness and less mip tug-of-war, not a measured CPU gain.
+
+## R36 Verification
+
+- `rg -n "QualitySettings\\.globalTextureMipmapLimit|_baselineGlobalTextureMipLimit|_activeGlobalTextureMipLimit|_mipGateInitialized|CaptureMipBiasBaseline|UiMipDowngradeThresholdBytes|UiMipRestoreThresholdBytes|LowVramDeviceThresholdMb|totalVramBytes >= UiMip|totalVramBytes <= UiMip" Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs`
+  - no results.
+- `rg -n "SetExternalMipPressureResponse|_externalMipPressureResponse|VramPressureFactor = _runtimeTotalVramBudgetBytes|QualitySettings\\.globalTextureMipmapLimit" Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs`
+  - expected external pressure field/method and monitor-owned global mip write only.
+- `git diff --check -- Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs`
+  - LF-to-CRLF warnings only.
+
+## Compile Boundary R36
+
+Problem: Full compile verification remains blocked by the known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` item in `Hecton8.Core.csproj`.
+
+Solution: No build launched in R36. Static verification only.
+
+Rejected Alternatives: Rerunning a known pre-SHINOBU abort was rejected by user command discipline and AGENTS build discipline.
+
+Scalability potential: No extra runtime tier change beyond the external UI pressure route.
+
+Hardware Impact: Avoids local CPU/IO burn while the compile wall remains external.
+
+## VRAMEnforcer Continuous Bootstrap Budget R37
+
+Problem: `VRAMEnforcer` still encoded a hard MX350/shared-memory split: `DetectedGraphicsMemoryMb <= 2048` activated clamps, boid population used fixed low/shared scale constants, and texture mip clamp selected half vs shared-memory mip limits with branch logic. This was cold/bootstrap code, but it still trained downstream systems to reason in binary hardware classes.
+
+Solution: Replace the binary budget selection with scalar weight math. `ResolveHardwareBudgetWeight()` uses `math.smoothstep(1024 MB, 8192 MB, detectedGraphicsMemoryMb)` and branchless `math.select` for shared-memory ceiling. `ApplyBoidPopulationBudget()` combines hardware scale and `HomeostasisBrain.GlobalQualityWeight` scale through `math.lerp` and `math.min`. Bootstrap mip clamp now derives an integer mip minimum only after a continuous `math.lerp(2, 0, usableWeight)` response.
+
+Rejected Alternatives: Removing `VRAMEnforcer` entirely was rejected because `GameBootstrapper` and `SargassumMicroFaunaBoids` still call it as a cold budget guard. Leaving the boolean low-VRAM return was rejected because it violated the no binary hardware gate rule. Moving boid budgeting into the biota domain was rejected because the current call site already depends on this optimization facade and cross-domain surgery would widen the batch.
+
+Scalability potential: Low devices and UMA devices receive stronger bootstrap mip/boid clamp from low hardware weight and quality curve. Middle devices land between 0.4 and 1.0 boid scale instead of jumping. High/ultra devices with quality near 1.0 resolve to scale 1.0 and mip minimum 0, preserving visual overkill.
+
+Hardware Impact: Static estimate only. R37 replaces one binary hardware threshold and two fixed low/shared population scales with O(1) scalar math. Claimed measured savings: 0 microseconds because no Unity Profiler/GCMonitor proof is available behind the compile wall. Expected impact is smoother asset/fauna budget behavior across MX350 -> midrange -> RTX hardware.
+
+## R37 Verification
+
+- `rg -n "LowVramGraphicsMemoryMbThreshold|HalfResolutionTextureMipLimit|SharedMemoryTextureMipLimit|LowVramBoidPopulationScale|SharedMemoryBoidPopulationScale|DetectedGraphicsMemoryMb > 0 &&|\\? SharedMemory|graphicsMemoryMb > 0 \\?|if \\(!_lowVramBudgetActive\\)|<= LowVram" Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - no results.
+- `rg -n "ResolveHardwareBudgetWeight|ResolveQualityCurve|math\\.smoothstep|math\\.lerp|math\\.select|HomeostasisBrain\\.GlobalQualityWeight|QualitySettings\\.globalTextureMipmapLimit" Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - expected continuous budget helpers and bootstrap/editor `QualitySettings` clamps only.
+- `git diff --check -- Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - LF-to-CRLF warning only.
+
+## Compile Boundary R37
+
+Problem: Full compile verification remains blocked by the known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` item in `Hecton8.Core.csproj`.
+
+Solution: No build launched in R37. Static verification only.
+
+Rejected Alternatives: Rerunning a known pre-SHINOBU abort was rejected by user command discipline and AGENTS build discipline.
+
+Scalability potential: No extra runtime tier change beyond continuous bootstrap hardware/quality weighting.
+
+Hardware Impact: Avoids local CPU/IO burn while the compile wall remains external.

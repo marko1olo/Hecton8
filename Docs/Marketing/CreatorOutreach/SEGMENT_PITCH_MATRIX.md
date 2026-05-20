@@ -137,7 +137,7 @@ Every pitch must include:
 1. creator name;
 2. specific content fit;
 3. HECTON-8 angle;
-4. one approved asset link;
+4. one real asset ID/link after asset metadata claim checks, QA, creator utility, `creator_send_gate`, and the relevant public/private route gates pass;
 5. one ask;
 6. opt-out/no-pressure close.
 
@@ -169,7 +169,7 @@ Before send, check the matching asset metadata fields `public_comparison_gate`, 
 
 ## Rejection / Non-Response Handling
 
-- No response after 7-10 days: one follow-up only if a new approved asset exists and the original send-log row allows follow-up.
+- No response after 7-10 days: one follow-up only if a new asset row passes metadata claim checks, QA, creator utility, `creator_send_gate`, and the original send-log row allows follow-up.
 - Decline: mark `DECLINED`, do not argue.
 - "Send key": verify identity before key.
 - "Paid only": record rate, keep `paid_creator_permission_gate` blocked, and do not commit without `ALLOW_PAID_CREATOR_TEST_VERIFIED`.

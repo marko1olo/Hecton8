@@ -172,7 +172,7 @@ HECTON-8 is a single-player-first deep-sea survival game about pressure, salvage
 
 This list is for major updates only: first screenshots with a readable player decision, Steam page, demo/playtest access, and launch news. No scope claims without proof, no fake performance claims, no weekly filler.
 
-Steam: [approved Steam URL after CTA activation packet]
+Steam: [gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
 ```
 
 ## Demo Alert Email
@@ -199,10 +199,10 @@ Current build does not include:
 - final balance/content.
 
 Steam:
-[approved Steam URL after CTA activation packet]
+[gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
 
 Feedback:
-[approved feedback URL after CTA activation packet]
+[gated feedback URL after `owned_audience_permission_gate` or `steam_support_permission_gate`, plus `public_cta_permission_gate`, pass]
 ```
 
 ## Newsletter Metrics

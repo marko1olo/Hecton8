@@ -1,0 +1,21 @@
+{
+    "name": "Hecton8.Rendering.TexturePacker.Editor",
+    "rootNamespace": "Hecton8.EditorTools",
+    "references": [
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,10 +1,10 @@
-# Offline Wreckage Geometry Baker - SHINOBU_209
+﻿# Offline Wreckage Geometry Baker - SHINOBU_209
 
 Date: 2026-05-20
 Status: STATIC IMPLEMENTATION / PROJECT COMPILE BLOCKED OUTSIDE DOMAIN
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -14,10 +14,10 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 
@@ -39,7 +39,7 @@ First-20-minutes route blocker removed: static wreck/habitat breaches can show r
 
 The generated `.mesh` assets and collider proxy meshes are immutable environment assets. Rollback/netcode synchronizes only `OfflineWreckageDamageState` as a small state index. Mesh vertex data, convex hull points, scorch colors, and torn topology are excluded from rollback state rings and Merkle hashing.
 
-Runtime destruction enforcement is handled by `Runtime_Destruction_Scanner`, which scans requested and actual combat/environment roots outside `Editor/` for runtime mesh mutation, skinned damage, shatter code, and Rigidbody fragment spawning. Current static reports: `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` and `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_209.json`, findingCount `0`.
+Runtime destruction enforcement is handled by `Runtime_Destruction_Scanner`, which scans requested and actual combat/environment roots outside `Editor/` for runtime mesh mutation, skinned damage, shatter code, and Rigidbody fragment spawning. Current static reports: `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` and `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_209.json`, findingCount `0`. Prior shared canonical report content is preserved as bounded provenance fields plus `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_209.json`; it is not recursively embedded into the next canonical report. `previousReportBytes` is measured as UTF-8 encoded bytes to match the atomic writer, not UTF-16 character count, and `previousReportHash` hashes raw emitted UTF-8 bytes without name-hash case/whitespace normalization. Report string emission escapes JSON control characters; previous-agent extraction validates quote termination with backslash-run parity and fails closed unless the extracted field is explicitly a JSON string.
 
 ## Data Layout
 
@@ -112,9 +112,15 @@ Every owned `.cs` and `.asmdef` file under `Assets/_Project/Scripts/World/Offlin
 
 The black-box ring is registered through `Hecton8.Core.Contracts.NativeMemoryTrackingBridge`, not a direct root Core dependency. If the Core sentinel bridge is installed, it records owner `OfflineWreckageBlackBox`, label `s_ring`, lifetime `Session`, and 300 * 64 bytes. If the bridge is absent, registration no-ops and disposal still releases the ring.
 
+## Atomic Publication
+
+Owned `.bytes`, JSON reports, benchmark output, scanner output, and black-box dumps write to unique same-volume `.tmp.<processId>.<ordinal>` paths with `FileMode.CreateNew`. Publication uses `File.Replace` for existing final artifacts and `File.Move` for first creation. If another Editor tool changes final-path existence between the first observation and commit, `OfflineWreckageAtomicFile.Publish` retries once after re-observing file state while the owned temp still exists.
+
 ## Collision Lie
 
 The visual mesh can be twisted and torn. The physical proxy is a support-mapped convex hull mesh generated offline from the deformed bounds. No dynamic Rigidbody fragments are generated by this baker.
+
+Thin structural inputs keep their measured extents. If one bounds axis collapses to zero, the support hull expands only that axis to a 0.01 m half-extent and sets `WarningHullBoundsExpanded`; it does not replace a bulkhead or hull plate with an arbitrary unit cube unless all bounds are invalid/non-finite.
 
 ## Black Box
 
@@ -147,4 +153,4 @@ Owned mathematical jobs use `[BurstCompile(CompileSynchronously = true, FloatMod
 
 ## Verification Status
 
-Static source exists and the runtime-root scan report has been generated with zero findings. Pass 11 static scans were clean for stale index-copy symbols and sibling runtime references; Pass 12 hardened submesh descriptor bounds and 16-bit `baseVertex` clamping; Pass 13 wired the editor-only black-box ring into `Hecton8.Core.Contracts.NativeMemoryTrackingBridge`. Forbidden API scan only found scanner pattern constants. One single-core dotnet build was launched after CPU measured 45.095 percent and no dotnet/csc process was active, but it stopped on 72 unrelated `Hecton8.Core.csproj` missing-type errors outside the owned offline wreckage baker domain. Unity import, Burst Inspector, Editor bake run, Console, Frame Debugger, GCMonitor, Memory Profiler, and player build proof remain pending.
+Static source exists and the runtime-root scan report has been generated with zero findings. Pass 11 static scans were clean for stale index-copy symbols and sibling runtime references; Pass 12 hardened submesh descriptor bounds and 16-bit `baseVertex` clamping; Pass 13 wired the editor-only black-box ring into `Hecton8.Core.Contracts.NativeMemoryTrackingBridge`; Pass 14 replaced the flat-axis unit-cube hull fallback with measured-bounds expansion plus warning propagation; Pass 15 bounded previous-report scanner preservation; Pass 16 corrected scanner provenance to UTF-8 byte semantics; Pass 17 removed name-hash normalization from scanner provenance hashing; Pass 18 hardened scanner JSON escaping/extraction; Pass 19 made previous-agent extraction fail closed on non-string values; Pass 20 hardened atomic artifact publish against final-path existence races. Forbidden API scan only found scanner pattern constants. One single-core dotnet build was launched after CPU measured 45.095 percent and no dotnet/csc process was active, but it stopped on 72 unrelated `Hecton8.Core.csproj` missing-type errors outside the owned offline wreckage baker domain. Unity import, Burst Inspector, Editor bake run, Console, Frame Debugger, GCMonitor, Memory Profiler, and player build proof remain pending.

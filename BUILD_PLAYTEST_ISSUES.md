@@ -1,10 +1,10 @@
-# HECTON-8 - BUILD / PLAYTEST ISSUES LEDGER
+﻿# HECTON-8 - BUILD / PLAYTEST ISSUES LEDGER
 
 Status: `PENDING VERIFICATION`
 Ledger Start Date: `2026-04-05`
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
 This ledger is active only where it agrees with:
 
 - `Docs/README.md`
@@ -49,7 +49,7 @@ Rules:
 ## Entry Template
 
 ```md
-## Build Entry — YYYY-MM-DD — Build Name / Version
+## Build Entry â€” YYYY-MM-DD â€” Build Name / Version
 - Build Size:
 - Scene:
 - Hardware:
@@ -78,7 +78,7 @@ Rules:
 - Remaining:
 ```
 
-## Build Entry — 2026-04-05 — User Build Report
+## Build Entry â€” 2026-04-05 â€” User Build Report
 - Build Size: `~500 MB`
 - Scene: `02_HECTON_WORLD`
 - Hardware: `MX350 target context`
@@ -100,8 +100,8 @@ Rules:
 - Short Comment: code fix accepted; closed for current coding work, waiting for build proof
 - Next Step: build swim verification while rotating camera across the surface
 
-- Did: diagnosed live runtime mismatch at the waterline (`Atmosphere=UNDERWATER` while `Visuals=false`, `Movement=false`, `Survival depth≈0`) and replaced it with one shared hysteresis contract based on `HectonPlayerMovement.CurrentDepth` for atmosphere, underwater visuals, and survival.
-- Result: capture-time editor readback text indicated the surface boundary no longer split state; it kept `Atmosphere=surface`, `Visuals=false`, `Survival depth≈0.0049` on the same near-surface frame instead of contradictory surface/underwater states.
+- Did: diagnosed live runtime mismatch at the waterline (`Atmosphere=UNDERWATER` while `Visuals=false`, `Movement=false`, `Survival depthâ‰ˆ0`) and replaced it with one shared hysteresis contract based on `HectonPlayerMovement.CurrentDepth` for atmosphere, underwater visuals, and survival.
+- Result: capture-time editor readback text indicated the surface boundary no longer split state; it kept `Atmosphere=surface`, `Visuals=false`, `Survival depthâ‰ˆ0.0049` on the same near-surface frame instead of contradictory surface/underwater states.
 - Failed: build verification not run yet; could not force a scripted underwater transition sweep because Unity MCP runtime code execution fails on this machine (`mono.exe: filename or extension is too long`).
 - Broke: no compile errors from the patch; console still shows unrelated warnings from `Dynamic Decals` and one generic `Leak Detected : Persistent allocates 8 individual allocations` warning after recompilation.
 - Remaining: real swim test in player build while rotating the camera across the surface; confirm hitch is gone under build timing, not just editor runtime. Closed for coding unless new evidence reopens it.
@@ -214,7 +214,7 @@ Rules:
 - Short Comment: cave spawn ownership hardened; world proof still missing
 
 - Did: replaced the fire-and-forget `async void` cave spawn path with explicit pending-spawn ownership inside `WorldCaveDirector`, added per-key pending registry plus lifetime cancellation, cancel-on-disable teardown, stale cave-instance cleanup for missing voxel volumes, and a null-safe `TryGetCaveAt` fail-safe. Also moved the cave generation logs behind development/editor-only conditional methods so this gameplay path does not force string-building in release builds.
-- Result: the live cave path no longer depends on “not active until the await finishes” semantics. Duplicate cave launches for one runtime key are blocked while generation is pending, teardown can cancel in-flight requests instead of leaving orphaned ownership behind, and dead cave-volume references stop poisoning the active-cave registry.
+- Result: the live cave path no longer depends on â€œnot active until the await finishesâ€ semantics. Duplicate cave launches for one runtime key are blocked while generation is pending, teardown can cancel in-flight requests instead of leaving orphaned ownership behind, and dead cave-volume references stop poisoning the active-cave registry.
 - Failed: this remains `PENDING VERIFICATION` because no runtime cave traversal or build pass was executed, no duplicate-spawn reproduction was captured before/after, and the machine-side MCP runtime path is still not proving actual in-world cave generation behavior.
 - Broke: Unity recompilation completed with no new console errors; console still shows only the unrelated `Dynamic Decals` obsolete warnings.
 - Remaining: verify in build that one cave cell produces one live cave volume under repeated `SlowTick` passes, confirm disable/reenable or scene reload does not leave blocked pending keys, and check that entrance cues/dressing are not duplicated on revisit.
@@ -232,7 +232,7 @@ Rules:
 - Short Comment: hot-path compliance tightened; runtime proof still missing
 
 - Did: replaced live `foreach` scans in `WorldGenerativeGeologyVoxelBridgeDirector` with explicit generic enumerator loops for active-volume retention, pending-runtime retention, active-volume removal selection, stale pending cancellation, full pending cancellation, and clear-all volume teardown. Follow-up pass: added an owner cache for active `WorldGenerativeGeologyVoxelRuntime` instances keyed by `runtimeKey`, so `ResolveRequestBuildSettings()` no longer performs per-request `TryGetComponent` during reconcile; the same pass also removed the `"None"` sentinel from `_debugTopVolume` so the live owner no longer depends on string-sentinel checks for top-volume diagnostics. Latest addendum: runtime-diagnostics trace formatting is now isolated behind development/editor-only helper methods, so `ReconcileVoxelRequests()`, launch flushing, and request completion/cancel/fault bodies no longer build trace strings directly in the release hot path. New ownership addendum: reconcile now trims stale `_activeVolumes/_activeRuntimes/_activeSignatures` entries before retention logic, `ShouldRetainActiveVolume()` and signature short-circuiting only trust live owners whose active GameObject, cached runtime component, `RuntimeKey`, and `RequestSignature` still match, and stale registration cleanup now forgets dead/reused pooled owners without blindly despawning a volume that may already belong to a new runtime key.
-- Result: the voxel bridge no longer relies on banned dictionary/hashset `foreach` in its `SlowTick` reconcile/cleanup path, active request-resolution no longer needs a component lookup just to read previous detail-band / collider hysteresis state, release/runtime hot paths no longer carry diagnostics string interpolation debt just because trace support exists, and stale pooled/reused voxel volumes are less likely to poison retention logic or block a required respawn because an old key still looks “already tracked”.
+- Result: the voxel bridge no longer relies on banned dictionary/hashset `foreach` in its `SlowTick` reconcile/cleanup path, active request-resolution no longer needs a component lookup just to read previous detail-band / collider hysteresis state, release/runtime hot paths no longer carry diagnostics string interpolation debt just because trace support exists, and stale pooled/reused voxel volumes are less likely to poison retention logic or block a required respawn because an old key still looks â€œalready trackedâ€.
 - Failed: this remains `PENDING VERIFICATION` because no profiler capture was taken on a live seam/voxel traversal route, and no build run has yet proven that the bridge still behaves correctly under real cave/geology request churn.
 - Broke: after this pass and a separate compile-hygiene cleanup in stale verifier/editor helpers, Unity recompilation is back to warning-only state; console currently reports only the old `Dynamic Decals` obsolete editor warnings.
 - Remaining: capture profiler on live seam request churn, verify pending-request cancellation still clears correctly when requests fall out of range, and confirm no retention/removal regressions in build.
@@ -325,7 +325,7 @@ Rules:
 - Failed: build verification is still missing, and automated day/night sweep is still blocked by MCP `execute_code` failing on this machine with `mono.exe: filename or extension is too long`. `02_HECTON_WORLD` remains dirty and unsaved. The old compile blocker from `WorldCaveDirector.cs` is now cleared, so the new `HectonCelestialEngine` feed is no longer blocked at compile time, but it still lacks build/runtime proof.
 - Broke: the intermediate overlay-sphere path was a false solution and has been retired from the live runtime path.
 - Remaining: verify horizon behavior and night darkening in build, then decide whether to delete the retired overlay assets entirely or keep them only as dead experiments outside the runtime path.
-- Lesson: atmospheric depth cues must be attached either to the rendered object itself or to the same world-space ray logic as the rest of the sky. Camera-centered proxy geometry is not “cheap atmosphere”; it is guaranteed parallax debt.
+- Lesson: atmospheric depth cues must be attached either to the rendered object itself or to the same world-space ray logic as the rest of the sky. Camera-centered proxy geometry is not â€œcheap atmosphereâ€; it is guaranteed parallax debt.
 
 - Lesson Addendum: when the horizon looks wrong, fix the shared sky-response first and only then tune object-specific extinction. If the sky and the giant are not driven by the same atmospheric color logic, the eye reads the giant as pasted in front immediately.
 - Lesson Addendum: visible clouds and celestial occlusion are not the same system. The visible cloud layer can stay art-driven and high-character, while celestial objects should read a separate low-frequency transmittance field that only controls extinction, softness, and detail loss.
@@ -392,10 +392,10 @@ Rules:
 
 | Frame | CPU Frame | Primary Marker | Read |
 | --- | ---: | --- | --- |
-| `3327` | `14.72 ms` | `WaitForLastPresent ≈ 9.06 ms` | Healthy baseline frame. Real gameplay + render work is much lower than total frame time; a large part is present/frame-pacing wait. |
-| `3676` | `42.18 ms` | `WaitForLastPresent / DXGI.WaitOnSwapChain ≈ 36.14 ms` | Present-bound miss. Main thread total looks scary, but the frame is dominated by waiting, not by script saturation. |
-| `2483` | `22.19 ms` | `Coroutine: MoveNext ≈ 10.01 ms` | Real intermittent CPU hitch. Matches the project pattern where `GameTickManager` still runs a global `SlowTickRoutine()` coroutine. |
-| `3826` | `53.55 ms` | `EventSystem.Update() ≈ 42.89 ms` -> `GameObject.ActivateAwakeRecursively ≈ 23.54 ms` | Real CPU spike from UI activation cascade. `Collect ≈ 2.27 ms` is visible on the same frame. |
+| `3327` | `14.72 ms` | `WaitForLastPresent â‰ˆ 9.06 ms` | Healthy baseline frame. Real gameplay + render work is much lower than total frame time; a large part is present/frame-pacing wait. |
+| `3676` | `42.18 ms` | `WaitForLastPresent / DXGI.WaitOnSwapChain â‰ˆ 36.14 ms` | Present-bound miss. Main thread total looks scary, but the frame is dominated by waiting, not by script saturation. |
+| `2483` | `22.19 ms` | `Coroutine: MoveNext â‰ˆ 10.01 ms` | Real intermittent CPU hitch. Matches the project pattern where `GameTickManager` still runs a global `SlowTickRoutine()` coroutine. |
+| `3826` | `53.55 ms` | `EventSystem.Update() â‰ˆ 42.89 ms` -> `GameObject.ActivateAwakeRecursively â‰ˆ 23.54 ms` | Real CPU spike from UI activation cascade. `Collect â‰ˆ 2.27 ms` is visible on the same frame. |
 
 - Result: the screenshots separate the frame into two different problems instead of one fake general slowdown:
   1. Baseline standalone frames are often `present-bound`, not logic-bound.
@@ -1099,3 +1099,5 @@ After each new build, ask one short question:
 - Runtime Addendum: `HectonUnderwaterVisuals` was still leaving the player camera stack's `SpaceCamera` alive all the way into aphotic depths even though the vertical path already owns the underwater transition and `SpaceCamera` only exists to render the celestial layer. It now zeros `SpaceCamera.cullingMask` below `1000 m` while underwater and restores the original celestial mask on return, so deep water stops paying that sky-layer render path without touching shallow-water behavior or the camera stack contract.
 - Result Addendum: the new deep-water celestial cut is narrow and fail-safe. It does not wake scatter on Y motion, does not change shallow/twilight rendering, and restores the original `SpaceCamera` culling mask on disable or ascent.
 - Next Step: recompile, then verify cave detail layers still build and recycle cleanly in a live cave route
+
+

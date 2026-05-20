@@ -1,7 +1,7 @@
-# OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213
+﻿# OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -11,10 +11,10 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact.
-Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Owner: SHINOBU_213
@@ -64,6 +64,14 @@ LOD meshes use an explicit 32-byte interleaved vertex layout:
 - normal `float3`
 - uv0 `float2`
 
+Hot/job geometry DTOs are explicit layouts and are validated during editor entry:
+- `OfflineGeometryRawVertex`: 32 bytes, offsets `Position=0`, `Normal=12`, `Uv0=24`.
+- `OfflineGeometryVertex32`: 32 bytes, offsets `Position=0`, `Normal=12`, `Uv0=24`.
+- `OfflineSubMeshRange`: 16 bytes, offsets `SourceIndexStart=0`, `SourceTriangleCount=4`, `TargetTriangleStart=8`, `TargetTriangleCount=12`.
+- `OfflinePrimitiveFitResult`: 40 bytes, offsets `Center=0`, `Size=12`, `Radius=24`, `Error=28`, `VertexCount=32`, `ColliderType=36`, `_pad0=37`, `_pad1=38`.
+
+No `[StructLayout(Pack=1)]` is used. `OfflinePrimitiveFitResult` uses 3 explicit pad bytes after `ColliderType`, making the row 40 bytes, an exact 8-byte multiple. `OfflineGeometryBakeTelemetryEntry` remains the only 64-byte false-sharing row because it is the fixed black-box ring element.
+
 LOD0 is capped by `Lod0HardBudget`. LOD1 and LOD2 derive hard caps from `Lod0HardBudget * resolvedRatio`, with LOD2 clamped below LOD1, so source meshes above budget cannot leak oversized lower-detail meshes.
 
 LOD1/LOD2 source-triangle selection uses bounded partition-local saliency. Each output triangle maps to a deterministic non-overlapping source partition. `GlobalQualityWeight` and depth resolve the sampled candidate count from 1 to 7; low quality pays the cheapest single candidate while high quality preserves stronger area-normalized candidates under the same hard cap. Imported index bases are clamped before raw pointer vertex reads; invalid index streams, empty range tables, empty source vertices, or null position streams collapse to deterministic zero/up-normal triangles instead of unsafe memory access.
@@ -106,3 +114,5 @@ The ring is allocated with `UninitializedMemory` and then written with determini
 - `Docs/Reports/LOD_OPTIMIZATION_REPORT.json`
 - `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json`
 - `Docs/Reports/SHINOBU_213_SELF_AUDIT.xml`
+
+

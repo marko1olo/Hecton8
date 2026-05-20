@@ -30,18 +30,19 @@ namespace Hecton8.World
             uint flags)
         {
             _ = depthMeters;
-            Vector3 safeSize = new Vector3(
-                Mathf.Max(0.5f, size.x),
-                Mathf.Max(0.5f, size.y),
-                Mathf.Max(0.5f, size.z));
+            float3 rawCenter = new float3(universeCenter.x, universeCenter.y, universeCenter.z);
+            float3 rawSize = new float3(size.x, size.y, size.z);
+            float3 safeCenter = math.select(float3.zero, rawCenter, math.isfinite(rawCenter));
+            float3 safeSize = math.max(new float3(0.5f), math.select(new float3(0.5f), rawSize, math.isfinite(rawSize)));
+            float safeFade = math.saturate(math.select(1f, fade01, math.isfinite(fade01)));
 
             return new OctahedralImpostorInstance
             {
                 CenterFade = new Vector4(
-                    universeCenter.x,
-                    universeCenter.y,
-                    universeCenter.z,
-                    Mathf.Clamp01(fade01)),
+                    safeCenter.x,
+                    safeCenter.y,
+                    safeCenter.z,
+                    safeFade),
                 SizeFlags = new Vector4(
                     safeSize.x,
                     safeSize.y,
@@ -65,9 +66,13 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Bounds ToUniverseBounds()
         {
+            float3 rawCenter = new float3(CenterFade.x, CenterFade.y, CenterFade.z);
+            float3 rawSize = new float3(SizeFlags.x, SizeFlags.y, SizeFlags.z);
+            float3 safeCenter = math.select(float3.zero, rawCenter, math.isfinite(rawCenter));
+            float3 safeSize = math.max(new float3(0.5f), math.select(new float3(0.5f), rawSize, math.isfinite(rawSize)));
             return new Bounds(
-                new Vector3(CenterFade.x, CenterFade.y, CenterFade.z),
-                new Vector3(SizeFlags.x, SizeFlags.y, SizeFlags.z));
+                new Vector3(safeCenter.x, safeCenter.y, safeCenter.z),
+                new Vector3(safeSize.x, safeSize.y, safeSize.z));
         }
     }
 
@@ -86,10 +91,12 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ImpostorConfigDTO Create(float2 atlasGridSize, float depthScale, uint flags)
         {
+            float2 safeGridSize = math.select(new float2(1f, 1f), atlasGridSize, math.isfinite(atlasGridSize));
+            float safeDepthScale = math.select(1f, depthScale, math.isfinite(depthScale));
             return new ImpostorConfigDTO
             {
-                AtlasGridSize = math.max(atlasGridSize, new float2(1f, 1f)),
-                DepthScale = math.max(0.01f, depthScale),
+                AtlasGridSize = math.max(safeGridSize, new float2(1f, 1f)),
+                DepthScale = math.max(0.01f, safeDepthScale),
                 Flags = flags
             };
         }
@@ -148,17 +155,23 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ShouldUseImpostor(double distanceSq, float enterDistanceMeters)
         {
-            float safeDistance = Mathf.Max(1f, enterDistanceMeters);
+            if (!math.isfinite(distanceSq) || distanceSq < 0d)
+            {
+                return false;
+            }
+
+            float safeDistance = math.max(1f, math.select(DefaultImpostorEnterDistanceMeters, enterDistanceMeters, math.isfinite(enterDistanceMeters)));
             return distanceSq > (double)safeDistance * safeDistance;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveContinuousEnterDistanceMeters(float baseDistanceMeters, float globalQualityWeight)
         {
-            float q = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
-            float survival = math.max(1f, baseDistanceMeters * 0.58f);
-            float middle = math.max(survival, baseDistanceMeters);
-            float overkill = math.max(middle, baseDistanceMeters * 1.65f);
+            float safeBaseDistance = math.max(1f, math.select(DefaultImpostorEnterDistanceMeters, baseDistanceMeters, math.isfinite(baseDistanceMeters)));
+            float q = math.saturate(math.select(0f, globalQualityWeight, math.isfinite(globalQualityWeight)));
+            float survival = math.max(1f, safeBaseDistance * 0.58f);
+            float middle = math.max(survival, safeBaseDistance);
+            float overkill = math.max(middle, safeBaseDistance * 1.65f);
             float shaped = q * q * (3f - 2f * q);
             return q < 0.5f
                 ? math.lerp(survival, middle, shaped * 2f)

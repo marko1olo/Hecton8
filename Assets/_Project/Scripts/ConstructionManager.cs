@@ -705,9 +705,12 @@ namespace Hecton8.Construction
             }
 
             int moduleIndex = ResolveRegisteredModuleIndex(module);
+            AbsoluteUniversePosition positionAup = TryResolveAupFromRuntimeOrigin(module.transform.position, out AbsoluteUniversePosition resolvedPositionAup)
+                ? resolvedPositionAup
+                : GlobalSignals.CurrentRuntimeOriginAup();
             GlobalSignals.Publish(new HabitatConstructionSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(module.transform.position),
+                PositionAup = positionAup,
                 ModuleHash = moduleHash,
                 GraphId = (uint)Mathf.Max(0, _habitatGraphManager != null ? _habitatGraphManager.NodeCount : 0),
                 NodeId = (ushort)Mathf.Clamp(moduleIndex, 0, ushort.MaxValue),
@@ -1443,7 +1446,9 @@ namespace Hecton8.Construction
                 ModuleGraphNodeDTO graphNodeDto = new ModuleGraphNodeDTO();
                 graphNodeDto.prefabId = prefabId;
                 graphNodeDto.moduleHashId = marker.Data != null ? marker.Data.ModuleHashId : 0;
-                graphNodeDto.SetAup(AbsoluteUniversePosition.FromRuntimePosition(t.position));
+                graphNodeDto.SetAup(TryResolveAupFromRuntimeOrigin(t.position, out AbsoluteUniversePosition moduleAup)
+                    ? moduleAup
+                    : GlobalSignals.CurrentRuntimeOriginAup());
                 graphNodeDto.SetRotation(t.rotation);
 
                 // Serialize dynamic state.
@@ -2277,6 +2282,18 @@ namespace Hecton8.Construction
         private static bool IsFiniteVector(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            double3 localDelta = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            positionAup = AbsoluteUniversePosition.OffsetMeters(in originAup, localDelta);
+            return MathGuard.IsFinite(in positionAup);
         }
 
         private void TryTriggerAmbientAccident()

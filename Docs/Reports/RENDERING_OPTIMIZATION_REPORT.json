@@ -2,7 +2,7 @@
   "schema": "hecton8.rendering_optimization_report.v1",
   "agent": "SHINOBU_214",
   "scanner": "HectonMaterialChannelPackValidator",
-  "status": "SCRIPT_INSTALLED_STATIC_POLISH_BLACKBOX_STRUCT_REQUEST_FIX_QUALITY_CURVE_APPLIED_PENDING_UNITY_MENU_RUN",
+  "status": "SCRIPT_INSTALLED_STATIC_POLISH_ISOLATED_ASMDEF_BLACKBOX_STRUCT_REQUEST_FIX_AXIS_DIMENSION_FIX_QUALITY_CURVE_CSV_PROFILE_AUTHORITY_PROPERTY_PURGE_BATCH_FAULT_ADVANCE_APPLIED_PENDING_UNITY_MENU_RUN",
   "applyImporterFixes": false,
   "rollbackNetcodeExcluded": true,
   "merkleStateExcluded": true,

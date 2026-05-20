@@ -45,54 +45,85 @@ namespace Hecton8.Audio.Propagation
         InvalidInput = 5
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = 56)]
     public struct AcousticPortalNode
     {
+        [FieldOffset(0)]
         public AcousticAup Position;
+        [FieldOffset(40)]
         public int FirstEdge;
+        [FieldOffset(44)]
         public int EdgeCount;
+        [FieldOffset(48)]
         public float RoomVolumeCubicMeters;
+        [FieldOffset(52)]
         public AcousticPortalFlags Flags;
+        [FieldOffset(53)]
         private byte _reserved0;
+        [FieldOffset(54)]
         private ushort _reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct AcousticPortalEdge
     {
+        [FieldOffset(0)]
         public int ToNode;
+        [FieldOffset(4)]
         public float DistanceMeters;
+        [FieldOffset(8)]
         public AcousticPortalFlags Flags;
+        [FieldOffset(9)]
         private byte _reserved0;
+        [FieldOffset(10)]
         private ushort _reserved1;
+        [FieldOffset(12)]
         private uint _reserved2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 112)]
+    [StructLayout(LayoutKind.Explicit, Size = 112)]
     public struct AcousticPathQuery
     {
+        [FieldOffset(0)]
         public AcousticAup SourceAup;
+        [FieldOffset(40)]
         public AcousticAup ListenerAup;
+        [FieldOffset(80)]
         public float3 ListenerRight;
+        [FieldOffset(92)]
         public int NodeCount;
+        [FieldOffset(96)]
         public int EdgeCount;
+        [FieldOffset(100)]
         public int MaxNodeExpansions;
+        [FieldOffset(104)]
         public byte QualityTier;
+        [FieldOffset(105)]
         public byte DisablePortalPath;
+        [FieldOffset(106)]
         private ushort _reserved0;
+        [FieldOffset(108)]
         private uint _reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public readonly struct SoundEmissionSignal
     {
+        [FieldOffset(0)]
         public readonly AcousticAup SourceAup;
+        [FieldOffset(40)]
         public readonly float Volume;
+        [FieldOffset(44)]
         public readonly float Pitch;
+        [FieldOffset(48)]
         public readonly uint EventID;
+        [FieldOffset(52)]
         public readonly int StationaryCacheKey;
+        [FieldOffset(56)]
         public readonly AcousticPortalFlags Flags;
+        [FieldOffset(57)]
         private readonly byte _reserved0;
+        [FieldOffset(58)]
         private readonly ushort _reserved1;
 
         public SoundEmissionSignal(
@@ -114,27 +145,46 @@ namespace Hecton8.Audio.Propagation
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 104)]
+    [StructLayout(LayoutKind.Explicit, Size = 104)]
     public struct AcousticPathResult
     {
+        [FieldOffset(0)]
         public AcousticAup LastPortalAup;
+        [FieldOffset(40)]
         public float TrueDistanceMeters;
+        [FieldOffset(44)]
         public float DelaySeconds;
+        [FieldOffset(48)]
         public float Transmission01;
+        [FieldOffset(52)]
         public float LowPassCutoffHz;
+        [FieldOffset(56)]
         public float ItdSeconds;
+        [FieldOffset(60)]
         public float RoomVolumeCubicMeters;
+        [FieldOffset(64)]
         public float PathfindingMs;
+        [FieldOffset(68)]
         public int NodeCount;
+        [FieldOffset(72)]
         public int CornerCount;
+        [FieldOffset(76)]
         public int ExpandedNodeCount;
+        [FieldOffset(80)]
         public int SourceNodeIndex;
+        [FieldOffset(84)]
         public int ListenerNodeIndex;
+        [FieldOffset(88)]
         public uint StateHash;
+        [FieldOffset(92)]
         public AcousticPathStatus Status;
+        [FieldOffset(93)]
         public byte UsedPortalPath;
+        [FieldOffset(94)]
         public byte UsedSealedBulkhead;
+        [FieldOffset(95)]
         public byte UsedReprojectionCache;
+        [FieldOffset(96)]
         private uint _reserved0;
 
         public static AcousticPathResult Fallback(AcousticPathStatus status, in AcousticPathQuery query)
@@ -165,18 +215,28 @@ namespace Hecton8.Audio.Propagation
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct AcousticTelemetryEntry
     {
+        [FieldOffset(0)]
         public int Frame;
+        [FieldOffset(4)]
         public int NodeCount;
+        [FieldOffset(8)]
         public int CornerCount;
+        [FieldOffset(12)]
         public int ExpandedNodeCount;
+        [FieldOffset(16)]
         public float PathfindingMs;
+        [FieldOffset(20)]
         public float TrueDistanceMeters;
+        [FieldOffset(24)]
         public float DelaySeconds;
+        [FieldOffset(28)]
         public float LowPassCutoffHz;
+        [FieldOffset(32)]
         public uint Flags;
+        [FieldOffset(36)]
         public uint StateHash;
     }
 

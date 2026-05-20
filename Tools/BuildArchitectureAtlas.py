@@ -771,9 +771,10 @@ def build_markdown(data: dict[str, object] | None = None, generated_at: datetime
     )
     out.append("")
     out.append(
-        "Current DOC_GLOBAL boundary (2026-05-20 R45): "
-        "`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` "
-        "is the latest local static root/architecture R43/R44 residue, proof-artifact wording, and source-counter correction. "
+        "Current DOC_GLOBAL boundary (2026-05-20 R46): "
+        "`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` "
+        "is the latest local static root/architecture interior-authority, route-field, and proof-language correction. "
+        "R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; "
         "R44 remains the prior internal-residue/exact-route-field/proof-wording correction; "
         "R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; AtlasCheck remains red and runtime proof is absent."
     )
@@ -848,7 +849,7 @@ def build_markdown(data: dict[str, object] | None = None, generated_at: datetime
     out.append("- `python Tools/AtlasCheck.py`")
     out.append("- `python -m py_compile Tools/BuildArchitectureAtlas.py Tools/AtlasCheck.py`")
     out.append("- C# compile verification is outside this atlas; run Unity import/Console and serial CLI builds as separate evidence.")
-    out.append("- Current DOC_GLOBAL R45 blocker: `python Tools/AtlasCheck.py` still exits `1` with `ATLAS_CHECK_FAIL references=6741 missing=59`; missing refs include one Dynamic Decals vendor asset reference, RealtimeCSG vendor icon/readme image references, and `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs` until the references are restored or the atlas check excludes that evidence class deliberately.")
+    out.append("- Current DOC_GLOBAL R46 blocker: `python Tools/AtlasCheck.py` still exits `1` with `ATLAS_CHECK_FAIL references=6741 missing=59`; missing refs include one Dynamic Decals vendor asset reference, RealtimeCSG vendor icon/readme image references, and `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs` until the references are restored or the atlas check excludes that evidence class deliberately.")
     out.append("- This generated atlas is not `VERIFIED` unless `Tools/AtlasCheck.py` exits `0` after generation.")
     out.append("")
 

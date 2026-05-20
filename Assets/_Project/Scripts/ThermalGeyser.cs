@@ -205,7 +205,9 @@ namespace Hecton8.Caves
             if (director == null)
                 return;
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            if (!TryResolveVentAup(out AbsoluteUniversePosition aup))
+                return;
+
             float eruptionHeight = math.max(MinimumCylinderHeightMeters, _eruptionRadius * EruptionCylinderHeightMultiplier);
             float active01 = _isErupting ? 1f : 0f;
             float timer01 = _eruptionDuration > 0.0001f
@@ -220,6 +222,24 @@ namespace Hecton8.Caves
                 eruptionHeight,
                 active01,
                 timer01);
+        }
+
+        private bool TryResolveVentAup(out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            Vector3 runtimePosition = transform.position;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return MathGuard.IsFinite(in aup);
         }
 
         private void TryRegister()

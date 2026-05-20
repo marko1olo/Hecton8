@@ -461,8 +461,11 @@ namespace Hecton8.World
         internal static bool IsInsidePermanentDefoliantDeadZone(Vector3 worldPosition)
         {
             ChemicalInfluenceGrid instance = _activeRuntimeInstance;
+            if (instance == null || !TryResolveAupFromRuntimeOrigin(worldPosition, out double3 absolutePosition))
+                return false;
+
             return instance != null &&
-                   instance.IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPosition));
+                   instance.IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(absolutePosition);
         }
 
         internal static bool IsInsidePermanentDefoliantDeadZoneAbsolute(Vector3 absolutePosition)
@@ -1056,9 +1059,12 @@ namespace Hecton8.World
 
             int count = math.clamp(pendingCount[0], 0, pending.Length);
             int index = count < pending.Length ? count : _pendingEmitterWriteCursor % pending.Length;
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out double3 emitterAup))
+                return;
+
             pending[index] = new ChemicalEmitterDTO
             {
-                Aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPosition),
+                Aup = emitterAup,
                 Channels = scaledChannels,
                 RadiusMeters = math.max(MinimumRadiusMeters, radiusMeters * math.max(0.001f, profile.RadiusMultiplier)),
                 LifetimeSeconds = ChemicalTransientLifetimeSeconds * math.max(0.001f, profile.DissipationMultiplier),
@@ -1102,7 +1108,9 @@ namespace Hecton8.World
                 return;
 
             float now = ResolveSimulationSeconds();
-            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out double3 absolutePosition))
+                return;
+
             float3 absolute = ToFloat3(absolutePosition - HectonFloatingOrigin.CurrentTotalOffsetDouble);
             float safeRadius = math.max(1f, radiusOverrideMeters > 0f ? radiusOverrideMeters : breadcrumbRadiusMeters);
             int mergeIndex = FindMergeCandidate(breadcrumbs, absolutePosition, primaryChannel, now);
@@ -1450,7 +1458,9 @@ namespace Hecton8.World
                 return false;
 
             Vector3 runtimePosition = new Vector3(worldPosition.x, worldPosition.y, worldPosition.z);
-            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out double3 absolute))
+                return false;
+
             bool insideDeadZone = IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(absolute);
             float3 local = ToFloat3(absolute - _gridOriginAup);
             float cellSize = ResolveCellSizeMeters();
@@ -1504,7 +1514,9 @@ namespace Hecton8.World
                 if (intensity01 > 0f)
                 {
                     Vector3 runtimePosition = new Vector3(worldPosition.x, worldPosition.y, worldPosition.z);
-                    double3 aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+                    if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out double3 aup))
+                        return false;
+
                     nearestWaypoint = new ChemicalBreadcrumbWaypoint
                     {
                         AbsolutePosition = worldPosition,
@@ -1524,7 +1536,9 @@ namespace Hecton8.World
                 return false;
 
             Vector3 runtime = new Vector3(worldPosition.x, worldPosition.y, worldPosition.z);
-            double3 queryAbsolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtime);
+            if (!TryResolveAupFromRuntimeOrigin(runtime, out double3 queryAbsolute))
+                return false;
+
             int channelIndex = (int)channel;
             int safeCount = math.min(_breadcrumbCount, breadcrumbs.Length);
             float now = ResolveSimulationSeconds();
@@ -1654,7 +1668,9 @@ namespace Hecton8.World
             if (!zones.IsCreated || zones.Length == 0)
                 return;
 
-            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out double3 absolutePosition))
+                return;
+
             float safeRadius = math.max(MinimumRadiusMeters, radiusMeters);
             double mergeRadiusSq = (double)safeRadius * safeRadius;
             int safeCount = math.min(_defoliantDeadZoneCount, zones.Length);
@@ -1932,7 +1948,11 @@ namespace Hecton8.World
 
             var submarine = GlobalRegistry.Submarine;
             if (submarine != null && submarine.PlatformTransform != null)
-                return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(submarine.PlatformTransform.position);
+            {
+                Vector3 runtimePosition = submarine.PlatformTransform.position;
+                if (TryResolveAupFromRuntimeOrigin(runtimePosition, out double3 submarineAup))
+                    return submarineAup;
+            }
 
             if (_gridHasOrigin)
             {
@@ -1944,6 +1964,27 @@ namespace Hecton8.World
             }
 
             return HectonFloatingOrigin.CurrentTotalOffsetDouble;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out double3 aup)
+        {
+            aup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!MathGuard.IsFinite(in resolvedAup))
+                return false;
+
+            aup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(aup));
         }
 
         private int ResolveDeterministicFrameId(bool advanceFallback)

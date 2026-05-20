@@ -6,6 +6,7 @@ using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -138,12 +139,29 @@ namespace Hecton8.Construction
         internal int TotalLaunchCount => _launchCountTotal;
         internal Vector3 DockPosition => ResolvedDockSocketPosition;
         internal Quaternion DockRotation => ResolvedDockSocketRotation;
-        internal AbsoluteUniversePosition DockAup => AbsoluteUniversePosition.FromRuntimePosition(ResolvedDockSocketPosition);
+        internal AbsoluteUniversePosition DockAup => ResolveDockAup();
         internal Vector3 DockForward => ResolvedDockSocketRotation * Vector3.forward;
         internal BaseAirlock DockingAirlock => ResolveDockingAirlock();
         internal PowerGrid CurrentGrid => _powerNode != null ? _powerNode.Grid : null;
         internal int ActiveSlotCapacity => _activeDroneIds != null ? _activeDroneIds.Length : Mathf.Max(1, maxConcurrentDrones);
         internal bool HasOperationalPower => _hasPower && _powerNode != null && _powerNode.Grid != null;
+
+        private AbsoluteUniversePosition ResolveDockAup()
+        {
+            Vector3 dockPosition = ResolvedDockSocketPosition;
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!float.IsFinite(dockPosition.x) ||
+                !float.IsFinite(dockPosition.y) ||
+                !float.IsFinite(dockPosition.z))
+            {
+                return originAup;
+            }
+
+            AbsoluteUniversePosition dockAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(dockPosition.x, dockPosition.y, dockPosition.z));
+            return MathGuard.IsFinite(in dockAup) ? dockAup : originAup;
+        }
 
         internal static RepairDroneHub GetActiveHubAt(int index)
         {

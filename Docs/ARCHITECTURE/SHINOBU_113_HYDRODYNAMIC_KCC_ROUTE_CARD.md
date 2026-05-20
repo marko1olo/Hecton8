@@ -1,4 +1,4 @@
-# SHINOBU_113 Hydrodynamic KCC Route Card
+﻿# SHINOBU_113 Hydrodynamic KCC Route Card
 
 Date: 2026-05-19
 Owner: SHINOBU_113 / HYDRODYNAMIC_KINEMATICS_DIRECTOR
@@ -17,7 +17,7 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Boundary
@@ -33,6 +33,7 @@ It does not own canonical device input, netcode rollback orchestration, water re
 | Route ID | `SHINOBU_113_HYDRODYNAMIC_KCC` |
 | Review disposition | YELLOW / STATIC_SOURCE_ONLY |
 | Owner | SHINOBU_113 / `HydrodynamicKccRuntime` |
+| Instrument | GlobalDataVault KCC buffers, external writer `JobHandle` handoff, `SignalBus<WakeGeneratedSignal>`, rollback byte lane, and black-box dump route |
 | Producer phase | External input writer or mock input before simulation; KCC integration during simulation; wake/visual output during post phase |
 | Consumer phase | Post-simulation rollback/state readback, visual sync, wake consumption, and editor diagnostics |
 | Consumers | Input owner, rollback owner, visual sync, wake consumers, editor diagnostics |
@@ -40,6 +41,7 @@ It does not own canonical device input, netcode rollback orchestration, water re
 | Capacity | Vault-backed KCC state/input/command/hit/output lanes sized by runtime capacity; telemetry ring fixed at 300 entries |
 | Overflow/failure | Reject stale/non-finite input, reject external writer while mock input or batch-in-flight is active, drain scheduled batches on abort, write fault flags before telemetry dump |
 | Shutdown/disposal | `AbortScheduledBatch()` completes owned handles before clearing batch flags; Vault/SignalBus owners retain buffer and queue disposal authority |
+| Fault dump target | `Docs/AgentLogs/Dump_SHINOBU_113.bin` and `Docs/AgentLogs/Dump_KINEMATICS_SURGEON.bin` are generated only after a fault mask is observed; no existing artifact is implied unless linked with runtime trigger evidence |
 | Proof required before GREEN | Fresh compile/import artifact, Play Mode rollback route, profiler/GC proof, Burst/job proof, and linked output path with command, timestamp, environment, and result |
 
 ## Vault Handles
@@ -112,3 +114,5 @@ The CPU does not solve fluid fields. Hydrodynamics are analytical drag, buoyancy
 ## Verification
 
 Static source wiring exists. Guarded compile, Unity import, Burst Inspector, profiler, GC capture, Play Mode rollback, and scene presentation proof are pending.
+
+

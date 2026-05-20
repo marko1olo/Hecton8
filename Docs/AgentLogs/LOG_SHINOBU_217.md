@@ -471,7 +471,7 @@ What was done:
 - Added `ModularBaseConstructionValidator` offset gates for the new signal fields at 96/100/104.
 - `PlayerBuilder` now writes those fields from `_shinobuDearLieDampen`, `GlobalQualityWeight`, and `ConstructionSocketTuningDTO.DearLieWiggleSpeed`.
 - `HectonBlueprintPreviewBatch` consumes the signal, tracks a result/module keyed envelope, applies continuous quality-scaled decay, and writes material scalars only when values change.
-- `Hecton_BlueprintWireInstanced.shader` now applies the normal-offset sine wiggle; `Hecton_ConstructionDearLieHologram.shader` clamps negative dampen and uses explicit vector epsilon.
+- `Hecton_BlueprintWireInstanced.shader` now applies the normal-offset sine wiggle through `HectonCoreLitSafeNormalize`; `Hecton_ConstructionDearLieHologram.shader` clamps negative dampen and guards normal length with `max(dot(n,n), 0.000001)` before `rsqrt`.
 - `ConstructionRuntimeProxyFactory` initializes `_H8SnapDampen` to `0` for fallback proxy materials, keeping the visual fake off until a snap signal drives it.
 
 Cinematic Cheats used:
@@ -487,3 +487,82 @@ Verification:
 - `ConstructionPreviewSignal` size remains 128 bytes and `BlueprintPreviewInstance` remains 64 bytes.
 - SHINOBU socket job forbidden-pattern scan has no hits.
 - `git diff --check` exits with only CRLF normalization warnings on touched files.
+
+## Result Sink Direction Guard - 2026-05-20
+
+What was wrong:
+- The final snap application still had a byte-to-`ModuleSocketDirection` helper that returned North for unknown input.
+- Upstream CSR made invalid rows unlikely, but the authority sink still needed its own fail-closed gate.
+
+What was done:
+- Replaced the defaulting conversion with `TryToShinobuSocketDirection()`.
+- `TryApplyShinobuVaultSnapResult()` now rejects invalid target direction bytes and invalid ghost socket directions before pose math, cache mutation, or occupancy marking.
+
+Cinematic Cheats used:
+- No new visual fake. This protects the existing Dear Lie snap pulse from being driven by a bad final pose.
+
+Exact Microseconds saved:
+- No savings claimed. Two range checks on accepted snap rows only; correctness guard, not an optimization.
+
+Verification:
+- Static scan shows no remaining `ToShinobuSocketDirection`, `direction & 7`, or default-North direction conversion in the SHINOBU active route.
+- `git diff --check -- Assets/_Project/Scripts/PlayerBuilder.cs` exits with only the existing CRLF normalization warning.
+
+## CSR Fallback Eradication - 2026-05-20
+
+What was wrong:
+- Missing ghost-specific CSR ranges fell back to `0..TargetCount`.
+- Missing or short CSR target-index lanes could treat the CSR slot as a direct target socket index.
+
+What was done:
+- `EvaluateSocketSnappingJob` now requires a valid ghost CSR range row and a created `SocketCsrTargetIndices` lane.
+- Short target-index lanes set `CapacityExceeded` and continue inside the bounded budget without reading a direct socket row.
+
+Cinematic Cheats used:
+- No visual change. The Dear Lie shader remains downstream of valid CSR truth only.
+
+Exact Microseconds saved:
+- Failure-path saving only: corrupt/missing CSR now reads 0 target rows for a ghost instead of falling back to up to `TargetCount` direct socket/AUP rows.
+
+Verification:
+- Static scan shows no `new int2(0, TargetCount)`, no `targetIndex = csrIndex`, no direct job `Execute()` calls, and no SHINOBU job forbidden hot-path patterns.
+
+## Dear Lie Preview Envelope Reset - 2026-05-20
+
+What was wrong:
+- The active preview material envelope kept the last result/module hash after preview disappearance.
+- Returning to the same socket could reuse the old start time and suppress a fresh snap pulse.
+
+What was done:
+- Added `ResetDearLieEnvelope()`.
+- `SetActivePreviewCount(0)` and `ClearPreviews()` now clear the Dear Lie active flag, dampen, quality, wiggle speed, result hash, and module hash.
+
+Cinematic Cheats used:
+- The visual fake remains a shader pulse; this change only resets the pulse authority when the preview lifetime ends.
+
+Exact Microseconds saved:
+- No savings claimed. Seven scalar writes on preview clear only.
+
+Verification:
+- Static scan confirms both preview-zero paths call `ResetDearLieEnvelope()`.
+- `BlueprintPreviewInstance` remains 64 bytes and `ConstructionPreviewSignal` offsets remain unchanged.
+
+## ModuleTemplate Ghost Prefab Bypass - 2026-05-20
+
+What was wrong:
+- `PlayerBuilder.SpawnGhost()` still used the authored `ghostPrefab` pool branch for socket modules when `ghostPrefab` was assigned.
+- SHINOBU snap truth already comes from `BaseModuleTemplate.SocketDefinitions` and Vault rows, so the preview prefab was unnecessary hierarchy churn for this route.
+
+What was done:
+- `SpawnGhost()` now routes every buildable with a `ModuleTemplate` through `ConstructionRuntimeProxyFactory.TryAcquireGhostProxy()`.
+- The `ObjectPoolManager.Spawn(activeBuildable.ghostPrefab)` branch remains only for non-template buildables outside the SHINOBU socket-module route.
+
+Cinematic Cheats used:
+- The module preview stays as a reusable proxy plus Vault/shader Dear Lie data. No preview-prefab animation, door prefab, or socket trigger drives the snap.
+
+Exact Microseconds saved:
+- No measured profiler number. Static cost removed: one preview prefab pool spawn/despawn and associated ghost hierarchy setup per armed `ModuleTemplate` buildable.
+
+Verification:
+- Static scan shows `pool.Spawn(activeBuildable.ghostPrefab)` is now behind the non-`ModuleTemplate` branch.
+- SHINOBU socket alignment still hydrates ghost sockets from `BaseModuleTemplate.SocketDefinitions`, not preview-prefab `ModuleSocket` components.

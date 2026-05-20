@@ -202,11 +202,14 @@ namespace Hecton8.Core
             (uint)ErrorBits.RuntimeWatchdogStall |
             (uint)ErrorBits.BootstrapSafeHalt;
 
-        [StructLayout(LayoutKind.Sequential, Size = CrashExportHeaderSizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = CrashExportHeaderSizeBytes)]
         private struct CrashExportHeader
         {
+            [FieldOffset(0)]
             public ulong Magic;
+            [FieldOffset(8)]
             public uint EntryCount;
+            [FieldOffset(12)]
             public uint StructSizeBytes;
         }
 
@@ -247,16 +250,24 @@ namespace Hecton8.Core
             public uint LastOriginShiftFrame;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = LiveTelemetryRecordSizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = LiveTelemetryRecordSizeBytes)]
         private struct LiveTelemetryRecord
         {
+            [FieldOffset(0)]
             public uint Magic;
+            [FieldOffset(4)]
             public uint Version;
+            [FieldOffset(8)]
             public uint FrameIndex;
+            [FieldOffset(12)]
             public uint ActiveChunkCount;
+            [FieldOffset(16)]
             public uint GcAllocBytes;
+            [FieldOffset(20)]
             public float CpuFrameTimeMs;
+            [FieldOffset(24)]
             public float DeltaTime;
+            [FieldOffset(28)]
             public float ReservedMemoryMb;
         }
 

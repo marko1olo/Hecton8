@@ -68,9 +68,11 @@ namespace Hecton8.Graphics.Materials.Editor
 
             Button pushButton = new Button(PushToRuntime) { text = "Push Tuning" };
             Button refreshButton = new Button(RefreshFromRuntime) { text = "Refresh Runtime" };
+            Button reloadCsvButton = new Button(ReloadCsvProfiles) { text = "Reload CSV Profiles" };
             Button inquisitionButton = new Button(VisualPressureAgingInquisition.RunAndReveal) { text = "Run Static Inquisition" };
             rootVisualElement.Add(pushButton);
             rootVisualElement.Add(refreshButton);
+            rootVisualElement.Add(reloadCsvButton);
             rootVisualElement.Add(inquisitionButton);
             RefreshFromRuntime();
         }
@@ -98,6 +100,12 @@ namespace Hecton8.Graphics.Materials.Editor
                 _temperatureBoost.value,
                 _qualityNoise.value);
             RefreshRuntimeLabels();
+        }
+
+        private void ReloadCsvProfiles()
+        {
+            VisualPressureAgingRuntime.TryReloadEditorCsv();
+            RefreshFromRuntime();
         }
 
         private void RefreshFromRuntime()
@@ -274,7 +282,29 @@ namespace Hecton8.Graphics.Materials.Editor
             int projectMaterialMutationReferences = CountTokenInDirectory(root, "Assets/_Project/Scripts", "*.cs", ".material") +
                 CountTokenInDirectory(root, "Assets/_Project/Scripts", "*.cs", "MaterialPropertyBlock");
             int projectDynamicDecalReferences = CountTokenInDirectory(root, "Assets/_Project/Scripts", "*.cs", "DynamicDecal");
+            int legacyBaseCorrosionFiles = CountFileNameInDirectory(root, "Assets/_Project/Scripts/Rendering", "BaseCorrosion.cs") +
+                CountFileNameInDirectory(root, "Assets/_Project/Scripts/Construction", "BaseCorrosion.cs");
+            int legacyGlassFractureFiles = CountFileNameInDirectory(root, "Assets/_Project/Scripts/Rendering", "GlassFracture.cs") +
+                CountFileNameInDirectory(root, "Assets/_Project/Scripts/Construction", "GlassFracture.cs");
+            int legacyRendererMaterialSetFloat = CountTokenInDirectory(root, "Assets/_Project/Scripts/Rendering", "*.cs", "GetComponent<Renderer>().material.SetFloat") +
+                CountTokenInDirectory(root, "Assets/_Project/Scripts/Construction", "*.cs", "GetComponent<Renderer>().material.SetFloat");
+            int dynamicAgingDecalReferences = CountTokenInDirectory(root, "Assets/_Project/Scripts/Rendering", "*.cs", "CorrosionDecal") +
+                CountTokenInDirectory(root, "Assets/_Project/Scripts/Rendering", "*.cs", "RustDecal") +
+                CountTokenInDirectory(root, "Assets/_Project/Scripts/Rendering", "*.cs", "AlgaeDecal") +
+                CountTokenInDirectory(root, "Assets/_Project/Scripts/Rendering", "*.cs", "GlassFractureDecal") +
+                CountTokenInDirectory(root, "Assets/_Project/Scripts/Construction", "*.cs", "CorrosionDecal") +
+                CountTokenInDirectory(root, "Assets/_Project/Scripts/Construction", "*.cs", "RustDecal") +
+                CountTokenInDirectory(root, "Assets/_Project/Scripts/Construction", "*.cs", "AlgaeDecal") +
+                CountTokenInDirectory(root, "Assets/_Project/Scripts/Construction", "*.cs", "GlassFractureDecal");
             bool layoutValid = VisualPressureAgingRuntime.ValidateLayout();
+            bool pass = activeMaterialMutations == 0 &&
+                activeAuthoringDecals == 0 &&
+                legacyBaseCorrosionFiles == 0 &&
+                legacyGlassFractureFiles == 0 &&
+                legacyRendererMaterialSetFloat == 0 &&
+                dynamicAgingDecalReferences == 0 &&
+                shaderBufferBindings >= 2 &&
+                layoutValid;
 
             StringBuilder builder = new StringBuilder(1024);
             builder.AppendLine("{");
@@ -286,11 +316,15 @@ namespace Hecton8.Graphics.Materials.Editor
             builder.AppendLine("  \"authoringAgingDecalCallsActive\": " + activeAuthoringDecals + ",");
             builder.AppendLine("  \"projectMaterialMutationReferences\": " + projectMaterialMutationReferences + ",");
             builder.AppendLine("  \"projectDynamicDecalReferences\": " + projectDynamicDecalReferences + ",");
+            builder.AppendLine("  \"legacyBaseCorrosionFiles\": " + legacyBaseCorrosionFiles + ",");
+            builder.AppendLine("  \"legacyGlassFractureFiles\": " + legacyGlassFractureFiles + ",");
+            builder.AppendLine("  \"legacyRendererMaterialSetFloat\": " + legacyRendererMaterialSetFloat + ",");
+            builder.AppendLine("  \"dynamicAgingDecalReferences\": " + dynamicAgingDecalReferences + ",");
             builder.AppendLine("  \"globalAgingShaderBindings\": " + shaderBufferBindings + ",");
             builder.AppendLine("  \"visualAgingParamsDTOBytes\": 64,");
             builder.AppendLine("  \"layoutValid\": " + (layoutValid ? "true" : "false") + ",");
             builder.AppendLine("  \"rollbackStateIncluded\": false,");
-            builder.AppendLine("  \"status\": \"" + (activeMaterialMutations == 0 && activeAuthoringDecals == 0 && shaderBufferBindings >= 2 && layoutValid ? "PASS" : "FAIL") + "\"");
+            builder.AppendLine("  \"status\": \"" + (pass ? "PASS" : "FAIL") + "\"");
             builder.AppendLine("}");
             File.WriteAllText(reportPath, builder.ToString());
             return reportPath;
@@ -312,6 +346,23 @@ namespace Hecton8.Graphics.Materials.Editor
         {
             string path = Path.Combine(root, relativePath);
             return File.Exists(path) ? File.ReadAllText(path) : string.Empty;
+        }
+
+        private static int CountFileNameInDirectory(string root, string relativePath, string fileName)
+        {
+            string directory = Path.Combine(root, relativePath);
+            if (!Directory.Exists(directory))
+                return 0;
+
+            int count = 0;
+            string[] files = Directory.GetFiles(directory, fileName, SearchOption.AllDirectories);
+            for (int i = 0; i < files.Length; i++)
+            {
+                if (Path.GetFileName(files[i]) == fileName)
+                    count++;
+            }
+
+            return count;
         }
 
         private static int CountTokenInDirectory(string root, string relativePath, string searchPattern, string token)

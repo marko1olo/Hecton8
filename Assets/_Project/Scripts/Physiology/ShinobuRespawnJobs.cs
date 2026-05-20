@@ -117,42 +117,65 @@ namespace Hecton8.Physiology
             {
                 target = fallback;
                 medicalBayHash = 0u;
+                uint rejectedCandidateFlags = 0u;
+                uint selectedCandidateFlags = 0u;
                 double bestSq = double.MaxValue;
+                double radius = math.max((double)tuning.MedicalBaySearchRadiusMeters, 0.0001d);
+                double maxSearchSq = radius * radius;
                 int count = math.max(0, MedicalBayCount);
 
                 for (int i = 0; i < count; i++)
                 {
                     MedicalBayRespawnPointDTO bay = MedicalBays[i];
                     if (!math.all(math.isfinite(bay.BayAUP)))
+                    {
+                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
+                    }
 
                     double3 delta = bay.BayAUP - request.DeathAUP;
                     if (!math.all(math.isfinite(delta)))
+                    {
+                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
+                    }
 
                     float distanceSq = math.lengthsq(AupDeltaToFloat3(delta));
                     if (!math.isfinite(distanceSq))
+                    {
+                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
+                    }
+
+                    if ((double)distanceSq > maxSearchSq)
+                    {
+                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
+                        continue;
+                    }
 
                     if (distanceSq >= bestSq)
                         continue;
 
                     if (!ValidateMedicalBay(in bay, tuning.ValidationClearanceMeters))
                     {
-                        flags |= ShinobuRespawnFlags.InvalidTargetAup;
+                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
                     }
 
                     bestSq = distanceSq;
                     target = bay.BayAUP;
                     medicalBayHash = bay.MedicalBayHashID;
-                    flags |= bay.Flags & ShinobuRespawnFlags.MockMedicalBay;
+                    selectedCandidateFlags = bay.Flags & ShinobuRespawnFlags.MockMedicalBay;
                 }
 
                 if (!math.all(math.isfinite(target)) || medicalBayHash == 0u)
                 {
                     target = fallback;
-                    flags |= ShinobuRespawnFlags.FallbackLifepod;
+                    flags |= rejectedCandidateFlags | ShinobuRespawnFlags.FallbackLifepod;
+                }
+                else
+                {
+                    flags |= selectedCandidateFlags;
                 }
             }
             else
@@ -343,6 +366,9 @@ namespace Hecton8.Physiology
 
         private static bool ValidateMedicalBay(in MedicalBayRespawnPointDTO bay, float clearanceMeters)
         {
+            if (bay.MedicalBayHashID == 0u)
+                return false;
+
             double3 delta = bay.BayAUP - bay.NearestTerrainAUP;
             if (!math.all(math.isfinite(delta)))
                 return false;
@@ -360,6 +386,8 @@ namespace Hecton8.Physiology
             tuning.LowQualityFadeRate = math.clamp(FiniteOr(tuning.LowQualityFadeRate, 2f), 0.0001f, 16f);
             tuning.PenaltyMultiplier = math.saturate(FiniteOr(tuning.PenaltyMultiplier, 1f));
             tuning.ValidationClearanceMeters = math.clamp(FiniteOr(tuning.ValidationClearanceMeters, 1.5f), 0.25f, 16f);
+            tuning.RespawnInvulnerabilitySeconds = math.clamp(FiniteOr(tuning.RespawnInvulnerabilitySeconds, 1.5f), 0f, 60f);
+            tuning.MedicalBaySearchRadiusMeters = math.clamp(FiniteOr(tuning.MedicalBaySearchRadiusMeters, 5000f), 1f, 50000f);
             return tuning;
         }
 

@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_220
 
-Status: POLISH LOOP ACTIVE / INTENT BUS HARDENED / AUP CONVERSION HARDENED / GPU DOUBLE BUFFER HARDENED / SHADER GLOBAL FAIL-CLOSED / ZERO-ACTIVE VISUAL BYPASS / ZERO-ACTIVE KCC JOB BYPASS / KCC DISPATCHER FRAME FENCE / VERIFY_WORDING_CORRECTED / VAULT_HOTSWAP_RELEASE_HARDENED / PRE_SIM_FENCE_HARDENED / TEARDOWN_DRAIN_HARDENED / UNITY IMPORT HUNG
+Status: POLISH LOOP ACTIVE / INTENT BUS HARDENED / AUP CONVERSION HARDENED / GPU_DOUBLE_BUFFER_HARDENED / SHADER_GLOBAL_FAIL_CLOSED / ZERO_ACTIVE_VISUAL_BYPASS / ZERO_ACTIVE_KCC_JOB_BYPASS / KCC_DISPATCHER_FRAME_FENCE / VERIFY_WORDING_CORRECTED / VAULT_HOTSWAP_RELEASE_HARDENED / PRE_SIM_FENCE_HARDENED / TEARDOWN_DRAIN_HARDENED / EVERY_FRAME_TELEMETRY_HARDENED / TELEMETRY_LENGTH_GUARDS_HARDENED / BULKHEAD_SHADOW_STATE_PURGED / BLACKBOX_DUMP_DECOUPLED_FROM_SHADER / UNITY IMPORT HUNG
 
 ## Initial Decision 2026-05-20
 Problem: Emergency habitat bulkhead closure is currently represented by CPU-side `BaseAirlock` transform motion, while the batch requires mathematical CSR/KCC blocking and GPU-only visual closure.
@@ -42,7 +42,7 @@ Problem: The system needs crash explainability, tuning, CSV profiles, and an arc
 Solution: Added `BulkheadTelemetryEntry[300]`, `Dump_SHINOBU_220.bin` writer, UI Toolkit tuner, span-based CSV profile parser, and `DoorPhysicsInquisition` report route.
 Rejected Alternatives: Runtime string CSV parsing and log-only telemetry were rejected; both produce GC or fail black-box requirements.
 Scalability potential: Low writes compact telemetry and skips expensive visuals; Middle/High expose live tuning; Ultra can use the same telemetry to justify visual overkill.
-Hardware Impact: Hot-path telemetry is fixed-size native writes. Dump and CSV file allocations are cold/editor or fault-path only; expected frame cost below 5 us for telemetry at authority cadence.
+Hardware Impact: Hot-path telemetry is fixed-size native writes. Dump and CSV file allocations are cold/editor or fault-path only; after Loop 20, empty routes write a direct telemetry row and active routes schedule a small telemetry job every Simulation frame.
 
 ## Decision 2026-05-20 - Contract Bridge Instead Of Gameplay Construction Import (SUPERSEDED)
 Superseded By: `BulkheadContainmentIntentBus` unmanaged DataVault ingress in the later hardening pass below.
@@ -184,3 +184,31 @@ Solution: Added `ShutdownRuntime(forceCompletePendingJobs: true)` and routed bot
 Rejected Alternatives: Keeping deferred release with no remaining phase pump was rejected as a cold native-memory retention risk. Immediate `ReleaseBuffer` without draining handles was rejected because Burst jobs may still own raw pointers. Manually invoking `OnDisable()` from the quit callback was rejected because lifecycle recursion hides ordering and can double-run partial cleanup.
 Scalability potential: Low/Middle/High/Ultra gameplay behavior is unchanged. The drain is cold teardown only; runtime cadence and shader deformation still scale continuously from 5 Hz authority on weak devices to high-frequency visual overkill on strong machines.
 Hardware Impact: Frame-loop cost is 0 us. Teardown may wait on at most the active SHINOBU_220 pre-simulation and simulation handles; that is an explicit shutdown boundary, not a gameplay-frame wait.
+
+## Decision 2026-05-20 - Every-Frame Black Box Telemetry
+Problem: The first telemetry implementation wrote the 300-frame ring only when the authority closure cadence fired. At low `GlobalQualityWeight`, authority can collapse toward 5 Hz, which means the black box could miss multiple dispatcher frames immediately before a fatal NaN or shutdown fault.
+Solution: `ScheduleSimulation()` now records telemetry on every Simulation phase. The expensive closure, catastrophic damage, and CSR lock jobs remain behind the continuous cadence gate. On cadence-skip frames, only states/collision/telemetry/cursor buffers resolve and `RecordBulkheadTelemetryJob` writes a black-box row. If no bulkheads are active, the runtime writes a direct zero telemetry row and schedules no no-op job.
+Rejected Alternatives: Keeping telemetry at authority cadence was rejected because it weakens crash autopsy proof. Scheduling the whole closure chain every frame was rejected because it violates continuous scalability. Resolving CSR/conductivity/fluid/integrity just to write telemetry was rejected because it increases failure surface and Vault metadata traffic on cadence-skip frames.
+Scalability potential: Low tier preserves 5 Hz closure authority while retaining 60 Hz black-box observability; middle/high/ultra keep smoother authority cadence and the same every-frame forensic ring. The visual Dear Lie remains shader-driven by q.
+Hardware Impact: Empty scenes pay one direct NativeArray row write and no scheduled job. Active scenes pay one small `IJob` schedule per Simulation frame for telemetry; the closure/CSR chain still sheds work continuously based on `GlobalQualityWeight`.
+
+## Decision 2026-05-20 - Telemetry Length And Pending-Producer Guards
+Problem: Every-frame telemetry introduced more frequent writes to the 300-frame ring, but the first hardening pass still assumed fixed-size Vault lanes were nonzero and that the empty-route direct write could never overlap a pending PreSimulation producer. A hot-swap, partial Vault failure, or future call-site drift could turn that into a modulo-zero fault or a data race on the collision proof row.
+Solution: `ScheduleSimulation()`, `ScheduleTelemetryJob()`, and `VisualSyncTick()` now reject empty state/collision/telemetry/cursor lanes before unsafe pointer extraction or cursor modulo. If active count resolves to zero while `_preSimulationScheduled` is still true, the runtime schedules a zero-count telemetry job chained behind the pre-sim dependency instead of writing the ring directly. `RecordBulkheadTelemetryJob` also exits on invalid pointer/count inputs before reading `Cursor[0]` or `CollisionResult[0]`.
+Rejected Alternatives: Trusting boot-time fixed-capacity requests was rejected because DataVault hot-swap can invalidate assumptions. Forcing all empty routes through a no-op telemetry job was rejected because normal inactive scenes should remain scheduler-inert. Completing the pre-sim handle before direct write was rejected because it would block the frame loop.
+Scalability potential: Low tier keeps the cheap direct empty-route row and low closure cadence. Middle/high/ultra behavior is unchanged; the only extra path is a rare dependency-correct telemetry job when a pending producer must be fenced.
+Hardware Impact: Normal active path pays integer length checks before scheduling telemetry. Normal empty path remains one direct row and no job. Rare pending-producer empty path pays one tiny IJob to avoid a race; no object, collider, or physics route is introduced.
+
+## Decision 2026-05-20 - BaseAirlock Bulkhead Shadow State Purge
+Problem: `BaseAirlock` still kept `_bulkheadClosureIntent01`, a local float shadow of closure intent used only to gate the pressure whistle. It was not gameplay-authoritative, but the name and scalar preserved object-door semantics beside the Vault-owned `BulkheadStateDTO` truth.
+Solution: Removed `_bulkheadClosureIntent01` and `SetBulkheadClosureIntent`. Audio whistle gating now uses `_emergencyLockedDown` only; closure progress remains owned exclusively by the containment Vault lane and shader upload route.
+Rejected Alternatives: Keeping the audio-only float was rejected because shadow state is exactly how standard door objects creep back in. Reading `BulkheadStateDTO` from Gameplay for audio was rejected because it would add cross-owner polling and a DataVault read to a cosmetic path.
+Scalability potential: Low tier avoids one more local scalar branch and preserves the no-object model. Middle/high/ultra still get the same shader Dear Lie and continuous q-driven closure cadence from the owner runtime.
+Hardware Impact: Removes two cold writes and one scalar read in whistle gating. The measurable gain is negligible; the authority gain is that closure progress exists in one owner route only.
+
+## Decision 2026-05-20 - Black-Box Dump Before Shader Fail-Closed Branches
+Problem: `RecordBulkheadTelemetryJob` can mark `DumpRequested`, but the previous dump call lived after successful shader buffer resolution and upload. If shader upload was disabled or failed closed because the visual route was inactive, the black-box file would not be written even though the solver requested forensic output.
+Solution: Added `DumpBlackBoxIfRequested(IDataVault)` and call it at the start of `VisualSyncTick()` after Vault rebind handling, before `uploadShaderBuffer`, active-count, and graphics-buffer checks. The helper resolves only telemetry and cursor lanes, validates nonzero lengths, reads the latest ring row, and emits the dump when `DumpRequested` is set.
+Rejected Alternatives: Keeping dump behind the shader upload path was rejected because crash evidence must not depend on visual feature enablement. Completing the telemetry job immediately in Simulation was rejected because it would stall the frame. Leaving both old and new dump checks was rejected because it could double-write the same flagged row.
+Scalability potential: Low tier can disable or fail-close shader upload and still preserve fatal telemetry. Middle/high/ultra keep the same Dear Lie visual path; forensic output is now orthogonal to visual quality.
+Hardware Impact: Adds one telemetry/cursor descriptor resolve and latest-row flag check per VisualSync. Fault-path file I/O remains gated by `DumpRequested`; no collider, object, or physics route is introduced.

@@ -374,8 +374,32 @@ namespace Hecton8.Gameplay
                 return;
 
             target.EnsureResolvedStrings();
-            s_loreEntityAups[index] = AbsoluteUniversePosition.FromRuntimePosition(target.transform.position);
+            s_loreEntityAups[index] = target.TryResolveLoreEntityAup(out AbsoluteUniversePosition entityAup)
+                ? entityAup
+                : GlobalSignals.CurrentRuntimeOriginAup();
             s_loreEntityHashes[index] = target.EntityHash;
+        }
+
+        private bool TryResolveLoreEntityAup(out AbsoluteUniversePosition entityAup)
+        {
+            entityAup = default;
+            Transform cachedTransform = transform;
+            if (cachedTransform == null)
+                return false;
+
+            Vector3 runtimePosition = cachedTransform.position;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            entityAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return MathGuard.IsFinite(in entityAup);
         }
 
         private static void ClearLoreEntitySlot(int index)

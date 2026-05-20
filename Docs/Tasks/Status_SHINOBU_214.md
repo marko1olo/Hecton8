@@ -4,7 +4,7 @@ Date: 2026-05-20
 Agent: SHINOBU_214
 Role: PBR_TEXTURE_CHANNEL_PACKER
 Domain: Echelon 2 World Generation / Tech Art Editor texture packing
-Status: STATIC POLISH + BLACKBOX + STRUCT_REQUEST_FIX + QUALITY_CURVE + CSV_FLAG_PASS APPLIED / COMPILE BLOCKED BY CPU GATE
+Status: STATIC POLISH + ISOLATED_ASMDEF + BLACKBOX + STRUCT_REQUEST_FIX + AXIS_DIMENSION_FIX + QUALITY_CURVE + CSV_PROFILE_AUTHORITY + PROPERTY_PURGE + BATCH_FAULT_ADVANCE APPLIED / COMPILE BLOCKED BY CPU GATE
 
 ## Source Prompt
 
@@ -28,7 +28,7 @@ Status: STATIC POLISH + BLACKBOX + STRUCT_REQUEST_FIX + QUALITY_CURVE + CSV_FLAG
 
 - [x] Task 01 REALTIME_TEXTURE_MANIPULATION_INQUISITION | DOD: source scan checked `GetPixels/SetPixels/GetRawTextureData/Apply` hotspots; only weather LUT and cold water LUT paths were found outside PBR ARM scope. | Alternative rejected: ripping unrelated weather/array resolver code and destabilizing other domains. | Estimate: 0 us runtime added; sampler win depends on converted materials.
 - [x] Task 02 REDUNDANT_SAMPLER_PURGE | DOD: `UberNoir` mask contract changed from legacy ORM to ARM; validator reports loose AO/Roughness/Metallic stacks to `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json`. | Alternative rejected: blind material mutation without scanner evidence. | Estimate: two texture sampler reads avoided per converted material; exact us pending GPU profiler.
-- [x] Task 03 CS1612_PIXEL_STATE_ANNIHILATION | DOD: legacy M.A.S.K. editor entrypoint now delegates to ARM packer; no `GetPixels`, LINQ, or dense managed pixel loops in new path. | Alternative rejected: PNG `EncodeToPNG` mask writer and mutable Color property loops. | Estimate: 0 us runtime; editor memory bandwidth moved to NativeArray jobs.
+- [x] Task 03 CS1612_PIXEL_STATE_ANNIHILATION | DOD: legacy M.A.S.K. editor entrypoint now delegates to ARM packer; no `GetPixels`, LINQ, dense managed pixel loops, or DTO-style `{ get; }` properties remain in owned packer/validator surface. | Alternative rejected: PNG `EncodeToPNG` mask writer and mutable Color property loops. | Estimate: 0 us runtime; editor memory bandwidth moved to NativeArray jobs.
 - [x] Task 04 ARM64_MAPPING_LAYOUT_ASSERTION | DOD: `TexturePackerConfigDTO` is explicit 16 bytes with offset report menu. | Alternative rejected: sequential DTO and C# properties. | Estimate: 0 us runtime; avoids layout ambiguity on ARM64.
 - [x] Task 05 EMERGENCY_MOCK_TEXTURE_BENCHMARK | DOD: 4K mock benchmark menu allocates uninitialized NativeArray buffers, packs ARM, generates Sobel normals, writes JSON. | Alternative rejected: waiting for final art library before proving kernel path. | Estimate: pending Unity execution.
 
@@ -51,7 +51,7 @@ Status: STATIC POLISH + BLACKBOX + STRUCT_REQUEST_FIX + QUALITY_CURVE + CSV_FLAG
 ## Loop 4: Tasks 16-20
 
 - [x] Task 16 PROCEDURAL_PACKER_FORGE_WINDOW | DOD: UI Toolkit window under `Hecton8/Rendering/Texture Channel Packer` controls folder batch, profiles, quality weight, mips, inversion, macro bake, and normals. | Alternative rejected: command-only tool with no preview/artist flow. | Estimate: editor-only.
-- [x] Task 17 CSV_PACKING_PROFILES_INGESTOR | DOD: unsafe byte-buffer CSV parser reads `texture_packing_profiles.csv` without `Split`/LINQ; flag column now supports `macro/noise`, `toksvig/mip`, `normal/sobel`, `invert/smoothness`, and `none/off/0`. | Alternative rejected: managed string splitting across dense profile imports and always-on profile flags. | Estimate: editor-only.
+- [x] Task 17 CSV_PACKING_PROFILES_INGESTOR | DOD: unsafe byte-buffer CSV parser reads `texture_packing_profiles.csv` without `Split`/LINQ; flag column now supports `macro/noise`, `toksvig/mip`, `normal/sobel`, `invert/smoothness`, and `none/off/0`; Forge requests now start from profile flags instead of forcing macro on. | Alternative rejected: managed string splitting across dense profile imports, always-on profile flags, and UI facade overriding CSV authority. | Estimate: editor-only.
 - [x] Task 18 LIVE_CHANNEL_PREVIEW_GIZMO | DOD: preview job extracts ARM channels to grayscale editor textures. | Alternative rejected: trusting asset thumbnails. | Estimate: editor-only.
 - [x] Task 19 ARCHITECTURAL_METRIC_VALIDATOR | DOD: material validator includes UberNoir, loose roughness fields, BC7/linear mask checks, and JSON output. | Alternative rejected: manual material audit. | Estimate: two sampler reads avoided per remediated material; exact us pending GPU profiler.
 - [x] Task 20 SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION | DOD: static scans passed for old ORM/M.A.S.K./`GetPixels` in owned files, DTO layout surface, uninitialized buffers, docs fence, and 64-byte telemetry layout surface. | Alternative rejected: claiming Unity proof without compile/import. | Estimate: proof pending compiler.
@@ -76,8 +76,13 @@ Status: STATIC POLISH + BLACKBOX + STRUCT_REQUEST_FIX + QUALITY_CURVE + CSV_FLAG
 - Blackbox pass: PASS static install. `TexturePackerTelemetryEntry` is `[StructLayout(LayoutKind.Explicit, Size = 64)]`; ring length is 300; dump target is `Docs/AgentLogs/Dump_SHINOBU_214.bin`; menu target is `Hecton8/Rendering/Texture Channel Packer/Dump Black Box`; Unity execution proof remains pending.
 - Struct request pass: PASS static patch. `TryPackArmAsset` calls `ValidateRequest(ref request)`; batch report preserves blackbox fields; non-square source dimensions no longer collapse by width-only resolution selection.
 - Quality curve pass: PASS static patch. `InjectMacroNoiseJob` now uses polynomial smoothstep quality shaping and FBM octave weights derived from continuous `GlobalQualityWeight`.
-- CSV flag pass: PASS static patch. Profile flags are no longer hardwired to all stages; explicit `none/off/0` yields zero flags, empty flags preserve default terrain/hard-surface behavior.
-- Latest static forbidden scan: PASS for owned new/edited path on old ORM/M.A.S.K./pixel APIs/LINQ/foreach/Random/Time/MemClear.
+- CSV profile authority pass: PASS static patch. Profile flags are no longer hardwired to all stages; explicit `none/off/0` yields zero flags, empty flags preserve default terrain/hard-surface behavior; Forge `BuildRequest` now starts from `profile.Flags`, then applies only the visible normal/Toksvig/invert toggles.
+- Property purge pass: PASS static patch. `PackedMaskAnalysis` now exposes raw readonly fields instead of get-only properties.
+- Axis dimension pass: PASS static patch. Packer output width/height now resolve independently, preserving non-square authoring intent while still enforcing POT plus max-size clamp.
+- Cold allocation annotation pass: PASS static patch. Editor-only `List`/`Dictionary` caches now carry canonical `COLD ALLOC` owner/capacity comments.
+- Batch fault advance pass: PASS static patch. Forge queue catches per-set pack exceptions, records one failure, advances `_pendingIndex`, and avoids retry loops after the packer blackbox dumps the fault.
+- Compile wall pass: PASS static patch. Packer scripts moved under `Assets/_Project/Scripts/Editor/TextureChannelPacker/` with `Hecton8.Rendering.TexturePacker.Editor.asmdef` referencing only Unity Collections/Mathematics/Burst/Jobs.
+- Latest static forbidden scan: PASS for owned new/edited path on old ORM/M.A.S.K./pixel APIs/LINQ/foreach/Random/Time/MemClear/get-only properties/`HashLiteral`/retired square-only dimension helpers.
 - Current batch extraction: PASS with regex allowing additional XML attributes on `<AGENT_PROMPT id="SHINOBU_214" ...>`.
 - Report JSON parse: PASS for `TEXTURE_PACKING_REPORT.json` and `RENDERING_OPTIMIZATION_REPORT.json`.
 - Unity import proof: PENDING.

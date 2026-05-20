@@ -138,8 +138,8 @@ Suggested coverage angle for your audience:
 [segment-specific angle]
 
 Demo/key: [private access route or key batch ID after access log]
-Steam: [approved public Steam URL after CTA activation packet]
-Press kit: [approved presskit URL after CTA activation packet]
+Steam: [gated public Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
+Press kit: [gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
 
 Useful disclosure line if you cover it: code/key provided by the developer.
 

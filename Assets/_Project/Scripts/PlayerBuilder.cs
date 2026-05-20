@@ -158,6 +158,11 @@ namespace Hecton8.Building
         private GameObject _currentGhostObj;
         private PlacementGhost _currentGhost;
         private bool _currentGhostUsesRuntimeProxy;
+        private bool _builderGhostPreviewActive;
+        private bool _builderGhostPreviewCanBuild = true;
+        private Vector3 _builderGhostPreviewPosition;
+        private Quaternion _builderGhostPreviewRotation = Quaternion.identity;
+        private Vector3 _builderGhostPreviewScale = Vector3.one;
         private RaycastHit _hit;
         private readonly RaycastHit[] _buildHits = new RaycastHit[1]; // COLD ALLOC: single surface probe for build targeting.
         private const float StructuralPlacementGridMeters = 4f;
@@ -166,12 +171,6 @@ namespace Hecton8.Building
         private const float StructuralSnapRadiusMeters = 1f;
         private const float StructuralUnsnapRadiusMeters = 1.25f;
         private int _ghostYawStep;
-        private const int BuildGhostProjectionInstanceCount = 1;
-        private readonly Matrix4x4[] _buildGhostProjectionMatrices = new Matrix4x4[BuildGhostProjectionInstanceCount];
-        private Mesh _buildGhostProjectionMesh;
-        private Material _buildGhostValidProjectionMaterial;
-        private Material _buildGhostBlockedProjectionMaterial;
-
         private static readonly Vector3 ViewportCenter = new Vector3(0.5f, 0.5f, 0f);
 
         // ══════════════════════════════════════════════════════════
@@ -278,8 +277,8 @@ namespace Hecton8.Building
         public int ActiveBuildableIndex => _activeBuildableIndex;
         public int BuildableCount => _buildCatalog != null ? _buildCatalog.ViewableCount : 0;
         public bool HasResourcesForActiveBuildable => activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable) && HasResources(activeBuildable);
-        public bool CanPlaceActiveBuildable => activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable) && _currentGhost != null && _currentGhost.CanBuild && _semanticPlacementValid && _terrainSdfPlacementValid && _integrityPlacementValid;
-        public bool HasPlacementPreview => _currentGhostObj != null;
+        public bool CanPlaceActiveBuildable => activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable) && _builderGhostPreviewActive && _builderGhostPreviewCanBuild && _semanticPlacementValid && _terrainSdfPlacementValid && _integrityPlacementValid;
+        public bool HasPlacementPreview => _builderGhostPreviewActive;
         public BuildReadiness ActiveBuildReadiness => GetActiveBuildReadiness();
 
         /// <summary>Seychas prizrak prilip k soketu.</summary>
@@ -418,22 +417,21 @@ namespace Hecton8.Building
 
         public bool TryGetPlacementPreviewPose(out Vector3 position, out Quaternion rotation)
         {
-            if (_currentGhostObj == null)
+            if (!_builderGhostPreviewActive)
             {
                 position = default;
                 rotation = default;
                 return false;
             }
 
-            Transform ghostTransform = _currentGhostObj.transform;
-            position = ghostTransform.position;
-            rotation = ghostTransform.rotation;
+            position = _builderGhostPreviewPosition;
+            rotation = _builderGhostPreviewRotation;
             return true;
         }
 
         public bool TryDeployActiveBuildableFromPreview()
         {
-            if (_currentGhost == null || !_currentGhost.CanBuild)
+            if (!_builderGhostPreviewActive || !_builderGhostPreviewCanBuild)
                 return false;
             if (!UpdatePlacementValidityState())
                 return false;
@@ -689,7 +687,7 @@ namespace Hecton8.Building
         {
             ConsumeBuilderInputSignals();
             // Position update only; edge input is consumed from PlayerInputSignal.
-            if (_currentGhostObj != null)
+            if (_builderGhostPreviewActive)
             {
                 UpdateGhostPosition(deltaTime);
                 UpdatePlacementValidationState();
@@ -866,6 +864,11 @@ namespace Hecton8.Building
             _ghostSocketBuffer.Clear();
             _shinobuTargetSocketBuffer.Clear();
             _currentGhost?.SetExternalValidity(true);
+            _builderGhostPreviewActive = false;
+            _builderGhostPreviewCanBuild = true;
+            _builderGhostPreviewPosition = default;
+            _builderGhostPreviewRotation = Quaternion.identity;
+            _builderGhostPreviewScale = Vector3.one;
             _habitatConstructionManager?.ResetValidation();
         }
 
@@ -883,6 +886,7 @@ namespace Hecton8.Building
                 return;
             }
 
+            ReleaseLegacyGhostObject();
             Vector3 spawnPos;
             if (buildAnchor != null)
             {
@@ -898,41 +902,15 @@ namespace Hecton8.Building
                 spawnPos = transform.position + Vector3.forward * buildDistance;
             }
 
-            if (activeBuildable.ghostPrefab == null)
-            {
-                if (!ConstructionRuntimeProxyFactory.TryAcquireGhostProxy(
-                        activeBuildable,
-                        spawnPos,
-                        Quaternion.identity,
-                        ResolveSurfaceMask(),
-                        out _currentGhostObj))
-                {
-                    NotifyBuildBlocked("GHOST PROXY MISSING");
-                    return;
-                }
-
-                _currentGhostUsesRuntimeProxy = true;
-            }
-            else
-            {
-                if (!TryGetObjectPool(out ObjectPoolManager pool))
-                {
-                    NotifyBuildBlocked("OBJECT POOL OFFLINE");
-                    return;
-                }
-
-                _currentGhostObj = pool.Spawn(
-                    activeBuildable.ghostPrefab, spawnPos, Quaternion.identity);
-                _currentGhostUsesRuntimeProxy = false;
-            }
-
-            if (_currentGhostObj != null)
-            {
-                _currentGhostObj.TryGetComponent(out _currentGhost);
-                CacheGhostSockets();
-                _currentGhost?.SetExternalValidity(true);
-            }
-
+            _builderGhostPreviewActive = true;
+            _builderGhostPreviewCanBuild = true;
+            _builderGhostPreviewPosition = spawnPos;
+            _builderGhostPreviewRotation = Quaternion.identity;
+            _builderGhostPreviewScale = ResolveActivePreviewScale();
+            _currentGhostObj = null;
+            _currentGhost = null;
+            _currentGhostUsesRuntimeProxy = false;
+            _ghostSocketBuffer.Clear();
             _integrityPlacementValid = true;
             _integrityPlacementBlockReason = string.Empty;
             _integrityValidationDirty = true;
@@ -941,7 +919,27 @@ namespace Hecton8.Building
 
         private void DespawnGhost()
         {
-            if (_currentGhostObj == null) return;
+            ReleaseLegacyGhostObject();
+            _builderGhostPreviewActive = false;
+            _builderGhostPreviewCanBuild = true;
+            _builderGhostPreviewPosition = default;
+            _builderGhostPreviewRotation = Quaternion.identity;
+            _builderGhostPreviewScale = Vector3.one;
+            _ghostSocketBuffer.Clear();
+            _semanticPlacementValid = true;
+            _semanticPlacementBlockReason = string.Empty;
+            _integrityPlacementValid = true;
+            _integrityPlacementBlockReason = string.Empty;
+            _integrityValidationDirty = false;
+            _hasScheduledValidationSnapshot = false;
+            _hasCompletedValidationSnapshot = false;
+            _habitatConstructionManager?.ResetValidation();
+        }
+
+        private void ReleaseLegacyGhostObject()
+        {
+            if (_currentGhostObj == null)
+                return;
 
             if (_currentGhostUsesRuntimeProxy)
             {
@@ -959,15 +957,6 @@ namespace Hecton8.Building
             _currentGhostObj = null;
             _currentGhost    = null;
             _currentGhostUsesRuntimeProxy = false;
-            _ghostSocketBuffer.Clear();
-            _semanticPlacementValid = true;
-            _semanticPlacementBlockReason = string.Empty;
-            _integrityPlacementValid = true;
-            _integrityPlacementBlockReason = string.Empty;
-            _integrityValidationDirty = false;
-            _hasScheduledValidationSnapshot = false;
-            _hasCompletedValidationSnapshot = false;
-            _habitatConstructionManager?.ResetValidation();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -996,12 +985,25 @@ namespace Hecton8.Building
         ///   • Struct Ray, RaycastHit, Vector3, Quaternion — stack.
         ///   • Nikakih List, LINQ, lyambd, new.
         /// </summary>
+        private Vector3 ResolveActivePreviewScale()
+        {
+            if (activeBuildable != null &&
+                activeBuildable.ModuleTemplate != null)
+            {
+                Vector3 size = activeBuildable.ModuleTemplate.ProxyBoundsSize;
+                if (size.x > 0.001f && size.y > 0.001f && size.z > 0.001f)
+                    return size;
+            }
+
+            return Vector3.one;
+        }
+
         private void UpdateGhostPosition(float dt)
         {
             if (_terrainSdfBlockHapticCooldown > 0f)
                 _terrainSdfBlockHapticCooldown = math.max(0f, _terrainSdfBlockHapticCooldown - math.max(0f, dt));
 
-            if (playerCamera == null || _currentGhostObj == null || _habitatConstructionManager == null)
+            if (playerCamera == null || !_builderGhostPreviewActive || _habitatConstructionManager == null)
                 return;
 
             Ray ray = playerCamera.ViewportPointToRay(ViewportCenter);
@@ -1169,26 +1171,29 @@ namespace Hecton8.Building
                 targetRot = QuantizeRotation(targetRot, StructuralRotationStepDegrees);
             }
 
-            Transform t = _currentGhostObj.transform;
-            Vector3 previousPosition = t.position;
-            Quaternion previousRotation = t.rotation;
+            Vector3 previousPosition = _builderGhostPreviewPosition;
+            Quaternion previousRotation = _builderGhostPreviewRotation;
 
             if (_isSnapped)
             {
-                t.SetPositionAndRotation(targetPos, targetRot);
+                _builderGhostPreviewPosition = targetPos;
+                _builderGhostPreviewRotation = targetRot;
             }
             else
             {
                 float lerpFactor = ResolveDecayBlend(ghostFollowSpeed, dt);
-                t.position = Vector3.Lerp(previousPosition, targetPos, lerpFactor);
-                t.rotation = NlerpRotation(previousRotation, targetRot, lerpFactor);
+                _builderGhostPreviewPosition = Vector3.Lerp(previousPosition, targetPos, lerpFactor);
+                _builderGhostPreviewRotation = NlerpRotation(previousRotation, targetRot, lerpFactor);
             }
+
+            if (_currentGhostObj != null)
+                _currentGhostObj.transform.SetPositionAndRotation(_builderGhostPreviewPosition, _builderGhostPreviewRotation);
 
             if (previousSnapState != _isSnapped ||
                 !ReferenceEquals(previousSocket, _snappedSocket) ||
                 !ReferenceEquals(previousGhostSocket, _snappedGhostSocket) ||
-                (t.position - previousPosition).sqrMagnitude > 0.0001f ||
-                Quaternion.Dot(previousRotation, t.rotation) < 0.9999f)
+                (_builderGhostPreviewPosition - previousPosition).sqrMagnitude > 0.0001f ||
+                Quaternion.Dot(previousRotation, _builderGhostPreviewRotation) < 0.9999f)
             {
                 _integrityValidationDirty = true;
             }
@@ -1228,14 +1233,14 @@ namespace Hecton8.Building
                 return;
             }
 
-            if (_currentGhostObj == null || _currentGhost == null)
+            if (!_builderGhostPreviewActive)
             {
                 NotifyBuildBlocked("PLACEMENT INVALID");
                 PlaySound(errorSound);
                 return;
             }
 
-            if (!UpdatePlacementValidityState() || !_currentGhost.CanBuild)
+            if (!UpdatePlacementValidityState() || !_builderGhostPreviewCanBuild)
             {
                 NotifyBuildBlocked(ResolvePlacementBlockReason());
                 PlaySound(errorSound);
@@ -1252,8 +1257,8 @@ namespace Hecton8.Building
                 return;
             }
 
-            Vector3 placePos = _currentGhostObj.transform.position;
-            Quaternion placeRot = _currentGhostObj.transform.rotation;
+            Vector3 placePos = _builderGhostPreviewPosition;
+            Quaternion placeRot = _builderGhostPreviewRotation;
             TryResolveExactSnappedPlacementPose(ref placePos, ref placeRot);
             ApplyStructuralPlacementQuantization(ref placePos, ref placeRot);
 
@@ -1778,12 +1783,15 @@ namespace Hecton8.Building
 
         private bool TryResolveExactSnappedPlacementPose(ref Vector3 placePos, ref Quaternion placeRot)
         {
-            if (_isSnapped && _shinobuHasSnappedPose && _currentGhostObj != null)
+            if (_isSnapped && _shinobuHasSnappedPose)
             {
                 placePos = _shinobuSnappedPosePosition;
                 placeRot = _shinobuSnappedPoseRotation;
                 ApplyStructuralPlacementQuantization(ref placePos, ref placeRot);
-                _currentGhostObj.transform.SetPositionAndRotation(placePos, placeRot);
+                _builderGhostPreviewPosition = placePos;
+                _builderGhostPreviewRotation = placeRot;
+                if (_currentGhostObj != null)
+                    _currentGhostObj.transform.SetPositionAndRotation(placePos, placeRot);
                 return true;
             }
 
@@ -1811,6 +1819,8 @@ namespace Hecton8.Building
             placeRot = alignedRotation;
             ApplyStructuralPlacementQuantization(ref placePos, ref placeRot);
             _snappedGhostSocket = alignedGhostSocket;
+            _builderGhostPreviewPosition = placePos;
+            _builderGhostPreviewRotation = placeRot;
             _currentGhostObj.transform.SetPositionAndRotation(placePos, placeRot);
             return true;
         }
@@ -1906,10 +1916,10 @@ namespace Hecton8.Building
             if (!HasResources(activeBuildable))
                 return BuildReadiness.MissingCost;
 
-            if (_currentGhost == null)
+            if (!_builderGhostPreviewActive)
                 return BuildReadiness.Ready;
 
-            if (!UpdatePlacementValidityState() || !_currentGhost.CanBuild)
+            if (!UpdatePlacementValidityState() || !_builderGhostPreviewCanBuild)
                 return BuildReadiness.PlacementBlocked;
 
             return _isSnapped ? BuildReadiness.SnappedReady : BuildReadiness.Ready;
@@ -1942,17 +1952,16 @@ namespace Hecton8.Building
 
         private bool UpdateSemanticPlacementState()
         {
-            if (_activePlacementRule == null || _currentGhostObj == null)
+            if (_activePlacementRule == null || !_builderGhostPreviewActive)
             {
                 _semanticPlacementValid = true;
                 _semanticPlacementBlockReason = string.Empty;
                 return true;
             }
 
-            Transform ghostTransform = _currentGhostObj.transform;
             _semanticPlacementValid = _activePlacementRule.ValidatePlacement(
-                ghostTransform.position,
-                ghostTransform.rotation,
+                _builderGhostPreviewPosition,
+                _builderGhostPreviewRotation,
                 out _semanticPlacementBlockReason);
 
             if (_semanticPlacementValid)
@@ -1984,7 +1993,7 @@ namespace Hecton8.Building
             bestAlignedRotation = default;
             _shinobuSocketAdapterCandidateCount = 0;
 
-            if (_currentGhostObj == null || activeBuildable == null || activeBuildable.ModuleTemplate == null)
+            if (!_builderGhostPreviewActive || activeBuildable == null || activeBuildable.ModuleTemplate == null)
                 return false;
 
             BaseModuleTemplate.SocketDefinition[] ghostSockets = activeBuildable.ModuleTemplate.SocketDefinitions;
@@ -2094,7 +2103,7 @@ namespace Hecton8.Building
                 Results = views.SnapResults,
                 Tuning = jobTuning,
                 GhostRootAup = ghostRootAup,
-                RuntimeOriginAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero),
+                RuntimeOriginAup = GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3(),
                 GhostRootRotation = ghostRootRotation,
                 GhostModuleHash = ResolveShinobuModuleHash(activeBuildable),
                 TargetCount = targetCount,
@@ -2333,7 +2342,8 @@ namespace Hecton8.Building
                 Vector3 position = moduleTransform.position;
                 Quaternion rotation = moduleTransform.rotation;
                 quaternion moduleRotation = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
-                double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);
+                if (!TryResolveConstructionPivotAup(position, out double3 rootAup))
+                    continue;
                 int socketStart = socketWrite;
                 uint moduleHash = ResolveShinobuModuleHash(marker.Data);
                 _shinobuTargetSocketBuffer.Clear();
@@ -2429,7 +2439,12 @@ namespace Hecton8.Building
             out quaternion ghostRootRotation)
         {
             ghostSocketCount = 0;
-            ghostRootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(rawTargetPoint);
+            if (!TryResolveConstructionPivotAup(rawTargetPoint, out ghostRootAup))
+            {
+                ghostRootRotation = quaternion.identity;
+                return false;
+            }
+
             Quaternion yawRotation = ResolveShinobuSocketYawRotation(_ghostYawStep);
             ghostRootRotation = new quaternion(yawRotation.x, yawRotation.y, yawRotation.z, yawRotation.w);
             if (ghostSockets == null ||
@@ -2600,14 +2615,20 @@ namespace Hecton8.Building
             Transform targetTransform = modules[sceneIndex].transform;
             SocketStateDTO targetSocket = views.SocketStates[best.TargetSocketIndex];
             BaseModuleTemplate.SocketDefinition ghostSocket = ghostSockets[best.GhostSocketIndex];
-            ModuleSocketDirection targetDirection = ToShinobuSocketDirection(ShinobuSocketConstructionRuntime.ExtractDirection(targetSocket));
+            byte targetDirectionByte = ShinobuSocketConstructionRuntime.ExtractDirection(targetSocket);
+            if (!TryToShinobuSocketDirection(targetDirectionByte, out ModuleSocketDirection targetDirection) ||
+                !ShinobuSocketConstructionRuntime.IsDirectionValid((byte)ghostSocket.Direction))
+            {
+                return false;
+            }
+
             Quaternion targetSocketRotation = targetTransform.rotation * ModuleSocketTopology.RotationFromDirection(targetDirection);
             Quaternion desiredSocketRotation = targetSocketRotation * ResolveShinobuSocketYawRotation(_ghostYawStep);
             Quaternion ghostLocalRotation = ModuleSocketTopology.RotationFromDirection(ghostSocket.Direction);
             Quaternion candidateRotation = desiredSocketRotation * Quaternion.Inverse(ghostLocalRotation);
             Vector3 rotatedLocalOffset = candidateRotation * ghostSocket.LocalPosition;
             double3 candidateRootAup = views.SocketAups[best.TargetSocketIndex] - new double3(rotatedLocalOffset.x, rotatedLocalOffset.y, rotatedLocalOffset.z);
-            double3 runtimeOriginAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero);
+            double3 runtimeOriginAup = GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
             double3 candidateRuntimeDouble = candidateRootAup - runtimeOriginAup;
             if (!math.all(math.isfinite(candidateRootAup)) ||
                 !math.all(math.isfinite(candidateRuntimeDouble)) ||
@@ -2733,16 +2754,31 @@ namespace Hecton8.Building
             return hash;
         }
 
-        private static ModuleSocketDirection ToShinobuSocketDirection(byte direction)
+        private static bool TryToShinobuSocketDirection(byte direction, out ModuleSocketDirection result)
         {
             switch (direction)
             {
-                case 1: return ModuleSocketDirection.South;
-                case 2: return ModuleSocketDirection.East;
-                case 3: return ModuleSocketDirection.West;
-                case 4: return ModuleSocketDirection.Top;
-                case 5: return ModuleSocketDirection.Bottom;
-                default: return ModuleSocketDirection.North;
+                case 0:
+                    result = ModuleSocketDirection.North;
+                    return true;
+                case 1:
+                    result = ModuleSocketDirection.South;
+                    return true;
+                case 2:
+                    result = ModuleSocketDirection.East;
+                    return true;
+                case 3:
+                    result = ModuleSocketDirection.West;
+                    return true;
+                case 4:
+                    result = ModuleSocketDirection.Top;
+                    return true;
+                case 5:
+                    result = ModuleSocketDirection.Bottom;
+                    return true;
+                default:
+                    result = ModuleSocketDirection.North;
+                    return false;
             }
         }
 
@@ -2833,6 +2869,7 @@ namespace Hecton8.Building
             bool semanticValid = UpdateSemanticPlacementState();
             bool terrainValid = UpdateTerrainSdfPlacementState();
             bool finalValid = semanticValid && terrainValid && _integrityPlacementValid;
+            _builderGhostPreviewCanBuild = finalValid;
 
             if (_currentGhost != null)
                 _currentGhost.SetExternalValidity(finalValid);
@@ -2844,7 +2881,7 @@ namespace Hecton8.Building
         {
             _terrainSdfPlacementValid = true;
             _terrainSdfPlacementBlockReason = string.Empty;
-            if (!IsStructuralBuildable(activeBuildable) || _currentGhostObj == null || activeBuildable.ModuleTemplate == null)
+            if (!IsStructuralBuildable(activeBuildable) || !_builderGhostPreviewActive || activeBuildable.ModuleTemplate == null)
                 return AcceptTerrainSdfPlacement();
 
             BaseModuleTemplate template = activeBuildable.ModuleTemplate;
@@ -2852,10 +2889,10 @@ namespace Hecton8.Building
             if (proxyBoundsSize.x <= 0.01f || proxyBoundsSize.y <= 0.01f || proxyBoundsSize.z <= 0.01f)
                 return AcceptTerrainSdfPlacement();
 
-            Transform ghostTransform = _currentGhostObj.transform;
             if (!TryBuildConstructionValidationPayload(
                     template,
-                    ghostTransform,
+                    _builderGhostPreviewPosition,
+                    _builderGhostPreviewRotation,
                     out ConstructionRequestDTO request,
                     out StructuralBoundsDTO bounds,
                     out ConstructionValidationSettingsDTO settings,
@@ -2960,7 +2997,8 @@ namespace Hecton8.Building
 
         private bool TryBuildConstructionValidationPayload(
             BaseModuleTemplate template,
-            Transform ghostTransform,
+            Vector3 previewPosition,
+            Quaternion previewRotation,
             out ConstructionRequestDTO request,
             out StructuralBoundsDTO bounds,
             out ConstructionValidationSettingsDTO settings,
@@ -2973,15 +3011,17 @@ namespace Hecton8.Building
             sipBudget = default;
             worldSampler = default;
 
-            if (template == null || ghostTransform == null || activeBuildable == null)
+            if (template == null || activeBuildable == null)
                 return false;
 
             ModularBaseConstructionValidator.TryReadTunerSettingsFromVault(_shinobuSocketVault, out settings);
             float gridSize = ResolveConstructionGridSize();
-            double3 rootAup = ResolveConstructionRootAup(ghostTransform.position);
-            double3 pivotAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(ghostTransform.position);
+            if (!TryResolveConstructionPivotAup(previewPosition, out double3 pivotAup))
+                return false;
+
+            double3 rootAup = ResolveConstructionRootAup(previewPosition);
             uint moduleHash = ResolveShinobuModuleHash(activeBuildable);
-            uint rotation = ResolveConstructionRotationIndex(ghostTransform.rotation);
+            uint rotation = ResolveConstructionRotationIndex(previewRotation);
             if (!ModularBaseConstructionValidator.TryBuildRequestFromAup(
                     rootAup,
                     pivotAup,
@@ -3057,7 +3097,9 @@ namespace Hecton8.Building
                         if (moduleTransform == null)
                             continue;
 
-                        double3 moduleAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(moduleTransform.position);
+                        if (!TryResolveConstructionPivotAup(moduleTransform.position, out double3 moduleAup))
+                            continue;
+
                         if (!ModularBaseConstructionValidator.TryBuildRequestFromAup(
                                 request.RootAUP,
                                 moduleAup,
@@ -3113,7 +3155,9 @@ namespace Hecton8.Building
                 if (moduleTransform == null)
                     continue;
 
-                double3 moduleAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(moduleTransform.position);
+                if (!TryResolveConstructionPivotAup(moduleTransform.position, out double3 moduleAup))
+                    continue;
+
                 if (!ModularBaseConstructionValidator.TryBuildRequestFromAup(
                         request.RootAUP,
                         moduleAup,
@@ -3178,12 +3222,38 @@ namespace Hecton8.Building
                 for (int i = 0, count = modules.Count; i < count; i++)
                 {
                     GameObject module = modules[i];
-                    if (module != null)
-                        return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(module.transform.position);
+                    if (module != null &&
+                        TryResolveConstructionPivotAup(module.transform.position, out double3 moduleAup))
+                    {
+                        return moduleAup;
+                    }
                 }
             }
 
-            return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(fallbackRuntimePosition);
+            return TryResolveConstructionPivotAup(fallbackRuntimePosition, out double3 fallbackAup)
+                ? fallbackAup
+                : GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
+        }
+
+        private static bool TryResolveConstructionPivotAup(Vector3 runtimePosition, out double3 pivotAup)
+        {
+            pivotAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!MathGuard.IsFinite(in resolvedAup))
+                return false;
+
+            pivotAup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(pivotAup));
         }
 
         private float ResolveConstructionGridSize()
@@ -3262,7 +3332,7 @@ namespace Hecton8.Building
 
         private void DrawBuildGhostProjection()
         {
-            if (_currentGhostObj == null || activeBuildable == null)
+            if (!_builderGhostPreviewActive || activeBuildable == null)
                 return;
 
             BaseModuleTemplate template = activeBuildable.ModuleTemplate;
@@ -3273,62 +3343,17 @@ namespace Hecton8.Building
             if (proxyBoundsSize.x <= 0.01f || proxyBoundsSize.y <= 0.01f || proxyBoundsSize.z <= 0.01f)
                 return;
 
-            EnsureBuildGhostProjectionResources();
-            if (_buildGhostProjectionMesh == null)
-                return;
-
             bool placementAllowed =
-                _currentGhost != null &&
-                _currentGhost.CanBuild &&
+                _builderGhostPreviewCanBuild &&
                 _semanticPlacementValid &&
                 _terrainSdfPlacementValid &&
                 _integrityPlacementValid;
-            Material projectionMaterial = placementAllowed
-                ? _buildGhostValidProjectionMaterial
-                : _buildGhostBlockedProjectionMaterial;
-            if (projectionMaterial == null)
+            Vector3 targetRuntime = _builderGhostPreviewPosition + (_builderGhostPreviewRotation * template.ProxyBoundsCenter);
+            if (!TryResolveConstructionPivotAup(targetRuntime, out double3 targetAup))
                 return;
 
-            Transform ghostTransform = _currentGhostObj.transform;
-            Vector3 targetRuntime = ghostTransform.TransformPoint(template.ProxyBoundsCenter);
-            double3 targetAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(targetRuntime);
-            Vector3 drawPosition = HectonFloatingOrigin.ToRuntimePosition(targetAup);
-            _buildGhostProjectionMatrices[0] = Matrix4x4.TRS(drawPosition, ghostTransform.rotation, proxyBoundsSize);
-            PublishConstructionPreviewSignal(targetAup, ghostTransform.rotation, proxyBoundsSize, placementAllowed);
-
-            UnityEngine.Graphics.DrawMeshInstanced(
-                _buildGhostProjectionMesh,
-                0,
-                projectionMaterial,
-                _buildGhostProjectionMatrices,
-                BuildGhostProjectionInstanceCount,
-                null,
-                UnityEngine.Rendering.ShadowCastingMode.Off,
-                false,
-                _currentGhostObj.layer,
-                playerCamera,
-                UnityEngine.Rendering.LightProbeUsage.Off,
-                null);
-        }
-
-        private void EnsureBuildGhostProjectionResources()
-        {
-            if (_buildGhostProjectionMesh != null &&
-                _buildGhostValidProjectionMaterial != null &&
-                _buildGhostBlockedProjectionMaterial != null)
-            {
-                return;
-            }
-
-            if (ConstructionRuntimeProxyFactory.TryGetGhostProjectionResources(
-                    out Mesh projectionMesh,
-                    out Material validMaterial,
-                    out Material blockedMaterial))
-            {
-                _buildGhostProjectionMesh = projectionMesh;
-                _buildGhostValidProjectionMaterial = validMaterial;
-                _buildGhostBlockedProjectionMaterial = blockedMaterial;
-            }
+            _builderGhostPreviewScale = proxyBoundsSize;
+            PublishConstructionPreviewSignal(targetAup, _builderGhostPreviewRotation, proxyBoundsSize, placementAllowed);
         }
 
         private void PublishConstructionPreviewSignal(double3 centerAup, Quaternion rotation, Vector3 proxyBoundsSize, bool placementAllowed)
@@ -3358,10 +3383,21 @@ namespace Hecton8.Building
 
         private void UpdatePlacementValidationState()
         {
-            if (_habitatConstructionManager == null || activeBuildable == null || _currentGhostObj == null)
+            if (_habitatConstructionManager == null || activeBuildable == null || !_builderGhostPreviewActive)
             {
                 _integrityPlacementValid = true;
                 _integrityPlacementBlockReason = string.Empty;
+                UpdatePlacementValidityState();
+                return;
+            }
+
+            if (_currentGhostObj == null)
+            {
+                _integrityPlacementValid = true;
+                _integrityPlacementBlockReason = string.Empty;
+                _integrityValidationDirty = false;
+                _hasScheduledValidationSnapshot = false;
+                _hasCompletedValidationSnapshot = false;
                 UpdatePlacementValidityState();
                 return;
             }
@@ -3428,16 +3464,15 @@ namespace Hecton8.Building
         private bool TryCaptureValidationSnapshot(out ValidationSnapshot snapshot)
         {
             snapshot = default;
-            if (_currentGhostObj == null || activeBuildable == null)
+            if (!_builderGhostPreviewActive || activeBuildable == null)
                 return false;
 
-            Transform ghostTransform = _currentGhostObj.transform;
             ConstructionManager constructionManager = ResolveCachedConstructionManager();
             snapshot.Buildable = activeBuildable;
             snapshot.TargetSocket = _snappedSocket;
             snapshot.ModuleCount = constructionManager != null ? constructionManager.ModuleCount : 0;
-            snapshot.Position = ghostTransform.position;
-            snapshot.Rotation = ghostTransform.rotation;
+            snapshot.Position = _builderGhostPreviewPosition;
+            snapshot.Rotation = _builderGhostPreviewRotation;
             return true;
         }
 
@@ -3668,10 +3703,16 @@ namespace Hecton8.Building
             else
                 rayDirection *= math.rsqrt(directionLengthSq);
 
+            if (!TryResolveConstructionPivotAup(modulePosition, out double3 targetAupDouble) ||
+                !TryResolveConstructionPivotAup(rayOrigin, out double3 rayOriginAupDouble))
+            {
+                return false;
+            }
+
             DeconstructRequestSignal request = new DeconstructRequestSignal
             {
-                TargetAup = AbsoluteUniversePosition.FromRuntimePosition(modulePosition),
-                RayOriginAup = AbsoluteUniversePosition.FromRuntimePosition(rayOrigin),
+                TargetAup = AbsoluteUniversePosition.FromAbsolutePosition(targetAupDouble),
+                RayOriginAup = AbsoluteUniversePosition.FromAbsolutePosition(rayOriginAupDouble),
                 TargetEntityId = unchecked((uint)EntityId.ToULong(module.gameObject.GetEntityId())),
                 RequesterEntityId = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId())),
                 MaxDistance = Mathf.Max(0f, maxDistance),
@@ -3722,7 +3763,9 @@ namespace Hecton8.Building
             Vector3 localCenter = template != null ? template.ProxyBoundsCenter : Vector3.zero;
             Vector3 proxySize = template != null ? template.ProxyBoundsSize : Vector3.one;
             Vector3 centerRuntime = moduleTransform.TransformPoint(localCenter);
-            double3 centerAupDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(centerRuntime);
+            if (!TryResolveConstructionPivotAup(centerRuntime, out double3 centerAupDouble))
+                return;
+
             AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromAbsolutePosition(centerAupDouble);
             float3 extents = (float3)(Vector3.Max(proxySize * 0.5f, Vector3.one * 0.5f) + Vector3.one * 0.25f);
             float radius = math.max(6f, math.cmax(extents) * 4f);

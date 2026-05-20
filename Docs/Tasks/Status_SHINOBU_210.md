@@ -33,7 +33,7 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` XML block `SHINOBU_210`.
 - [x] Task 07 PROCEDURAL_TEAR_AND_BREACH_MATH | Added duplicate-vertex tear path and degenerate breach triangles near deterministic weak seams. DOD: offline split/holes, not runtime tearing. | Alternatives Rejected: SkinnedMeshRenderer/blendshape rupture. | Estimate: runtime 0 us.
 - [x] Task 08 THE_DEAR_LIE_COLLISION_HULLS | Added `GenerateSimplifiedHullsJob` writing primitive `HabitatDamageHullDTO` boxes. DOD: visual complexity with cheap collision lie. | Alternatives Rejected: deformed MeshCollider. | Estimate: avoids complex collision mesh rebuilds.
 - [x] Task 09 NORMAL_AND_TANGENT_RECALCULATION | Added Burst normal accumulation and tangent rebuild; Unity `Mesh.RecalculateNormals()` not used. DOD: offline lighting repair. | Alternatives Rejected: main-thread Unity recalculation. | Estimate: editor-only.
-- [x] Task 10 ASYNCHRONOUS_ASSET_SERIALIZATION | Added editor bake queue processing prefabs across `EditorApplication.update`, mesh creation via `SetVertexBufferParams`, `SetVertexBufferData` equivalent MeshData write, and `AssetDatabase.CreateAsset`. DOD: editor queue rather than gameplay work. | Alternatives Rejected: runtime prefab swaps with broken fragments. | Estimate: runtime 0 us.
+- [x] Task 10 ASYNCHRONOUS_ASSET_SERIALIZATION | Added editor bake queue processing prefabs across `EditorApplication.update`, mesh creation via `SetVertexBufferParams`, direct `SetVertexBufferData`/`SetIndexBufferData` native uploads, and `AssetDatabase.CreateAsset`. DOD: editor queue rather than gameplay work. | Alternatives Rejected: runtime prefab swaps with broken fragments. | Estimate: runtime 0 us.
 - [x] Task 11 PROCEDURAL_RUST_AND_STRESS_BAKING | Added `BakeStressColorsJob`; packed stress/tear into vertex color channels for shader blending. DOD: no per-module texture requirement. | Alternatives Rejected: unique damage textures per module. | Estimate: saves VRAM; measured proof absent.
 - [x] Task 12 AUP_DEPTH_LOCALIZATION | Added `ResolveDepthMeters(double3 moduleAup, double3 seaLevelAup)` and feeds float depth only after double delta. DOD: AUP precision preserved. | Alternatives Rejected: absolute world float depth. | Estimate: correctness guard, no runtime bake cost.
 - [x] Task 13 ROLLBACK_NETCODE_EXCLUSION_FENCE | Scanner report documents immutable baked assets and flags `StateRingBuffer` references in Habitat/Environment runtime. DOD: static asset/netcode fence. | Alternatives Rejected: syncing baked geometry. | Estimate: network truth remains integer state.
@@ -67,6 +67,12 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` XML block `SHINOBU_210`.
 - Compile attempt after CPU guard cleared: `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` failed with 72 errors in external domains before SHINOBU_210 code could be isolated. First blockers: `Hecton8.Logistics.Grid`, `FaunaKinematicsRuntime`, `HectonFluidEngine`, `SoundEmissionSignal`, `H8BinaryWorldPager`, `SocketDefinitionDTO`, `IDockingAutopilotService`.
 - Ultra Loop 14 static gates: resolver now contains three `math.step` thresholds and no collapse-only `math.select(0, 3, ...)`; forbidden source-pattern scan had no hits; no `dotnet`/`csc` process remained after the failed external build.
 - Ultra Loop 16 static gates: source-only forbidden scan has no `math.select(0, 3, ...)`; evidence/log files intentionally retain the phrase as defect history. DamageBake asmdef still has no direct Runtime/Power/Construction/World/Fauna/Logistics reference. `git diff --check` has no whitespace errors, only the existing LF/CRLF ledger warning.
+- Ultra Loop 17 static gates: direct `Mesh.SetVertexBufferData` and `Mesh.SetIndexBufferData` calls are present; `AllocateWritableMeshData`, `ApplyAndDisposeWritableMeshData`, and `GetVertexData<HabitatDamageBakedVertex>` are absent.
+- Ultra Loop 18 static gates: source-only forbidden scan has no collapse-only resolver pattern; `ResolveStateIndex` contains Stressed/Ruptured/Collapsed `math.step` thresholds; no direct sibling Runtime/Power/Construction/World/Fauna/Logistics reference is present; no `dotnet`/`csc` process is running. `git diff --check` has no whitespace errors, only LF/CRLF working-copy warnings.
+- Ultra Loop 19 static gates: code declares `HabitatDamageIndexRangeDTO`, routes `ScheduleIndexCopy` through triangle `SubMeshDescriptor.indexStart`/`baseVertex` ranges, clamps adjusted indices to `0..vertexCount-1`, removed the raw-first-index-buffer `ResolveIndexCount` path, and source-only forbidden/sibling-reference scans have no hits. `git diff --check` has no whitespace errors, only LF/CRLF working-copy warnings.
+- Ultra Loop 20 static gates: `PackBakedVertexJob` clamps non-finite position, tangent, UV, stress, and tear values before writing the 32-byte GPU vertex stream; source-only forbidden/sibling-reference scans have no hits. `git diff --check` has no whitespace errors, only LF/CRLF working-copy warnings.
+- Ultra Loop 21 static gates: potentially overlapping read-only mesh stream byte views no longer carry `[NoAlias]`, while non-overlapping output/range/index buffers still do; source-only forbidden scan has no hits. `git diff --check` has no whitespace errors, only LF/CRLF working-copy warnings.
+- Ultra Loop 22 static gates: missing normal/tangent/UV source streams now reuse the valid position byte stream with zero stride and `Has* = 0`, avoiding default `NativeArray<byte>` containers in scheduled extraction jobs. Forbidden source-pattern scan has no hits; `dotnet`/`csc` process guard has no running compiler process.
 
 ## Ultra Polish Loop 02
 
@@ -138,3 +144,23 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` XML block `SHINOBU_210`.
 ## Ultra Polish Loop 17
 
 - [x] Literal Mesh.SetVertexBufferData serialization | Replaced writable `MeshData` serialization with packed `NativeArray<HabitatDamageBakedVertex>` plus `Mesh.SetVertexBufferData` and `Mesh.SetIndexBufferData`, matching Task 10 wording while retaining one chained completion. | Alternatives Rejected: relying on MeshData-only equivalence. | Estimate: runtime 0 us; editor uses one extra packed TempJob buffer but satisfies direct native upload contract.
+
+## Ultra Polish Loop 18
+
+- [x] Resolver source regression sealed again | Static verification after Loop 17 found the collapse-only resolver pattern in source; reapplied the three-threshold `math.step` resolver, updated the contract summary comment, and reran the source-only forbidden gate. | Alternatives Rejected: trusting status/rationale while source selected only collapse. | Estimate: runtime remains O(1), three scalar step ops; deformation remains 0 us.
+
+## Ultra Polish Loop 19
+
+- [x] Triangle submesh index compaction | Replaced raw-first-index-buffer copying with `HabitatDamageIndexRangeDTO` ranges that preserve triangle submesh `indexStart` and `baseVertex`, then clamp adjusted indices before Burst index compaction. DOD: multi-submesh habitat modules bake only triangle topology with correct vertex bases. | Alternatives Rejected: assuming module meshes are one submesh with zero base vertex. | Estimate: runtime 0 us; editor index copy adds a small range lookup per index.
+
+## Ultra Polish Loop 20
+
+- [x] Final vertex pack NaN vaccination | Hardened `PackBakedVertexJob` so non-finite position, tangent, UV, stress, or tear values collapse to safe defaults before half/snorm/color packing and `SetVertexBufferData`. DOD: corrupted source or upstream math cannot serialize NaN into baked mesh assets. | Alternatives Rejected: relying on earlier job stages only. | Estimate: runtime 0 us; editor pack adds finite guards per vertex.
+
+## Ultra Polish Loop 21
+
+- [x] Pointer alias annotation honesty | Removed `[NoAlias]` from source mesh byte stream views because interleaved vertex attributes can share the same stream; kept `[NoAlias]` on non-overlapping outputs, ranges, and index buffers. DOD: Burst alias promises now match Unity MeshData reality. | Alternatives Rejected: pretending read-only attribute views never overlap. | Estimate: runtime 0 us; editor extraction remains safe.
+
+## Ultra Polish Loop 22
+
+- [x] Extraction container safety | Replaced `default` missing-attribute byte views with the valid position stream plus zero stride/disabled flags. DOD: scheduled Burst job fields carry valid containers even when source meshes lack normal/tangent/UV channels. | Alternatives Rejected: allocating dummy TempJob byte buffers for absent streams. | Estimate: runtime 0 us; editor scheduling safety improved without extra memory traffic.

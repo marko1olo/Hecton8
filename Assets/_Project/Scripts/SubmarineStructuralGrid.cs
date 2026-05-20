@@ -1267,7 +1267,9 @@ namespace Hecton8.Physics
         {
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
-            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(cachedTransform.position);
+            if (!TryResolveAupFromRuntimeOrigin(cachedTransform.position, out double3 absolute))
+                return;
+
             Rigidbody hullBody = ResolveHullRigidbody();
             ImpactSignal signal = new ImpactSignal
             {
@@ -1595,8 +1597,12 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            double3 hitAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
-            double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(cachedTransform.position);
+            if (!TryResolveAupFromRuntimeOrigin(worldPoint, out double3 hitAup) ||
+                !TryResolveAupFromRuntimeOrigin(cachedTransform.position, out double3 rootAup))
+            {
+                return false;
+            }
+
             double3 relativeWorldDouble = hitAup - rootAup;
             if (!math.all(math.isfinite(relativeWorldDouble)))
                 return false;
@@ -1657,6 +1663,23 @@ namespace Hecton8.Physics
         private static bool IsFiniteVector(Vector3 value)
         {
             return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out double3 aup)
+        {
+            aup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!MathGuard.IsFinite(in resolvedAup))
+                return false;
+
+            aup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(aup));
         }
 
         private static bool IsFiniteQuaternion(Quaternion value)

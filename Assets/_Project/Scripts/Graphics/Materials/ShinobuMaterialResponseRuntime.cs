@@ -16,102 +16,156 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Hecton8.Graphics.Materials
 {
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct InstanceMaterialDTO
     {
+        [FieldOffset(0)]
         public float WearAge;
+        [FieldOffset(4)]
         public float SaltAccumulation;
+        [FieldOffset(8)]
         public float BioGrowthMask;
+        [FieldOffset(12)]
         public uint TextureSetHash;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct MaterialPowerDTO
     {
+        [FieldOffset(0)]
         public float PowerLevel;
+        [FieldOffset(4)]
         public float DepthMeters;
+        [FieldOffset(8)]
         public float StructuralStress01;
+        [FieldOffset(12)]
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct MaterialVisibleDTO
     {
+        [FieldOffset(0)]
         public float WearAge;
+        [FieldOffset(4)]
         public float SaltAccumulation;
+        [FieldOffset(8)]
         public float BioGrowthMask;
+        [FieldOffset(12)]
         public uint TextureSetHash;
+        [FieldOffset(16)]
         public float PowerLevel;
+        [FieldOffset(20)]
         public float Depth01;
+        [FieldOffset(24)]
         public float MossLayer01;
+        [FieldOffset(28)]
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct GlobalShaderConstantsDTO
     {
+        [FieldOffset(0)]
         public float4 SubsurfaceColor;
+        [FieldOffset(16)]
         public float4 CausticSpeed;
+        [FieldOffset(32)]
         public float GlobalWearMultiplier;
+        [FieldOffset(36)]
         public uint _pad0;
+        [FieldOffset(40)]
         public uint _pad1;
+        [FieldOffset(44)]
         public uint _pad2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockBiomassDensitySignal
     {
+        [FieldOffset(0)]
         public float Density01;
+        [FieldOffset(4)]
         public float Pulse01;
+        [FieldOffset(8)]
         public uint SectorHash;
+        [FieldOffset(12)]
         public uint Frame;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct MaterialRuntimeScalarsDTO
     {
+        [FieldOffset(0)]
         public float GlobalBiomass01;
+        [FieldOffset(4)]
         public float GlobalQualityWeight;
+        [FieldOffset(8)]
         public uint VisibleCount;
+        [FieldOffset(12)]
         public uint CsvGeneration;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct TextureSetMappingDTO
     {
+        [FieldOffset(0)]
         public uint TextureSetHash;
+        [FieldOffset(4)]
         public uint SliceIndex;
+        [FieldOffset(8)]
         public uint Generation;
+        [FieldOffset(12)]
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct WearRateDTO
     {
+        [FieldOffset(0)]
         public float IronOxidationRate;
+        [FieldOffset(4)]
         public float SaltDepositionRate;
+        [FieldOffset(8)]
         public float MossGrowthRate;
+        [FieldOffset(12)]
         public float PowerFlickerRate;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MaterialResponseTelemetryEntry
     {
+        [FieldOffset(0)]
         public uint Frame;
+        [FieldOffset(4)]
         public uint Flags;
+        [FieldOffset(8)]
         public uint VisibleCount;
+        [FieldOffset(12)]
         public uint UploadedBytes;
+        [FieldOffset(16)]
         public float MaterialBufferUploadTimeMs;
+        [FieldOffset(20)]
         public float ActiveTriplanarPixels;
+        [FieldOffset(24)]
         public float TextureArrayMemoryMB;
+        [FieldOffset(28)]
         public float GlobalQualityWeight;
+        [FieldOffset(32)]
         public uint StateHash;
+        [FieldOffset(36)]
         public uint CsvGeneration;
+        [FieldOffset(40)]
         public uint LayoutHash;
+        [FieldOffset(44)]
         public uint _pad0;
+        [FieldOffset(48)]
         public float WearMean;
+        [FieldOffset(52)]
         public float SaltMean;
+        [FieldOffset(56)]
         public float BioMean;
+        [FieldOffset(60)]
         public float PowerMean;
     }
 

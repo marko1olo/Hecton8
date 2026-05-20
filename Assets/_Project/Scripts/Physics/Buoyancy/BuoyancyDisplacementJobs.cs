@@ -10,9 +10,23 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct GenerateMockBuoyantObjectsJob : IJobParallelFor
     {
-        // SAFETY: each scheduled lane writes exactly States[index] after a length guard.
-        // No other SHINOBU buoyancy job is scheduled against States until this seed job completes.
-        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<BuoyancyStateDTO> States;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // This mock seeding job writes through an UnsafeUtility.AsRef pointer to avoid NativeArray indexer
+        // defensive copies on the 64-byte state DTO. Unity cannot inspect that pointer write and therefore
+        // cannot prove the access is exactly States[index], even though the source maps one Execute index to
+        // one state row after the length guard.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rejected NativeArray indexer mutation because the task explicitly targets hot DTO mutation without
+        // property/indexer copy debt. Rejected a scalar Run seeding path because the benchmark needs 250000
+        // deterministic rows under parallel pressure. Rejected temporary seed arrays because they add native
+        // lifetime and copy bandwidth before the actual benchmark.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Schedule count is bounded by States.Length; Execute(i) writes only row i and no other row. The
+        // runtime schedules downstream evaluation only after this seed handle completes, so no concurrent
+        // job reads or writes States while this writer owns the buffer.
+        [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<BuoyancyStateDTO> States;
         [WriteOnly, NoAlias] public NativeArray<BuoyancyDebugForceDTO> DebugForces;
         public int ActiveMockCount;
         public double3 SurfaceAUP;
@@ -155,13 +169,39 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct EvaluateBuoyancyJob : IJobParallelFor
     {
-        // SAFETY: workIndex maps to one state row through index = workIndex * max(1, stride) + offset.
-        // With stride >= 1 and fixed offset, two lanes cannot target the same state row.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Unity's ParallelFor safety expects States[workIndex]. This evaluator intentionally writes
+        // States[index] where index = workIndex * max(1, stride) + fixed offset, so the safety warning is
+        // a partition-shape false positive. The unsafe pointer write is used to mutate the 64-byte DTO in
+        // place after reading the current authoritative row.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rejected one-frame precompaction to dense indices because it duplicates the state walk and creates
+        // another Vault buffer. Rejected scalar fallback for skipped rows because it introduces hidden owner
+        // scheduling. Rejected making inactive rows run full physics because it burns frame budget instead
+        // of using continuous stride/offset cadence.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // For a fixed stride >= 1 and fixed offset in one schedule, workIndex is injective: two different
+        // work indices cannot produce the same state row. The job writes only rows in [0, activeCount), and
+        // the dispatcher chains the reduction after this evaluator handle, so no concurrent row owner exists.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<BuoyancyStateDTO> States;
         [ReadOnly, NoAlias] public NativeArray<BuoyancyFlowSampleDTO> FlowSamples;
-        [ReadOnly, NoAlias] public NativeArray<BuoyancyTuningDTO> Tuning;
-        // SAFETY: debug writes use the same injective state row mapping as States.
-        // DebugForces is not read by any later job until this evaluator handle completes.
+        public BuoyancyTuningDTO Tuning;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // DebugForces uses the same strided row mapping as States, not DebugForces[workIndex]. Unity cannot
+        // infer that the mapped debug row is injective, so the ParallelFor restriction is disabled only for
+        // this partitioned output. [NoAlias] proves it is not the same allocation as States or ForcePackets.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rejected workIndex-keyed debug rows because telemetry must follow state row identity for black-box
+        // autopsy. Rejected a post-pass remap because it doubles debug buffer writes. Rejected omitting debug
+        // rows for skipped cadence slots because the 300-frame ring depends on stable row evidence.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // With fixed stride and offset, each scheduled workIndex owns at most one DebugForces row and that row
+        // is the same injective state row used above. Telemetry reduction is scheduled after this evaluator
+        // handle, so no job reads DebugForces until all partitioned writes are complete.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<BuoyancyDebugForceDTO> DebugForces;
         [WriteOnly, NoAlias] public NativeArray<BuoyancyForcePacketDTO> ForcePackets;
         public int ForcePacketWriteEnabled;
@@ -177,7 +217,7 @@ namespace Hecton8.Physics
             if (!States.IsCreated || (uint)workIndex >= (uint)States.Length)
                 return;
 
-            BuoyancyTuningDTO tuning = ResolveTuning();
+            BuoyancyTuningDTO tuning = Tuning;
             int authoredActiveCount = math.select(tuning.ActiveStateCount, ActiveStateCount, ActiveStateCount > 0);
             int activeCount = math.clamp(authoredActiveCount, 0, States.Length);
             int stride = math.max(1, EvaluationStride);
@@ -359,13 +399,6 @@ namespace Hecton8.Physics
             debug.Flags |= math.select(0u, BuoyancyDisplacementConstants.FlagForceQueued, queueCandidate & wroteCandidate);
 
             WriteDebug(index, debug);
-        }
-
-        private BuoyancyTuningDTO ResolveTuning()
-        {
-            if (Tuning.IsCreated && Tuning.Length > 0)
-                return Tuning[0];
-            return BuoyancyTuningDTO.Default();
         }
 
         private void WriteDebug(int index, BuoyancyDebugForceDTO debug)
@@ -632,7 +665,8 @@ namespace Hecton8.Physics
             entry.MaxDepthMeters = counter.MaxDepthMeters;
             entry.LastNetForce = math.select(float3.zero, lastNetForce, hasLastNetForce != 0);
             TelemetryRing[slot] = entry;
-            TelemetryCursor[0] = cursor + 1;
+            int nextCursor = slot + 1;
+            TelemetryCursor[0] = math.select(nextCursor, 0, nextCursor >= TelemetryRing.Length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

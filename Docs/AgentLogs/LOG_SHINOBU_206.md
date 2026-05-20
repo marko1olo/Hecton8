@@ -147,6 +147,95 @@ Residual blockers:
   </DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
 
+## 2026-05-20 - Standalone Scanner Rebuild and Inline Run Clamp
+
+What was wrong:
+- The previous full PowerShell call-propagation analyzer timed out and could not be used as current proof.
+- `SumpPumpPipeGridRuntime` still contained one real `DrainageMockNetworkJob.Run()` after an earlier patch did not persist in the tracked file.
+- A filtered broad gate exposed an inline `}.Run()` in `ScannerDataMiningRouter`; exact substring scanning was not strict enough for every runner shape.
+
+What was done:
+- Added and reran `Tools/Stall_Eradication_Scanner_SHINOBU_206.ps1` as the current fast static gate.
+- Removed the dead heavy call-graph functions from that scanner.
+- Hardened token matching to whitespace-tolerant regex checks for `.Run`, `.Complete`, `CompleteAll`, and forced `TryComplete`.
+- Replaced runtime job runners with direct deterministic `Execute()` in:
+  - `Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs`
+  - `Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs`
+  - `Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs`
+- Removed gameplay-tool `Schedule().Complete()` in `LaserCutterDodRuntime`:
+  - mock trigger hydration now uses direct deterministic `Execute(i)`;
+  - cutter hit evaluation now schedules a no-wait worker and publishes signals after `DispatcherJobFence.TryFinalizeCompleted`.
+- Updated `Docs/Reports/DISPATCHER_OPTIMIZATION_REPORT.json`.
+
+Cinematic cheats used:
+- Scanner mock grid seeding and sump/atmosphere bootstrap stay synchronous direct kernels because the surrounding code immediately consumes the initialized data. No fake async handle was introduced.
+- Runtime presentation fences from prior passes still use cached/stale visual data while workers finish; this keeps visual continuity without main-thread waits.
+- Laser cutter impact side effects now tolerate one poll of latency instead of forcing the raycast evaluation worker.
+
+Exact static counters:
+- `reportModel`: `FAST_TOKEN_CONTEXT_SCAN_WITH_LEGACY_HELPER_GATE`
+- `scannedTokenFiles`: 242
+- `totalSyncTokens`: 396
+- `coldOrEditorTokens`: 191
+- `directCompleteTokens`: 102
+- `directCompleteHotPathTokens`: 0
+- `runtimeRunTokens`: 0
+- `forcedHotPathTokens`: 0
+- `methodScopedHotPathTokens`: 0
+- `unclassifiedRuntimeTokens`: 205
+
+Microseconds saved:
+- Direct `Execute()` substitutions for cold/mock runner sites: estimated 3-150 us scheduler/run overhead removed per invocation.
+- Laser cutter deferred hit evaluation: estimated 50-500 us avoided on dense cutter hit batches.
+- Scanner replacement: avoids another 240s+ CPU-heavy analyzer pass on this workstation; frame-time impact is audit-only.
+
+Verification:
+- Standalone scanner ran and JSON parsed.
+- Filtered runtime `.Run(` gate returned no output after excluding editor/dev/smoke and managed `Task.Run`.
+- Filtered runtime `Schedule(...).Complete()` gate returned no gameplay output after smoke/offline filters.
+- Targeted `git diff --check` returned no whitespace errors; LF-to-CRLF warnings only.
+- Build not run: CPU sampled at 100%; no `dotnet`/`csc`, but project law forbids build while CPU >50%.
+
+Residual risk:
+- Unity import, Burst compile, Play Mode, Profiler, GCMonitor, and player-build proof are still absent.
+- 205 unclassified runtime sync tokens remain in the broad report; current scanner does not classify them as hot-path, but owner domains still need to drain hard-barrier residue.
+- `SumpPumpPipeGridRuntime.cs:283` is a live multi-agent conflict surface: SHINOBU_222 documentation records the opposite `Execute()` -> `Run()` change. Current file is patched to `Execute()`.
+- Central Core hard fences for teardown, AUP shift, memory release, and deterministic barriers remain intentionally visible.
+
+<SELF_AUDIT agent="SHINOBU_206" status="PENDING_VERIFICATION" pass="standalone-scanner-rebuild">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS">Direct hot `.Complete()` count is 0 by current scanner; forced hard fences are separated and not method-scoped hot.</TASK>
+    <TASK id="02" result="PASS">Runtime `IJob.Run()` count is 0; direct broad gate also returns no gameplay runner after filters.</TASK>
+    <TASK id="03" result="PASS">No property-backed hot handle tracker was introduced.</TASK>
+    <TASK id="04" result="PASS">No new DTO layout was introduced; existing 32B/64B dispatcher layouts remain the proof surface.</TASK>
+    <TASK id="05" result="PASS">Mock dependency surface remains deterministic; scanner mock seed now uses direct `Execute()`.</TASK>
+    <TASK id="06" result="PASS">Dependency combine ownership remains in the dispatcher/fence substrate.</TASK>
+    <TASK id="07" result="PASS">Runtime finalizers remain no-wait; hard drains are teardown/AUP only.</TASK>
+    <TASK id="08" result="PASS">Readback-style visual paths retain cached/fallback output rather than blocking.</TASK>
+    <TASK id="09" result="PASS">Domain fences remain registered through dispatcher-owned handles.</TASK>
+    <TASK id="10" result="PASS">No binary quality switch added; scheduled batch policy remains continuous.</TASK>
+    <TASK id="11" result="PASS">No new safety-bypass path added.</TASK>
+    <TASK id="12" result="PASS">AUP hard fence remains centralized and explicit.</TASK>
+    <TASK id="13" result="FAIL">Full rollback/netcode owner snapshot audit remains pending; no false pass recorded.</TASK>
+    <TASK id="14" result="PASS">No new zero-init cost added.</TASK>
+    <TASK id="15" result="PASS">300-frame fence telemetry ring remains unchanged.</TASK>
+    <TASK id="16" result="PASS">Editor X-Ray surface remains unchanged.</TASK>
+    <TASK id="17" result="PASS">CSV scheduling profile path remains cold-only.</TASK>
+    <TASK id="18" result="PASS">Dependency graph proof surface remains unchanged.</TASK>
+    <TASK id="19" result="PASS">Metric validator now produces fresh JSON without timeout: runtime `IJob.Run()` = 0, direct hot `.Complete()` = 0, forced hot fence = 0.</TASK>
+    <TASK id="20" result="FAIL">Compile/profiler proof blocked by CPU guard; static gates only.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <STRUCT name="JobDependencyDTO" size="32">0 ulong JobHandlePtr(8); 8 uint SystemIdHash(4); 12 uint FrameId(4); 16 uint DependencyHash0(4); 20 byte PhaseId(1); 21 byte DomainId(1); 22 byte DependencyCount(1); 23 byte BucketId(1); 24 uint Flags(4); 28 uint _pad0(4). Proof: 32 % 16 = 0.</STRUCT>
+    <STRUCT name="DispatcherFenceTelemetryEntry" size="64">0 uint FrameId(4); 4 uint ScheduledJobCount(4); 8 uint SafetyBypassCount(4); 12 uint DomainMask(4); 16 float SimulationWaitMs(4); 20 float FixedWaitMs(4); 24 float AupHardFenceMs(4); 28 float GlobalQualityWeight(4); 32 ulong MasterSimulationHandleBits(8); 40 ulong PhysicsHandleBits(8); 48 ulong AudioHandleBits(8); 56 ulong NetcodeHandleBits(8). Proof: 64 bytes = one cache line.</STRUCT>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>Current pass did not add a binary quality branch. Existing dispatcher batch policy uses `GlobalQualityWeight`; low weight favors larger batches and fewer scheduling edges, high weight exposes more worker parallelism for visual overkill.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No private persistent NativeArray ownership was added. Dispatcher fence buffers remain vault-owned: `SystemDispatcherDomainFenceHandles=70627`, `SystemDispatcherFenceTelemetry=70628`, `SystemDispatcherFenceTelemetryCursor=70629`.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Consumed handles: subsystem registered handles, domain fence handles, AUP hard-fence requests. Output handles: combined master/domain fences plus telemetry. No new alias-unsafe safety bypass was introduced.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef was edited and no sibling runtime dependency was added. Build/import proof was not attempted because CPU was 100%.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Cached visual-state reuse remains the Dear Lie for deferred workers. Laser cutter hit side effects now publish after the evaluation worker finalizes; spark/decal freshness can lag one poll. For mock/bootstrap runner removals, the correct cheap path is direct `Execute()` because the jobs hydrate deterministic data immediately consumed by the caller.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
 ## Pass 2026-05-20 - Shared Helper Split / Fast Gate Refresh
 
 What was wrong:

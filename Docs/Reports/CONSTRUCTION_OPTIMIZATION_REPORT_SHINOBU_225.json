@@ -1,0 +1,15 @@
+﻿{
+    "agent":  "SHINOBU_225",
+    "scanner":  "Cutter_Raycast_Inquisition_PowerShell_Mirror",
+    "generated_utc":  "2026-05-20T11:03:24.8793019Z",
+    "cutter_sync_raycast_sites":  0,
+    "cutter_particle_system_references":  0,
+    "cutter_instantiate_sites":  0,
+    "cutter_mesh_mutation_sites":  0,
+    "dod_request_definition_hits":  39,
+    "raycast_command_batch_sites":  1,
+    "shader_lie_dto_hits":  12,
+    "gpu_spark_signal_hits":  37,
+    "laser_cut_request_layout_contract":  "64 bytes offsets 0,24,36,40,44,48",
+    "verdict":  "PASS: focused cutter files have no direct sync raycast, prefab spawn, or ParticleSystem text."
+}

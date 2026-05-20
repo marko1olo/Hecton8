@@ -43,17 +43,17 @@ namespace Hecton8.Animation.FaunaProcedural
         [SerializeField] private bool _seedEmergencyMockRig = true;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<ProceduralBoneRigDTO> _rigsHandle;
-        private VaultBufferHandle<ProceduralBoneFrameInputDTO> _frameInputsHandle;
-        private VaultBufferHandle<int> _parentIndicesHandle;
-        private VaultBufferHandle<float4x4> _bindPosesHandle;
-        private VaultBufferHandle<BoneStateDTO> _boneStatesHandle;
-        private VaultBufferHandle<float4x4> _boneMatricesHandle;
-        private VaultBufferHandle<ProceduralBoneFrameStatsDTO> _frameStatsHandle;
-        private VaultBufferHandle<ProceduralBoneTelemetryEntry> _telemetryRingHandle;
-        private VaultBufferHandle<int> _telemetryCursorHandle;
-        private VaultBufferHandle<ProceduralBoneRigTuningDTO> _tuningHandle;
-        private VaultBufferHandle<MockAiVelocitySignal> _mockAiSignalsHandle;
+        private VaultGenerationHandle<ProceduralBoneRigDTO> _rigsHandle;
+        private VaultGenerationHandle<ProceduralBoneFrameInputDTO> _frameInputsHandle;
+        private VaultGenerationHandle<int> _parentIndicesHandle;
+        private VaultGenerationHandle<float4x4> _bindPosesHandle;
+        private VaultGenerationHandle<BoneStateDTO> _boneStatesHandle;
+        private VaultGenerationHandle<float4x4> _boneMatricesHandle;
+        private VaultGenerationHandle<ProceduralBoneFrameStatsDTO> _frameStatsHandle;
+        private VaultGenerationHandle<ProceduralBoneTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<int> _telemetryCursorHandle;
+        private VaultGenerationHandle<ProceduralBoneRigTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<MockAiVelocitySignal> _mockAiSignalsHandle;
 
         private GraphicsBuffer _matrixBufferA;
         private GraphicsBuffer _matrixBufferB;
@@ -115,11 +115,14 @@ namespace Hecton8.Animation.FaunaProcedural
             if (vault == null)
                 return false;
 
-            if (!_tuningHandle.IsCreated)
+            if (!IsVaultHandleCreated(in _tuningHandle))
                 EnsureVaultBuffers();
 
-            tuning = _tuningHandle.Resolve(vault);
-            return tuning.IsCreated && tuning.Length >= ProceduralBoneBlenderConstants.TuningCapacity;
+            return TryResolveVaultBuffer(
+                vault,
+                in _tuningHandle,
+                ProceduralBoneBlenderConstants.TuningCapacity,
+                out tuning);
         }
 
         public bool TryResolveMatricesForEditor(
@@ -137,10 +140,11 @@ namespace Hecton8.Animation.FaunaProcedural
             if (vault == null)
                 return false;
 
-            matrices = _boneMatricesHandle.Resolve(vault);
-            parentIndices = _parentIndicesHandle.Resolve(vault);
-            if (!matrices.IsCreated || !parentIndices.IsCreated)
+            if (!TryResolveVaultBuffer(vault, in _boneMatricesHandle, 1, out matrices) ||
+                !TryResolveVaultBuffer(vault, in _parentIndicesHandle, 1, out parentIndices))
+            {
                 return false;
+            }
 
             matrixCount = math.min(math.min(_activeMatrixUploadCount, matrices.Length), parentIndices.Length);
             return matrixCount > 0;
@@ -155,15 +159,13 @@ namespace Hecton8.Animation.FaunaProcedural
             if (vault == null)
                 return false;
 
-            NativeArray<ProceduralBoneRigDTO> rigs = _rigsHandle.Resolve(vault);
-            if (!rigs.IsCreated || rigs.Length <= 0)
+            if (!TryResolveVaultBuffer(vault, in _rigsHandle, 1, out NativeArray<ProceduralBoneRigDTO> rigs))
                 return false;
 
             if (rigs[0].BoneCount <= 0)
                 GenerateEmergencyMockRigs();
 
-            rigs = _rigsHandle.Resolve(vault);
-            if (!rigs.IsCreated || rigs.Length <= 0)
+            if (!TryResolveVaultBuffer(vault, in _rigsHandle, 1, out rigs))
                 return false;
 
             ProceduralBoneRigTuningDTO dto = tuning[0];
@@ -208,6 +210,8 @@ namespace Hecton8.Animation.FaunaProcedural
             TryUnregister();
             CompletePendingSolverForTeardown();
             ClearGpuSkinningBinding();
+            ReleaseVaultHandles();
+            ClearHandles();
         }
 
         private void OnDestroy()
@@ -227,6 +231,7 @@ namespace Hecton8.Animation.FaunaProcedural
             TryUnregister();
             CompletePendingSolverForTeardown();
             ClearGpuSkinningBinding();
+            ReleaseVaultHandles();
             ReleaseGraphicsBuffers();
             ClearHandles();
         }
@@ -346,6 +351,7 @@ namespace Hecton8.Animation.FaunaProcedural
                 return;
 
             CompletePendingSolverForTeardown();
+            ReleaseVaultHandles(_dataVault ?? previousService as IDataVault);
             _dataVault = currentService as IDataVault;
             ClearHandles();
             if (EnsureVaultBuffers())
@@ -495,83 +501,144 @@ namespace Hecton8.Animation.FaunaProcedural
             if (vault == null || !ProceduralBoneBlenderLayout.Validate())
                 return false;
 
+            if (_dataVault != null && !ReferenceEquals(_dataVault, vault))
+            {
+                ReleaseVaultHandles(_dataVault);
+                ClearHandles();
+            }
+
             _dataVault = vault;
             int skeletonCapacity = math.clamp(_skeletonCapacity, 1, ProceduralBoneBlenderConstants.DefaultSkeletonCapacity);
             int boneCapacity = math.clamp(_boneCapacity, ProceduralBoneBlenderConstants.EmergencyMockBoneCount, ProceduralBoneBlenderConstants.DefaultBoneCapacity);
-            _rigsHandle = vault.GetBufferHandle<ProceduralBoneRigDTO>(
+            bool resolved = TryResolveOrAcquireVaultBuffer(
+                vault,
                 ProceduralBoneBlenderBufferIds.Rigs,
                 skeletonCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.UninitializedMemory);
-            _frameInputsHandle = vault.GetBufferHandle<ProceduralBoneFrameInputDTO>(
+                ref _rigsHandle,
+                out _) &&
+            TryResolveOrAcquireVaultBuffer(
+                vault,
                 ProceduralBoneBlenderBufferIds.FrameInputs,
                 skeletonCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.UninitializedMemory);
-            _parentIndicesHandle = vault.GetBufferHandle<int>(
+                ref _frameInputsHandle,
+                out _) &&
+            TryResolveOrAcquireVaultBuffer(
+                vault,
                 ProceduralBoneBlenderBufferIds.ParentIndices,
                 boneCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.UninitializedMemory);
-            _bindPosesHandle = vault.GetBufferHandle<float4x4>(
+                ref _parentIndicesHandle,
+                out _) &&
+            TryResolveOrAcquireVaultBuffer(
+                vault,
                 ProceduralBoneBlenderBufferIds.BindPoses,
                 boneCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.UninitializedMemory);
-            _boneStatesHandle = vault.GetBufferHandle<BoneStateDTO>(
+                ref _bindPosesHandle,
+                out _) &&
+            TryResolveOrAcquireVaultBuffer(
+                vault,
                 ProceduralBoneBlenderBufferIds.BoneStates,
                 boneCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.UninitializedMemory);
-            _boneMatricesHandle = vault.GetBufferHandle<float4x4>(
+                ref _boneStatesHandle,
+                out _) &&
+            TryResolveOrAcquireVaultBuffer(
+                vault,
                 ProceduralBoneBlenderBufferIds.BoneMatrices,
                 boneCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.UninitializedMemory);
-            _frameStatsHandle = vault.GetBufferHandle<ProceduralBoneFrameStatsDTO>(
+                ref _boneMatricesHandle,
+                out _) &&
+            TryResolveOrAcquireVaultBuffer(
+                vault,
                 ProceduralBoneBlenderBufferIds.FrameStats,
                 skeletonCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.UninitializedMemory);
-            _telemetryRingHandle = vault.GetBufferHandle<ProceduralBoneTelemetryEntry>(
+                ref _frameStatsHandle,
+                out _) &&
+            TryResolveOrAcquireVaultBuffer(
+                vault,
                 ProceduralBoneBlenderBufferIds.TelemetryRing,
                 ProceduralBoneBlenderConstants.TelemetryCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.ClearMemory);
-            _telemetryCursorHandle = vault.GetBufferHandle<int>(
+                ref _telemetryRingHandle,
+                out _,
+                NativeArrayOptions.ClearMemory) &&
+            TryResolveOrAcquireVaultBuffer(
+                vault,
                 ProceduralBoneBlenderBufferIds.TelemetryCursor,
                 1,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.ClearMemory);
-            _tuningHandle = vault.GetBufferHandle<ProceduralBoneRigTuningDTO>(
+                ref _telemetryCursorHandle,
+                out _,
+                NativeArrayOptions.ClearMemory) &&
+            TryResolveOrAcquireVaultBuffer(
+                vault,
                 ProceduralBoneBlenderBufferIds.Tuning,
                 ProceduralBoneBlenderConstants.TuningCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.ClearMemory);
-            _mockAiSignalsHandle = vault.GetBufferHandle<MockAiVelocitySignal>(
+                ref _tuningHandle,
+                out _,
+                NativeArrayOptions.ClearMemory) &&
+            TryResolveOrAcquireVaultBuffer(
+                vault,
                 ProceduralBoneBlenderBufferIds.MockAiSignals,
                 skeletonCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.UninitializedMemory);
+                ref _mockAiSignalsHandle,
+                out _);
 
-            if (_tuningHandle.IsCreated)
+            if (!resolved)
+                return false;
+
+            if (TryResolveVaultBuffer(
+                    vault,
+                    in _tuningHandle,
+                    ProceduralBoneBlenderConstants.TuningCapacity,
+                    out NativeArray<ProceduralBoneRigTuningDTO> tuning) &&
+                tuning.Length > 0)
             {
-                NativeArray<ProceduralBoneRigTuningDTO> tuning = _tuningHandle.Resolve(vault);
-                if (tuning.IsCreated && tuning.Length > 0)
-                    tuning[0] = ProceduralBoneSanitizer.SanitizeTuning(tuning[0].HighQualityUpdateHz > 0f ? tuning[0] : ProceduralBoneRigTuningDTO.Default());
+                tuning[0] = ProceduralBoneSanitizer.SanitizeTuning(tuning[0].HighQualityUpdateHz > 0f ? tuning[0] : ProceduralBoneRigTuningDTO.Default());
             }
 
-            return _rigsHandle.IsCreated &&
-                   _frameInputsHandle.IsCreated &&
-                   _parentIndicesHandle.IsCreated &&
-                   _bindPosesHandle.IsCreated &&
-                   _boneStatesHandle.IsCreated &&
-                   _boneMatricesHandle.IsCreated &&
-                   _frameStatsHandle.IsCreated &&
-                   _telemetryRingHandle.IsCreated &&
-                   _telemetryCursorHandle.IsCreated &&
-                   _tuningHandle.IsCreated &&
-                   _mockAiSignalsHandle.IsCreated;
+            return true;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static bool TryResolveVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   IsVaultHandleCreated(in handle) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryResolveOrAcquireVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            ref VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer,
+            NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct
+        {
+            if (TryResolveVaultBuffer(vault, in handle, requiredLength, out buffer))
+                return true;
+
+            if (vault == null)
+                return false;
+
+            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.AnimationFauna,
+                options);
+            if (!TryResolveVaultBuffer(vault, in acquired, requiredLength, out buffer))
+                return false;
+
+            handle = acquired;
+            return true;
         }
 
         private bool TryResolveRuntimeBuffers(
@@ -603,28 +670,19 @@ namespace Hecton8.Animation.FaunaProcedural
             if (vault == null)
                 return false;
 
-            rigs = _rigsHandle.Resolve(vault);
-            inputs = _frameInputsHandle.Resolve(vault);
-            parents = _parentIndicesHandle.Resolve(vault);
-            bindPoses = _bindPosesHandle.Resolve(vault);
-            boneStates = _boneStatesHandle.Resolve(vault);
-            matrices = _boneMatricesHandle.Resolve(vault);
-            stats = _frameStatsHandle.Resolve(vault);
-            telemetry = _telemetryRingHandle.Resolve(vault);
-            cursor = _telemetryCursorHandle.Resolve(vault);
-            tuning = _tuningHandle.Resolve(vault);
-            mockSignals = _mockAiSignalsHandle.Resolve(vault);
-            return rigs.IsCreated &&
-                   inputs.IsCreated &&
-                   parents.IsCreated &&
-                   bindPoses.IsCreated &&
-                   boneStates.IsCreated &&
-                   matrices.IsCreated &&
-                   stats.IsCreated &&
-                   telemetry.IsCreated &&
-                   cursor.IsCreated &&
-                   tuning.IsCreated &&
-                   mockSignals.IsCreated &&
+            int skeletonCapacity = math.clamp(_skeletonCapacity, 1, ProceduralBoneBlenderConstants.DefaultSkeletonCapacity);
+            int boneCapacity = math.clamp(_boneCapacity, ProceduralBoneBlenderConstants.EmergencyMockBoneCount, ProceduralBoneBlenderConstants.DefaultBoneCapacity);
+            return TryResolveVaultBuffer(vault, in _rigsHandle, skeletonCapacity, out rigs) &&
+                   TryResolveVaultBuffer(vault, in _frameInputsHandle, skeletonCapacity, out inputs) &&
+                   TryResolveVaultBuffer(vault, in _parentIndicesHandle, boneCapacity, out parents) &&
+                   TryResolveVaultBuffer(vault, in _bindPosesHandle, boneCapacity, out bindPoses) &&
+                   TryResolveVaultBuffer(vault, in _boneStatesHandle, boneCapacity, out boneStates) &&
+                   TryResolveVaultBuffer(vault, in _boneMatricesHandle, boneCapacity, out matrices) &&
+                   TryResolveVaultBuffer(vault, in _frameStatsHandle, skeletonCapacity, out stats) &&
+                   TryResolveVaultBuffer(vault, in _telemetryRingHandle, ProceduralBoneBlenderConstants.TelemetryCapacity, out telemetry) &&
+                   TryResolveVaultBuffer(vault, in _telemetryCursorHandle, 1, out cursor) &&
+                   TryResolveVaultBuffer(vault, in _tuningHandle, ProceduralBoneBlenderConstants.TuningCapacity, out tuning) &&
+                   TryResolveVaultBuffer(vault, in _mockAiSignalsHandle, skeletonCapacity, out mockSignals) &&
                    tuning.Length >= ProceduralBoneBlenderConstants.TuningCapacity &&
                    telemetry.Length >= ProceduralBoneBlenderConstants.TelemetryCapacity &&
                    cursor.Length >= 1;
@@ -731,10 +789,13 @@ namespace Hecton8.Animation.FaunaProcedural
 
         private float ResolveGlobalQualityWeight(IDataVault vault)
         {
-            if (vault != null && _tuningHandle.IsCreated)
+            if (TryResolveVaultBuffer(
+                    vault,
+                    in _tuningHandle,
+                    ProceduralBoneBlenderConstants.TuningCapacity,
+                    out NativeArray<ProceduralBoneRigTuningDTO> tuning))
             {
-                NativeArray<ProceduralBoneRigTuningDTO> tuning = _tuningHandle.Resolve(vault);
-                if (tuning.IsCreated && tuning.Length > 0 && math.isfinite(tuning[0].GlobalQualityWeight))
+                if (tuning.Length > 0 && math.isfinite(tuning[0].GlobalQualityWeight))
                     return math.saturate(tuning[0].GlobalQualityWeight);
             }
 
@@ -749,9 +810,10 @@ namespace Hecton8.Animation.FaunaProcedural
             if (vault == null)
                 return;
 
-            NativeArray<ProceduralBoneTelemetryEntry> telemetry = _telemetryRingHandle.Resolve(vault);
-            NativeArray<int> cursor = _telemetryCursorHandle.Resolve(vault);
-            if (!telemetry.IsCreated || !cursor.IsCreated || telemetry.Length <= 0 || cursor.Length <= 0 || cursor[0] <= 0)
+            if (!TryResolveVaultBuffer(vault, in _telemetryRingHandle, 1, out NativeArray<ProceduralBoneTelemetryEntry> telemetry) ||
+                !TryResolveVaultBuffer(vault, in _telemetryCursorHandle, 1, out NativeArray<int> cursor) ||
+                telemetry.Length <= 0 ||
+                cursor[0] <= 0)
                 return;
 
             int index = ProceduralBoneMath.PositiveModulo(cursor[0] - 1, telemetry.Length);
@@ -783,9 +845,10 @@ namespace Hecton8.Animation.FaunaProcedural
             if (vault == null)
                 return false;
 
-            NativeArray<ProceduralBoneTelemetryEntry> telemetry = _telemetryRingHandle.Resolve(vault);
-            NativeArray<int> cursor = _telemetryCursorHandle.Resolve(vault);
-            if (!telemetry.IsCreated || !cursor.IsCreated || telemetry.Length <= 0 || cursor.Length <= 0 || cursor[0] <= 0)
+            if (!TryResolveVaultBuffer(vault, in _telemetryRingHandle, 1, out NativeArray<ProceduralBoneTelemetryEntry> telemetry) ||
+                !TryResolveVaultBuffer(vault, in _telemetryCursorHandle, 1, out NativeArray<int> cursor) ||
+                telemetry.Length <= 0 ||
+                cursor[0] <= 0)
                 return false;
 
             int index = ProceduralBoneMath.PositiveModulo(cursor[0] - 1, telemetry.Length);
@@ -798,8 +861,12 @@ namespace Hecton8.Animation.FaunaProcedural
             if (vault == null)
                 return;
 
-            NativeArray<ProceduralBoneTelemetryEntry> telemetry = _telemetryRingHandle.Resolve(vault);
-            NativeArray<int> cursor = _telemetryCursorHandle.Resolve(vault);
+            if (!TryResolveVaultBuffer(vault, in _telemetryRingHandle, 1, out NativeArray<ProceduralBoneTelemetryEntry> telemetry) ||
+                !TryResolveVaultBuffer(vault, in _telemetryCursorHandle, 1, out NativeArray<int> cursor))
+            {
+                return;
+            }
+
             _dumpedFault = ProceduralBoneBlackBox.TryDumpTelemetry(ResolveProjectRoot(), telemetry, cursor);
         }
 
@@ -812,8 +879,7 @@ namespace Hecton8.Animation.FaunaProcedural
                 return false;
             }
 
-            NativeArray<float4x4> matrices = _boneMatricesHandle.Resolve(vault);
-            if (!matrices.IsCreated)
+            if (!TryResolveVaultBuffer(vault, in _boneMatricesHandle, 1, out NativeArray<float4x4> matrices))
             {
                 ClearGpuSkinningBinding();
                 return false;
@@ -937,6 +1003,38 @@ namespace Hecton8.Animation.FaunaProcedural
             ReleaseGraphicsBuffer(ref _matrixBufferA);
             ReleaseGraphicsBuffer(ref _matrixBufferB);
             _gpuBufferDataValid = false;
+        }
+
+        private void ReleaseVaultHandles()
+        {
+            ReleaseVaultHandles(_dataVault);
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _rigsHandle);
+            ReleaseVaultHandle(vault, ref _frameInputsHandle);
+            ReleaseVaultHandle(vault, ref _parentIndicesHandle);
+            ReleaseVaultHandle(vault, ref _bindPosesHandle);
+            ReleaseVaultHandle(vault, ref _boneStatesHandle);
+            ReleaseVaultHandle(vault, ref _boneMatricesHandle);
+            ReleaseVaultHandle(vault, ref _frameStatsHandle);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+            ReleaseVaultHandle(vault, ref _tuningHandle);
+            ReleaseVaultHandle(vault, ref _mockAiSignalsHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (!IsVaultHandleCreated(in handle))
+                return;
+
+            vault.ReleaseBuffer(in handle);
+            handle = default;
         }
 
         private void ClearHandles()

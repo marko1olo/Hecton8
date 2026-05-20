@@ -1,6 +1,6 @@
 # Status_SHINOBU_222
 
-Status: POLISH_POWER_AUTHORITY_STATIC_PASS_COMPILE_BLOCKED_BY_CPU_GATE
+Status: POLISH_EDITOR_READOUT_STATIC_PASS_COMPILE_BLOCKED_BY_CPU_GATE
 Agent: SHINOBU_222
 Role: SUMP_PUMP_PIPE_GRID_SOLVER
 Domain: Echelon 6 Habitat & Vehicles / Pipe & Sump Pump Logistics
@@ -52,14 +52,19 @@ First-20-minutes blocker removed: flooded starter habitat/submersible drainage m
 - Loop 4: Tasks 15-18 implemented. Deterministic DTO fence, 300-frame telemetry/dump, UI Toolkit tuner, and cold CSV parser added.
 - Loop 5: Tasks 19-20 implemented. Scene gizmo and static self-audit completed. Compile gate remains blocked by CPU=100%, no `csc.exe`/`dotnet` active.
 - Loop 6: Polish mandate pass. Repaired BufferID collision by moving drainage lanes to `95820..95842`; migrated runtime fields from legacy `VaultBufferHandle<T>` to `VaultGenerationHandle<T>`; bounded CSR prefix offsets to real edge capacity; removed parallel adjacent-`int` drain aggregate atomics; added Vault locks around CSV, tuning, and mock writes; kept `PumpNodeDTO` at the required 32-byte pad layout.
-- Loop 7: Compile-wall correction. Removed SHINOBU_222 drainage IDs from central `H8Memory.BufferID`; declared owner-local numeric casts in `SumpPumpDrainageBufferIds`; changed mock topology generation from direct `job.Execute()` to `job.Run()`; static scans stayed clean.
+- Loop 7: Compile-wall correction. Removed SHINOBU_222 drainage IDs from central `H8Memory.BufferID`; declared owner-local numeric casts in `SumpPumpDrainageBufferIds`; removed direct `job.Execute()` from mock topology generation; static scans stayed clean.
 - Loop 8: Vault/job safety polish. Moved solver scheduling to lock-before-resolve for owner-local lanes; resolved shared Fluid/Power inputs through generation handles instead of direct `TryGetBuffer`; added source-range CSR write cap after capacity trimming; bounded fluid CAS to 64 attempts; release all owner-local generation handles on teardown.
 - Loop 9: Owner job fence polish. Registered the final scheduled telemetry-chain handle with `H8Memory.RegisterActiveJob(OwnerSystem, _solverHandle)` so Vault/defrag teardown sees the active SHINOBU_222 job fence.
 - Loop 10: Boot fail-close polish. Added full owner-local `VaultGenerationHandle<T>` validation before `_buffersReady` can become true; partial acquisition now calls `ReleaseOwnedBuffers()` and returns false.
 - Loop 11: Conservation polish. Added 64-byte per-room drain locks on owner-local Vault lane `95843`; pump evacuation now serializes pumps targeting the same Fluid room and subtracts one identical bounded volume from front/back buffers.
-- Loop 12: Static regression correction. Forbidden scan caught `DrainageMockNetworkJob` still invoked through direct `job.Execute()` at `SumpPumpPipeGridRuntime.cs:283`; patched to `job.Run()` and reran the scan clean.
+- Loop 12: Static regression correction. Forbidden scan caught `DrainageMockNetworkJob` still invoked through direct `job.Execute()`; patched away direct entry and reran the scan clean.
 - Loop 13: NaN/power authority polish. Missing or short Logistics Power Vault rows now fail closed to zero pump power instead of synthetic `1.0`; evacuation quantization now clamps corrupted unit counts before int cast.
 - Loop 14: Static power authority correction. Jacobi pump pressure now uses zero power when the `PowerPotential` Vault row is absent/out-of-range/non-finite, short Logistics pressure rows raise `MissingPowerVault`, and quantized units clamp at both lower and upper bounds before int cast.
+- Loop 15: Worktree job-route reconciliation. Targeted diff showed `GenerateMockDrainageNetwork()` had regressed to direct `job.Execute()` in the worktree; patched away direct entry before any build attempt.
+- Loop 16: Energy telemetry authority correction. `DrainageTelemetryRecorderJob` now scales reported pump watts by actual evacuated-rate utilization over Vault `MaxPumpRate`, so throttled or water-starved pumps do not report full draw.
+- Loop 17: Editor readout zero-GC correction. `Base Drainage Tuner` telemetry now uses pre-created `IntegerField`/`FloatField` rows with `SetValueWithoutNotify` and an explicit `uint` clamp; formatted label strings, `StringBuilder`, `CultureInfo`, and `Mathf.Min(uint)` are absent.
+- Loop 18: Assembly boundary proof. `SumpPumpPipeGrid*` files resolve under the existing parent `Hecton8.Core.asmdef`; no asmdef was edited and no new sibling runtime assembly reference was introduced. Latest CPU gate sample returned 100% CPU with zero compiler processes.
+- Loop 19: Final direct-entry recheck. A post-doc forbidden scan caught the active worktree back on direct `DrainageMockNetworkJob.Execute()`; current route is `job.Schedule()` plus `H8Memory.RegisterActiveJob`, with finalization through `DispatcherJobFence`.
 
 ## Verification
 
@@ -68,7 +73,7 @@ First-20-minutes blocker removed: flooded starter habitat/submersible drainage m
 - Static polish scans: PASS for no `VaultBufferHandle`, no `GetBufferHandle`, no `.Resolve(_vault)`, no `Interlocked.Add`, no `foreach`, no LINQ, no `Time.deltaTime`, no `Pack=1` in SHINOBU_222 files.
 - BufferID collision scan: PASS for drainage-owned `95843`; `95820..95842` only collide with generated hash constants, not `BufferID` ownership. The rejected `70820..70841` range remains owned by other systems and is no longer used by drainage.
 - Compile-wall scan: PASS for no `BufferID.ShinobuDrainage*` and no `ShinobuDrainage*` in `H8Memory.cs`; drainage IDs are local contract constants under `SumpPumpDrainageBufferIds`.
-- Job API scan: PASS after correction for no direct `.Execute()`, no `JobHandle.Complete`, and no `.Complete()` in SHINOBU_222 runtime/jobs; mock path now invokes `IJob.Run()`.
+- Job API scan: PASS after correction for no direct `.Execute()`, no `JobHandle.Complete`, and no `.Complete()` in SHINOBU_222 runtime/jobs; mock path now schedules the `IJob` and registers the handle.
 - Active job scan: PASS for `H8Memory.RegisterActiveJob(OwnerSystem, _solverHandle)` immediately after final telemetry-chain schedule.
 - Vault resolve scan: PASS for no direct `TryGetBuffer`, `GetBufferHandle`, `VaultBufferHandle`, or `.Resolve(_vault)` in SHINOBU_222 runtime/jobs/contracts/editor files. Shared Fluid/Power reads use method-local `VaultGenerationHandle<T>` descriptors.
 - Owner handle validation scan: PASS for `ValidateOwnedBuffers()` checking every SHINOBU_222 owner-local generation descriptor against its required minimum length before tuning initialization or `_buffersReady=true`.
@@ -76,5 +81,10 @@ First-20-minutes blocker removed: flooded starter habitat/submersible drainage m
 - DTO layout scan: PASS for `PumpNodeDTO` explicit 32-byte required offsets and `PipeEdgeDTO` explicit 64-byte row.
 - Room lock layout scan: PASS for `DrainageRoomDrainLock64` explicit 64-byte row with `LockState` at offset 0 and padding through offset 56.
 - Power fail-closed scan: PASS for no missing-Vault fallback `powerPotential[i] = 1f` and no Jacobi `PowerPotential` fallback to `1f`; missing, non-finite, out-of-range, or undersized power rows evaluate as `0f`.
+- Energy telemetry scan: PASS for actual-rate utilization multiplying Vault `PumpNodeDTO.PowerDraw`; no full-watt telemetry when actual evacuation rate is zero.
 - Quantization overflow scan: PASS for lower-bound `0f` and upper-bound `MaxQuantizedDrainUnitsPerPump` clamp before integer cast in `EvacuateWaterVolumeJob`.
-- Build: BLOCKED BY CPU GATE. Latest `Win32_Processor.LoadPercentage` reported 100% total CPU; no active `dotnet`/`csc` process was found in the final sample. Protocol forbids launching `dotnet build` above 50%.
+- Editor readout scan: PASS for no `StringBuilder`, no `ToString(`, no `CultureInfo`, no `_telemetryLabel`, and no `Mathf.Min` in `SumpPumpPipeGridTunerWindow.cs`; readout updates use `SetValueWithoutNotify`.
+- Diff check: PASS for targeted SHINOBU_222 files; only repository LF/CRLF normalization warnings were reported.
+- Assembly boundary scan: PASS for existing parent `Assets/_Project/Scripts/Hecton8.Core.asmdef`; no SHINOBU_222 asmdef edit and no new direct sibling runtime assembly reference.
+- Final job route scan: PASS for `GenerateMockDrainageNetwork()` invoking `job.Schedule()`, `H8Memory.RegisterActiveJob(OwnerSystem, _mockSeedHandle)`, and zero `.Execute()` matches across SHINOBU_222 files.
+- Build: BLOCKED BY CPU GATE. Latest gate samples stayed above the threshold at 68-100% total CPU; no active `dotnet`/`csc` process was found. Protocol forbids launching `dotnet build` above 50%.

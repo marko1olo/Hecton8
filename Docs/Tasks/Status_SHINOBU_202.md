@@ -591,3 +591,48 @@ Mandates read before coding:
 - Targeted scan finds zero `VaultBufferHandle`, `GetBufferHandle`, `TryGetBufferHandle`, `ResolvePointer`, `.ptr`, `.Resolve(`, raw `float*`/telemetry pointer routes, `GlobalRegistry.ScalabilityTier`, `TryGetBuffer`, `GenerationID`, or `NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray` hits in `WfcLaserCutRuntime.cs`.
 - `git diff --check` passed for `WfcLaserCutRuntime.cs`; CRLF warning only.
 - Build not relaunched; previous compile-wall blockers remain unchanged.
+
+## Loop 35 - Procedural Ladder Climb IK Descriptor Migration
+- [x] Removed five legacy Vault descriptors from `ProceduralLadderClimbRuntime.cs`.
+  DOD practice: IK input/output, ladder AUP, telemetry ring, and telemetry cursor now persist `VaultGenerationHandle<T>` descriptors and resolve local `NativeArray<T>` views immediately before writes, reads, and IK job scheduling.
+  Rejected: keeping `.Resolve(_dataVault)` inside the job staging path because ladder IK is animation-facing but still schedules Burst work over Vault-backed AUP and telemetry payloads.
+  Estimate: five flat generation compares per solve scheduling/read path; no managed allocation.
+- [x] Added scoped release on disable, destroy, and DataVault loss/replacement.
+  DOD practice: outstanding IK job is completed before descriptor release, then only ladder-owned lanes are released through `IDataVault.ReleaseBuffer`.
+  Rejected: clearing descriptors without release because it hides Vault refcount/generation debt during scene teardown.
+  Estimate: cold path only; scheduled IK job cost unchanged.
+
+## Compile State Update 28
+- Targeted scan finds zero `VaultBufferHandle`, `GetBufferHandle`, `TryGetBufferHandle`, `ResolvePointer`, `.ptr`, `.Resolve(`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `ResolveBuffer`, `GenerationID`, or `NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray` hits in `ProceduralLadderClimbRuntime.cs`.
+- `git diff --check` passed for `ProceduralLadderClimbRuntime.cs`; CRLF warning only.
+- Build not relaunched; previous compile-wall blockers remain unchanged.
+
+## Loop 36 - Tool Haptics Descriptor Migration
+- [x] Removed two legacy haptic command Vault descriptors from `ToolHapticsRuntime.cs`.
+  DOD practice: front/back haptic command lanes now persist `VaultGenerationHandle<T>` descriptors and resolve local `NativeArray<HapticCommand>` views for enqueue, merge, tick, and snapshot paths.
+  Rejected: `ResolveBuffer(ref handle)` because it refreshes pointer-bearing metadata in the manager on every haptic path.
+  Estimate: one generation compare per front/back lane touch; no managed allocation.
+- [x] Added scoped release on DataVault loss/replacement and teardown.
+  DOD practice: cached `IDataVault` replacement releases old front/back descriptors through `IDataVault.ReleaseBuffer`; disable/destroy release through `DisposeBuffers`.
+  Rejected: clearing descriptors only because haptic buffers are session-owned Vault lanes and should invalidate stale readers.
+  Estimate: cold path only.
+
+## Compile State Update 29
+- Targeted scan finds zero `VaultBufferHandle`, `GetBufferHandle`, `TryGetBufferHandle`, `ResolvePointer`, `.ptr`, `.Resolve(`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `ResolveBuffer`, `GenerationID`, or `NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray` hits in `ToolHapticsRuntime.cs`.
+- `git diff --check` passed for `ToolHapticsRuntime.cs`; CRLF warning only.
+- Build not relaunched; previous compile-wall blockers remain unchanged.
+
+## Loop 37 - Procedural Bone Blender Descriptor Migration
+- [x] Removed eleven legacy fauna procedural bone Vault descriptors from `ProceduralBoneBlenderRuntime.cs`.
+  DOD practice: rig/input/parent/bind-pose/state/matrix/stats/telemetry/tuning/mock-signal lanes now persist `VaultGenerationHandle<T>` and resolve method-local `NativeArray<T>` views before editor reads, CSV tuning, mock rig generation, Burst scheduling, telemetry reads, blackbox dump, and GPU upload.
+  Rejected: keeping `.Resolve(vault)` because it keeps the old pointer-bearing descriptor contract alive in an animation manager that schedules Burst jobs across frames.
+  Estimate: eleven O(1) generation checks when staging the solve; no managed allocation.
+- [x] Added exact descriptor release for DataVault replacement, disable, and destroy paths.
+  DOD practice: outstanding solver jobs are completed before descriptor release, then this runtime releases only its known fauna animation lanes through `IDataVault.ReleaseBuffer`.
+  Rejected: `ClearHandles()` without Vault release because it leaks refcount/generation ownership and lets stale readers survive relocation.
+  Estimate: cold path only.
+
+## Compile State Update 30
+- Targeted scan finds zero `VaultBufferHandle`, `GetBufferHandle`, `TryGetBufferHandle`, `ResolvePointer`, `.ptr`, `.Resolve(`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `ResolveBuffer`, `GenerationID`, or `NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray` hits in `ProceduralBoneBlenderRuntime.cs`.
+- `git diff --check` passed for `ProceduralBoneBlenderRuntime.cs`; CRLF warning only.
+- Build not relaunched; previous compile-wall blockers remain unchanged and the user explicitly forbade unnecessary rebuilds.

@@ -58,7 +58,7 @@ namespace Hecton8.Audio.Editor
             AssertNotContains(contracts, CompactPackNeedle, "Virtualization contracts do not use compact packing syntax", builder, ref failures);
             AssertNotContains(acousticAup, CompactPackWithSpacesNeedle, "AcousticAup uses natural packing", builder, ref failures);
             AssertNotContains(acousticAup, CompactPackNeedle, "AcousticAup does not use compact packing syntax", builder, ref failures);
-            AssertContains(contracts, "[StructLayout(LayoutKind.Sequential, Size = 48)]", "VirtualVoiceDTO remains exact 48 bytes", builder, ref failures);
+            AssertContains(contracts, "[StructLayout(LayoutKind.Explicit, Size = 48)]", "VirtualVoiceDTO remains exact 48 bytes", builder, ref failures);
             AssertContains(contracts, "public double3 AupMeters;", "VirtualVoiceDTO keeps double3 AUP first", builder, ref failures);
             AssertContains(contracts, "[StructLayout(LayoutKind.Explicit, Size = 64)]", "AcousticSourceDTO/output DTO are explicit one-cache-line layouts", builder, ref failures);
             AssertContains(contracts, "[FieldOffset(16)] public double3 AUP_Position;", "AcousticSourceDTO keeps double3 AUP at offset 16", builder, ref failures);
@@ -73,7 +73,7 @@ namespace Hecton8.Audio.Editor
             AssertContains(contracts, "TryReadTuning(ReadOnlySpan<byte>", "CSV tuning parser accepts bytes without managed line splitting", builder, ref failures);
             AssertContains(contracts, "NativeParallelHashMap<uint, AcousticMaterialCoefficientDTO>", "Material acoustics can hydrate a Vault-owned native hash map", builder, ref failures);
             AssertContains(contracts, "GenerateEmergencyMockAcoustics", "Missing acoustic material binary has deterministic fallback rows", builder, ref failures);
-            AssertContains(contracts, "[StructLayout(LayoutKind.Sequential, Size = 16)]", "VirtualVoiceSortKey is one 16-byte cache key", builder, ref failures);
+            AssertContains(contracts, "[StructLayout(LayoutKind.Explicit, Size = 16)]", "VirtualVoiceSortKey is one 16-byte cache key", builder, ref failures);
             AssertContains(contracts, "public enum VirtualVoicePortalFlags : byte", "Virtualization owns byte portal mirror without propagation assembly coupling", builder, ref failures);
             AssertNotContains(contracts, PropagationUsingNeedle, "Virtualization contracts do not import sibling propagation runtime", builder, ref failures);
             AssertNotContains(virtualizationAsmdef, PropagationAssemblyNeedle, "Virtualization asmdef avoids direct propagation sibling reference", builder, ref failures);

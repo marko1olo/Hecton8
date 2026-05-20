@@ -1353,3 +1353,45 @@ Scalability potential: Low-tier and VR devices keep the same deterministic overr
 Hardware Impact: Runtime microseconds claimed: `0`; no profiler capture and no build. Static impact: compile-wall findings dropped from `83` to `81`. Touched-file scanners report `Burst_Job_Directives=0`, `Runtime_Struct_Layout=0`, and `Vault_Sovereignty=0`; only the pre-existing `InputDispatcher.cs` World edge remains among touched Core files.
 
 First 20 Minutes Route Impact: Player input override, ghost replay, KCC velocity publication, and desync signaling remain live for early movement validation. The route now removes two Core-to-Physics compile edges without changing first-session movement semantics.
+
+## Loop 135 / XR Look-At AUP Mirror Extraction
+
+Problem: After the determinism facade extraction, `InputDispatcher` still imported `Hecton8.World` only for XR look-at ray AUP cache math. The file stored `_lastXRLookAtRayOriginAup` and `_lastXRLookAtHitPointAup` as `AbsoluteUniversePosition`, then used World-owned conversion helpers to reuse a recent gaze raycast. This kept a high-value Core input service coupled to World for a tiny presentation-selection cache.
+
+Solution: Added `XRRuntimeAup48` in `HectonXRRuntimeState.cs` as a Core-local explicit 48-byte grid/local mirror and changed `InputDispatcher` to store that mirror. `HectonXRRuntimeState` remains the bridge that can copy from the true World AUP cache for legacy callers; `InputDispatcher` now resolves cached head AUP through `TryResolveCachedHeadAup48`, falls back to a mirror built from `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3`, and performs ray reuse with local grid/local delta math before casting to `float3`.
+
+Rejected Alternatives: Keeping `AbsoluteUniversePosition` in `InputDispatcher` was rejected because it preserved a direct Core-to-World edge for a raycast reuse cache. Moving all XR head AUP ownership out of `HectonXRRuntimeState` was rejected because physical hand, VR somatic, spatial audio, and existing XR pose code still consume the true World AUP route. Caching only runtime `Vector3` positions was rejected because origin shifts and 100km AUP jitter make absolute runtime-float comparison the wrong authority.
+
+Scalability potential: Low/Quest avoids the extra Core input compile breadth and fails closed on invalid gaze positions rather than scheduling bad raycasts. Middle/high/ultra keep the same gaze-selection behavior and can continue to spend XR saved cost on foveated shader state and haptic richness. No binary quality switch was introduced.
+
+Hardware Impact: Runtime microseconds claimed: `0`; no profiler capture and no build. Static impact: compile-wall findings dropped from `81` to `80`; `InputDispatcher.cs` now has zero compile-wall findings. Touched-file scanners report `Burst_Job_Directives=0`, `Runtime_Struct_Layout=0`, and `Vault_Sovereignty=0`; `git diff --check` passed with CRLF warnings only.
+
+First 20 Minutes Route Impact: XR look-at command scheduling, hit reuse, and dispatcher raycast consumption remain live for early VR interaction. The local cache is now a blittable 48-byte mirror, and non-finite origins/hit offsets disable the gaze ray for that frame instead of contaminating the raycast lane.
+
+## Loop 136 / Player Runtime Pose AUP Namespace Extraction
+
+Problem: `PlayerRuntimeContextService` still contained four explicit `Hecton8.World.AbsoluteUniversePosition` references for player pose fallback stamping and AUP finite validation. The service already receives `PlayerMovementRuntimeState.PredictedAup`; spelling the World namespace in the Core service preserved compile-wall debt without owning the AUP type.
+
+Solution: Replaced the explicit World type with inferred `PredictedAup` field typing and routed fallback runtime-position conversion through `GlobalSignals.TryRuntimePositionToAup(...)`. The finite check now accepts the Core-owned `PlayerMovementRuntimeState`, copies its `PredictedAup`, and calls the existing AUP method without writing a forbidden namespace token in the service.
+
+Rejected Alternatives: Leaving the explicit World namespace was rejected because the fallback conversion has an existing signal-corridor helper. Changing `PlayerRuntimePoseSnapshot` or `PlayerMovementRuntimeState` layout was rejected because those are broad Core contracts still used by many domains. Defaulting bad predicted AUP to zero was rejected because it would publish false player pose telemetry.
+
+Scalability potential: Low/Quest avoids four more Core-to-World source edges in the player runtime context service without changing frame math. Middle/high/ultra keep the same pose snapshot payload and can continue using richer pose consumers through the existing AUP-backed contracts.
+
+Hardware Impact: Runtime microseconds claimed: `0`; no profiler capture and no build. Static impact: compile-wall findings dropped from `80` to `76`; `PlayerRuntimeContextService.cs` no longer has World findings. Touched-file scanners report `Burst_Job_Directives=0`, `Runtime_Struct_Layout=0`, and `Vault_Sovereignty=0`.
+
+First 20 Minutes Route Impact: Player pose snapshots still use `MovementState.PredictedAup` when valid and finite runtime-position conversion when invalid. The remaining service edges to Audio, Environment, Gameplay, and Inventory are real reference-service wiring and were not widened or disguised in this loop.
+
+## Loop 137 / Procedural Audio Signal Payload Contract Extraction
+
+Problem: `Core/GlobalSignals.cs` embedded `Hecton8.Audio.AudioEventKind`, `AudioPingTriggerInfo`, and `StructuralStressAudioInfo` directly in the Core signal DTO. That made the signal corridor depend on the audio DSP domain for wire payload shape and produced nine compile-wall findings inside one hot contract file.
+
+Solution: Added Core-owned `AudioEventKind`, `AudioPingTriggerPayload`, and `StructuralStressAudioPayload` in the signal contract namespace. `AudioEvent` now carries those DTOs only. `ProceduralAudioEvents` converts its audio-owner listener structs into signal payloads before publish and converts signal payloads back only when dispatching legacy listeners. `PlayerCriticalProceduralAudioRenderer` consumes the contract payloads directly from `SignalBus<AudioEvent>`.
+
+Rejected Alternatives: Keeping audio structs in Core was rejected because it violates one route/one owner. Replacing the typed signal lane with managed audio callbacks was rejected because it would add GC and virtual dispatch. Moving all audio listener structs to Core was rejected because those structs contain audio-domain API semantics and wider external call sites; only the wire payload moved.
+
+Scalability potential: Low/Quest retains the same compact 128-byte typed audio event and avoids widening Core recompiles when DSP-only structs change. Middle/high/ultra keep the same procedural audio lane and can spend DSP budget on richer ping/stress rendering without forcing Core signal contracts to reference the audio assembly.
+
+Hardware Impact: Runtime microseconds claimed: `0`; no profiler capture and no build. Static impact: compile-wall findings dropped from `76` to `67`; `GlobalSignals.cs` has no `Hecton8.Audio` token. Touched-file `scan_burst=0` and `scan_struct_layout=0`. Touched-file `scan_vault=5` remains in audio owner allocation sites and is not claimed clean.
+
+First 20 Minutes Route Impact: First-session sonar pings and structural stress groans still publish through `SignalBus<AudioEvent>`. Audio listener compatibility remains inside `ProceduralAudioEvents`; the critical renderer reads the new contract payloads directly and falls back to runtime `WorldPosition` when a structural stress event lacks a source AUP flag.

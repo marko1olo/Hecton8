@@ -172,7 +172,7 @@ Structure:
   4 15s: survival loop: move, scan, salvage, maintain;
   16 30s: base/machine consequence;
   31 45s: Seed Ship/anomaly escalation;
-  final 3s: title, single player first, approved Steam CTA after CTA activation; otherwise no-link title card.
+  final 3s: title, single player first, gated Steam CTA after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass; otherwise no-link title card.
 
 Forbidden:
 

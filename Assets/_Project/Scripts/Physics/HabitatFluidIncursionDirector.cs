@@ -477,7 +477,7 @@ namespace Hecton8.Physics
             if (!front.IsCreated || !back.IsCreated || !integrity.IsCreated || !centroids.IsCreated || !waterlines.IsCreated)
                 return;
 
-            AbsoluteUniversePositionBlit origin = AbsoluteUniversePositionBlit.FromAup(AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform.position));
+            AbsoluteUniversePositionBlit origin = ResolveColdBootOriginAup();
             FluidCompartmentDTO* frontPtr = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(front);
             FluidCompartmentDTO* backPtr = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back);
             IntegrityStateDTO* integrityPtr = (IntegrityStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(integrity);
@@ -543,6 +543,23 @@ namespace Hecton8.Physics
                 JobHandle breachBackHandle = breachBack.Schedule();
                 DispatcherJobFence.TryComplete(ref breachBackHandle, forceComplete: true);
             }
+        }
+
+        private AbsoluteUniversePositionBlit ResolveColdBootOriginAup()
+        {
+            Vector3 runtimePosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                runtimePosition = Vector3.zero;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePositionBlit.FromAup(in resolvedAup);
         }
 
         private void BuildDefaultLineTopology(int safeCount)
@@ -850,7 +867,10 @@ namespace Hecton8.Physics
 
         private AbsoluteUniversePositionBlit ResolveExternalWaterlineAup()
         {
-            AbsoluteUniversePosition waterlineAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(0f, externalWaterlineRuntimeY, 0f));
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition waterlineAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(0d, externalWaterlineRuntimeY, 0d));
             return AbsoluteUniversePositionBlit.FromAup(in waterlineAup);
         }
 

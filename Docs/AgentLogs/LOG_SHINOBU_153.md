@@ -584,3 +584,33 @@ Estimated microseconds saved: no measured profiler claim. The writer-fence guard
     <Compile>Not launched. User explicitly forbade premature rebuild; Unity import and profiler proof remain pending.</Compile>
   </VERIFICATION_DELTA>
 </SELF_AUDIT_DELTA>
+
+---
+
+## Loop 24 Polish Pass - 2026-05-20
+
+What was wrong: `ProceduralOreSpawner` still carried `MapMagicBridge.QuantizedHeightmapPayload` through the scheduling boundary and performed a slow-tick MapMagic resolver call. The fallback mock SDF path also used player AUP Y as its base height when no quantized payload existed, even if the registry terrain provider could answer the seafloor height.
+
+What was done: added `GeologyHeightPayloadView` as a SHINOBU-owned phase-local payload view. `RefreshTerrainPayload()` is now the only adapter that names `MapMagicBridge.QuantizedHeightmapPayload`; it copies height samples, terrain size, absolute terrain origin, and absolute base height into the local view. `ScheduleSpawnJob()` consumes only that local view. `ITerrainProvider` and `MapMagicBridge` are cached at enable and updated through `TerrainProviderRuntime` / `MapMagicRuntime` hot-swap events, so `SlowTick` no longer calls `WorldRuntimeReferenceUtility.TryResolveMapMagicBridge`. When quantized samples are absent, `GenerateMockTerrainSDFJob.BaseHeight` uses the provider terrain height converted to AUP Y.
+
+Cinematic cheats used: unchanged. Fallback terrain remains the cheap 32x32 deterministic mock SDF and triangle-wave seabed, not a collider/raycast or terrain mesh query per ore candidate. High tiers still use quantized heightmap samples and visual-only matrix clusters.
+
+Estimated microseconds saved: no profiler number claimed. Removed one slow-tick MapMagic resolver call and prevented fallback ore rows from being grounded around player altitude, which would inflate draw bounds and waste indirect/HZB work.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_153" evidence="STATIC_SOURCE" runtime_status="PENDING_VERIFICATION">
+  <TERRAIN_ADAPTER_DELTA>
+    <Before>`RefreshSectorAndTerrain()` and `ScheduleSpawnJob()` exchanged `MapMagicBridge.QuantizedHeightmapPayload` directly.</Before>
+    <After>`ScheduleSpawnJob()` accepts `GeologyHeightPayloadView`; the concrete MapMagic payload is copied inside `RefreshTerrainPayload()` only.</After>
+    <ProviderFallback>When quantized payload is absent, mock SDF base height is seeded from cached `ITerrainProvider.TryGetHeight()` converted to AUP Y.</ProviderFallback>
+  </TERRAIN_ADAPTER_DELTA>
+  <REGISTRY_DELTA>
+    <Before>`SlowTick()` called `WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge)`.</Before>
+    <After>Terrain provider and MapMagic bridge are cached on enable and maintained by `TerrainProviderRuntime` / `MapMagicRuntime` hot-swap events.</After>
+  </REGISTRY_DELTA>
+  <VERIFICATION_DELTA>
+    <StaticScan>`ScheduleSpawnJob` and the Burst job boundary no longer carry `MapMagicBridge.QuantizedHeightmapPayload`; only `RefreshTerrainPayload` names that nested type.</StaticScan>
+    <ForbiddenScan>Scoped owned-source scan returned no direct buffer APIs, legacy Vault pointer handles, hot native allocation, raw `.Complete()`, Unity/System random, Unity time, `File.ReadAllBytes`, LINQ, `string.Format`, or direct sibling-domain hits.</ForbiddenScan>
+    <DiffCheck>`git diff --check` returned only CRLF normalization warnings; exact trailing-whitespace scan returned no hits.</DiffCheck>
+    <Compile>Not launched. User explicitly forbade premature rebuild; no generated `Hecton8.World.Economy*.csproj` exists for a scoped dotnet build.</Compile>
+  </VERIFICATION_DELTA>
+</SELF_AUDIT_DELTA>

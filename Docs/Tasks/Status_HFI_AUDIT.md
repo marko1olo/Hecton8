@@ -239,3 +239,96 @@ R26 verification:
 
 No dotnet build, Unity import, player build, profiler, GC, memory, or device run
 was launched.
+
+## 2026-05-20 R27 DataVault Regression Drilldown / No-Build Recapture
+
+- [x] Added structured DataVault regression drilldown. DOD:
+  `DataVaultSovereigntyAudit.py` now emits schema
+  `hecton8.datavault_sovereignty_audit_report.v1`, writes optional
+  `--audit-json`, and groups candidate no-regression growth by domain and
+  file. Alternative rejected: refreshing the HFI candidate baseline and hiding
+  active growth. Estimate: 0 runtime us claimed.
+- [x] Hardened Python audit tests. DOD:
+  DataVault, BufferID, global authority, assembly, hotlist, and platform audit
+  unit tests were run with `python -B`; temp-root sensitive tests now avoid the
+  previous `%TEMP%` failure path. Alternative rejected: treating sandbox/temp
+  failure as source proof. Estimate: 0 runtime us claimed.
+- [x] Re-ran current static gates without dotnet/Unity build. DOD:
+  generic registry lookup hard gate remains `0`; exact runtime `Pack=1`
+  remains `0`; central BufferID duplicates remain `0`; first-party asmdef
+  cycles remain `0`. Alternative rejected: launching a rebuild for static-only
+  docs/tooling work. Estimate: 0 runtime us claimed.
+- [x] Re-checked DataVault candidate with hard regression flag and JSON report.
+  DOD: command fails as expected with constructors `1149`, forbidden
+  declarations `5132`, and regression details in
+  `Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md/json`.
+  Alternative rejected: patching Physics/Construction/Editor/Power/World owner
+  files from the HFI audit lane. Estimate: 0 runtime us claimed.
+
+R27 verification:
+
+- `python -B Tools/test_datavault_sovereignty_audit.py`: PASS, 4 tests.
+- `python -B Tools/test_buffer_id_sovereignty_audit.py`: PASS, 2 tests.
+- `python -B Tools/test_global_authority_gate.py`: PASS, 3 tests.
+- `python -B Tools/test_assembly_dependency_audit.py`: PASS, 3 tests.
+- `python -B Tools/test_architecture_risk_hotlist_audit.py`: PASS, 3 tests.
+- `python -B Tools/test_platform_portability_proof_audit.py`: PASS, 2 tests.
+- `python Tools/GlobalAuthorityGate.py`: PASS_WITH_WARNINGS,
+  `globalRegistryGenericGet=0`, `packOne=0`, `duplicates=0`,
+  local BufferID casts `758`.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS,
+  duplicates `0`, local casts `758`.
+- `python Tools/AssemblyDependencyAudit.py`: PASS_WITH_WARNINGS, cycles `0`,
+  Core concrete sibling refs `1`, runtime concrete cross-domain refs `77`.
+- `python Tools/ArchitectureRiskHotlistAudit.py`: PASS_WITH_WARNINGS, C# files
+  `1992`, scored files `912`, authority `6104`, DataVault/native `3263`,
+  determinism `1209`, signals `591`.
+- `python Tools/PlatformPortabilityProofAudit.py`: PASS_WITH_WARNINGS, Quest
+  scaffold still true, XR provider serialized proof false, Addressables `0`,
+  Data Monolith false, build artifacts `0`, PICO package false.
+- `python Tools/DataVaultSovereigntyAudit.py --baseline Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json --report Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md --audit-json Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.json --fail-on-regression`:
+  FAIL_REGRESSION, forbidden constructors `1149`, forbidden declarations
+  `5132`.
+
+R27 DataVault regression domains: Physics `+10`, Construction `+5`, Editor
+`+5`, Power `+4`, World `+3`, Core `+2`, Habitat `+1`. This is active churn,
+not a reason to approve the HFI candidate baseline.
+
+No dotnet build, Unity import, player build, profiler, GC, memory, or device run
+was launched.
+
+## 2026-05-20 R28 DataVault Runtime-vs-Editor Split
+
+- [x] Added execution-surface classification to the DataVault regression gate.
+  DOD: `DataVaultSovereigntyAudit.py` now tags each regression detail as
+  `Runtime`, `Editor`, `Dev`, `Test`, `Plugin`, or `External`, emits
+  `regressionByExecutionSurface` in JSON, and writes a markdown table before
+  the domain table. Alternative rejected: treating editor/offline-baker growth
+  and runtime growth as the same platform risk. Estimate: 0 runtime us claimed.
+- [x] Expanded the DataVault drilldown tests. DOD:
+  `Tools/test_datavault_sovereignty_audit.py` now verifies runtime/editor/dev
+  surface classification and report payload fields. Alternative rejected:
+  untested report-schema expansion. Estimate: 0 runtime us claimed.
+- [x] Re-ran the candidate DataVault no-regression command. DOD:
+  current report now shows net forbidden constructors `1150` and net forbidden
+  declarations `5151`; file-level gross regression is `Runtime +38` and
+  `Editor +12`. Alternative rejected: using R27 counters after concurrent C#
+  churn. Estimate: 0 runtime us claimed.
+
+R28 verification:
+
+- `python -B Tools/test_datavault_sovereignty_audit.py`: PASS, 5 tests.
+- `python Tools/DataVaultSovereigntyAudit.py --baseline Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json --report Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md --audit-json Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.json --fail-on-regression`:
+  FAIL_REGRESSION, direct constructors `1156`, allowed `6`, forbidden `1150`,
+  field-like declarations `5165`, forbidden `5151`.
+
+R28 interpretation: the dangerous slice is now explicit. Runtime file-level
+gross DataVault growth is `+38`, led by `Tools/LaserCutterDodJobs.cs` `+13`,
+`Physics/Buoyancy/BuoyancySimdVectorization.cs` `+10`,
+`Power/PowerGridJacobiContracts.cs` `+4`, Construction `+5`, Gameplay scanner
+`+3`, Core static data `+2`, and World resources `+1`. Editor/offline-baker
+growth is `+12` and belongs to Data Monolith/bake hygiene, not frame-time
+runtime ownership.
+
+No dotnet build, Unity import, player build, profiler, GC, memory, or device run
+was launched.

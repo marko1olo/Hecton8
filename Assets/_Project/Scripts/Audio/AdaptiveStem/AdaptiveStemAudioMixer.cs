@@ -17,21 +17,29 @@ using Debug = UnityEngine.Debug;
 
 namespace Hecton8.Audio
 {
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct AudioStemStateDTO
     {
+        [FieldOffset(0)]
         public float TensionIndex;
+        [FieldOffset(4)]
         public float DepthFilter;
+        [FieldOffset(8)]
         public uint ActiveStemHash;
+        [FieldOffset(12)]
         public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct StemCommandDTO
     {
+        [FieldOffset(0)]
         public uint StemHash_A;
+        [FieldOffset(4)]
         public float Volume_A;
+        [FieldOffset(8)]
         public uint StemHash_B;
+        [FieldOffset(12)]
         public float Volume_B;
     }
 

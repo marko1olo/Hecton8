@@ -1,7 +1,7 @@
 {
   "schema": "hecton8.texture_packing_report.v1",
   "agent": "SHINOBU_214",
-  "status": "SCRIPT_INSTALLED_STATIC_POLISH_BLACKBOX_STRUCT_REQUEST_FIX_QUALITY_CURVE_APPLIED_PENDING_UNITY_MENU_RUN",
+  "status": "SCRIPT_INSTALLED_STATIC_POLISH_ISOLATED_ASMDEF_BLACKBOX_STRUCT_REQUEST_FIX_AXIS_DIMENSION_FIX_QUALITY_CURVE_CSV_PROFILE_AUTHORITY_PROPERTY_PURGE_BATCH_FAULT_ADVANCE_APPLIED_PENDING_UNITY_MENU_RUN",
   "processedTextures": 0,
   "inputTextureCount": 0,
   "width": 0,
@@ -17,5 +17,5 @@
   "blackboxDumpPath": "Docs/AgentLogs/Dump_SHINOBU_214.bin",
   "blackboxEntryBytes": 64,
   "blackboxRingLength": 300,
-  "criticalWarning": "Unity AssetDatabase pack run pending; compile/profiler blocked by CPU gate. Pack job uses NoAlias raw Color32 pointers, UnsafeUtility.AsRef, and Burst v128 channel packing. Editor blackbox ring installed. Struct request default mutation fixed via ref validation. Macro FBM octave weights consume continuous GlobalQualityWeight; Unity execution proof pending."
+  "criticalWarning": "Unity AssetDatabase pack run pending; compile/profiler blocked by CPU gate. Pack job uses NoAlias raw Color32 pointers, UnsafeUtility.AsRef, and Burst v128 channel packing. Editor blackbox ring installed. Struct request default mutation fixed via ref validation. Output width/height resolve independently with POT clamp. Macro FBM octave weights consume continuous GlobalQualityWeight. CSV flags now control optional stages and Forge requests start from profile flags. DTO-style properties purged from owned packer/validator surface. Forge queue advances after per-set pack faults. Texture packer now sits in isolated Editor asmdef with Unity-only package refs; Unity execution proof pending."
 }

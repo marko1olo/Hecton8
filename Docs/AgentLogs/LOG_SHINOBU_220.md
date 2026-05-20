@@ -819,3 +819,104 @@ Exact Microseconds saved:
   <frame_loop result="PASS_STATIC">No new frame-loop blocking wait was added; forced completion exists only in shutdown/quitting teardown.</frame_loop>
   <dear_lie result="UNCHANGED">Bulkhead gameplay remains CSR/KCC scalar math and shader deformation, not physical door simulation.</dear_lie>
 </SELF_AUDIT>
+
+## 2026-05-20 - Tail Audit: Every-Frame Black Box Telemetry
+
+What was wrong:
+- Telemetry rows were written only when the authority closure cadence fired.
+- At low quality, 5 Hz authority could leave the 300-frame black box missing the final dispatcher frames before a fault.
+
+What was done:
+- `ScheduleSimulation()` now writes telemetry every Simulation phase.
+- Cadence-skip frames schedule only `RecordBulkheadTelemetryJob`, not closure, damage, or CSR lock jobs.
+- Empty routes write one direct zero telemetry row and avoid scheduling a no-op job.
+- CSR/conductivity/fluid/integrity buffers now resolve only when authority work is due.
+
+Cinematic Cheats used:
+- No physical door or collider work was added. Gameplay truth remains scalar CSR/KCC math; visuals remain shader deformation.
+
+Exact Microseconds saved:
+- No speed claim. This spends a small active-route telemetry job per Simulation frame to buy crash forensics while preserving the closure cadence curve.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_EVERY_FRAME_TELEMETRY">
+  <task15 result="PASS_STATIC">The 300-frame ring is updated every Simulation phase; empty routes use a direct zero-row write.</task15>
+  <scalability result="PASS_STATIC">Closure, catastrophic damage, and CSR lock jobs remain cadence-gated by continuous `GlobalQualityWeight`.</scalability>
+  <vault_resolve_scope result="PASS_STATIC">Cadence-skip telemetry no longer requires CSR/conductivity/fluid/integrity buffer resolution.</vault_resolve_scope>
+  <dear_lie result="UNCHANGED">No object door, collider, or CPU geometry path was introduced.</dear_lie>
+</SELF_AUDIT>
+
+## 2026-05-20 - Tail Audit: Telemetry Length Guards And Pending Producer Fence
+
+What was wrong:
+- Every-frame telemetry assumed state, collision, telemetry, and cursor Vault lanes had nonzero lengths after resolve.
+- The normal empty route wrote telemetry directly, which is correct when no producer exists, but did not explicitly fence the rare case where a pre-simulation producer handle is still scheduled.
+
+What was done:
+- Added zero-length guards in `ScheduleSimulation()`, `ScheduleTelemetryJob()`, and `VisualSyncTick()` before unsafe pointer extraction or cursor modulo.
+- Added defensive early exit inside `RecordBulkheadTelemetryJob` for invalid pointer/count inputs.
+- Changed the empty active-count route to schedule a zero-count telemetry job behind `_preSimulationHandle` if a producer is still pending; the normal empty route still writes one direct row and schedules no job.
+
+Cinematic Cheats used:
+- No physical door, collider, Animator, or CPU geometry route was introduced. Closure remains CSR/KCC scalar math plus UberNoir shader deformation.
+
+Exact Microseconds saved:
+- No new speed claim. This adds length/pointer guards to prevent modulo-zero and stale-producer races. Normal empty scenes still avoid scheduler traffic.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_TELEMETRY_LENGTH_GUARDS">
+  <telemetry_guard result="PASS_STATIC">Telemetry scheduling now rejects empty state, collision, telemetry, or cursor lanes before unsafe pointers or modulo operations.</telemetry_guard>
+  <producer_fence result="PASS_STATIC">If a pre-simulation producer is pending while active count resolves to zero, telemetry is chained behind that handle instead of direct main-thread write.</producer_fence>
+  <burst_guard result="PASS_STATIC">`RecordBulkheadTelemetryJob` exits before cursor/collision reads when pointers or counts are invalid.</burst_guard>
+  <build_gate result="NOT_RUN" cpu="13.425" active_processes="none">No rebuild launched; static verification covers this guard patch and standalone dotnet remains a false signal until Unity regenerates project files.</build_gate>
+  <dear_lie result="UNCHANGED">Bulkhead gameplay remains scalar containment math and shader deformation, not physical door simulation.</dear_lie>
+</SELF_AUDIT>
+
+## 2026-05-20 - Tail Audit: BaseAirlock Bulkhead Shadow State Purge
+
+What was wrong:
+- `BaseAirlock` still carried `_bulkheadClosureIntent01`, a non-authoritative closure scalar.
+- The field was only used for an audio whistle, but it kept a local door-state shadow beside the Vault-owned bulkhead truth.
+
+What was done:
+- Removed `_bulkheadClosureIntent01`.
+- Removed `SetBulkheadClosureIntent`.
+- Pressure whistle gating now uses `_emergencyLockedDown` only.
+- Updated `Docs/Tasks/Route_SHINOBU_220_BulkheadContainment.md` to state that `BaseAirlock` owns no local closure-progress scalar.
+
+Cinematic Cheats used:
+- No new simulation. Bulkhead closure remains the Vault DTO plus UberNoir shader deformation. Audio does not poll the bulkhead state lane.
+
+Exact Microseconds saved:
+- Negligible runtime savings: two cold writes and one scalar-read branch removed. The real gain is one-fact ownership: closure progress lives only in `BulkheadStateDTO`.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_BULKHEAD_SHADOW_STATE_PURGE">
+  <shadow_state result="PASS_STATIC">`BaseAirlock` no longer stores `_bulkheadClosureIntent01` or calls `SetBulkheadClosureIntent`.</shadow_state>
+  <authority_route result="PASS_STATIC">Bulkhead closure progress remains owned by the DataVault `BulkheadStateDTO` lane.</authority_route>
+  <route_card result="PASS_STATIC">The SHINOBU_220 route card states that `BaseAirlock` owns no local closure-progress scalar.</route_card>
+  <audio_route result="PASS_STATIC">Pressure whistle gates on lockdown state without DataVault polling or local closure progress.</audio_route>
+  <build_gate result="NOT_RUN" cpu="100" active_processes="none">No rebuild launched because the CPU gate rejects it.</build_gate>
+  <dear_lie result="UNCHANGED">Visual closure remains shader-side procedural deformation.</dear_lie>
+</SELF_AUDIT>
+
+## 2026-05-20 - Tail Audit: Black-Box Dump Before Shader Fail-Closed Branches
+
+What was wrong:
+- `DumpRequested` telemetry was only consumed after shader buffer resolution/upload.
+- If `uploadShaderBuffer` was disabled or the shader path failed closed, `Dump_SHINOBU_220.bin` could be skipped.
+
+What was done:
+- Added `DumpBlackBoxIfRequested(IDataVault)`.
+- `VisualSyncTick()` now checks telemetry/cursor for `DumpRequested` before shader-upload eligibility and active-count fail-closed branches.
+- Removed the old tail dump branch behind shader upload success.
+
+Cinematic Cheats used:
+- No change to the Dear Lie. Shader upload can fail closed while black-box forensic dumping still works.
+
+Exact Microseconds saved:
+- No speed claim. This adds one latest-row telemetry flag check per VisualSync and keeps file I/O fault-gated.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_BLACKBOX_DUMP_DECOUPLED">
+  <blackbox result="PASS_STATIC">`DumpRequested` is checked before `uploadShaderBuffer` and active-count visual fail-closed branches.</blackbox>
+  <shader_dependency result="REMOVED">Black-box dumping no longer depends on successful `_GlobalBulkheadStates` upload.</shader_dependency>
+  <blocking result="PASS_STATIC">No telemetry job completion wait was added to force dump timing.</blocking>
+  <dear_lie result="UNCHANGED">Visual closure remains shader-side procedural deformation.</dear_lie>
+</SELF_AUDIT>

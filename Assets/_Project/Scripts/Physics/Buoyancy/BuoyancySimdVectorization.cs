@@ -76,6 +76,7 @@ namespace Hecton8.Physics
     {
         public const int HydrodynamicsLaneWidth = 4;
         public const int SpatialQueryLaneWidth = 4;
+        public const int FrustumCullLaneWidth = 8;
         public const int BenchmarkEntityCount = 250000;
         public const int TelemetryCapacity = 300;
         public const int ToleranceCapacity = 64;
@@ -380,7 +381,7 @@ namespace Hecton8.Physics
                 return;
 
             float q = math.saturate(math.select(1f, Tuning.GlobalQualityWeight, math.isfinite(Tuning.GlobalQualityWeight)));
-            bool hasApproximationWeight = math.isfinite(Tuning.ApproximationQualityWeight) &&
+            bool hasApproximationWeight = math.isfinite(Tuning.ApproximationQualityWeight) &
                                            Tuning.ApproximationQualityWeight > BuoyancyDisplacementConstants.Epsilon;
             float approximationWeight = math.saturate(math.select(q, Tuning.ApproximationQualityWeight, hasApproximationWeight));
             float dt = math.clamp(math.select(1f / 60f, Tuning.DeltaTime, math.isfinite(Tuning.DeltaTime)), 0.0001f, 0.1f);
@@ -419,11 +420,39 @@ namespace Hecton8.Physics
     public struct VectorizedHydrodynamicsLane4Job : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<SimdFloat3Padded> LocalPositions;
-        // ParallelFor invariant: one scheduled lane owns [laneIndex * 4, laneIndex * 4 + 3].
-        // Schedule count is rounded down to Count / 4, so lane ranges are injective and non-overlapping.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Unity's ParallelFor safety assumes Execute(i) writes only element i. This lane-packed job
+        // writes Velocities rows [laneIndex * 4, laneIndex * 4 + 3], so the warning is a partition
+        // mismatch, not a real cross-worker overlap. [NoAlias] separately proves this output is not
+        // the same native allocation as LocalPositions, DragCoefficients, or OutputForces.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rejected one-entity Execute scheduling because it removes the Task 06 lane-4 proof. Rejected
+        // a scalar tail cleanup job because it creates an extra dependency edge and lets adopters forget
+        // the cleanup pass. Rejected copying to a temporary lane array because that would add bandwidth
+        // and native lifetime surface without improving the mathematical contract.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Callers schedule ceil(Count / 4). Lane k owns logical rows [k * 4, min(k * 4 + 3, Count - 1)].
+        // Tail reads and writes clamp to Count - 1; duplicate tail stores happen inside one Execute and
+        // write the identical final velocity value, so two workers never write the same row.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<SimdFloat3Padded> Velocities;
         [ReadOnly, NoAlias] public NativeArray<float> DragCoefficients;
-        // Same partition as Velocities; every lane overwrites its four force rows exactly once.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // OutputForces uses the same four-row lane partition as Velocities. Unity cannot infer that
+        // Execute(laneIndex) owns a closed range rather than a single index, so the ParallelFor restriction
+        // is disabled only for this partitioned output. [NoAlias] keeps force output independent from
+        // LocalPositions, DragCoefficients, and Velocities.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rejected per-row force scheduling because it would split velocity and force math into divergent
+        // jobs. Rejected post-pass force reconstruction because it doubles memory traffic over the velocity
+        // lane. Rejected leaving the force lane write-restricted because it fails Unity safety in editor.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The write range is identical to the velocity range: lane k owns [k * 4, min(k * 4 + 3, Count - 1)].
+        // Tail duplicate stores write the same final force for the clamped last row within one Execute.
+        // No other lane can compute or store that final row because lane ranges are monotonically disjoint.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<SimdFloat3Padded> OutputForces;
         public SimdHydrodynamicTuningDTO Tuning;
         public int Count;
@@ -445,19 +474,22 @@ namespace Hecton8.Physics
                     math.min(
                         Velocities.Length,
                         math.min(DragCoefficients.Length, OutputForces.Length))));
-            int vectorizedCount = count & ~(SimdVectorizationConstants.HydrodynamicsLaneWidth - 1);
             int baseIndex = laneIndex * SimdVectorizationConstants.HydrodynamicsLaneWidth;
-            if ((uint)baseIndex >= (uint)vectorizedCount)
+            if ((uint)baseIndex >= (uint)count)
                 return;
+            int lastIndex = count - 1;
+            int index1 = math.min(baseIndex + 1, lastIndex);
+            int index2 = math.min(baseIndex + 2, lastIndex);
+            int index3 = math.min(baseIndex + 3, lastIndex);
 
             SimdFloat3Padded p0 = LocalPositions[baseIndex];
-            SimdFloat3Padded p1 = LocalPositions[baseIndex + 1];
-            SimdFloat3Padded p2 = LocalPositions[baseIndex + 2];
-            SimdFloat3Padded p3 = LocalPositions[baseIndex + 3];
+            SimdFloat3Padded p1 = LocalPositions[index1];
+            SimdFloat3Padded p2 = LocalPositions[index2];
+            SimdFloat3Padded p3 = LocalPositions[index3];
             SimdFloat3Padded v0 = Velocities[baseIndex];
-            SimdFloat3Padded v1 = Velocities[baseIndex + 1];
-            SimdFloat3Padded v2 = Velocities[baseIndex + 2];
-            SimdFloat3Padded v3 = Velocities[baseIndex + 3];
+            SimdFloat3Padded v1 = Velocities[index1];
+            SimdFloat3Padded v2 = Velocities[index2];
+            SimdFloat3Padded v3 = Velocities[index3];
 
             float4 px = SanitizeFinite(new float4(p0.Value.x, p1.Value.x, p2.Value.x, p3.Value.x));
             float4 pz = SanitizeFinite(new float4(p0.Value.z, p1.Value.z, p2.Value.z, p3.Value.z));
@@ -466,12 +498,12 @@ namespace Hecton8.Physics
             float4 vz = SanitizeFinite(new float4(v0.Value.z, v1.Value.z, v2.Value.z, v3.Value.z));
             float4 dragCoefficient = SanitizeFinite(new float4(
                 DragCoefficients[baseIndex],
-                DragCoefficients[baseIndex + 1],
-                DragCoefficients[baseIndex + 2],
-                DragCoefficients[baseIndex + 3]));
+                DragCoefficients[index1],
+                DragCoefficients[index2],
+                DragCoefficients[index3]));
 
             float q = math.saturate(math.select(1f, Tuning.GlobalQualityWeight, math.isfinite(Tuning.GlobalQualityWeight)));
-            bool hasApproximationWeight = math.isfinite(Tuning.ApproximationQualityWeight) &&
+            bool hasApproximationWeight = math.isfinite(Tuning.ApproximationQualityWeight) &
                                            Tuning.ApproximationQualityWeight > BuoyancyDisplacementConstants.Epsilon;
             float approximationWeight = math.saturate(math.select(q, Tuning.ApproximationQualityWeight, hasApproximationWeight));
             float dt = math.clamp(math.select(1f / 60f, Tuning.DeltaTime, math.isfinite(Tuning.DeltaTime)), 0.0001f, 0.1f);
@@ -508,24 +540,35 @@ namespace Hecton8.Physics
             finiteZ = math.select(new float4(0f), finiteZ, finiteMask);
             float4 invDt = new float4(math.rcp(dt));
 
-            StoreLane(baseIndex, finiteX, finiteY, finiteZ, vx, vy, vz, invDt);
+            StoreLane(baseIndex, index1, index2, index3, finiteX, finiteY, finiteZ, vx, vy, vz, invDt);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void StoreLane(int baseIndex, float4 x, float4 y, float4 z, float4 previousX, float4 previousY, float4 previousZ, float4 invDt)
+        private void StoreLane(
+            int baseIndex,
+            int index1,
+            int index2,
+            int index3,
+            float4 x,
+            float4 y,
+            float4 z,
+            float4 previousX,
+            float4 previousY,
+            float4 previousZ,
+            float4 invDt)
         {
             float3 f0 = new float3(x.x, y.x, z.x);
             float3 f1 = new float3(x.y, y.y, z.y);
             float3 f2 = new float3(x.z, y.z, z.z);
             float3 f3 = new float3(x.w, y.w, z.w);
             Velocities[baseIndex] = SimdFloat3Padded.FromFloat3(f0);
-            Velocities[baseIndex + 1] = SimdFloat3Padded.FromFloat3(f1);
-            Velocities[baseIndex + 2] = SimdFloat3Padded.FromFloat3(f2);
-            Velocities[baseIndex + 3] = SimdFloat3Padded.FromFloat3(f3);
+            Velocities[index1] = SimdFloat3Padded.FromFloat3(f1);
+            Velocities[index2] = SimdFloat3Padded.FromFloat3(f2);
+            Velocities[index3] = SimdFloat3Padded.FromFloat3(f3);
             OutputForces[baseIndex] = SimdFloat3Padded.FromFloat3((f0 - new float3(previousX.x, previousY.x, previousZ.x)) * invDt.x);
-            OutputForces[baseIndex + 1] = SimdFloat3Padded.FromFloat3((f1 - new float3(previousX.y, previousY.y, previousZ.y)) * invDt.y);
-            OutputForces[baseIndex + 2] = SimdFloat3Padded.FromFloat3((f2 - new float3(previousX.z, previousY.z, previousZ.z)) * invDt.z);
-            OutputForces[baseIndex + 3] = SimdFloat3Padded.FromFloat3((f3 - new float3(previousX.w, previousY.w, previousZ.w)) * invDt.w);
+            OutputForces[index1] = SimdFloat3Padded.FromFloat3((f1 - new float3(previousX.y, previousY.y, previousZ.y)) * invDt.y);
+            OutputForces[index2] = SimdFloat3Padded.FromFloat3((f2 - new float3(previousX.z, previousY.z, previousZ.z)) * invDt.z);
+            OutputForces[index3] = SimdFloat3Padded.FromFloat3((f3 - new float3(previousX.w, previousY.w, previousZ.w)) * invDt.w);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -565,7 +608,7 @@ namespace Hecton8.Physics
             for (int index = 0; index < count; index++)
             {
                 float q = math.saturate(math.select(1f, Tuning.GlobalQualityWeight, math.isfinite(Tuning.GlobalQualityWeight)));
-                bool hasApproximationWeight = math.isfinite(Tuning.ApproximationQualityWeight) &&
+                bool hasApproximationWeight = math.isfinite(Tuning.ApproximationQualityWeight) &
                                                Tuning.ApproximationQualityWeight > BuoyancyDisplacementConstants.Epsilon;
                 float approximationWeight = math.saturate(math.select(q, Tuning.ApproximationQualityWeight, hasApproximationWeight));
                 float dt = math.clamp(math.select(1f / 60f, Tuning.DeltaTime, math.isfinite(Tuning.DeltaTime)), 0.0001f, 0.1f);
@@ -662,8 +705,21 @@ namespace Hecton8.Physics
     public struct VectorizedSpatialQueryLane4Job : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<SimdFloat3Padded> PreyPositions;
-        // ParallelFor invariant: one scheduled lane owns [laneIndex * 4, laneIndex * 4 + 3].
-        // Callers schedule ceil(Count / 4); tail lanes duplicate-store the last in-range row with the same final mask.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Unity's ParallelFor restriction expects ValidMask[laneIndex]. This job deliberately writes four
+        // contiguous mask rows per scheduled lane to expose prey distance tests as float4 math. The safety
+        // warning is a false positive for the lane partition; [NoAlias] proves ValidMask is not aliased
+        // with PreyPositions.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rejected one prey row per Execute because it fails Task 07 packed query intent. Rejected a scalar
+        // tail pass because it makes correctness depend on owner scheduling discipline. Rejected an output
+        // bitfield because it creates atomics or cross-lane merge work for adopters.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Callers schedule ceil(Count / 4). Lane k owns rows [k * 4, min(k * 4 + 3, Count - 1)]. Tail lanes
+        // clamp duplicate indices to Count - 1 and use cascading math.select masks, so duplicate stores land
+        // on the same row with the same final mask inside one Execute only.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> ValidMask;
         public float3 PredatorPosition;
         public float RadiusSq;
@@ -765,16 +821,253 @@ namespace Hecton8.Physics
             for (int i = 0; i < 6; i++)
             {
                 int inRange = math.select(0, 1, i < planeCount);
-                float4 plane = Planes[math.min(i, lastPlaneSlot)];
+                float4 rawPlane = Planes[math.min(i, lastPlaneSlot)];
+                bool finitePlaneMask = math.all(math.isfinite(rawPlane));
+                float4 plane = math.select(float4.zero, rawPlane, finitePlaneMask);
                 float projectedRadius = math.dot(math.abs(plane.xyz), extents);
                 float signedDistance = math.dot(plane.xyz, center) + plane.w;
                 float planePass = math.step(0f, signedDistance + projectedRadius);
-                float finitePlane = math.select(0f, 1f, math.all(math.isfinite(plane)));
+                float finitePlane = math.select(0f, 1f, finitePlaneMask);
                 visible *= math.select(1f, planePass * finitePlane, inRange != 0);
             }
 
             bool finite = math.all(math.isfinite(rawCenter)) & math.all(math.isfinite(rawExtents));
             VisibleIndexMask[index] = math.select(-1, index, (visible > 0.5f) & finite);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct VectorizedFrustumCullLane8Job : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<SimdFloat3Padded> Centers;
+        [ReadOnly, NoAlias] public NativeArray<SimdFloat3Padded> Extents;
+        [ReadOnly, NoAlias] public NativeArray<float4> Planes;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Unity's ParallelFor restriction expects VisibleIndexMask[laneIndex]. This cull kernel writes eight
+        // contiguous visibility rows per scheduled lane because Task 08 requires two float4 AABB groups per
+        // Execute. The suppression is limited to this partition mismatch; [NoAlias] proves the output mask
+        // is separate from Centers, Extents, and Planes.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rejected scalar one-AABB scheduling because it does not prove the requested lane-8 cull surface.
+        // Rejected a secondary compaction-only cull because it would duplicate plane math. Rejected renderer
+        // domain integration here because SHINOBU owns reusable kernels, not BRG submission truth.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Callers schedule ceil(Count / 8). Lane k owns rows [k * 8, min(k * 8 + 7, Count - 1)]. Tail lanes
+        // clamp duplicate indices to Count - 1 and use cascading math.select masks, so duplicate stores write
+        // the same final visibility value inside one Execute and never overlap another worker lane.
+        [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> VisibleIndexMask;
+        public int PlaneCount;
+        public int Count;
+
+        public void Execute(int laneIndex)
+        {
+            if (!Centers.IsCreated || !Extents.IsCreated || !VisibleIndexMask.IsCreated)
+                return;
+
+            int count = math.min(math.max(0, Count), math.min(Centers.Length, math.min(Extents.Length, VisibleIndexMask.Length)));
+            int baseIndex = laneIndex * SimdVectorizationConstants.FrustumCullLaneWidth;
+            if ((uint)baseIndex >= (uint)count)
+                return;
+
+            int lastIndex = count - 1;
+            int index0 = baseIndex;
+            int index1 = math.min(baseIndex + 1, lastIndex);
+            int index2 = math.min(baseIndex + 2, lastIndex);
+            int index3 = math.min(baseIndex + 3, lastIndex);
+            int index4 = math.min(baseIndex + 4, lastIndex);
+            int index5 = math.min(baseIndex + 5, lastIndex);
+            int index6 = math.min(baseIndex + 6, lastIndex);
+            int index7 = math.min(baseIndex + 7, lastIndex);
+            bool lane1InRange = baseIndex + 1 < count;
+            bool lane2InRange = baseIndex + 2 < count;
+            bool lane3InRange = baseIndex + 3 < count;
+            bool lane4InRange = baseIndex + 4 < count;
+            bool lane5InRange = baseIndex + 5 < count;
+            bool lane6InRange = baseIndex + 6 < count;
+            bool lane7InRange = baseIndex + 7 < count;
+            bool4 inRangeA = new bool4(true, lane1InRange, lane2InRange, lane3InRange);
+            bool4 inRangeB = new bool4(lane4InRange, lane5InRange, lane6InRange, lane7InRange);
+
+            if (!Planes.IsCreated || Planes.Length <= 0)
+            {
+                StoreLaneMasks(
+                    index0,
+                    index1,
+                    index2,
+                    index3,
+                    index4,
+                    index5,
+                    index6,
+                    index7,
+                    lane1InRange,
+                    lane2InRange,
+                    lane3InRange,
+                    lane4InRange,
+                    lane5InRange,
+                    lane6InRange,
+                    lane7InRange,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false);
+                return;
+            }
+
+            SimdFloat3Padded center0 = Centers[index0];
+            SimdFloat3Padded center1 = Centers[index1];
+            SimdFloat3Padded center2 = Centers[index2];
+            SimdFloat3Padded center3 = Centers[index3];
+            SimdFloat3Padded center4 = Centers[index4];
+            SimdFloat3Padded center5 = Centers[index5];
+            SimdFloat3Padded center6 = Centers[index6];
+            SimdFloat3Padded center7 = Centers[index7];
+            SimdFloat3Padded extent0 = Extents[index0];
+            SimdFloat3Padded extent1 = Extents[index1];
+            SimdFloat3Padded extent2 = Extents[index2];
+            SimdFloat3Padded extent3 = Extents[index3];
+            SimdFloat3Padded extent4 = Extents[index4];
+            SimdFloat3Padded extent5 = Extents[index5];
+            SimdFloat3Padded extent6 = Extents[index6];
+            SimdFloat3Padded extent7 = Extents[index7];
+
+            float4 cxA = new float4(center0.Value.x, center1.Value.x, center2.Value.x, center3.Value.x);
+            float4 cyA = new float4(center0.Value.y, center1.Value.y, center2.Value.y, center3.Value.y);
+            float4 czA = new float4(center0.Value.z, center1.Value.z, center2.Value.z, center3.Value.z);
+            float4 cxB = new float4(center4.Value.x, center5.Value.x, center6.Value.x, center7.Value.x);
+            float4 cyB = new float4(center4.Value.y, center5.Value.y, center6.Value.y, center7.Value.y);
+            float4 czB = new float4(center4.Value.z, center5.Value.z, center6.Value.z, center7.Value.z);
+            float4 exA = new float4(extent0.Value.x, extent1.Value.x, extent2.Value.x, extent3.Value.x);
+            float4 eyA = new float4(extent0.Value.y, extent1.Value.y, extent2.Value.y, extent3.Value.y);
+            float4 ezA = new float4(extent0.Value.z, extent1.Value.z, extent2.Value.z, extent3.Value.z);
+            float4 exB = new float4(extent4.Value.x, extent5.Value.x, extent6.Value.x, extent7.Value.x);
+            float4 eyB = new float4(extent4.Value.y, extent5.Value.y, extent6.Value.y, extent7.Value.y);
+            float4 ezB = new float4(extent4.Value.z, extent5.Value.z, extent6.Value.z, extent7.Value.z);
+
+            bool4 centerFiniteA = math.isfinite(cxA) & math.isfinite(cyA) & math.isfinite(czA) & inRangeA;
+            bool4 centerFiniteB = math.isfinite(cxB) & math.isfinite(cyB) & math.isfinite(czB) & inRangeB;
+            bool4 extentFiniteA = math.isfinite(exA) & math.isfinite(eyA) & math.isfinite(ezA) & inRangeA;
+            bool4 extentFiniteB = math.isfinite(exB) & math.isfinite(eyB) & math.isfinite(ezB) & inRangeB;
+            bool4 finiteA = centerFiniteA & extentFiniteA;
+            bool4 finiteB = centerFiniteB & extentFiniteB;
+            cxA = math.select(new float4(0f), cxA, centerFiniteA);
+            cyA = math.select(new float4(0f), cyA, centerFiniteA);
+            czA = math.select(new float4(0f), czA, centerFiniteA);
+            cxB = math.select(new float4(0f), cxB, centerFiniteB);
+            cyB = math.select(new float4(0f), cyB, centerFiniteB);
+            czB = math.select(new float4(0f), czB, centerFiniteB);
+            exA = math.max(math.select(new float4(0f), exA, extentFiniteA), new float4(0.001f));
+            eyA = math.max(math.select(new float4(0f), eyA, extentFiniteA), new float4(0.001f));
+            ezA = math.max(math.select(new float4(0f), ezA, extentFiniteA), new float4(0.001f));
+            exB = math.max(math.select(new float4(0f), exB, extentFiniteB), new float4(0.001f));
+            eyB = math.max(math.select(new float4(0f), eyB, extentFiniteB), new float4(0.001f));
+            ezB = math.max(math.select(new float4(0f), ezB, extentFiniteB), new float4(0.001f));
+
+            float4 visibleA = new float4(1f);
+            float4 visibleB = new float4(1f);
+            int planeCapacity = Planes.Length;
+            int requestedPlanes = math.select(6, PlaneCount, PlaneCount > 0);
+            int planeCount = math.min(math.max(0, requestedPlanes), math.min(planeCapacity, 6));
+            int lastPlaneSlot = planeCapacity - 1;
+            for (int i = 0; i < 6; i++)
+            {
+                bool planeActive = i < planeCount;
+                float4 rawPlane = Planes[math.min(i, lastPlaneSlot)];
+                bool finitePlaneMask = math.all(math.isfinite(rawPlane));
+                float4 plane = math.select(float4.zero, rawPlane, finitePlaneMask);
+                float4 planeAbsX = new float4(math.abs(plane.x));
+                float4 planeAbsY = new float4(math.abs(plane.y));
+                float4 planeAbsZ = new float4(math.abs(plane.z));
+                float4 planeX = new float4(plane.x);
+                float4 planeY = new float4(plane.y);
+                float4 planeZ = new float4(plane.z);
+                float4 planeW = new float4(plane.w);
+                float4 projectedRadiusA = planeAbsX * exA + planeAbsY * eyA + planeAbsZ * ezA;
+                float4 projectedRadiusB = planeAbsX * exB + planeAbsY * eyB + planeAbsZ * ezB;
+                float4 signedDistanceA = planeX * cxA + planeY * cyA + planeZ * czA + planeW;
+                float4 signedDistanceB = planeX * cxB + planeY * cyB + planeZ * czB + planeW;
+                float4 planePassA = math.step(new float4(0f), signedDistanceA + projectedRadiusA);
+                float4 planePassB = math.step(new float4(0f), signedDistanceB + projectedRadiusB);
+                float finitePlane = math.select(0f, 1f, finitePlaneMask);
+                visibleA *= math.select(new float4(1f), planePassA * finitePlane, planeActive);
+                visibleB *= math.select(new float4(1f), planePassB * finitePlane, planeActive);
+            }
+
+            bool4 validA = (visibleA > new float4(0.5f)) & finiteA;
+            bool4 validB = (visibleB > new float4(0.5f)) & finiteB;
+            StoreLaneMasks(
+                index0,
+                index1,
+                index2,
+                index3,
+                index4,
+                index5,
+                index6,
+                index7,
+                lane1InRange,
+                lane2InRange,
+                lane3InRange,
+                lane4InRange,
+                lane5InRange,
+                lane6InRange,
+                lane7InRange,
+                validA.x,
+                validA.y,
+                validA.z,
+                validA.w,
+                validB.x,
+                validB.y,
+                validB.z,
+                validB.w);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void StoreLaneMasks(
+            int index0,
+            int index1,
+            int index2,
+            int index3,
+            int index4,
+            int index5,
+            int index6,
+            int index7,
+            bool lane1InRange,
+            bool lane2InRange,
+            bool lane3InRange,
+            bool lane4InRange,
+            bool lane5InRange,
+            bool lane6InRange,
+            bool lane7InRange,
+            bool valid0,
+            bool valid1,
+            bool valid2,
+            bool valid3,
+            bool valid4,
+            bool valid5,
+            bool valid6,
+            bool valid7)
+        {
+            int mask0 = math.select(-1, index0, valid0);
+            int mask1 = math.select(mask0, math.select(-1, index1, valid1), lane1InRange);
+            int mask2 = math.select(mask1, math.select(-1, index2, valid2), lane2InRange);
+            int mask3 = math.select(mask2, math.select(-1, index3, valid3), lane3InRange);
+            int mask4 = math.select(mask3, math.select(-1, index4, valid4), lane4InRange);
+            int mask5 = math.select(mask4, math.select(-1, index5, valid5), lane5InRange);
+            int mask6 = math.select(mask5, math.select(-1, index6, valid6), lane6InRange);
+            int mask7 = math.select(mask6, math.select(-1, index7, valid7), lane7InRange);
+            VisibleIndexMask[index0] = mask0;
+            VisibleIndexMask[index1] = mask1;
+            VisibleIndexMask[index2] = mask2;
+            VisibleIndexMask[index3] = mask3;
+            VisibleIndexMask[index4] = mask4;
+            VisibleIndexMask[index5] = mask5;
+            VisibleIndexMask[index6] = mask6;
+            VisibleIndexMask[index7] = mask7;
         }
     }
 
@@ -914,7 +1207,8 @@ namespace Hecton8.Physics
             entry.MaxError = 0f;
             entry.MaxSpeedSq = math.max(0f, math.select(0f, MaxSpeedSq, math.isfinite(MaxSpeedSq)));
             TelemetryRing[slot] = entry;
-            TelemetryCursor[0] = cursor + 1;
+            int nextCursor = slot + 1;
+            TelemetryCursor[0] = math.select(nextCursor, 0, nextCursor >= TelemetryRing.Length);
         }
     }
 

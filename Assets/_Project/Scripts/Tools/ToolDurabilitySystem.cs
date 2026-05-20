@@ -1010,6 +1010,7 @@ namespace Hecton8.Tools
                 return true;
             }
 
+            ReleaseDurabilityHandle(vault, ref handle);
             handle = vault.GetGenerationHandle<T>(
                 bufferId,
                 MaxTrackedTools,

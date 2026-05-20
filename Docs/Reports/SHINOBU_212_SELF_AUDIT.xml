@@ -119,4 +119,14 @@
     <VALIDATOR_SHADOWING status="PATCHED">ScanBillboardAssets local array is named paths; the StringBuilder files output parameter is no longer shadowed.</VALIDATOR_SHADOWING>
     <COMPILE_GATE status="DEFERRED_BY_CPU">CPU sample was 100 percent and compiler process count was 0; Unity compile/import was not launched under the project CPU gate.</COMPILE_GATE>
   </LOOP_10_RENDERER_REBIND>
+
+  <LOOP_11_NAN_SHADER_PAYLOAD_VACCINATION evidence="STATIC_SOURCE">
+    <TASK_RECALL status="PASS">CURRENT_BATCH.md was re-extracted by CLI and counted as 20 Task NN entries for SHINOBU_212.</TASK_RECALL>
+    <DTO_BOUNDARY status="PATCHED">OctahedralImpostorInstance, ImpostorConfigDTO, and HectonChunkImpostorResidency now sanitize non-finite centers, sizes, fade, atlas grid, depth scale, quality, and distance before producing runtime payloads. Invalid quality falls back to minimum-survival cost.</DTO_BOUNDARY>
+    <BURST_BOUNDARY status="PATCHED">CalculateCaptureAnglesJob sanitizes bounds center/extents/padding/near clip before LookAt/Ortho matrix generation. GenerateMockCaptureTargetJob sanitizes center/extents/shaped mock points before writing HlodImpostorMockPoint.</BURST_BOUNDARY>
+    <SHADER_BOUNDARY status="PATCHED">Hecton_Impostor.hlsl finite guards cover normalization, atlas-grid addressing, visible matrix stream payload, instance payload, clip-space position, fade, and fog. Active and legacy impostor shaders guard quality, texture samples, alpha/depth occupancy, dither time, lighting, fog, and SV_Depth.</SHADER_BOUNDARY>
+    <COMPUTE_BOUNDARY status="PATCHED">PackImpostorAtlas.compute and DilateImpostorEdges.compute guard atlas dimensions, view index, source colors, normal/depth samples, masks, and final dilation output.</COMPUTE_BOUNDARY>
+    <DEAR_LIE status="UNCHANGED">No real-geometry simulation or runtime recapture was added; invalid capture pixels fall back to empty occupancy or stable normal defaults.</DEAR_LIE>
+    <COMPILE_GATE status="DEFERRED_BY_CPU">Static checks were run only. Unity compile/import remains blocked by the >50 percent CPU rule.</COMPILE_GATE>
+  </LOOP_11_NAN_SHADER_PAYLOAD_VACCINATION>
 </SELF_AUDIT>

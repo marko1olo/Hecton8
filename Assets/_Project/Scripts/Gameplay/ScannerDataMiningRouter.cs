@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -17,159 +18,306 @@ using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct ScanResultDTO
     {
+        [FieldOffset(0)]
         public double3 AUP;
+        [FieldOffset(24)]
         public uint EntityHash;
+        [FieldOffset(28)]
         public float Distance;
+        [FieldOffset(32)]
         public float ScanProgress;
+        [FieldOffset(36)]
         public uint _pad0;
+        [FieldOffset(40)]
         public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct ScannableEntityMetadataDTO
     {
+        [FieldOffset(0)]
         public uint EntityHash;
+        [FieldOffset(4)]
         public float ScanDuration;
+        [FieldOffset(8)]
         public uint RequiredToolLevel;
+        [FieldOffset(12)]
         public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ScannerSpatialEntityDTO
     {
+        [FieldOffset(0)]
         public double3 AUP;
+        [FieldOffset(24)]
         public long SectorHash;
+        [FieldOffset(32)]
         public ulong DepletionMask;
+        [FieldOffset(40)]
         public uint EntityHash;
+        [FieldOffset(44)]
         public float SphereRadius;
+        [FieldOffset(48)]
         public uint MetadataIndex;
+        [FieldOffset(52)]
         public uint Flags;
+        [FieldOffset(56)]
         public uint DepletionWordIndex;
+        [FieldOffset(60)]
         public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ScannerVfxDTO
     {
+        [FieldOffset(0)]
         public float3 HitAUP;
+        [FieldOffset(12)]
         public float HitDistance;
+        [FieldOffset(16)]
         public float ScanProgress;
+        [FieldOffset(20)]
         public uint TargetHash;
+        [FieldOffset(24)]
         public uint Flags;
+        [FieldOffset(28)]
         public float BeamScore;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct ActiveScanStateDTO
     {
+        [FieldOffset(0)]
         public double3 TargetAUP;
+        [FieldOffset(24)]
         public double3 LastOriginAUP;
+        [FieldOffset(48)]
         public long SectorHash;
+        [FieldOffset(56)]
         public ulong DepletionMask;
+        [FieldOffset(64)]
         public ulong _pad0;
+        [FieldOffset(72)]
         public ulong _pad1;
+        [FieldOffset(80)]
         public uint TargetHash;
+        [FieldOffset(84)]
         public float Progress01;
+        [FieldOffset(88)]
         public float ScanDurationSeconds;
+        [FieldOffset(92)]
         public float HoldSeconds;
+        [FieldOffset(96)]
         public uint LastFrame;
+        [FieldOffset(100)]
         public uint Flags;
+        [FieldOffset(104)]
         public uint CompletedHash;
+        [FieldOffset(108)]
         public int BestEntityIndex;
+        [FieldOffset(112)]
         public uint DepletionWordIndex;
+        [FieldOffset(116)]
         public uint MetadataFlags;
+        [FieldOffset(120)]
         public float HitDistance;
+        [FieldOffset(124)]
         public float BeamScore;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MockScannerInputSignal
     {
+        [FieldOffset(0)]
         public double3 RayOriginAUP;
+        [FieldOffset(24)]
         public float3 RayDirection;
+        [FieldOffset(36)]
         public float MaxDistance;
+        [FieldOffset(40)]
         public float DeltaTime;
+        [FieldOffset(44)]
         public float BeamRadius;
+        [FieldOffset(48)]
         public uint ToolHash;
+        [FieldOffset(52)]
         public uint Frame;
+        [FieldOffset(56)]
         public uint ToolLevel;
+        [FieldOffset(60)]
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct MockToolTransformSignal
     {
+        [FieldOffset(0)]
         public double3 PositionAUP;
+        [FieldOffset(24)]
         public float3 ForwardVector;
+        [FieldOffset(36)]
         public float MaxDistance;
+        [FieldOffset(40)]
         public uint ToolHash;
+        [FieldOffset(44)]
         public uint Frame;
+        [FieldOffset(48)]
         public uint Flags;
+        [FieldOffset(52)]
         public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct MockSdfOcclusionZoneDTO
     {
+        [FieldOffset(0)]
         public double3 CenterAUP;
+        [FieldOffset(24)]
         public float Radius;
+        [FieldOffset(28)]
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ScannerQueryStatsDTO
     {
+        [FieldOffset(0)]
         public int CandidateCount;
+        [FieldOffset(4)]
         public int BestEntityIndex;
+        [FieldOffset(8)]
         public float BestScore;
+        [FieldOffset(12)]
         public uint BestHash;
+        [FieldOffset(16)]
         public uint Flags;
+        [FieldOffset(20)]
         public uint EstimatedMicroseconds;
+        [FieldOffset(24)]
         public uint CellProbeCount;
+        [FieldOffset(28)]
         public uint OccludedCount;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ScannerTelemetryEntry
     {
+        [FieldOffset(0)]
         public double3 TargetAUP;
+        [FieldOffset(24)]
         public ulong _pad0;
+        [FieldOffset(32)]
         public uint Frame;
+        [FieldOffset(36)]
         public uint TargetHash;
+        [FieldOffset(40)]
         public uint Flags;
+        [FieldOffset(44)]
         public uint CandidateCount;
+        [FieldOffset(48)]
         public uint CompletedCount;
+        [FieldOffset(52)]
         public uint EstimatedMicroseconds;
+        [FieldOffset(56)]
         public float Progress01;
+        [FieldOffset(60)]
         public float HitDistance;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct ScannerSettingsDTO
     {
+        [FieldOffset(0)]
         public float CellSizeMeters;
+        [FieldOffset(4)]
         public float MaxDistanceMeters;
+        [FieldOffset(8)]
         public float BeamRadiusMeters;
+        [FieldOffset(12)]
         public float BeamMinDot;
+        [FieldOffset(16)]
         public float BeamMagnetism;
+        [FieldOffset(20)]
         public float ProgressDecayRate;
+        [FieldOffset(24)]
         public float QueryBudgetMicroseconds;
+        [FieldOffset(28)]
         public float AcousticIntensity01;
+        [FieldOffset(32)]
         public float LowTierProgressMultiplier;
+        [FieldOffset(36)]
         public float HighTierVfxBias;
+        [FieldOffset(40)]
         public float SdfMidpointClearance;
+        [FieldOffset(44)]
         public float ScanDurationFallback;
+        [FieldOffset(48)]
         public int LowTierCadenceFrames;
+        [FieldOffset(52)]
         public int MidTierCadenceFrames;
+        [FieldOffset(56)]
         public int HighTierCadenceFrames;
+        [FieldOffset(60)]
         public int UltraTierCadenceFrames;
+        [FieldOffset(64)]
         public int MaxCandidateCells;
+        [FieldOffset(68)]
         public int MaxCandidatesPerCell;
+        [FieldOffset(72)]
         public int MaxResults;
+        [FieldOffset(76)]
         public int Flags;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct ScanProgressDTO
+    {
+        [FieldOffset(0)] public uint TargetHashID;
+        [FieldOffset(4)] public float CurrentProgress01;
+        [FieldOffset(8)] public float ScanRate;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public double3 ScannerAUP;
+        [FieldOffset(40)] public uint LastFrame;
+        [FieldOffset(44)] public uint CompletedHash;
+        [FieldOffset(48)] private ulong _pad0;
+        [FieldOffset(56)] private ulong _pad1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct ScannerLoreIndexDTO
+    {
+        [FieldOffset(0)] public uint TargetHashID;
+        [FieldOffset(4)] public uint LoreEntryIndex;
+        [FieldOffset(8)] public uint Flags;
+        [FieldOffset(12)] public uint SourceHash;
+        [FieldOffset(16)] public uint ProbeStride;
+        [FieldOffset(20)] private uint _pad0;
+        [FieldOffset(24)] private ulong _pad1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    public struct ScannerEncyclopediaStateDTO
+    {
+        [FieldOffset(0)] public ulong Mask0;
+        [FieldOffset(8)] public ulong Mask1;
+        [FieldOffset(16)] public ulong Mask2;
+        [FieldOffset(24)] public ulong Mask3;
+        [FieldOffset(32)] public ulong Mask4;
+        [FieldOffset(40)] public ulong Mask5;
+        [FieldOffset(48)] public ulong Mask6;
+        [FieldOffset(56)] public ulong Mask7;
+        [FieldOffset(64)] public ulong Mask8;
+        [FieldOffset(72)] public ulong Mask9;
+        [FieldOffset(80)] public ulong Mask10;
+        [FieldOffset(88)] public ulong Mask11;
+        [FieldOffset(96)] public ulong Mask12;
+        [FieldOffset(104)] public ulong Mask13;
+        [FieldOffset(112)] public ulong Mask14;
+        [FieldOffset(120)] public ulong Mask15;
     }
 
     public struct MockSpatialHashGrid
@@ -185,9 +333,10 @@ namespace Hecton8.Gameplay
         public float CellSizeMeters;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct MockToolTransformSignalJob : IJob
     {
+        [NoAlias]
         public NativeArray<MockToolTransformSignal> ToolSignals;
         public double3 PositionAUP;
         public float3 ForwardVector;
@@ -231,20 +380,22 @@ namespace Hecton8.Gameplay
         public const uint StateFlagHasTarget = 1u << 0;
         public const uint StateFlagCompletedThisFrame = 1u << 1;
         public const uint StateFlagOccluded = 1u << 2;
-        public const uint StateFlagLowTier = 1u << 3;
         public const uint VfxFlagHasTarget = 1u << 0;
         public const uint VfxFlagOccluded = 1u << 1;
-        public const uint VfxFlagLowTier = 1u << 2;
         public const uint QueryFlagNoCandidate = 1u << 0;
         public const uint QueryFlagNaNInput = 1u << 1;
         public const uint QueryFlagOccluded = 1u << 2;
+        public const uint ScanProgressFlagActive = 1u << 0;
+        public const uint ScanProgressFlagCompleted = 1u << 1;
+        public const uint ScanProgressFlagLostTarget = 1u << 2;
+        public const uint LoreIndexFlagOccupied = 1u << 0;
         public const int BlackBoxCapacity = 300;
         public const int DefaultEntityCapacity = 128;
         public const int DefaultSpatialBucketCapacity = 256;
         public const int DefaultResultCapacity = 4;
         public const float DefaultCellSizeMeters = 16f;
-        public const string DumpFileName = "Dump_SHINOBU_24.bin";
-        public const string H8DumpFileName = "Dump_SHINOBU_24.h8dump";
+        public const string DumpFileName = "Dump_SHINOBU_226.bin";
+        public const string H8DumpFileName = "Dump_SHINOBU_226.h8dump";
 
         private const SystemID OwnerSystemId = SystemID.GameplayTools;
         private const byte ToolAcousticStateScanner = 2;
@@ -261,23 +412,28 @@ namespace Hecton8.Gameplay
         [SerializeField] private uint toolLevel = 1u;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<ScannerSpatialEntityDTO> _entitiesHandle;
-        private VaultBufferHandle<ScannableEntityMetadataDTO> _metadataHandle;
-        private VaultBufferHandle<MockSdfOcclusionZoneDTO> _occlusionZonesHandle;
-        private VaultBufferHandle<int> _bucketHeadsHandle;
-        private VaultBufferHandle<int> _bucketNextHandle;
-        private VaultBufferHandle<ScanResultDTO> _scanResultsHandle;
-        private VaultBufferHandle<int> _resultCountHandle;
-        private VaultBufferHandle<ActiveScanStateDTO> _activeStateHandle;
-        private VaultBufferHandle<ScannerVfxDTO> _vfxTargetHandle;
-        private VaultBufferHandle<ScannerQueryStatsDTO> _queryStatsHandle;
-        private VaultBufferHandle<ScannerTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<ScannerSettingsDTO> _settingsHandle;
+        private VaultGenerationHandle<ScannerSpatialEntityDTO> _entitiesHandle;
+        private VaultGenerationHandle<ScannableEntityMetadataDTO> _metadataHandle;
+        private VaultGenerationHandle<MockSdfOcclusionZoneDTO> _occlusionZonesHandle;
+        private VaultGenerationHandle<int> _bucketHeadsHandle;
+        private VaultGenerationHandle<int> _bucketNextHandle;
+        private VaultGenerationHandle<ScanResultDTO> _scanResultsHandle;
+        private VaultGenerationHandle<int> _resultCountHandle;
+        private VaultGenerationHandle<ActiveScanStateDTO> _activeStateHandle;
+        private VaultGenerationHandle<ScannerVfxDTO> _vfxTargetHandle;
+        private VaultGenerationHandle<ScannerQueryStatsDTO> _queryStatsHandle;
+        private VaultGenerationHandle<ScannerTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<ScannerSettingsDTO> _settingsHandle;
+        private VaultGenerationHandle<ScanProgressDTO> _scanProgressHandle;
+        private VaultGenerationHandle<ScannerLoreIndexDTO> _loreIndexHandle;
+        private VaultGenerationHandle<ScannerEncyclopediaStateDTO> _encyclopediaStateHandle;
         private JobHandle _queryHandle;
+        private JobHandle _completionHandle;
         private MockScannerInputSignal _lastInput;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private HectonPlayerMovement _cachedPlayerMovement;
         private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
+        private float _cachedGlobalQualityWeight = 1f;
         private float _cachedSystemPressure01;
         private int _lastQueryFrame = -1024;
         private int _entityCount;
@@ -285,6 +441,8 @@ namespace Hecton8.Gameplay
         private uint _completionCount;
         private bool _queryScheduled;
         private bool _queryBuffersLocked;
+        private bool _completionScheduled;
+        private bool _completionBuffersLocked;
         private bool _registeredFast;
         private bool _registeredSlow;
         private bool _registeredLate;
@@ -306,6 +464,9 @@ namespace Hecton8.Gameplay
             public NativeArray<ScannerQueryStatsDTO> QueryStats;
             public NativeArray<ScannerTelemetryEntry> Telemetry;
             public NativeArray<ScannerSettingsDTO> Settings;
+            public NativeArray<ScanProgressDTO> ScanProgress;
+            public NativeArray<ScannerLoreIndexDTO> LoreIndex;
+            public NativeArray<ScannerEncyclopediaStateDTO> EncyclopediaState;
 
             public bool HasCoreBuffers =>
                 Entities.IsCreated &&
@@ -319,7 +480,10 @@ namespace Hecton8.Gameplay
                 VfxTarget.IsCreated &&
                 QueryStats.IsCreated &&
                 Telemetry.IsCreated &&
-                Settings.IsCreated;
+                Settings.IsCreated &&
+                ScanProgress.IsCreated &&
+                LoreIndex.IsCreated &&
+                EncyclopediaState.IsCreated;
         }
 
         public static ScannerSettingsDTO CreateDefaultSettings()
@@ -361,15 +525,13 @@ namespace Hecton8.Gameplay
             settings = ScannerDataMiningTuning.Settings;
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !vault.TryGetBufferHandle(BufferID.ShinobuScannerSettings, out VaultBufferHandle<ScannerSettingsDTO> handle) ||
-                !handle.IsCreated)
+                !vault.TryGetGenerationHandle(BufferID.ShinobuScannerSettings, out VaultGenerationHandle<ScannerSettingsDTO> handle) ||
+                !vault.TryResolveHandle(in handle, out NativeArray<ScannerSettingsDTO> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length == 0)
             {
                 return false;
             }
-
-            NativeArray<ScannerSettingsDTO> buffer = handle.Resolve(vault);
-            if (!buffer.IsCreated || buffer.Length == 0)
-                return false;
 
             settings = buffer[0];
             return settings.CellSizeMeters > 0f && math.isfinite(settings.CellSizeMeters);
@@ -381,14 +543,17 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
-            VaultBufferHandle<ScannerSettingsDTO> handle = vault.GetBufferHandle<ScannerSettingsDTO>(
+            VaultGenerationHandle<ScannerSettingsDTO> handle = vault.GetGenerationHandle<ScannerSettingsDTO>(
                 BufferID.ShinobuScannerSettings,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            NativeArray<ScannerSettingsDTO> buffer = handle.Resolve(vault);
-            if (!buffer.IsCreated || buffer.Length == 0)
+            if (!vault.TryResolveHandle(in handle, out NativeArray<ScannerSettingsDTO> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length == 0)
+            {
                 return false;
+            }
 
             buffer[0] = settings;
             return true;
@@ -409,6 +574,7 @@ namespace Hecton8.Gameplay
                 SeedMockGridFromTransform();
 
             _cachedQualityTier = GlobalRegistry.ScalabilityTier;
+            _cachedGlobalQualityWeight = ResolveGlobalQualityWeight();
             _registeredFast = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
             _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
             _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
@@ -417,7 +583,9 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             CompleteScheduledQuery(forceComplete: true);
+            CompleteScheduledCompletion(forceComplete: true);
             UnlockQueryBuffers();
+            UnlockCompletionBuffers();
 
             if (_registeredFast)
                 GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);
@@ -437,7 +605,7 @@ namespace Hecton8.Gameplay
             if (!TryResolveVaultViews(out ScannerVaultViews views) || !views.HasCoreBuffers)
                 return;
 
-            if (_queryScheduled)
+            if (_queryScheduled || _completionScheduled)
                 return;
 
             ScannerSettingsDTO settings = ResolveCurrentSettings(views.Settings);
@@ -445,7 +613,7 @@ namespace Hecton8.Gameplay
             settings.BeamRadiusMeters = math.max(0.05f, beamRadiusMeters > 0f ? beamRadiusMeters : settings.BeamRadiusMeters);
 
             int frame = math.max(0, Time.frameCount);
-            int cadence = ResolveQueryCadenceFrames(_cachedQualityTier, _cachedSystemPressure01, in settings);
+            int cadence = ResolveQueryCadenceFrames(_cachedGlobalQualityWeight, _cachedSystemPressure01, in settings);
             if (frame - _lastQueryFrame < cadence)
                 return;
 
@@ -479,6 +647,9 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            if (_completionScheduled)
+                TryFinalizeScheduledCompletion();
+
             if (!_queryScheduled)
                 return;
 
@@ -486,6 +657,7 @@ namespace Hecton8.Gameplay
                 return;
 
             ProcessCompletedQuery(_lastInput.DeltaTime);
+            TryFinalizeScheduledCompletion();
         }
 
         public void SlowTick()
@@ -496,6 +668,7 @@ namespace Hecton8.Gameplay
                 _cachedPlayerMovement = _cachedPlayerContext.PlayerMovement;
 
             _cachedQualityTier = GlobalRegistry.ScalabilityTier;
+            _cachedGlobalQualityWeight = ResolveGlobalQualityWeight();
             ReadOnlySpan<SystemHealthIndexSignal> healthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
             if (healthSignals.Length > 0)
                 _cachedSystemPressure01 = math.saturate(healthSignals[healthSignals.Length - 1].Pressure01);
@@ -524,6 +697,31 @@ namespace Hecton8.Gameplay
 
             _queryScheduled = false;
             UnlockQueryBuffers();
+        }
+
+        private bool TryFinalizeScheduledCompletion()
+        {
+            if (!_completionScheduled)
+                return false;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _completionHandle))
+                return false;
+
+            _completionScheduled = false;
+            UnlockCompletionBuffers();
+            return true;
+        }
+
+        private void CompleteScheduledCompletion(bool forceComplete)
+        {
+            if (!_completionScheduled)
+                return;
+
+            if (!DispatcherJobFence.TryComplete(ref _completionHandle, forceComplete))
+                return;
+
+            _completionScheduled = false;
+            UnlockCompletionBuffers();
         }
 
         private MockScannerInputSignal BuildInputSignal(float deltaTime, int frame, in ScannerSettingsDTO settings)
@@ -637,18 +835,8 @@ namespace Hecton8.Gameplay
                 {
                     ScanResultDTO result = views.ScanResults[0];
                     float scanDuration = ResolveScanDuration(stats.BestEntityIndex, views.Entities, views.Metadata, in settings);
-                    if (_cachedQualityTier == HectonQualityTier.Unknown ||
-                        _cachedQualityTier == HectonQualityTier.Low ||
-                        _cachedQualityTier == HectonQualityTier.Mx350)
-                    {
-                        state.Flags |= StateFlagLowTier;
-                    }
-                    else
-                    {
-                        state.Flags &= ~StateFlagLowTier;
-                    }
 
-                    ScannerScanProgression.Solve(ref state, ref result, stats.BestEntityIndex, scanDuration, deltaTime, in settings);
+                    ScannerScanProgression.Solve(ref state, ref result, stats.BestEntityIndex, scanDuration, deltaTime, _lastInput.Frame, _cachedGlobalQualityWeight, in settings);
                     state.LastOriginAUP = _lastInput.RayOriginAUP;
                     state.BeamScore = stats.BestScore;
                     if ((stats.Flags & QueryFlagOccluded) != 0u)
@@ -657,8 +845,8 @@ namespace Hecton8.Gameplay
                     views.ScanResults[0] = result;
                     WriteVfxTarget(in result, in state, in stats, views.VfxTarget);
                     RouteProgressSignals(in result, in state, in settings);
-                    RouteCompletionIfNeeded(in result, ref state, in settings);
                     WriteTelemetry(in result, in state, in stats, views.Telemetry);
+                    RouteCompletionIfNeeded(in result, ref state, in settings, in views);
                 }
                 else
                 {
@@ -727,7 +915,11 @@ namespace Hecton8.Gameplay
             });
         }
 
-        private void RouteCompletionIfNeeded(in ScanResultDTO result, ref ActiveScanStateDTO state, in ScannerSettingsDTO settings)
+        private void RouteCompletionIfNeeded(
+            in ScanResultDTO result,
+            ref ActiveScanStateDTO state,
+            in ScannerSettingsDTO settings,
+            in ScannerVaultViews views)
         {
             if ((state.Flags & StateFlagCompletedThisFrame) == 0u || result.EntityHash == 0u)
                 return;
@@ -792,8 +984,64 @@ namespace Hecton8.Gameplay
                 Flags = AcousticPingSignal.FlagActiveSonar
             });
 
+            TryScheduleCompletionEvaluation(in result, in state, in views);
             _completionCount++;
             state.Flags &= ~StateFlagCompletedThisFrame;
+        }
+
+        private bool TryScheduleCompletionEvaluation(
+            in ScanResultDTO result,
+            in ActiveScanStateDTO state,
+            in ScannerVaultViews views)
+        {
+            if (_completionScheduled ||
+                !views.ScanProgress.IsCreated ||
+                views.ScanProgress.Length == 0 ||
+                !views.LoreIndex.IsCreated ||
+                !views.EncyclopediaState.IsCreated ||
+                views.EncyclopediaState.Length == 0 ||
+                !views.Telemetry.IsCreated)
+            {
+                return false;
+            }
+
+            IDataVault vault = _dataVault;
+            if (!TryLockCompletionBuffers(vault))
+                return false;
+
+            uint frame = unchecked((uint)math.max(0, Time.frameCount));
+            views.ScanProgress[0] = new ScanProgressDTO
+            {
+                TargetHashID = result.EntityHash,
+                CurrentProgress01 = math.saturate(result.ScanProgress),
+                ScanRate = 0f,
+                Flags = ScanProgressFlagActive | ScanProgressFlagCompleted,
+                ScannerAUP = state.LastOriginAUP,
+                LastFrame = frame,
+                CompletedHash = result.EntityHash
+            };
+
+            JobHandle progressHandle = new UpdateScanProgressJob
+            {
+                Progress = views.ScanProgress,
+                TargetHashID = result.EntityHash,
+                ScannerAUP = state.LastOriginAUP,
+                ScanRate = 0f,
+                SimulationTickDelta = 0f,
+                Frame = frame
+            }.Schedule();
+            _completionHandle = new EvaluateScanCompletionJob
+            {
+                Progress = views.ScanProgress,
+                LoreIndex = views.LoreIndex,
+                EncyclopediaState = views.EncyclopediaState,
+                Telemetry = views.Telemetry,
+                Frame = frame,
+                CompletionCount = _completionCount + 1u
+            }.Schedule(progressHandle);
+            H8Memory.RegisterActiveJob(OwnerSystemId, _completionHandle);
+            _completionScheduled = true;
+            return true;
         }
 
         private void WriteVfxTarget(
@@ -812,14 +1060,13 @@ namespace Hecton8.Gameplay
             vfx.TargetHash = result.EntityHash;
             vfx.Flags = VfxFlagHasTarget;
             vfx.BeamScore = stats.BestScore;
-            if ((state.Flags & StateFlagLowTier) != 0u)
-                vfx.Flags |= VfxFlagLowTier;
             if ((state.Flags & StateFlagOccluded) != 0u)
                 vfx.Flags |= VfxFlagOccluded;
 
             vfxTarget[0] = vfx;
             s_lastVfxTarget = vfx;
             s_lastVfxFrame = unchecked((uint)math.max(0, Time.frameCount));
+            ScannerShaderGlobals.Publish(in vfx, _cachedGlobalQualityWeight, _cachedSystemPressure01);
         }
 
         private void WriteEmptyVfxTarget(
@@ -833,11 +1080,12 @@ namespace Hecton8.Gameplay
             ScannerVfxDTO vfx = default;
             vfx.ScanProgress = state.Progress01;
             vfx.TargetHash = state.TargetHash;
-            vfx.Flags = (state.Flags & StateFlagLowTier) != 0u ? VfxFlagLowTier : 0u;
+            vfx.Flags = 0u;
             vfx.BeamScore = stats.BestScore;
             vfxTarget[0] = vfx;
             s_lastVfxTarget = vfx;
             s_lastVfxFrame = unchecked((uint)math.max(0, Time.frameCount));
+            ScannerShaderGlobals.Publish(in vfx, _cachedGlobalQualityWeight, _cachedSystemPressure01);
         }
 
         private void WriteTelemetry(
@@ -905,63 +1153,78 @@ namespace Hecton8.Gameplay
             int safeBucketCapacity = ResolveSpatialBucketCapacity(safeEntityCapacity);
             int safeResultCapacity = math.clamp(ScannerDataMiningTuning.Settings.MaxResults, 1, 16);
 
-            _entitiesHandle = vault.GetBufferHandle<ScannerSpatialEntityDTO>(
+            _entitiesHandle = vault.GetGenerationHandle<ScannerSpatialEntityDTO>(
                 BufferID.ShinobuScannerEntities,
                 safeEntityCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _metadataHandle = vault.GetBufferHandle<ScannableEntityMetadataDTO>(
+            _metadataHandle = vault.GetGenerationHandle<ScannableEntityMetadataDTO>(
                 BufferID.ShinobuScannerMetadata,
                 safeEntityCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _occlusionZonesHandle = vault.GetBufferHandle<MockSdfOcclusionZoneDTO>(
+            _occlusionZonesHandle = vault.GetGenerationHandle<MockSdfOcclusionZoneDTO>(
                 BufferID.ShinobuScannerOcclusionZones,
                 8,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _bucketHeadsHandle = vault.GetBufferHandle<int>(
+            _bucketHeadsHandle = vault.GetGenerationHandle<int>(
                 BufferID.ShinobuScannerSpatialBucketHeads,
                 safeBucketCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _bucketNextHandle = vault.GetBufferHandle<int>(
+            _bucketNextHandle = vault.GetGenerationHandle<int>(
                 BufferID.ShinobuScannerSpatialNext,
                 safeEntityCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _scanResultsHandle = vault.GetBufferHandle<ScanResultDTO>(
+            _scanResultsHandle = vault.GetGenerationHandle<ScanResultDTO>(
                 BufferID.ShinobuScannerScanResults,
                 safeResultCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _resultCountHandle = vault.GetBufferHandle<int>(
+            _resultCountHandle = vault.GetGenerationHandle<int>(
                 BufferID.ShinobuScannerResultCount,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _activeStateHandle = vault.GetBufferHandle<ActiveScanStateDTO>(
+            _activeStateHandle = vault.GetGenerationHandle<ActiveScanStateDTO>(
                 BufferID.ShinobuScannerActiveState,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _vfxTargetHandle = vault.GetBufferHandle<ScannerVfxDTO>(
+            _vfxTargetHandle = vault.GetGenerationHandle<ScannerVfxDTO>(
                 BufferID.ShinobuScannerVfxTarget,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _queryStatsHandle = vault.GetBufferHandle<ScannerQueryStatsDTO>(
+            _queryStatsHandle = vault.GetGenerationHandle<ScannerQueryStatsDTO>(
                 BufferID.ShinobuScannerQueryStats,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _telemetryHandle = vault.GetBufferHandle<ScannerTelemetryEntry>(
+            _telemetryHandle = vault.GetGenerationHandle<ScannerTelemetryEntry>(
                 BufferID.ShinobuScannerTelemetryRing,
                 BlackBoxCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _settingsHandle = vault.GetBufferHandle<ScannerSettingsDTO>(
+            _settingsHandle = vault.GetGenerationHandle<ScannerSettingsDTO>(
                 BufferID.ShinobuScannerSettings,
+                1,
+                OwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            _scanProgressHandle = vault.GetGenerationHandle<ScanProgressDTO>(
+                BufferID.ShinobuScannerScanProgress,
+                1,
+                OwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            _loreIndexHandle = vault.GetGenerationHandle<ScannerLoreIndexDTO>(
+                BufferID.ShinobuScannerLoreIndex,
+                safeEntityCapacity << 1,
+                OwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            _encyclopediaStateHandle = vault.GetGenerationHandle<ScannerEncyclopediaStateDTO>(
+                BufferID.ShinobuScannerEncyclopediaState,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
@@ -991,23 +1254,25 @@ namespace Hecton8.Gameplay
         private bool TryResolveVaultViews(out ScannerVaultViews views)
         {
             views = default;
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            _dataVault = vault;
-            views.Entities = _entitiesHandle.Resolve(vault);
-            views.Metadata = _metadataHandle.Resolve(vault);
-            views.OcclusionZones = _occlusionZonesHandle.Resolve(vault);
-            views.BucketHeads = _bucketHeadsHandle.Resolve(vault);
-            views.BucketNext = _bucketNextHandle.Resolve(vault);
-            views.ScanResults = _scanResultsHandle.Resolve(vault);
-            views.ResultCount = _resultCountHandle.Resolve(vault);
-            views.ActiveState = _activeStateHandle.Resolve(vault);
-            views.VfxTarget = _vfxTargetHandle.Resolve(vault);
-            views.QueryStats = _queryStatsHandle.Resolve(vault);
-            views.Telemetry = _telemetryHandle.Resolve(vault);
-            views.Settings = _settingsHandle.Resolve(vault);
+            vault.TryResolveHandle(in _entitiesHandle, out views.Entities);
+            vault.TryResolveHandle(in _metadataHandle, out views.Metadata);
+            vault.TryResolveHandle(in _occlusionZonesHandle, out views.OcclusionZones);
+            vault.TryResolveHandle(in _bucketHeadsHandle, out views.BucketHeads);
+            vault.TryResolveHandle(in _bucketNextHandle, out views.BucketNext);
+            vault.TryResolveHandle(in _scanResultsHandle, out views.ScanResults);
+            vault.TryResolveHandle(in _resultCountHandle, out views.ResultCount);
+            vault.TryResolveHandle(in _activeStateHandle, out views.ActiveState);
+            vault.TryResolveHandle(in _vfxTargetHandle, out views.VfxTarget);
+            vault.TryResolveHandle(in _queryStatsHandle, out views.QueryStats);
+            vault.TryResolveHandle(in _telemetryHandle, out views.Telemetry);
+            vault.TryResolveHandle(in _settingsHandle, out views.Settings);
+            vault.TryResolveHandle(in _scanProgressHandle, out views.ScanProgress);
+            vault.TryResolveHandle(in _loreIndexHandle, out views.LoreIndex);
+            vault.TryResolveHandle(in _encyclopediaStateHandle, out views.EncyclopediaState);
             return views.HasCoreBuffers;
         }
 
@@ -1025,10 +1290,15 @@ namespace Hecton8.Gameplay
             _queryStatsHandle = default;
             _telemetryHandle = default;
             _settingsHandle = default;
+            _scanProgressHandle = default;
+            _loreIndexHandle = default;
+            _encyclopediaStateHandle = default;
             _dataVault = null;
             _entityCount = 0;
             _telemetryCursor = 0;
             _completionCount = 0u;
+            _completionScheduled = false;
+            _completionBuffersLocked = false;
         }
 
         private bool TryLockQueryBuffers(IDataVault vault)
@@ -1120,6 +1390,53 @@ namespace Hecton8.Gameplay
             _queryBuffersLocked = false;
         }
 
+        private bool TryLockCompletionBuffers(IDataVault vault)
+        {
+            if (vault == null || _completionBuffersLocked)
+                return false;
+
+            if (!vault.TryLockBuffer(BufferID.ShinobuScannerScanProgress, OwnerSystemId))
+                return false;
+            if (!vault.TryLockBuffer(BufferID.ShinobuScannerLoreIndex, OwnerSystemId))
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuScannerScanProgress, OwnerSystemId);
+                return false;
+            }
+            if (!vault.TryLockBuffer(BufferID.ShinobuScannerEncyclopediaState, OwnerSystemId))
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuScannerLoreIndex, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.ShinobuScannerScanProgress, OwnerSystemId);
+                return false;
+            }
+            if (!vault.TryLockBuffer(BufferID.ShinobuScannerTelemetryRing, OwnerSystemId))
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuScannerEncyclopediaState, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.ShinobuScannerLoreIndex, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.ShinobuScannerScanProgress, OwnerSystemId);
+                return false;
+            }
+
+            _completionBuffersLocked = true;
+            return true;
+        }
+
+        private void UnlockCompletionBuffers()
+        {
+            if (!_completionBuffersLocked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuScannerTelemetryRing, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.ShinobuScannerEncyclopediaState, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.ShinobuScannerLoreIndex, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.ShinobuScannerScanProgress, OwnerSystemId);
+            }
+
+            _completionBuffersLocked = false;
+        }
+
         private ScannerSettingsDTO ResolveCurrentSettings(NativeArray<ScannerSettingsDTO> settingsBuffer)
         {
             if (settingsBuffer.IsCreated && settingsBuffer.Length > 0)
@@ -1144,16 +1461,19 @@ namespace Hecton8.Gameplay
             float3 forward = math.normalizesafe(new float3(transform.forward.x, transform.forward.y, transform.forward.z), new float3(0f, 0f, 1f));
             float3 right = math.normalizesafe(new float3(transform.right.x, transform.right.y, transform.right.z), new float3(1f, 0f, 0f));
             ScannerSettingsDTO settings = ResolveCurrentSettings(views.Settings);
-            FillMockSpatialHash(
-                views.BucketHeads,
-                views.BucketNext,
-                views.Entities,
-                views.Metadata,
-                origin,
-                forward,
-                right,
-                settings.CellSizeMeters,
-                count);
+            new GenerateMockScannableTargetsJob
+            {
+                BucketHeads = views.BucketHeads,
+                BucketNext = views.BucketNext,
+                Entities = views.Entities,
+                Metadata = views.Metadata,
+                LoreIndex = views.LoreIndex,
+                OriginAUP = origin,
+                Forward = forward,
+                Right = right,
+                CellSizeMeters = settings.CellSizeMeters,
+                Count = count
+            }.Execute();
             _entityCount = count;
             if (views.OcclusionZones.IsCreated && views.OcclusionZones.Length > 0)
             {
@@ -1201,14 +1521,11 @@ namespace Hecton8.Gameplay
                 Directory.CreateDirectory(directory);
 
             int byteCount = UnsafeUtility.SizeOf<ScannerTelemetryEntry>() * telemetry.Length;
-            byte[] payload = new byte[byteCount];
-            fixed (byte* destination = payload)
+            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             {
-                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                UnsafeUtility.MemCpy(destination, source, byteCount);
+                stream.Write(new ReadOnlySpan<byte>(source, byteCount));
             }
-
-            File.WriteAllBytes(path, payload);
         }
 
         public static unsafe ref ActiveScanStateDTO GetActiveStateRef(NativeArray<ActiveScanStateDTO> states)
@@ -1222,17 +1539,57 @@ namespace Hecton8.Gameplay
             UnsafeUtility.MemClear(UnsafeUtility.AddressOf(ref state), UnsafeUtility.SizeOf<ActiveScanStateDTO>());
         }
 
+        public static bool ValidateScanProgressLayout(
+            out int sizeBytes,
+            out int targetHashOffset,
+            out int progressOffset,
+            out int scanRateOffset,
+            out int flagsOffset,
+            out int scannerAupOffset,
+            out int completedHashOffset)
+        {
+            sizeBytes = UnsafeUtility.SizeOf<ScanProgressDTO>();
+            targetHashOffset = Marshal.OffsetOf<ScanProgressDTO>(nameof(ScanProgressDTO.TargetHashID)).ToInt32();
+            progressOffset = Marshal.OffsetOf<ScanProgressDTO>(nameof(ScanProgressDTO.CurrentProgress01)).ToInt32();
+            scanRateOffset = Marshal.OffsetOf<ScanProgressDTO>(nameof(ScanProgressDTO.ScanRate)).ToInt32();
+            flagsOffset = Marshal.OffsetOf<ScanProgressDTO>(nameof(ScanProgressDTO.Flags)).ToInt32();
+            scannerAupOffset = Marshal.OffsetOf<ScanProgressDTO>(nameof(ScanProgressDTO.ScannerAUP)).ToInt32();
+            completedHashOffset = Marshal.OffsetOf<ScanProgressDTO>(nameof(ScanProgressDTO.CompletedHash)).ToInt32();
+            return sizeBytes == 64 &&
+                   targetHashOffset == 0 &&
+                   progressOffset == 4 &&
+                   scanRateOffset == 8 &&
+                   flagsOffset == 12 &&
+                   scannerAupOffset == 16 &&
+                   completedHashOffset == 44;
+        }
+
+        public static int ResolveQueryCadenceFrames(float globalQualityWeight, float pressure01, in ScannerSettingsDTO settings)
+        {
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float pressure = math.saturate(math.isfinite(pressure01) ? pressure01 : 0f);
+            float qualityCurve = quality * quality * (3f - 2f * quality);
+            float pressureCurve = pressure * pressure * (3f - 2f * pressure);
+            float lowCadence = math.max(1f, settings.LowTierCadenceFrames);
+            float ultraCadence = math.max(1f, settings.UltraTierCadenceFrames);
+            float baseCadence = math.lerp(lowCadence, ultraCadence, qualityCurve);
+            float pressureMultiplier = math.lerp(1f, 3f, pressureCurve);
+            return math.clamp((int)math.ceil(baseCadence * pressureMultiplier), 1, 16);
+        }
+
         public static int ResolveQueryCadenceFrames(HectonQualityTier tier, float pressure01, in ScannerSettingsDTO settings)
         {
-            int cadence = tier == HectonQualityTier.Ultra ? settings.UltraTierCadenceFrames :
-                tier == HectonQualityTier.High ? settings.HighTierCadenceFrames :
-                tier == HectonQualityTier.Mid ? settings.MidTierCadenceFrames :
-                settings.LowTierCadenceFrames;
+            float quality = tier == HectonQualityTier.Ultra ? 1f :
+                tier == HectonQualityTier.High ? 0.72f :
+                tier == HectonQualityTier.Mid ? 0.48f :
+                0.18f;
+            return ResolveQueryCadenceFrames(quality, pressure01, in settings);
+        }
 
-            if (pressure01 > 0.8f)
-                cadence <<= 1;
-
-            return math.clamp(cadence, 1, 16);
+        private static float ResolveGlobalQualityWeight()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(weight) ? weight : 1f);
         }
 
         public static void FillMockSpatialHash(
@@ -1246,10 +1603,26 @@ namespace Hecton8.Gameplay
             float cellSizeMeters,
             int count)
         {
+            FillMockSpatialHash(bucketHeads, bucketNext, entities, metadata, default, origin, forward, right, cellSizeMeters, count);
+        }
+
+        public static void FillMockSpatialHash(
+            NativeArray<int> bucketHeads,
+            NativeArray<int> bucketNext,
+            NativeArray<ScannerSpatialEntityDTO> entities,
+            NativeArray<ScannableEntityMetadataDTO> metadata,
+            NativeArray<ScannerLoreIndexDTO> loreIndex,
+            double3 origin,
+            float3 forward,
+            float3 right,
+            float cellSizeMeters,
+            int count)
+        {
             if (!bucketHeads.IsCreated || !bucketNext.IsCreated || !entities.IsCreated || !metadata.IsCreated)
                 return;
 
             ScannerSpatialHash.ClearBuckets(bucketHeads, bucketNext);
+            ClearLoreIndex(loreIndex);
             int safeCount = math.min(count, math.min(entities.Length, metadata.Length));
             float safeCell = math.max(1f, cellSizeMeters);
             float3 up = new float3(0f, 1f, 0f);
@@ -1287,7 +1660,111 @@ namespace Hecton8.Gameplay
 
                 int key = ScannerSpatialHash.CellKey(aup, safeCell);
                 ScannerSpatialHash.InsertBucket(bucketHeads, bucketNext, key, i);
+                InsertLoreIndex(loreIndex, hash, (uint)i);
             }
+        }
+
+        public static void ClearLoreIndex(NativeArray<ScannerLoreIndexDTO> loreIndex)
+        {
+            if (!loreIndex.IsCreated)
+                return;
+
+            for (int i = 0; i < loreIndex.Length; i++)
+                loreIndex[i] = default;
+        }
+
+        public static bool InsertLoreIndex(NativeArray<ScannerLoreIndexDTO> loreIndex, uint targetHash, uint loreEntryIndex)
+        {
+            if (!loreIndex.IsCreated || loreIndex.Length == 0 || targetHash == 0u)
+                return false;
+
+            int start = ScannerSpatialHash.BucketIndex(unchecked((int)targetHash), loreIndex.Length);
+            for (int probe = 0; probe < loreIndex.Length; probe++)
+            {
+                int index = start + probe;
+                if (index >= loreIndex.Length)
+                    index -= loreIndex.Length;
+
+                ScannerLoreIndexDTO entry = loreIndex[index];
+                if (entry.TargetHashID != 0u && entry.TargetHashID != targetHash)
+                    continue;
+
+                entry.TargetHashID = targetHash;
+                entry.LoreEntryIndex = loreEntryIndex;
+                entry.Flags = LoreIndexFlagOccupied;
+                entry.SourceHash = ScannerToolHash;
+                entry.ProbeStride = (uint)probe;
+                loreIndex[index] = entry;
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool TryFindLoreIndex(
+            NativeArray<ScannerLoreIndexDTO> loreIndex,
+            uint targetHash,
+            out uint loreEntryIndex)
+        {
+            loreEntryIndex = 0u;
+            if (!loreIndex.IsCreated || loreIndex.Length == 0 || targetHash == 0u)
+                return false;
+
+            int start = ScannerSpatialHash.BucketIndex(unchecked((int)targetHash), loreIndex.Length);
+            for (int probe = 0; probe < loreIndex.Length; probe++)
+            {
+                int index = start + probe;
+                if (index >= loreIndex.Length)
+                    index -= loreIndex.Length;
+
+                ScannerLoreIndexDTO entry = loreIndex[index];
+                if (entry.TargetHashID == targetHash)
+                {
+                    loreEntryIndex = entry.LoreEntryIndex;
+                    return true;
+                }
+
+                if (entry.TargetHashID == 0u)
+                    return false;
+            }
+
+            return false;
+        }
+
+        public static bool TryApplyLoreIndexCsvLine(
+            ReadOnlySpan<byte> line,
+            NativeArray<ScannerLoreIndexDTO> loreIndex,
+            out uint targetHash,
+            out uint loreEntryIndex)
+        {
+            targetHash = 0u;
+            loreEntryIndex = 0u;
+            if (line.Length == 0 || !loreIndex.IsCreated)
+                return false;
+
+            int cursor = 0;
+            if (!TryParseHashOrToken(line, ref cursor, out targetHash))
+                return false;
+
+            SkipCsvSeparators(line, ref cursor);
+            if (!TryParseUnsigned(line, ref cursor, out loreEntryIndex))
+                return false;
+
+            return InsertLoreIndex(loreIndex, targetHash, loreEntryIndex);
+        }
+
+        public static uint ComputeFnv1a32Ascii(ReadOnlySpan<byte> token)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < token.Length; i++)
+            {
+                byte value = token[i];
+                if (value >= (byte)'A' && value <= (byte)'Z')
+                    value = (byte)(value + 32);
+                hash = (hash ^ value) * 16777619u;
+            }
+
+            return hash == 0u ? 2166136261u : hash;
         }
 
         public static bool TryApplyCsvOverrideLine(
@@ -1335,6 +1812,49 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private static void SkipCsvSeparators(ReadOnlySpan<byte> line, ref int cursor)
+        {
+            while (cursor < line.Length)
+            {
+                byte c = line[cursor];
+                if (c != (byte)',' && c != (byte)';' && c != (byte)' ' && c != (byte)'\t')
+                    break;
+                cursor++;
+            }
+        }
+
+        private static bool TryParseHashOrToken(ReadOnlySpan<byte> line, ref int cursor, out uint value)
+        {
+            value = 0u;
+            SkipCsvSeparators(line, ref cursor);
+            int start = cursor;
+            while (cursor < line.Length)
+            {
+                byte c = line[cursor];
+                if (c == (byte)',' || c == (byte)';' || c == (byte)' ' || c == (byte)'\t' || c == (byte)'\r' || c == (byte)'\n')
+                    break;
+                cursor++;
+            }
+
+            int end = cursor;
+            while (end > start && (line[end - 1] == (byte)' ' || line[end - 1] == (byte)'\t'))
+                end--;
+
+            if (end <= start)
+                return false;
+
+            ReadOnlySpan<byte> token = line.Slice(start, end - start);
+            int tokenCursor = 0;
+            if (TryParseUnsigned(token, ref tokenCursor, out uint numeric) && tokenCursor >= token.Length)
+            {
+                value = numeric;
+                return value != 0u;
+            }
+
+            value = ComputeFnv1a32Ascii(token);
+            return value != 0u;
+        }
+
         private static bool TryParseUnsigned(ReadOnlySpan<char> line, ref int cursor, out uint value)
         {
             value = 0u;
@@ -1356,6 +1876,39 @@ namespace Hecton8.Gameplay
                     digit = (uint)(10 + c - 'a');
                 else if (hex && c >= 'A' && c <= 'F')
                     digit = (uint)(10 + c - 'A');
+                else
+                    break;
+
+                uint multiplier = hex ? 16u : 10u;
+                value = value * multiplier + digit;
+                any = true;
+                cursor++;
+            }
+
+            return any;
+        }
+
+        private static bool TryParseUnsigned(ReadOnlySpan<byte> line, ref int cursor, out uint value)
+        {
+            value = 0u;
+            SkipCsvSeparators(line, ref cursor);
+            bool hex = cursor + 1 < line.Length &&
+                       line[cursor] == (byte)'0' &&
+                       (line[cursor + 1] == (byte)'x' || line[cursor + 1] == (byte)'X');
+            if (hex)
+                cursor += 2;
+
+            bool any = false;
+            while (cursor < line.Length)
+            {
+                byte c = line[cursor];
+                uint digit;
+                if (c >= (byte)'0' && c <= (byte)'9')
+                    digit = (uint)(c - (byte)'0');
+                else if (hex && c >= (byte)'a' && c <= (byte)'f')
+                    digit = (uint)(10 + c - (byte)'a');
+                else if (hex && c >= (byte)'A' && c <= (byte)'F')
+                    digit = (uint)(10 + c - (byte)'A');
                 else
                     break;
 
@@ -1536,6 +2089,8 @@ namespace Hecton8.Gameplay
             int bestEntityIndex,
             float scanDurationSeconds,
             float deltaTime,
+            uint frame,
+            float globalQualityWeight,
             in ScannerSettingsDTO settings)
         {
             if (result.EntityHash == 0u)
@@ -1557,11 +2112,11 @@ namespace Hecton8.Gameplay
             state.BestEntityIndex = bestEntityIndex;
             state.Flags |= ScannerDataMiningRouter.StateFlagHasTarget;
             state.Flags &= ~ScannerDataMiningRouter.StateFlagOccluded;
-            float multiplier = (state.Flags & ScannerDataMiningRouter.StateFlagLowTier) != 0u
-                ? math.max(0.1f, settings.LowTierProgressMultiplier)
-                : 1f;
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float qualityCurve = quality * quality * (3f - 2f * quality);
+            float multiplier = math.lerp(math.max(0.1f, settings.LowTierProgressMultiplier), 1f, qualityCurve);
             state.Progress01 = math.saturate(state.Progress01 + math.max(0f, deltaTime) * multiplier / state.ScanDurationSeconds);
-            state.LastFrame = unchecked((uint)math.max(0, Time.frameCount));
+            state.LastFrame = frame;
             if (state.Progress01 >= 1f && state.CompletedHash != result.EntityHash)
             {
                 state.CompletedHash = result.EntityHash;
@@ -1576,23 +2131,229 @@ namespace Hecton8.Gameplay
             state.Progress01 = math.max(0f, state.Progress01 - math.max(0f, deltaTime) * math.max(0f, settings.ProgressDecayRate));
             if (state.Progress01 <= 0f)
             {
-                uint lowTier = state.Flags & ScannerDataMiningRouter.StateFlagLowTier;
                 ScannerDataMiningRouter.ResetActiveState(ref state);
-                state.Flags = lowTier;
             }
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct GenerateMockScannableTargetsJob : IJob
+    {
+        [NoAlias] public NativeArray<int> BucketHeads;
+        [NoAlias] public NativeArray<int> BucketNext;
+        [NoAlias] public NativeArray<ScannerSpatialEntityDTO> Entities;
+        [NoAlias] public NativeArray<ScannableEntityMetadataDTO> Metadata;
+        [NoAlias] public NativeArray<ScannerLoreIndexDTO> LoreIndex;
+        public double3 OriginAUP;
+        public float3 Forward;
+        public float3 Right;
+        public float CellSizeMeters;
+        public int Count;
+
+        public void Execute()
+        {
+            ScannerDataMiningRouter.FillMockSpatialHash(
+                BucketHeads,
+                BucketNext,
+                Entities,
+                Metadata,
+                LoreIndex,
+                OriginAUP,
+                math.normalizesafe(Forward, new float3(0f, 0f, 1f)),
+                math.normalizesafe(Right, new float3(1f, 0f, 0f)),
+                CellSizeMeters,
+                Count);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct UpdateScanProgressJob : IJob
+    {
+        [NoAlias] public NativeArray<ScanProgressDTO> Progress;
+        public uint TargetHashID;
+        public double3 ScannerAUP;
+        public float ScanRate;
+        public float SimulationTickDelta;
+        public uint Frame;
+
+        public void Execute()
+        {
+            if (!Progress.IsCreated || Progress.Length == 0)
+                return;
+
+            ScanProgressDTO progress = Progress[0];
+            float delta = math.max(0f, math.isfinite(SimulationTickDelta) ? SimulationTickDelta : 0f);
+            float rate = math.max(0f, math.isfinite(ScanRate) ? ScanRate : 0f);
+            if (TargetHashID == 0u)
+            {
+                progress.CurrentProgress01 = math.max(0f, progress.CurrentProgress01 - delta * math.max(rate, 0.25f));
+                progress.Flags = ScannerDataMiningRouter.ScanProgressFlagLostTarget;
+                progress.LastFrame = Frame;
+                Progress[0] = progress;
+                return;
+            }
+
+            if (progress.TargetHashID != TargetHashID)
+            {
+                progress.CurrentProgress01 = 0f;
+                progress.CompletedHash = 0u;
+            }
+
+            progress.TargetHashID = TargetHashID;
+            progress.ScannerAUP = math.all(math.isfinite(ScannerAUP)) ? ScannerAUP : default;
+            progress.ScanRate = rate;
+            progress.LastFrame = Frame;
+            progress.Flags = ScannerDataMiningRouter.ScanProgressFlagActive;
+            progress.CurrentProgress01 = math.saturate(progress.CurrentProgress01 + delta * rate);
+            if (progress.CurrentProgress01 >= 1f)
+            {
+                progress.CompletedHash = TargetHashID;
+                progress.Flags |= ScannerDataMiningRouter.ScanProgressFlagCompleted;
+            }
+
+            Progress[0] = progress;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct EvaluateScanCompletionJob : IJob
+    {
+        [NoAlias] public NativeArray<ScanProgressDTO> Progress;
+        [ReadOnly, NoAlias] public NativeArray<ScannerLoreIndexDTO> LoreIndex;
+        [NoAlias] public NativeArray<ScannerEncyclopediaStateDTO> EncyclopediaState;
+        [NoAlias] public NativeArray<ScannerTelemetryEntry> Telemetry;
+        public uint Frame;
+        public uint CompletionCount;
+
+        public void Execute()
+        {
+            if (!Progress.IsCreated || Progress.Length == 0)
+                return;
+
+            ScanProgressDTO progress = Progress[0];
+            if ((progress.Flags & ScannerDataMiningRouter.ScanProgressFlagCompleted) == 0u ||
+                progress.TargetHashID == 0u ||
+                !EncyclopediaState.IsCreated ||
+                EncyclopediaState.Length == 0)
+            {
+                return;
+            }
+
+            uint loreEntryIndex;
+            if (!ScannerDataMiningRouter.TryFindLoreIndex(LoreIndex, progress.TargetHashID, out loreEntryIndex))
+                loreEntryIndex = progress.TargetHashID & 1023u;
+
+            int bitIndex = (int)(loreEntryIndex & 1023u);
+            int wordIndex = bitIndex >> 6;
+            ulong bitMask = 1UL << (bitIndex & 63);
+            ulong* masks = (ulong*)NativeArrayUnsafeUtility.GetUnsafePtr(EncyclopediaState);
+            AtomicOr(masks, wordIndex, bitMask);
+            progress.CompletedHash = progress.TargetHashID;
+            Progress[0] = progress;
+
+            if (Telemetry.IsCreated && Telemetry.Length > 0)
+            {
+                int telemetryIndex = (int)(Frame % (uint)Telemetry.Length);
+                Telemetry[telemetryIndex] = new ScannerTelemetryEntry
+                {
+                    TargetAUP = progress.ScannerAUP,
+                    _pad0 = 0UL,
+                    Frame = Frame,
+                    TargetHash = progress.TargetHashID,
+                    Flags = progress.Flags,
+                    CandidateCount = 0u,
+                    CompletedCount = CompletionCount,
+                    EstimatedMicroseconds = 1u,
+                    Progress01 = progress.CurrentProgress01,
+                    HitDistance = 0f
+                };
+            }
+        }
+
+        private static bool AtomicOr(ulong* words, int wordIndex, ulong bitMask)
+        {
+            long* signedWords = (long*)words;
+            ref long signedWord = ref UnsafeUtility.AsRef<long>(signedWords + wordIndex);
+            long signedBit = unchecked((long)bitMask);
+            while (true)
+            {
+                long before = Interlocked.CompareExchange(ref signedWord, 0L, 0L);
+                long after = before | signedBit;
+                if (before == after)
+                    return false;
+
+                if (Interlocked.CompareExchange(ref signedWord, after, before) == before)
+                    return true;
+            }
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct AcquireScanTargetJob : IJob
+    {
+        [ReadOnly, NoAlias] public NativeArray<ScannerSpatialEntityDTO> Entities;
+        [ReadOnly, NoAlias] public NativeArray<ScannableEntityMetadataDTO> Metadata;
+        [ReadOnly, NoAlias] public NativeArray<MockSdfOcclusionZoneDTO> OcclusionZones;
+        [ReadOnly, NoAlias] public NativeArray<int> BucketHeads;
+        [ReadOnly, NoAlias] public NativeArray<int> BucketNext;
+        [NoAlias] public NativeArray<ScanResultDTO> Results;
+        [NoAlias] public NativeArray<int> ResultCount;
+        [NoAlias] public NativeArray<ScannerQueryStatsDTO> QueryStats;
+        [NoAlias] public NativeArray<ScanProgressDTO> Progress;
+        public MockScannerInputSignal Input;
+        public ScannerSettingsDTO Settings;
+        public int EntityCount;
+        public int MetadataCount;
+        public int OcclusionZoneCount;
+
+        public void Execute()
+        {
+            new ScannerSpatialQueryJob
+            {
+                Entities = Entities,
+                Metadata = Metadata,
+                OcclusionZones = OcclusionZones,
+                BucketHeads = BucketHeads,
+                BucketNext = BucketNext,
+                Results = Results,
+                ResultCount = ResultCount,
+                QueryStats = QueryStats,
+                Input = Input,
+                Settings = Settings,
+                EntityCount = EntityCount,
+                MetadataCount = MetadataCount,
+                OcclusionZoneCount = OcclusionZoneCount
+            }.Execute();
+
+            if (!Progress.IsCreated || Progress.Length == 0 || !Results.IsCreated || Results.Length == 0)
+                return;
+
+            if (!ResultCount.IsCreated || ResultCount.Length == 0 || ResultCount[0] <= 0)
+                return;
+
+            ScanResultDTO result = Results[0];
+            ScanProgressDTO progress = Progress[0];
+            progress.TargetHashID = result.EntityHash;
+            progress.ScannerAUP = Input.RayOriginAUP;
+            progress.LastFrame = Input.Frame;
+            progress.Flags |= ScannerDataMiningRouter.ScanProgressFlagActive;
+            Progress[0] = progress;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ScannerSpatialQueryJob : IJob
     {
-        [ReadOnly] public NativeArray<ScannerSpatialEntityDTO> Entities;
-        [ReadOnly] public NativeArray<ScannableEntityMetadataDTO> Metadata;
-        [ReadOnly] public NativeArray<MockSdfOcclusionZoneDTO> OcclusionZones;
-        [ReadOnly] public NativeArray<int> BucketHeads;
-        [ReadOnly] public NativeArray<int> BucketNext;
+        [ReadOnly, NoAlias] public NativeArray<ScannerSpatialEntityDTO> Entities;
+        [ReadOnly, NoAlias] public NativeArray<ScannableEntityMetadataDTO> Metadata;
+        [ReadOnly, NoAlias] public NativeArray<MockSdfOcclusionZoneDTO> OcclusionZones;
+        [ReadOnly, NoAlias] public NativeArray<int> BucketHeads;
+        [ReadOnly, NoAlias] public NativeArray<int> BucketNext;
+        [NoAlias]
         public NativeArray<ScanResultDTO> Results;
+        [NoAlias]
         public NativeArray<int> ResultCount;
+        [NoAlias]
         public NativeArray<ScannerQueryStatsDTO> QueryStats;
         public MockScannerInputSignal Input;
         public ScannerSettingsDTO Settings;
@@ -1767,6 +2528,27 @@ namespace Hecton8.Gameplay
         {
             if (QueryStats.IsCreated && QueryStats.Length > 0)
                 QueryStats[0] = stats;
+        }
+    }
+
+    public static class ScannerShaderGlobals
+    {
+        private static readonly int ScannerHudParamsId = Shader.PropertyToID("_H8ScannerHudParams");
+        private static readonly int ScannerHudHashId = Shader.PropertyToID("_H8ScannerHudHash");
+
+        public static void Publish(in ScannerVfxDTO vfx, float globalQualityWeight, float pressure01)
+        {
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float pressure = math.saturate(math.isfinite(pressure01) ? pressure01 : 0f);
+            float qualityCurve = quality * quality * (3f - 2f * quality);
+            float refreshHz = math.lerp(5f, 60f, qualityCurve);
+            float ditherComplexity = math.lerp(1f, 8f, qualityCurve) * math.lerp(1f, 0.35f, pressure);
+            Shader.SetGlobalVector(
+                ScannerHudParamsId,
+                new Vector4(math.saturate(vfx.ScanProgress), quality, refreshHz, ditherComplexity));
+            Shader.SetGlobalVector(
+                ScannerHudHashId,
+                new Vector4(vfx.TargetHash, vfx.Flags, vfx.BeamScore, vfx.HitDistance));
         }
     }
 }

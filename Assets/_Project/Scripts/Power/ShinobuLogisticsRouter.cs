@@ -262,6 +262,7 @@ namespace Hecton8.Power
         private DateTime _csvLastWriteUtc;
         private string _csvPath;
         private IConnectionSplineBatchRendererService _pipeRenderer;
+        private int _flowVisualPublishCursor;
 
         public static ShinobuLogisticsRouter Active => _active;
 
@@ -1504,9 +1505,26 @@ namespace Hecton8.Power
                 return;
 
             int edgeCount = math.min(_edgeCount, _edges.Length);
-            for (int i = 0; i < edgeCount; i++)
+            if (edgeCount <= 0)
             {
-                LogisticsEdgeDTO edge = _edges[i];
+                _flowVisualPublishCursor = 0;
+                return;
+            }
+
+            float quality = math.saturate(math.isfinite(_globalQualityWeight) ? _globalQualityWeight : 0f);
+            float qualityCurve = quality * quality * (3f - (2f * quality));
+            int publishBudget = math.clamp(
+                (int)math.round(math.lerp(32f, edgeCount, qualityCurve)),
+                1,
+                edgeCount);
+            int cursor = math.clamp(_flowVisualPublishCursor, 0, edgeCount - 1);
+            for (int published = 0; published < publishBudget; published++)
+            {
+                int edgeIndex = cursor + published;
+                if (edgeIndex >= edgeCount)
+                    edgeIndex -= edgeCount;
+
+                LogisticsEdgeDTO edge = _edges[edgeIndex];
                 int2 nodes = edge.Nodes;
                 float flow = math.saturate(edge.Flow01);
                 if ((uint)nodes.x < (uint)_nodeCount)
@@ -1514,6 +1532,10 @@ namespace Hecton8.Power
                 if ((uint)nodes.y < (uint)_nodeCount)
                     renderer.SetPipeNodeFlow((uint)nodes.y, flow);
             }
+
+            _flowVisualPublishCursor = cursor + publishBudget;
+            if (_flowVisualPublishCursor >= edgeCount)
+                _flowVisualPublishCursor -= edgeCount;
         }
 
         private void DumpBlackBox(int faultFlags)
@@ -2000,7 +2022,8 @@ namespace Hecton8.Power
             if (!math.all(math.isfinite(delta)))
                 return 0f;
 
-            return math.length(new float3((float)delta.x, (float)delta.y, (float)delta.z));
+            float distanceSq = math.lengthsq(new float3((float)delta.x, (float)delta.y, (float)delta.z));
+            return distanceSq <= 0.000001f ? 0f : distanceSq * math.rsqrt(math.max(distanceSq, 0.000001f));
         }
 
         private static float ResolveOxygenDemand(byte kind)
@@ -2182,7 +2205,8 @@ namespace Hecton8.Power
                 }
 
                 double3 delta = NodeAup[high] - NodeAup[low];
-                float length = math.length(new float3((float)delta.x, (float)delta.y, (float)delta.z));
+                float lengthSq = math.lengthsq(new float3((float)delta.x, (float)delta.y, (float)delta.z));
+                float length = lengthSq <= 0.000001f ? 0f : lengthSq * math.rsqrt(math.max(lengthSq, 0.000001f));
                 float resistance = math.max(0.001f, DefaultBasePipeResistance + length * 0.0025f);
                 float capacity = math.max(1f, 120f - math.min(80f, (Nodes[low].Capacity + Nodes[high].Capacity) * 0.25f));
                 Edges[edgeCount++] = new LogisticsEdgeDTO

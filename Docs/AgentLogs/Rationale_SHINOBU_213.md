@@ -3,7 +3,7 @@
 Date: 2026-05-20
 Agent: SHINOBU_213
 Domain: OFFLINE_LOD_AND_COLLIDER_BAKER
-Status: PENDING VERIFICATION / PRE-ENDIAN ROSLYN PROBE PASS / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX PROBE GATED BY CPU / UNITY IMPORT AND PROFILER PENDING
+Status: PENDING VERIFICATION / PRE-ENDIAN ROSLYN PROBE PASS / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX-HOT-STRUCT PROBE GATED BY CPU=93.3 / UNITY IMPORT AND PROFILER PENDING
 
 ## Decision 001: Editor-only ownership boundary
 
@@ -356,3 +356,19 @@ Solution: Return only the reloaded mock mesh asset. If the editor asset database
 Rejected Alternatives: Returning the transient fallback was rejected because it is valid only on create, not replace. Special-casing replacement state was rejected as unnecessary because the menu caller does not consume the mesh reference.
 Scalability potential: No runtime tier impact. It keeps the offline stress-test artifact path deterministic across repeated Low/Middle/High/Ultra benchmark runs.
 Hardware Impact: Runtime cost is 0us. Editor correctness improves; no measurable normal-case bake cost.
+
+## Decision 045: `.h8lod` manifest needs a binary-ledger boundary
+
+Problem: SHINOBU_213 emits `offline_lod_manifest.h8lod`, but the binary payload ledger did not name the owner, layout, endian contract, or non-runtime authority boundary for that payload.
+Solution: Add a SHINOBU_213 entry to `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` documenting the 64-byte header, 128-byte records, explicit little-endian writer, immutable editor-output ownership, no Vault buffer, and no rollback truth.
+Rejected Alternatives: Leaving the architecture note as the only documentation was rejected because the binary ledger is the cross-domain payload inventory. Adding a Vault buffer reservation was rejected because this baker owns no runtime mutable fact.
+Scalability potential: Low/Middle/High/Ultra runtime consumers can import one flat manifest through their own owner lane without coupling to the editor baker or parsing JSON.
+Hardware Impact: Runtime cost is 0us until another owner imports the payload. Future readers avoid byte-order ambiguity and false ownership.
+
+## Decision 046: Hot geometry DTO layouts must be explicit
+
+Problem: The latest safety pass hardened `LodConfigurationDTO`, telemetry, and manifest rows, but several editor hot/job geometry structs still relied on default sequential layout.
+Solution: Convert `OfflineGeometryRawVertex`, `OfflineGeometryVertex32`, `OfflineSubMeshRange`, and `OfflinePrimitiveFitResult` to explicit layouts and validate their exact sizes in `OfflineGeometryVertexLayoutValidator.ValidateStructs`.
+Rejected Alternatives: Relying on default sequential layout was rejected because the audit mandate requires byte-for-byte ARM64 proof and future field edits could silently alter stride or padding. `[StructLayout(Pack=1)]` remains rejected because it risks unaligned loads on ARM64.
+Scalability potential: Low/Middle/High/Ultra bakes now use the same fixed source vertex, output vertex, submesh range, and primitive-fit rows. The quality curve still changes budgets and saliency work, not ABI layout.
+Hardware Impact: Runtime cost is 0us because this is editor-only output generation. Editor Burst kernels get stable 32-byte vertex rows, 16-byte range rows, and a 40-byte primitive fit row aligned to an 8-byte multiple.

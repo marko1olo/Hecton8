@@ -1,4 +1,4 @@
-# Flora Procedural Sway Field
+﻿# Flora Procedural Sway Field
 
 Owner: `SHINOBU_124` / `FloraInteractionManager`.
 Source anchor: `Assets/_Project/Scripts/World/FloraInteractionManager.cs`.
@@ -16,7 +16,7 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 The submarine-to-flora bend path is a visual displacement field, not a physics interaction. Vehicles and other movers publish `WakeGeneratedSignal`; `FloraInteractionManager` resolves those wake sources into a Vault-owned 3D `FloraDisplacementDTO` field:
@@ -52,3 +52,5 @@ On invalid input, upload stall, or NaN, the last 300 field frames dump to `Docs/
 Editor facade: `Tools/Hecton-8/Procedural Flora Sway Tuner` exposes decay/current/mass/mock/gizmo controls and a 10Hz readout. The max-magnitude label uses a cold precomputed string cache; secondary resolution/cell detail text updates only on editor value changes and is not part of the player hot path.
 
 Indirect vegetation culling remains owned by `HectonIndirectVegetationRenderer`, not by the sway field. The current static route builds `__HectonVegetationDepthPyramid`, binds `_HectonDepthPyramid` into `FloraCulling.compute`, rejects occluded instances before appending visible IDs, copies append counts into indirect argument buffers with `GraphicsBuffer.CopyCount`, and submits through `Graphics.RenderMeshIndirect`. SHINOBU_124 does not add a duplicate CPU HZB readback or direct renderer dependency.
+
+

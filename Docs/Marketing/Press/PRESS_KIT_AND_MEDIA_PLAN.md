@@ -138,8 +138,8 @@ The short version: survival below the light where every base, machine, and route
 Useful assets:
 
 - Steam page: [official Steam URL only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for that URL]
-- trailer: [approved asset ID/link only after asset metadata claim checks; public link only after destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`]
-- screenshots: [approved asset IDs/links only]
+- trailer: [asset ID/link only after asset metadata claim checks, QA, press/creator claim checks where applicable, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for public links]
+- screenshots: [asset IDs/links only after asset metadata claim checks, QA, and public presskit/CTA gates where linked publicly]
 - press kit: [public link only after `press_release_permission_gate = ALLOW_PRESS_RELEASE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`]
 
 Best angle for your audience: [one sentence customized to outlet].

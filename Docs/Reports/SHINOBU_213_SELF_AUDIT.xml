@@ -26,8 +26,29 @@
     <Field struct="LodConfigurationDTO" name="Lod2Threshold" offset="4" bytes="4" />
     <Field struct="LodConfigurationDTO" name="Lod1MeshHash" offset="8" bytes="4" />
     <Field struct="LodConfigurationDTO" name="Lod2MeshHash" offset="12" bytes="4" />
-    <Struct name="LodConfigurationDTO" size="16" alignmentMath="4+4+4+4=16; exact 16-byte DTO; no packed layout attribute" />
-    <Struct name="OfflineGeometryVertex32" size="32" alignmentMath="float3(12)+float3(12)+float2(8)=32; single interleaved vertex stride" />
+    <Struct name="LodConfigurationDTO" size="16" alignmentMath="4+4+4+4=16; exact 16-byte SIMD-friendly DTO; no packed layout attribute" />
+    <Field struct="OfflineGeometryRawVertex" name="Position" offset="0" bytes="12" />
+    <Field struct="OfflineGeometryRawVertex" name="Normal" offset="12" bytes="12" />
+    <Field struct="OfflineGeometryRawVertex" name="Uv0" offset="24" bytes="8" />
+    <Struct name="OfflineGeometryRawVertex" size="32" alignmentMath="float3(12)+float3(12)+float2(8)=32; exact 32-byte raw job vertex; explicit offsets 0,12,24" />
+    <Field struct="OfflineGeometryVertex32" name="Position" offset="0" bytes="12" />
+    <Field struct="OfflineGeometryVertex32" name="Normal" offset="12" bytes="12" />
+    <Field struct="OfflineGeometryVertex32" name="Uv0" offset="24" bytes="8" />
+    <Struct name="OfflineGeometryVertex32" size="32" alignmentMath="float3(12)+float3(12)+float2(8)=32; exact 32-byte interleaved mesh vertex; explicit offsets 0,12,24" />
+    <Field struct="OfflineSubMeshRange" name="SourceIndexStart" offset="0" bytes="4" />
+    <Field struct="OfflineSubMeshRange" name="SourceTriangleCount" offset="4" bytes="4" />
+    <Field struct="OfflineSubMeshRange" name="TargetTriangleStart" offset="8" bytes="4" />
+    <Field struct="OfflineSubMeshRange" name="TargetTriangleCount" offset="12" bytes="4" />
+    <Struct name="OfflineSubMeshRange" size="16" alignmentMath="4+4+4+4=16; exact 16-byte range row; explicit int offsets 0,4,8,12" />
+    <Field struct="OfflinePrimitiveFitResult" name="Center" offset="0" bytes="12" />
+    <Field struct="OfflinePrimitiveFitResult" name="Size" offset="12" bytes="12" />
+    <Field struct="OfflinePrimitiveFitResult" name="Radius" offset="24" bytes="4" />
+    <Field struct="OfflinePrimitiveFitResult" name="Error" offset="28" bytes="4" />
+    <Field struct="OfflinePrimitiveFitResult" name="VertexCount" offset="32" bytes="4" />
+    <Field struct="OfflinePrimitiveFitResult" name="ColliderType" offset="36" bytes="1" />
+    <Field struct="OfflinePrimitiveFitResult" name="_pad0" offset="37" bytes="1" />
+    <Field struct="OfflinePrimitiveFitResult" name="_pad1" offset="38" bytes="2" />
+    <Struct name="OfflinePrimitiveFitResult" size="40" alignmentMath="float3(12)+float3(12)+float(4)+float(4)+int(4)+byte(1)+pad(3)=40; exact 8-byte multiple; explicit offsets 0,12,24,28,32,36,37,38" />
     <Field struct="OfflineGeometryBakeTelemetryEntry" name="SourceHash" offset="0" bytes="4" />
     <Field struct="OfflineGeometryBakeTelemetryEntry" name="OutputHash" offset="4" bytes="4" />
     <Field struct="OfflineGeometryBakeTelemetryEntry" name="OriginalTriangles" offset="8" bytes="4" />
@@ -68,7 +89,7 @@
     <RuntimeAssembly name="Hecton8.World.OfflineGeometry" references="none" />
     <EditorAssembly name="Hecton8.World.OfflineGeometry.Editor" references="Hecton8.World.OfflineGeometry,Unity.Burst,Unity.Collections,Unity.Jobs,Unity.Mathematics" />
     <SiblingDomainReferences count="0" />
-    <RoslynProbe status="PRE_ENDIAN_BOUNDED_HULL_ASSET_BIND_SAFETY_INDEX_RECHECK_PENDING" path="Temp/SHINOBU_213_CompileProbe" note="Last pass predates explicit-endian fallback, bounded-hull support-index edits, fail-closed hull asset-binding guard, hull read-write annotation fix, finite rsqrt normalization guards, decimator index-stream fail-closed guards, and mock asset reload guard; post-endian bounded-hull safety-index probe gated by CPU; Unity import/profiler proof still pending" />
+    <RoslynProbe status="PRE_ENDIAN_BOUNDED_HULL_ASSET_BIND_SAFETY_INDEX_HOT_STRUCT_RECHECK_PENDING" path="Temp/SHINOBU_213_CompileProbe" note="Last pass predates explicit-endian fallback, bounded-hull support-index edits, fail-closed hull asset-binding guard, hull read-write annotation fix, finite rsqrt normalization guards, decimator index-stream fail-closed guards, mock asset reload guard, binary-ledger edit, and hot geometry DTO explicit-layout proof; post-endian bounded-hull safety-index hot-struct probe gated by CPU; Unity import/profiler proof still pending" />
   </COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Before: concave source-mesh collision approaches O(T) triangle contact/cooking complexity. After: sphere/box is O(1), fallback convex collision is bounded to V support points where 8 &lt;= V &lt;= 32; offline face discovery is capped to O(V^3) but emitted faces are plane-deduped and fan-triangulated before MeshCollider import. Underpopulated or unbound hull output collapses to BoxCollider O(1), never forced counters. Visual mesh remains rich; PhysX receives the lie.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>

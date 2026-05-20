@@ -20,6 +20,27 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
         public static void Publish(string tempPath, string finalPath)
         {
+            try
+            {
+                PublishObservedState(tempPath, finalPath);
+                return;
+            }
+            catch (FileNotFoundException)
+            {
+                if (!File.Exists(tempPath))
+                    throw;
+            }
+            catch (IOException)
+            {
+                if (!File.Exists(tempPath))
+                    throw;
+            }
+
+            PublishObservedState(tempPath, finalPath);
+        }
+
+        private static void PublishObservedState(string tempPath, string finalPath)
+        {
             if (File.Exists(finalPath))
                 File.Replace(tempPath, finalPath, null);
             else

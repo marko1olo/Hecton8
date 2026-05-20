@@ -241,3 +241,65 @@ Solution: Reference `Hecton8.Core.Contracts` from the Editor-only asmdef and reg
 Rejected Alternatives: Directly referencing `Hecton8.Core` was rejected because the contracts bridge exists specifically to avoid compile-wall coupling. Leaving the persistent ring untracked was rejected because the mandate requires native allocation visibility even for bounded editor diagnostics.
 Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged. Editor leak evidence improves while the runtime mesh-swap contract remains independent of the baker.
 Hardware Impact: Runtime 0 us. Editor cost is a cold allocation registration/unregistration around a 300 * 64 byte ring.
+
+## 2026-05-20 Ultra-Think Polish Pass 14 Decisions
+
+Problem: The support-hull Dear Lie used a generic `[-0.5, 0.5]` cube whenever any measured deformed bounds axis was flat. Flat bulkheads and hull plates are legitimate wreckage inputs, so that fallback discarded real extents and produced an arbitrary collision proxy.
+Solution: Preserve measured min/max on valid axes and expand only degenerate axes to a 0.01 m half-extent. Invalid/non-finite bounds still fall back to the unit cube and mark the existing non-finite warning.
+Rejected Alternatives: Keeping the unit-cube fallback was rejected because it is fast but physically misleading for thin structural assets. Generating detailed runtime MeshCollider topology was rejected because the entire domain exists to avoid runtime collision truth.
+Scalability potential: Low/Middle/High/Ultra all retain the same O(n) offline support hull scan and O(1) runtime mesh/collider swap. Higher-detail source meshes keep their authored extents without increasing runtime cost.
+Hardware Impact: Runtime 0 us. Editor cost is three max comparisons and one optional warning bit in the hull job after the existing bounds scan.
+
+Problem: Hull proxy expansion was not surfaced through the report or black-box warning path.
+Solution: Add `WarningHullBoundsExpanded` and OR `OfflineWreckageBakeCounters64.WarningFlags` into the state warning flags after the hull job completes.
+Rejected Alternatives: Silent collision proxy thickening was rejected because QA needs to distinguish a clean 3D support hull from a thin-axis-expanded proxy.
+Scalability potential: Warning propagation is tier-independent and does not alter visual quality curves.
+Hardware Impact: Runtime 0 us. Editor cost is one scalar OR per baked state.
+
+## 2026-05-20 Ultra-Think Polish Pass 15 Decisions
+
+Problem: `Runtime_Destruction_Scanner` preserved the previous shared canonical report by embedding its full JSON as an escaped string inside the new canonical report. Re-running the scanner can recursively grow `PHYSICS_OPTIMIZATION_REPORT.json`.
+Solution: Replace the recursive blob with bounded provenance fields: previous report byte count, hash, and agent. The exact previous JSON is still written once to `PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_209.json` before the canonical report is replaced.
+Rejected Alternatives: Keeping the embedded report was rejected because the report size grows with every run and pollutes machine-readable evidence. Dropping previous-report preservation entirely was rejected because multiple agents share the canonical report.
+Scalability potential: Runtime behavior unchanged across all tiers. Editor scanner output remains bounded even under repeated CI/menu runs.
+Hardware Impact: Runtime 0 us. Editor avoids recursive JSON growth; canonical report stays O(current findings) instead of O(previous report chain).
+
+## 2026-05-20 Ultra-Think Polish Pass 16 Decisions
+
+Problem: Pass 15 labeled `previousReport.Length` as `previousReportBytes`, but `string.Length` is UTF-16 code units, not the UTF-8 byte count actually written by `OfflineWreckageAtomicFile.WriteTextUtf8`.
+Solution: Add a no-allocation UTF-8 measurement/hash walk in `Runtime_Destruction_Scanner`. The scanner now counts ASCII, two-byte, three-byte, and surrogate-pair four-byte UTF-8 emissions and hashes the same byte stream used for the bounded previous-report provenance.
+Rejected Alternatives: Renaming the field to `previousReportChars` was rejected because the report contract says bytes. Calling `Encoding.UTF8.GetBytes` was rejected because it allocates a managed byte array for a cold artifact that can be measured by a scalar walk.
+Scalability potential: Runtime behavior unchanged across Low/Middle/High/Ultra; static scanner evidence remains bounded and byte-accurate under repeated validation runs.
+Hardware Impact: Runtime 0 us. Editor adds one scalar pass over the previous report string and removes misleading provenance metadata.
+
+## 2026-05-20 Ultra-Think Polish Pass 17 Decisions
+
+Problem: Pass 16 counted UTF-8 bytes correctly, but the hash path still called `OfflineWreckageBakeMath.HashBytes`, which lowercases ASCII and skips selected whitespace for stable asset/profile-name hashes. That is not a raw report byte-stream hash.
+Solution: Add `HashRawByte` inside `Runtime_Destruction_Scanner` and use it for every emitted UTF-8 byte in `HashUtf8Scalar`. The final avalanche remains `OfflineWreckageBakeMath.Hash(uint)` because it does not normalize individual bytes.
+Rejected Alternatives: Reusing the name-hash helper was rejected because two distinct prior reports can collide more easily if case and whitespace are intentionally ignored. Allocating an encoded byte array for standard hashing was rejected because the scanner already has a no-allocation scalar encoder walk.
+Scalability potential: Runtime behavior unchanged across Low/Middle/High/Ultra; scanner provenance now reflects byte-for-byte report differences without growing the canonical report.
+Hardware Impact: Runtime 0 us. Editor cost is unchanged in meaningful terms: one XOR and multiply per UTF-8 byte already counted in the cold scanner path.
+
+## 2026-05-20 Ultra-Think Polish Pass 18 Decisions
+
+Problem: Scanner JSON string escaping only handled quote and backslash, and previous-agent extraction treated any quote preceded by a backslash as escaped without checking whether the backslash itself was escaped.
+Solution: Extend `AppendEscaped` to emit valid JSON escapes for backspace, form feed, newline, carriage return, tab, and generic control bytes as `\u00XX`. Add `IsEscaped` with backslash-run parity so extracted string termination respects even/odd slash counts.
+Rejected Alternatives: Leaving report fields dependent on path/pattern cleanliness was rejected because the scanner also preserves other-agent canonical report metadata. Pulling in a JSON serializer was rejected because this editor scanner intentionally keeps a tiny bounded writer and avoids broad dependency churn.
+Scalability potential: Runtime behavior unchanged across Low/Middle/High/Ultra; static scanner artifacts remain machine-readable under repeated validation and cross-agent report preservation.
+Hardware Impact: Runtime 0 us. Editor cost is a few branches per emitted report character in a cold menu/CI scanner path.
+
+## 2026-05-20 Ultra-Think Polish Pass 19 Decisions
+
+Problem: `ExtractJsonStringValue` located the first quote after the colon, so a prior canonical report containing a non-string `agent` value could cause the scanner to capture the next quoted property name/value as the previous report agent.
+Solution: After the colon, skip only JSON whitespace and require the next non-whitespace character to be a string quote. Non-string, missing, or malformed values now fail closed to `UNKNOWN`.
+Rejected Alternatives: Continuing to tolerate loose extraction was rejected because previous-report provenance is cross-agent evidence. Using a full JSON parser was rejected because this bounded editor scanner only needs one string field and avoids adding broad dependencies.
+Scalability potential: Runtime behavior unchanged across Low/Middle/High/Ultra; scanner provenance remains bounded and fails closed under malformed shared canonical reports.
+Hardware Impact: Runtime 0 us. Editor adds a short whitespace loop in a cold scanner path.
+
+## 2026-05-20 Ultra-Think Polish Pass 20 Decisions
+
+Problem: `OfflineWreckageAtomicFile.Publish` used one `File.Exists(finalPath)` snapshot before choosing `File.Replace` or `File.Move`. In a parallel Editor environment, another tool can create or remove the final file between that check and publication.
+Solution: Wrap the first observed-state publish in a narrow retry path. If `FileNotFoundException` or `IOException` occurs and the owned temp file still exists, re-observe final-path existence and retry the appropriate `File.Replace`/`File.Move` once.
+Rejected Alternatives: A global named mutex was rejected because it would serialize unrelated artifact writers and create a new lock-order surface. Blind repeated retries were rejected because locked files should fail visibly instead of spinning.
+Scalability potential: Runtime behavior unchanged across Low/Middle/High/Ultra; editor output artifacts remain stable under concurrent scan/bake/report tools.
+Hardware Impact: Runtime 0 us. Editor normal path unchanged; race path adds one filesystem recheck and one retry.

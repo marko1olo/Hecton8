@@ -277,7 +277,7 @@ namespace Hecton8.Power
 
                     bool residualGrew = previousResidual < float.MaxValue * 0.5f &&
                                         maxResidual > math.max(previousResidual + targetTolerance * 0.25f, previousResidual * 1.08f);
-                    omega = residualGrew ? math.max(1f, omega * 0.86f) : omega;
+                    omega = residualGrew ? math.max(0.55f, omega * 0.86f) : omega;
                     previousResidual = maxResidual;
                 }
 
@@ -899,8 +899,8 @@ namespace Hecton8.Power
                             continue;
                         }
 
-                        float sourcePotential = NodeSourcePotential[nodeIndex];
-                        if (sourcePotential > Epsilon)
+                        float sourceAnchorPotential = NodeSourcePotential[nodeIndex];
+                        if (sourceAnchorPotential > Epsilon)
                         {
                             output[nodeIndex] = 1f;
                             continue;
@@ -961,7 +961,7 @@ namespace Hecton8.Power
 
                     bool residualGrew = previousResidual < float.MaxValue * 0.5f &&
                                         maxResidual > math.max(previousResidual + targetTolerance * 0.25f, previousResidual * 1.08f);
-                    omega = residualGrew ? math.max(1f, omega * 0.86f) : omega;
+                    omega = residualGrew ? math.max(0.55f, omega * 0.86f) : omega;
                     previousResidual = maxResidual;
                 }
 
@@ -1446,6 +1446,7 @@ namespace Hecton8.Power
         private NativeArray<ushort> _publishedNodeStatesBack;
         private VaultGenerationHandle<PowerTelemetryEntry> _powerBlackBoxHandle;
         private VaultGenerationHandle<PowerGridCounter64> _powerBlackBoxCursorHandle;
+        private IDataVault _powerBlackBoxVault;
         private NativeParallelHashMap<uint, ushort> _publishedNodeStateMap;
         private NativeParallelHashMap<uint, ushort> _publishedNodeStateBackMap;
         private NativeQueue<int> _bfsQueue;
@@ -1473,6 +1474,7 @@ namespace Hecton8.Power
             int safeEdgeCapacity = math.max(1, edgeCapacity);
             int safeConsumerCapacity = math.max(1, consumerCapacity);
             _bfsQueueSentinelLabel = string.Concat(nameof(_bfsQueue), "_", ++_nextSentinelInstanceId);
+            _powerBlackBoxVault = GlobalRegistry.DataVault;
 
             // COLD ALLOC: LogisticsNode[nodeCapacity] — runtime node buffer — owner: LogisticsNetworkGraph
             _nodeBuffer = new NativeArray<LogisticsNode>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -1782,6 +1784,7 @@ namespace Hecton8.Power
             DisposeNativeArray(ref _publishedNodeStatesBack, disposeDependency);
             _powerBlackBoxHandle = default;
             _powerBlackBoxCursorHandle = default;
+            _powerBlackBoxVault = null;
             DisposeNativeParallelHashMap(ref _publishedNodeStateMap, disposeDependency, nameof(_publishedNodeStateMap));
             DisposeNativeParallelHashMap(ref _publishedNodeStateBackMap, disposeDependency, nameof(_publishedNodeStateBackMap));
 
@@ -2662,7 +2665,7 @@ namespace Hecton8.Power
         {
             ring = default;
             cursor = default;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _powerBlackBoxVault;
             if (vault == null || vault.IsAllocationLocked)
                 return false;
 

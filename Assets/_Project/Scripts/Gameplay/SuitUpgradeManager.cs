@@ -165,14 +165,7 @@ namespace Hecton8.Gameplay
         {
             get
             {
-                ulong mask = _effectiveUpgradeMask;
-                if ((mask & SuitUpgradeResolver.DepthMk4) != 0UL)
-                    return 4;
-                if ((mask & SuitUpgradeResolver.DepthMk3) != 0UL)
-                    return 3;
-                if ((mask & SuitUpgradeResolver.DepthMk2) != 0UL)
-                    return 2;
-                return (mask & SuitUpgradeResolver.DepthMk1) != 0UL ? 1 : 0;
+                return SuitUpgradeResolver.ResolveHullTier(_effectiveUpgradeMask);
             }
         }
 

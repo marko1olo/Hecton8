@@ -23,7 +23,7 @@ Dispatcher phases: PreSimulation, Simulation, PostSimulation, VisualSync
 - `Shinobu220BulkheadIntentControl` (72015): `BulkheadContainmentIntentControlDTO[1]`, exact 64-byte write/read cursor row.
 
 ## Boundary Rule
-`BaseAirlock` publishes edge lock intent and normalized parent integrity as `BulkheadContainmentIntentDTO` packets through `Hecton8.Core.Contracts.BulkheadContainmentIntentBus`. It does not import `Hecton8.Construction`, does not hold a Construction object reference, and does not own the state lane. `BulkheadContainmentRuntime` consumes the ingress ring in `PreSimulation`, then owns closure, CSR sealing, KCC plane collision result, shader upload, telemetry, and dump path `Docs/AgentLogs/Dump_SHINOBU_220.bin`.
+`BaseAirlock` publishes edge lock intent and normalized parent integrity as `BulkheadContainmentIntentDTO` packets through `Hecton8.Core.Contracts.BulkheadContainmentIntentBus`. It does not import `Hecton8.Construction`, does not hold a Construction object reference, and does not own the state lane or any local closure-progress scalar. `BulkheadContainmentRuntime` consumes the ingress ring in `PreSimulation`, then owns closure, CSR sealing, KCC plane collision result, shader upload, telemetry, and dump path `Docs/AgentLogs/Dump_SHINOBU_220.bin`.
 
 `PlayerKinematicsRuntime` consumes `Shinobu220BulkheadCollisionResults` as a data-only KCC correction: it projects player position/velocity out of closed bulkhead planes without Unity colliders or direct Construction object references.
 

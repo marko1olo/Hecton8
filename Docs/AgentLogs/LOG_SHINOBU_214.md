@@ -209,3 +209,152 @@ Exact Microseconds saved:
 Verification:
 - Static source surface confirms `Fbm(float2,uint,float)` consumes `GlobalQualityWeight` and uses `math.smoothstep`.
 - Build remains gated: dotnet/csc absent, CPU sampled at 99 percent.
+
+## 2026-05-20 - CSV Flag Authority Pass
+
+What was wrong:
+- `texture_packing_profiles.csv` parsing always began with macro noise, Toksvig mips, and Sobel normals enabled. A profile intended for props could not actually disable those stages from data.
+
+What was done:
+- Rewrote `ReadFlags` to parse lowercase FNV-1a tokens from the existing byte cursor.
+- Supported `macro/noise`, `toksvig/mip`, `normal/sobel`, `invert/smoothness`, and `none/off/false/0`.
+- Empty flag cells keep the default hard-surface behavior; explicit off returns zero flags.
+
+Cinematic Cheats used:
+- Terrain profiles still use the Dear Lie macro bake. Prop profiles can now skip it instead of paying pointless offline work.
+
+Exact Microseconds saved:
+- Runtime added: 0 us.
+- Runtime sampler savings unchanged.
+- Editor savings are profile-dependent: disabled Sobel/macro stages avoid those jobs for prop batches; Unity timing proof pending.
+
+Verification:
+- Static forbidden-pattern scan stayed clean after the parser change.
+- JSON reports still parse.
+
+## 2026-05-20 - CSV Profile Facade Authority Pass
+
+What was wrong:
+- The CSV byte parser could produce zero optional flags, but the Forge window still initialized every batch request with `FlagInjectMacroNoise`. Data authority and UI execution diverged.
+
+What was done:
+- `TextureChannelPackerWindow.BuildRequest` now starts from `profile.Flags`.
+- The visible UI toggles only override invert roughness, Toksvig mips, and Sobel normals after profile selection.
+- Macro bake remains profile-owned; explicit `none/off/0` in CSV now reaches the pack request instead of being silently overwritten.
+- `HashLiteral(string)` was removed from CSV flag matching and replaced with precomputed FNV-1a constants.
+
+Cinematic Cheats used:
+- Prop recipes can remove the entire offline macro pass. Terrain recipes keep the baked macro Dear Lie without introducing a runtime sampler.
+
+Exact Microseconds saved:
+- Runtime added: 0 us.
+- Editor: one full-pixel macro pass is skipped for profiles that disable macro. Exact timing pending Unity menu-run proof.
+
+Verification:
+- Static forbidden-pattern scan passed after this patch.
+- JSON reports parse.
+- Build remains gated: dotnet/csc absent, CPU sampled at 100 percent.
+
+## 2026-05-20 - Batch Fault Advance Pass
+
+What was wrong:
+- A single corrupt source set could throw from `TryPackArmAsset` and leave the Forge queue on the same `_pendingIndex`, causing repeated editor update failures.
+
+What was done:
+- Wrapped the per-set pack call in `TickPackingQueue` with an Editor-only catch.
+- Failed sets increment `_batch.Failed` and the queue advances to the next source set.
+- The packer still records the fault and dumps the blackbox before rethrowing.
+
+Cinematic Cheats used:
+- None. This is tool resilience around the offline pipeline.
+
+Exact Microseconds saved:
+- Runtime added: 0 us.
+- Editor: prevents repeated failed work after one bad source set; exact avoided time depends on corrupt asset count.
+
+Verification:
+- Static forbidden-pattern scan passed after this patch.
+- JSON reports parse.
+- Build remains gated: dotnet/csc absent, CPU sampled at 100 percent.
+
+## 2026-05-20 - Compile Wall Isolation Pass
+
+What was wrong:
+- The packer scripts were under the broad pre-existing `Hecton8.Editor.asmdef`, which references several Hecton8 runtime assemblies. The code had no sibling-domain `using`, but assembly evidence was still too broad.
+
+What was done:
+- Moved the packer scripts and `.meta` files to `Assets/_Project/Scripts/Editor/TextureChannelPacker/`.
+- Added `Hecton8.Rendering.TexturePacker.Editor.asmdef`.
+- New asmdef references only `Unity.Collections`, `Unity.Mathematics`, `Unity.Burst`, and `Unity.Jobs`; no sibling Hecton8 runtime assemblies.
+
+Cinematic Cheats used:
+- None. This is compile-wall isolation.
+
+Exact Microseconds saved:
+- Runtime added: 0 us.
+- Developer compile-wall impact requires Unity import/build timing proof. Static assembly surface is narrowed.
+
+Verification:
+- Pending asmdef/reference scan after this patch.
+- Build remains gated until CPU is below 50 percent and no compiler process exists.
+
+## 2026-05-20 - Property Purge Pass
+
+What was wrong:
+- `PackedMaskAnalysis` still used get-only C# properties. The struct was Editor-only, but the domain audit requires raw field discipline across owned texture-packing DTO surfaces.
+
+What was done:
+- Replaced `HasSourceAlpha` and `RgbChannelsCollapseToGreyscale` properties with raw readonly fields.
+
+Cinematic Cheats used:
+- No simulation involved. This is data-surface hardening for the scanner that proves ARM adoption.
+
+Exact Microseconds saved:
+- Runtime added: 0 us.
+- Editor delta is negligible; the value is stricter compile-surface hygiene and cleaner CS1612 evidence.
+
+Verification:
+- Static forbidden-pattern scan passed after this patch, including `{ get; }` and `HashLiteral`.
+- JSON reports parse.
+- Build remains gated: dotnet/csc absent, CPU sampled at 100 percent.
+
+## 2026-05-20 - Axis Dimension Preservation Pass
+
+What was wrong:
+- Output dimension resolution used one max dimension for both width and height. That avoided width-only collapse but forced non-square source sets into square masks.
+
+What was done:
+- Added independent `ResolvePackWidth` and `ResolvePackHeight`.
+- Each axis now scans AO/Roughness/Metallic/Albedo source dimensions, rounds to POT, and clamps to request max size.
+
+Cinematic Cheats used:
+- No runtime work. The same baked ARM Dear Lie remains; this only avoids unnecessary texel bloat for asymmetric source sets.
+
+Exact Microseconds saved:
+- Runtime sampler count remains one ARM sampler.
+- VRAM and upload savings are source-dependent. Example model: 1024x4096 clamped to 2048 no longer becomes 2048x2048 if height/width source axes do not require it; exact proof pending Unity asset run.
+
+Verification:
+- Static forbidden-pattern scan passed after this patch, including retired `ResolvePackDimension`/`MaxDimension`.
+- JSON reports parse.
+- Build remains gated: dotnet/csc absent, CPU sampled at 100 percent.
+
+## 2026-05-20 - Cold Allocation Annotation Pass
+
+What was wrong:
+- Editor-only `List`/`Dictionary` caches were intentionally cold allocations, but several did not carry the canonical owner/capacity comment required by AGENTS.md.
+
+What was done:
+- Added `COLD ALLOC` comments to Forge profile caches, source grouping dictionary, validator audit lists, and per-material issue buffer.
+
+Cinematic Cheats used:
+- None. This is audit-surface hygiene only.
+
+Exact Microseconds saved:
+- Runtime added: 0 us.
+- Performance unchanged; the value is traceable allocation ownership in editor tooling.
+
+Verification:
+- Static forbidden-pattern scan passed after this patch.
+- JSON reports parse.
+- Build remains gated: dotnet/csc absent, CPU sampled at 100 percent.

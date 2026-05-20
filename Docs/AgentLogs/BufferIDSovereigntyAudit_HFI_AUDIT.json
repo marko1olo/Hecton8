@@ -2030,112 +2030,112 @@
     },
     {
       "enumNames": [],
-      "line": 212,
+      "line": 297,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID VertexBudgetCounters = (BufferID)70820;",
       "value": 70820
     },
     {
       "enumNames": [],
-      "line": 213,
+      "line": 298,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID TileWarnings = (BufferID)70821;",
       "value": 70821
     },
     {
       "enumNames": [],
-      "line": 214,
+      "line": 299,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID TransparentQuadCounters = (BufferID)70822;",
       "value": 70822
     },
     {
       "enumNames": [],
-      "line": 215,
+      "line": 300,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID TelemetryRing = (BufferID)70823;",
       "value": 70823
     },
     {
       "enumNames": [],
-      "line": 216,
+      "line": 301,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID MockVisibleInstances = (BufferID)70824;",
       "value": 70824
     },
     {
       "enumNames": [],
-      "line": 217,
+      "line": 302,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID SortScratch = (BufferID)70825;",
       "value": 70825
     },
     {
       "enumNames": [],
-      "line": 218,
+      "line": 303,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID MeshVertexCounts = (BufferID)70826;",
       "value": 70826
     },
     {
       "enumNames": [],
-      "line": 219,
+      "line": 304,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID RadixHistogram = (BufferID)70827;",
       "value": 70827
     },
     {
       "enumNames": [],
-      "line": 220,
+      "line": 305,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID VisibleCountOut = (BufferID)70828;",
       "value": 70828
     },
     {
       "enumNames": [],
-      "line": 221,
+      "line": 306,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID MockQualitySignal = (BufferID)70829;",
       "value": 70829
     },
     {
       "enumNames": [],
-      "line": 222,
+      "line": 307,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID MockCamera = (BufferID)70830;",
       "value": 70830
     },
     {
       "enumNames": [],
-      "line": 223,
+      "line": 308,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID SourceFrustumPlanes = (BufferID)70831;",
       "value": 70831
     },
     {
       "enumNames": [],
-      "line": 224,
+      "line": 309,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID SqueezedFrustumPlanes = (BufferID)70832;",
       "value": 70832
     },
     {
       "enumNames": [],
-      "line": 225,
+      "line": 310,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID HzbVisibilityMask = (BufferID)70833;",
       "value": 70833
     },
     {
       "enumNames": [],
-      "line": 226,
+      "line": 311,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID IndirectDrawArgs = (BufferID)70834;",
       "value": 70834
     },
     {
       "enumNames": [],
-      "line": 881,
+      "line": 966,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "SliceTableHandle = dataVault.GetBufferHandle<TextureStreamingSliceDTO>((BufferID)70835, SliceCapacity, SystemID.GraphicsScalability, NativeArrayOptions.UninitializedMemory);",
       "value": 70835

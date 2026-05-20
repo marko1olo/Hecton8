@@ -1199,6 +1199,9 @@ namespace Hecton8.Core.Memory
         ShinobuMigrationGridBack = 70654,
         ShinobuMigrationBloodCloudPois = 70655,
         ShinobuMigrationSwarmStates = 70656,
+        ShinobuScannerScanProgress = 70657,
+        ShinobuScannerLoreIndex = 70658,
+        ShinobuScannerEncyclopediaState = 70659,
         ShinobuMaterialStates = 70660,
         ShinobuMaterialPowers = 70661,
         ShinobuMaterialVisibleIndices = 70662,
@@ -1404,7 +1407,20 @@ namespace Hecton8.Core.Memory
         ShinobuSimdVisibleIndexMask = 71639,
         ShinobuSimdVisibleIndices = 71640,
         ShinobuSimdVisibleCount = 71641,
-        ShinobuSimdHydrodynamicTuning = 71642
+        ShinobuSimdHydrodynamicTuning = 71642,
+        ShinobuSeaglideStates = 71660,
+        ShinobuSeaglideRequests = 71661,
+        ShinobuSeaglideForcePackets = 71662,
+        ShinobuSeaglideFlowSamples = 71663,
+        ShinobuSeaglideTuning = 71664,
+        ShinobuSeaglideTelemetryRing = 71665,
+        ShinobuSeaglideTelemetryCursor = 71666,
+        ShinobuSeaglideCounters = 71667,
+        ShinobuSeaglideBodyBindings = 71668,
+        ShinobuSeaglideVisualStates = 71669,
+        ShinobuSeaglideAudioSignals = 71670,
+        ShinobuSeaglideCavitationSignals = 71671,
+        ShinobuSeaglideCsvScratch = 71672
     }
 
     [Flags]

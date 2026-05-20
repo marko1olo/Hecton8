@@ -1,9 +1,9 @@
-# ARM64 Memory Alignment - SHINOBU_204
+﻿# ARM64 Memory Alignment - SHINOBU_204
 
 Status: partial enforcement pass. Last recorded static scan text reported zero `StructLayout(...Pack=...)` parameters under `Assets/_Project/Scripts`; rerun and link an artifact path, command/tool, timestamp, environment, and output before treating that count as current proof. Core DTO explicit-layout coverage was expanded for Bridge, input, black-box, foveated telemetry, simulation-bucketing records, weather current metadata, queue payloads, content authority Vault records, global telemetry events, dispatcher telemetry/state records, Core runtime snapshots for brine/power/UI/player context, acoustic AUP, object-batch render payloads, spatial intrinsics, native bitmask, logistics spline descriptor, native-memory snapshot source, arena allocation metadata, input dispatch records, scheduling black-box records, GlobalSignals transform records, GlobalTelemetryBus black-box jobs/editor frame, and every `StructLayout` record inside `GlobalRegistryContracts.cs`; full non-Pack Sequential layout conversion remains open outside the owner-safe Core set.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -13,10 +13,10 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 
@@ -66,3 +66,5 @@ Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTA
 - Latest owner-safe Core Sequential conversions: H8Bridge binary entries, InputDeterminism DTOs, duplicate Input/Determinism contracts, GlobalTelemetryBus black-box DTOs/jobs/editor frame, FoveatedSimulationTelemetryEntry, SimulationBucketFrameState, SimulationBucketRebalanceResult, SimulationBucketBlackBoxEntry, CurrentMeta, WeatherRuntimeSnapshot, ContentAuthority Vault/telemetry/pending-load/budget records, ContentLoreBlockIndex, GlobalTelemetryBus TelemetryEvent, DispatcherStateDTO, DispatcherPipelineTelemetryEntry, MockTimeDilationSignal, BrineLayerSample, BatteryRuntimeSnapshot, UIStateData, UIValueSlot, PlayerMovementRuntimeState, PlayerLookState, PlayerSurvivalRuntimeState, PlayerInteractionRuntimeState, AcousticAup, ObjectBatchInstance, ObjectBatchChunk, HectonAabb, HectonSphere, NativeBitmask256, SplineDescriptor, NativeAllocationSnapshotSource, ArenaAllocation, BufferedActionEntry, JobAdmissionBlackboxEntry, CombatDamageSignalAupShiftTransformer, PlayerInputState family, every `StructLayout` record in GlobalRegistryContracts, NativeQueue event payloads, RegistryEventPayload, EntityCommand, and StorageReservationCommitResolvedPayload. `AnomalySignal` duplicate padding from the signal-fence pass was removed after the scoped build attempt exposed it.
 - Known ABI exception: Core `InputStateDTO` remains 24 bytes because rollback/netcode contracts currently hard-code `InputStateDTO` offsets at 24-byte boundaries. It is explicit and aligned, but not yet 32-byte quantized.
 - Build proof is absent. A scoped `Hecton8.Core.csproj` build was attempted under a green CPU gate and failed with 117 dependency-wall errors from missing sibling/domain contracts; one SHINOBU-owned `AnomalySignal` duplicate padding error was fixed afterward. Latest CPU gate rose above 50 percent, so rerun is forbidden.
+
+

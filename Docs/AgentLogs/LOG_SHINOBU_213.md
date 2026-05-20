@@ -436,7 +436,34 @@ Exact Microseconds saved:
 - Editor: prevents a bad reference after repeated benchmark generation; no measured speed claim.
 
 Verification:
-- Static scans and compile probe must be re-run after this guard.
+- Generated-domain forbidden-pattern scan: clean after mock guard.
+- Stale proof scan: clean after self-audit generator/static XML update.
+- Owned whitespace/conflict-marker scan: clean.
+- Scoped `git diff --check`: clean.
+- Compile probe not launched: latest gate sample remained CPU=94.3 with `dotnet/csc` count=0.
+
+---
+
+## 2026-05-20 Binary Payload Ledger Boundary
+
+Status: PENDING VERIFICATION / STATIC DOC UPDATED
+
+What was wrong:
+- `offline_lod_manifest.h8lod` existed in SHINOBU_213 architecture/self-audit proof, but `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` did not record its owner, layout, endian contract, or authority boundary.
+
+What was done:
+- Added `2026-05-20 SHINOBU_213 Offline LOD and Collider Manifest Boundary` to the binary payload ledger.
+- Documented the 64-byte header, 128-byte records, explicit little-endian 4-byte field writes, no Unity object references, no managed payload, no Vault ownership, and no rollback authority.
+
+Cinematic Cheats used:
+- None new. The ledger records the existing primitive-first and bounded support-hull collision lies as payload context.
+
+Exact Microseconds saved:
+- Runtime: 0us direct change.
+- Future importer risk reduced by preventing JSON parsing, host-endian raw DTO reads, or accidental ownership through a global route.
+
+Verification:
+- Static doc update only; post-ledger scans pending.
 
 ---
 
@@ -467,3 +494,32 @@ Verification:
 - Owned whitespace/conflict-marker scan: clean.
 - Scoped `git diff --check`: clean.
 - Compile probe not launched: latest gate sample remained CPU=100.0 with `dotnet/csc` count=0.
+
+---
+
+## 2026-05-20 Hot Job Struct Explicit Layout Pass
+
+Status: PENDING VERIFICATION / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX-HOT-STRUCT PROBE GATED BY CPU=93.3
+
+What was wrong:
+- `OfflineGeometryRawVertex`, `OfflineGeometryVertex32`, `OfflineSubMeshRange`, and `OfflinePrimitiveFitResult` were job/hot geometry rows but did not have explicit byte-layout proof in the generated self-audit.
+
+What was done:
+- Converted those structs to explicit layouts in `OfflineGeometryBakerTypes.cs`.
+- Added validator checks for 32B raw vertex, 32B output vertex, 16B submesh range, and 40B primitive-fit result.
+- Patched `OfflineGeometrySelfAudit.cs`, `SHINOBU_213_SELF_AUDIT.xml`, and the architecture note with field offsets and padding math.
+
+Cinematic Cheats used:
+- None new. This pass preserves the existing primitive-first and bounded support-hull collision lie; it hardens the data rows feeding those jobs.
+
+Exact Microseconds saved:
+- Runtime: 0us direct change; the baker emits static assets.
+- Editor: fixed 32-byte vertex rows and 16-byte range rows reduce future ABI drift risk. Speed gain is not claimed until Unity/Burst profiler proof exists.
+
+Verification:
+- Generated-domain forbidden-pattern scan: clean for properties, `foreach`, LINQ terminals, mesh `.vertices`/`.triangles`, `File.ReadAllBytes`, `NativeArrayOptions.ClearMemory`, `math.reversebytes`, `convex=false`, and stale `[WriteOnly] HullVertices`.
+- Stale proof scan: clean for old probe wording and old 8-point proof text in current SHINOBU_213 proof files.
+- Owned whitespace/conflict-marker scan: clean.
+- Scoped `git diff --check`: clean, with line-ending warnings only.
+- Compile-wall asmdef inspection: runtime assembly has zero references; editor assembly references only owned runtime DTO plus Unity Burst/Collections/Jobs/Mathematics.
+- Compile probe not launched: latest gate sample was CPU=93.3 with `dotnet/csc` count=0.

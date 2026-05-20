@@ -246,3 +246,22 @@ Status: SOURCE IMPLEMENTED / UNITY COMPILE BLOCKED BY FOREIGN DEPENDENCY WALL + 
 - `git diff --check` on SHINOBU_207 touched source/docs/report: PASS except CRLF normalization warnings in existing tracked files.
 - Temp cleanup: PASS after escalated deletion of the stale byte-identical Babel manifest temp.
 - C# compile/profiler: BLOCKED. CPU guard via `Get-Counter` returned `98.48`; no `dotnet`/`csc`; no build launched.
+
+## Loop 18: Scanner Residue Gate Hardening
+- [x] Re-read Status/Rationale before continuation. DOD: Loop 18 started from disk state and current report data, not chat memory. Rejected: relying on the already-long session transcript.
+- [x] Added source-residue failure gates to `Tools/Cache_Miss_Eradication_Scanner.py`. DOD: the scanner now fails if the SHINOBU_207 source contour regains flat `while (lo <= hi)` / `while (low <= high)` search loops, `.BinarySearch` APIs, managed `Dictionary<>`/`SortedList<>`/`HashSet<>` containers, `Pack=1`, wrapped `offset + 64`, or the old full `OutputBytes` mock clear. Rejected: manual `rg` as the only regression proof.
+- [x] Refreshed `Docs/Reports/MEMORY_OPTIMIZATION_REPORT.json`. DOD: report now includes `sourceContracts.sourceResidueClean` with all six gates true, plus deterministic search-job and 64-byte node checks. Rejected: keeping scanner proof limited to Burst attributes.
+- [x] Post-Loop-18 verification. DOD: cache scanner execution, in-memory Python compile, static/Babel B-Tree validation, H8LR/lore manifest checks, localization verify, BufferID sovereignty audit, direct static record-alignment audit, targeted source residue grep, conflict-marker grep, and diff-check passed. `py_compile` remains avoided because `Tools/__pycache__` write permission is blocked; in-memory compile was used instead.
+- [ ] Unity compile/profiler proof. BLOCKED BY CPU GUARD + known foreign dependency wall; no `dotnet build` or rebuild was launched in this loop.
+
+## Verification Delta Loop 18
+- In-memory Python compile for `Tools/Cache_Miss_Eradication_Scanner.py`, `Tools/UpgradeStaticBTreePayloads.py`, `Tools/LorePacker.py`, `Tools/VerifyLore.py`, and `Tools/BufferIDSovereigntyAudit.py`: PASS.
+- `python Tools/Cache_Miss_Eradication_Scanner.py`: PASS, packed-byte binary `26167.87 ns`, packed-byte B-Tree `26089.42 ns`, `nsPerLookupSaved=78.45`, theoretical cacheLinesSaved `8.00`, `sourceContracts.sourceResidueClean` all true.
+- `python Tools/UpgradeStaticBTreePayloads.py --check`: PASS, static/Babel B-Trees present.
+- `python Tools/LorePacker.py --check --hash-audit --list`: PASS, H8LR bytes `43536`, collisions `0`.
+- `python Tools/VerifyLore.py --check --verify-manifest --list`: PASS.
+- `python Tools/LocToBinary.py --verify-only`: PASS, 188 entries.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS, duplicates `0`, local casts `758`, cast files `63`.
+- Direct static record alignment audit: PASS, 13 records, flags `0x101`, records offset `512`, file bytes `1328`, Babel CRC `0xA1084F1D`, Hecton payload CRC `0x598EF439`, every lookup record offset `% 64 == 0`.
+- Targeted source-residue `rg`: PASS, no forbidden B-Tree contour matches.
+- `git diff --check` on SHINOBU_207 touched source/docs/report set: PASS.

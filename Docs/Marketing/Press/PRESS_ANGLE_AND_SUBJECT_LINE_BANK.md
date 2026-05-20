@@ -157,7 +157,7 @@ Reject:
 One follow-up max unless the outlet replies.
 
 ```text
-Quick follow-up on HECTON-8. The sharper angle for your audience may be [specific angle]. The presskit is here: [approved presskit URL after CTA activation packet]. If this is not a fit, I will leave it there.
+Quick follow-up on HECTON-8. The sharper angle for your audience may be [specific angle]. The presskit is here: [gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]. If this is not a fit, I will leave it there.
 ```
 
 ## Press Proof Checklist

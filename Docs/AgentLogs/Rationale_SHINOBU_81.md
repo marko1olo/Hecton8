@@ -1107,3 +1107,51 @@ Rejected Alternatives: Leaving the placeholders because deeper gate docs already
 Scalability potential: Low budget execution can keep preparing copy without opening public or private routes. Middle/High/Ultra campaigns can later reuse the same templates by filling exact gate-backed URLs, route classes, and provenance fields instead of rewriting from scratch.
 
 Hardware Impact: 0us measured runtime impact. STATIC_DOC/STATIC_DATA only. No public CTA, post, showcase submission, press send, creator send, private access, browser/account action, runtime action, or build action occurred.
+
+## Decision 238 - Metrics Need Permission Gate/Source, Not Only Route Class
+
+Problem: Analytics and KPI schemas had route/provenance fields, but several report tables could still count campaign events, creator attribution, feedback, or weekly signals without recording the machine gate/source that allowed the route. That leaves a reporting loophole: a row can look measured while the public CTA, private access, creator send, press send, support route, or owned-audience permission is unknown.
+
+Solution: Added permission gate/source columns and quarantine rules to the analytics event, creator attribution, feedback, minimum packet, weekly report, and rules sections. Expanded the KPI creator outreach dashboard fields to include `asset_ids_sent`, `creator_utility_score`, `creator_send_gate`, `send_route_class`, `reply_consent_provenance`, and `send_gate_source`. Synchronized the control tower, daily loop, and README so entry points no longer describe reporting as route/provenance-only.
+
+Rejected Alternatives: Leaving the current schema was rejected because `unknown` route/provenance and blank permission sources would still be reportable by habit. Filling current KPI/CRM rows was rejected because no public route, send, access, CTA, or measured signal happened. Creating a new dashboard file was rejected because the existing analytics and KPI owner docs are the correct surfaces.
+
+Scalability potential: Low budget work avoids false weekly wins. Middle/High/Ultra campaign operations can later scale paid, creator, press, support, and owned-audience reporting from machine-gated rows instead of manually reconciling screenshots and comments.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC/STATIC_DATA only. No KPI row fill, public CTA, post, send, private access, browser/account action, runtime action, or build action occurred.
+
+## Decision 239 - Support Reply Templates Must Not Carry Generic Approved-Route Placeholders
+
+Problem: Steam support/review and launch war-room response templates still used a generic support-route placeholder. The documents had a support gate above the templates, but the pasteable reply text itself could still be copied into a public response without route custody.
+
+Solution: Replaced the generic support route placeholder with gated support-route wording in the performance and bug templates. Added explicit replacement rules requiring `steam_support_permission_gate = ALLOW_STEAM_SUPPORT_ROUTE_VERIFIED`, owner-controlled inbox/form custody, `route_class = support_route`, `consent_provenance = support_report`, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` when the route is linked publicly. Added backlog row 210 and source ledger/status/log entries.
+
+Rejected Alternatives: Leaving the template as-is was rejected because support replies are high-pressure paste surfaces. Creating a new support checklist was rejected because the support playbook already owns the gate. Filling a support route was rejected because no Steam surface, owner custody, or support allow gate exists.
+
+Scalability potential: Low budget launch prep can keep support copy ready without exposing personal or unowned routes. Middle/High/Ultra launch operations can later insert a support URL only when the exact app/build/surface and route-provenance fields are known.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No support route, Steam/forum reply, public CTA, account/browser action, runtime action, or build action occurred.
+
+## Decision 240 - Pasteable CTA URL Placeholders Must Name The Specific Gate
+
+Problem: Multiple pasteable templates still used generic approved-after-CTA placeholders for Steam, demo, presskit, Discord, feedback, and asset URLs. The owner gate documents were stricter, but bracketed placeholders in email/social/release/event templates are the text humans copy during launch pressure.
+
+Solution: Replaced the old generic approved-CTA placeholders in press release/email templates, social profile and pinned-post templates, owned-audience emails, demo outreach, Next Fest campaign copy, Steam wishlist clip ending, press follow-up copy, post-bank bundle, and localization review form. The replacement placeholders name the relevant machine gates: Steam page publication, public demo access, press release/public presskit, Discord open, owned-audience or Steam support feedback route, and public CTA.
+
+Rejected Alternatives: Leaving generic placeholders was rejected because they compress too many permission decisions into one word. Replacing them with final URLs was rejected because no live URL or gate allow exists. Creating a new link-placeholder file was rejected because the current owner docs already hold the route rules.
+
+Scalability potential: Low budget prep keeps templates copyable without opening public routes. Middle/High/Ultra launch operations can later swap placeholders for real URLs only after the exact surface gates pass.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No public link, post, release, email, signup, Discord, account/browser action, runtime action, or build action occurred.
+
+## Decision 241 - Residual Asset-Link And Event CTA Shorthand Must Not Survive In Adjacent Copy
+
+Problem: After bracket-placeholder cleanup, residual paste-adjacent lines still said approved asset link, approved screenshots, Steam/presskit link after CTA activation, approved Steam CTA after activation, wishlist after CTA activation, or one asset link. These phrases are weaker than the actual permission graph and appear in the files operators copy from: trailer, creator pitch, showcase, paid test, key compliance, and demo planning surfaces.
+
+Solution: Replaced those residual phrases with explicit gates on the same owner surfaces. Asset references now require asset metadata claim checks, QA, creator utility where creator-facing, and `creator_send_gate` where creator-facing. Public Steam/presskit/demo/trailer/event links now name `steam_page_publish_permission_gate`, `press_release_permission_gate`, `demo_public_access_permission_gate`, and destination-specific `public_cta_permission_gate`. Private access references name recipient/batch `private_access_permission_gate`, official inbox custody, disclosure, and access-log fields. Showcase and paid rows now also name `submission_permission_gate` and `spend_permission_gate`.
+
+Rejected Alternatives: Leaving generic wording was rejected because these are operator-facing copy banks and tables, not archival analysis. Creating another gate document was rejected because the owner docs and machine fields already exist. Filling any URL, send-log, spend, or access field was rejected because no real asset, route custody, public CTA, spend approval, or human send exists.
+
+Scalability potential: Low budget work can keep copy and event/spend planning ready without opening public routes. Middle/High/Ultra campaign execution can later substitute real links only through the same machine gates, avoiding last-minute permission reconstruction.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC/STATIC_DATA only. No public link, post, event submission, email, spend, creator send, key/access route, account/browser action, runtime action, or build action occurred.

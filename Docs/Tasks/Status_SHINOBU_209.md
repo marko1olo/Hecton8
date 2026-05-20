@@ -109,3 +109,26 @@ Status: STATIC IMPLEMENTATION / PROJECT COMPILE BLOCKED OUTSIDE DOMAIN
 ## Ultra-Think Polish Pass 13
 - [x] Black-box native ring tracking bridged | DOD: editor black-box `Allocator.Persistent` ring registers/unregisters through `NativeMemoryTrackingBridge` from `Hecton8.Core.Contracts` | Rejected: untracked persistent editor NativeArray and direct `Hecton8.Core` dependency | Estimate: runtime 0 us, editor leak-audit proof improved
 - [x] Compile-wall guard preserved | DOD: only the Editor asmdef gained `Hecton8.Core.Contracts`; runtime asmdef remains isolated and no sibling runtime domain reference was introduced | Rejected: root Core reference from offline baker | Estimate: runtime 0 us
+
+## Ultra-Think Polish Pass 14
+- [x] Thin-hull collision lie preserved measured extents | DOD: support hull generation now expands only degenerate axes to 0.01 m half-extents instead of replacing any flat plate with a generic unit cube | Rejected: unit-cube fallback for bulkheads/hull plates and runtime detailed MeshCollider truth | Estimate: runtime 0 us, editor collision proxy correctness hardened
+- [x] Hull expansion warning surfaced | DOD: `WarningHullBoundsExpanded` bit flows through the 64-byte counter row into report/black-box warning flags | Rejected: silently modifying collision proxy thickness with no forensic evidence | Estimate: runtime 0 us
+
+## Ultra-Think Polish Pass 15
+- [x] Scanner report recursion bounded | DOD: `Runtime_Destruction_Scanner` no longer embeds the entire prior canonical JSON inside the next canonical report; it writes bounded previous-report byte/hash/agent fields and snapshots the prior JSON to `PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_209.json` | Rejected: recursive `previousReport` blob growth in a shared canonical report | Estimate: runtime 0 us, editor report size bounded
+- [x] Prior-report provenance retained | DOD: previous report preservation remains explicit through hash, byte count, agent string, and sidecar copy | Rejected: deleting other-agent canonical evidence before overwrite | Estimate: runtime 0 us
+
+## Ultra-Think Polish Pass 16
+- [x] Scanner byte provenance corrected | DOD: `previousReportBytes` now measures UTF-8 encoded bytes matching `WriteTextUtf8`, and `previousReportHash` hashes that same UTF-8 byte stream; source scan found no remaining scanner-source `previousReport.Length`/`HashText` path | Rejected: `string.Length` UTF-16 code-unit count mislabeled as bytes | Estimate: runtime 0 us, editor report correctness hardened
+
+## Ultra-Think Polish Pass 17
+- [x] Scanner hash normalization removed | DOD: `previousReportHash` now uses local raw FNV byte updates for every emitted UTF-8 byte instead of `OfflineWreckageBakeMath.HashBytes` name-normalization semantics | Rejected: lowercasing/skipping whitespace inside a provenance hash | Estimate: runtime 0 us, editor artifact hash correctness hardened
+
+## Ultra-Think Polish Pass 18
+- [x] Scanner JSON escaping hardened | DOD: report string fields now escape JSON control characters and `ExtractJsonStringValue` checks backslash parity before accepting a closing quote | Rejected: quote/backslash-only escaping and single-backslash quote detection | Estimate: runtime 0 us, editor report correctness hardened
+
+## Ultra-Think Polish Pass 19
+- [x] Scanner previous-agent extraction fails closed on non-string values | DOD: `ExtractJsonStringValue` now skips JSON whitespace after `:` and requires an immediate string quote before parsing | Rejected: scanning forward to the next quoted key/value after a non-string `agent` field | Estimate: runtime 0 us, editor provenance correctness hardened
+
+## Ultra-Think Polish Pass 20
+- [x] Atomic artifact publish race hardened | DOD: `OfflineWreckageAtomicFile.Publish` retries once against post-failure file state after `FileNotFoundException`/`IOException` if the owned temp still exists | Rejected: single `File.Exists` snapshot before `File.Replace`/`File.Move` under parallel Editor writers | Estimate: runtime 0 us, editor artifact publication resilience hardened

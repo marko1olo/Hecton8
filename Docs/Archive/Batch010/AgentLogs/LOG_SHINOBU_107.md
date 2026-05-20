@@ -3433,3 +3433,33 @@ What was done: Added `CoreDeterminismSignals` as the single Core owner for deter
 Cinematic Cheats used: None; this was signal-route isolation, not visual simulation.
 
 Exact Microseconds saved: `0` claimed. No profiler capture. Static proof: compile-wall findings `83 -> 81`; touched-file Burst/Struct/Vault scanners all `0`; build/rebuild not launched.
+
+## Loop 135 / XR Look-At AUP Mirror Extraction
+
+What was wrong: `InputDispatcher` still imported World only to cache and compare two XR look-at AUPs for gaze raycast reuse.
+
+What was done: Added explicit 48-byte `XRRuntimeAup48` and moved the InputDispatcher cache to that mirror. The true `AbsoluteUniversePosition` route remains inside `HectonXRRuntimeState`; InputDispatcher now uses grid/local mirror math, finite-checked runtime projection, and finite-checked hit-point offset.
+
+Cinematic Cheats used: XR look-at reuse is a cheap gaze-selection fake: reuse a recent valid raycast when origin/direction drift is tiny instead of issuing another physics query every frame.
+
+Exact Microseconds saved: Runtime claim `0 us`; no profiler run and no build. Static compile-wall debt decreased `81 -> 80`; `InputDispatcher.cs` now has zero compile-wall findings. Touched-file `Burst_Job_Directives=0`, `Runtime_Struct_Layout=0`, `Vault_Sovereignty=0`; `git diff --check` passed with CRLF warnings only.
+
+## Loop 136 / Player Runtime Pose AUP Namespace Extraction
+
+What was wrong: `PlayerRuntimeContextService` contained four explicit `Hecton8.World` references for predicted player AUP fallback and validation.
+
+What was done: Removed the explicit World references by using inferred `PredictedAup` field typing and routing fallback conversion through `GlobalSignals.TryRuntimePositionToAup(...)`. The finite check now operates from `PlayerMovementRuntimeState`.
+
+Cinematic Cheats used: None; this is compile-wall/AUP route cleanup. The avoided bad path was publishing false origin pose data when predicted AUP is invalid.
+
+Exact Microseconds saved: `0` measured; no profiler capture. Static proof: compile-wall dropped from `80` to `76`; `PlayerRuntimeContextService.cs` has no World findings and touched-file Burst/struct/vault scanners report zero findings. `dotnet build` not launched.
+
+## Loop 137 / Procedural Audio Signal Payload Contract Extraction
+
+What was wrong: `GlobalSignals.AudioEvent` depended directly on audio-domain structs and enum, producing nine Core-to-Audio source findings.
+
+What was done: Replaced those fields with Core-owned blittable signal payloads, moved audio struct conversion into `ProceduralAudioEvents`, updated the critical renderer to consume payloads, and normalized one touched Burst job directive.
+
+Cinematic Cheats used: The procedural audio lane remains a compact scalar event fake: one 128-byte packet drives DSP pings/groans instead of instantiating scene audio objects per stress source.
+
+Exact Microseconds saved: `0` measured; no profiler capture. Static proof: compile-wall dropped from `76` to `67`; `GlobalSignals.cs` contains no `Hecton8.Audio`; touched-file Burst and struct scanners are zero. Vault scanner still reports five existing audio-owner native allocation sites, so this loop is not logged as Vault-clean. `dotnet build` not launched.

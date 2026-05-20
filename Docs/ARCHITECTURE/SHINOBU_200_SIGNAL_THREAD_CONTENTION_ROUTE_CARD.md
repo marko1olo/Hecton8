@@ -1,4 +1,4 @@
-# SHINOBU_200 Signal Thread Contention Route Card
+﻿# SHINOBU_200 Signal Thread Contention Route Card
 
 Date: 2026-05-20
 Owner: SHINOBU_200 / THREAD_CONTENTION_SURGEON
@@ -6,7 +6,7 @@ Domain: Core Signals / SignalBus MPSC contention corridor
 Status: STATIC SOURCE UPDATED - COMPILE BLOCKED BY CPU GUARD
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -16,10 +16,10 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 
@@ -78,13 +78,19 @@ Adjacent Core signal buffers `73038..73042` were also moved off legacy pointer-b
 |---|---|
 | Route ID | `SHINOBU_200_SIGNAL_THREAD_CONTENTION` |
 | Owner | SHINOBU_200 / THREAD_CONTENTION_SURGEON |
+| Instrument | GlobalDataVault thread-local scratch/overflow/telemetry buffers `73043..73055`, SignalBusRegistry direct/fallback lane dispatch, closed-generic operation table, and black-box dump route |
 | Producer phase | SIMULATION worker slice writes; rare cold overflow ingress only through `TryPushAsynchronousOverflow(...)` |
 | Consumer phase | POST_SIMULATION deterministic commit, then read-only snapshot for downstream consumers |
 | Cadence | frame-bounded commit; capacity governed by Vault buffers `73043..73055` |
 | Capacity | Worker-local mock payload slices, bounded overflow lane `73053`, overflow header `73054`, published snapshot/hash lanes, and fixed 300-entry telemetry |
 | Overflow/failure | bounded overflow lane `73053` plus header `73054`; high-frequency producers must stay on thread-local slices; non-finite or saturated states require telemetry, not silent route promotion |
 | Shutdown/disposal | Owner completes/drains owned scheduled handles before clearing contention state; Vault/SignalBus owners retain buffer and queue disposal authority |
+| Telemetry fields | Frame, committed count, overflow count, dropped/coalesced count, active worker count, slow-path flags, quality, state hash, and estimated commit time |
+| Black-box fields | 300-entry `SignalThreadContentionTelemetryEntry` ring, telemetry cursor, overflow header, committed count, and fault flags |
+| Fault dump target | `Docs/AgentLogs/Dump_SHINOBU_200.bin` is planned/generated on fault; no existing artifact is implied unless linked with runtime trigger evidence |
 | Proof required before GREEN | Fresh compile/import artifact, contention Play Mode route, profiler/GCMonitor proof, player-build proof, and linked output path with command, timestamp, environment, and result |
 | Review disposition | YELLOW / STATIC_SOURCE_ONLY until compile, Unity import, Play Mode, profiler, GCMonitor, and player-build artifacts exist |
 ## Verification
 Static checks passed for brace balance, forbidden hot-path patterns, deterministic Burst attributes, layout guard wiring, direct-list parity (`flush=135`, `clear=135`, `direct_policy=135`, drift `0`), and diff whitespace. Build, Unity import, Burst Inspector, profiler, GCMonitor, and player proof are pending because CPU guard stayed above 50 percent.
+
+

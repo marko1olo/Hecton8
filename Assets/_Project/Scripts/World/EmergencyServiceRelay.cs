@@ -337,8 +337,34 @@ namespace Hecton8.World
                 _cachedTransform = relayTransform;
             }
 
-            _cachedRelayAup = AbsoluteUniversePosition.FromRuntimePosition(relayTransform.position);
+            if (!TryResolveRelayAup(relayTransform, out _cachedRelayAup))
+            {
+                _hasCachedRelayAup = false;
+                return;
+            }
+
             _hasCachedRelayAup = true;
+        }
+
+        private static bool TryResolveRelayAup(Transform relayTransform, out AbsoluteUniversePosition relayAup)
+        {
+            relayAup = default;
+            if (relayTransform == null)
+                return false;
+
+            Vector3 runtimePosition = relayTransform.position;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            relayAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return MathGuard.IsFinite(in relayAup);
         }
 
         private static double ResolveVerticalDeltaMeters(in AbsoluteUniversePosition from, in AbsoluteUniversePosition to)

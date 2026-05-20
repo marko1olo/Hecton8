@@ -81,6 +81,8 @@ namespace Hecton8.World
         [SerializeField, Tooltip("Inventory item hash emitted for silver ore yields.")] private int silverItemHash;
 
         private IDataVault _dataVault;
+        private ITerrainProvider _terrainProvider;
+        private IPlayerRuntimeContext _playerContext;
         private VaultGenerationHandle<ResourceNodeDTO> _resourceNodesHandle;
         private VaultGenerationHandle<float3> _orePositionsHandle;
         private VaultGenerationHandle<int> _oreTypesHandle;
@@ -202,6 +204,16 @@ namespace Hecton8.World
             }
         }
 
+        private struct GeologyHeightPayloadView
+        {
+            public NativeArray<ushort> HeightSamples;
+            public float3 TerrainSize;
+            public double2 TerrainOriginAbsoluteXZ;
+            public float TerrainBaseY;
+            public int HeightResolution;
+            public byte HasQuantizedPayload;
+        }
+
         /// <summary>Number of non-depleted ore slots currently alive in the active sector.</summary>
         public int ActiveOreCount => _activeOreCount;
         public int LocalTitaniumCount => _localTitaniumCount;
@@ -293,6 +305,7 @@ namespace Hecton8.World
 
             _pendingDisableSpawnDrain = false;
             TryRegisterHotSwapDependency();
+            CacheRuntimeServices();
 
             if (_dataVault == null && !AllocateNativeState())
             {
@@ -416,6 +429,31 @@ namespace Hecton8.World
 
         private void QueueRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerContext = currentService as IPlayerRuntimeContext;
+                if (_playerContext == null)
+                    playerTransform = null;
+                else
+                    RefreshCachedPlayerRuntimeReference();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.TerrainProviderRuntime)
+            {
+                _terrainProvider = currentService as ITerrainProvider;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.MapMagicRuntime)
+            {
+                MapMagicBridge previousBridge = mapMagicBridge;
+                mapMagicBridge = currentService as MapMagicBridge;
+                if (_terrainProvider == null || ReferenceEquals(_terrainProvider, previousBridge))
+                    _terrainProvider = mapMagicBridge;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -441,10 +479,9 @@ namespace Hecton8.World
 
             DrainDropPodLandingSignals();
 
-            if (!WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform) || playerTransform == null)
+            if (!RefreshCachedPlayerRuntimeReference())
                 return;
 
-            WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
             RefreshSectorAndTerrain();
             if (_spawnJobScheduled)
                 return;
@@ -534,6 +571,36 @@ namespace Hecton8.World
             _simulationFrameCounter = 0u;
             _discardSpawnJobOutput = false;
             _pendingDisableSpawnDrain = false;
+        }
+
+        private void CacheRuntimeServices()
+        {
+            if (_playerContext == null)
+                _playerContext = GlobalRegistry.Player;
+
+            RefreshCachedPlayerRuntimeReference();
+
+            if (_terrainProvider == null)
+                _terrainProvider = GlobalRegistry.Terrain;
+
+            if (mapMagicBridge == null)
+                mapMagicBridge = GlobalRegistry.MapMagic;
+
+            if (_terrainProvider == null && mapMagicBridge != null)
+                _terrainProvider = mapMagicBridge;
+        }
+
+        private bool RefreshCachedPlayerRuntimeReference()
+        {
+            IPlayerRuntimeContext playerContext = _playerContext;
+            if (playerContext == null)
+                return false;
+
+            Transform runtimeTransform = playerContext.PlayerTransform;
+            if (runtimeTransform != null)
+                playerTransform = runtimeTransform;
+
+            return true;
         }
 
         private bool AllocateNativeState()
@@ -1210,7 +1277,7 @@ namespace Hecton8.World
                 return;
 
             double3 playerAbsolute = playerAup.ToAbsoluteDouble3();
-            MapMagicBridge.QuantizedHeightmapPayload heightPayload = default;
+            GeologyHeightPayloadView heightPayload = default;
             float safeSectorSize = math.max(16f, sectorSizeMeters);
             int2 sector = new int2(
                 (int)math.floor(playerAbsolute.x / safeSectorSize),
@@ -1237,7 +1304,7 @@ namespace Hecton8.World
                 }
             }
 
-            RefreshMapMagicPayload(playerAbsolute, out heightPayload);
+            RefreshTerrainPayload(playerAbsolute, out heightPayload);
 
             if ((sectorChanged || anchorRefresh) && !_spawnJobScheduled)
             {
@@ -1246,11 +1313,11 @@ namespace Hecton8.World
             }
         }
 
-        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerContext;
             if (playerContext == null)
                 return false;
 
@@ -1291,16 +1358,11 @@ namespace Hecton8.World
             }
         }
 
-        private void RefreshMapMagicPayload(double3 playerAbsolute, out MapMagicBridge.QuantizedHeightmapPayload heightPayload)
+        private void RefreshTerrainPayload(double3 playerAbsolute, out GeologyHeightPayloadView heightPayload)
         {
             heightPayload = default;
             _currentBiomeId = 0;
-
-            if (mapMagicBridge == null)
-            {
-                FillBiomeHeatmap(0);
-                return;
-            }
+            heightPayload.TerrainBaseY = (float)playerAbsolute.y;
 
             Vector3 runtimeProbe = HectonFloatingOrigin.ToRuntimePosition(playerAbsolute);
             if (!IsFinite(runtimeProbe))
@@ -1309,8 +1371,33 @@ namespace Hecton8.World
                 return;
             }
 
+            double3 runtimeToAbsoluteOffset = playerAbsolute - new double3(runtimeProbe.x, runtimeProbe.y, runtimeProbe.z);
+            ITerrainProvider terrainProvider = _terrainProvider;
+            if (terrainProvider != null &&
+                terrainProvider.IsAvailable &&
+                terrainProvider.TryGetHeight(runtimeProbe.x, runtimeProbe.z, out float terrainHeight) &&
+                math.isfinite(terrainHeight))
+            {
+                heightPayload.TerrainBaseY = (float)((double)terrainHeight + runtimeToAbsoluteOffset.y);
+            }
+
+            if (mapMagicBridge == null)
+            {
+                FillBiomeHeatmap(0);
+                return;
+            }
+
             if (mapMagicBridge.TryGetQuantizedHeightmapPayload(runtimeProbe.x, runtimeProbe.z, out MapMagicBridge.QuantizedHeightmapPayload payload) && payload.IsValid)
-                heightPayload = payload;
+            {
+                heightPayload.HeightSamples = payload.HeightSamples;
+                heightPayload.TerrainSize = ToFloat3(payload.TerrainSize);
+                heightPayload.TerrainOriginAbsoluteXZ = new double2(
+                    (double)payload.TerrainPosition.x + runtimeToAbsoluteOffset.x,
+                    (double)payload.TerrainPosition.z + runtimeToAbsoluteOffset.z);
+                heightPayload.TerrainBaseY = (float)((double)payload.TerrainPosition.y + runtimeToAbsoluteOffset.y);
+                heightPayload.HeightResolution = payload.HeightmapResolution;
+                heightPayload.HasQuantizedPayload = 1;
+            }
 
             if (mapMagicBridge.TryGetMatrixBiomeId(runtimeProbe.x, runtimeProbe.z, out int biomeId))
                 _currentBiomeId = biomeId;
@@ -1335,7 +1422,7 @@ namespace Hecton8.World
                 biomeHeatmap[i] = packed;
         }
 
-        private void ScheduleSpawnJob(double3 playerAbsolute, MapMagicBridge.QuantizedHeightmapPayload payload)
+        private void ScheduleSpawnJob(double3 playerAbsolute, GeologyHeightPayloadView payload)
         {
             if (!EnsureNativeState() || !TryLockVaultJobBuffers())
                 return;
@@ -1355,22 +1442,19 @@ namespace Hecton8.World
             float safeSectorSize = math.max(16f, tuning.SectorSizeMeters);
             double2 sectorOrigin = new double2((double)_currentSector.x * safeSectorSize, (double)_currentSector.y * safeSectorSize);
             float qualityWeight = ResolveGlobalQualityWeight();
-            Vector3 playerRuntime = playerTransform != null ? playerTransform.position : HectonFloatingOrigin.ToRuntimePosition(playerAbsolute);
-            double3 runtimeToAbsoluteOffset = playerAbsolute - new double3(playerRuntime.x, playerRuntime.y, playerRuntime.z);
-            double2 terrainOriginAbsoluteXZ = payload.IsValid
-                ? new double2(
-                    (double)payload.TerrainPosition.x + runtimeToAbsoluteOffset.x,
-                    (double)payload.TerrainPosition.z + runtimeToAbsoluteOffset.z)
+            bool hasQuantizedPayload = HasQuantizedHeightPayload(in payload);
+            double2 terrainOriginAbsoluteXZ = hasQuantizedPayload
+                ? payload.TerrainOriginAbsoluteXZ
                 : sectorOrigin;
-            float terrainBaseY = payload.IsValid
-                ? (float)((double)payload.TerrainPosition.y + runtimeToAbsoluteOffset.y)
+            float terrainBaseY = math.isfinite(payload.TerrainBaseY)
+                ? payload.TerrainBaseY
                 : (float)playerAbsolute.y;
             ClearPresentationState(false);
             _drawBounds = new Bounds(transform.position, Vector3.one * safeSectorSize);
             _discardSpawnJobOutput = false;
 
             JobHandle dependency = default;
-            if (!payload.IsValid && views.MockTerrainSdf.IsCreated)
+            if (!hasQuantizedPayload && views.MockTerrainSdf.IsCreated)
             {
                 GenerateMockTerrainSDFJob mockJob = new GenerateMockTerrainSDFJob
                 {
@@ -1378,7 +1462,7 @@ namespace Hecton8.World
                     Resolution = ProceduralGeologyConstants.MockTerrainResolution,
                     SectorOrigin = sectorOrigin,
                     SectorSize = safeSectorSize,
-                    BaseHeight = (float)playerAbsolute.y,
+                    BaseHeight = terrainBaseY,
                     Seed = unchecked((uint)_currentSectorHash ^ worldSeed)
                 };
                 dependency = mockJob.Schedule(views.MockTerrainSdf.Length, 32);
@@ -1394,8 +1478,8 @@ namespace Hecton8.World
                 SpawnCounts = views.SpawnCounts,
                 CandidateSlots = views.CandidateSlots,
                 IndirectArgs = views.IndirectArgs,
-                HeightSamples = payload.IsValid ? payload.HeightSamples : default,
-                MockTerrainSdf = payload.IsValid ? default : views.MockTerrainSdf,
+                HeightSamples = hasQuantizedPayload ? payload.HeightSamples : default,
+                MockTerrainSdf = hasQuantizedPayload ? default : views.MockTerrainSdf,
                 BiomeHeatmap = views.BiomeHeatmap,
                 DistributionRules = views.DistributionRules,
                 HzbTiles = views.HzbTiles,
@@ -1406,8 +1490,8 @@ namespace Hecton8.World
                 SectorSize = safeSectorSize,
                 TerrainPosition = new float3(0f, terrainBaseY, 0f),
                 TerrainOriginAbsoluteXZ = terrainOriginAbsoluteXZ,
-                TerrainSize = payload.IsValid ? ToFloat3(payload.TerrainSize) : new float3(safeSectorSize, 64f, safeSectorSize),
-                HeightResolution = payload.IsValid ? payload.HeightmapResolution : 0,
+                TerrainSize = hasQuantizedPayload ? payload.TerrainSize : new float3(safeSectorSize, 64f, safeSectorSize),
+                HeightResolution = hasQuantizedPayload ? payload.HeightResolution : 0,
                 MockTerrainResolution = ProceduralGeologyConstants.MockTerrainResolution,
                 BiomeHeatmapResolution = BiomeHeatmapResolution,
                 DistributionRuleCount = _distributionRuleCount,
@@ -1430,6 +1514,14 @@ namespace Hecton8.World
             _spawnJob = job.Schedule(dependency);
             H8Memory.RegisterActiveJob(OwnerSystemId, _spawnJob);
             _spawnJobScheduled = true;
+        }
+
+        private static bool HasQuantizedHeightPayload(in GeologyHeightPayloadView payload)
+        {
+            return payload.HasQuantizedPayload != 0 &&
+                   payload.HeightResolution > 1 &&
+                   payload.HeightSamples.IsCreated &&
+                   payload.HeightSamples.Length >= payload.HeightResolution * payload.HeightResolution;
         }
 
         private int ResolveIterationBudget(ProceduralGeologyVaultViews views)

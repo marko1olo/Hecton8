@@ -92,6 +92,7 @@ namespace Hecton8.Thermodynamics
         private VaultBufferHandle<int> _solverDumpLatch;
 
         private JobHandle _pendingHandle;
+        private JobHandle _sampleReadHandle;
         private bool _hasPendingJob;
         private bool _nativeReady;
         private bool _registeredUpdate;
@@ -144,6 +145,8 @@ namespace Hecton8.Thermodynamics
                 DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true);
                 _hasPendingJob = false;
             }
+
+            DispatcherJobFence.TryComplete(ref _sampleReadHandle, forceComplete: true);
 
             if (_registeredUpdate)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -218,7 +221,8 @@ namespace Hecton8.Thermodynamics
             _frame = tuning.Frame;
             CullExpiredTransientSources(sources, sourceCount, tuning.Frame);
 
-            JobHandle dependency = default;
+            JobHandle dependency = _sampleReadHandle;
+            _sampleReadHandle = default;
             uint telemetryFlags = 0u;
             if (_lastInitializedResolution != _activeResolution)
             {
@@ -356,10 +360,7 @@ namespace Hecton8.Thermodynamics
 
         public void SlowTick()
         {
-            if (!_nativeReady || _hasPendingJob)
-                return;
-
-            TryLoadProfilesCold();
+            // Profile IO is boot/editor driven. Runtime cadence must not poll the filesystem.
         }
 
         public void LateFrameTick()
@@ -647,6 +648,8 @@ namespace Hecton8.Thermodynamics
             job.Results = (ThermalSampleResultDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(results);
             job.Tuning = *tuning;
             handle = job.Schedule(sampleAups.Length, 64, dependency);
+            _sampleReadHandle = JobHandle.CombineDependencies(_sampleReadHandle, handle);
+            H8Memory.RegisterActiveJob(SystemID.Thermodynamics, handle);
             return true;
         }
 
@@ -874,7 +877,9 @@ namespace Hecton8.Thermodynamics
             _activeResolution = ResolveStableResolution(safeQuality, safeSimulationTickDelta);
             _activeCellCount = _activeResolution * _activeResolution * _activeResolution;
             float safeCellSize = math.max(0.001f, math.isfinite(cellSizeMeters) ? cellSizeMeters : DefaultCellSizeMeters);
-            double3 anchorAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(transform.position);
+            double3 anchorAup = TryResolveAnchorAup(out double3 resolvedAnchorAup)
+                ? resolvedAnchorAup
+                : GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
             double halfExtent = (_activeResolution * safeCellSize) * 0.5;
             if (!_gridOriginInitialized)
             {
@@ -923,6 +928,28 @@ namespace Hecton8.Thermodynamics
             tuning.SubmarineHalfExtentZ = math.max(0f, math.isfinite(submarineHalfExtentsMeters.z) ? submarineHalfExtentsMeters.z : 0f);
             tuning.SimulationTickDeltaSeconds = safeSimulationTickDelta;
             return tuning;
+        }
+
+        private bool TryResolveAnchorAup(out double3 anchorAup)
+        {
+            anchorAup = default;
+            Vector3 runtimePosition = transform.position;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!MathGuard.IsFinite(in resolvedAup))
+                return false;
+
+            anchorAup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(anchorAup));
         }
 
         private float ResolveQualityWeight()

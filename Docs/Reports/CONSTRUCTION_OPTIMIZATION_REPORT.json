@@ -1,5 +1,5 @@
 ﻿{
-    "generated_utc":  "2026-05-20T10:36:18.0262107Z",
+    "generated_utc":  "2026-05-20T10:49:32.4670194Z",
     "scanner":  "Structural_Integrity_Scanner",
     "summary":  "Physics-Based Integrity Purged",
     "authority":  "StructuralIntegrityCalculatorRuntime: Burst CSR depth-pressure solver over GlobalDataVault buffers 70488-70497",
@@ -18,28 +18,28 @@
                      },
                      {
                          "file":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-                         "line":  3104,
+                         "line":  3127,
                          "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
                          "severity":  "review",
                          "snippet":  "float requestedRepair = Mathf.Max(0f, recoverableIntegrity - target.CurrentIntegrity);"
                      },
                      {
                          "file":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-                         "line":  5386,
+                         "line":  5409,
                          "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
                          "severity":  "review",
                          "snippet":  "float integrity01 = Mathf.Clamp01(module.CurrentIntegrity * math.rcp(recoverableIntegrity));"
                      },
                      {
                          "file":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-                         "line":  5396,
+                         "line":  5419,
                          "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
                          "severity":  "review",
                          "snippet":  "return module.CurrentIntegrity \u003c recoverableIntegrity || module.IsFlooded || module.HasCascadeFailure || graphRuptured;"
                      },
                      {
                          "file":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-                         "line":  5414,
+                         "line":  5437,
                          "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
                          "severity":  "review",
                          "snippet":  "float integrity01 = Mathf.Clamp01(module.CurrentIntegrity * math.rcp(recoverableIntegrity));"
@@ -67,14 +67,14 @@
                      },
                      {
                          "file":  "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-                         "line":  963,
+                         "line":  986,
                          "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
                          "severity":  "review",
                          "snippet":  "public float IntegrityBudget;"
                      },
                      {
                          "file":  "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-                         "line":  976,
+                         "line":  999,
                          "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
                          "severity":  "review",
                          "snippet":  "float integrity = IntegrityBudget;"

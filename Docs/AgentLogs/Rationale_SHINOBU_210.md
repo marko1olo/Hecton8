@@ -218,3 +218,43 @@ Solution: Pack baked vertices into a TempJob `NativeArray<HabitatDamageBakedVert
 Rejected Alternatives: Keeping MeshData-only serialization was rejected because the task wording is unambiguous and static evidence should match it. Moving serialization to runtime was rejected because the baker is Editor-only and runtime must only resolve baked state hashes.
 Scalability potential: Low bakes pay one compact packed buffer. High/Ultra bakes with denser topology still stay Editor-only and produce the same 32-byte vertex stream for GPU bandwidth.
 Hardware Impact: Runtime impact is 0 us. Editor adds one packed TempJob buffer but removes ambiguity in the serialization contract and retains one completion boundary.
+
+## Decision 028 - Resolver Source Gate Sealed After Direct Upload Patch
+
+Problem: The static gate after the direct mesh-upload patch again found the collapse-only `math.select(0, 3, p >= 0.95f)` resolver in the source contract. That would make Stressed and Ruptured baked meshes unreachable.
+Solution: Reapply the source-level branch-light threshold sum with `math.step(0.33333334f, p)`, `math.step(0.6666667f, p)`, and `math.step(0.95f, p)`. Update the contract comment so it no longer claims pristine-until-collapse behavior. Rerun the forbidden source-pattern gate against the owned `.cs` files.
+Rejected Alternatives: Trusting prior status entries was rejected because source is the authority. Adding a managed threshold asset was rejected because this contract must remain blittable, allocation-free, and independent of sibling runtime assemblies.
+Scalability potential: Low through Ultra all use the same constant-time state index. Visual richness scales by binding richer baked meshes per state, not by adding runtime deformation.
+Hardware Impact: Runtime remains O(1): three scalar step operations plus hash selection. Mesh deformation remains 0 us in gameplay.
+
+## Decision 029 - Triangle Submesh Range Compaction
+
+Problem: The index-copy path used a compact triangle count but copied from the start of the raw index buffer. Multi-submesh modules, non-triangle submeshes, or non-zero `baseVertex` would bake the wrong triangles into damaged states.
+Solution: Add explicit 16-byte `HabitatDamageIndexRangeDTO` rows and build triangle-only ranges from `SubMeshDescriptor.indexStart`, compact destination start, count, and `baseVertex`. Burst index-copy jobs now resolve each output index through those ranges, apply the base vertex, and clamp the final index to `0..vertexCount-1` before downstream tear and normal jobs run.
+Rejected Alternatives: Assuming one triangle submesh with zero base vertex was rejected because habitat modules are author-authored assets and can carry multiple material sections. Main-thread managed index reconstruction was rejected because the existing pipeline already has a Burst index stage and NativeArray scratch.
+Scalability potential: Low quality still bakes conservative topology; middle/high/ultra can bake complex multi-material modules without falling back to runtime deformation or per-submesh managed loops.
+Hardware Impact: Runtime impact is 0 us. Editor cost is a small range lookup per copied index; correctness is bought without introducing gameplay CPU work.
+
+## Decision 030 - Final Pack Stage NaN Vaccination
+
+Problem: Earlier jobs sanitize most data, but the final `PackBakedVertexJob` is the last boundary before Unity serializes a 32-byte GPU stream. A non-finite position, tangent, UV, stress, or tear scalar at this point would be baked permanently into the mesh asset.
+Solution: Clamp final pack inputs: non-finite positions become zero, non-finite tangents become `(1,0,0,1)`, non-finite UVs become zero, and stress/tear scalars saturate from finite values only. Then half, snorm, and color packing run on safe values before `Mesh.SetVertexBufferData`.
+Rejected Alternatives: Trusting upstream jobs alone was rejected because the pack job is the final asset boundary and must be independently defensive. Main-thread post-validation was rejected because it would add a second pass over packed asset data instead of hardening the existing Burst pack pass.
+Scalability potential: Low through Ultra use the same safe 32-byte stream. High/Ultra dense bakes get stronger asset corruption containment without moving validation to runtime.
+Hardware Impact: Runtime impact is 0 us. Editor pack cost is a few finite checks per vertex, paid only during offline baking.
+
+## Decision 031 - Honest NoAlias On MeshData Streams
+
+Problem: `ExtractSourceVertexJob` marked position, normal, tangent, and UV byte views as `[NoAlias]`, but Unity meshes commonly store those attributes in the same interleaved vertex stream. That promise could be false even though all views are read-only.
+Solution: Remove `[NoAlias]` from the potentially overlapping read-only byte views. Keep `[NoAlias]` on physically separate output arrays, index buffers, range rows, and packed output buffers where ownership is clear.
+Rejected Alternatives: Keeping the annotations was rejected because compiler-facing alias promises must match real memory. Splitting interleaved streams into separate temporary arrays was rejected because it would add more memory traffic before the actual bake jobs.
+Scalability potential: Low through Ultra extraction remains the same data path, now without unsafe alias claims on shared streams.
+Hardware Impact: Runtime impact is 0 us. Editor extraction may lose a tiny theoretical alias optimization on read-only byte views, but avoids incorrect assumptions on interleaved source meshes.
+
+## Decision 032 - Valid Missing-Attribute Containers
+
+Problem: `ScheduleExtract` passed `default` `NativeArray<byte>` containers for absent normal, tangent, or UV streams. The job logic would not read them when `Has*` was zero, but Unity's job safety validation can still reject uncreated native containers at schedule time.
+Solution: Resolve the position byte stream once and reuse it as the fallback container for missing optional attributes while keeping the corresponding stride at zero and `Has*` flag disabled. The extractor therefore carries valid native containers without reading unrelated bytes.
+Rejected Alternatives: Allocating dummy TempJob byte buffers was rejected because it adds avoidable memory ownership for data that is never read. Leaving `default` containers was rejected because schedule-time validation risk is independent of branch intent inside `Execute`.
+Scalability potential: Low through Ultra extraction remains one MeshData byte-stream path; optional attributes fall back to deterministic defaults without extra allocations.
+Hardware Impact: Runtime impact is 0 us. Editor scheduling becomes safer for sparse art-source meshes with no additional memory traffic.

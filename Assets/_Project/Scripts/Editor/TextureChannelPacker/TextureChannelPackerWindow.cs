@@ -23,8 +23,8 @@ namespace Hecton8.EditorTools
         private const string DefaultOutputFolder = "Assets/_Project/BakedGeometry/Textures";
         private const int PreviewSize = 256;
 
-        private readonly List<TexturePackingProfile> _profiles = new List<TexturePackingProfile>(8);
-        private readonly List<string> _profileNames = new List<string>(8);
+        private readonly List<TexturePackingProfile> _profiles = new List<TexturePackingProfile>(8); // COLD ALLOC: List<TexturePackingProfile>[8] - editor profile cache - owner: TextureChannelPackerWindow
+        private readonly List<string> _profileNames = new List<string>(8); // COLD ALLOC: List<string>[8] - editor popup labels - owner: TextureChannelPackerWindow
         private ObjectField _sourceFolderField;
         private ObjectField _previewTextureField;
         private Toggle _generateNormalsToggle;
@@ -223,19 +223,27 @@ namespace Hecton8.EditorTools
             EditorUtility.DisplayProgressBar("Texture Channel Packer", set.Key, progress);
 
             TexturePackerRequest request = BuildRequest(set);
-            if (HectonArmTextureChannelPacker.TryPackArmAsset(request, out TexturePackerRunMetrics metrics))
+            try
             {
-                _batch.Processed++;
-                _batch.EstimatedBeforeBytes += metrics.EstimatedBeforeBytes;
-                _batch.EstimatedAfterBytes += metrics.EstimatedAfterBytes;
-                _batch.EstimatedSavedBytes += metrics.EstimatedSavedBytes;
-                _batch.TotalMilliseconds += metrics.TotalMilliseconds;
-                if (!string.IsNullOrEmpty(metrics.CriticalWarning))
-                    _batch.CriticalWarnings++;
+                if (HectonArmTextureChannelPacker.TryPackArmAsset(request, out TexturePackerRunMetrics metrics))
+                {
+                    _batch.Processed++;
+                    _batch.EstimatedBeforeBytes += metrics.EstimatedBeforeBytes;
+                    _batch.EstimatedAfterBytes += metrics.EstimatedAfterBytes;
+                    _batch.EstimatedSavedBytes += metrics.EstimatedSavedBytes;
+                    _batch.TotalMilliseconds += metrics.TotalMilliseconds;
+                    if (!string.IsNullOrEmpty(metrics.CriticalWarning))
+                        _batch.CriticalWarnings++;
+                }
+                else
+                {
+                    _batch.Failed++;
+                }
             }
-            else
+            catch (Exception exception)
             {
                 _batch.Failed++;
+                Debug.LogError("[TextureChannelPackerWindow] Pack failed for " + set.Key + ": " + exception.GetType().Name);
             }
 
             _pendingIndex++;
@@ -245,13 +253,10 @@ namespace Hecton8.EditorTools
         private TexturePackerRequest BuildRequest(SourceTextureSet set)
         {
             TexturePackingProfile profile = _profiles.Count > 0 ? _profiles[math.clamp(_profilePopup.index, 0, _profiles.Count - 1)] : TexturePackingProfileCsv.DefaultProfile();
-            uint flags = HectonArmTextureChannelPacker.FlagInjectMacroNoise;
-            if (_invertRoughnessToggle.value)
-                flags |= HectonArmTextureChannelPacker.FlagInvertRoughness;
-            if (_toksvigToggle.value)
-                flags |= HectonArmTextureChannelPacker.FlagToksvigMipFiltering;
-            if (_generateNormalsToggle.value)
-                flags |= HectonArmTextureChannelPacker.FlagGenerateNormals;
+            uint flags = profile.Flags;
+            flags = SetFlag(flags, HectonArmTextureChannelPacker.FlagInvertRoughness, _invertRoughnessToggle.value);
+            flags = SetFlag(flags, HectonArmTextureChannelPacker.FlagToksvigMipFiltering, _toksvigToggle.value);
+            flags = SetFlag(flags, HectonArmTextureChannelPacker.FlagGenerateNormals, _generateNormalsToggle.value);
 
             TexturePackerConfigDTO config;
             config.NormalIntensity = math.max(0.001f, profile.NormalIntensity);
@@ -277,10 +282,15 @@ namespace Hecton8.EditorTools
             };
         }
 
+        private static uint SetFlag(uint flags, uint flag, bool enabled)
+        {
+            return enabled ? flags | flag : flags & ~flag;
+        }
+
         private static SourceTextureSet[] DiscoverSourceSets(string folderPath)
         {
             string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { folderPath });
-            Dictionary<string, SourceTextureSet> sets = new Dictionary<string, SourceTextureSet>(guids.Length);
+            Dictionary<string, SourceTextureSet> sets = new Dictionary<string, SourceTextureSet>(guids.Length); // COLD ALLOC: Dictionary<string, SourceTextureSet>[textureGuidCount] - editor source grouping - owner: TextureChannelPackerWindow
             for (int i = 0; i < guids.Length; i++)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
@@ -563,6 +573,24 @@ namespace Hecton8.EditorTools
 
     internal static unsafe class TexturePackingProfileCsv
     {
+        private const uint HashNone = 0xADA7AFDBu;
+        private const uint HashOff = 0xAB3A8A0Au;
+        private const uint HashFalse = 0x0B069958u;
+        private const uint HashZero = 0x350CA8AFu;
+        private const uint HashMacro = 0x36A3CAD3u;
+        private const uint HashNoise = 0x904416D1u;
+        private const uint HashM = 0xE80C2F78u;
+        private const uint HashToksvig = 0x04F6BFE0u;
+        private const uint HashMip = 0xCF8F4EC9u;
+        private const uint HashT = 0xF10C3DA3u;
+        private const uint HashNormal = 0xE68B9C52u;
+        private const uint HashNormals = 0x0EC6C7F3u;
+        private const uint HashSobel = 0x1FBA0C56u;
+        private const uint HashN = 0xEB0C3431u;
+        private const uint HashInvert = 0x316C9FA1u;
+        private const uint HashSmoothness = 0xA29A2330u;
+        private const uint HashI = 0xEC0C35C4u;
+
         internal static void Load(string assetPath, List<TexturePackingProfile> profiles)
         {
             profiles.Clear();
@@ -732,9 +760,11 @@ namespace Hecton8.EditorTools
 
         private static uint ReadFlags(byte* bytes, int length, ref int cursor)
         {
-            uint flags = HectonArmTextureChannelPacker.FlagInjectMacroNoise |
-                         HectonArmTextureChannelPacker.FlagToksvigMipFiltering |
-                         HectonArmTextureChannelPacker.FlagGenerateNormals;
+            uint flags = 0u;
+            uint tokenHash = 2166136261u;
+            bool hasToken = false;
+            bool hasExplicitToken = false;
+            bool explicitOff = false;
             while (cursor < length)
             {
                 byte b = bytes[cursor++];
@@ -742,12 +772,51 @@ namespace Hecton8.EditorTools
                     break;
                 if (b >= 'A' && b <= 'Z')
                     b = (byte)(b + 32);
-                if (b == 'i')
-                    flags |= HectonArmTextureChannelPacker.FlagInvertRoughness;
+                if ((b >= 'a' && b <= 'z') || (b >= '0' && b <= '9'))
+                {
+                    hasToken = true;
+                    tokenHash ^= b;
+                    tokenHash *= 16777619u;
+                    continue;
+                }
+
+                CommitFlagToken(tokenHash, hasToken, ref flags, ref hasExplicitToken, ref explicitOff);
+                tokenHash = 2166136261u;
+                hasToken = false;
             }
 
+            CommitFlagToken(tokenHash, hasToken, ref flags, ref hasExplicitToken, ref explicitOff);
             ConsumeLineBreakRemainder(bytes, length, ref cursor);
+            if (explicitOff)
+                return 0u;
+            if (!hasExplicitToken)
+                return HectonArmTextureChannelPacker.FlagInjectMacroNoise |
+                       HectonArmTextureChannelPacker.FlagToksvigMipFiltering |
+                       HectonArmTextureChannelPacker.FlagGenerateNormals;
             return flags;
+        }
+
+        private static void CommitFlagToken(uint tokenHash, bool hasToken, ref uint flags, ref bool hasExplicitToken, ref bool explicitOff)
+        {
+            if (!hasToken)
+                return;
+
+            hasExplicitToken = true;
+            if (tokenHash == HashNone || tokenHash == HashOff || tokenHash == HashFalse || tokenHash == HashZero)
+            {
+                explicitOff = true;
+                flags = 0u;
+                return;
+            }
+
+            if (tokenHash == HashMacro || tokenHash == HashNoise || tokenHash == HashM)
+                flags |= HectonArmTextureChannelPacker.FlagInjectMacroNoise;
+            else if (tokenHash == HashToksvig || tokenHash == HashMip || tokenHash == HashT)
+                flags |= HectonArmTextureChannelPacker.FlagToksvigMipFiltering;
+            else if (tokenHash == HashNormal || tokenHash == HashNormals || tokenHash == HashSobel || tokenHash == HashN)
+                flags |= HectonArmTextureChannelPacker.FlagGenerateNormals;
+            else if (tokenHash == HashInvert || tokenHash == HashSmoothness || tokenHash == HashI)
+                flags |= HectonArmTextureChannelPacker.FlagInvertRoughness;
         }
 
         private static float SafePositive(float value, float fallback)

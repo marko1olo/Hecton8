@@ -1,6 +1,6 @@
 {
   "agent": "SHINOBU_208",
-  "status": "STATIC_PLACEHOLDER_NORMAL_WELD_PATCH_BUILD_BLOCKED",
+  "status": "STATIC_PLACEHOLDER_ASYNC_RUNNER_PATCH_BUILD_BLOCKED",
   "meshCount": 0,
   "meshFailures": 0,
   "manifestValid": false,
@@ -9,5 +9,5 @@
   "manifestReason": "NO_UNITY_EDITOR_BAKE_EXECUTED",
   "vertexStrideBytes": 32,
   "failures": [],
-  "note": "Run HECTON-8/Geology Forge/Run Layout Self Audit inside Unity after baking assets to validate mesh vertex layouts and geology_mesh_manifest.h8geom. Static source now includes angle-weighted normal weld buckets before mesh packing."
+  "note": "Run HECTON-8/Geology Forge/Run Layout Self Audit inside Unity after baking assets to validate mesh vertex layouts and geology_mesh_manifest.h8geom. Static source now includes angle-weighted normal weld buckets before mesh packing plus async UI batch runner/cancel guards."
 }

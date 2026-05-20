@@ -120,11 +120,17 @@ Rule quote: "AUP is the only simulation-scale spatial authority. Transform.posit
 - [x] Hull dent shader fake route | DOD: shader dent local impact resolves by visual root-relative subtraction, not AUP fabrication from submarine root Transform | Alternative rejected: treating a shader-only dent buffer as simulation authority | Estimate: removes 1 strict blocker.
 - [x] Loop 13 gate refresh | DOD: CLI gate reports 1990 scanned files, direct AUP float3 casts 0, runtime component AUP float casts 0, editor reviews 5, strict Transform authority blockers 57 across 37 files | Alternative rejected: changing gate threshold from 0 | Estimate: static gate only.
 
+## Loop 14: Final Strict Transform Authority Gate Purge
+- [x] Cold boot/runtime-origin AUP bridges | DOD: replaced remaining direct `Transform.position -> FromRuntimePosition/ToAbsoluteUniversePositionDouble3` bridge lines in construction, fluid, scanner, thermal, UI, world registry, chemical, emergency relay, and structural grid domains with explicit `GlobalSignals.CurrentRuntimeOriginAup()` plus double local offset helpers | Alternative rejected: hiding absolute transform casts behind `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3` | Estimate: removes 18 strict blockers; no runtime us claimed.
+- [x] Existing owner fallback preference | DOD: preserved existing owner AUP where present (`drone.TargetAup`, player AUP, grid origin, integrity/state records) and fails closed when helper input is non-finite | Alternative rejected: inventing new DataVault lanes or sibling assembly contracts | Estimate: prevents one route-state false authority per cold/bootstrap handoff.
+- [x] Static gate pass | DOD: `python Tools\AupPrecisionGate_SHINOBU_205.py` returned `PASS_STATIC_GATE`, 1994 scanned files, direct AUP float3 casts 0, runtime component AUP float casts 0, editor component reviews 5, strict Transform authority blockers 0 | Alternative rejected: lowering scanner threshold or marking findings ignored | Estimate: 24.6 s cold static scan; 0 runtime us.
+- [x] Whitespace guard | DOD: targeted `git diff --check` on 13 touched runtime files returned 0 errors, LF/CRLF warnings only | Alternative rejected: full repo check as proof because unrelated pre-existing whitespace debt remains | Estimate: static hygiene only.
+
 ## Verification Log
 - DONE: source scans for direct AUP/double3 float casts; current result 0 hits.
 - DONE: runtime explicit component AUP float casts; current result 0 hits. Editor-only component casts remain 5 review findings.
-- DONE: CLI gate result: `FAIL_STATIC_GATE`, 1990 files scanned, direct AUP float3 casts 0, runtime component AUP float casts 0, editor review casts 5, strict Transform.position authority blockers 57 across 37 files.
-- DONE: strict Transform.position authority scan reports 57 runtime blockers; remaining findings are owner-domain handoff debt where no existing AUP source was proven.
+- DONE: CLI gate result: `PASS_STATIC_GATE`, 1994 files scanned, direct AUP float3 casts 0, runtime component AUP float casts 0, editor review casts 5, strict Transform.position authority blockers 0 across 0 files.
+- DONE: strict Transform.position authority scan reports 0 runtime blockers. Broad `Transform.position` presentation review findings remain non-blocking review debt.
 - DONE: `python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py` returned 0.
 - DONE: `python Tools\TestAupPrecisionGate_SHINOBU_205.py` returned `SHINOBU_205_AUP_PRECISION_GATE_SELF_TESTS=PASS`.
 - DONE: `Docs/Reports/MATH_OPTIMIZATION_REPORT.json`, `Docs/Reports/AUP_PRECISION_SCAN_SHINOBU_205.json`, and `Docs/Reports/AUP_PRECISION_GATE_SELF_TEST_SHINOBU_205.json` parse through `ConvertFrom-Json` after the CLI gate run.
@@ -144,5 +150,5 @@ Rule quote: "AUP is the only simulation-scale spatial authority. Transform.posit
 - DONE: report stub/preflight written to `Docs/Reports/MATH_OPTIMIZATION_REPORT.json`; editor scanner can overwrite with Unity-time full report.
 - DONE: final report appended to `Docs/AgentLogs/LOG_SHINOBU_205.md`.
 - BLOCKED: full `git diff --check` is red on pre-existing unrelated whitespace in prefabs/deprecated docs/CURRENT_BATCH.
-- BLOCKED: dotnet build skipped. CPU guard showed latest `CPU=100`; no compiler processes were active, but project rule forbids build above 50%.
+- BLOCKED: dotnet build skipped by user instruction and project rebuild discipline; static gate proof did not require a rebuild.
 - PENDING: Unity Editor compile, Burst compile, Console clear, Play Mode, GC/profiler proof.

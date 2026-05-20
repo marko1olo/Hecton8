@@ -17,6 +17,7 @@ namespace Hecton8.World.OfflineWreckageBaker
         public const uint WarningHullBudgetExceeded = 1u << 0;
         public const uint WarningDegenerateTriangles = 1u << 1;
         public const uint WarningNonFiniteFallback = 1u << 2;
+        public const uint WarningHullBoundsExpanded = 1u << 3;
     }
 
     /// <summary>

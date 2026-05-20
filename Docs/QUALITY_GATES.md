@@ -1,10 +1,10 @@
-# QUALITY_GATES.md
+﻿# QUALITY_GATES.md
 ## SECONDARY LAYER: QUALITY CONTROL
 Date: 2026-05-18
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -14,10 +14,10 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL/POWERSHELL_STATIC evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40/R39/R38 remain prior correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL/POWERSHELL_STATIC evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40/R39/R38 remain prior correction layers; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 Verification: PENDING VERIFICATION
 Apply only after production result exists.
@@ -87,6 +87,17 @@ Rules:
   `Construction/ShinobuSocketConstructionJobs.cs`,
   `Construction/SumpPumpPipeGridJobs.cs`, and
   `Core/Data/H8StaticDataContracts.cs`.
+- HFI R27 recapture uses the JSON drilldown command:
+  `python Tools\DataVaultSovereigntyAudit.py --baseline Docs\AgentLogs\DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json --report Docs\AgentLogs\DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md --audit-json Docs\AgentLogs\DataVaultSovereigntyAudit_HFI_AUDIT_candidate.json --fail-on-regression`.
+  It fails with forbidden constructors `1149` across `177` files and
+  forbidden field-like declarations `5132` across `347` files. Regression
+  domains: Physics `+10`, Construction `+5`, Editor `+5`, Power `+4`, World
+  `+3`, Core `+2`, Habitat `+1`.
+- HFI R28 recapture adds `regressionByExecutionSurface` to the same JSON
+  report. It fails with forbidden constructors `1150` across `177` files and
+  forbidden field-like declarations `5151` across `348` files. File-level gross
+  regression is Runtime `+38` and Editor `+12`; runtime growth blocks platform
+  confidence first.
 - The zero-debt gate is expected to fail until the remaining cross-domain migrations are complete.
 
 2026-05-20 polish/static mandate gate:
@@ -153,11 +164,9 @@ missing, build artifacts/logs `0`, PICO package candidates `0`.
 |---|---|---|
 | ranked global architecture review map | `python Tools\ArchitectureRiskHotlistAudit.py` | No by default; required input for broad owner-domain burn-down |
 
-Current HFI R26 hotlist uses schema `hecton8.architecture_risk_hotlist.v2`,
-scans `1989` C# files, scores `910`, and adds domain pressure. Highest static
-pressure domains are `Root` score `12899`, `World` `8228`, `Core` `4728`,
-`Gameplay` `3452`, `Construction` `2237`, `UI` `2156`, `Audio` `1595`,
-`Atmosphere` `1362`, and `Power` `1304`. Top review files remain
+Current HFI R27 hotlist uses schema `hecton8.architecture_risk_hotlist.v2`,
+scans `1992` C# files, scores `912`, and adds domain pressure. Highest static
+review files remain
 `PlayerInventory.cs`, `Core/GlobalSignals.cs`, `HectonFluidEngine.cs`,
 `Power/LogisticsNetworkGraph.cs`,
 `Audio/PlayerCriticalProceduralAudioRenderer.cs`, `SpatialAudioManager.cs`,
@@ -390,3 +399,5 @@ Fill only if every item can be True.
 [REQ] Empty item = task not done. State what is missing and why.
 [FORBID] Submit this checklist as proof of work
          without existing prefab.
+
+

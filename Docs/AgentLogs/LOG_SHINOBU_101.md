@@ -1076,3 +1076,228 @@ Exact microseconds saved:
   </STATIC_VERIFICATION>
   <COMPILE_VERIFICATION status="PENDING_VERIFICATION">Build was not launched in R32. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` blocks `Hecton8.Core.csproj` before SHINOBU code verification, and the user forbade needless build/rebuild runs.</COMPILE_VERIFICATION>
 </SELF_AUDIT>
+
+## R35 VRAMPressureMonitor Continuous Mip Bias Closure
+
+What was wrong:
+- `ApplyMipBias()` still converted soft pressure and forced half-resolution thresholds into one fixed mip downgrade.
+- The forced-mip branch remained a byte-threshold cliff after R34.
+- A tiny nonzero soft-pressure response could restore an already downgraded mip limit before the restore band if rounded incorrectly.
+
+What was done:
+- Removed the boolean soft-pressure helper and forced-mip byte-threshold helper from the mip-bias route.
+- Added `ResolveForcedMipResponse()` using quality-adjusted fractions and `math.smoothstep`.
+- Added `ResolveMipLimitDelta()` so the scalar pressure response is quantized only at the Unity `globalTextureMipmapLimit` API boundary.
+- Red-zone pressure forces two mip steps; low nonzero response holds the current active mip limit until either pressure grows or the restore band is reached.
+
+Cinematic cheats used:
+- Texture mip shedding remains the visual fake. The engine reduces resident texture detail instead of simulating or synchronously reloading asset truth under pressure.
+- Before: soft pressure/forced threshold caused an abrupt global quality step. After: O(1) scalar response drives progressive mip residency with final integer API quantization.
+
+Exact microseconds saved:
+- Measured savings: 0 microseconds claimed. Unity Profiler/GCMonitor proof remains unavailable behind the external compile wall.
+- Static impact: one boolean pressure route and one byte-threshold branch removed from the 90-frame pressure sample path; expected win is lower mip-thrash and fewer abrupt texture residency changes, not a measured CPU number.
+
+<SELF_AUDIT agent_id="SHINOBU_101" revision="R35_VRAM_PRESSURE_MONITOR_CONTINUOUS_MIP_BIAS_CLOSURE" timestamp="2026-05-20T00:00:00+04:00" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">MANAGED_DICTIONARY_ERADICATION: no managed collection route was added.</TASK>
+    <TASK id="02" status="PASS">DEFERRED_RELEASE_QUEUE_PURGE: release authority remains the governor blind/panic gate.</TASK>
+    <TASK id="03" status="PASS">CS1612_ENCAPSULATION_PURGE: no hot unmanaged DTO property path was introduced.</TASK>
+    <TASK id="04" status="PASS">ARM64_PADDING_RECONSTRUCTION: no DTO layout changed in R35.</TASK>
+    <TASK id="05" status="PASS">EMERGENCY_MOCK_CACHE_PROFILES: unchanged; fallback cache profiles remain archived-authority pass.</TASK>
+    <TASK id="06" status="PASS">VAULT_OPEN_ADDRESS_HASH_TABLE: unchanged; no Vault map mutation in R35.</TASK>
+    <TASK id="07" status="PASS">BURST_TTL_EVALUATION_KERNEL: unchanged; no Burst job changed in R35.</TASK>
+    <TASK id="08" status="PASS">SAFE_FRAME_RELEASE_GATE: no raw Addressables release was added.</TASK>
+    <TASK id="09" status="PASS">THE_DEAR_LIE_IMPOSTOR_MESH: pressure response preserves visual mips/fallback illusions rather than synchronous asset truth.</TASK>
+    <TASK id="10" status="PASS">VRAM_PANIC_EVICTION_ROUTING: unchanged; red-zone remains fail-safe, not a normal binary quality switch.</TASK>
+    <TASK id="11" status="PASS">CONTINUOUS_SCALABILITY_CACHE_SIZING: R35 directly removes the remaining mip-bias cliff using `GlobalQualityWeight`-weighted pressure response.</TASK>
+    <TASK id="12" status="PASS">ATOMIC_REFERENCE_COUNTING: unchanged; ref-count ownership remains governor-controlled.</TASK>
+    <TASK id="13" status="PASS">AUP_PRECISION_EVICTION_SCORING: unchanged; no distance math changed.</TASK>
+    <TASK id="14" status="PASS">ASSET_BUNDLE_FRAGMENTATION_DEFRAG: unchanged; no bundle route changed.</TASK>
+    <TASK id="15" status="PASS">NARRATIVE_PINNING_LOCK: unchanged; pinned handles remain exempt from eviction logic.</TASK>
+    <TASK id="16" status="PASS">ZERO_INIT_OVERHEAD_BYPASS: no new native or managed buffer was allocated.</TASK>
+    <TASK id="17" status="PASS">TELEMETRY_HEAP_RECORDER: unchanged; pressure telemetry remains existing monitor/governor path.</TASK>
+    <TASK id="18" status="PASS">MEMORY_TUNER_EDITOR_WINDOW: unchanged; UI Toolkit facade remains archived-authority pass.</TASK>
+    <TASK id="19" status="PASS">CSV_OVERRIDE_INGESTOR: unchanged; no CSV parser path changed.</TASK>
+    <TASK id="20" status="PASS">LIVE_LEAK_DETECTOR_GIZMO: unchanged; no editor gizmo route changed.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <NOTE>R35 changes only scalar methods in `VRAMPressureMonitor`. No DTO, SignalBus payload, telemetry entry, atomic counter, or Vault record layout changed.</NOTE>
+    <STRUCT name="AssetTrackerDTO" size="64" alignment="8/16/64">
+      <MATH>Existing proof remains: field sum = 64 bytes; exactly one 64B cache line; no `Pack=1`.</MATH>
+    </STRUCT>
+    <STRUCT name="AssetHandleMapEntryDTO" size="64" alignment="8/16/64">
+      <MATH>Existing proof remains: 36 bytes live fields + 28 bytes explicit padding = 64 bytes; exactly one 64B cache line; no `Pack=1`.</MATH>
+    </STRUCT>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE_EXPLANATION>
+    Below `GlobalQualityWeight &lt; 0.3`, quality-adjusted forced/soft fractions move earlier and `ResolvePressureResponse` produces a larger scalar before red-zone. `ApplyMipBias` then holds or steps global mips from baseline toward baseline+2 instead of flipping at a byte threshold. LOD bias, release-drain, and eviction responses from R34 remain continuous; R35 closes the remaining mip-specific cliff.
+  </SCALABILITY_CURVE_EXPLANATION>
+  <H_PHI_VAULT_STATUS>
+    <PRIVATE_NATIVE_ALLOCATIONS status="PASS">R35 declares zero private `NativeArray`, `NativeList`, or `NativeHashMap` fields.</PRIVATE_NATIVE_ALLOCATIONS>
+    <VAULT_HANDLES>R35 requests no new VaultBufferHandle IDs. Existing SHINOBU handles remain `AddressableTracker`, `AddressableTtl`, `AddressableTrackerFlags`, `AddressableHandleMap`, `AddressableCacheProfiles`, `AddressableHeapTelemetry`, and `AddressableHeapCsvScratch = 70329`.</VAULT_HANDLES>
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>
+    <CONSUMES>R35 consumes no `JobHandle`.</CONSUMES>
+    <OUTPUTS>R35 outputs no `JobHandle`.</OUTPUTS>
+    <NO_ALIAS status="PASS">No new Burst job was introduced. Existing TTL/residency jobs retain archived `[NoAlias]` proof where applicable.</NO_ALIAS>
+  </POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No `.asmdef` was edited. R35 touched `VRAMPressureMonitor.cs` and SHINOBU docs only; no direct sibling runtime assembly reference was introduced.
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    The Dear Lie is texture-residency degradation: under pressure, the player sees lower-detail mips and stable fallback presentation instead of CPU-visible synchronous unload/reload truth. Before R35 the mip reaction was threshold O(1) with visual pops; after R35 it remains O(1) but uses continuous scalar response and final integer API quantization.
+  </DEAR_LIE_CONFIRMATION>
+  <STATIC_VERIFICATION>
+    <SCAN command="rg -n &quot;softVramPressure|forcedMipThresholdBytes|ResolveForcedMipDropThresholdBytes|IsSoftVramPressureActive|Mathf.Max\\(_baselineMipLimit, 1\\)|LastUsedVramBytes &gt;= forced&quot; Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs">No results.</SCAN>
+    <SCAN command="rg -n &quot;ResolveForcedMipResponse|ResolveMipLimitDelta|mipPressureResponse|math\\.lerp\\(0f, 2f|ResolveQualityAdjustedFraction|VramPressureFactor &gt;= 1f&quot; Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs">Expected continuous mip-response helpers and one red-zone fail-safe only.</SCAN>
+    <SCAN command="git diff --check -- Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs">LF-to-CRLF warning only.</SCAN>
+  </STATIC_VERIFICATION>
+  <COMPILE_VERIFICATION status="PENDING_VERIFICATION">Build was not launched in R35. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` blocks `Hecton8.Core.csproj` before SHINOBU code verification, and the user forbade needless build/rebuild runs.</COMPILE_VERIFICATION>
+</SELF_AUDIT>
+
+## R36 Dispatcher UI Mip Gate Ownership Collapse
+
+What was wrong:
+- `AssetLoadDispatcher` still wrote `QualitySettings.globalTextureMipmapLimit` directly after R35.
+- Dispatcher and monitor both owned the same global mip fact.
+- Dispatcher still carried old private baseline/active mip state plus the old binary low-VRAM gate residue.
+
+What was done:
+- Removed dispatcher mip baseline/active fields and `CaptureMipBiasBaseline()`.
+- Dispatcher now produces a continuous UI mip pressure scalar and sends it to `VRAMPressureMonitor.SetExternalMipPressureResponse(...)`.
+- `VRAMPressureMonitor` combines external UI pressure with soft/forced/red-zone pressure and remains the writer for `QualitySettings.globalTextureMipmapLimit`.
+- Dispatcher clears the external pressure response on disable/destroy before unregistering.
+
+Cinematic cheats used:
+- UI mip pressure is still a texture-residency illusion: reduce visible texture detail under pressure rather than forcing synchronous asset unload/reload truth.
+- Complexity stays O(1). The ownership change removes a second writer rather than adding another simulation or memory route.
+
+Exact microseconds saved:
+- Measured savings: 0 microseconds claimed. Unity Profiler/GCMonitor proof remains unavailable behind the external compile wall.
+- Static impact: removed two direct dispatcher `QualitySettings` writes and three dispatcher mip-state fields; expected effect is less mip ownership conflict, not a measured CPU win.
+
+<SELF_AUDIT agent_id="SHINOBU_101" revision="R36_DISPATCHER_UI_MIP_GATE_OWNERSHIP_COLLAPSE" timestamp="2026-05-20T00:00:00+04:00" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">MANAGED_DICTIONARY_ERADICATION: no managed collection route was added.</TASK>
+    <TASK id="02" status="PASS">DEFERRED_RELEASE_QUEUE_PURGE: no release route changed.</TASK>
+    <TASK id="03" status="PASS">CS1612_ENCAPSULATION_PURGE: no hot unmanaged DTO property path was introduced.</TASK>
+    <TASK id="04" status="PASS">ARM64_PADDING_RECONSTRUCTION: no DTO layout changed in R36.</TASK>
+    <TASK id="05" status="PASS">EMERGENCY_MOCK_CACHE_PROFILES: unchanged.</TASK>
+    <TASK id="06" status="PASS">VAULT_OPEN_ADDRESS_HASH_TABLE: unchanged.</TASK>
+    <TASK id="07" status="PASS">BURST_TTL_EVALUATION_KERNEL: unchanged.</TASK>
+    <TASK id="08" status="PASS">SAFE_FRAME_RELEASE_GATE: no raw `Addressables.Release` was added.</TASK>
+    <TASK id="09" status="PASS">THE_DEAR_LIE_IMPOSTOR_MESH: UI mip shedding remains the visual fake.</TASK>
+    <TASK id="10" status="PASS">VRAM_PANIC_EVICTION_ROUTING: unchanged; external UI pressure feeds the monitor path.</TASK>
+    <TASK id="11" status="PASS">CONTINUOUS_SCALABILITY_CACHE_SIZING: R36 removes the binary low-VRAM UI gate and feeds continuous pressure into the monitor.</TASK>
+    <TASK id="12" status="PASS">ATOMIC_REFERENCE_COUNTING: unchanged.</TASK>
+    <TASK id="13" status="PASS">AUP_PRECISION_EVICTION_SCORING: unchanged.</TASK>
+    <TASK id="14" status="PASS">ASSET_BUNDLE_FRAGMENTATION_DEFRAG: unchanged.</TASK>
+    <TASK id="15" status="PASS">NARRATIVE_PINNING_LOCK: unchanged.</TASK>
+    <TASK id="16" status="PASS">ZERO_INIT_OVERHEAD_BYPASS: no new native or managed buffer was allocated.</TASK>
+    <TASK id="17" status="PASS">TELEMETRY_HEAP_RECORDER: telemetry gate remains `GlobalTelemetryBus.PublishPerformanceWarning` with fixed hashes.</TASK>
+    <TASK id="18" status="PASS">MEMORY_TUNER_EDITOR_WINDOW: unchanged.</TASK>
+    <TASK id="19" status="PASS">CSV_OVERRIDE_INGESTOR: unchanged.</TASK>
+    <TASK id="20" status="PASS">LIVE_LEAK_DETECTOR_GIZMO: unchanged.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <NOTE>R36 changes only class scalar state and method routing. No DTO, SignalBus payload, telemetry entry, atomic counter, or Vault record layout changed.</NOTE>
+    <STRUCT name="AssetTrackerDTO" size="64" alignment="8/16/64"><MATH>Existing proof remains: field sum = 64 bytes; one 64B cache line; no `Pack=1`.</MATH></STRUCT>
+    <STRUCT name="AssetHandleMapEntryDTO" size="64" alignment="8/16/64"><MATH>Existing proof remains: 36 bytes live fields + 28 bytes explicit padding = 64 bytes; one 64B cache line; no `Pack=1`.</MATH></STRUCT>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE_EXPLANATION>
+    Below `GlobalQualityWeight &lt; 0.3`, dispatcher UI pressure starts earlier through `ResolveQualityAdjustedFraction`; the dispatcher sends a scalar response to the monitor, and the monitor combines it with soft/forced/red-zone pressure before final mip quantization. The binary `LowVramDeviceThresholdMb` early return is gone.
+  </SCALABILITY_CURVE_EXPLANATION>
+  <H_PHI_VAULT_STATUS>
+    <PRIVATE_NATIVE_ALLOCATIONS status="PASS">R36 declares zero private `NativeArray`, `NativeList`, or `NativeHashMap` fields.</PRIVATE_NATIVE_ALLOCATIONS>
+    <VAULT_HANDLES>R36 requests no new VaultBufferHandle IDs. Existing SHINOBU handles remain `AddressableTracker`, `AddressableTtl`, `AddressableTrackerFlags`, `AddressableHandleMap`, `AddressableCacheProfiles`, `AddressableHeapTelemetry`, and `AddressableHeapCsvScratch = 70329`.</VAULT_HANDLES>
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>
+    <CONSUMES>R36 consumes no `JobHandle`.</CONSUMES>
+    <OUTPUTS>R36 outputs no `JobHandle`.</OUTPUTS>
+    <NO_ALIAS status="PASS">No new Burst job was introduced. Existing TTL/residency jobs retain archived `[NoAlias]` proof where applicable.</NO_ALIAS>
+  </POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No `.asmdef` was edited. R36 touched only SHINOBU optimization files and docs; no direct sibling runtime assembly reference was introduced.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    The Dear Lie remains texture mips as pressure camouflage. Before R36, dispatcher and monitor could tug the same global mip value. After R36, dispatcher sends a pressure scalar and the monitor performs the single write. Algorithmic complexity stays O(1) before and after; ownership risk is reduced.
+  </DEAR_LIE_CONFIRMATION>
+  <STATIC_VERIFICATION>
+    <SCAN command="rg -n &quot;QualitySettings\\.globalTextureMipmapLimit|_baselineGlobalTextureMipLimit|_activeGlobalTextureMipLimit|_mipGateInitialized|CaptureMipBiasBaseline|UiMipDowngradeThresholdBytes|UiMipRestoreThresholdBytes|LowVramDeviceThresholdMb|totalVramBytes &gt;= UiMip|totalVramBytes &lt;= UiMip&quot; Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs">No results.</SCAN>
+    <SCAN command="rg -n &quot;SetExternalMipPressureResponse|_externalMipPressureResponse|VramPressureFactor = _runtimeTotalVramBudgetBytes|QualitySettings\\.globalTextureMipmapLimit&quot; Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs">Expected external pressure field/method and monitor-owned global mip write only.</SCAN>
+    <SCAN command="git diff --check -- Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs">LF-to-CRLF warnings only.</SCAN>
+  </STATIC_VERIFICATION>
+  <COMPILE_VERIFICATION status="PENDING_VERIFICATION">Build was not launched in R36. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` blocks `Hecton8.Core.csproj` before SHINOBU code verification, and the user forbade needless build/rebuild runs.</COMPILE_VERIFICATION>
+</SELF_AUDIT>
+
+## R37 VRAMEnforcer Continuous Bootstrap Budget
+
+What was wrong:
+- `VRAMEnforcer` used a hard `DetectedGraphicsMemoryMb <= 2048` clamp.
+- Boid population budget used fixed low/shared-memory scale constants.
+- Bootstrap texture mip clamp selected discrete half/shared-memory limits before any pressure curve.
+
+What was done:
+- Added scalar `Unity.Mathematics` budget weighting.
+- `ResolveHardwareBudgetWeight()` now maps detected VRAM through `math.smoothstep(1024 MB, 8192 MB, detected MB)` and applies shared-memory ceiling through `math.select`.
+- Boid population scale now blends between 0.4 and 1.0 using both hardware weight and `GlobalQualityWeight`.
+- Bootstrap mip minimum now resolves from a continuous `math.lerp(2, 0, usableWeight)` and quantizes only at the Unity integer mip setting.
+
+Cinematic cheats used:
+- Same Dear Lie as the SHINOBU pressure lane: reduce population/mip presentation rather than loading/unloading or simulating more expensive asset truth.
+- Complexity remains O(1); the change replaces binary hardware classification with scalar budget response.
+
+Exact microseconds saved:
+- Measured savings: 0 microseconds claimed. Unity Profiler/GCMonitor proof remains unavailable behind the external compile wall.
+- Static impact: removed one binary hardware threshold and two fixed scale clamps from bootstrap/fauna budget routing.
+
+<SELF_AUDIT agent_id="SHINOBU_101" revision="R37_VRAM_ENFORCER_CONTINUOUS_BOOTSTRAP_BUDGET" timestamp="2026-05-20T00:00:00+04:00" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">MANAGED_DICTIONARY_ERADICATION: no managed collection route was added.</TASK>
+    <TASK id="02" status="PASS">DEFERRED_RELEASE_QUEUE_PURGE: no release route changed.</TASK>
+    <TASK id="03" status="PASS">CS1612_ENCAPSULATION_PURGE: no hot unmanaged DTO property path was introduced.</TASK>
+    <TASK id="04" status="PASS">ARM64_PADDING_RECONSTRUCTION: no DTO layout changed in R37.</TASK>
+    <TASK id="05" status="PASS">EMERGENCY_MOCK_CACHE_PROFILES: unchanged.</TASK>
+    <TASK id="06" status="PASS">VAULT_OPEN_ADDRESS_HASH_TABLE: unchanged.</TASK>
+    <TASK id="07" status="PASS">BURST_TTL_EVALUATION_KERNEL: unchanged.</TASK>
+    <TASK id="08" status="PASS">SAFE_FRAME_RELEASE_GATE: no Addressables route changed.</TASK>
+    <TASK id="09" status="PASS">THE_DEAR_LIE_IMPOSTOR_MESH: bootstrap budget now favors mip/population fakes over load churn.</TASK>
+    <TASK id="10" status="PASS">VRAM_PANIC_EVICTION_ROUTING: unchanged.</TASK>
+    <TASK id="11" status="PASS">CONTINUOUS_SCALABILITY_CACHE_SIZING: R37 directly removes a binary hardware budget cliff.</TASK>
+    <TASK id="12" status="PASS">ATOMIC_REFERENCE_COUNTING: unchanged.</TASK>
+    <TASK id="13" status="PASS">AUP_PRECISION_EVICTION_SCORING: unchanged.</TASK>
+    <TASK id="14" status="PASS">ASSET_BUNDLE_FRAGMENTATION_DEFRAG: unchanged.</TASK>
+    <TASK id="15" status="PASS">NARRATIVE_PINNING_LOCK: unchanged.</TASK>
+    <TASK id="16" status="PASS">ZERO_INIT_OVERHEAD_BYPASS: no new buffer was allocated.</TASK>
+    <TASK id="17" status="PASS">TELEMETRY_HEAP_RECORDER: unchanged.</TASK>
+    <TASK id="18" status="PASS">MEMORY_TUNER_EDITOR_WINDOW: unchanged.</TASK>
+    <TASK id="19" status="PASS">CSV_OVERRIDE_INGESTOR: unchanged.</TASK>
+    <TASK id="20" status="PASS">LIVE_LEAK_DETECTOR_GIZMO: unchanged.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <NOTE>R37 changes only scalar static budget code. No DTO, SignalBus payload, telemetry entry, atomic counter, or Vault record layout changed.</NOTE>
+    <STRUCT name="AssetTrackerDTO" size="64" alignment="8/16/64"><MATH>Existing proof remains: field sum = 64 bytes; one 64B cache line; no `Pack=1`.</MATH></STRUCT>
+    <STRUCT name="AssetHandleMapEntryDTO" size="64" alignment="8/16/64"><MATH>Existing proof remains: 36 bytes live fields + 28 bytes explicit padding = 64 bytes; one 64B cache line; no `Pack=1`.</MATH></STRUCT>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE_EXPLANATION>
+    Below `GlobalQualityWeight &lt; 0.3`, boid population scale trends toward `0.4` and bootstrap mip minimum trends toward `2`. Middle devices interpolate by hardware weight. High/ultra devices with quality near `1.0` resolve to boid scale `1.0` and mip minimum `0`. No low/high hardware branch remains in the enforcer path.
+  </SCALABILITY_CURVE_EXPLANATION>
+  <H_PHI_VAULT_STATUS>
+    <PRIVATE_NATIVE_ALLOCATIONS status="PASS">R37 declares zero private native containers.</PRIVATE_NATIVE_ALLOCATIONS>
+    <VAULT_HANDLES>R37 requests no new VaultBufferHandle IDs. Existing SHINOBU handles remain unchanged.</VAULT_HANDLES>
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>
+    <CONSUMES>R37 consumes no `JobHandle`.</CONSUMES>
+    <OUTPUTS>R37 outputs no `JobHandle`.</OUTPUTS>
+    <NO_ALIAS status="PASS">No new Burst job was introduced.</NO_ALIAS>
+  </POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No `.asmdef` was edited. R37 touched only `VRAMEnforcer.cs` and SHINOBU docs; no direct sibling runtime assembly reference was introduced.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    The Dear Lie is cold budget fakery: fewer boids and coarser mips sell the same scene under pressure instead of forcing asset churn or CPU simulation. Complexity stays O(1), but transitions are scalar instead of hardware-class jumps.
+  </DEAR_LIE_CONFIRMATION>
+  <STATIC_VERIFICATION>
+    <SCAN command="rg -n &quot;LowVramGraphicsMemoryMbThreshold|HalfResolutionTextureMipLimit|SharedMemoryTextureMipLimit|LowVramBoidPopulationScale|SharedMemoryBoidPopulationScale|DetectedGraphicsMemoryMb &gt; 0 &amp;&amp;|\\? SharedMemory|graphicsMemoryMb &gt; 0 \\?|if \\(!_lowVramBudgetActive\\)|&lt;= LowVram&quot; Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs">No results.</SCAN>
+    <SCAN command="rg -n &quot;ResolveHardwareBudgetWeight|ResolveQualityCurve|math\\.smoothstep|math\\.lerp|math\\.select|HomeostasisBrain\\.GlobalQualityWeight|QualitySettings\\.globalTextureMipmapLimit&quot; Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs">Expected continuous budget helpers and bootstrap/editor `QualitySettings` clamps only.</SCAN>
+    <SCAN command="git diff --check -- Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs">LF-to-CRLF warning only.</SCAN>
+  </STATIC_VERIFICATION>
+  <COMPILE_VERIFICATION status="PENDING_VERIFICATION">Build was not launched in R37. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` blocks `Hecton8.Core.csproj` before SHINOBU code verification, and the user forbade needless build/rebuild runs.</COMPILE_VERIFICATION>
+</SELF_AUDIT>

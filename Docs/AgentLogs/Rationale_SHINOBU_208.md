@@ -1,7 +1,7 @@
 # SHINOBU_208 Rationale - OFFLINE_GEOLOGY_MESH_BAKER
 
 Date: 2026-05-20
-Status: SCANNER_SCHEMA_V2_PATCHED / BUILD BLOCKED BY CPU GATE / RUNTIME ERADICATION VERDICT FALSE
+Status: EDITOR_ASYNC_CANCEL_GUARD_PATCHED / BUILD BLOCKED BY CPU GATE / RUNTIME ERADICATION VERDICT FALSE
 
 ## Decision 001 - Domain Boundary
 Problem: Runtime mesh generation scan found broad mesh builders, including live cave voxel MC and vegetation/wreck/outpost helpers. Editing all of them would cross unrelated domains.
@@ -142,3 +142,31 @@ Solution: Wrapped the LOD metric/save block in a `try/finally` and added `Destro
 Rejected Alternatives: Removing the public non-save overload rejected because it is useful for smoke probes and report-only validation. Destroying meshes after asset save rejected because saved/existing asset references must remain valid.
 Scalability potential: Low through Ultra behavior is unchanged. The patch protects repeated non-asset bake probes from editor memory slope while the same continuous quality controls remain active.
 Hardware Impact: Runtime cost remains 0 us. Editor/native memory retention risk drops for report-only bake loops; exact memory slope requires Unity editor profiling.
+
+## Decision 021 - Noise Quality Single Owner
+Problem: Full bake still pre-scaled `Octaves` before assigning the job DTO, while `GenerateMockFractalNoiseJob` also consumed `GlobalQualityWeight` to derive fractional octave span. That split ownership could double-collapse low-quality profiles and make preview/bake quality behavior diverge.
+Solution: `BakeSingle` now passes sanitized raw `profile.Octaves` into `GenerateMockFractalNoiseJob`. The job remains the single owner of SDF octave collapse through `GlobalQualityWeight`; the generator-level `qualityCurve` is retained only for UV scale, AO rays/steps/range, and LOD triangle/collapse budgets.
+Rejected Alternatives: Keeping caller-side octave lerp rejected because it hides part of SDF quality policy outside the Burst kernel. Removing generator-level quality completely rejected because AO/UV/LOD budgets are separate authoring costs and not SDF noise math.
+Scalability potential: Low weights still suppress high-frequency SDF detail through fractional job octaves, reduced frequency, reduced amplitude, lower ridged contribution, and suppressed Voronoi contribution. Middle/High/Ultra preserve richer authored octave spans while AO and LOD budgets continue to scale continuously.
+Hardware Impact: Runtime cost remains 0 us. Editor low-quality bakes avoid accidental double reduction and keep predictable authoring output; exact bake milliseconds remain pending Unity editor execution.
+
+## Decision 022 - UI Progress Callback
+Problem: The UI Toolkit `ProgressBar` in `GeologyForgeWindow` only moved from 0 to 1 around a synchronous bake call, while the actual batch progress was visible only through `EditorUtility.DisplayCancelableProgressBar`.
+Solution: `BakeProfiles` now accepts an optional cold `Action<float>` progress callback and reports by completed variation count. `GeologyForgeWindow` passes `SetBakeProgress`, clamps the value, marks the progress bar dirty, and repaints the window.
+Rejected Alternatives: Adding runtime-visible progress state rejected because GeologyForge is Editor-only. A full async editor scheduler was rejected in this tail patch because it would be a broader control-flow rewrite without compiler proof available under the current CPU gate.
+Scalability potential: Low through Ultra asset quality behavior is unchanged. Human operators get truthful progress when baking many profile variations, reducing canceled/restarted authoring runs.
+Hardware Impact: Runtime cost remains 0 us. Editor UI now does O(1) progress updates per baked variation; exact editor responsiveness still requires Unity editor execution.
+
+## Decision 023 - Editor Async Batch Runner
+Problem: `BakeAll` still invoked a full synchronous batch call. The UI progress callback made state truthful, but the Editor call stack remained occupied until all variations finished.
+Solution: Added `BakeProfilesAsync`, a static Editor-only runner driven by `EditorApplication.update`. It processes one profile variation per editor tick, reuses the existing private bake kernel, accumulates batch metrics and manifest records, writes the manifest/report once at finish or cancel, and keeps each 300-row TempJob telemetry ring local to a single tick.
+Rejected Alternatives: `async/await` rejected because Unity editor async introduces managed state machines and cancellation/lifetime complexity. Persistent `NativeArray` telemetry fields rejected because the async runner spans editor frames; TempJob telemetry is created/disposed per variation instead. Runtime worker/GlobalRegistry integration rejected because SHINOBU_208 is strictly Editor-only.
+Scalability potential: Low through Ultra generated asset quality is unchanged. Human operators can launch large profile libraries without one monolithic window call; strong machines still bake richer variants because the math budgets remain `GlobalQualityWeight` driven.
+Hardware Impact: Runtime cost remains 0 us. Editor responsiveness improves between variations; exact responsiveness and bake timing require Unity editor execution.
+
+## Decision 024 - Async Bake Cancel Guard
+Problem: An editor async batch can span multiple editor updates while `AssetDatabase.StartAssetEditing` is open. Domain reload or operator abort must not leave the asset database editing scope open.
+Solution: Added `CancelAsyncBake`, registered it with `AssemblyReloadEvents.beforeAssemblyReload`, and exposed a UI Toolkit `Cancel Bake` button. Cancel routes through the same finish path as user-canceled modal progress: unsubscribe update, clear progress UI, stop asset editing, write partial manifest/report, reset the UI progress scalar to 0, and clear static batch state.
+Rejected Alternatives: Relying only on the modal `EditorUtility` cancel rejected because it does not cover assembly reload. Letting domain reload reset static fields without calling `StopAssetEditing` rejected because it risks editor asset database state leakage.
+Scalability potential: Low through Ultra output math is unchanged. Large batch authoring becomes safer because abort/reload paths close the editor asset transaction deterministically.
+Hardware Impact: Runtime cost remains 0 us. Editor safety improves; exact abort behavior requires Unity editor execution.

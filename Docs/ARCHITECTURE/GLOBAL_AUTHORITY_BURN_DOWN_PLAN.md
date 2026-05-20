@@ -1,4 +1,4 @@
-# HECTON-8 Global Authority Burn-Down Plan
+﻿# HECTON-8 Global Authority Burn-Down Plan
 
 Date: 2026-05-20
 Owner lane: HFI_AUDIT
@@ -6,7 +6,7 @@ Status: PENDING VERIFICATION
 Evidence class: STATIC_SOURCE / STATIC_DOC
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -16,10 +16,10 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. Runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. Runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, platform run, headset run, Deck run, macOS/Linux run, console proof, or visual-route proof is implied unless this document links a fresh evidence artifact.
-Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 This plan orders the current global-authority burn-down work. It is not compile,
@@ -33,7 +33,7 @@ Source artifact:
 - `Docs/AgentLogs/ArchitectureRiskHotlist_HFI_AUDIT.md`
 - `Docs/AgentLogs/ArchitectureRiskHotlist_HFI_AUDIT.json`
 
-Current linked HFI_AUDIT artifact reports an R26 candidate scan; recapture the tools below before treating these scores as current under later R43/R44 documentation churn:
+Current linked HFI_AUDIT artifact reports an R27 candidate scan; recapture the tools below before treating these scores as current under later documentation churn:
 
 | Domain | Score | Scored files | First review files |
 |---|---:|---:|---|
@@ -97,7 +97,7 @@ Every burn-down slice must record before/after evidence:
 - `python Tools/ArchitectureRiskHotlistAudit.py`
 - `python Tools/GlobalAuthorityGate.py`
 - `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`
-- `python Tools/DataVaultSovereigntyAudit.py --baseline Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json --report Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md`
+- `python Tools/DataVaultSovereigntyAudit.py --baseline Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json --report Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md --audit-json Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.json --fail-on-regression`
 - `python Tools/AssemblyDependencyAudit.py` when asmdefs or cross-domain refs are touched
 - `python Tools/PlatformPortabilityProofAudit.py` when platform readiness is discussed
 
@@ -123,12 +123,21 @@ Every changed global route must have:
   contract/facade replacement, and Unity import proof.
 - Do not normalize the HFI candidate DataVault baseline as approval. It is a
   counter package for integrator review.
-- Historical R26 candidate no-regression check fails on field declaration growth and is subordinate to the R44 DOC_GLOBAL root/architecture boundary; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. The current AtlasCheck red tuple is `ATLAS_CHECK_FAIL references=6741 missing=59`; rerun before using it as current pressure:
-  forbidden declarations `5125 -> 5130`, with new pressure in
-  `Construction/ShinobuSocketConstructionData.cs`,
-  `Construction/ShinobuSocketConstructionJobs.cs`,
-  `Construction/SumpPumpPipeGridJobs.cs`, and
-  `Core/Data/H8StaticDataContracts.cs`.
+- Current R27 candidate no-regression check fails and the HFI candidate
+  baseline remains unapproved. Forbidden constructors are `1149`; forbidden
+  field-like `NativeArray<T>` declarations are `5132`. Regression domains are
+  Physics `+10`, Construction `+5`, Editor `+5`, Power `+4`, World `+3`,
+  Core `+2`, and Habitat `+1`. Use
+  `Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md/json` for
+  exact file deltas.
+- Current R28 DataVault drilldown splits regression by execution surface.
+  Runtime file-level gross growth is `+38`; Editor/offline-baker growth is
+  `+12`. Runtime burn-down starts with `Tools/LaserCutterDodJobs.cs`,
+  `Physics/Buoyancy/BuoyancySimdVectorization.cs`,
+  `Power/PowerGridJacobiContracts.cs`, Construction pipe/socket files,
+  `Gameplay/ScannerDataMiningRouter.cs`, `Core/Data/H8StaticDataContracts.cs`,
+  and `World/Resources/ProceduralOreSpawner.cs`. Editor/offline-baker growth
+  stays red but is second-order for frame-time portability.
 
 ## Platform Meaning
 
@@ -146,3 +155,5 @@ Quest 2/3 and PICO readiness require, at minimum:
 - Addressables/content streaming and Data Monolith payload proof.
 
 Until those artifacts exist, the platform status is scaffolded, not ready.
+
+

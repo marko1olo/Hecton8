@@ -381,8 +381,44 @@ Status: STATIC SOURCE UPDATED - UNITY IMPORT/PROFILER PENDING CPU GATE.
   <DearLieConfirmation>
     Before: quality from generic UberNoir path could spend or shed pressure-aging ALU without honoring the uploaded Vault scalar. After: visual aging remains O(n active scalar rows) CPU upload plus O(p shaded pixels) existing UberNoir math, with detail controlled by Vault quality and no physical corrosion/fracture simulation.
   </DearLieConfirmation>
-  <BuildGate status="DEFERRED" cpuPercent="100" dotnetCscProcesses="none" rule="build forbidden above 50 percent CPU" />
+<BuildGate status="DEFERRED" cpuPercent="100" dotnetCscProcesses="none" rule="build forbidden above 50 percent CPU" />
 </SELF_AUDIT>
+
+## 2026-05-20 Loop 16 - CSV Hot-Path Eviction and Shader Quality Variant Sanitation
+
+What was wrong:
+`VisualPressureAgingRuntime.PreSimulationTick` still reached a CSV file watcher every 96 frames in editor/development builds. The parser was byte-slice based, but the trigger path used filesystem metadata and `FileStream` from a dispatcher phase. The SHINOBU aging block in UberNoir also retained `_MATH_LOD_LOW` compile-time branches around aging noise/surface work, creating a binary quality surface inside a task that requires continuous `GlobalQualityWeight` behavior.
+
+What was done:
+`CsvPollCadenceFrames` and `MonitorCsv` were removed. CSV loading is now `ReloadCsvFromDisk(IDataVault,bool)` and is reachable through `TryReloadEditorCsv()` only. `VisualPressureAgingTunerWindow` now exposes `Reload CSV Profiles`, which runs the cold editor bridge and refreshes the Vault-backed tuner values. `PreSimulationTick` now only resolves cached Vault state and applies pending editor tuning.
+
+`Hecton8_UberNoir.hlsl` SHINOBU aging ranges no longer use `_MATH_LOD_LOW`. Albedo-array triplanar work, macro noise, RustDetail sampling, POM UV work, corrosion normal application, and surface detail all collapse via `H8UberNoirSmoothRange01`/`quality` gates. Below low quality thresholds the shader exits before expensive RustDetail/POM/triplanar work; mid/high quality blends into the richer paths.
+
+Cinematic cheats used:
+CSV changes do not affect the Dear Lie route. The visual aging remains GPU-side procedural rust, salt, biomass, pitting, and glass cracks. The CPU still packs scalar rows and never owns rust placement, corrosion geometry, or crack topology.
+
+Exact microseconds saved:
+Static estimate only. Removed one modulo branch and a possible filesystem metadata probe/read from every 96 PreSimulation ticks in editor/development builds. Shader path avoids RustDetail samples/POM/triplanar aging work below the quality thresholds. No profiler number is claimed because build/import/profiling remains gated by CPU policy.
+
+Verification:
+Scoped `rg` scans found no `CsvPollCadenceFrames`, no `MonitorCsv`, no frame-path CSV/File reachability, no forbidden material mutation/decal atlas tokens, and no binary LOD tokens inside SHINOBU aging shader ranges. Trailing whitespace scan returned no matches. `git diff --check` returned exit 0 with CRLF warnings only. Build was deferred because CPU was 100.000 percent and no compiler processes were active.
+
+## 2026-05-20 Loop 17 - Vault Lock Fence and Payload Quality Continuity
+
+What was wrong:
+VisualSync uploaded from `VisualPressureAgingParams` and read telemetry/cursor data while only holding the runtime lane lock. Cold/editor routes also used inconsistent lock order across the same owned lanes. Separately, RustDetail/POM quality gating in UberNoir reread global quality instead of using the row-aware quality already resolved from the Vault payload. The inquisition report also under-reported the XML archaeology scope.
+
+What was done:
+`VisualSyncTick` now locks SHINOBU lanes in ascending BufferID order before GPU upload and fault-dump reads: params, runtime, telemetry ring, telemetry cursor. Editor tuning read, default hydration, and CSV reload were normalized to the same ascending-order lock discipline for their touched lanes. `H8UberNoirResolveRustPomUv` now accepts the resolved aging `quality` argument and no longer rereads global quality internally. `VisualPressureAgingInquisition` now reports `BaseCorrosion.cs`, `GlassFracture.cs`, exact `GetComponent<Renderer>().material.SetFloat`, and rust/algae/corrosion/glass aging decal tokens in `Rendering/` and `Construction/`.
+
+Cinematic cheats used:
+No CPU rust placement, corrosion meshes, glass crack geometry, or dynamic aging decals were introduced. The CPU still publishes scalar rows only; UberNoir owns the procedural visual lie.
+
+Exact microseconds saved:
+No new profiler number is claimed. The lock-order patch buys correctness, not frame time. The shader quality patch prevents high-cost RustDetail/POM divergence when Vault payload quality asks for a cheaper aging path. The inquisition expansion is editor-only.
+
+Verification:
+Scoped scans found no live legacy aging material/decal archaeology tokens in `Rendering`/`Construction`, no binary LOD tokens inside SHINOBU aging shader ranges, and no rollback/Merkle references beyond `H8Memory` BufferIDs. The only forbidden-token hit in Graphics/Materials was the validator's own literal search string. Trailing whitespace scan returned no matches. `git diff --check` returned exit 0 with CRLF warnings only. Build was deferred because CPU was 98.693 percent and no compiler processes were active.
 
 ---
 

@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Collections;
@@ -63,6 +64,29 @@ namespace Hecton8.Audio
             AcousticTransmission01 = Mathf.Clamp01(acousticTransmission01);
             LowPassCutoffHz = Mathf.Clamp(lowPassCutoffHz, 80f, 22000f);
             Kind = kind;
+            Reserved0 = 0;
+            Reserved1 = 0;
+            Reserved2 = 0u;
+        }
+
+        internal AudioPingTriggerInfo(
+            long startSampleFrame,
+            int sampleRate,
+            float intensity,
+            float chirpDurationSeconds,
+            Vector3 worldPosition,
+            float acousticTransmission01,
+            float lowPassCutoffHz,
+            byte kind)
+        {
+            StartSampleFrame = startSampleFrame;
+            SampleRate = sampleRate > 0 ? sampleRate : 1;
+            Intensity = Mathf.Clamp01(intensity);
+            ChirpDurationSeconds = Mathf.Max(0f, chirpDurationSeconds);
+            WorldPosition = worldPosition;
+            AcousticTransmission01 = Mathf.Clamp01(acousticTransmission01);
+            LowPassCutoffHz = Mathf.Clamp(lowPassCutoffHz, 80f, 22000f);
+            Kind = (ProceduralAudioPingKind)kind;
             Reserved0 = 0;
             Reserved1 = 0;
             Reserved2 = 0u;
@@ -269,6 +293,30 @@ namespace Hecton8.Audio
             Reserved1 = 0u;
         }
 
+        internal StructuralStressAudioInfo(
+            in AbsoluteUniversePosition sourceAup,
+            Vector3 worldPosition,
+            float stress01,
+            float pitchScale,
+            float pressureDelta,
+            float depthMeters,
+            float acousticTransmission01,
+            float lowPassCutoffHz,
+            float acousticDelaySeconds)
+        {
+            WorldPosition = HullStressSignal.SanitizeWorldPosition(worldPosition);
+            SourceAup = sourceAup;
+            Stress01 = Mathf.Clamp01(HullStressSignal.SanitizeFiniteValue(stress01));
+            PitchScale = Mathf.Max(0.1f, HullStressSignal.SanitizeFiniteValue(pitchScale));
+            PressureDelta = HullStressSignal.SanitizeFiniteValue(pressureDelta);
+            DepthMeters = Mathf.Max(0f, HullStressSignal.SanitizeFiniteValue(depthMeters));
+            AcousticTransmission01 = Mathf.Clamp01(HullStressSignal.SanitizeFiniteValue(acousticTransmission01));
+            LowPassCutoffHz = Mathf.Clamp(HullStressSignal.SanitizeFiniteOrDefault(lowPassCutoffHz, 22000f), 80f, 22000f);
+            AcousticDelaySeconds = Mathf.Max(0f, HullStressSignal.SanitizeFiniteValue(acousticDelaySeconds));
+            Reserved0 = 0u;
+            Reserved1 = 0u;
+        }
+
         /// <summary>World-space origin for spatial routing.</summary>
         [FieldOffset(48)]
         public readonly Vector3 WorldPosition;
@@ -308,13 +356,6 @@ namespace Hecton8.Audio
         public readonly uint Reserved0;
         [FieldOffset(92)]
         public readonly uint Reserved1;
-    }
-
-    public enum AudioEventKind : byte
-    {
-        None = 0,
-        AudioPing = 1,
-        StructuralStress = 2
     }
 
     /// <summary>
@@ -516,7 +557,7 @@ namespace Hecton8.Audio
         public static void RaiseAudioPingTriggered(long startSampleFrame, int sampleRate, float intensity, float chirpDurationSeconds)
         {
             AudioPingTriggerInfo info = new AudioPingTriggerInfo(startSampleFrame, sampleRate, intensity, chirpDurationSeconds);
-            AudioEvent audioEvent = AudioEvent.FromAudioPing(in info);
+            AudioEvent audioEvent = CreateAudioPingEvent(in info);
             PublishTypedAudioEvent(in audioEvent);
 
             if (_listeners.Count <= 0)
@@ -547,7 +588,7 @@ namespace Hecton8.Audio
                 acousticTransmission01,
                 lowPassCutoffHz,
                 kind);
-            AudioEvent audioEvent = AudioEvent.FromAudioPing(in info);
+            AudioEvent audioEvent = CreateAudioPingEvent(in info);
             PublishTypedAudioEvent(in audioEvent);
 
             if (_listeners.Count <= 0)
@@ -567,13 +608,13 @@ namespace Hecton8.Audio
         {
             if (_isDispatching)
             {
-                _nextFrameAudioEvents.Enqueue(AudioEvent.FromAudioPing(in info));
+                _nextFrameAudioEvents.Enqueue(CreateAudioPingEvent(in info));
                 _nextFrameAudioEventCount++;
                 _nextFrameAudioPingCount++;
             }
             else
             {
-                _pendingAudioEvents.Enqueue(AudioEvent.FromAudioPing(in info));
+                _pendingAudioEvents.Enqueue(CreateAudioPingEvent(in info));
                 _pendingAudioEventCount++;
                 _pendingAudioPingCount++;
             }
@@ -602,7 +643,7 @@ namespace Hecton8.Audio
         /// </summary>
         public static void RaiseStructuralStressTriggered(in StructuralStressAudioInfo info)
         {
-            AudioEvent audioEvent = AudioEvent.FromStructuralStress(in info);
+            AudioEvent audioEvent = CreateStructuralStressEvent(in info);
             PublishTypedAudioEvent(in audioEvent);
 
             if (_listeners.Count <= 0)
@@ -622,16 +663,46 @@ namespace Hecton8.Audio
         {
             if (_isDispatching)
             {
-                _nextFrameAudioEvents.Enqueue(AudioEvent.FromStructuralStress(in info));
+                _nextFrameAudioEvents.Enqueue(CreateStructuralStressEvent(in info));
                 _nextFrameAudioEventCount++;
                 _nextFrameStructuralStressCount++;
             }
             else
             {
-                _pendingAudioEvents.Enqueue(AudioEvent.FromStructuralStress(in info));
+                _pendingAudioEvents.Enqueue(CreateStructuralStressEvent(in info));
                 _pendingAudioEventCount++;
                 _pendingStructuralStressCount++;
             }
+        }
+
+        private static AudioEvent CreateAudioPingEvent(in AudioPingTriggerInfo info)
+        {
+            AudioPingTriggerPayload payload = new AudioPingTriggerPayload(
+                info.StartSampleFrame,
+                info.SampleRate,
+                info.Intensity,
+                info.ChirpDurationSeconds,
+                info.WorldPosition,
+                info.AcousticTransmission01,
+                info.LowPassCutoffHz,
+                (byte)info.Kind);
+            return AudioEvent.FromAudioPing(in payload);
+        }
+
+        private static AudioEvent CreateStructuralStressEvent(in StructuralStressAudioInfo info)
+        {
+            StructuralStressAudioPayload payload = new StructuralStressAudioPayload(
+                ToAcousticAup(in info.SourceAup),
+                info.WorldPosition,
+                info.Stress01,
+                info.PitchScale,
+                info.PressureDelta,
+                info.DepthMeters,
+                info.AcousticTransmission01,
+                info.LowPassCutoffHz,
+                info.AcousticDelaySeconds,
+                StructuralStressAudioPayload.FlagHasSourceAup);
+            return AudioEvent.FromStructuralStress(in payload);
         }
 
         private static void PublishTypedAudioEvent(in AudioEvent audioEvent)
@@ -775,12 +846,71 @@ namespace Hecton8.Audio
             switch (audioEvent.Kind)
             {
                 case AudioEventKind.AudioPing:
-                    DispatchAudioPingToListener(listener, in audioEvent.AudioPing);
+                {
+                    AudioPingTriggerInfo info = ToAudioInfo(in audioEvent.AudioPing);
+                    DispatchAudioPingToListener(listener, in info);
                     break;
+                }
                 case AudioEventKind.StructuralStress:
-                    DispatchStructuralStressToListener(listener, in audioEvent.StructuralStress);
+                {
+                    StructuralStressAudioInfo info = ToAudioInfo(in audioEvent.StructuralStress);
+                    DispatchStructuralStressToListener(listener, in info);
                     break;
+                }
             }
+        }
+
+        private static AudioPingTriggerInfo ToAudioInfo(in AudioPingTriggerPayload payload)
+        {
+            return new AudioPingTriggerInfo(
+                payload.StartSampleFrame,
+                payload.SampleRate,
+                payload.Intensity,
+                payload.ChirpDurationSeconds,
+                payload.WorldPosition,
+                payload.AcousticTransmission01,
+                payload.LowPassCutoffHz,
+                payload.Kind);
+        }
+
+        private static StructuralStressAudioInfo ToAudioInfo(in StructuralStressAudioPayload payload)
+        {
+            AbsoluteUniversePosition sourceAup = (payload.Flags & StructuralStressAudioPayload.FlagHasSourceAup) != 0
+                ? ToAbsoluteUniversePosition(in payload.SourceAup)
+                : AbsoluteUniversePosition.FromRuntimePosition(payload.WorldPosition);
+
+            return new StructuralStressAudioInfo(
+                in sourceAup,
+                payload.WorldPosition,
+                payload.Stress01,
+                payload.PitchScale,
+                payload.PressureDelta,
+                payload.DepthMeters,
+                payload.AcousticTransmission01,
+                payload.LowPassCutoffHz,
+                payload.AcousticDelaySeconds);
+        }
+
+        private static AcousticAup ToAcousticAup(in AbsoluteUniversePosition aup)
+        {
+            return new AcousticAup(
+                aup.GridX,
+                aup.GridY,
+                aup.GridZ,
+                new Unity.Mathematics.float3(aup.LocalX, aup.LocalY, aup.LocalZ));
+        }
+
+        private static AbsoluteUniversePosition ToAbsoluteUniversePosition(in AcousticAup aup)
+        {
+            return new AbsoluteUniversePosition
+            {
+                GridX = aup.GridX,
+                GridY = aup.GridY,
+                GridZ = aup.GridZ,
+                LocalX = aup.Local.x,
+                LocalY = aup.Local.y,
+                LocalZ = aup.Local.z
+            };
         }
 
         private static void DispatchAudioPingToListener(IProceduralAudioEventListener listener, in AudioPingTriggerInfo info)

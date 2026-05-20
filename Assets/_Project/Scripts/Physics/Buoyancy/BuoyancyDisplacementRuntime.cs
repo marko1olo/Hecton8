@@ -292,7 +292,7 @@ namespace Hecton8.Physics
             {
                 States = states,
                 FlowSamples = flowSamples,
-                Tuning = tuning,
+                Tuning = tuningDto,
                 DebugForces = debugForces,
                 ForcePackets = forcePackets,
                 ForcePacketWriteEnabled = 1,
@@ -452,9 +452,10 @@ namespace Hecton8.Physics
             int count = math.min(
                 BuoyancyDisplacementConstants.SimdBenchmarkCapacity,
                 math.min(positions.Length, math.min(velocities.Length, math.min(dragCoefficients.Length, outputForces.Length))));
-            int vectorizedCount = count & ~(SimdVectorizationConstants.HydrodynamicsLaneWidth - 1);
-            if (vectorizedCount <= 0)
+            if (count <= 0)
                 return false;
+            int laneCount = (count + SimdVectorizationConstants.HydrodynamicsLaneWidth - 1) /
+                            SimdVectorizationConstants.HydrodynamicsLaneWidth;
 
             SimdHydrodynamicTuningDTO tuningValue = ResolveBenchmarkSimdTuning(benchmarkTuning, _simulationFrame);
             float scalarMicros = 0f;
@@ -465,12 +466,12 @@ namespace Hecton8.Physics
                 LocalPositions = positions,
                 Velocities = velocities,
                 DragCoefficients = dragCoefficients,
-                Count = vectorizedCount,
+                Count = count,
                 Seed = 0x2015A11Du,
                 FrameIndex = _simulationFrame
             };
-            JobHandle handle = generateJob.Schedule(vectorizedCount, 128);
-            int scalarProbeCount = math.clamp((int)math.round(vectorizedCount * scalarProbeWeight), 0, vectorizedCount);
+            JobHandle handle = generateJob.Schedule(count, 128);
+            int scalarProbeCount = math.clamp((int)math.round(count * scalarProbeWeight), 0, count);
             if (scalarProbeCount > 0)
             {
                 DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
@@ -486,10 +487,10 @@ namespace Hecton8.Physics
                 };
                 JobHandle scalarHandle = scalarJob.Schedule();
                 DispatcherJobFence.TryComplete(ref scalarHandle, forceComplete: true);
-                scalarMicros = ResolveElapsedMicros(scalarStart) * (vectorizedCount * math.rcp(math.max(1, scalarProbeCount)));
+                scalarMicros = ResolveElapsedMicros(scalarStart) * (count * math.rcp(math.max(1, scalarProbeCount)));
 
                 generateJob.FrameIndex = _simulationFrame;
-                handle = generateJob.Schedule(vectorizedCount, 128);
+                handle = generateJob.Schedule(count, 128);
             }
 
             long start = Stopwatch.GetTimestamp();
@@ -500,9 +501,9 @@ namespace Hecton8.Physics
                 DragCoefficients = dragCoefficients,
                 OutputForces = outputForces,
                 Tuning = tuningValue,
-                Count = vectorizedCount
+                Count = count
             };
-            handle = hydroJob.Schedule(vectorizedCount / SimdVectorizationConstants.HydrodynamicsLaneWidth, 64, handle);
+            handle = hydroJob.Schedule(laneCount, 64, handle);
             DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
 
             float vectorMicros = ResolveElapsedMicros(start);
@@ -512,11 +513,11 @@ namespace Hecton8.Physics
                 TelemetryCursor = cursor,
                 FrameIndex = _simulationFrame,
                 KernelHash = SimdVectorizationConstants.HydrodynamicsKernelHash,
-                EntityCount = vectorizedCount,
+                EntityCount = count,
                 VectorMicros = vectorMicros,
                 ScalarMicros = scalarMicros,
                 GlobalQualityWeight = tuningValue.GlobalQualityWeight,
-                StateHash = (uint)vectorizedCount ^ _simulationFrame ^ SimdVectorizationConstants.HydrodynamicsKernelHash,
+                StateHash = (uint)count ^ _simulationFrame ^ SimdVectorizationConstants.HydrodynamicsKernelHash,
                 MaxSpeedSq = 144f
             };
             JobHandle telemetryHandle = telemetryJob.Schedule();

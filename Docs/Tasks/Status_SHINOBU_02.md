@@ -3,7 +3,21 @@
 Date: 2026-05-20
 Agent: SHINOBU_02
 Domain: Core & Memory Infrastructure / Global EventBus MPSC SignalBus
-Status: CURRENT47 SIGNAL DROP-STORM BLACKBOX BACKOFF AND R45 DOC BOUNDARY PATCH APPLIED; SIGNALCRITICAL STATIC AUDIT 0 ERRORS / 15 REVIEW WARNINGS; BUILD BLOCKED BY HARDWARE GUARD CPU=100. CORE COMPILE GREEN STILL UNPROVEN. PREVIOUS POST-PATCH BUILD REMAINS CURRENT40: 311 ERRORS / 19 WARNINGS UNTIL A GUARDED BUILD CAN RUN.
+Status: CURRENT48 SIGNAL CORRUPTION BLACKBOX BACKOFF AND SIGNALCRITICAL AUDIT CLASSIFIER APPLIED; SIGNALCRITICAL STATIC AUDIT 0 ERRORS / 1 REVIEW WARNING / 16 INFOS; BUILD BLOCKED BY HARDWARE GUARD CPU=100. CORE COMPILE GREEN STILL UNPROVEN. PREVIOUS POST-PATCH BUILD REMAINS CURRENT40: 311 ERRORS / 19 WARNINGS UNTIL A GUARDED BUILD CAN RUN.
+
+## Current48 Checklist
+
+- [x] Re-read active SHINOBU_02 status/rationale before work.
+- [x] Re-read active docs/mandates for R45 boundary, SignalBus lane segregation, GlobalRegistry cold routing, blackbox telemetry, native ownership, zero-GC, and evidence classification.
+- [x] Used read-only subagents Einstein and Lagrange to classify the Current47 SignalCritical sync-I/O warnings and source call contexts.
+- [x] Added a 300-frame backoff latch for SignalBus corruption blackbox dumps in `GlobalSignals.ReportSignalLaneTelemetry()`. The first corruption dump remains immediate; repeated corruption exports inside the same 300-frame ring window are suppressed.
+- [x] Added fail-closed sync-I/O context classification to `Tools/SignalBusContractAudit.ps1`: fault blackbox, cold bootstrap config, and editor/development CSV hot swap are INFO; unmatched runtime file I/O remains WARN.
+- [x] Preserved one `RUNTIME_SYNC_FILE_IO_REVIEW` warning for `SignalPriorityCsvHotSwap.TryLoad(string path)` because it is public, unguarded, and has no proven current cold/editor/fatal call site.
+- [x] SignalCritical audit rerun: files 9 C# / 68 compute, errors 0, warnings 1, infos 16, confirmedErrors 0. Managed event surface 0, runtime signal Pack=1 0, hot-path heuristic hits 0.
+- [x] Static checks: corruption backoff scan found `_signalTelemetryLastCorruptionDumpFrame`, `ShouldDumpSignalCorruption`, shared `ShouldDumpSignalBlackBox`, and reset coverage; Current48 audit artifacts have no trailing whitespace; `git diff --check` over touched tracked files returned exit 0 with line-ending warnings only.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT48 CPU=100 SAMPLES=100,100,100 PROCS=0`; dotnet build skipped by project hardware rule.
+- [ ] Core compile green: not proven in Current48 because CPU guard blocked build.
+- [ ] Unity import / Play Mode / Profiler / GCMonitor / IL2CPP / ARM64 proof: not run.
 
 ## Current47 Checklist
 

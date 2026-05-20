@@ -303,3 +303,49 @@ Solution: Compile gate remains closed from the last sample: CPU was 94.052 perce
 Rejected Alternatives: Running a build under CPU 94.052 percent was rejected by project rule.
 Scalability potential: Static source proof only; no runtime/profiler claim is made.
 Hardware Impact: No compiler load added.
+
+## Loop 16 - CSV Hot-Path Eviction and Shader Quality Variant Sanitation
+
+Problem: `PreSimulationTick` still incremented a local frame counter and called `MonitorCsv(vault)` every 96 frames in editor/development builds. `MonitorCsv` used `File.Exists`, `File.GetLastWriteTimeUtc`, and `FileStream` before parsing bytes into the Vault scratch lane. That violated the cold-only CSV mandate even though the parser itself was allocation-free.
+Solution: Remove `CsvPollCadenceFrames` and delete the automatic `MonitorCsv` call from `PreSimulationTick`. Rename the loader to `ReloadCsvFromDisk(IDataVault,bool)` and expose it only through `TryReloadEditorCsv()`, which is called by a UI Toolkit editor button labeled `Reload CSV Profiles`. The parser, scratch buffer, tuning DTO, CSV generation flag, and Vault mutation route remain unchanged.
+Rejected Alternatives: Keeping low-frequency polling was rejected because "every 96 frames" is still a hot-path filesystem probe. Loading the CSV through managed `File.ReadAllText` was rejected because the runtime parser is required to operate over `NativeArray<byte>`/`ReadOnlySpan<byte>`-style slices. Deleting CSV ingestion was rejected because Task 17 requires a human tuning bridge.
+Scalability potential: Low, middle, high, and ultra gameplay paths now pay zero CSV disk cost. Designers still reload profiles manually in the editor, then the same Vault-backed tuning scalars drive continuous shader quality and aging coefficients.
+Hardware Impact: Removes a periodic filesystem metadata probe and possible disk read from PreSimulation on weak storage/mobile dev kits. The steady-state frame path loses one modulo branch and all CSV I/O reachability.
+
+Problem: The SHINOBU aging shader path still contained `_MATH_LOD_LOW` compile-time branches around visual-aging albedo array sampling, macro noise, rust UV/POM resolution, rust corrosion application, and the surface aging split. Even if the broader UberNoir shader still has legacy variant macros in unrelated lighting/caustic sections, this task's aging route must not depend on binary quality variants.
+Solution: Replace those SHINOBU-owned aging branches with quality-driven gates. `H8UberNoirSampleAlbedoArray` returns UV sampling until `quality` enables triplanar detail. `H8UberNoirMaterialMacroNoise` lerps cheap triangle noise into value noise through `H8UberNoirSmoothRange01`. `H8UberNoirResolveRustPomUv` exits before RustDetail samples below quality 0.06-0.24 and enables POM only through a 0.58-0.92 quality ramp. `H8UberNoirSampleSurface` uses a runtime `surfaceDetailWeight` from 0.06-0.24 to keep the cheap surface path at minimum quality and richer normal/rust/glass work above it.
+Rejected Alternatives: Keeping `_MATH_LOD_LOW` in the aging route was rejected because it creates a binary visual surface. Always executing the rich branch was rejected because it spends texture samples and POM loops on low quality. A separate low-end material was rejected because it reintroduces material-state divergence.
+Scalability potential: Low quality gets cheap UV sampling, triangle macro noise, no RustDetail sample/POM, and a simple surface response. Middle quality progressively enables texture arrays, triplanar blend, richer corrosion masks, and glass fracture detail. High/ultra quality keeps RustDetail, POM, normal perturbation, pitting, moss, and crack catchlight work without material swaps or extra draw calls.
+Hardware Impact: On weak GPUs the aging path exits before high-cost texture/POM/detail work. On high-tier GPUs saved CPU/decal budget is spent on shader-side procedural detail. Static proof only; no profiler claim is made until Unity import/player profiling is allowed.
+
+Problem: Compile verification is still required after loop 16.
+Solution: Rechecked CPU and compiler gate. CPU was 100.000 percent and no `dotnet`, `csc`, or `VBCSCompiler` process was active.
+Rejected Alternatives: Running a build under CPU 100.000 percent was rejected by project rule.
+Scalability potential: Static source proof only; no runtime/profiler claim is made.
+Hardware Impact: No compiler load added.
+
+## Loop 17 - Vault Lock Fence and Payload Quality Continuity
+
+Problem: `VisualSyncTick` locked only `VisualPressureAgingRuntime` while reading `VisualPressureAgingParams`, `VisualPressureAgingTelemetryRing`, and `VisualPressureAgingTelemetryCursor` for GPU upload, cursor capture, and fault dump. Other SHINOBU-owned cold/editor paths also used mixed lock order across overlapping lanes.
+Solution: Fence VisualSync reads/writes with locks in ascending owned BufferID order: params, runtime, telemetry ring, telemetry cursor. Normalize editor read, default hydration, and CSV reload lock order to the same ascending-order rule for the lanes they touch. Unlock order is reversed.
+Rejected Alternatives: Relying on dispatcher phase separation was rejected because the Vault API is the ownership proof, not an assumption about frame sequencing. Keeping mixed order in cold/editor routes was rejected because editor input can interleave with play-mode dispatch and create avoidable lock contention ambiguity.
+Scalability potential: Low through ultra behavior is unchanged. The payload route is now more mechanically defensible under editor preview, CSV reload, and VisualSync upload pressure.
+Hardware Impact: Adds a small number of nonblocking Vault lock probes to VisualSync and removes undefined overlap risk. No profiler number is claimed.
+
+Problem: `H8UberNoirResolveRustPomUv` internally reread `H8UberNoirGlobalQualityWeight()` after `H8UberNoirSampleSurface` had already computed the row-aware quality via `H8UberNoirVisualAgingQualityWeight(visualAging)`. That meant Vault payload quality could drive rust/salt/glass scalar work but not RustDetail/POM gating.
+Solution: Pass the computed `quality` into `H8UberNoirResolveRustPomUv` and use it for RustDetail and POM gates. This keeps the full SHINOBU aging shader path on one quality scalar.
+Rejected Alternatives: Leaving global quality inside the POM helper was rejected because it splits visual LOD authority. Recomputing row quality inside the helper was rejected because it would duplicate load/sanitize logic already done at the surface entry.
+Scalability potential: Low quality now consistently exits before RustDetail/POM across the whole aging path. Middle/high quality consistently enables richer rust detail when the payload authorizes it.
+Hardware Impact: No extra texture samples or branches. One scalar argument replaces one global quality read.
+
+Problem: The static inquisition report was too narrow for the XML archaeology task. It counted BaseDegradation/runtime material mutation surfaces, but did not explicitly report `BaseCorrosion.cs`, `GlassFracture.cs`, exact `GetComponent<Renderer>().material.SetFloat`, or rust/algae/corrosion/glass aging decal tokens in `Rendering/` and `Construction/`.
+Solution: Extend `VisualPressureAgingInquisition` with file-name and token scans for those exact archaeology requirements. The report still records broad project material/dynamic-decal counts, but pass/fail is gated on SHINOBU's visual pressure-aging scope.
+Rejected Alternatives: Failing the report on all project-wide `Material.SetFloat` or `DynamicDecal` strings was rejected because other owners have editor tools, holograms, impacts, and fluid effects outside SHINOBU_219 aging. Ignoring the XML-named files/patterns was rejected because it weakens Task 01 evidence.
+Scalability potential: Editor-only validator. Runtime low/mid/high/ultra paths are unaffected.
+Hardware Impact: No runtime cost. Editor report allocates managed strings/arrays by design and is outside gameplay.
+
+Problem: Compile verification is still required after loop 17.
+Solution: Rechecked CPU and compiler gate. CPU was 98.693 percent and no `dotnet`, `csc`, or `VBCSCompiler` process was active.
+Rejected Alternatives: Running a build under CPU 98.693 percent was rejected by project rule.
+Scalability potential: Static source proof only; no runtime/profiler claim is made.
+Hardware Impact: No compiler load added.

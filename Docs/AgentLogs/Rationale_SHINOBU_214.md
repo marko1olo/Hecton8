@@ -1,7 +1,7 @@
 # SHINOBU_214 Rationale
 
 Date: 2026-05-20
-Status: STATIC POLISH + BLACKBOX + STRUCT_REQUEST_FIX + QUALITY_CURVE_PASS APPLIED / COMPILE BLOCKED BY CPU GATE
+Status: STATIC POLISH + ISOLATED_ASMDEF + BLACKBOX + STRUCT_REQUEST_FIX + AXIS_DIMENSION_FIX + QUALITY_CURVE + CSV_PROFILE_AUTHORITY + PROPERTY_PURGE + BATCH_FAULT_ADVANCE APPLIED / COMPILE BLOCKED BY CPU GATE
 
 ## Decision 001: Offline-Only PBR Mask Authority
 
@@ -112,7 +112,7 @@ Hardware Impact: 300 * 64 = 19200 bytes of Editor-only persistent forensic memor
 Problem: `TexturePackerRequest` was intentionally converted from a class to a struct, but `ValidateRequest` still accepted it by value. Default `OutputName`, `OutputFolder`, and `MaxSize` writes were therefore lost, risking invalid root-level asset paths for fallback callers.
 Solution: Change validation to `ValidateRequest(ref TexturePackerRequest request)`, keep the public pack API value-based for caller isolation, and normalize request defaults before any path or dimension resolution.
 Rejected Alternatives: Reverting the request to a reference type, duplicating default logic in every caller, or assuming the UI always supplies all fields were rejected. Reference semantics reintroduce avoidable mutable object state; duplicated defaults drift; assuming a single caller breaks the legacy selection menu.
-Scalability potential: All quality profiles now reach the same stable output root. Non-square production scans also preserve intended resolution because pack dimension now uses max(width,height) across source maps before max-size clamp.
+Scalability potential: All quality profiles now reach the same stable output root. Non-square production scans keep enough resolution because each axis is resolved from source texture dimensions before max-size clamp.
 Hardware Impact: Runtime remains 0 us. Editor prevents accidental undersized output and invalid asset path churn; exact bake-time delta is negligible compared with texture readback/compression.
 
 ## Decision 015: Continuous Macro Octave Quality Curve
@@ -122,3 +122,51 @@ Solution: Feed `GlobalQualityWeight` into the FBM function. Base low-frequency n
 Rejected Alternatives: Authoring separate low/high textures, runtime shader macro-noise, or hard `if (q < 0.3)` branches were rejected. Separate outputs drift, runtime noise violates sampler/ALU goals, and hard thresholds create tier pops.
 Scalability potential: Low receives one broad macro field; Middle gradually admits the second octave; High/Ultra restores the full three-octave variation while still baking it offline into the same ARM mask.
 Hardware Impact: Runtime remains 0 us and one ARM sampler. Editor bake ALU changes are cold; the saved runtime macro sampler remains the actual low-end silicon win.
+
+## Decision 016: CSV Flags Must Actually Control Work
+
+Problem: The CSV parser defaulted every parsed profile to macro noise, Toksvig mips, and Sobel normals before reading the flag column. This meant a prop profile could not disable macro or normal generation, making the human tuning bridge mostly decorative.
+Solution: Parse the flag column as lowercase FNV-1a tokens directly from the byte stream. Empty flags keep the default recipe; explicit `none`, `off`, `false`, or `0` returns zero flags; `macro/noise`, `toksvig/mip`, `normal/sobel`, and `invert/smoothness` opt into the exact stages requested.
+Rejected Alternatives: Managed `Split`, enum reflection, or UI-only toggles were rejected. They either allocate, add fragile reflection, or prevent profile files from being authoritative.
+Scalability potential: Low/prop profiles can skip Sobel and macro bake completely; terrain profiles can enable full macro/Toksvig behavior; high/ultra assets can opt into all offline detail without changing runtime shader sampler count.
+Hardware Impact: Runtime remains 0 us. Editor batch time drops for profiles that disable Sobel/macro stages; exact milliseconds require Unity menu-run proof.
+
+## Decision 017: Forge Must Not Override CSV Macro Authority
+
+Problem: The byte parser could return zero flags for `none/off/0`, but `TextureChannelPackerWindow.BuildRequest` still initialized every request with `FlagInjectMacroNoise`. That made the parser correct and the UI facade wrong.
+Solution: Initialize request flags from `profile.Flags`, then apply only the visible user toggles for invert roughness, Toksvig mips, and Sobel normals. Macro remains controlled by the profile data and can be further neutralized by a zero macro strength.
+Rejected Alternatives: Adding another macro checkbox, leaving macro always on, or moving all flag control to UI state were rejected. Another checkbox duplicates profile authority; always-on violates prop profiles; UI-only state makes CSV recipes decorative.
+Scalability potential: Low/prop profiles can skip macro and normal jobs entirely; terrain profiles keep macro/Toksvig; high/ultra can enable all offline stages from data without changing runtime sampler count.
+Hardware Impact: Runtime remains 0 us. Editor batch work now follows the selected profile; disabled macro avoids one full-pixel pass for prop batches. Exact milliseconds require Unity menu-run proof.
+
+## Decision 018: Remove Last DTO-Style Properties From Owned Editor Surface
+
+Problem: `PackedMaskAnalysis` in the validator still used get-only properties. It was Editor-only and not a Burst pixel DTO, but it weakened the CS1612/property-eradication proof for this domain.
+Solution: Replace the properties with raw readonly fields while keeping the struct immutable at construction.
+Rejected Alternatives: Keeping properties because they were cold-path, or converting the validator to a class, were rejected. The first leaves an avoidable audit scar; the second adds reference semantics without benefit.
+Scalability potential: No visual tier behavior changes. It keeps the domain's data surface closer to the raw-field rule used by the real Burst DTOs.
+Hardware Impact: Runtime remains 0 us. Editor impact is negligible; this is primarily compile-surface and audit hardening.
+
+## Decision 019: Preserve Non-Square Source Axes
+
+Problem: The request mutation fix prevented width-only collapse, but the packer still resolved output width and height from the same max dimension. A 1024x4096 source could become square, wasting texture memory and potentially altering authored aspect.
+Solution: Resolve width and height independently across AO, Roughness, Metallic, and Albedo sources. Each axis is rounded to power-of-two and clamped to the selected max size.
+Rejected Alternatives: Always-square output and source-width-only output were rejected. Square output wastes VRAM for trims; width-only output loses vertical detail.
+Scalability potential: Low profiles can clamp each axis to 512/1024/2048 without forced square bloat; high/ultra profiles preserve asymmetric source detail when authored.
+Hardware Impact: Runtime remains one ARM sampler. Non-square assets avoid unnecessary texels, improving VRAM residency and upload size; exact savings depend on source aspect.
+
+## Decision 020: Batch Queue Must Advance After Per-Set Fault
+
+Problem: `TryPackArmAsset` records a fault and rethrows to preserve forensic visibility. The Forge update loop did not catch that exception, so one bad source set could keep the same `_pendingIndex` and repeatedly fault on editor update.
+Solution: Catch exceptions inside `TickPackingQueue`, increment the failed counter, log one editor error with the source key and exception type, then advance `_pendingIndex`.
+Rejected Alternatives: Swallowing exceptions inside the packer or stopping the whole batch were rejected. The packer must dump blackbox evidence; the batch should still process independent source sets.
+Scalability potential: Large art-library batches degrade by skipping bad sets instead of stalling the entire queue. Low/high visual output rules are unchanged.
+Hardware Impact: Runtime remains 0 us. Editor prevents repeated failing work and unbounded Console spam from a single corrupt texture set.
+
+## Decision 021: Isolate Texture Packer From Broad Editor Assembly
+
+Problem: The packer files lived under the pre-existing broad `Hecton8.Editor.asmdef`, which references multiple Hecton8 runtime assemblies. The code itself did not use sibling namespaces, but the assembly evidence did not satisfy the compile-wall audit.
+Solution: Move the texture packer files into `Assets/_Project/Scripts/Editor/TextureChannelPacker/` and add `Hecton8.Rendering.TexturePacker.Editor.asmdef` with only Unity Collections, Mathematics, Burst, and Jobs references.
+Rejected Alternatives: Editing the broad shared `Hecton8.Editor.asmdef` or leaving the code under that assembly were rejected. The first risks other editor tools owned by other agents; the second leaves a false compile-wall dependency surface.
+Scalability potential: No visual tier behavior changes. Iteration speed improves because texture-packer edits compile inside a narrower Editor assembly.
+Hardware Impact: Runtime remains 0 us. Developer compile churn is reduced; exact compile seconds require Unity import/build proof after CPU gate opens.

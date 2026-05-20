@@ -507,3 +507,62 @@ Verification:
   <COMPILE_GUARD>No asmdef or sibling runtime dependency was added. A previous targeted build hit a 188-error foreign dependency wall; Loop 17 did not launch a build because CPU guard was `98.48` and the user explicitly forbade rebuild until needed.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Legacy flat lookup is O(log2 N) random cache-line probing. B-Tree lookup is O(log8 N) cache-line nodes. PDA mock fallback is O(1) ordinal inverse of mock key generation. The fake is data topology and deterministic cache warming, not CPU simulation.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
+
+## 2026-05-20 Loop 18 Scanner Residue Gate Hardening
+
+What was wrong: the cache scanner proved deterministic Burst attributes, `BTreeNodeDTO` explicit 64-byte layout, and the PDA mock flat-scan removal, but several older failure modes still required a manual `rg`: flat `while (lo <= hi)` / `while (low <= high)` search loops, `.BinarySearch`, managed lookup containers, `Pack=1`, wrapped `offset + 64`, and the old full `OutputBytes` mock clear.
+
+What was done: `Tools/Cache_Miss_Eradication_Scanner.py` now has `SOURCE_CONTRACT_FILES`, named `RESIDUE_PATTERNS`, and `validate_no_source_residue()`. It reads the six SHINOBU_207 B-Tree contour source files and fails with file/line/snippet evidence if forbidden residue returns. `Docs/Reports/MEMORY_OPTIMIZATION_REPORT.json` now records `sourceContracts.sourceResidueClean` booleans; all are true on the current pass.
+
+Cinematic Cheats used: no new runtime cheat was added. This is proof hardening around the existing Dear Lie: cache-line topology, deterministic guarded cache-touch prefetch, and O(1) PDA mock ordinal inverse instead of simulating another lookup structure.
+
+Exact Microseconds saved: scanner run after the gate reports packed-byte binary `26167.87 ns/lookup`, packed-byte B-Tree `26089.42 ns/lookup`, static Python delta `78.45 ns saved/lookup`, and theoretical `8.00` cache lines / `512.06` bytes saved. This remains static Python evidence, not Unity/Burst profiler proof.
+
+Verification:
+- In-memory Python compile: PASS for cache scanner, static upgrader, lore packer, lore verifier, and BufferID audit.
+- `python Tools/Cache_Miss_Eradication_Scanner.py`: PASS, `sourceResidueClean` all true.
+- `python Tools/UpgradeStaticBTreePayloads.py --check`: PASS.
+- `python Tools/LorePacker.py --check --hash-audit --list`: PASS, H8LR bytes 43536, collisions 0.
+- `python Tools/VerifyLore.py --check --verify-manifest --list`: PASS.
+- `python Tools/LocToBinary.py --verify-only`: PASS, 188 entries.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS, duplicates 0, local casts 758, cast files 63.
+- Direct static record alignment audit: PASS, 13 records, flags `0x101`, records offset `512`, file bytes `1328`, Babel CRC `0xA1084F1D`, Hecton payload CRC `0x598EF439`, all lookup record offsets `% 64 == 0`.
+- Targeted source-residue `rg`: PASS.
+- `git diff --check` on SHINOBU_207 touched source/docs/report set: PASS.
+- C# build/profiler: NOT RUN. User forbade rebuild until needed; known foreign dependency wall remains the last C# build evidence.
+
+<SELF_AUDIT agent="SHINOBU_207" loop="18" date="2026-05-20">
+  <TASK_RECONCILIATION>
+    <TASK id="01">[PASS] BINARY_SEARCH_PROFILING_AND_ERADICATION: real static/Babel/H8LR lookup paths use B-Tree; scanner now fails if flat binary-search loops return in the target contour.</TASK>
+    <TASK id="02">[PASS] MANAGED_DICTIONARY_RESIDUE_PURGE: runtime static lookup map removed; scanner now fails on managed `Dictionary<>`, `SortedList<>`, or `HashSet<>` residue in target files.</TASK>
+    <TASK id="03">[PASS] CS1612_TRAVERSAL_STATE_ANNIHILATION: hot traversal state remains raw fields and stack primitives; no new property mutation path was added.</TASK>
+    <TASK id="04">[PASS] ARM64_BTREE_NODE_ALIGNMENT_ASSERTION: `BTreeNodeDTO` is scanner-gated as `[StructLayout(LayoutKind.Explicit, Size = 64)]`; `Pack=1` is now scanner-forbidden.</TASK>
+    <TASK id="05">[PASS] EMERGENCY_MOCK_TREE_GENERATOR: mock full-buffer clear residue is now scanner-forbidden; PDA mock lookup remains O(1) ordinal inverse.</TASK>
+    <TASK id="06">[PASS] BURST_NODE_SCANNING_KERNEL: deterministic scan job remains source-contract gated.</TASK>
+    <TASK id="07">[PASS] DETERMINISTIC_PAGE_TRAVERSAL_ALGORITHM: scanner verifies all named search/traversal jobs carry `FloatMode.Deterministic`.</TASK>
+    <TASK id="08">[PASS] THE_DEAR_LIE_WARM_CACHE_PREFETCH: guarded cache-touch prefetch remains the no-API fallback and topology proof path.</TASK>
+    <TASK id="09">[PASS] ASYNCHRONOUS_BULK_LOOKUP_DISPATCH: bulk lookup job still writes caller-owned rows only.</TASK>
+    <TASK id="10">[PASS] CONTINUOUS_SCALABILITY_PREFETCH_STRIDING: quality-weight prefetch stride remains continuous; no binary tier branch added.</TASK>
+    <TASK id="11">[PASS] OFFLINE_BTREE_CONSTRUCTION_COMPILER: current static/Babel/H8LR payloads validate with B-Tree sections present.</TASK>
+    <TASK id="12">[PASS] AUP_SPATIAL_LOG_INTEGRATION: Morton64 B-Tree variant remains in source and not touched by this scanner patch.</TASK>
+    <TASK id="13">[PASS] ROLLBACK_NETCODE_EXCLUSION_FENCE: immutable MMF topology remains outside rollback snapshots.</TASK>
+    <TASK id="14">[PASS] ZERO_INIT_OVERHEAD_BYPASS: scanner now fails if the old full `OutputBytes` clear returns.</TASK>
+    <TASK id="15">[PASS] TELEMETRY_CACHE_MISS_RECORDER: telemetry Vault IDs `72070..72072` remain the forensic route.</TASK>
+    <TASK id="16">[PASS] BTREE_PERFORMANCE_XRAY_WINDOW: editor X-Ray path remains untouched and diagnostic-only.</TASK>
+    <TASK id="17">[PASS] CSV_TREE_TUNING_INGESTOR: Vault tuning profile route `72073` remains intact.</TASK>
+    <TASK id="18">[PASS] LIVE_SEARCH_DEBUG_GIZMO: trace job remains deterministic and editor-bound.</TASK>
+    <TASK id="19">[PASS] ARCHITECTURAL_METRIC_VALIDATOR: scanner now records timing, cache-line savings, deterministic job gates, 64-byte node gate, PDA mock gate, and source-residue gates.</TASK>
+    <TASK id="20">[FAIL] SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION: source/static/tool proof improved; Unity compile, Burst Inspector, profiler, and GC proof are still absent.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <BTreeNodeDTO size="64">Key0..Key6 offsets 0,4,8,12,16,20,24; Child0..Child7 offsets 28,32,36,40,44,48,52,56; Meta offset 60. Math: 7*4 + 8*4 + 4 = 64 bytes.</BTreeNodeDTO>
+    <MortonBTreeNodeDTO size="64">Key0..Key3 offsets 0,8,16,24; Child0..Child4 offsets 32,36,40,44,48; Meta=52; Reserved0=56; Reserved1=60. Math: 4*8 + 5*4 + 3*4 = 64 bytes.</MortonBTreeNodeDTO>
+    <TelemetryAndTuning size="64">`BTreeTelemetryEntry`, `BTreeTelemetryAccumulatorDTO`, and `BTreeTuningProfileDTO` remain one-cache-line explicit records.</TelemetryAndTuning>
+    <StaticPayloadRecordAlignment>Current static payload audit: 13 records, flags `0x101`, records offset `512`, file bytes `1328`, Babel CRC `0xA1084F1D`, Hecton payload CRC `0x598EF439`, all lookup offsets `% 64 == 0`.</StaticPayloadRecordAlignment>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>`GlobalQualityWeight` still changes only speculative prefetch cadence through the continuous 4-to-1 stride curve. Below 0.3, sparse cache-touch avoids bandwidth pressure; mid-tier warms intermediate depths; high/ultra touches each depth. Lookup topology and results do not switch by tier.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Zero private persistent native arrays are introduced by this loop. Vault buffers remain `72070` BTreeTelemetryRing, `72071` BTreeTelemetryCursor, `72072` BTreeTelemetryAccumulator, and `72073` BTreeTuningProfiles.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Search/traversal jobs retain `[NoAlias]` on non-overlapping lanes. Bulk search consumes external scheduling dependencies and writes caller output; telemetry flush returns a chained POST_SIMULATION handle. This loop added Python source gates only.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef or sibling runtime dependency was added. No build/rebuild was launched in Loop 18. Last C# evidence remains the prior foreign dependency wall, not a SHINOBU_207 isolated compile.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Legacy flat lookup is O(log2 N) random packed-table probing. B-Tree lookup is O(log8 N) one-cache-line nodes. PDA mock lookup is O(1) ordinal inverse. Scanner source gates now prevent those paths from drifting back toward flat probes.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>

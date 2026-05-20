@@ -20,7 +20,7 @@ Do not send any of this until:
 
 - current channel activity is verified;
 - public business contact route is verified from the creator's own page;
-- approved asset link is ready and matching asset metadata claim checks pass;
+- the referenced asset ID/link has matching asset metadata claim checks, QA pass, creator utility 3/4+, and an open `creator_send_gate` for that recipient segment;
 - pain-backed angles have `pain_freshness_source` and `pain_freshness_checked_at` filled;
 - creator utility is 3/4+ for the recipient segment and `creator_send_gate` is open;
 - gameplay/pressure/route-risk pitches include one factual `AGENCY_PROOF_CANDIDATE` asset with `agency_decision_notes` and AB-009/KPI decision-read fields, not only identity, anomaly, or mood;
@@ -41,8 +41,8 @@ Your channel fits because [specific reason]. The angle is [specific angle], with
 Assets:
 
 - Steam: [official Steam URL only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`]
-- trailer/clip: [approved asset only]
-- screenshots: [approved asset IDs/links only]
+- trailer/clip: [asset ID/link only after asset metadata claim checks, QA, creator utility, `creator_send_gate`, and destination-specific `public_cta_permission_gate` if linked publicly]
+- screenshots: [asset IDs/links only after asset metadata claim checks, QA, creator utility, and `creator_send_gate`]
 - demo/key: [only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, disclosure, and exact access-log fields]
 
 If it fits your audience, I can send the demo when the slice is ready.

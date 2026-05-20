@@ -41,12 +41,12 @@ namespace Hecton8.EditorTools
             internal int TargetMaterialCount;
             internal int AnalysedMaskCount;
             internal int FixedImporterCount;
-            internal readonly List<string> Violations = new List<string>(128);
-            internal readonly List<string> VramViolations = new List<string>(64);
-            internal readonly List<string> PackedMaskViolations = new List<string>(64);
-            internal readonly List<string> CompliantMaterials = new List<string>(64);
-            internal readonly List<string> FixedImporters = new List<string>(32);
-            internal readonly List<string> QuarantineCandidatePaths = new List<string>(16);
+            internal readonly List<string> Violations = new List<string>(128); // COLD ALLOC: List<string>[128] - editor audit violations - owner: HectonMaterialChannelPackValidator
+            internal readonly List<string> VramViolations = new List<string>(64); // COLD ALLOC: List<string>[64] - editor VRAM audit violations - owner: HectonMaterialChannelPackValidator
+            internal readonly List<string> PackedMaskViolations = new List<string>(64); // COLD ALLOC: List<string>[64] - editor packed-mask violations - owner: HectonMaterialChannelPackValidator
+            internal readonly List<string> CompliantMaterials = new List<string>(64); // COLD ALLOC: List<string>[64] - editor compliant material list - owner: HectonMaterialChannelPackValidator
+            internal readonly List<string> FixedImporters = new List<string>(32); // COLD ALLOC: List<string>[32] - editor importer fix log - owner: HectonMaterialChannelPackValidator
+            internal readonly List<string> QuarantineCandidatePaths = new List<string>(16); // COLD ALLOC: List<string>[16] - editor quarantine candidates - owner: HectonMaterialChannelPackValidator
         }
 
         [MenuItem(AuditMenuPath, priority = 191)]
@@ -103,7 +103,7 @@ namespace Hecton8.EditorTools
             AuditResult result = new AuditResult();
             string[] materialGuids = AssetDatabase.FindAssets("t:Material", MaterialRoots);
             bool anyImporterChanged = false;
-            List<string> issueBuffer = new List<string>(8);
+            List<string> issueBuffer = new List<string>(8); // COLD ALLOC: List<string>[8] - editor per-material issue buffer - owner: HectonMaterialChannelPackValidator
 
             for (int i = 0; i < materialGuids.Length; i++)
             {
@@ -701,8 +701,8 @@ namespace Hecton8.EditorTools
                 RgbChannelsCollapseToGreyscale = rgbChannelsCollapseToGreyscale;
             }
 
-            internal bool HasSourceAlpha { get; }
-            internal bool RgbChannelsCollapseToGreyscale { get; }
+            internal readonly bool HasSourceAlpha;
+            internal readonly bool RgbChannelsCollapseToGreyscale;
         }
     }
 }

@@ -38,42 +38,42 @@ namespace Hecton8.Editor.OfflineGeometry
         Sphere = 2
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct OfflineGeometryRawVertex
     {
-        public float3 Position;
-        public float3 Normal;
-        public float2 Uv0;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float3 Normal;
+        [FieldOffset(24)] public float2 Uv0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct OfflineGeometryVertex32
     {
-        public float3 Position;
-        public float3 Normal;
-        public float2 Uv0;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float3 Normal;
+        [FieldOffset(24)] public float2 Uv0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct OfflineSubMeshRange
     {
-        public int SourceIndexStart;
-        public int SourceTriangleCount;
-        public int TargetTriangleStart;
-        public int TargetTriangleCount;
+        [FieldOffset(0)] public int SourceIndexStart;
+        [FieldOffset(4)] public int SourceTriangleCount;
+        [FieldOffset(8)] public int TargetTriangleStart;
+        [FieldOffset(12)] public int TargetTriangleCount;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     internal struct OfflinePrimitiveFitResult
     {
-        public float3 Center;
-        public float3 Size;
-        public float Radius;
-        public float Error;
-        public int VertexCount;
-        public byte ColliderType;
-        public byte _pad0;
-        public ushort _pad1;
+        [FieldOffset(0)] public float3 Center;
+        [FieldOffset(12)] public float3 Size;
+        [FieldOffset(24)] public float Radius;
+        [FieldOffset(28)] public float Error;
+        [FieldOffset(32)] public int VertexCount;
+        [FieldOffset(36)] public byte ColliderType;
+        [FieldOffset(37)] public byte _pad0;
+        [FieldOffset(38)] public ushort _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -206,6 +206,18 @@ namespace Hecton8.Editor.OfflineGeometry
             int vertexSize = UnsafeUtility.SizeOf<OfflineGeometryVertex32>();
             if (vertexSize != OfflineGeometryBakerConstants.VertexStrideBytes)
                 throw new System.InvalidOperationException("OfflineGeometryVertex32 stride mismatch. Expected 32, got " + vertexSize + ".");
+
+            int rawVertexSize = UnsafeUtility.SizeOf<OfflineGeometryRawVertex>();
+            if (rawVertexSize != 32)
+                throw new System.InvalidOperationException("OfflineGeometryRawVertex layout mismatch. Expected 32, got " + rawVertexSize + ".");
+
+            int rangeSize = UnsafeUtility.SizeOf<OfflineSubMeshRange>();
+            if (rangeSize != 16)
+                throw new System.InvalidOperationException("OfflineSubMeshRange layout mismatch. Expected 16, got " + rangeSize + ".");
+
+            int primitiveSize = UnsafeUtility.SizeOf<OfflinePrimitiveFitResult>();
+            if (primitiveSize != 40)
+                throw new System.InvalidOperationException("OfflinePrimitiveFitResult layout mismatch. Expected 40, got " + primitiveSize + ".");
 
             int dtoSize = UnsafeUtility.SizeOf<LodConfigurationDTO>();
             if (dtoSize != 16)

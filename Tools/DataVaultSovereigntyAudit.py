@@ -368,6 +368,25 @@ def extract_domain(relative_path: str) -> str:
     return remainder.split("/", 1)[0] or "Root"
 
 
+def extract_execution_surface(relative_path: str) -> str:
+    normalized = relative_path.replace("\\", "/")
+    lowered = normalized.lower()
+    parts = [part.lower() for part in normalized.split("/")]
+
+    if "editor" in parts:
+        return "Editor"
+    if "tests" in parts or "test" in parts:
+        return "Test"
+    if "dev" in parts or lowered.endswith("smoketester.cs") or "testharness" in lowered:
+        return "Dev"
+    if "/plugins/" in lowered:
+        return "Plugin"
+    if not normalized.startswith("Assets/_Project/Scripts/"):
+        return "External"
+
+    return "Runtime"
+
+
 def collect_regression_details(
     payload: dict[str, Any],
     baseline: dict[str, Any] | None,
@@ -404,6 +423,7 @@ def collect_regression_details(
                 {
                     "kind": "directConstructor",
                     "domain": extract_domain(path),
+                    "executionSurface": extract_execution_surface(path),
                     "path": path,
                     "baseline": baseline_count,
                     "current": count,
@@ -436,6 +456,7 @@ def collect_regression_details(
                     {
                         "kind": "fieldDeclaration",
                         "domain": extract_domain(path),
+                        "executionSurface": extract_execution_surface(path),
                         "path": path,
                         "baseline": baseline_count,
                         "current": count,
@@ -493,6 +514,48 @@ def aggregate_regression_details(details: Sequence[dict[str, Any]]) -> list[dict
     return sorted(rows, key=lambda item: (-int(item["delta"]), str(item["domain"])))
 
 
+def aggregate_regression_details_by_surface(details: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    aggregate: dict[str, dict[str, Any]] = {}
+    for detail in details:
+        surface = str(detail.get("executionSurface", "Unknown"))
+        entry = aggregate.setdefault(
+            surface,
+            {
+                "executionSurface": surface,
+                "delta": 0,
+                "directConstructorDelta": 0,
+                "fieldDeclarationDelta": 0,
+                "fileCount": 0,
+                "files": set(),
+            },
+        )
+        delta = int(detail.get("delta", 0))
+        entry["delta"] += delta
+        if detail.get("kind") == "directConstructor":
+            entry["directConstructorDelta"] += delta
+        elif detail.get("kind") == "fieldDeclaration":
+            entry["fieldDeclarationDelta"] += delta
+        path = str(detail.get("path", ""))
+        if path:
+            entry["files"].add(path)
+
+    rows: list[dict[str, Any]] = []
+    for entry in aggregate.values():
+        files = sorted(entry["files"])
+        rows.append(
+            {
+                "executionSurface": entry["executionSurface"],
+                "delta": entry["delta"],
+                "directConstructorDelta": entry["directConstructorDelta"],
+                "fieldDeclarationDelta": entry["fieldDeclarationDelta"],
+                "fileCount": len(files),
+                "files": files,
+            }
+        )
+
+    return sorted(rows, key=lambda item: (-int(item["delta"]), str(item["executionSurface"])))
+
+
 def build_report_payload(
     payload: dict[str, Any],
     baseline_path: Path,
@@ -508,6 +571,7 @@ def build_report_payload(
         "regressionErrors": list(regression_errors),
         "regressionDetails": list(regression_details),
         "regressionByDomain": aggregate_regression_details(regression_details),
+        "regressionByExecutionSurface": aggregate_regression_details_by_surface(regression_details),
     }
 
 
@@ -580,6 +644,24 @@ def write_markdown_report(
         lines.append("")
 
     domain_regressions = aggregate_regression_details(regression_details)
+    surface_regressions = aggregate_regression_details_by_surface(regression_details)
+    if surface_regressions:
+        lines.extend(
+            [
+                "## Regression Delta By Execution Surface",
+                "",
+                "| Surface | Delta | Direct constructor delta | Field declaration delta | Files |",
+                "|---|---:|---:|---:|---:|",
+            ]
+        )
+        for item in surface_regressions:
+            lines.append(
+                f"| `{item['executionSurface']}` | {item['delta']} | "
+                f"{item['directConstructorDelta']} | {item['fieldDeclarationDelta']} | "
+                f"{item['fileCount']} |"
+            )
+        lines.append("")
+
     if domain_regressions:
         lines.extend(
             [
@@ -601,8 +683,8 @@ def write_markdown_report(
             [
                 "## Regression Delta Details",
                 "",
-                "| Kind | Domain | Baseline | Current | Delta | Path |",
-                "|---|---|---:|---:|---:|---|",
+                "| Kind | Surface | Domain | Baseline | Current | Delta | Path |",
+                "|---|---|---|---:|---:|---:|---|",
             ]
         )
         for item in sorted(
@@ -614,7 +696,8 @@ def write_markdown_report(
             ),
         ):
             lines.append(
-                f"| `{item['kind']}` | `{item['domain']}` | "
+                f"| `{item['kind']}` | `{item.get('executionSurface', 'Unknown')}` | "
+                f"`{item['domain']}` | "
                 f"{item['baseline']} | {item['current']} | {item['delta']} | "
                 f"`{item['path']}` |"
             )

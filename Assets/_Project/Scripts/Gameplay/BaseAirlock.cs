@@ -201,7 +201,6 @@ namespace Hecton8.Gameplay
         private bool _snapBodyUseGravity;
         private float _snapBodyLinearDamping;
         private float _snapBodyAngularDamping;
-        private float _bulkheadClosureIntent01;
         private int _pressureWhistleFrameOffset;
         private bool _bulkheadContainmentPublishPending;
         private byte _bulkheadContainmentRetryTicks;
@@ -264,7 +263,6 @@ namespace Hecton8.Gameplay
                 statusLightRenderer = cachedRenderer;
 
             CacheOwningModule();
-            _bulkheadClosureIntent01 = _emergencyLockedDown ? 1f : 0f;
             _pressureWhistleFrameOffset = unchecked((int)EntityId.ToULong(GetEntityId())) & PressureWhistleFrameMask;
         }
 
@@ -277,7 +275,6 @@ namespace Hecton8.Gameplay
             _state = AirlockState.Ready;
             _weldOverrideProgressSeconds = 0f;
             UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
-            SetBulkheadClosureIntent(_emergencyLockedDown ? 1f : 0f);
             PublishBulkheadContainmentState(_emergencyLockedDown);
         }
 
@@ -920,11 +917,6 @@ namespace Hecton8.Gameplay
                 insideDryVolume ? DryOceanRoarLowPassHz : WetOceanRoarLowPassHz);
         }
 
-        private void SetBulkheadClosureIntent(float target01)
-        {
-            _bulkheadClosureIntent01 = math.saturate(target01);
-        }
-
         private static double3 ToBulkheadAbsoluteDouble3(in AbsoluteUniversePosition aup)
         {
             double cell = AbsoluteUniversePosition.CellSizeMeters;
@@ -1036,7 +1028,7 @@ namespace Hecton8.Gameplay
 
         private void EmitPressureDifferentialWhistle()
         {
-            if (!_emergencyLockedDown && _bulkheadClosureIntent01 < 0.5f)
+            if (!_emergencyLockedDown)
                 return;
 
             if (((Time.frameCount + _pressureWhistleFrameOffset) & PressureWhistleFrameMask) != 0)
@@ -1421,7 +1413,6 @@ namespace Hecton8.Gameplay
             if (!lockedDown)
                 _lockdownOverrideBlockedByFloodedNeighbor = false;
             _weldOverrideProgressSeconds = 0f;
-            SetBulkheadClosureIntent(lockedDown ? 1f : 0f);
             PublishBulkheadContainmentState(lockedDown);
             if (_state == AirlockState.Ready)
                 UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);

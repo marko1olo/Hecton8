@@ -56,11 +56,11 @@ Do not infer paid permission from budget tier, PMT ID, platform candidate, or a 
 
 | Family | Asset | Headline | CTA |
 |---|---|---|---|
-| Pressure | hatch/leak/gauge | Survive below the light | Wishlist on Steam after CTA activation |
-| Machinery | pump/base/tool | Keep the machines alive | Wishlist on Steam after CTA activation |
-| Seed Ship | anomaly/signal | Something is buried below | Wishlist on Steam after CTA activation |
-| Salvage | route/wreck | Salvage under pressure | Play demo or wishlist only after route activation |
-| Base risk | flooded module | Your base can fail | Play demo or wishlist only after route activation |
+| Pressure | hatch/leak/gauge | Survive below the light | Wishlist on Steam only after `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`, `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` |
+| Machinery | pump/base/tool | Keep the machines alive | Wishlist on Steam only after `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`, `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` |
+| Seed Ship | anomaly/signal | Something is buried below | Wishlist on Steam only after `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`, `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` |
+| Salvage | route/wreck | Salvage under pressure | Play demo or wishlist only after `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`, `demo_public_access_permission_gate` where a demo is linked, `steam_page_publish_permission_gate` where Steam is linked, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` |
+| Base risk | flooded module | Your base can fail | Play demo or wishlist only after `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`, `demo_public_access_permission_gate` where a demo is linked, `steam_page_publish_permission_gate` where Steam is linked, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` |
 
 ## 2026-05-20 Paid Microtest Execution Plan
 

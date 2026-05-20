@@ -6,6 +6,7 @@
 namespace Hecton8.Gameplay
 {
     using Hecton8.Core;
+    using Hecton8.Core.Contracts.Signals;
     using Hecton8.World;
     using Unity.Mathematics;
     using UnityEngine;
@@ -20,9 +21,6 @@ namespace Hecton8.Gameplay
         [Header("── Runtime Bindings ───────────────────")]
         [Tooltip("Legacy renderer list retained for prefab compatibility. Cut response is routed through SargassumCutManager global mask publishing.")]
         [SerializeField] private Renderer[] targetRenderers;
-
-        [Tooltip("Optional particle system used for leaf scrap bursts.")]
-        [SerializeField] private ParticleSystem leafDebrisParticles;
 
         [Header("── Cut Response ───────────────────────")]
         [Tooltip("Minimum world-space radius of the cut mask.")]
@@ -59,11 +57,9 @@ namespace Hecton8.Gameplay
         /// Binds the renderers and optional debris particle system used by this responder.
         /// </summary>
         /// <param name="renderers">Cluster renderers controlled by the responder.</param>
-        /// <param name="debrisParticles">Optional debris particle system.</param>
-        public void Configure(Renderer[] renderers, ParticleSystem debrisParticles)
+        public void Configure(Renderer[] renderers)
         {
             targetRenderers = renderers;
-            leafDebrisParticles = debrisParticles;
             ApplyCutState();
         }
 
@@ -91,17 +87,25 @@ namespace Hecton8.Gameplay
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
 
-            if (leafDebrisParticles != null && _particleCooldownRemaining <= 0f)
+            if (_particleCooldownRemaining <= 0f)
             {
-                ParticleSystem.EmitParams emitParams = new ParticleSystem.EmitParams
+                double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(positionWS);
+                float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+                ushort quantity = (ushort)math.clamp(
+                    (int)(math.lerp(baseDebrisCount, baseDebrisCount * 2.2f, normalizedSpeed) * math.lerp(0.35f, 1.4f, quality) + 0.5f),
+                    0,
+                    ushort.MaxValue);
+                DebrisSpawnSignal debris = new DebrisSpawnSignal
                 {
-                    position = leafDebrisParticles.transform.InverseTransformPoint(positionWS),
-                    velocity = velocityWS * 0.18f,
-                    startSize = math.lerp(0.05f, 0.14f, normalizedSpeed)
+                    PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(absolute),
+                    SpeciesHash = 0x53415247u,
+                    SourceEntityId = 0u,
+                    Intensity01 = normalizedSpeed,
+                    DebrisKind = DebrisSpawnSignal.DebrisKindOrganicScrap,
+                    Flags = DebrisSpawnSignal.FlagComputeShard,
+                    Quantity = quantity
                 };
-
-                int emitCount = (int)(math.lerp(baseDebrisCount, baseDebrisCount * 2.2f, normalizedSpeed) + 0.5f);
-                leafDebrisParticles.Emit(emitParams, emitCount);
+                SignalBus<DebrisSpawnSignal>.TryPush(in debris);
                 _particleCooldownRemaining = particleCooldown;
             }
 

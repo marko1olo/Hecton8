@@ -497,6 +497,33 @@ Exact Microseconds saved:
   <dear_lie_confirmation>Runtime remains O(1) state/hash selection, not vertex deformation.</dear_lie_confirmation>
 </SELF_AUDIT>
 
+## 2026-05-20 - ULTRA POLISH LOOP 16
+
+What was wrong:
+- The post-Loop-15 static gate found `ResolveStateIndex` still using collapse-only `math.select(0, 3, p >= 0.95f)` in source.
+- The docs/rationale claimed the four-state resolver, but the source did not match that claim.
+
+What was done:
+- Reapplied the source-level `math.step` threshold sum for Stressed, Ruptured, and Collapsed.
+- Kept `math.select(0, 3` in the SHINOBU_210 forbidden-pattern gate.
+- Updated status, rationale, and bake report status.
+
+Cinematic Cheats used:
+- Runtime still resolves an immutable baked mesh hash. No deformation logic moved to gameplay.
+
+Exact Microseconds saved:
+- Runtime deformation remains 0 us. State resolver remains O(1) with three scalar step ops.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Tasks 04, 05, 06, 07, and runtime swap requirement repaired against source regression.</task_reconciliation>
+  <struct_layout_verification>No DTO layout changed.</struct_layout_verification>
+  <scalability_curve>Continuous pressure scalar again reaches Stressed, Ruptured, and Collapsed baked states.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No job dependency graph changed.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Runtime remains O(1) state/hash selection, not vertex deformation.</dear_lie_confirmation>
+</SELF_AUDIT>
+
 ## 2026-05-20 - ULTRA POLISH LOOP 17
 
 What was wrong:
@@ -524,29 +551,138 @@ Exact Microseconds saved:
   <dear_lie_confirmation>Runtime remains O(1) state/hash selection, not vertex deformation.</dear_lie_confirmation>
 </SELF_AUDIT>
 
-## 2026-05-20 - ULTRA POLISH LOOP 16
+## 2026-05-20 - ULTRA POLISH LOOP 18
 
 What was wrong:
-- The post-Loop-15 static gate found `ResolveStateIndex` still using collapse-only `math.select(0, 3, p >= 0.95f)` in source.
-- The docs/rationale claimed the four-state resolver, but the source did not match that claim.
+- After the direct native mesh upload patch, the source-only static gate again found collapse-only resolver code in `HabitatDamageBakedContracts.cs`.
+- That would strand Stressed and Ruptured assets even though the Editor baker generates those states.
 
 What was done:
-- Reapplied the source-level `math.step` threshold sum for Stressed, Ruptured, and Collapsed.
-- Kept `math.select(0, 3` in the SHINOBU_210 forbidden-pattern gate.
-- Updated status, rationale, and bake report status.
+- Reapplied the actual source fix: `ResolveStateIndex` now sums Stressed, Ruptured, and Collapsed `math.step` thresholds.
+- Updated the resolver XML summary to remove the stale pristine-until-collapse claim.
+- Reran source-only forbidden pattern, direct mesh upload, asmdef boundary, whitespace, and process-state gates.
 
 Cinematic Cheats used:
-- Runtime still resolves an immutable baked mesh hash. No deformation logic moved to gameplay.
+- Gameplay still performs only pressure-to-state index and hash selection. Wall bending, rupture gaps, breach holes, normals, stress color, and collision proxies remain offline baked illusions.
 
 Exact Microseconds saved:
-- Runtime deformation remains 0 us. State resolver remains O(1) with three scalar step ops.
+- Runtime deformation remains 0 us. The resolver cost remains three scalar step operations and one hash selection.
 
 <SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
-  <task_reconciliation>Tasks 04, 05, 06, 07, and runtime swap requirement repaired against source regression.</task_reconciliation>
-  <struct_layout_verification>No DTO layout changed.</struct_layout_verification>
-  <scalability_curve>Continuous pressure scalar again reaches Stressed, Ruptured, and Collapsed baked states.</scalability_curve>
-  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
-  <pointer_aliasing_dependency_graph>No job dependency graph changed.</pointer_aliasing_dependency_graph>
+  <task_reconciliation>Tasks 04, 05, 06, 07, 10, 13, and 20 rechecked against source. Task 10 direct `SetVertexBufferData` path remains present; Stressed/Ruptured/Collapsed runtime indices are reachable again.</task_reconciliation>
+  <struct_layout_verification>No DTO layout changed. `ModuleDamageStateMappingDTO` remains explicit 32 bytes; `HabitatDamageHullDTO` and telemetry rows remain explicit 64 bytes; packed baked vertex remains explicit 32 bytes.</struct_layout_verification>
+  <scalability_curve>Continuous pressure now reaches state indices 1, 2, and 3 at 0.33333334, 0.6666667, and 0.95. Geometry richness still scales offline by `GlobalQualityWeight`; runtime never computes deformation.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added. Reserved IDs remain `73320..73323` only.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>Pack job remains chained to deformation/normal/color/hull dependency; one `Complete()` remains before Unity native mesh upload.</pointer_aliasing_dependency_graph>
   <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
-  <dear_lie_confirmation>Runtime remains O(1) state/hash selection, not vertex deformation.</dear_lie_confirmation>
+  <dear_lie_confirmation>Before: runtime wall deformation would be O(vertices) or worse with physics debris. After: O(1) state/hash selection and offline baked visual damage.</dear_lie_confirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 - ULTRA POLISH LOOP 19
+
+What was wrong:
+- The bake pipeline compacted triangle index counts but copied from the beginning of the raw index buffer.
+- Multi-submesh source modules with non-triangle sections or non-zero `baseVertex` could bake wrong damaged topology.
+
+What was done:
+- Added explicit 16-byte `HabitatDamageIndexRangeDTO`.
+- Built triangle-only ranges from `SubMeshDescriptor.indexStart`, compact destination start, count, and `baseVertex`.
+- Routed both 16-bit and 32-bit Burst index-copy jobs through those ranges before tear, normal, hull, and pack jobs.
+- Clamped adjusted indices to `0..vertexCount-1` so bad imported meshes cannot feed out-of-range indices into downstream Burst passes.
+- Added layout validation for the range DTO.
+
+Cinematic Cheats used:
+- No gameplay simulation added. This protects the offline fake so runtime still swaps baked mesh hashes.
+
+Exact Microseconds saved:
+- Runtime: 0 us. Editor index copy adds a tiny range lookup per index and avoids invalid damaged asset output for multi-submesh modules.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Tasks 06, 07, 09, 10, and 20 strengthened. Damage deformation, tear, normal rebuild, and direct native upload now consume correctly compacted triangle indices.</task_reconciliation>
+  <struct_layout_verification>`HabitatDamageIndexRangeDTO`: offset 0 SourceStart int32, offset 4 DestinationStart int32, offset 8 Count int32, offset 12 BaseVertex int32, total 16 bytes.</struct_layout_verification>
+  <scalability_curve>Quality behavior unchanged; low through ultra bakes now preserve multi-submesh topology before any richness scaling is applied.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added. Range DTO is TempJob editor scratch only.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>`ScheduleExtract` feeds `ScheduleIndexCopy`; index copy now also consumes non-overlapping range rows marked `[NoAlias]` and outputs clamped compact uint indices for downstream jobs.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Before: invalid source-index assumptions could force runtime or manual repair. After: offline O(indices * submeshRangeCount) compaction preserves the O(1) runtime mesh-state swap.</dear_lie_confirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 - ULTRA POLISH LOOP 20
+
+What was wrong:
+- The final pack job was the last boundary before `Mesh.SetVertexBufferData`, but it trusted `Position`, `Tangent`, `UV`, `Stress`, and `Tear` values from earlier stages.
+- A non-finite scalar at that point could become a permanent half/snorm/color payload in the baked mesh asset.
+
+What was done:
+- Added finite guards inside `PackBakedVertexJob`.
+- Non-finite positions now become zero, non-finite tangents become `(1,0,0,1)`, non-finite UVs become zero, and stress/tear values saturate only from finite inputs.
+- The 32-byte packed GPU vertex stream remains unchanged.
+
+Cinematic Cheats used:
+- None added. The offline visual fake remains the core path; this hardens the serialization boundary.
+
+Exact Microseconds saved:
+- Runtime: 0 us. Editor pack pays a few finite checks per vertex to avoid baking NaN payloads.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Tasks 09, 10, 11, 15, and 20 strengthened. Final normals/tangents, stress colors, report payloads, and native mesh upload now cross a finite-value boundary.</task_reconciliation>
+  <struct_layout_verification>No layout changed. `HabitatDamageBakedVertex` remains explicit 32 bytes.</struct_layout_verification>
+  <scalability_curve>Quality behavior unchanged; all quality tiers write the same NaN-vaccinated packed stream.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>Pack job remains chained after deformation/normal/color/hull jobs and writes a non-overlapping `[NoAlias]` output NativeArray.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Runtime remains O(1) state/hash selection; damaged geometry is still pre-baked and finite at the asset boundary.</dear_lie_confirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 - ULTRA POLISH LOOP 21
+
+What was wrong:
+- `ExtractSourceVertexJob` claimed `[NoAlias]` on position, normal, tangent, and UV byte views.
+- Unity can store those attributes in the same interleaved stream, so the byte views may physically overlap.
+
+What was done:
+- Removed `[NoAlias]` from the potentially overlapping read-only source byte views.
+- Kept `[NoAlias]` on separate output/range/index/hull/packed buffers where the promise is structurally true.
+
+Cinematic Cheats used:
+- None added. This is compiler-contract hygiene for the offline bake path.
+
+Exact Microseconds saved:
+- Runtime: 0 us. Editor extraction keeps the same memory reads without unsafe alias promises on shared streams.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Tasks 03, 06, 09, and 20 strengthened. Burst extraction now avoids false alias declarations while preserving raw-field DTO mutation downstream.</task_reconciliation>
+  <struct_layout_verification>No layout changed.</struct_layout_verification>
+  <scalability_curve>Quality behavior unchanged; all tiers extract source mesh streams through the same honest alias model.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>Potentially overlapping read-only MeshData byte streams are not `[NoAlias]`; non-overlapping output/range/index buffers remain `[NoAlias]`.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Runtime remains O(1) state/hash selection. This change only hardens offline compiler assumptions.</dear_lie_confirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 - ULTRA POLISH LOOP 22
+
+What was wrong:
+- Missing normal/tangent/UV source mesh attributes passed `default` `NativeArray<byte>` containers into `ExtractSourceVertexJob`.
+- The code branches avoided reading those fields, but Unity job safety can validate native containers before `Execute` runs.
+
+What was done:
+- Resolved the position byte stream once in `ScheduleExtract`.
+- Reused that valid byte stream for absent optional attributes while keeping stride zero and `HasNormal`/`HasTangent`/`HasUv` disabled.
+- No dummy buffers, persistent allocations, or runtime paths were added.
+
+Cinematic Cheats used:
+- None added. This is offline compiler safety for sparse habitat source meshes.
+
+Exact Microseconds saved:
+- Runtime: 0 us. Editor avoids a potential schedule-time failure without allocating fallback byte buffers.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Tasks 03, 06, 10, and 20 strengthened. Mesh extraction now accepts sparse source attributes while preserving raw DTO writes and direct native mesh upload.</task_reconciliation>
+  <struct_layout_verification>No layout changed. The fallback is a scheduling-container fix only.</struct_layout_verification>
+  <scalability_curve>Quality behavior unchanged; low through ultra tiers still derive geometry richness from `GlobalQualityWeight` after extraction.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>Position byte stream may be reused as fallback for disabled optional attributes; no `[NoAlias]` claim is made on these read-only byte views.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Runtime remains O(1) pressure-to-state/hash selection. This change only protects the offline bake path.</dear_lie_confirmation>
 </SELF_AUDIT>

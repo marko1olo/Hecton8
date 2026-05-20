@@ -13,12 +13,16 @@ using UnityEngine.Rendering;
 
 namespace Hecton8.Graphics.Culling
 {
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct VertexBudgetDTO
     {
+        [FieldOffset(0)]
         public uint MaxVisibleVertices;     // offset 0, size 4
+        [FieldOffset(4)]
         public uint CurrentVisibleVertices; // offset 4, size 4
+        [FieldOffset(8)]
         public float TilePressure;          // offset 8, size 4
+        [FieldOffset(12)]
         public uint _pad0;                  // offset 12, size 4
     }
 
@@ -41,34 +45,50 @@ namespace Hecton8.Graphics.Culling
         public ulong _pad5;                 // offset 56, size 8
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct TileSpillWarningDTO
     {
+        [FieldOffset(0)]
         public float EstimatedOverdraw;     // offset 0, size 4
+        [FieldOffset(4)]
         public uint CulledInstanceCount;    // offset 4, size 4
+        [FieldOffset(8)]
         public ulong _pad0;                 // offset 8, size 8
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockQualityWeightSignal
     {
+        [FieldOffset(0)]
         public float GlobalQualityWeight;   // offset 0, size 4
+        [FieldOffset(4)]
         public uint Frame;                  // offset 4, size 4
+        [FieldOffset(8)]
         public uint Seed;                   // offset 8, size 4
+        [FieldOffset(12)]
         public uint _pad0;                  // offset 12, size 4
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 112)]
+    [StructLayout(LayoutKind.Explicit, Size = 112)]
     public struct PoiTransformDTO
     {
+        [FieldOffset(0)]
         public float4x4 LocalToWorld;                 // offset 0, size 64
+        [FieldOffset(64)]
         public float4 CameraRelativePositionRadius;   // offset 64, size 16
+        [FieldOffset(80)]
         public uint MeshId;                           // offset 80, size 4
+        [FieldOffset(84)]
         public uint InstanceId;                       // offset 84, size 4
+        [FieldOffset(88)]
         public uint VertexCount;                      // offset 88, size 4
+        [FieldOffset(92)]
         public float DistanceSq;                      // offset 92, size 4
+        [FieldOffset(96)]
         public uint SortKey;                          // offset 96, size 4
+        [FieldOffset(100)]
         public uint Flags;                            // offset 100, size 4
+        [FieldOffset(104)]
         public ulong _pad0;                           // offset 104, size 8
     }
 
@@ -106,104 +126,169 @@ namespace Hecton8.Graphics.Culling
         public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct MockCameraMatrix
     {
+        [FieldOffset(0)]
         public float4x4 ViewProjection;
+        [FieldOffset(64)]
         public float4 PositionRadius;
+        [FieldOffset(80)]
         public float4 ForwardFov;
+        [FieldOffset(96)]
         public uint Frame;
+        [FieldOffset(100)]
         public uint Flags;
+        [FieldOffset(104)]
         public ulong _pad0;
+        [FieldOffset(112)]
+        public ulong _pad1;
+        [FieldOffset(120)]
+        public ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct AupGpuLocalizationInput
     {
+        [FieldOffset(0)]
         public long CellX;          // offset 0, size 8
+        [FieldOffset(8)]
         public long CellY;          // offset 8, size 8
+        [FieldOffset(16)]
         public long CellZ;          // offset 16, size 8
+        [FieldOffset(24)]
         public float3 Local;        // offset 24, size 12
+        [FieldOffset(36)]
         public float BoundsRadius;  // offset 36, size 4
+        [FieldOffset(40)]
         public uint MeshId;         // offset 40, size 4
+        [FieldOffset(44)]
         public uint InstanceId;     // offset 44, size 4
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct TextureStreamingSliceDTO
     {
+        [FieldOffset(0)]
         public uint BiomeHash;
+        [FieldOffset(4)]
         public uint SliceId;
+        [FieldOffset(8)]
         public uint LastTouchedFrame;
+        [FieldOffset(12)]
         public uint ResidentFlags;
+        [FieldOffset(16)]
         public uint SourceWidth;
+        [FieldOffset(20)]
         public uint SourceHeight;
+        [FieldOffset(24)]
         public uint ApproxBytes;
+        [FieldOffset(28)]
         public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct TBDRPipelineTelemetryEntry
     {
+        [FieldOffset(0)]
         public uint Frame;
+        [FieldOffset(4)]
         public uint TotalSubmittedVertices;
+        [FieldOffset(8)]
         public uint MaxVisibleVertices;
+        [FieldOffset(12)]
         public uint TileSpillWarnings;
+        [FieldOffset(16)]
         public float SortComputeTimeMs;
+        [FieldOffset(20)]
         public float TilePressure;
+        [FieldOffset(24)]
         public uint Flags;
+        [FieldOffset(28)]
         public uint StateHash;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct TBDRHardwareBudgetLimits
     {
+        [FieldOffset(0)]
         public uint Quest3MaxVisibleVertices;
+        [FieldOffset(4)]
         public uint MobileLowMaxVisibleVertices;
+        [FieldOffset(8)]
         public uint SteamDeckMaxVisibleVertices;
+        [FieldOffset(12)]
         public uint DesktopMaxVisibleVertices;
+        [FieldOffset(16)]
         public uint TextureArrayBudgetMb;
+        [FieldOffset(20)]
         public uint TransparentQuadLimit;
+        [FieldOffset(24)]
         public float FrustumSqueezeDegrees;
+        [FieldOffset(28)]
         public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct TBDRTunerSnapshot
     {
+        [FieldOffset(0)]
         public uint HardVertexCap;
+        [FieldOffset(4)]
         public uint CurrentVisibleVertices;
+        [FieldOffset(8)]
         public uint TransparentQuadLimit;
+        [FieldOffset(12)]
         public uint TotalSubmittedVertices;
+        [FieldOffset(16)]
         public float TilePressure;
+        [FieldOffset(20)]
         public float FrustumSqueezeDegrees;
+        [FieldOffset(24)]
         public float EstimatedVramMb;
+        [FieldOffset(28)]
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct TBDRShaderBudgetGlobalsDTO
     {
+        [FieldOffset(0)]
         public float GlobalQualityWeight;
+        [FieldOffset(4)]
         public float FrustumSqueezeDegrees;
+        [FieldOffset(8)]
         public float TilePressure;
+        [FieldOffset(12)]
         public float EstimatedVramMb;
+        [FieldOffset(16)]
         public uint HardVertexCap;
+        [FieldOffset(20)]
         public uint CurrentVisibleVertices;
+        [FieldOffset(24)]
         public uint TransparentQuadLimit;
+        [FieldOffset(28)]
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct TBDRIndirectDrawArgsDTO
     {
+        [FieldOffset(0)]
         public uint VertexCountPerInstance;
+        [FieldOffset(4)]
         public uint InstanceCount;
+        [FieldOffset(8)]
         public uint StartVertex;
+        [FieldOffset(12)]
         public uint StartInstance;
+        [FieldOffset(16)]
         public uint StartIndex;
+        [FieldOffset(20)]
         public uint _pad0;
+        [FieldOffset(24)]
         public uint _pad1;
+        [FieldOffset(28)]
         public uint _pad2;
     }
 

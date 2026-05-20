@@ -96,7 +96,6 @@ namespace Hecton8.Graphics.Materials
         private const int TelemetryFrameCount = 300;
         private const int CsvScratchBytes = 4096;
         private const int JobBatchSize = 64;
-        private const int CsvPollCadenceFrames = 96;
         private const float UploadFaultMicroseconds = 100.0f;
         private const uint DumpMagic = 0x56414745u; // VAGE
         private const uint DumpVersion = 1u;
@@ -248,14 +247,14 @@ namespace Hecton8.Graphics.Materials
             if (vault == null || !active.EnsureVaultState(vault))
                 return false;
 
-            bool tuningLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-            if (!tuningLocked)
-                return false;
-
             bool runtimeLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
             if (!runtimeLocked)
+                return false;
+
+            bool tuningLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+            if (!tuningLocked)
             {
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
                 return false;
             }
 
@@ -278,10 +277,24 @@ namespace Hecton8.Graphics.Materials
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
             }
         }
+
+#if UNITY_EDITOR
+        public static bool TryReloadEditorCsv()
+        {
+            VisualPressureAgingRuntime active = s_active;
+            if (active == null)
+                return false;
+
+            IDataVault vault = active.ResolveVault(true);
+            return vault != null &&
+                active.EnsureVaultState(vault) &&
+                active.ReloadCsvFromDisk(vault, true);
+        }
+#endif
 
         public static bool TryAcquireAgingBufferRead(out NativeArray<VisualAgingParamsDTO> aging, out int activeCount)
         {
@@ -421,11 +434,6 @@ namespace Hecton8.Graphics.Materials
                 return;
 
             ApplyPendingEditorTuningImmediate();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            _frame++;
-            if ((_frame % CsvPollCadenceFrames) == 0u)
-                MonitorCsv(vault);
-#endif
         }
 
         private JobHandle ScheduleSimulation(
@@ -543,8 +551,33 @@ namespace Hecton8.Graphics.Materials
             if (vault == null || !EnsureVaultState(vault) || !EnsureGraphicsBuffers())
                 return;
 
-            if (!vault.TryLockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId))
+            bool paramsLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
+            if (!paramsLocked)
                 return;
+
+            bool runtimeLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
+            if (!runtimeLocked)
+            {
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
+                return;
+            }
+
+            bool telemetryLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTelemetryRing, OwnerSystemId);
+            if (!telemetryLocked)
+            {
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
+                return;
+            }
+
+            bool cursorLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTelemetryCursor, OwnerSystemId);
+            if (!cursorLocked)
+            {
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryRing, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
+                return;
+            }
 
             try
             {
@@ -601,7 +634,10 @@ namespace Hecton8.Graphics.Materials
             }
             finally
             {
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryCursor, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryRing, OwnerSystemId);
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
             }
         }
 
@@ -682,31 +718,31 @@ namespace Hecton8.Graphics.Materials
             if (vault == null)
                 return false;
 
-            bool tuningLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-            if (!tuningLocked)
-                return false;
-
-            bool mockTemperatureLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingMockTemperature, OwnerSystemId);
-            if (!mockTemperatureLocked)
-            {
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-                return false;
-            }
-
             bool paramsLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
             if (!paramsLocked)
-            {
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingMockTemperature, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
                 return false;
-            }
 
             bool runtimeLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
             if (!runtimeLocked)
             {
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingMockTemperature, OwnerSystemId);
+                return false;
+            }
+
+            bool tuningLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+            if (!tuningLocked)
+            {
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
+                return false;
+            }
+
+            bool mockTemperatureLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingMockTemperature, OwnerSystemId);
+            if (!mockTemperatureLocked)
+            {
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
                 return false;
             }
 
@@ -745,10 +781,10 @@ namespace Hecton8.Graphics.Materials
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingMockTemperature, OwnerSystemId);
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
             }
         }
 
@@ -1072,24 +1108,24 @@ namespace Hecton8.Graphics.Materials
             destination.UnlockBufferAfterWrite<VisualAgingParamsDTO>(safeCount);
         }
 
-        private void MonitorCsv(IDataVault vault)
+        private bool ReloadCsvFromDisk(IDataVault vault, bool force)
         {
             if (string.IsNullOrEmpty(_csvPath) || !File.Exists(_csvPath))
-                return;
+                return false;
 
             long ticks = File.GetLastWriteTimeUtc(_csvPath).Ticks;
-            if (ticks == _csvLastWriteTicks)
-                return;
-
-            bool scratchLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingCsvScratch, OwnerSystemId);
-            if (!scratchLocked)
-                return;
+            if (!force && ticks == _csvLastWriteTicks)
+                return false;
 
             bool tuningLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
             if (!tuningLocked)
+                return false;
+
+            bool scratchLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingCsvScratch, OwnerSystemId);
+            if (!scratchLocked)
             {
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingCsvScratch, OwnerSystemId);
-                return;
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+                return false;
             }
 
             try
@@ -1097,15 +1133,15 @@ namespace Hecton8.Graphics.Materials
                 vault.TryResolveHandle(in _csvScratchHandle, out NativeArray<byte> scratch);
                 vault.TryResolveHandle(in _tuningHandle, out NativeArray<VisualAgingTuningDTO> tuning);
                 if (!scratch.IsCreated || !tuning.IsCreated || tuning.Length == 0)
-                    return;
+                    return false;
 
                 int bytesRead = ReadFileIntoScratch(_csvPath, scratch);
                 if (bytesRead <= 0)
-                    return;
+                    return false;
 
                 VisualAgingTuningDTO dto = tuning[0];
                 if (!ParseAgingRulesCsv(scratch, bytesRead, ref dto))
-                    return;
+                    return false;
 
                 dto.CsvGeneration = unchecked(dto.CsvGeneration + 1u);
                 dto.RuntimeFlags |= FlagCsvLoaded;
@@ -1115,11 +1151,12 @@ namespace Hecton8.Graphics.Materials
                 _csvLastWriteTicks = ticks;
                 _runtimeFlags |= FlagCsvLoaded;
                 _agingDirty = true;
+                return true;
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingCsvScratch, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
             }
         }
 

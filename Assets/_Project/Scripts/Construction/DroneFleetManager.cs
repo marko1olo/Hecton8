@@ -2235,10 +2235,11 @@ namespace Hecton8.Construction
                 {
                     s_LogicLeechHijackCount++;
                     drone.FactionBit = (byte)HeadlessDroneFactionBit.Hostile;
-                    if (TryResolvePlayerPosition(out Vector3 playerPosition))
+                    if (TryResolvePlayerPosition(out Vector3 playerPosition) &&
+                        TryResolvePlayerAup(out double3 playerAup))
                     {
                         drone.TargetPosition = ToFloat3(playerPosition);
-                        drone.TargetAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(playerPosition);
+                        drone.TargetAup = playerAup;
                         drone.State = (byte)HeadlessDroneRuntimeState.Travel;
                     }
                 }
@@ -2583,7 +2584,14 @@ namespace Hecton8.Construction
             Vector3 dockRuntime = IsFiniteFloat3(drone.HomePosition)
                 ? ToVector3(drone.HomePosition)
                 : ToVector3(drone.Position);
-            AbsoluteUniversePosition dockAup = AbsoluteUniversePosition.FromRuntimePosition(dockRuntime);
+            AbsoluteUniversePosition dockAup;
+            if (IsFiniteDouble3(drone.HomeAup))
+                dockAup = AbsoluteUniversePosition.FromAbsolutePosition(drone.HomeAup);
+            else if (IsFiniteDouble3(drone.PositionAup))
+                dockAup = AbsoluteUniversePosition.FromAbsolutePosition(drone.PositionAup);
+            else if (!TryResolveAbsoluteAupFromRuntimeOrigin(dockRuntime, out dockAup))
+                return;
+
             float3 dockForward = ResolveForward(drone.HomeRotation);
 
             DockingCompleteSignal signal = new DockingCompleteSignal
@@ -2609,7 +2617,12 @@ namespace Hecton8.Construction
 
         private static void PublishDockingFailed(int slot, in HeadlessDroneState drone, Vector3 hitPoint, uint requestId, DockingFailureReason reason)
         {
-            AbsoluteUniversePosition lastAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(drone.Position));
+            AbsoluteUniversePosition lastAup;
+            if (IsFiniteDouble3(drone.PositionAup))
+                lastAup = AbsoluteUniversePosition.FromAbsolutePosition(drone.PositionAup);
+            else if (!TryResolveAbsoluteAupFromRuntimeOrigin(drone.Position, out lastAup))
+                return;
+
             Vector3 failureVector = hitPoint - ToVector3(drone.Position);
             float3 finiteFailureVector = IsFiniteVector(failureVector)
                 ? ToFloat3(failureVector)
@@ -2839,8 +2852,11 @@ namespace Hecton8.Construction
             if (!hub.TryResolveNearestSupplyEndpoint(ToVector3(drone.Position), out Vector3 endpointPosition))
                 return;
 
+            if (!TryResolveAupDoubleFromRuntimeOrigin(endpointPosition, out double3 endpointAup))
+                return;
+
             drone.SupplyPosition = ToFloat3(endpointPosition);
-            drone.SupplyAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(endpointPosition);
+            drone.SupplyAup = endpointAup;
             drone.State = (byte)HeadlessDroneRuntimeState.ResupplyTravel;
             drone.Velocity = float3.zero;
         }
@@ -2916,8 +2932,12 @@ namespace Hecton8.Construction
 
             s_DroneHubs[slot] = bestHub;
             drone.HubGridId = ResolveHubTaskKey(bestHub);
+            AbsoluteUniversePosition hubDockAup = bestHub.DockAup;
+            if (!MathGuard.IsFinite(in hubDockAup))
+                return false;
+
             drone.HomePosition = ToFloat3(bestHub.DockPosition);
-            drone.HomeAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(bestHub.DockPosition);
+            drone.HomeAup = hubDockAup.ToAbsoluteDouble3();
             drone.HomeRotation = ToQuaternion(bestHub.DockRotation);
             drone.TargetTaskIndex = EmptyTaskIndex;
             drone.TargetPosition = drone.HomePosition;
@@ -3062,10 +3082,11 @@ namespace Hecton8.Construction
             BaseModule target = s_TargetModulesByDroneSlot[slot];
             if (target == null)
             {
-                if (TryResolvePlayerPosition(out Vector3 playerPosition))
+                if (TryResolvePlayerPosition(out Vector3 playerPosition) &&
+                    TryResolvePlayerAup(out double3 playerAup))
                 {
                     drone.TargetPosition = ToFloat3(playerPosition);
-                    drone.TargetAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(playerPosition);
+                    drone.TargetAup = playerAup;
                 }
                 return;
             }
@@ -3081,9 +3102,9 @@ namespace Hecton8.Construction
             if (target == null || repairUnits <= 0f)
                 return;
 
-            AbsoluteUniversePosition hitAup = IsFiniteDouble3(drone.TargetAup)
-                ? AbsoluteUniversePosition.FromAbsolutePosition(drone.TargetAup)
-                : AbsoluteUniversePosition.FromRuntimePosition(target.transform.position);
+            if (!TryResolveRepairHitAup(in drone, target, out AbsoluteUniversePosition hitAup))
+                return;
+
             HullRepairedSignal signal = new HullRepairedSignal
             {
                 HitAup = hitAup,
@@ -3096,6 +3117,29 @@ namespace Hecton8.Construction
                 Flags = HullRepairedSignal.CompletedFlag
             };
             SignalBus<HullRepairedSignal>.Push(in signal);
+        }
+
+        private static bool TryResolveRepairHitAup(in HeadlessDroneState drone, BaseModule target, out AbsoluteUniversePosition hitAup)
+        {
+            hitAup = default;
+            if (IsFiniteDouble3(drone.TargetAup))
+            {
+                hitAup = AbsoluteUniversePosition.FromAbsolutePosition(drone.TargetAup);
+                return MathGuard.IsFinite(in hitAup);
+            }
+
+            if (target == null)
+                return false;
+
+            Vector3 targetPosition = target.transform.position;
+            if (!IsFiniteVector(targetPosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            hitAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(targetPosition.x, targetPosition.y, targetPosition.z));
+            return MathGuard.IsFinite(in hitAup);
         }
 
         private static void ExecuteSacrifice(int slot, ref HeadlessDroneState drone, BaseModule target)
@@ -3143,8 +3187,11 @@ namespace Hecton8.Construction
             RepairDroneHub hub = s_DroneHubs[slot];
             if (hub != null && hub.TryResolveNearestSupplyEndpoint(ToVector3(drone.Position), out Vector3 endpointPosition))
             {
+                if (!TryResolveAupDoubleFromRuntimeOrigin(endpointPosition, out double3 endpointAup))
+                    return;
+
                 drone.SupplyPosition = ToFloat3(endpointPosition);
-                drone.SupplyAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(endpointPosition);
+                drone.SupplyAup = endpointAup;
                 drone.State = (byte)HeadlessDroneRuntimeState.ResupplyTravel;
                 return;
             }
@@ -3170,15 +3217,21 @@ namespace Hecton8.Construction
             if (volume == null || target == null)
                 return;
 
-            Vector3 dronePosition = ToVector3(drone.Position);
-            Vector3 targetPosition = target.transform.position;
-            Vector3 weldDirection = targetPosition - dronePosition;
-            float weldDistanceSq = weldDirection.sqrMagnitude;
+            if (!IsFiniteDouble3(drone.PositionAup) ||
+                !TryResolveDroneTargetAup(in drone, target, out double3 targetAup))
+            {
+                return;
+            }
+
+            double3 weldDeltaDouble = targetAup - drone.PositionAup;
+            float3 weldDirectionLocal = ToFloat3(weldDeltaDouble);
+            float weldDistanceSq = math.lengthsq(weldDirectionLocal);
             if (weldDistanceSq <= SeparationDistanceEpsilon)
                 return;
 
-            Vector3 normalizedWeldDirection = weldDirection * math.rsqrt(weldDistanceSq);
-            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(dronePosition + (normalizedWeldDirection * 0.35f));
+            float3 normalizedWeldLocal = weldDirectionLocal * math.rsqrt(weldDistanceSq);
+            Vector3 normalizedWeldDirection = ToVector3(normalizedWeldLocal);
+            double3 absoluteHitPoint = drone.PositionAup + (new double3(normalizedWeldLocal.x, normalizedWeldLocal.y, normalizedWeldLocal.z) * 0.35d);
             volume.ApplyRepairWeldDda(
                 absoluteHitPoint,
                 normalizedWeldDirection,
@@ -3193,15 +3246,21 @@ namespace Hecton8.Construction
             if (volume == null || target == null)
                 return;
 
-            Vector3 dronePosition = ToVector3(drone.Position);
-            Vector3 targetPosition = target.transform.position;
-            Vector3 cutDirection = targetPosition - dronePosition;
-            float cutDistanceSq = cutDirection.sqrMagnitude;
+            if (!IsFiniteDouble3(drone.PositionAup) ||
+                !TryResolveDroneTargetAup(in drone, target, out double3 targetAup))
+            {
+                return;
+            }
+
+            double3 cutDeltaDouble = targetAup - drone.PositionAup;
+            float3 cutDirectionLocal = ToFloat3(cutDeltaDouble);
+            float cutDistanceSq = math.lengthsq(cutDirectionLocal);
             if (cutDistanceSq <= SeparationDistanceEpsilon)
                 return;
 
-            Vector3 normalizedCutDirection = cutDirection * math.rsqrt(cutDistanceSq);
-            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(dronePosition + (normalizedCutDirection * 0.35f));
+            float3 normalizedCutLocal = cutDirectionLocal * math.rsqrt(cutDistanceSq);
+            Vector3 normalizedCutDirection = ToVector3(normalizedCutLocal);
+            double3 absoluteHitPoint = drone.PositionAup + (new double3(normalizedCutLocal.x, normalizedCutLocal.y, normalizedCutLocal.z) * 0.35d);
             volume.ApplyPlasmaCutDda(
                 absoluteHitPoint,
                 normalizedCutDirection,
@@ -3255,8 +3314,13 @@ namespace Hecton8.Construction
                 s_DroneTaskKindsBySlot[slot] = launch.Task.Kind;
                 s_DronePositions[slot] = launch.HomePosition;
                 quaternion homeRotation = ToQuaternion(launch.HomeRotation);
-                double3 homeAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(launch.HomePosition);
-                double3 targetAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(launch.Task.Position);
+                if (!TryResolveAupDoubleFromRuntimeOrigin(launch.HomePosition, out double3 homeAup) ||
+                    !TryResolveAupDoubleFromRuntimeOrigin(launch.Task.Position, out double3 targetAup))
+                {
+                    ClearHeadlessSlot(slot, true);
+                    continue;
+                }
+
                 uint launchTaskHash = ComputeDroneTaskHash(launch.Task.Kind, launch.DroneId, GetRuntimeId(target));
                 DroneChassisSpecDTO chassis = ResolveLaunchDroneChassisSpec(launch.Task.Kind, in tuning);
                 int tunedCargoCapacity = Mathf.Max(1, Mathf.RoundToInt(chassis.CargoCapacity));
@@ -3638,9 +3702,12 @@ namespace Hecton8.Construction
             s_TaskKinds[taskIndex] = kind;
             if (s_DroneAssignmentTasks.IsCreated && taskIndex < s_DroneAssignmentTasks.Length)
             {
+                if (!TryResolveAupDoubleFromRuntimeOrigin(position, out double3 targetAup))
+                    return;
+
                 s_DroneAssignmentTasks[taskIndex] = new DroneTaskDTO
                 {
-                    TargetAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position),
+                    TargetAup = targetAup,
                     LocalPosition = ToFloat3(position),
                     Priority = 1f,
                     Score = 0f,
@@ -3666,9 +3733,12 @@ namespace Hecton8.Construction
             if (s_DroneAssignmentTasks.IsCreated && taskIndex < s_DroneAssignmentTasks.Length)
             {
                 Vector3 targetPosition = ToVector3(signal.Position);
+                if (!TryResolveAupDoubleFromRuntimeOrigin(targetPosition, out double3 targetAup))
+                    return;
+
                 s_DroneAssignmentTasks[taskIndex] = new DroneTaskDTO
                 {
-                    TargetAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(targetPosition),
+                    TargetAup = targetAup,
                     LocalPosition = signal.Position,
                     Priority = 0.25f,
                     Score = 0f,
@@ -5517,9 +5587,12 @@ namespace Hecton8.Construction
                 return;
             }
 
+            if (!TryResolveAupDoubleFromRuntimeOrigin(candidate.Position, out double3 targetAup))
+                return;
+
             DroneTaskDTO dto = new DroneTaskDTO
             {
-                TargetAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(candidate.Position),
+                TargetAup = targetAup,
                 LocalPosition = ToFloat3(candidate.Position),
                 Priority = ResolveTaskPriority(candidate.Kind),
                 Score = candidate.Score,
@@ -5711,32 +5784,102 @@ namespace Hecton8.Construction
 
         private static double3 ResolveDroneRenderReferenceAup()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext != null)
-            {
-                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-                    MathGuard.IsFinite(in snapshot.Aup))
-                {
-                    return snapshot.Aup.ToAbsoluteDouble3();
-                }
+            if (TryResolvePlayerAup(out double3 playerAup))
+                return playerAup;
 
-                var playerMovement = playerContext.PlayerMovement;
-                if (playerMovement != null)
-                {
-                    AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-                    if (MathGuard.IsFinite(in currentAup))
-                        return currentAup.ToAbsoluteDouble3();
-                }
+            if (TryResolveFormationAnchor(out Vector3 formationAnchor) &&
+                TryResolveAupDoubleFromRuntimeOrigin(formationAnchor, out double3 formationAup))
+            {
+                return formationAup;
             }
 
-            if (TryResolvePlayerPosition(out Vector3 playerPosition))
-                return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(playerPosition);
-
-            if (TryResolveFormationAnchor(out Vector3 formationAnchor))
-                return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(formationAnchor);
-
             RepairDroneHub hub = RepairDroneHub.GetActiveHubAt(0);
-            return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(hub != null ? hub.DockPosition : Vector3.zero);
+            if (hub != null)
+            {
+                AbsoluteUniversePosition dockAup = hub.DockAup;
+                if (MathGuard.IsFinite(in dockAup))
+                    return dockAup.ToAbsoluteDouble3();
+            }
+
+            return GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
+        }
+
+        private static bool TryResolvePlayerAup(out double3 playerAup)
+        {
+            playerAup = default;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                MathGuard.IsFinite(in snapshot.Aup))
+            {
+                playerAup = snapshot.Aup.ToAbsoluteDouble3();
+                return math.all(math.isfinite(playerAup));
+            }
+
+            var playerMovement = playerContext.PlayerMovement;
+            if (playerMovement == null)
+                return false;
+
+            AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
+            if (!MathGuard.IsFinite(in currentAup))
+                return false;
+
+            playerAup = currentAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(playerAup));
+        }
+
+        private static bool TryResolveDroneTargetAup(in HeadlessDroneState drone, BaseModule target, out double3 targetAup)
+        {
+            targetAup = default;
+            if (IsFiniteDouble3(drone.TargetAup))
+            {
+                targetAup = drone.TargetAup;
+                return true;
+            }
+
+            if (target == null)
+                return false;
+
+            return TryResolveAupDoubleFromRuntimeOrigin(target.transform.position, out targetAup);
+        }
+
+        private static bool TryResolveAbsoluteAupFromRuntimeOrigin(float3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            return TryResolveAbsoluteAupFromRuntimeOrigin(ToVector3(runtimePosition), out aup);
+        }
+
+        private static bool TryResolveAbsoluteAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return MathGuard.IsFinite(in aup);
+        }
+
+        private static bool TryResolveAupDoubleFromRuntimeOrigin(float3 runtimePosition, out double3 aup)
+        {
+            aup = default;
+            if (!IsFiniteFloat3(runtimePosition))
+                return false;
+
+            return TryResolveAupDoubleFromRuntimeOrigin(ToVector3(runtimePosition), out aup);
+        }
+
+        private static bool TryResolveAupDoubleFromRuntimeOrigin(Vector3 runtimePosition, out double3 aup)
+        {
+            aup = default;
+            if (!TryResolveAbsoluteAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition absoluteAup))
+                return false;
+
+            aup = absoluteAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(aup));
         }
 
         private static Vector3 ResolveDroneRenderReferencePosition()

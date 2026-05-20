@@ -1,34 +1,34 @@
 {
   "categoryTotals": {
     "binaryHardwareSwitch": 102,
-    "globalRegistryDot": 6113,
+    "globalRegistryDot": 6128,
     "globalSignalsPublish": 259,
     "hectonEventBusPubSub": 45,
-    "jobHandleComplete": 103,
-    "localNumericBufferCast": 734,
-    "nativeArrayCtor": 1154,
-    "privateNativeCollectionField": 1386,
-    "signalBusPushTryPush": 289,
+    "jobHandleComplete": 102,
+    "localNumericBufferCast": 798,
+    "nativeArrayCtor": 1161,
+    "privateNativeCollectionField": 1352,
+    "signalBusPushTryPush": 293,
     "structAutoProperties": 8,
     "unityRandom": 2,
-    "unityTimeCritical": 1207,
-    "unityUpdateMethod": 6
+    "unityTimeCritical": 1215,
+    "unityUpdateMethod": 7
   },
-  "csFileCount": 1989,
+  "csFileCount": 2013,
   "domainTotals": [
     {
       "domain": "Root",
       "familyCounts": {
-        "authority": 1510,
-        "datavault": 854,
-        "determinism": 442,
+        "authority": 1504,
+        "datavault": 833,
+        "determinism": 444,
         "jobs": 12,
         "layout": 3,
         "platform": 6,
-        "signals": 112
+        "signals": 110
       },
       "files": 180,
-      "score": 12890,
+      "score": 12636,
       "topFiles": [
         {
           "path": "Assets/_Project/Scripts/PlayerInventory.cs",
@@ -59,15 +59,15 @@
     {
       "domain": "World",
       "familyCounts": {
-        "authority": 765,
-        "datavault": 620,
+        "authority": 768,
+        "datavault": 621,
         "determinism": 126,
         "jobs": 18,
         "platform": 15,
         "signals": 49
       },
       "files": 102,
-      "score": 8228,
+      "score": 8239,
       "topFiles": [
         {
           "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
@@ -98,15 +98,15 @@
     {
       "domain": "Core",
       "familyCounts": {
-        "authority": 350,
-        "datavault": 285,
+        "authority": 351,
+        "datavault": 266,
         "determinism": 160,
         "jobs": 3,
         "platform": 15,
-        "signals": 125
+        "signals": 130
       },
-      "files": 78,
-      "score": 4693,
+      "files": 79,
+      "score": 4492,
       "topFiles": [
         {
           "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
@@ -138,12 +138,12 @@
       "domain": "Gameplay",
       "familyCounts": {
         "authority": 611,
-        "datavault": 157,
-        "determinism": 94,
-        "signals": 79
+        "datavault": 161,
+        "determinism": 96,
+        "signals": 81
       },
-      "files": 88,
-      "score": 3453,
+      "files": 89,
+      "score": 3497,
       "topFiles": [
         {
           "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
@@ -172,56 +172,16 @@
       ]
     },
     {
-      "domain": "Editor",
-      "familyCounts": {
-        "authority": 58,
-        "datavault": 187,
-        "determinism": 14,
-        "hotpath": 3,
-        "jobs": 61,
-        "platform": 3,
-        "signals": 4
-      },
-      "files": 52,
-      "score": 2435,
-      "topFiles": [
-        {
-          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
-          "score": 604
-        },
-        {
-          "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs",
-          "score": 228
-        },
-        {
-          "path": "Assets/_Project/Scripts/Editor/HectonArmTextureChannelPacker.cs",
-          "score": 200
-        },
-        {
-          "path": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs",
-          "score": 156
-        },
-        {
-          "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs",
-          "score": 144
-        },
-        {
-          "path": "Assets/_Project/Scripts/Editor/AnomalySmokeTester.cs",
-          "score": 96
-        }
-      ]
-    },
-    {
       "domain": "Construction",
       "familyCounts": {
-        "authority": 137,
-        "datavault": 182,
-        "determinism": 22,
+        "authority": 139,
+        "datavault": 210,
+        "determinism": 26,
         "platform": 2,
         "signals": 19
       },
-      "files": 26,
-      "score": 2257,
+      "files": 27,
+      "score": 2555,
       "topFiles": [
         {
           "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
@@ -236,16 +196,56 @@
           "score": 396
         },
         {
+          "path": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridContracts.cs",
+          "score": 240
+        },
+        {
           "path": "Assets/_Project/Scripts/Construction/LogisticsPipeTransportScheduler.cs",
           "score": 160
         },
         {
           "path": "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
           "score": 136
+        }
+      ]
+    },
+    {
+      "domain": "Editor",
+      "familyCounts": {
+        "authority": 59,
+        "datavault": 191,
+        "determinism": 13,
+        "hotpath": 3,
+        "jobs": 61,
+        "platform": 3,
+        "signals": 4
+      },
+      "files": 53,
+      "score": 2464,
+      "topFiles": [
+        {
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+          "score": 604
         },
         {
-          "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-          "score": 129
+          "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs",
+          "score": 252
+        },
+        {
+          "path": "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs",
+          "score": 200
+        },
+        {
+          "path": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs",
+          "score": 164
+        },
+        {
+          "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs",
+          "score": 144
+        },
+        {
+          "path": "Assets/_Project/Scripts/Editor/AnomalySmokeTester.cs",
+          "score": 96
         }
       ]
     },
@@ -326,6 +326,43 @@
       ]
     },
     {
+      "domain": "Power",
+      "familyCounts": {
+        "authority": 28,
+        "datavault": 128,
+        "determinism": 4,
+        "signals": 7
+      },
+      "files": 11,
+      "score": 1416,
+      "topFiles": [
+        {
+          "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+          "score": 797
+        },
+        {
+          "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+          "score": 201
+        },
+        {
+          "path": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+          "score": 150
+        },
+        {
+          "path": "Assets/_Project/Scripts/Power/BatteryChargerLogisticsContracts.cs",
+          "score": 100
+        },
+        {
+          "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+          "score": 68
+        },
+        {
+          "path": "Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs",
+          "score": 47
+        }
+      ]
+    },
+    {
       "domain": "Atmosphere",
       "familyCounts": {
         "authority": 82,
@@ -359,43 +396,6 @@
         {
           "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
           "score": 12
-        }
-      ]
-    },
-    {
-      "domain": "Power",
-      "familyCounts": {
-        "authority": 18,
-        "datavault": 118,
-        "determinism": 4,
-        "signals": 6
-      },
-      "files": 9,
-      "score": 1304,
-      "topFiles": [
-        {
-          "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
-          "score": 797
-        },
-        {
-          "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
-          "score": 201
-        },
-        {
-          "path": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
-          "score": 150
-        },
-        {
-          "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
-          "score": 68
-        },
-        {
-          "path": "Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs",
-          "score": 47
-        },
-        {
-          "path": "Assets/_Project/Scripts/Power/PowerGridTelemetryEvents.cs",
-          "score": 24
         }
       ]
     },
@@ -438,6 +438,44 @@
       ]
     },
     {
+      "domain": "Physics",
+      "familyCounts": {
+        "authority": 90,
+        "datavault": 50,
+        "hotpath": 2,
+        "platform": 6,
+        "signals": 15
+      },
+      "files": 24,
+      "score": 686,
+      "topFiles": [
+        {
+          "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
+          "score": 132
+        },
+        {
+          "path": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+          "score": 126
+        },
+        {
+          "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+          "score": 110
+        },
+        {
+          "path": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageContracts.cs",
+          "score": 100
+        },
+        {
+          "path": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+          "score": 44
+        },
+        {
+          "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+          "score": 23
+        }
+      ]
+    },
+    {
       "domain": "Graphics",
       "familyCounts": {
         "authority": 75,
@@ -472,44 +510,6 @@
         {
           "path": "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
           "score": 24
-        }
-      ]
-    },
-    {
-      "domain": "Physics",
-      "familyCounts": {
-        "authority": 80,
-        "datavault": 48,
-        "hotpath": 1,
-        "platform": 6,
-        "signals": 20
-      },
-      "files": 23,
-      "score": 652,
-      "topFiles": [
-        {
-          "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
-          "score": 132
-        },
-        {
-          "path": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
-          "score": 126
-        },
-        {
-          "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
-          "score": 110
-        },
-        {
-          "path": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageContracts.cs",
-          "score": 100
-        },
-        {
-          "path": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
-          "score": 44
-        },
-        {
-          "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
-          "score": 23
         }
       ]
     },
@@ -650,6 +650,43 @@
         {
           "path": "Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftRuntime.cs",
           "score": 21
+        }
+      ]
+    },
+    {
+      "domain": "Tools",
+      "familyCounts": {
+        "authority": 68,
+        "datavault": 26,
+        "determinism": 4,
+        "signals": 14
+      },
+      "files": 13,
+      "score": 402,
+      "topFiles": [
+        {
+          "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+          "score": 160
+        },
+        {
+          "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+          "score": 100
+        },
+        {
+          "path": "Assets/_Project/Scripts/Tools/ToolKinematics/ToolKinematicsRuntime.cs",
+          "score": 54
+        },
+        {
+          "path": "Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs",
+          "score": 25
+        },
+        {
+          "path": "Assets/_Project/Scripts/Tools/ToolHapticsRuntime.cs",
+          "score": 14
+        },
+        {
+          "path": "Assets/_Project/Scripts/Tools/LaserCutterDodRuntime.cs",
+          "score": 13
         }
       ]
     },
@@ -825,22 +862,22 @@
     {
       "domain": "Habitat",
       "familyCounts": {
-        "authority": 17,
-        "datavault": 22,
-        "jobs": 3,
+        "authority": 19,
+        "datavault": 25,
+        "jobs": 2,
         "platform": 5,
         "signals": 4
       },
       "files": 5,
-      "score": 284,
+      "score": 302,
       "topFiles": [
         {
           "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
-          "score": 136
+          "score": 138
         },
         {
           "path": "Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs",
-          "score": 120
+          "score": 136
         },
         {
           "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs",
@@ -853,43 +890,6 @@
         {
           "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorTypes.cs",
           "score": 3
-        }
-      ]
-    },
-    {
-      "domain": "Optimization",
-      "familyCounts": {
-        "authority": 159,
-        "datavault": 3,
-        "determinism": 17,
-        "signals": 1
-      },
-      "files": 17,
-      "score": 271,
-      "topFiles": [
-        {
-          "path": "Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs",
-          "score": 31
-        },
-        {
-          "path": "Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs",
-          "score": 30
-        },
-        {
-          "path": "Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs",
-          "score": 28
-        },
-        {
-          "path": "Assets/_Project/Scripts/Optimization/PreInitAssetIdMap.cs",
-          "score": 20
-        },
-        {
-          "path": "Assets/_Project/Scripts/Optimization/RenderTextureLifecycleTracker.cs",
-          "score": 20
-        },
-        {
-          "path": "Assets/_Project/Scripts/Optimization/CameraRTManager.cs",
-          "score": 19
         }
       ]
     },
@@ -974,6 +974,43 @@
         {
           "path": "Assets/_Project/Scripts/Bootstrap/SceneInstantiationGate.cs",
           "score": 6
+        }
+      ]
+    },
+    {
+      "domain": "Optimization",
+      "familyCounts": {
+        "authority": 151,
+        "datavault": 2,
+        "determinism": 17,
+        "signals": 1
+      },
+      "files": 17,
+      "score": 251,
+      "topFiles": [
+        {
+          "path": "Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs",
+          "score": 30
+        },
+        {
+          "path": "Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs",
+          "score": 24
+        },
+        {
+          "path": "Assets/_Project/Scripts/Optimization/PreInitAssetIdMap.cs",
+          "score": 20
+        },
+        {
+          "path": "Assets/_Project/Scripts/Optimization/RenderTextureLifecycleTracker.cs",
+          "score": 20
+        },
+        {
+          "path": "Assets/_Project/Scripts/Optimization/CameraRTManager.cs",
+          "score": 19
+        },
+        {
+          "path": "Assets/_Project/Scripts/Optimization/PostFXRTManager.cs",
+          "score": 19
         }
       ]
     },
@@ -1267,42 +1304,6 @@
       ]
     },
     {
-      "domain": "Tools",
-      "familyCounts": {
-        "authority": 68,
-        "determinism": 2,
-        "signals": 11
-      },
-      "files": 9,
-      "score": 128,
-      "topFiles": [
-        {
-          "path": "Assets/_Project/Scripts/Tools/ToolKinematics/ToolKinematicsRuntime.cs",
-          "score": 54
-        },
-        {
-          "path": "Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs",
-          "score": 27
-        },
-        {
-          "path": "Assets/_Project/Scripts/Tools/ToolHapticsRuntime.cs",
-          "score": 14
-        },
-        {
-          "path": "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs",
-          "score": 12
-        },
-        {
-          "path": "Assets/_Project/Scripts/Tools/PauseSystemVerifier.cs",
-          "score": 7
-        },
-        {
-          "path": "Assets/_Project/Scripts/Tools/PerformanceBudgetController.cs",
-          "score": 4
-        }
-      ]
-    },
-    {
       "domain": "Ecosystem",
       "familyCounts": {
         "authority": 58,
@@ -1472,22 +1473,22 @@
       "domain": "Rendering",
       "familyCounts": {
         "authority": 22,
-        "determinism": 5
+        "determinism": 4
       },
       "files": 4,
-      "score": 42,
+      "score": 38,
       "topFiles": [
         {
           "path": "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs",
           "score": 18
         },
         {
-          "path": "Assets/_Project/Scripts/Rendering/GlobalShaderDispatcher.cs",
-          "score": 13
-        },
-        {
           "path": "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
           "score": 10
+        },
+        {
+          "path": "Assets/_Project/Scripts/Rendering/GlobalShaderDispatcher.cs",
+          "score": 9
         },
         {
           "path": "Assets/_Project/Scripts/Rendering/HectonShaderGlobalDataVaultBridge.cs",
@@ -1579,17 +1580,17 @@
     }
   ],
   "familyTotals": {
-    "authority": 6113,
-    "datavault": 3274,
-    "determinism": 1209,
-    "hotpath": 6,
-    "jobs": 103,
+    "authority": 6128,
+    "datavault": 3311,
+    "determinism": 1217,
+    "hotpath": 7,
+    "jobs": 102,
     "layout": 8,
     "platform": 102,
-    "signals": 593
+    "signals": 597
   },
   "schema": "hecton8.architecture_risk_hotlist.v2",
-  "scoredFileCount": 910,
+  "scoredFileCount": 921,
   "sourceRoot": "Assets/_Project/Scripts",
   "topFiles": [
     {
@@ -1687,62 +1688,62 @@
       "examples": [
         {
           "category": "binaryHardwareSwitch",
-          "line": 366,
+          "line": 479,
           "text": "public byte QualityTier;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 1716,
+          "line": 1829,
           "text": "private static NativeQueue<T> _queue;"
         },
         {
           "category": "globalRegistryDot",
-          "line": 2047,
+          "line": 2160,
           "text": "global::Hecton8.Core.GlobalRegistry.SetSystemKillSwitchBits(NonCriticalVfxKillSwitchMask, true);"
         },
         {
           "category": "globalRegistryDot",
-          "line": 2446,
+          "line": 2559,
           "text": "vault = global::Hecton8.Core.GlobalRegistry.DataVault;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 5399,
+          "line": 5513,
           "text": "private static NativeQueue<ImpactSignal> _impactSignals;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 5400,
+          "line": 5514,
           "text": "private static NativeQueue<AupPreShiftSignal> _aupPreShiftSignals;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 5401,
+          "line": 5515,
           "text": "private static NativeQueue<AupShiftSignal> _aupShiftSignals;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 5402,
+          "line": 5516,
           "text": "private static NativeQueue<BrownoutSignal> _brownoutSignals;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 5403,
+          "line": 5517,
           "text": "private static NativeQueue<DebrisSpawnSignal> _debrisSpawnSignals;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 5404,
+          "line": 5518,
           "text": "private static NativeQueue<DeflectSignal> _deflectSignals;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 5405,
+          "line": 5519,
           "text": "private static NativeQueue<EntityDeathSignal> _entityDeathSignals;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 5406,
+          "line": 5520,
           "text": "private static NativeQueue<SolarFlareSignal> _solarFlareSignals;"
         }
       ],
@@ -3604,87 +3605,6 @@
     },
     {
       "categoryCounts": {
-        "globalRegistryDot": 23,
-        "globalSignalsPublish": 1,
-        "privateNativeCollectionField": 21,
-        "signalBusPushTryPush": 2,
-        "unityTimeCritical": 1
-      },
-      "domain": "Root",
-      "examples": [
-        {
-          "category": "privateNativeCollectionField",
-          "line": 73,
-          "text": "private NativeArray<ToolState> _toolStates;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 74,
-          "text": "private NativeArray<ToolRuntimeStats> _toolStats;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 75,
-          "text": "private NativeArray<byte> _toolTypes;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 76,
-          "text": "private NativeArray<float> _currentHeat;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 77,
-          "text": "private NativeArray<float> _batteryCharge;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 78,
-          "text": "private NativeArray<uint> _statusMasks;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 79,
-          "text": "private NativeArray<float> _environmentHeat01;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 80,
-          "text": "private NativeArray<ActiveEquipmentDTO> _activeEquipmentStates;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 81,
-          "text": "private NativeArray<ActiveEquipmentDTO> _publishedActiveEquipmentStates;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 82,
-          "text": "private NativeArray<double3> _activeEquipmentAupSamples;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 83,
-          "text": "private NativeArray<EquipmentGridLoadRequest> _activeEquipmentGridLoadRequests;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 84,
-          "text": "private NativeArray<float> _activeEquipmentWearDrainRates;"
-        }
-      ],
-      "familyCounts": {
-        "authority": 23,
-        "datavault": 21,
-        "determinism": 1,
-        "signals": 3
-      },
-      "isEditorPath": false,
-      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
-      "score": 295
-    },
-    {
-      "categoryCounts": {
         "globalRegistryDot": 29,
         "nativeArrayCtor": 5,
         "privateNativeCollectionField": 17,
@@ -4255,52 +4175,52 @@
         },
         {
           "category": "nativeArrayCtor",
-          "line": 2601,
+          "line": 2606,
           "text": "using NativeArray<SectorEntry> sectorEntries = new NativeArray<SectorEntry>("
         },
         {
           "category": "nativeArrayCtor",
-          "line": 3700,
+          "line": 3705,
           "text": "voxelDeltaSnapshot = new NativeArray<byte>(voxelByteLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 3723,
+          "line": 3728,
           "text": "using NativeArray<byte> sectorRaw = new NativeArray<byte>(entry.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 4087,
+          "line": 4092,
           "text": "using NativeArray<byte> sectorRaw = new NativeArray<byte>(entry.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 4200,
+          "line": 4205,
           "text": "new NativeArray<PersistentWorldDeltaRecord>(0, Allocator.Temp, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 4274,
+          "line": 4279,
           "text": "using NativeArray<byte> rawSectionBytes = new NativeArray<byte>(rawSectionLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 4275,
+          "line": 4280,
           "text": "using NativeArray<byte> fileBytes = new NativeArray<byte>(fileCapacity, Allocator.Temp, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 4359,
+          "line": 4364,
           "text": "using NativeArray<byte> rawBytes = new NativeArray<byte>(overrideHeader.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 4456,
+          "line": 4461,
           "text": "writeHandle.SourceStates = new NativeArray<EntityDataRecord>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 4457,
+          "line": 4462,
           "text": "writeHandle.SortEntries = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
         }
       ],
@@ -4322,62 +4242,62 @@
       "examples": [
         {
           "category": "privateNativeCollectionField",
-          "line": 263,
+          "line": 274,
           "text": "private NativeArray<TelemetryEntry> _ringBuffer;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 264,
+          "line": 275,
           "text": "private NativeArray<TelemetryEntry> _exportSnapshot;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 292,
+          "line": 303,
           "text": "private NativeArray<byte> _exportScratch;"
         },
         {
           "category": "globalRegistryDot",
-          "line": 375,
+          "line": 386,
           "text": "CrashTelemetryBuffer registeredInstance = GlobalRegistry.CrashTelemetry;"
         },
         {
           "category": "globalRegistryDot",
-          "line": 390,
+          "line": 401,
           "text": "CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;"
         },
         {
           "category": "globalRegistryDot",
-          "line": 411,
+          "line": 422,
           "text": "CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;"
         },
         {
           "category": "globalRegistryDot",
-          "line": 435,
+          "line": 446,
           "text": "CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;"
         },
         {
           "category": "globalRegistryDot",
-          "line": 450,
+          "line": 461,
           "text": "CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;"
         },
         {
           "category": "globalRegistryDot",
-          "line": 473,
+          "line": 484,
           "text": "CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;"
         },
         {
           "category": "globalRegistryDot",
-          "line": 489,
+          "line": 500,
           "text": "CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;"
         },
         {
           "category": "globalRegistryDot",
-          "line": 504,
+          "line": 515,
           "text": "CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;"
         },
         {
           "category": "globalRegistryDot",
-          "line": 536,
+          "line": 547,
           "text": "CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;"
         }
       ],
@@ -4389,6 +4309,83 @@
       "isEditorPath": false,
       "path": "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
       "score": 253
+    },
+    {
+      "categoryCounts": {
+        "jobHandleComplete": 7,
+        "nativeArrayCtor": 18,
+        "privateNativeCollectionField": 2
+      },
+      "domain": "Editor",
+      "examples": [
+        {
+          "category": "nativeArrayCtor",
+          "line": 327,
+          "text": "raw = new NativeArray<OfflineGeometryRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "jobHandleComplete",
+          "line": 337,
+          "text": "}.Schedule(quadCount, 64).Complete();"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 378,
+          "text": "fit = new NativeArray<OfflinePrimitiveFitResult>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "jobHandleComplete",
+          "line": 384,
+          "text": "}.Schedule().Complete();"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 389,
+          "text": "hull = new NativeArray<float3>(hullVertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 391,
+          "text": "hullIndexBuffer = new NativeArray<ushort>(OfflineGeometryBakerConstants.MaxHullIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 393,
+          "text": "hullCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 395,
+          "text": "hullIndexCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "jobHandleComplete",
+          "line": 404,
+          "text": "}.Schedule().Complete();"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 468,
+          "text": "rawVertices = new NativeArray<OfflineGeometryRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "jobHandleComplete",
+          "line": 525,
+          "text": "handle.Complete();"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 560,
+          "text": "packed = new NativeArray<OfflineGeometryVertex32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        }
+      ],
+      "familyCounts": {
+        "datavault": 20,
+        "jobs": 7
+      },
+      "isEditorPath": true,
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs",
+      "score": 252
     },
     {
       "categoryCounts": {
@@ -4471,6 +4468,80 @@
     },
     {
       "categoryCounts": {
+        "localNumericBufferCast": 24
+      },
+      "domain": "Construction",
+      "examples": [
+        {
+          "category": "localNumericBufferCast",
+          "line": 49,
+          "text": "public const BufferID PumpNodes = (BufferID)95820;"
+        },
+        {
+          "category": "localNumericBufferCast",
+          "line": 50,
+          "text": "public const BufferID PipeEdges = (BufferID)95821;"
+        },
+        {
+          "category": "localNumericBufferCast",
+          "line": 51,
+          "text": "public const BufferID NodeAup = (BufferID)95822;"
+        },
+        {
+          "category": "localNumericBufferCast",
+          "line": 52,
+          "text": "public const BufferID PumpRoomIndices = (BufferID)95823;"
+        },
+        {
+          "category": "localNumericBufferCast",
+          "line": 53,
+          "text": "public const BufferID CsrOffsets = (BufferID)95824;"
+        },
+        {
+          "category": "localNumericBufferCast",
+          "line": 54,
+          "text": "public const BufferID CsrDestinations = (BufferID)95825;"
+        },
+        {
+          "category": "localNumericBufferCast",
+          "line": 55,
+          "text": "public const BufferID CsrConductance = (BufferID)95826;"
+        },
+        {
+          "category": "localNumericBufferCast",
+          "line": 56,
+          "text": "public const BufferID CsrFlow = (BufferID)95827;"
+        },
+        {
+          "category": "localNumericBufferCast",
+          "line": 57,
+          "text": "public const BufferID CsrFlatEdgeIndex = (BufferID)95828;"
+        },
+        {
+          "category": "localNumericBufferCast",
+          "line": 58,
+          "text": "public const BufferID CsrWriteCursor = (BufferID)95829;"
+        },
+        {
+          "category": "localNumericBufferCast",
+          "line": 59,
+          "text": "public const BufferID PressureFront = (BufferID)95830;"
+        },
+        {
+          "category": "localNumericBufferCast",
+          "line": 60,
+          "text": "public const BufferID PressureBack = (BufferID)95831;"
+        }
+      ],
+      "familyCounts": {
+        "datavault": 24
+      },
+      "isEditorPath": false,
+      "path": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridContracts.cs",
+      "score": 240
+    },
+    {
+      "categoryCounts": {
         "localNumericBufferCast": 16,
         "nativeArrayCtor": 10
       },
@@ -4478,62 +4549,62 @@
       "examples": [
         {
           "category": "localNumericBufferCast",
-          "line": 212,
+          "line": 297,
           "text": "public const BufferID VertexBudgetCounters = (BufferID)70820;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 213,
+          "line": 298,
           "text": "public const BufferID TileWarnings = (BufferID)70821;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 214,
+          "line": 299,
           "text": "public const BufferID TransparentQuadCounters = (BufferID)70822;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 215,
+          "line": 300,
           "text": "public const BufferID TelemetryRing = (BufferID)70823;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 216,
+          "line": 301,
           "text": "public const BufferID MockVisibleInstances = (BufferID)70824;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 217,
+          "line": 302,
           "text": "public const BufferID SortScratch = (BufferID)70825;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 218,
+          "line": 303,
           "text": "public const BufferID MeshVertexCounts = (BufferID)70826;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 219,
+          "line": 304,
           "text": "public const BufferID RadixHistogram = (BufferID)70827;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 220,
+          "line": 305,
           "text": "public const BufferID VisibleCountOut = (BufferID)70828;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 221,
+          "line": 306,
           "text": "public const BufferID MockQualitySignal = (BufferID)70829;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 222,
+          "line": 307,
           "text": "public const BufferID MockCamera = (BufferID)70830;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 223,
+          "line": 308,
           "text": "public const BufferID SourceFrustumPlanes = (BufferID)70831;"
         }
       ],
@@ -4790,62 +4861,62 @@
       "examples": [
         {
           "category": "localNumericBufferCast",
-          "line": 243,
+          "line": 222,
           "text": "public const BufferID CellsFront = (BufferID)71500;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 244,
+          "line": 223,
           "text": "public const BufferID CellsBack = (BufferID)71501;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 245,
+          "line": 224,
           "text": "public const BufferID Nodes = (BufferID)71502;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 246,
+          "line": 225,
           "text": "public const BufferID Connections = (BufferID)71503;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 247,
+          "line": 226,
           "text": "public const BufferID EdgeOffsets = (BufferID)71504;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 248,
+          "line": 227,
           "text": "public const BufferID EdgeDestinations = (BufferID)71505;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 249,
+          "line": 228,
           "text": "public const BufferID EdgeConductance = (BufferID)71506;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 250,
+          "line": 229,
           "text": "public const BufferID EdgeWriteCursor = (BufferID)71507;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 251,
+          "line": 230,
           "text": "public const BufferID Consumers = (BufferID)71508;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 252,
+          "line": 231,
           "text": "public const BufferID ToxicSources = (BufferID)71509;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 253,
+          "line": 232,
           "text": "public const BufferID Vents = (BufferID)71510;"
         },
         {
           "category": "localNumericBufferCast",
-          "line": 254,
+          "line": 233,
           "text": "public const BufferID Counters = (BufferID)71511;"
         }
       ],
@@ -4938,83 +5009,6 @@
     },
     {
       "categoryCounts": {
-        "jobHandleComplete": 7,
-        "nativeArrayCtor": 15,
-        "privateNativeCollectionField": 2
-      },
-      "domain": "Editor",
-      "examples": [
-        {
-          "category": "nativeArrayCtor",
-          "line": 319,
-          "text": "raw = new NativeArray<OfflineGeometryRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
-        },
-        {
-          "category": "jobHandleComplete",
-          "line": 329,
-          "text": "}.Schedule(quadCount, 64).Complete();"
-        },
-        {
-          "category": "nativeArrayCtor",
-          "line": 367,
-          "text": "fit = new NativeArray<OfflinePrimitiveFitResult>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
-        },
-        {
-          "category": "jobHandleComplete",
-          "line": 373,
-          "text": "}.Schedule().Complete();"
-        },
-        {
-          "category": "nativeArrayCtor",
-          "line": 377,
-          "text": "hull = new NativeArray<float3>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
-        },
-        {
-          "category": "nativeArrayCtor",
-          "line": 379,
-          "text": "hullCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
-        },
-        {
-          "category": "jobHandleComplete",
-          "line": 386,
-          "text": "}.Schedule().Complete();"
-        },
-        {
-          "category": "nativeArrayCtor",
-          "line": 443,
-          "text": "rawVertices = new NativeArray<OfflineGeometryRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
-        },
-        {
-          "category": "jobHandleComplete",
-          "line": 500,
-          "text": "handle.Complete();"
-        },
-        {
-          "category": "nativeArrayCtor",
-          "line": 535,
-          "text": "packed = new NativeArray<OfflineGeometryVertex32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
-        },
-        {
-          "category": "nativeArrayCtor",
-          "line": 537,
-          "text": "indices = new NativeArray<uint>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
-        },
-        {
-          "category": "jobHandleComplete",
-          "line": 547,
-          "text": "indexHandle.Complete();"
-        }
-      ],
-      "familyCounts": {
-        "datavault": 17,
-        "jobs": 7
-      },
-      "isEditorPath": true,
-      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs",
-      "score": 228
-    },
-    {
-      "categoryCounts": {
         "globalRegistryDot": 29,
         "globalSignalsPublish": 7,
         "nativeArrayCtor": 4,
@@ -5070,17 +5064,17 @@
         },
         {
           "category": "globalSignalsPublish",
-          "line": 708,
+          "line": 711,
           "text": "GlobalSignals.Publish(new HabitatConstructionSignal"
         },
         {
           "category": "globalSignalsPublish",
-          "line": 732,
+          "line": 735,
           "text": "GlobalSignals.Publish(new ModuleDeconstructSignal"
         },
         {
           "category": "unityTimeCritical",
-          "line": 740,
+          "line": 743,
           "text": "Frame = (uint)Mathf.Max(0, Time.frameCount)"
         }
       ],
@@ -5654,57 +5648,57 @@
         },
         {
           "category": "globalRegistryDot",
-          "line": 1452,
+          "line": 1457,
           "text": "GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);"
         },
         {
           "category": "globalRegistryDot",
-          "line": 1458,
+          "line": 1463,
           "text": "GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Player);"
         },
         {
           "category": "globalRegistryDot",
-          "line": 1464,
+          "line": 1469,
           "text": "GlobalRegistry.RegisterFastTickable(this, PriorityLayer.Player);"
         },
         {
           "category": "globalRegistryDot",
-          "line": 1470,
+          "line": 1475,
           "text": "GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);"
         },
         {
           "category": "globalRegistryDot",
-          "line": 1482,
+          "line": 1487,
           "text": "GlobalRegistry.RegisterHotSwapListener(this);"
         },
         {
           "category": "globalRegistryDot",
-          "line": 1497,
+          "line": 1502,
           "text": "GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);"
         },
         {
           "category": "globalRegistryDot",
-          "line": 1503,
+          "line": 1508,
           "text": "GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Player);"
         },
         {
           "category": "globalRegistryDot",
-          "line": 1509,
+          "line": 1514,
           "text": "GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);"
         },
         {
           "category": "globalRegistryDot",
-          "line": 1515,
+          "line": 1520,
           "text": "GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);"
         },
         {
           "category": "globalRegistryDot",
-          "line": 1527,
+          "line": 1532,
           "text": "GlobalRegistry.UnregisterHotSwapListener(this);"
         },
         {
           "category": "globalRegistryDot",
-          "line": 1542,
+          "line": 1547,
           "text": "_motor = GlobalRegistry.PlayerMotor != null ? GlobalRegistry.PlayerMotor : GetComponent<HectonPlayerMotor>();"
         }
       ],
@@ -6025,7 +6019,7 @@
         "jobs": 5
       },
       "isEditorPath": true,
-      "path": "Assets/_Project/Scripts/Editor/HectonArmTextureChannelPacker.cs",
+      "path": "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs",
       "score": 200
     },
     {
@@ -6731,62 +6725,62 @@
       "examples": [
         {
           "category": "privateNativeCollectionField",
-          "line": 1604,
+          "line": 1601,
           "text": "private static NativeParallelHashMap<long, SystemID> _allocationOwners;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 1605,
+          "line": 1602,
           "text": "private static NativeParallelHashMap<long, int> _allocationRecordIndices;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 1606,
+          "line": 1603,
           "text": "private static NativeParallelHashMap<ushort, NativeList<IntPtr>> _ownerPointers;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 1607,
+          "line": 1604,
           "text": "private static NativeParallelHashMap<ushort, JobHandle> _ownerJobHandles;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 1608,
+          "line": 1605,
           "text": "private static NativeList<ushort> _ownerPointerKeys;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 1609,
+          "line": 1606,
           "text": "private static NativeList<ushort> _ownerJobKeys;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 1610,
+          "line": 1607,
           "text": "private static NativeArray<H8AllocationRecord> _records;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 1611,
+          "line": 1608,
           "text": "private static NativeArray<long> _ownerBytes;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 1612,
+          "line": 1609,
           "text": "private static NativeList<BlockDescriptor> _blockDescriptors;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 1613,
+          "line": 1610,
           "text": "private static NativeArray<H8MemoryTelemetryEntry> _blackBox;"
         },
         {
           "category": "privateNativeCollectionField",
-          "line": 1614,
+          "line": 1611,
           "text": "private static NativeArray<H8MemoryTelemetryEntry> _eventBlackBox;"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 1740,
+          "line": 1737,
           "text": "_records = new NativeArray<H8AllocationRecord>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);"
         }
       ],
@@ -7340,6 +7334,82 @@
     },
     {
       "categoryCounts": {
+        "jobHandleComplete": 3,
+        "nativeArrayCtor": 17
+      },
+      "domain": "World",
+      "examples": [
+        {
+          "category": "nativeArrayCtor",
+          "line": 259,
+          "text": "workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 260,
+          "text": "stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 261,
+          "text": "stateIndices = new NativeArray<int>(baseIndices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 262,
+          "text": "tearWeights = new NativeArray<float>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 263,
+          "text": "counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
+        },
+        {
+          "category": "jobHandleComplete",
+          "line": 266,
+          "text": "previewHandle.Complete();"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 311,
+          "text": "tearWeights = new NativeArray<float>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 312,
+          "text": "counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 313,
+          "text": "hullPoints = new NativeArray<float3>(OfflineWreckageBakeConstants.MaxCollisionHullVertices, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 314,
+          "text": "workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 315,
+          "text": "stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "nativeArrayCtor",
+          "line": 316,
+          "text": "stateIndices = new NativeArray<int>(baseIndices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        }
+      ],
+      "familyCounts": {
+        "datavault": 17,
+        "jobs": 3
+      },
+      "isEditorPath": true,
+      "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs",
+      "score": 172
+    },
+    {
+      "categoryCounts": {
         "localNumericBufferCast": 17
       },
       "domain": "Cartography",
@@ -7729,159 +7799,78 @@
     },
     {
       "categoryCounts": {
-        "globalRegistryDot": 12,
-        "globalSignalsPublish": 4,
-        "nativeArrayCtor": 3,
-        "privateNativeCollectionField": 5,
-        "unityTimeCritical": 5
+        "jobHandleComplete": 7,
+        "nativeArrayCtor": 10
       },
-      "domain": "Narrative",
-      "examples": [
-        {
-          "category": "privateNativeCollectionField",
-          "line": 161,
-          "text": "private NativeParallelHashMap<uint, int> _globalVariables;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 162,
-          "text": "private NativeParallelHashMap<uint, int> _queryVariables;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 163,
-          "text": "private NativeArray<MetaCampaignRule> _rules;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 164,
-          "text": "private NativeArray<MetaCampaignEvaluationResult> _evaluationOutput;"
-        },
-        {
-          "category": "privateNativeCollectionField",
-          "line": 165,
-          "text": "private NativeArray<MetaCampaignBlackBoxEntry> _blackBox;"
-        },
-        {
-          "category": "unityTimeCritical",
-          "line": 229,
-          "text": "PublishCachedVisualState(GlobalWorldStateSignal.ChangeKindLoad, (uint)Time.frameCount);"
-        },
-        {
-          "category": "unityTimeCritical",
-          "line": 309,
-          "text": "(uint)Time.frameCount);"
-        },
-        {
-          "category": "unityTimeCritical",
-          "line": 380,
-          "text": "(uint)Time.frameCount);"
-        },
-        {
-          "category": "nativeArrayCtor",
-          "line": 402,
-          "text": "_rules = new NativeArray<MetaCampaignRule>(RuleCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);"
-        },
-        {
-          "category": "nativeArrayCtor",
-          "line": 409,
-          "text": "_evaluationOutput = new NativeArray<MetaCampaignEvaluationResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);"
-        },
-        {
-          "category": "nativeArrayCtor",
-          "line": 415,
-          "text": "_blackBox = new NativeArray<MetaCampaignBlackBoxEntry>(BlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);"
-        },
-        {
-          "category": "globalRegistryDot",
-          "line": 452,
-          "text": "IMetaCampaignService registered = GlobalRegistry.MetaCampaign;"
-        }
-      ],
-      "familyCounts": {
-        "authority": 12,
-        "datavault": 8,
-        "determinism": 5,
-        "signals": 4
-      },
-      "isEditorPath": false,
-      "path": "Assets/_Project/Scripts/Narrative/Campaign/MetaCampaignService.cs",
-      "score": 164
-    },
-    {
-      "categoryCounts": {
-        "jobHandleComplete": 3,
-        "nativeArrayCtor": 16
-      },
-      "domain": "World",
+      "domain": "Editor",
       "examples": [
         {
           "category": "nativeArrayCtor",
-          "line": 258,
-          "text": "workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+          "line": 73,
+          "text": "telemetry = new NativeArray<GeologyBakeTelemetryEntry>(GeologyForgeConstants.BlackBoxFrameCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 259,
-          "text": "stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+          "line": 171,
+          "text": "telemetry = new NativeArray<GeologyBakeTelemetryEntry>(GeologyForgeConstants.BlackBoxFrameCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 260,
-          "text": "stateIndices = new NativeArray<int>(baseIndices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+          "line": 234,
+          "text": "telemetry = new NativeArray<GeologyBakeTelemetryEntry>(GeologyForgeConstants.BlackBoxFrameCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 261,
-          "text": "tearWeights = new NativeArray<float>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
-        },
-        {
-          "category": "nativeArrayCtor",
-          "line": 262,
-          "text": "counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
+          "line": 325,
+          "text": "density = new NativeArray<float>(pointCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "category": "jobHandleComplete",
-          "line": 265,
-          "text": "previewHandle.Complete();"
+          "line": 344,
+          "text": "sdfHandle.Complete();"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 310,
-          "text": "tearWeights = new NativeArray<float>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+          "line": 350,
+          "text": "counts = new NativeArray<int>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "category": "jobHandleComplete",
+          "line": 359,
+          "text": "countHandle.Complete();"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 311,
-          "text": "counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
+          "line": 362,
+          "text": "offsets = new NativeArray<int>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "category": "nativeArrayCtor",
-          "line": 312,
-          "text": "hullPoints = new NativeArray<float3>(OfflineWreckageBakeConstants.MaxCollisionHullVertices, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+          "line": 378,
+          "text": "rawVertices = new NativeArray<GeologyRawVertex>(rawCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
         },
         {
-          "category": "nativeArrayCtor",
-          "line": 313,
-          "text": "workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+          "category": "jobHandleComplete",
+          "line": 389,
+          "text": "extractHandle.Complete();"
         },
         {
-          "category": "nativeArrayCtor",
-          "line": 314,
-          "text": "stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+          "category": "jobHandleComplete",
+          "line": 422,
+          "text": "uvHandle.Complete();"
         },
         {
-          "category": "nativeArrayCtor",
-          "line": 315,
-          "text": "stateIndices = new NativeArray<int>(baseIndices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+          "category": "jobHandleComplete",
+          "line": 440,
+          "text": "aoHandle.Complete();"
         }
       ],
       "familyCounts": {
-        "datavault": 16,
-        "jobs": 3
+        "datavault": 10,
+        "jobs": 7
       },
       "isEditorPath": true,
-      "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs",
+      "path": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs",
       "score": 164
     }
   ]

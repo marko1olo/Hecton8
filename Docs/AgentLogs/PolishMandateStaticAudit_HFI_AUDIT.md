@@ -4,27 +4,27 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 
 - Schema: `hecton8.polish_mandate_static_audit.v1`
 - Source root: `Assets/_Project/Scripts`
-- C# files: `1984`
+- C# files: `2013`
 
 ## Counts
 
 | Category | Matches | Files |
 |---|---:|---:|
 | `binaryHardwareSwitch` | 103 | 48 |
-| `burstCompile` | 1184 | 301 |
-| `burstMissingCompileSynchronously` | 350 | 113 |
+| `burstCompile` | 1222 | 305 |
+| `burstMissingCompileSynchronously` | 346 | 111 |
 | `burstMissingFloatMode` | 41 | 16 |
 | `burstMissingFloatPrecision` | 43 | 17 |
-| `globalQualityWeight` | 1417 | 291 |
-| `jobHandleComplete` | 231 | 104 |
+| `globalQualityWeight` | 1498 | 313 |
+| `jobHandleComplete` | 104 | 37 |
 | `linqSurface` | 5 | 2 |
-| `noAlias` | 1638 | 147 |
+| `noAlias` | 1719 | 154 |
 | `packOne` | 0 | 0 |
-| `privateNativeCollectionField` | 1389 | 222 |
+| `privateNativeCollectionField` | 1353 | 223 |
 | `structAutoProperties` | 8 | 4 |
 | `unityRandom` | 2 | 2 |
-| `unityTimeCritical` | 1209 | 311 |
-| `unityUpdateMethod` | 6 | 6 |
+| `unityTimeCritical` | 1215 | 310 |
+| `unityUpdateMethod` | 7 | 7 |
 
 ## Top Files
 
@@ -52,7 +52,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 
 | Path | Count |
 |---|---:|
-| `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs` | 41 |
+| `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs` | 40 |
 | `Assets/_Project/Scripts/HectonVoxelEngine.cs` | 18 |
 | `Assets/_Project/Scripts/Core/DistanceMath.cs` | 17 |
 | `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 15 |
@@ -86,7 +86,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs` | 26 |
 | `Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs` | 26 |
 | `Assets/_Project/Scripts/FabricationAssemblerRuntime.cs` | 25 |
-| `Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs` | 23 |
+| `Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs` | 24 |
 
 ### jobHandleComplete
 
@@ -96,7 +96,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs` | 9 |
 | `Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs` | 7 |
 | `Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs` | 7 |
-| `Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs` | 7 |
+| `Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs` | 6 |
 
 ### linqSurface
 
@@ -121,8 +121,8 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 |---|---:|
 | `Assets/_Project/Scripts/Core/GlobalSignals.cs` | 75 |
 | `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs` | 54 |
-| `Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs` | 50 |
 | `Assets/_Project/Scripts/PlayerInventory.cs` | 49 |
+| `Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs` | 49 |
 | `Assets/_Project/Scripts/Construction/DroneFleetManager.cs` | 40 |
 
 ### structAutoProperties
@@ -159,7 +159,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/Editor/SumpPumpPipeGridTunerWindow.cs` | 1 |
 | `Assets/_Project/Scripts/Editor/VerletTowTunerWindow.cs` | 1 |
 | `Assets/_Project/Scripts/Physics/KCC/Editor/HydrodynamicKccTunerWindow.cs` | 1 |
-| `Assets/_Project/Scripts/SaveSystem/Editor/EntitySaveTunerWindow.cs` | 1 |
+| `Assets/_Project/Scripts/Physics/Seaglide/Editor/SeaglideHydrodynamicsEditorTools.cs` | 1 |
 
 ## Interpretation
 

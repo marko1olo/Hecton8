@@ -68,7 +68,7 @@ namespace Hecton8.Power
         {
             float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
             float curve = weight * weight * (3f - 2f * weight);
-            return math.clamp(math.lerp(1f, 1.72f, curve), 1f, 1.85f);
+            return math.clamp(math.lerp(0.68f, 1f, curve), 0.55f, 1f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -660,7 +660,7 @@ namespace Hecton8.Power
             tuning.VisualOverkillScalar = qualityWeight;
             tuning = SanitizeTuning(in tuning);
             float solverTolerance = ResolveSolverTargetTolerance(tuning.JacobiTolerance, qualityWeight) * math.max(Epsilon, tuning.ToleranceMultiplier);
-            float solverOmega = math.clamp(ResolveSolverOmega(qualityWeight) * math.max(0.25f, tuning.BaseOmegaFactor), 1f, 1.85f);
+            float solverOmega = math.clamp(ResolveSolverOmega(qualityWeight) * math.max(0.25f, tuning.BaseOmegaFactor), 0.55f, 1f);
             int residualSampleMask = ResolveResidualSampleMask(qualityWeight);
             views.Tuning[0] = tuning;
 
@@ -1560,7 +1560,7 @@ namespace Hecton8.Power
             float temperature01 = maxTemperatureTenths == short.MinValue
                 ? 0f
                 : math.saturate((maxTemperatureTenths - 390f) / math.max(1f, 480f - 390f));
-            float action01 = math.step(1f, actionMask == 0u ? 0f : 1f) * 0.125f;
+            float action01 = (actionMask == 0u ? 0f : 1f) * 0.125f;
             return math.saturate(math.max(severity01, temperature01) + action01);
         }
 
@@ -1620,7 +1620,8 @@ namespace Hecton8.Power
                     PendingVisualState[index] = default;
                 }
 
-                if ((uint)index < (uint)ResidualSlotCount)
+                int residualSlotCount = math.clamp(ResidualSlotCount, 1, ResidualThreadSlotCount);
+                if ((uint)index < (uint)residualSlotCount)
                     ResidualSamples[index] = default;
 
                 if ((uint)index < (uint)EdgeCount)
@@ -1815,7 +1816,7 @@ namespace Hecton8.Power
                 float distanceSq = math.lengthsq(localOffset);
                 float radial01 = 1f - math.saturate(distanceSq / math.max(1f, 900f));
                 float smoothRadial = radial01 * radial01 * (3f - 2f * radial01);
-                float lowTierUniform = math.step(Epsilon, heat01);
+                float lowTierUniform = math.saturate(heat01 * math.rcp(Epsilon));
                 float shape = math.lerp(lowTierUniform, smoothRadial, quality);
                 float ambientHeat = heat01 * math.lerp(0.55f, 1f, shape);
                 ExternalHeat[nodeIndex] = math.max(ExternalHeat[nodeIndex], ambientHeat);
@@ -1832,15 +1833,16 @@ namespace Hecton8.Power
 
             public void Execute(int nodeIndex)
             {
-                if ((uint)nodeIndex < (uint)ResidualSlotCount)
+                int slotCount = math.clamp(ResidualSlotCount, 1, ResidualThreadSlotCount);
+                if ((uint)nodeIndex < (uint)slotCount)
                     ResidualSamples[nodeIndex] = default;
                 if (nodeIndex == 0)
                 {
                     ConvergenceState[0] = new SolverConvergenceStateDTO
                     {
-                        MaxResidualFloat = float.MaxValue,
-                        PreviousResidualFloat = float.MaxValue,
-                        Omega = math.clamp(FiniteOr(BaseOmega, 1f), 1f, 1.85f),
+                        MaxResidualFloat = 0f,
+                        PreviousResidualFloat = 0f,
+                        Omega = math.clamp(FiniteOr(BaseOmega, 1f), 0.55f, 1f),
                         IterationCount = 0,
                         FaultFlags = SolverConvergenceFaultFlags.None
                     };
@@ -1856,7 +1858,8 @@ namespace Hecton8.Power
 
             public void Execute(int index)
             {
-                if ((uint)index < (uint)ResidualSlotCount)
+                int slotCount = math.clamp(ResidualSlotCount, 1, ResidualThreadSlotCount);
+                if ((uint)index < (uint)slotCount)
                     ResidualSamples[index] = default;
             }
         }
@@ -1884,7 +1887,7 @@ namespace Hecton8.Power
 
                 float maxResidual = 0f;
                 bool nonFiniteResidual = false;
-                int slotCount = math.max(1, ResidualSlotCount);
+                int slotCount = math.clamp(ResidualSlotCount, 1, ResidualThreadSlotCount);
                 for (int i = 0; i < slotCount; i++)
                 {
                     SolverResidualSlot64 slot = ResidualSamples[i];
@@ -1894,7 +1897,7 @@ namespace Hecton8.Power
                         residual >= float.MaxValue * 0.5f)
                     {
                         nonFiniteResidual = true;
-                        maxResidual = float.MaxValue;
+                        maxResidual = math.max(maxResidual, 1f);
                         break;
                     }
 
@@ -1902,26 +1905,26 @@ namespace Hecton8.Power
                 }
 
                 float tolerance = math.max(Epsilon * 0.25f, FiniteOr(TargetTolerance, 0.001f));
-                float baseOmega = math.clamp(FiniteOr(BaseOmega, 1f), 1f, 1.85f);
+                float baseOmega = math.clamp(FiniteOr(BaseOmega, 1f), 0.55f, 1f);
                 float previous = FiniteOr(state.PreviousResidualFloat, maxResidual);
                 bool previousValid = state.IterationCount > 0 && previous < float.MaxValue * 0.5f;
                 bool grew = previousValid && maxResidual > math.max(previous + tolerance * 0.25f, previous * 1.08f);
                 bool runaway = previousValid && maxResidual > math.max(0.5f, previous * 2f);
-                float omega = math.clamp(FiniteOr(state.Omega, baseOmega), 1f, 1.85f);
+                float omega = math.clamp(FiniteOr(state.Omega, baseOmega), 0.55f, 1f);
 
                 if (nonFiniteResidual)
                 {
                     flags = (ushort)(flags | SolverConvergenceFaultFlags.NonFinite | SolverConvergenceFaultFlags.Divergent);
-                    omega = 1f;
+                    omega = 0.55f;
                 }
                 else if (runaway)
                 {
                     flags = (ushort)(flags | SolverConvergenceFaultFlags.Divergent);
-                    omega = 1f;
+                    omega = 0.55f;
                 }
                 else if (grew)
                 {
-                    omega = math.max(1f, omega * 0.86f);
+                    omega = math.max(0.55f, omega * 0.86f);
                 }
                 else
                 {
@@ -2047,7 +2050,7 @@ namespace Hecton8.Power
                     nextPotential = (weightedPotential + injection) / denominator;
                 }
 
-                float omega = math.clamp(FiniteOr(convergenceState.Omega, 1f), 1f, 1.85f);
+                float omega = math.clamp(FiniteOr(convergenceState.Omega, 1f), 0.55f, 1f);
                 bool sourceAnchored = isolated || (source.Flags & SubmarineThermalGridStatusFlags.Source) != 0;
                 if (!sourceAnchored)
                     nextPotential = sourcePotential + (nextPotential - sourcePotential) * omega;
@@ -2082,18 +2085,16 @@ namespace Hecton8.Power
                 target.Flags = flags;
 
                 float residual = math.abs(nextPotential - sourcePotential);
-                int residualMask = math.max(0, ResidualSampleMask);
-                float sampledResidual = ((nodeIndex & residualMask) == 0)
-                    ? math.max(0f, FiniteOr(residual, float.MaxValue))
-                    : 0f;
+                float sampledResidual = math.max(0f, FiniteOr(residual, 1f));
                 if (potentialFault)
-                    sampledResidual = float.MaxValue;
+                    sampledResidual = math.max(sampledResidual, 1f);
                 if (sampledResidual > 0f)
                 {
-                    int slot = math.clamp(ThreadIndex, 0, math.max(1, ResidualSlotCount) - 1);
+                    int slotCount = math.clamp(ResidualSlotCount, 1, ResidualThreadSlotCount);
+                    int slot = math.clamp(ThreadIndex, 0, slotCount - 1);
                     ref SolverResidualSlot64 slotRef = ref UnsafeUtility.AsRef<SolverResidualSlot64>(ResidualSamples + slot);
                     slotRef.MaxResidualFloat = math.max(slotRef.MaxResidualFloat, sampledResidual);
-                    if (sampledResidual >= float.MaxValue * 0.5f)
+                    if (potentialFault)
                         slotRef.FaultFlags |= ResidualSlotFaultNonFinite;
                 }
 
@@ -2170,7 +2171,8 @@ namespace Hecton8.Power
                 float distanceSq = distanceSqDouble >= float.MaxValue ? float.MaxValue : (float)distanceSqDouble;
                 float radius = math.max(1f, HazardRadiusMeters);
                 float near01 = math.saturate(1f - distanceSq / math.max(Epsilon, radius * radius));
-                float cheapStep = math.step(0.02f, near01);
+                float cheapStep = math.saturate(near01 * 50f);
+                cheapStep = cheapStep * cheapStep * (3f - 2f * cheapStep);
                 float smooth = near01 * near01 * (3f - 2f * near01);
                 float qualityWeight = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
                 float sample01 = math.lerp(cheapStep, smooth, math.saturate((qualityWeight - 0.3f) * 1.4285715f));
@@ -2282,7 +2284,7 @@ namespace Hecton8.Power
                     MicroDamageCount = microDamage,
                     BrownoutCount = brownout,
                     ExternalHeatNodeCount = externalHeat,
-                    SolverOmega = math.clamp(FiniteOr(convergenceState.Omega, 1f), 1f, 1.85f),
+                    SolverOmega = math.clamp(FiniteOr(convergenceState.Omega, 1f), 0.55f, 1f),
                     TargetTolerance = math.max(Epsilon * 0.25f, FiniteOr(TargetTolerance, 0.001f))
                 };
                 Counters[CounterTelemetryCursor] = (cursor + 1) % TelemetryFrameCount;

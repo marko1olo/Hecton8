@@ -23,6 +23,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Core.Contracts.Signals;
     using Hecton8.Input;
     using Hecton8.Items;
+    using Hecton8.Physics;
     using Hecton8.Tools;
     using Hecton8.UI;
     using System;
@@ -172,7 +173,6 @@ namespace Hecton8.Gameplay
         private IInputService _cachedInputService;
         private ObjectPoolManager _cachedObjectPool;
         private SpatialAudioManager _cachedSpatialAudioManager;
-        private Rigidbody _playerRigidbody;
         private Transform _cachedTransform;
         private bool _isActive;
         private bool _isMoving;
@@ -200,6 +200,7 @@ namespace Hecton8.Gameplay
         private string _localizedSummaryStandbyFormat = "MANTA // STANDBY // BAT {0}%";
         private string[] _localizedSummaryActiveCache;
         private string[] _localizedSummaryStandbyCache;
+        private double3 _lastSeaglideAup;
         private string _localizedDirectiveInsertBattery = "Insert a battery to activate propulsion.";
         private string _localizedDirectiveSwapRecharge = "Battery depleted. Swap or recharge.";
         private string _localizedDirectiveHoldForward = "Hold forward to propel. Release to coast.";
@@ -218,7 +219,7 @@ namespace Hecton8.Gameplay
         private const string ActivationStateNoBattery = "NoBattery";
         private const string ActivationStateBatteryTooLow = "BatteryTooLow";
         private const string ActivationStateMissingPlayerMovement = "MissingPlayerMovement";
-        private const string ActivationStateMissingRigidbody = "MissingRigidbody";
+        private const string ActivationStateMissingRuntimeContext = "MissingRuntimeContext";
         private const string ActivationStateNotUnderwater = "NotUnderwater";
         private const string ActivationStateActivated = "Activated";
         private const string ActivationStateMoving = "ActiveMoving";
@@ -234,6 +235,7 @@ namespace Hecton8.Gameplay
         private float _misfireDeviationYawDegrees;
         private uint _misfireSequence;
         private float _empMisfireTimer;
+        private bool _hasLastSeaglideAup;
         private Light[] _headlightSlots;
         private Vector4[] _headlightPositionsWs;
         private Vector4[] _headlightDirectionsWs;
@@ -558,6 +560,7 @@ namespace Hecton8.Gameplay
 
             if (_isMoving)
             {
+                TrySubmitHydrodynamicRequest(deltaTime, driveThrottleOutput, currentCharge);
                 MarkScooterActiveForCentralSolver(true, driveThrottleOutput);
                 UpdatePowerIndicator();
                 UpdateHUD();
@@ -767,6 +770,7 @@ namespace Hecton8.Gameplay
             _isActive = false;
             _isMoving = false;
             _driveThrottleCurrent = 0f;
+            _hasLastSeaglideAup = false;
             MarkScooterActiveForCentralSolver(false, 0f);
             _debugActivationState = ActivationStateIdle;
             ResetMisfireState();
@@ -793,13 +797,87 @@ namespace Hecton8.Gameplay
 
         private bool IsPlayerMoving()
         {
-            if (_playerRigidbody == null)
+            if (!TryResolveSeaglideMovementState(out PlayerMovementRuntimeState movementState))
             {
-                _debugActivationState = ActivationStateMissingRigidbody;
+                _debugActivationState = ActivationStateMissingRuntimeContext;
                 return false;
             }
 
-            return _playerRigidbody.linearVelocity.sqrMagnitude > 0.25f;
+            return math.lengthsq(movementState.Velocity) > 0.25f;
+        }
+
+        private bool TrySubmitHydrodynamicRequest(float deltaTime, float driveThrottleOutput, float batteryCharge)
+        {
+            if (!TryResolveSeaglideMovementState(out PlayerMovementRuntimeState movementState))
+                return false;
+
+            float safeDelta = math.clamp(math.isfinite(deltaTime) && deltaTime > 0f ? deltaTime : Time.deltaTime, 0.0001f, 0.2f);
+            double3 currentAup = movementState.PredictedAup.ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(currentAup)))
+                return false;
+
+            double3 previousAup = _hasLastSeaglideAup
+                ? _lastSeaglideAup
+                : currentAup - new double3(
+                    movementState.Velocity.x * safeDelta,
+                    movementState.Velocity.y * safeDelta,
+                    movementState.Velocity.z * safeDelta);
+
+            float3 forward = SafeDirection(movementState.CameraForward, SafeDirection(movementState.Forward, new float3(0f, 0f, 1f)));
+            SeaglidePropulsionRequestDTO request = default;
+            request.CurrentAUP = currentAup;
+            request.PreviousAUP = previousAup;
+            request.InputVector = forward;
+            request.ForwardVector = SafeDirection(movementState.Forward, forward);
+            request.Throttle01 = math.saturate(driveThrottleOutput);
+            request.DeltaTime = safeDelta;
+            request.TargetEntityHash = SeaglideHydrodynamicsConstants.PlayerBodyTargetHash;
+            request.RequestHash = RuntimeToolId != 0u ? RuntimeToolId : SeaglideHydrodynamicsConstants.SourceHash;
+            request.Flags = SeaglideHydrodynamicsConstants.FlagActive | SeaglideHydrodynamicsConstants.FlagPlayerControlled;
+            request.BatteryLevel = math.saturate(batteryCharge);
+            request.SurfaceNormal = new float3(0f, 1f, 0f);
+
+            SeaglideStateDTO state = default;
+            state.CurrentAUP = currentAup;
+            state.Velocity = movementState.Velocity;
+            state.BatteryLevel = request.BatteryLevel;
+            state.ActiveFlags = request.Flags;
+            state.TargetEntityHash = request.TargetEntityHash;
+            state.MassKg = SeaglideHydrodynamicsConstants.DefaultBaseMassKg;
+            state.AddedMassKg = SeaglideHydrodynamicsConstants.DefaultAddedMassKg;
+
+            bool submitted = SeaglideHydrodynamicsRuntime.TrySubmitPlayerRequest(in request, in state);
+            _lastSeaglideAup = currentAup;
+            _hasLastSeaglideAup = true;
+            return submitted;
+        }
+
+        private static bool TryResolveSeaglideMovementState(out PlayerMovementRuntimeState movementState)
+        {
+            movementState = default;
+            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+                return false;
+
+            movementState = runtimeContext.MovementState;
+            bool hasPlayer = (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
+            return hasPlayer &&
+                   math.all(math.isfinite(movementState.Velocity)) &&
+                   math.all(math.isfinite(movementState.Forward)) &&
+                   math.all(math.isfinite(movementState.CameraForward));
+        }
+
+        private static Vector3 ResolveSeaglidePresentationVelocity(bool allowHeadlights)
+        {
+            if (!allowHeadlights || !TryResolveSeaglideMovementState(out PlayerMovementRuntimeState movementState))
+                return Vector3.zero;
+
+            return new Vector3(movementState.Velocity.x, movementState.Velocity.y, movementState.Velocity.z);
+        }
+
+        private static float3 SafeDirection(float3 value, float3 fallback)
+        {
+            float sq = math.lengthsq(value);
+            return math.select(fallback, value * math.rsqrt(math.max(sq, 0.000001f)), math.isfinite(sq) && sq > 0.000001f);
         }
 
         /// <summary>
@@ -816,17 +894,11 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Gets the additional propulsion force to apply.
-        /// Called by HectonPlayerMovement.SwimPhysics.
+        /// Legacy transport force path is disabled. SHINOBU_227 emits AUP force packets through SeaglideHydrodynamicsRuntime.
         /// </summary>
         public float GetPropulsionForce()
         {
-            float currentCharge = BatteryCharge;
-            if (_isTransportBroken || !_isActive || !_hasBattery || currentCharge < minChargeToActivate)
-                return 0f;
-
-            // Return additional force based on battery charge
-            return ResolveConfiguredTransportPropulsionForce() * ResolveEffectiveDriveThrottleOutput() * currentCharge; // Scale force with battery level
+            return 0f;
         }
 
         /// <summary>
@@ -862,7 +934,11 @@ namespace Hecton8.Gameplay
         public float GetTransportBoost01()
         {
             float propulsionReference = ResolveTransportPropulsionReference();
-            return math.saturate(GetPropulsionForce() / propulsionReference);
+            if (_isTransportBroken || !_isActive || !_hasBattery || BatteryCharge < minChargeToActivate)
+                return 0f;
+
+            float authoredForce = ResolveConfiguredTransportPropulsionForce() * ResolveEffectiveDriveThrottleOutput() * BatteryCharge;
+            return math.saturate(authoredForce / propulsionReference);
         }
 
         /// <summary>
@@ -1642,7 +1718,7 @@ namespace Hecton8.Gameplay
 
         private void PublishVolumetricSiltGlobals(float deltaTime, bool allowHeadlights)
         {
-            Vector3 velocity = allowHeadlights && _playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero;
+            Vector3 velocity = ResolveSeaglidePresentationVelocity(allowHeadlights);
             float speedSq = velocity.sqrMagnitude;
             float speed = ApproximateMagnitudeFromSq(speedSq);
             float previousSpeedSq = _lastPublishedVolumetricVelocity.sqrMagnitude;
@@ -2041,10 +2117,7 @@ namespace Hecton8.Gameplay
             if (_mantaSurvivalSystem == null && _playerMovement != null)
                 _playerMovement.TryGetComponent(out _mantaSurvivalSystem);
 
-            if (_playerRigidbody == null && _playerMovement != null)
-                _playerMovement.TryGetComponent(out _playerRigidbody);
-
-            if ((_playerMovement == null || _mantaSurvivalSystem == null || _playerRigidbody == null) &&
+            if ((_playerMovement == null || _mantaSurvivalSystem == null) &&
                 GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
                 if (_playerMovement == null)
@@ -2052,9 +2125,6 @@ namespace Hecton8.Gameplay
 
                 if (_mantaSurvivalSystem == null)
                     playerTransform.TryGetComponent(out _mantaSurvivalSystem);
-
-                if (_playerRigidbody == null)
-                    playerTransform.TryGetComponent(out _playerRigidbody);
             }
         }
 

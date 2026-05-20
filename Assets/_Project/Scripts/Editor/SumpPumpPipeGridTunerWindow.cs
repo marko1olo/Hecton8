@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text;
 using Hecton8.Construction;
 using UnityEditor;
 using UnityEngine;
@@ -13,13 +11,16 @@ namespace Hecton8.Editor
     public sealed class SumpPumpPipeGridTunerWindow : EditorWindow
     {
         private Label _statusLabel;
-        private Label _telemetryLabel;
+        private IntegerField _frameField;
+        private FloatField _evacuatedField;
+        private IntegerField _pumpsField;
+        private FloatField _pressureField;
+        private IntegerField _solverMicrosField;
         private Slider _conductanceSlider;
         private Slider _pumpPowerSlider;
         private Slider _jacobiSlider;
         private Button _mockButton;
         private DrainageTuningDTO _cachedTuning;
-        private readonly StringBuilder _readoutBuilder = new StringBuilder(160);
         private double _nextReadoutRefresh;
 
         [MenuItem("HECTON-8/Base Drainage Tuner")]
@@ -54,9 +55,17 @@ namespace Hecton8.Editor
             rootVisualElement.style.paddingBottom = 10f;
 
             _statusLabel = new Label("Runtime: PENDING");
-            _telemetryLabel = new Label("Telemetry: PENDING");
             rootVisualElement.Add(_statusLabel);
-            rootVisualElement.Add(_telemetryLabel);
+            _frameField = CreateReadoutInteger("Frame");
+            _evacuatedField = CreateReadoutFloat("Evacuated m3");
+            _pumpsField = CreateReadoutInteger("Active Pumps");
+            _pressureField = CreateReadoutFloat("Average Pressure");
+            _solverMicrosField = CreateReadoutInteger("Solver us");
+            rootVisualElement.Add(_frameField);
+            rootVisualElement.Add(_evacuatedField);
+            rootVisualElement.Add(_pumpsField);
+            rootVisualElement.Add(_pressureField);
+            rootVisualElement.Add(_solverMicrosField);
 
             SumpPumpPipeGridRuntime.TryGetTuning(out _cachedTuning);
             _conductanceSlider = CreateSlider("Base Pipe Conductance", 0.001f, 0.4f, _cachedTuning.BasePipeConductance, OnConductanceChanged);
@@ -75,6 +84,22 @@ namespace Hecton8.Editor
             Slider slider = new Slider(label, min, max) { value = value };
             slider.RegisterValueChangedCallback(callback);
             return slider;
+        }
+
+        private static IntegerField CreateReadoutInteger(string label)
+        {
+            IntegerField field = new IntegerField(label);
+            field.SetEnabled(false);
+            field.SetValueWithoutNotify(0);
+            return field;
+        }
+
+        private static FloatField CreateReadoutFloat(string label)
+        {
+            FloatField field = new FloatField(label);
+            field.SetEnabled(false);
+            field.SetValueWithoutNotify(0f);
+            return field;
         }
 
         private void OnConductanceChanged(ChangeEvent<float> evt)
@@ -104,7 +129,7 @@ namespace Hecton8.Editor
 
         private void RefreshReadout()
         {
-            if (_statusLabel == null || _telemetryLabel == null)
+            if (_statusLabel == null || _frameField == null || _evacuatedField == null || _pumpsField == null || _pressureField == null || _solverMicrosField == null)
                 return;
 
             bool hasRuntime = SumpPumpPipeGridRuntime.HasActiveRuntime;
@@ -112,23 +137,25 @@ namespace Hecton8.Editor
 
             if (SumpPumpPipeGridRuntime.TryGetLatestTelemetry(out DrainageTelemetryEntry entry))
             {
-                _readoutBuilder.Clear();
-                _readoutBuilder.Append("Frame ");
-                _readoutBuilder.Append(entry.FrameIndex);
-                _readoutBuilder.Append(" | Evacuated ");
-                _readoutBuilder.Append(entry.FrameEvacuatedM3.ToString("0.000", CultureInfo.InvariantCulture));
-                _readoutBuilder.Append(" m3 | Pumps ");
-                _readoutBuilder.Append(entry.ActivePumpCount);
-                _readoutBuilder.Append(" | Pressure ");
-                _readoutBuilder.Append(entry.AveragePressure.ToString("0.000", CultureInfo.InvariantCulture));
-                _readoutBuilder.Append(" | us ");
-                _readoutBuilder.Append(entry.SolverWallMicroseconds);
-                _telemetryLabel.text = _readoutBuilder.ToString();
+                _frameField.SetValueWithoutNotify(ClampUIntToInt(entry.FrameIndex));
+                _evacuatedField.SetValueWithoutNotify(entry.FrameEvacuatedM3);
+                _pumpsField.SetValueWithoutNotify(ClampUIntToInt(entry.ActivePumpCount));
+                _pressureField.SetValueWithoutNotify(entry.AveragePressure);
+                _solverMicrosField.SetValueWithoutNotify(ClampUIntToInt(entry.SolverWallMicroseconds));
             }
             else
             {
-                _telemetryLabel.text = "Telemetry: PENDING";
+                _frameField.SetValueWithoutNotify(0);
+                _evacuatedField.SetValueWithoutNotify(0f);
+                _pumpsField.SetValueWithoutNotify(0);
+                _pressureField.SetValueWithoutNotify(0f);
+                _solverMicrosField.SetValueWithoutNotify(0);
             }
+        }
+
+        private static int ClampUIntToInt(uint value)
+        {
+            return value > int.MaxValue ? int.MaxValue : (int)value;
         }
     }
 }

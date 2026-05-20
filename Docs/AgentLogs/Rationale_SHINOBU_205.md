@@ -272,3 +272,23 @@ Solution: Use root-relative presentation subtraction and existing local rotation
 Rejected Alternatives: AUP fabrication for a shader-only dent presenter.
 Scalability potential: Low keeps small dent buffer; High/Ultra can push more visual dent fidelity without touching simulation coordinates.
 Hardware Impact: Removes one strict blocker and two double3 conversions per dent registration.
+
+## Loop 14 Final Strict Gate Decisions
+
+Problem: The static gate still reported 18 strict authority blockers where cold/bootstrap or save-sync code converted `Transform.position` directly with `AbsoluteUniversePosition.FromRuntimePosition` or `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3`.
+Solution: Replaced those direct conversions in `PlayerBuilder`, `ConstructionManager`, `HabitatConstructionManager`, `DroneFleetManager`, `HabitatFluidIncursionDirector`, `SubmarineStructuralGrid`, `ScannableTarget`, `ThermalGeyser`, `AbyssalThermodynamicsSolver`, `BaseIntegrityHUD`, `ChemicalInfluenceGrid`, `EmergencyServiceRelay`, and `PersistentWorldRegistry` with explicit runtime-origin AUP helpers: `originAup = GlobalSignals.CurrentRuntimeOriginAup(); resolved = AbsoluteUniversePosition.OffsetMeters(in originAup, double3(runtimePosition))`. The conversion now makes the origin AUP authority explicit and keeps the local runtime delta small before any later float use.
+Rejected Alternatives: Keeping direct `FromRuntimePosition(transform.position)` wrappers, reducing the gate threshold, adding new sibling-domain AUP services, or creating new DataVault lanes for authored scene objects. Direct wrappers hide authority debt; new global lanes violate owner-local routing without a defined owner.
+Scalability potential: Low-tier devices keep identical coordinate correctness while evaluating fewer entities through existing quality gates. Middle/high/ultra can increase construction, thermal, scanner, and world-residency visual density without changing the AUP rule. No binary quality switch was added.
+Hardware Impact: Static blockers dropped from 18 to 0; direct AUP float casts remain 0 and runtime component AUP float casts remain 0. Runtime microsecond savings are not claimed; this is precision and rollback stability. The avoided failure is 100 km mantissa loss and save/streaming hash drift after origin shifts.
+
+Problem: Some remaining bridge sites had existing owner data while others were cold-authored scene handoffs.
+Solution: Preferred existing owner AUP when present (`drone.TargetAup`, player movement AUP, persisted record AUP, grid origin, integrity center) and used the runtime-origin helper only at cold/bootstrap or authored-scene boundaries where no owner route exists. Non-finite helper inputs fail closed or fall back to current runtime origin only for non-authoritative signal defaults.
+Rejected Alternatives: Using `Transform.position` as a universal fallback or failing all authored scene objects closed. The former is false authority; the latter would break existing authored relays, vents, scanner entries, and construction save sync before those domains expose owner AUP.
+Scalability potential: Low/Middle/High/Ultra all share one origin-plus-local-delta rule. More expensive visuals can be added above this layer without reintroducing float-first math.
+Hardware Impact: Prevents hidden route-state corruption during origin shifts without adding per-frame allocations or hot `GlobalRegistry` polling inside jobs.
+
+Problem: Verification had to avoid a premature rebuild.
+Solution: Ran `python Tools\AupPrecisionGate_SHINOBU_205.py` and targeted `git diff --check` only. The gate returned `PASS_STATIC_GATE` over 1994 C# files: direct casts 0, runtime component casts 0, editor component reviews 5, strict Transform authority reads 0.
+Rejected Alternatives: Launching `dotnet build` after regex-only edits despite explicit rebuild discipline.
+Scalability potential: Tooling-only proof; CI can enforce the same gate without Unity Editor startup.
+Hardware Impact: 24.6 s cold static scan cost; 0 runtime us.

@@ -2318,11 +2318,11 @@ Exact Microseconds saved: runtime CPU unchanged in this proof pass. The preserve
 
 What was wrong: SHINOBU's respawn runtime had migrated to pointer-free Vault generation descriptors, but the shared shader-global bridge used by the Dear Lie VisualSync path still cached `ShaderGlobalState` with `VaultBufferHandle<float4>` and called `.Resolve(vault)`. That bridge sat directly downstream of the respawn fade payload and preserved a stale-pointer failure mode outside the Physiology file.
 
-What was done: migrated `HectonShaderGlobalDataVaultBridge` to `VaultGenerationHandle<float4>`. Existing shader slot buffers are recovered through `IDataVault.TryGetGenerationHandle`, missing buffers are created through `IDataVault.GetGenerationHandle` only when allocation is unlocked, and writes resolve a method-local `NativeArray<float4>` with `IDataVault.TryResolveHandle` before touching the slot. SHINOBU still calls only `PublishRespawnDearLie(IDataVault, Vector4)` from VisualSync and teardown clear.
+What was done: migrated `HectonShaderGlobalDataVaultBridge` to `VaultGenerationHandle<float4>`. Existing shader slot buffers are recovered through `IDataVault.TryGetGenerationHandle`, missing buffers are created through `IDataVault.GetGenerationHandle` only when the caller explicitly allows allocation and the Vault is unlocked, and writes resolve a method-local `NativeArray<float4>` with `IDataVault.TryResolveHandle` before touching the slot. SHINOBU still calls only `PublishRespawnDearLie(IDataVault, Vector4)` from VisualSync and teardown clear; that overload passes `allowAllocation:false`.
 
 Cinematic Cheats used: no physical death travel, UI overlay, or scene reload was added. The Dear Lie remains a shader-only blackout/grain/chroma illusion, with the same continuous `GlobalQualityWeight` detail curve.
 
-Exact Microseconds saved: steady-state frame cost is unchanged except for avoiding legacy pointer refresh. The safety gain is stale-handle avoidance on Vault relocation or service replacement; no managed allocation, new signal, or new job was introduced.
+Exact Microseconds saved: steady-state frame cost is unchanged except for avoiding legacy pointer refresh. The safety gain is stale-handle avoidance on Vault relocation or service replacement; missing shader storage now falls back instead of allocating from the respawn VisualSync route. No managed allocation, new signal, or new job was introduced.
 
 <SELF_AUDIT agent_id="SHINOBU_155" focus="SHADER_BRIDGE_GENERATION_DESCRIPTOR_MIGRATION" status="PENDING_COMPILE_RUNTIME_PROOF_EXTERNAL_BRIDGE_ERRORS">
   <task_reconciliation>
@@ -2354,7 +2354,7 @@ Exact Microseconds saved: steady-state frame cost is unchanged except for avoidi
     No quality math changed. Below `GlobalQualityWeight < 0.3`, the respawn presentation still collapses through the existing fade-rate lerp and UberNoir detail gate, suppressing chroma/grain cost while preserving blackout cover. Middle/high/ultra retain progressively stronger shader detail without changing CPU simulation.
   </scalability_curve_explanation>
   <h_phi_vault_status>
-    SHINOBU still declares zero private native containers. Respawn-owned buffers remain `71604..71613`; the shared shader bridge uses `BufferID.ShaderGlobalState` through the Vault and caches only a pointer-free generation descriptor.
+    SHINOBU still declares zero private native containers. Respawn-owned buffers remain `71604..71613`; the shared shader bridge uses `BufferID.ShaderGlobalState` through the Vault and caches only a pointer-free generation descriptor. SHINOBU's cached-vault overload is no-allocation when the slot buffer is absent.
   </h_phi_vault_status>
   <pointer_aliasing_dependency_graph>
     Job graph unchanged: dispatcher `dependsOn` feeds `ResetPlayerPhysiologyJob`, then `UpdateRespawnFadeJob`, then VisualSync reads the completed fade row and writes one shader-global slot. Burst job pointer lanes remain `[NoAlias]`; shader bridge slot writes are main-thread VisualSync work guarded by Vault lock/unlock.
@@ -2366,6 +2366,62 @@ Exact Microseconds saved: steady-state frame cost is unchanged except for avoidi
     Heavy death transition remains replaced by O(1) signal/Vault state, bounded O(8) med-bay target search, and GPU-only blackout/grain/chroma. The bridge patch changes the transport handle, not the illusion.
   </dear_lie_confirmation>
   <verification>
-    Static scans show no `VaultBufferHandle<float4>`, `.Resolve(vault)`, `TryGetBufferHandle(BufferID.ShaderGlobalState)`, or `GetBufferHandle<float4>` in `HectonShaderGlobalDataVaultBridge.cs`. SHINOBU publishes respawn Dear Lie through the cached-vault overload. Active/archive mirrors hash-match. `git diff --check` reports only existing CRLF warnings on the touched bridge file and architecture ledger. CPU sampled `100%`; build not launched.
+    Static scans show no `VaultBufferHandle<float4>`, `.Resolve(vault)`, `TryGetBufferHandle(BufferID.ShaderGlobalState)`, or `GetBufferHandle<float4>` in `HectonShaderGlobalDataVaultBridge.cs`. SHINOBU publishes respawn Dear Lie through the cached-vault overload with `allowAllocation:false`; `GetGenerationHandle<float4>` remains only behind allocation-allowed bridge calls. Active/archive mirrors hash-match. `git diff --check` reports only existing CRLF warnings on the touched bridge file and architecture ledger. CPU sampled `100%`; build not launched.
+  </verification>
+</SELF_AUDIT>
+
+## 2026-05-20 - Med-Bay Radius And Fault-Flag Isolation
+
+What was wrong: the tuning row exposed `MedicalBaySearchRadiusMeters`, but the death reconciliation target search ignored it in both the PreSimulation resolver and the Burst fallback scan. The resolver also polluted successful respawns by carrying `InvalidTargetAup` from rejected candidates into the final flags even when a later valid med bay was selected.
+
+What was done: both med-bay search paths now sanitize tuning, derive `radius * radius`, reject out-of-radius candidates, and isolate rejected-candidate fault bits until fallback is actually chosen. Editor tuning writes now use the same sanitizer as runtime and clamp invulnerability seconds plus med-bay radius.
+
+Cinematic Cheats used: no physical traversal, ragdoll, scene reload, or nav query was added. The player still receives an atomic Vault AUP handoff plus the shader Dear Lie cover; radius just bounds the target choice.
+
+Exact Microseconds saved: rare death path adds one radius compare per candidate and can skip clearance work for distant rows. The main gain is forensic correctness: valid selected med-bay routes no longer trigger false target-fault telemetry or unnecessary dump analysis.
+
+<SELF_AUDIT agent_id="SHINOBU_155" focus="MED_BAY_RADIUS_FAULT_FLAG_ISOLATION" status="PENDING_COMPILE_RUNTIME_PROOF_EXTERNAL_BRIDGE_ERRORS">
+  <task_reconciliation>
+    <task id="01" status="PASS">No scene reload API added.</task>
+    <task id="02" status="PASS">No player destroy/instantiate route added.</task>
+    <task id="03" status="PASS">Touched hot DTOs still expose fields, not properties.</task>
+    <task id="04" status="PASS">No DTO size or `Pack=` change; tuning remains explicit 64 bytes.</task>
+    <task id="05" status="PASS">Mock med-bay fallback remains deterministic and bounded.</task>
+    <task id="06" status="PASS">Fatal damage signal route unchanged.</task>
+    <task id="07" status="PASS">Reset kernel now honors staged target first and radius-gates fallback scan.</task>
+    <task id="08" status="PASS">Dear Lie shader transition unchanged; no CPU travel simulation added.</task>
+    <task id="09" status="PASS">AUP teleport route unchanged.</task>
+    <task id="10" status="PASS">Async fade route unchanged.</task>
+    <task id="11" status="PASS">No binary quality switch added.</task>
+    <task id="12" status="PASS">Ecosystem aggro reset route unchanged.</task>
+    <task id="13" status="PASS">Med-bay distance still subtracts AUP in double precision before local checks.</task>
+    <task id="14" status="PASS">Rollback/blittable DTO route unchanged.</task>
+    <task id="15" status="PASS">No private native allocation added.</task>
+    <task id="16" status="PASS">Telemetry flags now better reflect the final route instead of discarded candidates.</task>
+    <task id="17" status="PASS">Editor tuning facade writes through the runtime sanitizer.</task>
+    <task id="18" status="PASS">CSV penalty ingestor unchanged.</task>
+    <task id="19" status="PASS">Editor gizmo unchanged.</task>
+    <task id="20" status="PARTIAL">Static source/docs updated. Unity import, profiler/GCMonitor, and player proof remain pending.</task>
+  </task_reconciliation>
+  <struct_layout_verification>
+    `RespawnTuningDTO` remains the primary touched DTO and remains 64 bytes. Existing proof: `FallbackLifepodAUP` offset 0 size 24; fade, penalty, clearance, invulnerability, and radius scalar lanes remain 4-byte aligned; flags and padding complete the explicit 64-byte row. No layout directive or field order changed in this patch.
+  </struct_layout_verification>
+  <scalability_curve_explanation>
+    Med-bay radius is a continuous scalar, not a low/high switch. A smaller designer radius reduces candidate acceptance work on weak devices; wider radius remains available for larger bases on higher tiers. Respawn visual cost still scales through `GlobalQualityWeight` in the fade job and UberNoir detail gate.
+  </scalability_curve_explanation>
+  <h_phi_vault_status>
+    No private array allocation was introduced. The patch uses existing Vault buffers: `71606` med bays, `71608` tuning, `71604` state, and `71613` request. Lifetimes remain owner-local through existing generation descriptors.
+  </h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>
+    Job graph unchanged: dispatcher dependency feeds `ResetPlayerPhysiologyJob`, then `UpdateRespawnFadeJob`; VisualSync waits on completed fade state. Existing `[NoAlias]` lanes remain on med bays, request/state, tuning, vitals, decompression, tissue, scalar, metabolism, kinematic, telemetry, fade, penalty rules, and command payload pointers.
+  </pointer_aliasing_dependency_graph>
+  <compile_guard>
+    No asmdef or namespace dependency changed. Physiology still has no direct sibling runtime dependency for World, Physics, Rendering, Inventory, AI, Fauna, Construction, Habitat, Graphics, or Gameplay.
+  </compile_guard>
+  <dear_lie_confirmation>
+    Heavy physical respawn remains replaced by O(1) signal/Vault state, bounded O(8) med-bay selection, and shader blackout/grain/chroma. The radius patch narrows candidate selection without adding raycasts, navigation, ragdolls, scene reloads, or object churn.
+  </dear_lie_confirmation>
+  <verification>
+    Focused source scan found `MedicalBaySearchRadiusMeters` consumed in both runtime and Burst fallback scans. Forbidden scan over touched Physiology source found no LINQ, foreach, managed collection allocation, `Pack=`, DTO property, legacy Vault handle, or `.Resolve(vault)` hit. Active/archive mirrors hash-match. CPU sampled `100%`, so build was not launched.
   </verification>
 </SELF_AUDIT>

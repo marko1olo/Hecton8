@@ -67,178 +67,6 @@ function Test-ColdAnnotated {
     return $false
 }
 
-function Get-MethodName {
-    param([string]$Line)
-    $trimmed = $Line.TrimStart()
-    if ((Test-CommentLine $Line) -or
-        $trimmed.StartsWith("if") -or
-        $trimmed.StartsWith("for") -or
-        $trimmed.StartsWith("while") -or
-        $trimmed.StartsWith("switch") -or
-        $trimmed.StartsWith("catch") -or
-        $trimmed.StartsWith("using") -or
-        $trimmed.StartsWith("lock") -or
-        $trimmed.StartsWith("return") -or
-        $trimmed.StartsWith("new ")) {
-        return $null
-    }
-
-    $open = $Line.IndexOf("(")
-    if ($open -le 0) {
-        return $null
-    }
-
-    $equals = $Line.IndexOf("=")
-    if ($equals -ge 0 -and $equals -lt $open) {
-        return $null
-    }
-
-    $cursor = $open - 1
-    while ($cursor -ge 0 -and [char]::IsWhiteSpace($Line[$cursor])) {
-        $cursor--
-    }
-
-    $end = $cursor
-    while ($cursor -ge 0 -and ([char]::IsLetterOrDigit($Line[$cursor]) -or $Line[$cursor] -eq "_")) {
-        $cursor--
-    }
-
-    $start = $cursor + 1
-    if ($start -gt $end) {
-        return $null
-    }
-
-    $name = $Line.Substring($start, $end - $start + 1)
-    if ($name -in @("if", "for", "while", "switch", "catch", "using", "lock", "return", "nameof")) {
-        return $null
-    }
-
-    return $name
-}
-
-function Get-BodyRange {
-    param([string[]]$Lines, [int]$SignatureLine)
-    $depth = 0
-    $started = $false
-    $startLine = -1
-    for ($i = $SignatureLine; $i -lt $Lines.Length; $i++) {
-        $line = $Lines[$i]
-        if (-not $started) {
-            $open = ($line.ToCharArray() | Where-Object { $_ -eq "{" }).Count
-            $close = ($line.ToCharArray() | Where-Object { $_ -eq "}" }).Count
-            if ($open -le 0) {
-                if ($line.Contains(";")) {
-                    return $null
-                }
-
-                continue
-            }
-
-            $started = $true
-            $startLine = $i
-            $depth += $open - $close
-            if ($depth -le 0) {
-                return [pscustomobject]@{ Start = $startLine; End = $i }
-            }
-
-            continue
-        }
-
-        $depth += (($line.ToCharArray() | Where-Object { $_ -eq "{" }).Count) -
-            (($line.ToCharArray() | Where-Object { $_ -eq "}" }).Count)
-        if ($depth -le 0) {
-            return [pscustomobject]@{ Start = $startLine; End = $i }
-        }
-    }
-
-    return $null
-}
-
-function New-HotMap {
-    param([string[]]$Lines)
-
-    $hot = New-Object bool[] $Lines.Length
-    $methods = New-Object System.Collections.Generic.List[object]
-    $byName = @{}
-    $callRegex = [regex]"\b([A-Za-z_][A-Za-z0-9_]*)\s*\("
-
-    for ($i = 0; $i -lt $Lines.Length; $i++) {
-        $name = Get-MethodName $Lines[$i]
-        if ($null -eq $name) {
-            continue
-        }
-
-        $body = Get-BodyRange $Lines $i
-        if ($null -eq $body) {
-            continue
-        }
-
-        $calls = New-Object System.Collections.Generic.HashSet[string]
-        for ($lineIndex = $body.Start; $lineIndex -le $body.End; $lineIndex++) {
-            $line = $Lines[$lineIndex]
-            if (Test-CommentLine $line) {
-                continue
-            }
-
-            foreach ($match in $callRegex.Matches($line)) {
-                [void]$calls.Add($match.Groups[1].Value)
-            }
-        }
-
-        $range = [pscustomobject]@{
-            Name = $name
-            Start = $body.Start
-            End = $body.End
-            IsHot = (Test-HotSignature $Lines[$i])
-            Calls = $calls
-        }
-
-        $methods.Add($range) | Out-Null
-        if (-not $byName.ContainsKey($name)) {
-            $byName[$name] = New-Object System.Collections.Generic.List[object]
-        }
-
-        $byName[$name].Add($range) | Out-Null
-    }
-
-    $queue = New-Object System.Collections.Generic.Queue[object]
-    foreach ($method in $methods) {
-        if ($method.IsHot) {
-            $queue.Enqueue($method)
-        }
-    }
-
-    while ($queue.Count -gt 0) {
-        $method = $queue.Dequeue()
-        foreach ($call in $method.Calls) {
-            if (-not $byName.ContainsKey($call)) {
-                continue
-            }
-
-            foreach ($callee in $byName[$call]) {
-                if ($callee.IsHot) {
-                    continue
-                }
-
-                $callee.IsHot = $true
-                $queue.Enqueue($callee)
-            }
-        }
-    }
-
-    foreach ($method in $methods) {
-        if (-not $method.IsHot) {
-            continue
-        }
-
-        for ($lineIndex = $method.Start; $lineIndex -le $method.End -and $lineIndex -lt $hot.Length; $lineIndex++) {
-            $hot[$lineIndex] = $true
-        }
-    }
-
-    return $hot
-}
-
 function Test-LikelyHotContext {
     param([string[]]$Lines, [int]$LineIndex)
     $start = [Math]::Max(0, $LineIndex - 16)
@@ -249,6 +77,33 @@ function Test-LikelyHotContext {
 
         if (Test-HotSignature $Lines[$i]) {
             return $true
+        }
+    }
+
+    return $false
+}
+
+function Test-LineInHotMethod {
+    param([string[]]$Lines, [int]$LineIndex)
+    $start = [Math]::Max(0, $LineIndex - 320)
+    for ($i = $LineIndex; $i -ge $start; $i--) {
+        $line = $Lines[$i]
+        if (Test-CommentLine $line) {
+            continue
+        }
+
+        if (Test-HotSignature $line) {
+            return $true
+        }
+
+        $trimmed = $line.TrimStart()
+        if (($trimmed.StartsWith("public ") -or
+             $trimmed.StartsWith("private ") -or
+             $trimmed.StartsWith("internal ") -or
+             $trimmed.StartsWith("protected ")) -and
+            $trimmed.Contains("(") -and
+            -not (Test-HotSignature $line)) {
+            return $false
         }
     }
 
@@ -280,7 +135,7 @@ $result = [ordered]@{
     agent = "SHINOBU_206"
     status = "PENDING_VERIFICATION"
     scope = $ScriptsRoot
-    reportModel = "FAST_TOKEN_FILE_CALL_GRAPH_SCAN"
+    reportModel = "FAST_TOKEN_CONTEXT_SCAN_WITH_LEGACY_HELPER_GATE"
     scannedTokenFiles = $hitsByFile.Count
     totalSyncTokens = 0
     coldOrEditorTokens = 0
@@ -303,11 +158,6 @@ $result = [ordered]@{
 foreach ($path in $hitsByFile.Keys) {
     $lines = @(Get-Content -LiteralPath $path)
     $editorFile = Test-EditorFile $path $lines
-    $hotMap = $null
-    if (-not $editorFile) {
-        $hotMap = New-HotMap $lines
-    }
-
     foreach ($hit in $hitsByFile[$path]) {
         $lineIndex = $hit.LineNumber - 1
         if ($lineIndex -lt 0 -or $lineIndex -ge $lines.Length) {
@@ -319,9 +169,9 @@ foreach ($path in $hitsByFile.Keys) {
             continue
         }
 
-        $hasComplete = $line.Contains(".Complete(") -or $line.Contains("CompleteAll(")
-        $hasRun = $line.Contains(".Run(") -and -not $line.Contains("Task.Run(")
-        $hasForcedFence = $line.Contains("TryComplete(") -and ($line.Contains("forceComplete: true") -or $line.Contains(", true)"))
+        $hasComplete = ($line -match '\.\s*Complete\s*\(') -or ($line -match '\bCompleteAll\s*\(')
+        $hasRun = ($line -match '\.\s*Run\s*\(') -and -not ($line -match '\bTask\s*\.\s*Run\s*\(')
+        $hasForcedFence = ($line -match '\bTryComplete\s*\(') -and (($line -match 'forceComplete\s*:\s*true') -or ($line -match ',\s*true\s*\)'))
         if (-not ($hasComplete -or $hasRun -or $hasForcedFence)) {
             continue
         }
@@ -357,7 +207,7 @@ foreach ($path in $hitsByFile.Keys) {
             $result.forcedFenceTokens++
         }
 
-        $isMethodHot = $hotMap -ne $null -and $hotMap[$lineIndex]
+        $isMethodHot = -not $editorFile -and (Test-LineInHotMethod $lines $lineIndex)
         $isHot = $isMethodHot -or (Test-LikelyHotContext $lines $lineIndex)
         if ($isHot) {
             $result.hotPathTokens++

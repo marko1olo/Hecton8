@@ -50,7 +50,7 @@ Submission separation: Next Fest registration/commitment uses the showcase track
 |  1 week | Publish "demo coming" announcement only if platform rules allow it, `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED`, `steam_announcement_permission_gate = ALLOW_STEAM_ANNOUNCEMENT_VERIFIED`, and CTA/access route gates pass. |
 | Event start | Push demo, Steam announcement, creator batch, community posts only after their exact permission gates pass. |
 | Event mid | Publish systems update and fix critical blockers. |
-| Event end | Recap, approved Steam CTA after CTA activation, feedback digest. |
+| Event end | Recap, gated Steam CTA after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass, feedback digest. |
 
 ## Event Content Beats
 
@@ -61,7 +61,7 @@ Submission separation: Next Fest registration/commitment uses the showcase track
 | Day 3 | Seed Ship/anomaly teaser. |
 | Day 4 | Community feedback fixes, if real. |
 | Day 5 | Creator highlight, only if creator consent/coverage exists. |
-| Final day | Last chance to play demo / approved Steam CTA after CTA activation. |
+| Final day | Last chance to play demo / gated Steam CTA after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass. |
 
 ## Event Pitch
 
@@ -77,7 +77,7 @@ The HECTON-8 demo is live on Steam for [event name].
 
 Your audience fits because [verified content pattern]. The demo is a single player first underwater survival slice focused on pressure, machinery, salvage, and black water exploration. Proof first scope, no competitor war pitch.
 
-Steam/demo: [approved public Steam/demo URL after CTA activation packet]
+Steam/demo: [gated public Steam/demo URL after `steam_page_publish_permission_gate`, `demo_public_access_permission_gate` where demo is linked, and `public_cta_permission_gate` pass]
 Suggested angle: [segment angle]
 
 If you cover it, disclosure: demo/key provided by developer where applicable.

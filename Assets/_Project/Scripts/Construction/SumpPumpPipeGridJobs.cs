@@ -653,7 +653,9 @@ namespace Hecton8.Construction
                     {
                         activePumpCount++;
                         frameEvacuated += evacuationRate * deltaTime;
-                        powerDraw += math.max(0f, math.isfinite(pump.PowerDraw) ? pump.PowerDraw : 0f);
+                        float maxRate = math.max(0f, math.isfinite(pump.MaxPumpRate) ? pump.MaxPumpRate : 0f);
+                        float utilization = maxRate > 0.000001f ? math.saturate(evacuationRate * math.rcp(maxRate)) : 0f;
+                        powerDraw += math.max(0f, math.isfinite(pump.PowerDraw) ? pump.PowerDraw : 0f) * utilization;
                     }
 
                     float pumpMassError = ReadFloat(PumpMassErrorM3, i, 0f);

@@ -22,9 +22,9 @@ namespace Hecton8.Optimization
         private const int Tier56WarningSlots = 0;
         private const int StarvationFrameThreshold = 60;
         private const long BytesPerMegabyte = 1024L * 1024L;
-        private const long UiMipDowngradeThresholdBytes = 1700L * BytesPerMegabyte;
-        private const long UiMipRestoreThresholdBytes = 1400L * BytesPerMegabyte;
-        private const int LowVramDeviceThresholdMb = 2048;
+        private const int UnknownGraphicsBudgetMb = 1800;
+        private const float UiMipDowngradePressureFraction = 1700f / 2048f;
+        private const float UiMipRestorePressureFraction = 1400f / 2048f;
         private const uint UiMipGateHighHash = 0xB157A301u;
         private const uint UiMipGateRestoreHash = 0xB157A302u;
         private const uint UiTextureContextHash = 0x71C0A11Du;
@@ -61,10 +61,8 @@ namespace Hecton8.Optimization
         private readonly uint[] _addressableGroupKeys = new uint[AddressableGroupMapCapacity];
         private readonly byte[] _addressableGroupValues = new byte[AddressableGroupMapCapacity];
         private int _addressableGroupCount;
-        private int _baselineGlobalTextureMipLimit;
-        private int _activeGlobalTextureMipLimit;
         private long _lastObservedVramBytes;
-        private bool _mipGateInitialized;
+        private long _graphicsBudgetBytes;
         private bool _uiMipBiasGateActive;
         private VRAMMonitor _vramMonitor;
         private VRAMPressureMonitor _vramPressure;
@@ -125,13 +123,9 @@ namespace Hecton8.Optimization
         }
 #endif
 
-        private void Awake()
-        {
-            CaptureMipBiasBaseline();
-        }
-
         private void OnEnable()
         {
+            RefreshGraphicsBudgetBytes();
             CacheDependencies();
             TryRegisterHotSwap();
             if (TryRegisterService())
@@ -140,6 +134,7 @@ namespace Hecton8.Optimization
 
         private void Start()
         {
+            RefreshGraphicsBudgetBytes();
             CacheDependencies();
             TryRegisterHotSwap();
             TryRegister();
@@ -147,6 +142,7 @@ namespace Hecton8.Optimization
 
         private void OnDisable()
         {
+            ClearUiMipBiasGate();
             TryUnregister();
             TryUnregisterHotSwap();
             TryUnregisterService();
@@ -155,6 +151,7 @@ namespace Hecton8.Optimization
 
         private void OnDestroy()
         {
+            ClearUiMipBiasGate();
             TryUnregister();
             TryUnregisterHotSwap();
             TryUnregisterService();
@@ -306,16 +303,6 @@ namespace Hecton8.Optimization
                 governor.ForceDrainPendingReleaseQueue();
         }
 
-        private void CaptureMipBiasBaseline()
-        {
-            if (_mipGateInitialized)
-                return;
-
-            _baselineGlobalTextureMipLimit = QualitySettings.globalTextureMipmapLimit;
-            _activeGlobalTextureMipLimit = _baselineGlobalTextureMipLimit;
-            _mipGateInitialized = true;
-        }
-
         private void RegisterAddressableGroupInternal(uint assetKey, AddressableAssetGroupKind group)
         {
             if (assetKey == 0u)
@@ -373,42 +360,42 @@ namespace Hecton8.Optimization
 
         private void EvaluateUiMipBiasGate()
         {
-            CaptureMipBiasBaseline();
-
-            int graphicsMemoryMb = Mathf.Max(0, SystemInfo.graphicsMemorySize);
-            if (graphicsMemoryMb == 0 || graphicsMemoryMb > LowVramDeviceThresholdMb)
-            {
-                if (_uiMipBiasGateActive)
-                    RestoreUiMipBiasGate();
-                return;
-            }
-
             VRAMMonitor monitor = _vramMonitor;
-            if (monitor == null)
+            VRAMPressureMonitor pressureMonitor = _vramPressure;
+            if (monitor == null || pressureMonitor == null)
                 return;
 
             monitor.GetVRAMBreakdown(out _, out _, out long totalVramBytes);
             _lastObservedVramBytes = totalVramBytes;
 
-            if (totalVramBytes >= UiMipDowngradeThresholdBytes)
+            if (_graphicsBudgetBytes <= 0L)
+                RefreshGraphicsBudgetBytes();
+
+            long graphicsBudgetBytes = _graphicsBudgetBytes;
+            float vramPressure = ResolveVramPressureFactor(totalVramBytes, graphicsBudgetBytes);
+            float gateResponse = ResolveUiMipGateResponse(vramPressure);
+            int mipDelta = ResolveUiMipGateDelta(gateResponse);
+
+            if (mipDelta > 0)
             {
-                ApplyUiMipBiasGate(totalVramBytes);
+                ApplyUiMipBiasGate(pressureMonitor, totalVramBytes, gateResponse);
                 return;
             }
 
-            if (_uiMipBiasGateActive && totalVramBytes <= UiMipRestoreThresholdBytes)
-                RestoreUiMipBiasGate();
+            if (_uiMipBiasGateActive && vramPressure <= ResolveUiMipRestoreFraction())
+            {
+                RestoreUiMipBiasGate(pressureMonitor);
+                return;
+            }
+
+            if (_uiMipBiasGateActive)
+                pressureMonitor.SetExternalMipPressureResponse(gateResponse, totalVramBytes);
         }
 
-        private void ApplyUiMipBiasGate(long observedVramBytes)
+        private void ApplyUiMipBiasGate(VRAMPressureMonitor pressureMonitor, long observedVramBytes, float gateResponse)
         {
-            int requestedLimit = Mathf.Max(_baselineGlobalTextureMipLimit, 1);
-            int currentLimit = QualitySettings.globalTextureMipmapLimit;
-            int targetLimit = Mathf.Max(currentLimit, requestedLimit);
-            if (currentLimit != targetLimit)
-                QualitySettings.globalTextureMipmapLimit = targetLimit;
+            pressureMonitor.SetExternalMipPressureResponse(gateResponse, observedVramBytes);
 
-            _activeGlobalTextureMipLimit = targetLimit;
             if (_uiMipBiasGateActive)
                 return;
 
@@ -416,14 +403,23 @@ namespace Hecton8.Optimization
             GlobalTelemetryBus.PublishPerformanceWarning(UiMipGateHighHash, UiTextureContextHash, observedVramBytes / (float)BytesPerMegabyte);
         }
 
-        private void RestoreUiMipBiasGate()
+        private void RestoreUiMipBiasGate(VRAMPressureMonitor pressureMonitor)
         {
-            if (QualitySettings.globalTextureMipmapLimit == _activeGlobalTextureMipLimit)
-                QualitySettings.globalTextureMipmapLimit = _baselineGlobalTextureMipLimit;
+            pressureMonitor.SetExternalMipPressureResponse(0f, _lastObservedVramBytes);
+            _uiMipBiasGateActive = false;
+            GlobalTelemetryBus.PublishPerformanceWarning(UiMipGateRestoreHash, UiTextureContextHash, _lastObservedVramBytes / (float)BytesPerMegabyte);
+        }
+
+        private void ClearUiMipBiasGate()
+        {
+            if (!_uiMipBiasGateActive)
+                return;
+
+            VRAMPressureMonitor pressureMonitor = _vramPressure;
+            if (pressureMonitor != null)
+                pressureMonitor.SetExternalMipPressureResponse(0f, _lastObservedVramBytes);
 
             _uiMipBiasGateActive = false;
-            _activeGlobalTextureMipLimit = _baselineGlobalTextureMipLimit;
-            GlobalTelemetryBus.PublishPerformanceWarning(UiMipGateRestoreHash, UiTextureContextHash, _lastObservedVramBytes / (float)BytesPerMegabyte);
         }
 
         private void TryRegister()
@@ -517,6 +513,11 @@ namespace Hecton8.Optimization
             _vramMonitor = null;
             _vramPressure = null;
             _assetLifecycle = null;
+        }
+
+        private void RefreshGraphicsBudgetBytes()
+        {
+            _graphicsBudgetBytes = ResolveGraphicsBudgetBytes(SystemInfo.graphicsMemorySize);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -706,6 +707,56 @@ namespace Hecton8.Optimization
             float collapse = math.saturate(math.lerp(pressureCollapse, math.max(pressureCollapse, qualityCollapse), 0.5f));
             float rawSlots = math.lerp(maxSlots, minSlots, collapse);
             return math.max(minSlots, (int)math.round(rawSlots));
+        }
+
+        private static long ResolveGraphicsBudgetBytes(int graphicsMemoryMb)
+        {
+            int budgetMb = graphicsMemoryMb > 0 ? graphicsMemoryMb : UnknownGraphicsBudgetMb;
+            return (long)budgetMb * BytesPerMegabyte;
+        }
+
+        private static float ResolveVramPressureFactor(long observedVramBytes, long graphicsBudgetBytes)
+        {
+            if (graphicsBudgetBytes <= 0L)
+                return 1f;
+
+            return math.saturate(observedVramBytes / (float)graphicsBudgetBytes);
+        }
+
+        private static float ResolveUiMipGateResponse(float vramPressure)
+        {
+            return ResolvePressureResponse(ResolveUiMipDowngradeFraction(), vramPressure);
+        }
+
+        private static int ResolveUiMipGateDelta(float gateResponse)
+        {
+            return math.clamp((int)math.round(math.lerp(0f, 2f, math.saturate(gateResponse))), 0, 2);
+        }
+
+        private static float ResolveUiMipDowngradeFraction()
+        {
+            return ResolveQualityAdjustedFraction(math.max(0.45f, UiMipDowngradePressureFraction - 0.20f), UiMipDowngradePressureFraction);
+        }
+
+        private static float ResolveUiMipRestoreFraction()
+        {
+            return ResolveQualityAdjustedFraction(math.max(0.25f, UiMipRestorePressureFraction - 0.12f), UiMipRestorePressureFraction);
+        }
+
+        private static float ResolvePressureResponse(float startFraction, float pressureFactor)
+        {
+            float start = math.saturate(startFraction);
+            if (start >= 1f)
+                start = 0.9999f;
+
+            return math.smoothstep(start, 1f, math.saturate(pressureFactor));
+        }
+
+        private static float ResolveQualityAdjustedFraction(float lowQualityFraction, float highQualityFraction)
+        {
+            float quality = ResolveGlobalQualityWeight();
+            float qualityCurve = math.smoothstep(0.15f, 0.85f, quality);
+            return math.saturate(math.lerp(lowQualityFraction, highQualityFraction, qualityCurve));
         }
 
         private static float ResolveGlobalQualityWeight()

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Text;
 using Hecton8.Gameplay;
 using NUnit.Framework;
 using Unity.Collections;
@@ -17,6 +18,9 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(16, UnsafeUtility.SizeOf<ScannableEntityMetadataDTO>());
             Assert.AreEqual(32, UnsafeUtility.SizeOf<ScannerVfxDTO>());
             Assert.AreEqual(128, UnsafeUtility.SizeOf<ActiveScanStateDTO>());
+            Assert.AreEqual(64, UnsafeUtility.SizeOf<ScanProgressDTO>());
+            Assert.AreEqual(32, UnsafeUtility.SizeOf<ScannerLoreIndexDTO>());
+            Assert.AreEqual(128, UnsafeUtility.SizeOf<ScannerEncyclopediaStateDTO>());
             Assert.AreEqual(0, Marshal.OffsetOf<ScannerSpatialEntityDTO>(nameof(ScannerSpatialEntityDTO.AUP)).ToInt32());
             Assert.AreEqual(24, Marshal.OffsetOf<ScannerSpatialEntityDTO>(nameof(ScannerSpatialEntityDTO.SectorHash)).ToInt32());
             Assert.AreEqual(32, Marshal.OffsetOf<ScannerSpatialEntityDTO>(nameof(ScannerSpatialEntityDTO.DepletionMask)).ToInt32());
@@ -24,6 +28,21 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(24, Marshal.OffsetOf<ActiveScanStateDTO>(nameof(ActiveScanStateDTO.LastOriginAUP)).ToInt32());
             Assert.AreEqual(48, Marshal.OffsetOf<ActiveScanStateDTO>(nameof(ActiveScanStateDTO.SectorHash)).ToInt32());
             Assert.AreEqual(56, Marshal.OffsetOf<ActiveScanStateDTO>(nameof(ActiveScanStateDTO.DepletionMask)).ToInt32());
+            Assert.IsTrue(ScannerDataMiningRouter.ValidateScanProgressLayout(
+                out int scanProgressSize,
+                out int targetHashOffset,
+                out int progressOffset,
+                out int scanRateOffset,
+                out int flagsOffset,
+                out int scannerAupOffset,
+                out int completedHashOffset));
+            Assert.AreEqual(64, scanProgressSize);
+            Assert.AreEqual(0, targetHashOffset);
+            Assert.AreEqual(4, progressOffset);
+            Assert.AreEqual(8, scanRateOffset);
+            Assert.AreEqual(12, flagsOffset);
+            Assert.AreEqual(16, scannerAupOffset);
+            Assert.AreEqual(44, completedHashOffset);
         }
 
         [Test]
@@ -177,6 +196,116 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(2.75f, seconds, 0.001f);
                 Assert.AreEqual(2.75f, metadata[0].ScanDuration, 0.001f);
             }
+        }
+
+        [Test]
+        public void LoreIndexCsvLine_HashesAsciiTokenIntoIndex()
+        {
+            using (NativeArray<ScannerLoreIndexDTO> loreIndex = new NativeArray<ScannerLoreIndexDTO>(16, Allocator.TempJob))
+            {
+                byte[] csvLine = Encoding.ASCII.GetBytes("moss_sample,130");
+                bool applied = ScannerDataMiningRouter.TryApplyLoreIndexCsvLine(
+                    csvLine,
+                    loreIndex,
+                    out uint hash,
+                    out uint loreEntryIndex);
+
+                Assert.IsTrue(applied);
+                Assert.AreEqual(ScannerDataMiningRouter.ComputeFnv1a32Ascii(Encoding.ASCII.GetBytes("moss_sample")), hash);
+                Assert.AreEqual(130u, loreEntryIndex);
+                Assert.IsTrue(ScannerDataMiningRouter.TryFindLoreIndex(loreIndex, hash, out uint resolvedIndex));
+                Assert.AreEqual(130u, resolvedIndex);
+            }
+        }
+
+        [Test]
+        public void CompletionJobs_SetUnmanagedUnlockBit()
+        {
+            using (NativeArray<ScanProgressDTO> progress = new NativeArray<ScanProgressDTO>(1, Allocator.TempJob))
+            using (NativeArray<ScannerLoreIndexDTO> loreIndex = new NativeArray<ScannerLoreIndexDTO>(8, Allocator.TempJob))
+            using (NativeArray<ScannerEncyclopediaStateDTO> state = new NativeArray<ScannerEncyclopediaStateDTO>(1, Allocator.TempJob))
+            using (NativeArray<ScannerTelemetryEntry> telemetry = new NativeArray<ScannerTelemetryEntry>(4, Allocator.TempJob))
+            {
+                const uint targetHash = 0xCAFEu;
+                Assert.IsTrue(ScannerDataMiningRouter.InsertLoreIndex(loreIndex, targetHash, 130u));
+                progress[0] = new ScanProgressDTO
+                {
+                    TargetHashID = targetHash,
+                    CurrentProgress01 = 0.99f,
+                    ScanRate = 1f,
+                    Flags = ScannerDataMiningRouter.ScanProgressFlagActive,
+                    ScannerAUP = new double3(1d, 2d, 3d),
+                    LastFrame = 4u,
+                    CompletedHash = 0u
+                };
+
+                new UpdateScanProgressJob
+                {
+                    Progress = progress,
+                    TargetHashID = targetHash,
+                    ScannerAUP = new double3(1d, 2d, 3d),
+                    ScanRate = 2f,
+                    SimulationTickDelta = 0.01f,
+                    Frame = 5u
+                }.Run();
+                new EvaluateScanCompletionJob
+                {
+                    Progress = progress,
+                    LoreIndex = loreIndex,
+                    EncyclopediaState = state,
+                    Telemetry = telemetry,
+                    Frame = 5u,
+                    CompletionCount = 1u
+                }.Run();
+
+                ScannerEncyclopediaStateDTO mask = state[0];
+                Assert.AreNotEqual(0UL, mask.Mask2 & (1UL << 2));
+                Assert.AreEqual(targetHash, progress[0].CompletedHash);
+                Assert.AreEqual(targetHash, telemetry[1].TargetHash);
+            }
+        }
+
+        [Test]
+        public void MockGenerationJob_FillsHashOnlyLoreIndex()
+        {
+            using (NativeArray<ScannerSpatialEntityDTO> entities = new NativeArray<ScannerSpatialEntityDTO>(4, Allocator.TempJob))
+            using (NativeArray<ScannableEntityMetadataDTO> metadata = new NativeArray<ScannableEntityMetadataDTO>(4, Allocator.TempJob))
+            using (NativeArray<ScannerLoreIndexDTO> loreIndex = new NativeArray<ScannerLoreIndexDTO>(16, Allocator.TempJob))
+            using (NativeArray<int> bucketHeads = new NativeArray<int>(16, Allocator.TempJob))
+            using (NativeArray<int> bucketNext = new NativeArray<int>(4, Allocator.TempJob))
+            {
+                new GenerateMockScannableTargetsJob
+                {
+                    BucketHeads = bucketHeads,
+                    BucketNext = bucketNext,
+                    Entities = entities,
+                    Metadata = metadata,
+                    LoreIndex = loreIndex,
+                    OriginAUP = double3.zero,
+                    Forward = new float3(0f, 0f, 1f),
+                    Right = new float3(1f, 0f, 0f),
+                    CellSizeMeters = 16f,
+                    Count = 4
+                }.Run();
+
+                Assert.AreNotEqual(0u, entities[0].EntityHash);
+                Assert.IsTrue(ScannerDataMiningRouter.TryFindLoreIndex(loreIndex, entities[0].EntityHash, out uint loreEntryIndex));
+                Assert.AreEqual(0u, loreEntryIndex);
+            }
+        }
+
+        [Test]
+        public void QueryCadence_UsesContinuousQualityAndPressure()
+        {
+            ScannerSettingsDTO settings = ScannerDataMiningRouter.CreateDefaultSettings();
+            int low = ScannerDataMiningRouter.ResolveQueryCadenceFrames(0.1f, 0f, in settings);
+            int mid = ScannerDataMiningRouter.ResolveQueryCadenceFrames(0.5f, 0f, in settings);
+            int ultra = ScannerDataMiningRouter.ResolveQueryCadenceFrames(1f, 0f, in settings);
+            int pressured = ScannerDataMiningRouter.ResolveQueryCadenceFrames(1f, 1f, in settings);
+
+            Assert.GreaterOrEqual(low, mid);
+            Assert.GreaterOrEqual(mid, ultra);
+            Assert.Greater(pressured, ultra);
         }
 
         private static ScannerSpatialEntityDTO MakeEntity(uint hash, double3 aup, uint metadataIndex)

@@ -128,7 +128,7 @@ Contact:
 [official route]
 
 CTA / access route:
-[approved public CTA after activation, no-link feedback ask, or private access route logged separately]
+[gated public CTA after `public_cta_permission_gate`, no-link feedback ask, or private access route logged separately]
 
 Agency proof field:
 [`what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` if pressure/route-risk proof is claimed]

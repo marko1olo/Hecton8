@@ -278,7 +278,7 @@ Paste these fields only after `account_registration_permission_gate = ALLOW_ACCO
 | Short bio | `Single player deep sea survival about pressure, salvage, machinery, and black water.` | `Deep sea survival. Pressure, salvage, machinery, black water.` | Scope neutral; no FPS or competitor claim. |
 | Long bio | `HECTON-8 is a single player deep sea survival game about pressure, salvage, machinery, and the Seed Ship anomaly.` | `Official HECTON-8 account. Public assets are released only when captured from the current build.` | Use on YouTube/About pages. |
 | Location | blank | blank | Avoid fake studio geography. |
-| Website | `[approved Steam URL when live]` | `[approved presskit URL when live]` | Do not link placeholders publicly. |
+| Website | `[gated Steam URL after steam_page_publish + public_cta]` | `[gated presskit URL after press_release + public_cta]` | Do not link placeholders publicly. |
 | Contact | `[owner-controlled project email]` | blank | Use only after inbox custody passes. |
 | Avatar | approved logo mark | text only `HECTON-8` mark | Do not use concept art as proof. |
 | Banner | approved in game screenshot/capsule | black water machinery crop | Must pass asset QA. |
@@ -297,7 +297,7 @@ Do not add a Steam link until Official CTA Link Activation Gate V0 passes and UT
 
 ```text
 HECTON-8   single player deep sea survival about pressure, salvage, machinery, and the Seed Ship anomaly.
-Steam: [approved Steam URL after CTA activation packet]
+Steam: [gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
 ```
 
 Scope: single player first. No competitor attack copy. No performance claim.
@@ -351,8 +351,8 @@ Use only after the official Steam URL exists through `steam_page_publish_permiss
 ```text
 HECTON-8 is a single player deep sea survival game about pressure, salvage, machinery, and the cost of staying alive below the light.
 
-Steam: [approved Steam URL after CTA activation packet]
-Presskit: [approved presskit URL after CTA activation packet]
+Steam: [gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
+Presskit: [gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
 
 Single player first scope. Performance details require measured build/hardware context.
 ```
@@ -371,9 +371,9 @@ Do not paste the same text everywhere. Keep the same facts, but change the ask:
 ```text
 HECTON-8 is a single player first deep sea survival game about pressure, salvage, machinery, and the cost of staying alive below the light.
 
-Steam: [approved Steam URL after CTA activation packet]
-Presskit: [approved presskit URL after CTA activation packet]
-Discord: [approved Discord URL after server custody and CTA activation packet]
+Steam: [gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
+Presskit: [gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
+Discord: [gated Discord URL after `discord_open_permission_gate` and `public_cta_permission_gate` pass]
 ```
 
 ## Platform Cadence

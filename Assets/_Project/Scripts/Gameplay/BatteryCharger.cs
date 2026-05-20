@@ -60,7 +60,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Gameplay/Battery Charger")]
-    public sealed class BatteryCharger : MonoBehaviour, ISlowTickable, IPowerComponent, IInteractable, ILocalizationLanguageChangedListener
+    public sealed class BatteryCharger : MonoBehaviour, IPowerComponent, IInteractable, ILocalizationLanguageChangedListener
     {
         private const float SlowTickDeltaSeconds = 0.5f;
 
@@ -82,6 +82,18 @@ namespace Hecton8.Gameplay
         [Header("── Power Integration ─────────────────────────")]
         [Tooltip("Reference to the power node for this charger.")]
         [SerializeField] private MonoBehaviour powerNodeReference;
+
+        [Tooltip("First SOA inventory slot index owned by this charger.")]
+        [SerializeField] private uint inventorySlotStartIndex;
+
+        [Tooltip("CSR power graph node index supplying this charger.")]
+        [SerializeField] private uint powerGraphNodeIndex;
+
+        [Tooltip("Efficiency scalar consumed by the Burst charger transaction kernel.")]
+        [SerializeField, Range(0.05f, 2f)] private float logisticsEfficiencyScalar = 1f;
+
+        [Tooltip("Registers passive ChargerLinkDTO records instead of active charging ticks.")]
+        [SerializeField] private bool registerLogisticsLinks = true;
 
         [Header("── Visuals ────────────────────────────────────")]
         [Tooltip("Renderer for charge indicator lights.")]
@@ -413,6 +425,7 @@ namespace Hecton8.Gameplay
 
         // Track which slots were fully charged (to avoid repeated events)
         private bool[] _slotChargedFlags;
+        private int[] _registeredLinkIndices;
 
         // ══════════════════════════════════════════════════════════
         //  IPowerComponent IMPLEMENTATION
@@ -421,7 +434,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Power rating: negative when charging, zero when idle.
         /// </summary>
-        public float PowerRating => _isCharging ? -powerConsumption : 0f;
+        public float PowerRating => 0f;
 
         /// <summary>
         /// Priority: normal for chargers.

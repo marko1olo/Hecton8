@@ -88,7 +88,7 @@ namespace Hecton8.Habitat.Deformation.Contracts
 
     /// <summary>
     /// Branch-light selector for immutable baked mesh hashes. No UnityEngine object reference crosses this contract.
-    /// Pressure drives continuous buckling scalar; mesh state stays pristine until real collapse.
+    /// Pressure reaches all baked states; visual buckling scalar stays continuous between thresholds.
     /// </summary>
     public static class HabitatDamageMeshStateResolver
     {
@@ -96,7 +96,10 @@ namespace Hecton8.Habitat.Deformation.Contracts
         public static byte ResolveStateIndex(float pressure01)
         {
             float p = math.saturate(math.isfinite(pressure01) ? pressure01 : 0f);
-            return (byte)math.select(0, 3, p >= 0.95f);
+            float stressed = math.step(0.33333334f, p);
+            float ruptured = math.step(0.6666667f, p);
+            float collapsed = math.step(0.95f, p);
+            return (byte)(stressed + ruptured + collapsed);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

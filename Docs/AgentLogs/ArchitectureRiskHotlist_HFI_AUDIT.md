@@ -4,64 +4,64 @@ Evidence class: STATIC_SOURCE. This is a ranked review map, not compile, runtime
 
 - Schema: `hecton8.architecture_risk_hotlist.v2`
 - Source root: `Assets/_Project/Scripts`
-- C# files: `1989`
-- Scored files: `910`
+- C# files: `2013`
+- Scored files: `921`
 
 ## Family Totals
 
 | Family | Matches |
 |---|---:|
-| `authority` | 6113 |
-| `datavault` | 3274 |
-| `determinism` | 1209 |
-| `hotpath` | 6 |
-| `jobs` | 103 |
+| `authority` | 6128 |
+| `datavault` | 3311 |
+| `determinism` | 1217 |
+| `hotpath` | 7 |
+| `jobs` | 102 |
 | `layout` | 8 |
 | `platform` | 102 |
-| `signals` | 593 |
+| `signals` | 597 |
 
 ## Domain Pressure
 
 | Rank | Domain | Score | Scored files | Family pressure | Top files |
 |---:|---|---:|---:|---|---|
-| 1 | `Root` | 12890 | 180 | authority:1510, signals:112, datavault:854, determinism:442, platform:6, jobs:12, layout:3 | Assets/_Project/Scripts/PlayerInventory.cs, Assets/_Project/Scripts/HectonFluidEngine.cs, Assets/_Project/Scripts/SpatialAudioManager.cs |
-| 2 | `World` | 8228 | 102 | authority:765, signals:49, datavault:620, determinism:126, jobs:18, platform:15 | Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs, Assets/_Project/Scripts/World/DestructibleOrganicManager.cs, Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs |
-| 3 | `Core` | 4693 | 78 | authority:350, signals:125, datavault:285, determinism:160, platform:15, jobs:3 | Assets/_Project/Scripts/Core/GlobalSignals.cs, Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs, Assets/_Project/Scripts/Core/SystemDispatcher.cs |
-| 4 | `Gameplay` | 3453 | 88 | authority:611, signals:79, datavault:157, determinism:94 | Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs, Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs, Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs |
-| 5 | `Editor` | 2435 | 52 | datavault:187, jobs:61, authority:58, determinism:14, platform:3, signals:4, hotpath:3 | Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs, Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs, Assets/_Project/Scripts/Editor/HectonArmTextureChannelPacker.cs |
-| 6 | `Construction` | 2257 | 26 | authority:137, signals:19, datavault:182, determinism:22, platform:2 | Assets/_Project/Scripts/Construction/DroneFleetManager.cs, Assets/_Project/Scripts/Construction/HabitatGraphManager.cs, Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs |
+| 1 | `Root` | 12636 | 180 | authority:1504, signals:110, datavault:833, determinism:444, platform:6, jobs:12, layout:3 | Assets/_Project/Scripts/PlayerInventory.cs, Assets/_Project/Scripts/HectonFluidEngine.cs, Assets/_Project/Scripts/SpatialAudioManager.cs |
+| 2 | `World` | 8239 | 102 | authority:768, signals:49, datavault:621, determinism:126, jobs:18, platform:15 | Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs, Assets/_Project/Scripts/World/DestructibleOrganicManager.cs, Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs |
+| 3 | `Core` | 4492 | 79 | authority:351, signals:130, datavault:266, determinism:160, platform:15, jobs:3 | Assets/_Project/Scripts/Core/GlobalSignals.cs, Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs, Assets/_Project/Scripts/Core/SystemDispatcher.cs |
+| 4 | `Gameplay` | 3497 | 89 | authority:611, signals:81, datavault:161, determinism:96 | Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs, Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs, Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs |
+| 5 | `Construction` | 2555 | 27 | authority:139, signals:19, datavault:210, determinism:26, platform:2 | Assets/_Project/Scripts/Construction/DroneFleetManager.cs, Assets/_Project/Scripts/Construction/HabitatGraphManager.cs, Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs |
+| 6 | `Editor` | 2464 | 53 | datavault:191, jobs:61, authority:59, determinism:13, platform:3, signals:4, hotpath:3 | Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs, Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs, Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs |
 | 7 | `UI` | 2156 | 86 | authority:630, datavault:105, determinism:75, signals:15 | Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs, Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs, Assets/_Project/Scripts/UI/VR/OpenXRManualOverrideLever.cs |
 | 8 | `Audio` | 1595 | 16 | authority:199, signals:9, datavault:89, determinism:56, platform:12, jobs:2 | Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs, Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs, Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs |
-| 9 | `Atmosphere` | 1362 | 8 | authority:82, datavault:122, determinism:4, signals:5 | Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs, Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs, Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsTypes.cs |
-| 10 | `Power` | 1304 | 9 | authority:18, datavault:118, signals:6, determinism:4 | Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs, Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs, Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs |
+| 9 | `Power` | 1416 | 11 | authority:28, datavault:128, signals:7, determinism:4 | Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs, Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs, Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs |
+| 10 | `Atmosphere` | 1362 | 8 | authority:82, datavault:122, determinism:4, signals:5 | Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs, Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs, Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsTypes.cs |
 | 11 | `Visor` | 695 | 27 | authority:101, signals:4, datavault:40, determinism:25, platform:10 | Assets/_Project/Scripts/Visor/SpectrumSystem.cs, Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs, Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs |
-| 12 | `Graphics` | 657 | 11 | datavault:56, authority:75, determinism:10, platform:6, signals:1 | Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs, Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingTypes.cs, Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonRuntime.cs |
-| 13 | `Physics` | 652 | 23 | authority:80, datavault:48, signals:20, platform:6, hotpath:1 | Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs, Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs, Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs |
+| 12 | `Physics` | 686 | 24 | authority:90, datavault:50, signals:15, platform:6, hotpath:2 | Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs, Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs, Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs |
+| 13 | `Graphics` | 657 | 11 | datavault:56, authority:75, determinism:10, platform:6, signals:1 | Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs, Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingTypes.cs, Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonRuntime.cs |
 | 14 | `Fauna` | 591 | 12 | authority:94, signals:17, determinism:17, datavault:19, platform:1, layout:4 | Assets/_Project/Scripts/Fauna/FaunaBrain.cs, Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs, Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs |
 | 15 | `ModdingAPI` | 577 | 12 | authority:38, signals:15, datavault:20, determinism:12, platform:3 | Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs, Assets/_Project/Scripts/ModdingAPI/HectonAPI.cs, Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs |
 | 16 | `QA` | 564 | 4 | authority:47, signals:14, datavault:32, determinism:16, platform:1 | Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs, Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs, Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs |
 | 17 | `Lighting` | 495 | 5 | datavault:42, authority:39, determinism:6, signals:1 | Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingContracts.cs, Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs, Assets/_Project/Scripts/Lighting/HectonGIRelaySystem.cs |
-| 18 | `Physiology` | 372 | 7 | datavault:27, authority:36, signals:7 | Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs, Assets/_Project/Scripts/Physiology/ShinobuRespawnData.cs, Assets/_Project/Scripts/Physiology/PlayerStressMetricsRuntime.cs |
-| 19 | `Plugins` | 346 | 14 | datavault:30, jobs:4, authority:34, determinism:6 | Assets/_Project/Scripts/Plugins/MapMagic/HectonAnomalyMapMagicNode.cs, Assets/_Project/Scripts/Plugins/MapMagic/HectonSpaceEngine098MapMagicNodes.cs, Assets/_Project/Scripts/Plugins/MapMagic/HectonTerrainSplatmapMapMagicNode.cs |
-| 20 | `Animation` | 326 | 5 | datavault:23, authority:32, signals:4, determinism:4 | Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorTypes.cs, Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderTypes.cs, Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs |
+| 18 | `Tools` | 402 | 13 | datavault:26, authority:68, signals:14, determinism:4 | Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs, Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs, Assets/_Project/Scripts/Tools/ToolKinematics/ToolKinematicsRuntime.cs |
+| 19 | `Physiology` | 372 | 7 | datavault:27, authority:36, signals:7 | Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs, Assets/_Project/Scripts/Physiology/ShinobuRespawnData.cs, Assets/_Project/Scripts/Physiology/PlayerStressMetricsRuntime.cs |
+| 20 | `Plugins` | 346 | 14 | datavault:30, jobs:4, authority:34, determinism:6 | Assets/_Project/Scripts/Plugins/MapMagic/HectonAnomalyMapMagicNode.cs, Assets/_Project/Scripts/Plugins/MapMagic/HectonSpaceEngine098MapMagicNodes.cs, Assets/_Project/Scripts/Plugins/MapMagic/HectonTerrainSplatmapMapMagicNode.cs |
 
 ## Category Totals
 
 | Category | Matches |
 |---|---:|
 | `binaryHardwareSwitch` | 102 |
-| `globalRegistryDot` | 6113 |
+| `globalRegistryDot` | 6128 |
 | `globalSignalsPublish` | 259 |
 | `hectonEventBusPubSub` | 45 |
-| `jobHandleComplete` | 103 |
-| `localNumericBufferCast` | 734 |
-| `nativeArrayCtor` | 1154 |
-| `privateNativeCollectionField` | 1386 |
-| `signalBusPushTryPush` | 289 |
+| `jobHandleComplete` | 102 |
+| `localNumericBufferCast` | 798 |
+| `nativeArrayCtor` | 1161 |
+| `privateNativeCollectionField` | 1352 |
+| `signalBusPushTryPush` | 293 |
 | `structAutoProperties` | 8 |
 | `unityRandom` | 2 |
-| `unityTimeCritical` | 1207 |
-| `unityUpdateMethod` | 6 |
+| `unityTimeCritical` | 1215 |
+| `unityUpdateMethod` | 7 |
 
 ## Top Review Files
 
@@ -92,21 +92,21 @@ Evidence class: STATIC_SOURCE. This is a ranked review map, not compile, runtime
 | 23 | 324 | `Assets/_Project/Scripts/TetherInstance.cs` | globalSignalsPublish:2, privateNativeCollectionField:25 |
 | 24 | 311 | `Assets/_Project/Scripts/World/FloraInteractionManager.cs` | globalRegistryDot:29, signalBusPushTryPush:2, localNumericBufferCast:5, nativeArrayCtor:7, privateNativeCollectionField:14, unityTimeCritical:1 |
 | 25 | 306 | `Assets/_Project/Scripts/Core/SystemDispatcher.cs` | globalRegistryDot:32, signalBusPushTryPush:4, globalSignalsPublish:7, localNumericBufferCast:1, unityTimeCritical:43 |
-| 26 | 295 | `Assets/_Project/Scripts/ModularEquipmentEngine.cs` | globalRegistryDot:23, signalBusPushTryPush:2, globalSignalsPublish:1, privateNativeCollectionField:21, unityTimeCritical:1 |
-| 27 | 289 | `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs` | globalRegistryDot:29, nativeArrayCtor:5, privateNativeCollectionField:17, unityTimeCritical:4 |
-| 28 | 288 | `Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs` | globalRegistryDot:16, nativeArrayCtor:15, privateNativeCollectionField:12, unityTimeCritical:2 |
-| 29 | 275 | `Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs` | globalRegistryDot:7, signalBusPushTryPush:2, globalSignalsPublish:2, localNumericBufferCast:24 |
-| 30 | 273 | `Assets/_Project/Scripts/EncounterDirector.cs` | globalRegistryDot:1, nativeArrayCtor:13, privateNativeCollectionField:14 |
-| 31 | 268 | `Assets/_Project/Scripts/World/AbyssalThermalManager.cs` | globalRegistryDot:26, signalBusPushTryPush:1, globalSignalsPublish:4, nativeArrayCtor:9, privateNativeCollectionField:9, unityTimeCritical:3 |
-| 32 | 266 | `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs` | globalRegistryDot:28, signalBusPushTryPush:11, globalSignalsPublish:3, localNumericBufferCast:18 |
-| 33 | 259 | `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs` | globalRegistryDot:3, nativeArrayCtor:12, privateNativeCollectionField:13, unityTimeCritical:1 |
-| 34 | 256 | `Assets/_Project/Scripts/SaveBinaryStorage.cs` | nativeArrayCtor:32 |
-| 35 | 253 | `Assets/_Project/Scripts/CrashTelemetryBuffer.cs` | globalRegistryDot:49, nativeArrayCtor:3, privateNativeCollectionField:3, unityTimeCritical:36 |
+| 26 | 289 | `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs` | globalRegistryDot:29, nativeArrayCtor:5, privateNativeCollectionField:17, unityTimeCritical:4 |
+| 27 | 288 | `Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs` | globalRegistryDot:16, nativeArrayCtor:15, privateNativeCollectionField:12, unityTimeCritical:2 |
+| 28 | 275 | `Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs` | globalRegistryDot:7, signalBusPushTryPush:2, globalSignalsPublish:2, localNumericBufferCast:24 |
+| 29 | 273 | `Assets/_Project/Scripts/EncounterDirector.cs` | globalRegistryDot:1, nativeArrayCtor:13, privateNativeCollectionField:14 |
+| 30 | 268 | `Assets/_Project/Scripts/World/AbyssalThermalManager.cs` | globalRegistryDot:26, signalBusPushTryPush:1, globalSignalsPublish:4, nativeArrayCtor:9, privateNativeCollectionField:9, unityTimeCritical:3 |
+| 31 | 266 | `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs` | globalRegistryDot:28, signalBusPushTryPush:11, globalSignalsPublish:3, localNumericBufferCast:18 |
+| 32 | 259 | `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs` | globalRegistryDot:3, nativeArrayCtor:12, privateNativeCollectionField:13, unityTimeCritical:1 |
+| 33 | 256 | `Assets/_Project/Scripts/SaveBinaryStorage.cs` | nativeArrayCtor:32 |
+| 34 | 253 | `Assets/_Project/Scripts/CrashTelemetryBuffer.cs` | globalRegistryDot:49, nativeArrayCtor:3, privateNativeCollectionField:3, unityTimeCritical:36 |
+| 35 | 252 | `Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs` | nativeArrayCtor:18, privateNativeCollectionField:2, jobHandleComplete:7 |
 | 36 | 241 | `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs` | globalRegistryDot:13, nativeArrayCtor:11, privateNativeCollectionField:11, unityTimeCritical:2 |
-| 37 | 240 | `Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs` | localNumericBufferCast:16, nativeArrayCtor:10 |
-| 38 | 236 | `Assets/_Project/Scripts/Fauna/FaunaBrain.cs` | globalRegistryDot:40, globalSignalsPublish:11, unityTimeCritical:16 |
-| 39 | 235 | `Assets/_Project/Scripts/Core/DodReplayRecorder.cs` | globalRegistryDot:3, nativeArrayCtor:1, privateNativeCollectionField:15, unityTimeCritical:11 |
-| 40 | 232 | `Assets/_Project/Scripts/Visor/SpectrumSystem.cs` | globalRegistryDot:16, globalSignalsPublish:1, nativeArrayCtor:2, privateNativeCollectionField:14, unityTimeCritical:5 |
+| 37 | 240 | `Assets/_Project/Scripts/Construction/SumpPumpPipeGridContracts.cs` | localNumericBufferCast:24 |
+| 38 | 240 | `Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs` | localNumericBufferCast:16, nativeArrayCtor:10 |
+| 39 | 236 | `Assets/_Project/Scripts/Fauna/FaunaBrain.cs` | globalRegistryDot:40, globalSignalsPublish:11, unityTimeCritical:16 |
+| 40 | 235 | `Assets/_Project/Scripts/Core/DodReplayRecorder.cs` | globalRegistryDot:3, nativeArrayCtor:1, privateNativeCollectionField:15, unityTimeCritical:11 |
 
 ## Review Notes
 
@@ -123,10 +123,10 @@ Evidence class: STATIC_SOURCE. This is a ranked review map, not compile, runtime
 
 - Score: `1070`
 - Families: `{'authority': 7, 'datavault': 75, 'determinism': 2, 'platform': 7, 'signals': 67}`
-- L366 `binaryHardwareSwitch`: `public byte QualityTier;`
-- L1716 `privateNativeCollectionField`: `private static NativeQueue<T> _queue;`
-- L2047 `globalRegistryDot`: `global::Hecton8.Core.GlobalRegistry.SetSystemKillSwitchBits(NonCriticalVfxKillSwitchMask, true);`
-- L2446 `globalRegistryDot`: `vault = global::Hecton8.Core.GlobalRegistry.DataVault;`
+- L479 `binaryHardwareSwitch`: `public byte QualityTier;`
+- L1829 `privateNativeCollectionField`: `private static NativeQueue<T> _queue;`
+- L2160 `globalRegistryDot`: `global::Hecton8.Core.GlobalRegistry.SetSystemKillSwitchBits(NonCriticalVfxKillSwitchMask, true);`
+- L2559 `globalRegistryDot`: `vault = global::Hecton8.Core.GlobalRegistry.DataVault;`
 
 ### Assets/_Project/Scripts/HectonFluidEngine.cs
 

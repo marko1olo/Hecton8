@@ -385,3 +385,93 @@ YELLOW/PENDING VERIFICATION because DataVault candidate no-regression now fails
 on field declaration growth in construction/static-data owner files. No dotnet
 build, Unity import, player build, profiler, GC, memory, or device run was
 launched.
+
+## 2026-05-20 R27 DataVault Regression Drilldown / No-Build Recapture
+
+What was wrong: the candidate DataVault gate was red, but the report did not
+give enough owner-domain detail to separate active regression from broad legacy
+debt. Concurrent source churn also changed the counters again.
+
+What was done: DataVault audit output now has a structured JSON artifact and
+markdown sections for regression deltas by domain and by file. Unit tests and
+static gates were rerun without dotnet/Unity build.
+
+Cinematic Cheats used: none; audit/tooling/docs pass only.
+
+Exact Microseconds saved: 0 runtime us claimed.
+
+Verification:
+
+- `python -B Tools/test_datavault_sovereignty_audit.py`: PASS, 4 tests.
+- `python -B Tools/test_buffer_id_sovereignty_audit.py`: PASS, 2 tests.
+- `python -B Tools/test_global_authority_gate.py`: PASS, 3 tests.
+- `python -B Tools/test_assembly_dependency_audit.py`: PASS, 3 tests.
+- `python -B Tools/test_architecture_risk_hotlist_audit.py`: PASS, 3 tests.
+- `python -B Tools/test_platform_portability_proof_audit.py`: PASS, 2 tests.
+- `python Tools/GlobalAuthorityGate.py`: PASS_WITH_WARNINGS,
+  `globalRegistryGenericGet=0`, `packOne=0`, duplicate central BufferIDs `0`.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS,
+  duplicates `0`, local casts `758`.
+- `python Tools/AssemblyDependencyAudit.py`: PASS_WITH_WARNINGS, cycles `0`,
+  Core concrete sibling refs `1`, runtime concrete cross-domain refs `77`.
+- `python Tools/ArchitectureRiskHotlistAudit.py`: PASS_WITH_WARNINGS,
+  C# files `1992`, scored files `912`.
+- `python Tools/PlatformPortabilityProofAudit.py`: PASS_WITH_WARNINGS; Quest
+  scaffold exists, runtime/platform proof remains absent.
+- `python Tools/DataVaultSovereigntyAudit.py --baseline Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json --report Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md --audit-json Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.json --fail-on-regression`:
+  FAIL_REGRESSION.
+
+Current R27 DataVault candidate:
+
+- direct constructors `1155`, allowed `6`, forbidden `1149`, files `177`;
+- field-like declarations `5146`, allowed `14`, forbidden `5132`, files `347`;
+- regression domains: Physics `+10`, Construction `+5`, Editor `+5`, Power
+  `+4`, World `+3`, Core `+2`, Habitat `+1`.
+
+R27 verdict: global foundation direction is still structurally correct, but
+the active worktree is not globally clean. Registry and BufferID hard gates are
+holding; DataVault no-regression is actively failing and must be burned down by
+owner domains, not normalized by baseline reset.
+
+## 2026-05-20 R28 DataVault Runtime-vs-Editor Split
+
+What was wrong: DataVault regression was grouped by domain only. That hides the
+most important platform distinction: runtime native ownership growth is frame
+and memory risk, while editor/offline-baker growth is pipeline/Data Monolith
+risk.
+
+What was done: added execution-surface classification to the DataVault audit
+report. JSON now includes `regressionByExecutionSurface`; markdown now prints
+`Regression Delta By Execution Surface` before the domain table.
+
+Cinematic Cheats used: none; static gate/reporting change only.
+
+Exact Microseconds saved: 0 runtime us claimed.
+
+Verification:
+
+- `python -B Tools/test_datavault_sovereignty_audit.py`: PASS, 5 tests.
+- `python Tools/DataVaultSovereigntyAudit.py --baseline Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json --report Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md --audit-json Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.json --fail-on-regression`:
+  FAIL_REGRESSION.
+
+Current R28 DataVault candidate:
+
+- direct constructors `1156`, allowed `6`, forbidden `1150`, files `177`;
+- field-like declarations `5165`, allowed `14`, forbidden `5151`, files `348`;
+- file-level gross regression by surface: Runtime `+38`, Editor `+12`.
+
+R28 runtime burn-down queue from fresh regression details:
+
+- `Assets/_Project/Scripts/Tools/LaserCutterDodJobs.cs`: declarations `0 -> 13`.
+- `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs`: declarations `33 -> 43`.
+- `Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs`: declarations `25 -> 29`.
+- `Assets/_Project/Scripts/Construction/SumpPumpPipeGridJobs.cs`: declarations `38 -> 41`.
+- `Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs`: declarations `26 -> 29`.
+- `Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs`: declarations `12 -> 14`.
+- `Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs`: declarations `10 -> 12`.
+- `Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs`: declarations `35 -> 36`.
+
+R28 verdict: the project is not globally failing because it introduced global
+authority tools; it is failing when new owner code adds persistent native
+surface outside the approved Vault/H8Memory owner shape. The next technical
+burn-down must prioritize runtime surface before editor/baker surface.

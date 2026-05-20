@@ -104,6 +104,8 @@ namespace Hecton8.Power
     [StructLayout(LayoutKind.Explicit, Size = PowerGridJacobiConstants.PowerTelemetryEntrySizeBytes)]
     public struct PowerTelemetryEntry
     {
+        // ABI union aliases are intentional: older black-box readers use TotalLoad/AveragePotential/SolverMicroseconds,
+        // while the power grid ledger uses TotalConsumption/Balance/OverloadedCount for the same 64-byte row.
         [FieldOffset(0)] public uint FrameIndex;
         [FieldOffset(4)] public uint StateHash;
         [FieldOffset(8)] public uint ReasonFlags;
@@ -297,7 +299,8 @@ namespace Hecton8.Power
         {
             float3 localA = ToBaseLocalFloat3(aupA, baseOriginAup);
             float3 localB = ToBaseLocalFloat3(aupB, baseOriginAup);
-            return math.distance(localA, localB);
+            float distanceSq = math.lengthsq(localA - localB);
+            return distanceSq <= 0.000001f ? 0f : distanceSq * math.rsqrt(math.max(distanceSq, 0.000001f));
         }
     }
 

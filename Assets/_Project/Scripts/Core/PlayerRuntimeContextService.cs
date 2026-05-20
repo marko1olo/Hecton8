@@ -269,9 +269,9 @@ namespace Hecton8.Core
 
             PlayerMovementRuntimeState movementState = _runtimeContext.MovementState;
             float3 runtimePosition = SafeFiniteVector(movementState.WorldPosition, (float3)_playerTransform.position);
-            Hecton8.World.AbsoluteUniversePosition aup = movementState.PredictedAup;
-            if (!IsFiniteAup(in aup))
-                aup = Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(ToVector3(runtimePosition));
+            var aup = movementState.PredictedAup;
+            if (!IsFinitePredictedAup(in movementState))
+                GlobalSignals.TryRuntimePositionToAup(runtimePosition, ref aup);
 
             float3 fallbackForward = SafeDirection((float3)_playerTransform.forward, new float3(0f, 0f, 1f));
             float3 forward = SafeDirection(movementState.CameraForward, fallbackForward);
@@ -632,10 +632,9 @@ namespace Hecton8.Core
                 fallbackPlayerPositionResolved = true;
                 movementState.WorldPosition = fallbackPlayerPosition;
                 movementState.PredictedWorldPosition = movementState.WorldPosition + (velocity * 0.1f);
-                movementState.PredictedAup = Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(new Vector3(
-                    movementState.PredictedWorldPosition.x,
-                    movementState.PredictedWorldPosition.y,
-                    movementState.PredictedWorldPosition.z));
+                var predictedAup = movementState.PredictedAup;
+                if (GlobalSignals.TryRuntimePositionToAup(movementState.PredictedWorldPosition, ref predictedAup))
+                    movementState.PredictedAup = predictedAup;
             }
 
             movementState.Velocity = velocity;
@@ -728,8 +727,9 @@ namespace Hecton8.Core
             return new float3(0f, 0f, 1f);
         }
 
-        private static bool IsFiniteAup(in Hecton8.World.AbsoluteUniversePosition aup)
+        private static bool IsFinitePredictedAup(in PlayerMovementRuntimeState state)
         {
+            var aup = state.PredictedAup;
             double3 absolute = aup.ToAbsoluteDouble3();
             return math.all(math.isfinite(absolute));
         }

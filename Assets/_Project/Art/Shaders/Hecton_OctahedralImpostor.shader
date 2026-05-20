@@ -115,50 +115,52 @@ Shader "Hecton8/Environment/Hecton_OctahedralImpostor"
                 float viewBlend;
                 HectonImpostorSelectViews(HectonSafeNormalize(input.viewDirectionWS, float3(0.0, 0.0, 1.0)), primaryView, secondaryView, viewBlend);
 
-                float quality01 = saturate(_HectonGlobalQualityWeight);
+                float quality01 = saturate(HectonFiniteOr(_HectonGlobalQualityWeight, 0.0));
                 float interpolationGate = smoothstep(0.22, 0.55, quality01);
                 float blendWeight = saturate(viewBlend * interpolationGate);
                 float2 primaryUv = HectonImpostorAtlasUv(input.uv, primaryView, _HectonImpostorAtlasGrid);
 
-                half4 albedoDepthA = SAMPLE_TEXTURE2D(_ImpostorAlbedoDepthAtlas, sampler_ImpostorAlbedoDepthAtlas, primaryUv);
-                half4 normalDepthA = SAMPLE_TEXTURE2D(_ImpostorNormalDepthAtlas, sampler_ImpostorNormalDepthAtlas, primaryUv);
-                half4 albedoDepth = albedoDepthA;
-                half4 normalDepth = normalDepthA;
+                float4 albedoDepthA = HectonFiniteOr(SAMPLE_TEXTURE2D(_ImpostorAlbedoDepthAtlas, sampler_ImpostorAlbedoDepthAtlas, primaryUv), float4(0.0, 0.0, 0.0, 0.0));
+                float4 normalDepthA = HectonFiniteOr(SAMPLE_TEXTURE2D(_ImpostorNormalDepthAtlas, sampler_ImpostorNormalDepthAtlas, primaryUv), float4(0.5, 0.5, 0.5, 0.0));
+                float4 albedoDepth = albedoDepthA;
+                float4 normalDepth = normalDepthA;
                 [branch]
                 if (interpolationGate > 0.001)
                 {
                     float2 secondaryUv = HectonImpostorAtlasUv(input.uv, secondaryView, _HectonImpostorAtlasGrid);
-                    half4 albedoDepthB = SAMPLE_TEXTURE2D(_ImpostorAlbedoDepthAtlas, sampler_ImpostorAlbedoDepthAtlas, secondaryUv);
-                    half4 normalDepthB = SAMPLE_TEXTURE2D(_ImpostorNormalDepthAtlas, sampler_ImpostorNormalDepthAtlas, secondaryUv);
-                    albedoDepth = lerp(albedoDepthA, albedoDepthB, (half)blendWeight);
-                    normalDepth = lerp(normalDepthA, normalDepthB, (half)blendWeight);
+                    float4 albedoDepthB = HectonFiniteOr(SAMPLE_TEXTURE2D(_ImpostorAlbedoDepthAtlas, sampler_ImpostorAlbedoDepthAtlas, secondaryUv), albedoDepthA);
+                    float4 normalDepthB = HectonFiniteOr(SAMPLE_TEXTURE2D(_ImpostorNormalDepthAtlas, sampler_ImpostorNormalDepthAtlas, secondaryUv), normalDepthA);
+                    albedoDepth = HectonFiniteOr(lerp(albedoDepthA, albedoDepthB, blendWeight), albedoDepthA);
+                    normalDepth = HectonFiniteOr(lerp(normalDepthA, normalDepthB, blendWeight), normalDepthA);
                 }
-                half occupancyDepth = albedoDepth.a;
-                clip(occupancyDepth - _AlphaClipThreshold);
+                float occupancyDepth = saturate(HectonFiniteOr(albedoDepth.a, 0.0));
+                clip(occupancyDepth - HectonFiniteOr((float)_AlphaClipThreshold, 0.003));
                 if (input.fade01 < 0.999h)
                 {
-                    float fadeDither = HectonInterleavedGradientNoise(input.positionCS.xy + _HectonImpostorTimeSeconds);
+                    float fadeDither = HectonInterleavedGradientNoise(input.positionCS.xy + HectonFiniteOr(_HectonImpostorTimeSeconds, 0.0));
                     clip(input.fade01 - fadeDither);
                 }
 
                 float3 normalWS = HectonDecodeImpostorNormal(normalDepth, _NormalStrength);
-                half headlight = (half)saturate(dot(normalWS, HectonSafeNormalize(_WorldSpaceCameraPos.xyz - input.positionWS, float3(0.0, 0.0, 1.0))));
-                half lighting = saturate(_AmbientFloor + headlight * _HeadlightBoost);
-                half3 color = albedoDepth.rgb * _BaseColor.rgb * lighting;
-                color = MixFog(color, input.fogFactor);
+                float headlight = saturate(HectonFiniteOr(dot(normalWS, HectonSafeNormalize(_WorldSpaceCameraPos.xyz - input.positionWS, float3(0.0, 0.0, 1.0))), 0.0));
+                float lighting = saturate(HectonFiniteOr((float)_AmbientFloor, 0.18) + headlight * HectonFiniteOr((float)_HeadlightBoost, 1.25));
+                float3 baseColor = HectonFiniteOr(float3(_BaseColor.rgb), float3(1.0, 1.0, 1.0));
+                float3 color = HectonFiniteOr(albedoDepth.rgb * baseColor * lighting, float3(0.0, 0.0, 0.0));
+                color = HectonFiniteOr(MixFog(color, HectonFiniteOr((float)input.fogFactor, 0.0)), color);
 
-                float deviceDepth = saturate(input.positionCS.z);
-                float decodedDepthMeters = saturate((float)occupancyDepth) * max(0.01, _HectonImpostorDepthScaleMeters);
-                float depthOffset = saturate(decodedDepthMeters * rcp(max(0.01, _HectonImpostorDepthScaleMeters))) * _DepthBias;
+                float deviceDepth = saturate(HectonFiniteOr(input.positionCS.z, 1.0));
+                float depthScaleMeters = max(0.01, HectonFiniteOr(_HectonImpostorDepthScaleMeters, 1.0));
+                float decodedDepthMeters = occupancyDepth * depthScaleMeters;
+                float depthOffset = saturate(decodedDepthMeters * rcp(depthScaleMeters)) * max(0.0, HectonFiniteOr(_DepthBias, 0.0));
             #if UNITY_REVERSED_Z
-                deviceDepth = saturate(deviceDepth - depthOffset);
+                deviceDepth = saturate(deviceDepth + depthOffset);
             #else
                 deviceDepth = saturate(deviceDepth + depthOffset);
             #endif
 
                 FragmentOutput output;
                 output.color = half4(color, 1.0h);
-                output.depth = deviceDepth;
+                output.depth = HectonFiniteOr(deviceDepth, 1.0);
                 return output;
             }
             ENDHLSL

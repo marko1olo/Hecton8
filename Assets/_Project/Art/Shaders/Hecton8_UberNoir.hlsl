@@ -545,10 +545,11 @@ float3 H8UberNoirTriplanarWeights(half3 normalWS)
 half4 H8UberNoirSampleAlbedoArray(uint slice, float2 uv, float3 stablePosition, half3 normalWS, float quality)
 {
     half4 uvSample = SAMPLE_TEXTURE2D_ARRAY(_H8UberNoirAlbedoArray, sampler_H8UberNoirAlbedoArray, uv, slice);
-#if defined(_MATH_LOD_LOW)
-    return uvSample;
-#else
     float useTriplanar = saturate((quality - 0.5) * 2.0);
+    [branch]
+    if (useTriplanar <= H8_UBER_NOIR_EPS)
+        return uvSample;
+
     float3 weights = H8UberNoirTriplanarWeights(normalWS);
     float scale = lerp(0.035, 0.085, saturate(quality));
     half4 xSample = SAMPLE_TEXTURE2D_ARRAY(_H8UberNoirAlbedoArray, sampler_H8UberNoirAlbedoArray, stablePosition.zy * scale, slice);
@@ -556,7 +557,6 @@ half4 H8UberNoirSampleAlbedoArray(uint slice, float2 uv, float3 stablePosition, 
     half4 zSample = SAMPLE_TEXTURE2D_ARRAY(_H8UberNoirAlbedoArray, sampler_H8UberNoirAlbedoArray, stablePosition.xy * scale, slice);
     half4 triplanarSample = xSample * (half)weights.x + ySample * (half)weights.y + zSample * (half)weights.z;
     return lerp(uvSample, triplanarSample, (half)useTriplanar);
-#endif
 }
 
 float H8UberNoirHash12(float2 value)
@@ -581,9 +581,6 @@ float H8UberNoirValueNoise2(float2 value)
 float H8UberNoirMaterialMacroNoise(float3 stablePosition, half instanceSeed, float quality)
 {
     float cheapNoise = H8UberNoirTriangle01(dot(stablePosition.xz, float2(0.071, -0.053)));
-#if defined(_MATH_LOD_LOW)
-    return cheapNoise;
-#else
     float detailWeight = H8UberNoirSmoothRange01(0.22, 0.44, quality);
     [branch]
     if (detailWeight <= H8_UBER_NOIR_EPS)
@@ -591,7 +588,6 @@ float H8UberNoirMaterialMacroNoise(float3 stablePosition, half instanceSeed, flo
 
     float richNoise = H8UberNoirValueNoise2(stablePosition.xz * 0.041 + instanceSeed);
     return lerp(cheapNoise, richNoise, detailWeight);
-#endif
 }
 
 float H8UberNoirAgingGrowthMask(float3 stablePosition, H8VisualAgingParamsDTO aging, half instanceSeed, float quality)
@@ -1283,6 +1279,7 @@ float2 H8UberNoirResolveRustPomUv(
     half3 viewDirWS,
     half3 normalWS,
     half4 tangentWS,
+    float quality,
     out half4 rustPacked,
     out half rustMask)
 {
@@ -1290,11 +1287,13 @@ float2 H8UberNoirResolveRustPomUv(
     rustPacked = half4(0.0h, 0.5h, 0.5h, 1.0h);
     rustMask = rust01;
 
-#if defined(_MATH_LOD_LOW)
-    return baseUv;
-#else
     [branch]
     if (rust01 <= (half)H8_UBER_NOIR_EPS)
+        return baseUv;
+
+    float rustDetailWeight = H8UberNoirSmoothRange01(0.06, 0.24, quality);
+    [branch]
+    if (rustDetailWeight <= H8_UBER_NOIR_EPS)
         return baseUv;
 
     float rustStValid = step(H8_UBER_NOIR_EPS, abs(_RustDetailMap_ST.x) + abs(_RustDetailMap_ST.y));
@@ -1305,7 +1304,8 @@ float2 H8UberNoirResolveRustPomUv(
 
     float rustActive = H8UberNoirSmoothRange01(_UberNoirRustParams.y, _UberNoirRustParams.y + 0.08, rust01);
     float decayAllowed = 1.0 - H8UberNoirSmoothRange01(0.45, 0.55, _HectonMaterialDecayRuntime.z);
-    float pomEnabled = H8UberNoirFeatureScalar(_UberNoirFeatureFlags.x) * rustActive * decayAllowed * H8UberNoirHighCostAllowed();
+    float pomQuality = H8UberNoirSmoothRange01(0.58, 0.92, quality);
+    float pomEnabled = H8UberNoirFeatureScalar(_UberNoirFeatureFlags.x) * rustActive * decayAllowed * H8UberNoirHighCostAllowed() * pomQuality;
     [branch]
     if (pomEnabled <= 0.0)
         return baseUv;
@@ -1336,7 +1336,6 @@ float2 H8UberNoirResolveRustPomUv(
     rustMask = saturate(rust01 * lerp(0.58h, 1.0h, pitMask));
     float2 invRustScale = float2(H8UberNoirSafeRcp(rustScale.x), H8UberNoirSafeRcp(rustScale.y));
     return baseUv + (resolvedUv - rustUv) * invRustScale * baseUvScale;
-#endif
 }
 
 half3 H8UberNoirDecodeRustNormalTS(half4 rustPacked, half strength)
@@ -1355,10 +1354,11 @@ void H8UberNoirApplyRustCorrosion(
     half rustMask,
     inout H8UberNoirSurface surface)
 {
-#if defined(_MATH_LOD_LOW)
-    return;
-#else
     half finalRustMask = saturate(rustMask);
+    [branch]
+    if (finalRustMask <= (half)H8_UBER_NOIR_EPS)
+        return;
+
     float3 safeNormalWS;
     float3 safeTangentWS;
     float3 safeBitangentWS;
@@ -1396,7 +1396,6 @@ void H8UberNoirApplyRustCorrosion(
     surface.albedo = lerp(surface.albedo, (half3)_RustPitTint.rgb * 0.35h, patch * 0.72h);
     surface.smoothness = lerp(surface.smoothness, 1.0h, patch * saturate((half)_HectonPlayerBloodSplatter.z));
     surface.roughness = saturate(1.0h - surface.smoothness);
-#endif
 }
 
 half3 H8UberNoirResolveBiolumEmission(float3 positionWS, half emissionMask, half instanceSeed)
@@ -1493,12 +1492,10 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
     float2 rawUv = input.uvPack.zw;
     float2 wearUv = baseUv;
     float2 maskUv = input.uvAux.zw;
-#if !defined(_MATH_LOD_LOW)
     half4 rustPacked;
     half rustMask;
-    wearUv = H8UberNoirResolveRustPomUv(rawUv, baseUv, input.uvAux.xy, input.viewDirWS, input.normalWS, input.tangentWS, rustPacked, rustMask);
+    wearUv = H8UberNoirResolveRustPomUv(rawUv, baseUv, input.uvAux.xy, input.viewDirWS, input.normalWS, input.tangentWS, quality, rustPacked, rustMask);
     maskUv += wearUv - baseUv;
-#endif
     H8UberNoirWearVitality vitality = H8UberNoirResolveWearVitality(
         stablePosition,
         wearUv,
@@ -1529,34 +1526,38 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
     }
 
     half brownoutPowerLevel = H8UberNoirResolveBrownoutPower(input.positionWS, input.instanceSeed, (half)materialState.PowerLevel);
-#if defined(_MATH_LOD_LOW)
-    half roughness = max(saturate(armSample.g), (half)_UberNoirLightingParams.y);
-    half rust01 = max(H8UberNoirResolveRust01(), dynamicRust);
-    half saltCrust = saturate(max(dynamicSalt, rust01 * 0.28h) * (0.55h + (half)H8UberNoirTriangle01(dot(stablePosition.xz, float2(0.071, -0.053)))));
-    half3 saltTint = lerp((half3)_RustTint.rgb, (half3)_RustPitTint.rgb, saltCrust);
-    half3 mossTint = max((half3)_BiolumLowColor.rgb * 0.22h, half3(0.04h, 0.11h, 0.07h));
-    surface.albedo = lerp(baseSample.rgb, saltTint, saturate((saltCrust + rust01) * 0.42h));
-    surface.albedo = lerp(surface.albedo, mossTint, dynamicMoss * 0.32h);
-    surface.normalWS = input.normalWS;
-    surface.emission = _EmissionColor.rgb * armSample.a * (half)_UberNoirLightingParams.w * brownoutPowerLevel;
-    surface.metallic = 0.0h;
-    surface.occlusion = saturate(lerp(1.0h, armSample.r, (half)_OcclusionStrength));
-    surface.smoothness = lerp(saturate((1.0h - roughness) * (half)_Smoothness), 0.24h, saltCrust);
-    surface.roughness = roughness;
-    surface.alpha = baseSample.a;
-    surface.rustMask = saltCrust;
-    surface.orm = armSample;
-    surface.sssMask = dynamicMoss;
-    surface.anisotropy = 0.0h;
-    surface.powerLevel = brownoutPowerLevel;
-    H8UberNoirApplyWearVitalityColor(vitality, surface);
-    surface.albedo = lerp(surface.albedo, (half3)_RustPitTint.rgb, (half)visualAging.RustAndCorrosion.z * dynamicRust * 0.22h);
-    H8UberNoirApplyGlassMicroFracture(visualAging, stablePosition, surface.normalWS, input.instanceSeed, quality, surface);
-    surface.normalWS = (half3)H8UberNoirSafeNormalize(
-        (float3)surface.normalWS + (float3)input.deformationNormalWS * saturate(input.dentScar),
-        (float3)input.normalWS);
-    return surface;
-#else
+    float surfaceDetailWeight = H8UberNoirSmoothRange01(0.06, 0.24, quality);
+    [branch]
+    if (surfaceDetailWeight <= H8_UBER_NOIR_EPS)
+    {
+        half roughness = max(saturate(armSample.g), (half)_UberNoirLightingParams.y);
+        half rust01 = max(H8UberNoirResolveRust01(), dynamicRust);
+        half saltCrust = saturate(max(dynamicSalt, rust01 * 0.28h) * (0.55h + (half)H8UberNoirTriangle01(dot(stablePosition.xz, float2(0.071, -0.053)))));
+        half3 saltTint = lerp((half3)_RustTint.rgb, (half3)_RustPitTint.rgb, saltCrust);
+        half3 mossTint = max((half3)_BiolumLowColor.rgb * 0.22h, half3(0.04h, 0.11h, 0.07h));
+        surface.albedo = lerp(baseSample.rgb, saltTint, saturate((saltCrust + rust01) * 0.42h));
+        surface.albedo = lerp(surface.albedo, mossTint, dynamicMoss * 0.32h);
+        surface.normalWS = input.normalWS;
+        surface.emission = _EmissionColor.rgb * armSample.a * (half)_UberNoirLightingParams.w * brownoutPowerLevel;
+        surface.metallic = 0.0h;
+        surface.occlusion = saturate(lerp(1.0h, armSample.r, (half)_OcclusionStrength));
+        surface.smoothness = lerp(saturate((1.0h - roughness) * (half)_Smoothness), 0.24h, saltCrust);
+        surface.roughness = roughness;
+        surface.alpha = baseSample.a;
+        surface.rustMask = saltCrust;
+        surface.orm = armSample;
+        surface.sssMask = dynamicMoss;
+        surface.anisotropy = 0.0h;
+        surface.powerLevel = brownoutPowerLevel;
+        H8UberNoirApplyWearVitalityColor(vitality, surface);
+        surface.albedo = lerp(surface.albedo, (half3)_RustPitTint.rgb, (half)visualAging.RustAndCorrosion.z * dynamicRust * 0.22h);
+        H8UberNoirApplyGlassMicroFracture(visualAging, stablePosition, surface.normalWS, input.instanceSeed, quality, surface);
+        surface.normalWS = (half3)H8UberNoirSafeNormalize(
+            (float3)surface.normalWS + (float3)input.deformationNormalWS * saturate(input.dentScar),
+            (float3)input.normalWS);
+        return surface;
+    }
+
     half3 normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, wearUv), (half)_BumpScale);
     [branch]
     if (textureArrayBlend > H8_UBER_NOIR_EPS)
@@ -1616,7 +1617,6 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
         safeNormalWS);
     surface.emission += H8UberNoirResolveBiolumEmission(input.positionWS, armSample.a, input.instanceSeed) * lerp(0.35h, 1.0h, surface.powerLevel);
     return surface;
-#endif
 }
 
 half3 H8UberNoirEvaluateMainLighting(H8UberNoirVaryings input, H8UberNoirSurface surface)

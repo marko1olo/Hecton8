@@ -91,8 +91,10 @@ Use:
 ### Performance Complaint
 
 ```text
-Thanks for reporting this. We are tracking performance issues by hardware/settings/build version. If you are willing to send specs and the area where the drops happen, use [approved support route]. We will not make a performance claim here without measured build context.
+Thanks for reporting this. We are tracking performance issues by hardware/settings/build version. If you are willing to send specs and the area where the drops happen, use [support route gated by steam_support_permission_gate/public_cta_permission_gate]. We will not make a performance claim here without measured build context.
 ```
+
+Replace the support-route placeholder only with a route that has `steam_support_permission_gate = ALLOW_STEAM_SUPPORT_ROUTE_VERIFIED` for the exact app/build/surface, owner-controlled inbox/form custody, `route_class = support_route`, `consent_provenance = support_report`, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` if the route is linked publicly.
 
 ### Content Too Thin
 
@@ -115,8 +117,10 @@ The underwater survival comparison is understandable. Our target is a different 
 ### Bug Report In Review
 
 ```text
-Thanks. This sounds like [issue class]. If you can send the save/build version or steps through [approved support route], it will help us reproduce it. I am logging the issue under [ticket/tag].
+Thanks. This sounds like [issue class]. If you can send the save/build version or steps through [support route gated by steam_support_permission_gate/public_cta_permission_gate], it will help us reproduce it. I am logging the issue under [ticket/tag].
 ```
+
+Replace the support-route placeholder only after the same support-route machine gate, owner custody, route class, support-report provenance, and public-CTA gate pass for the exact route.
 
 ## Forum Categories
 

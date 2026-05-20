@@ -9,9 +9,11 @@ from pathlib import Path
 from DataVaultSovereigntyAudit import (
     BASELINE_SCHEMA,
     aggregate_regression_details,
+    aggregate_regression_details_by_surface,
     build_report_payload,
     collect_regression_details,
     extract_domain,
+    extract_execution_surface,
 )
 
 
@@ -66,6 +68,22 @@ class DataVaultRegressionDrilldownTests(unittest.TestCase):
         )
         self.assertEqual(extract_domain("Packages/Vendor/File.cs"), "External")
 
+    def test_extract_execution_surface_separates_runtime_from_editor_and_dev(self) -> None:
+        self.assertEqual(
+            extract_execution_surface("Assets/_Project/Scripts/Construction/SumpPumpPipeGridJobs.cs"),
+            "Runtime",
+        )
+        self.assertEqual(
+            extract_execution_surface(
+                "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs"
+            ),
+            "Editor",
+        )
+        self.assertEqual(
+            extract_execution_surface("Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs"),
+            "Dev",
+        )
+
     def test_collect_regression_details_groups_exact_file_deltas(self) -> None:
         payload = make_payload()
         baseline = {
@@ -82,6 +100,7 @@ class DataVaultRegressionDrilldownTests(unittest.TestCase):
 
         errors, details = collect_regression_details(payload, baseline)
         by_domain = aggregate_regression_details(details)
+        by_surface = aggregate_regression_details_by_surface(details)
 
         self.assertTrue(any("Forbidden direct NativeArray constructors increased" in e for e in errors))
         self.assertEqual(len(details), 3)
@@ -89,6 +108,9 @@ class DataVaultRegressionDrilldownTests(unittest.TestCase):
         self.assertEqual(by_domain[0]["fieldDeclarationDelta"], 2)
         self.assertEqual(by_domain[1]["domain"], "Core")
         self.assertEqual(by_domain[2]["domain"], "World")
+        self.assertEqual(details[0]["executionSurface"], "Runtime")
+        self.assertEqual(by_surface[0]["executionSurface"], "Runtime")
+        self.assertEqual(by_surface[0]["delta"], 4)
 
     def test_build_report_payload_keeps_machine_readable_regression_data(self) -> None:
         payload = make_payload()
@@ -109,7 +131,9 @@ class DataVaultRegressionDrilldownTests(unittest.TestCase):
 
         self.assertEqual(report["schema"], "hecton8.datavault_sovereignty_audit_report.v1")
         self.assertEqual(report["regressionDetails"][0]["domain"], "Core")
+        self.assertEqual(report["regressionDetails"][0]["executionSurface"], "Runtime")
         self.assertEqual(report["regressionByDomain"][0]["domain"], "Core")
+        self.assertEqual(report["regressionByExecutionSurface"][0]["executionSurface"], "Runtime")
 
     def test_missing_baseline_fails_closed_without_fake_details(self) -> None:
         errors, details = collect_regression_details(make_payload(), None)

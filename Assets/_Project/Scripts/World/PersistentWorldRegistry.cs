@@ -2896,7 +2896,9 @@ namespace Hecton8.World
             if (record.IsCollected)
                 return;
 
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(sourceTransform.position);
+            if (!TryResolveLiveInstanceAup(sourceTransform, out AbsoluteUniversePosition position))
+                return;
+
             int3 nextChunkId = AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters);
             if (!math.all(nextChunkId == record.ChunkId))
             {
@@ -5002,6 +5004,27 @@ namespace Hecton8.World
             return math.isfinite(value.x) &&
                    math.isfinite(value.y) &&
                    math.isfinite(value.z);
+        }
+
+        private static bool TryResolveLiveInstanceAup(Transform sourceTransform, out AbsoluteUniversePosition position)
+        {
+            position = default;
+            if (sourceTransform == null)
+                return false;
+
+            Vector3 runtimePosition = sourceTransform.position;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            position = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return MathGuard.IsFinite(in position);
         }
 
         private void RegisterSpawnImpulse(uint instanceUid, Vector3 initialImpulse)

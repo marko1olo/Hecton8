@@ -84,6 +84,7 @@ namespace Hecton8.Construction
         private VaultGenerationHandle<DrainagePipeFlowGpuDTO> _flowGpuHandle;
 
         private JobHandle _solverHandle;
+        private JobHandle _mockSeedHandle;
         private GraphicsBuffer _flowBufferA;
         private GraphicsBuffer _flowBufferB;
         private ulong _lockedBufferMask;
@@ -99,6 +100,7 @@ namespace Hecton8.Construction
         private bool _pressureFrontIsA = true;
         private bool _topologyDirty = true;
         private bool _flowUploadDirty;
+        private bool _mockSeedScheduled;
         private bool _blackBoxDumped;
 
         /// <summary>True when the Vault-backed sump pump runtime is the active drainage authority.</summary>
@@ -149,6 +151,7 @@ namespace Hecton8.Construction
 
         private void OnDisable()
         {
+            CompleteMockSeedForTeardown();
             CompleteScheduledSolverForTeardown();
             UnlockJobBuffers();
             if (_buffersReady && TryReadTuning(out DrainageTuningDTO tuning))
@@ -179,7 +182,7 @@ namespace Hecton8.Construction
         /// <summary>Quality-scaled slow simulation cadence. No object pump or water-particle state is read here.</summary>
         public void SlowTick()
         {
-            if (_solverScheduled)
+            if (_solverScheduled || _mockSeedScheduled)
                 return;
 
             if (!_buffersReady && !TryResolveAndInitializeBuffers())
@@ -199,6 +202,9 @@ namespace Hecton8.Construction
         /// <summary>Completes the scheduled chain in the dispatcher visual-sync lane and uploads flow scalars.</summary>
         public void LateFrameTick()
         {
+            if (!TryFinalizeMockSeedNoWait())
+                return;
+
             if (!TryFinalizeScheduledSolverNoWait())
                 return;
 
@@ -243,6 +249,9 @@ namespace Hecton8.Construction
         /// <summary>Rebuilds the deterministic 1000-node / 2500-edge mock drainage topology in Vault buffers.</summary>
         public void GenerateMockDrainageNetwork()
         {
+            if (_mockSeedScheduled)
+                return;
+
             if (!_buffersReady && !TryResolveAndInitializeBuffers())
                 return;
 
@@ -251,6 +260,7 @@ namespace Hecton8.Construction
             if (!TryLockJobBuffers())
                 return;
 
+            bool scheduled = false;
             try
             {
                 NativeArray<PumpNodeDTO> pumps = Resolve(in _pumpNodesHandle);
@@ -280,14 +290,15 @@ namespace Hecton8.Construction
                     PumpPowerDraw = current.PumpPowerDraw
                 };
 
-                job.Run();
-                ClearRuntimeScalarBuffers();
-                _topologyDirty = true;
-                _pressureFrontIsA = true;
+                _mockSeedHandle = job.Schedule();
+                H8Memory.RegisterActiveJob(OwnerSystem, _mockSeedHandle);
+                _mockSeedScheduled = true;
+                scheduled = true;
             }
             finally
             {
-                UnlockJobBuffers();
+                if (!scheduled)
+                    UnlockJobBuffers();
             }
         }
 
@@ -565,6 +576,36 @@ namespace Hecton8.Construction
 
             _solverScheduled = false;
             return true;
+        }
+
+        private bool TryFinalizeMockSeedNoWait()
+        {
+            if (!_mockSeedScheduled)
+                return true;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _mockSeedHandle))
+                return false;
+
+            ClearRuntimeScalarBuffers();
+            _topologyDirty = true;
+            _pressureFrontIsA = true;
+            _mockSeedScheduled = false;
+            UnlockJobBuffers();
+            return true;
+        }
+
+        private void CompleteMockSeedForTeardown()
+        {
+            if (!_mockSeedScheduled)
+                return;
+
+            if (!DispatcherJobFence.TryComplete(ref _mockSeedHandle, forceComplete: true))
+                return;
+
+            ClearRuntimeScalarBuffers();
+            _topologyDirty = true;
+            _pressureFrontIsA = true;
+            _mockSeedScheduled = false;
         }
 
         private void CompleteScheduledSolverForTeardown()

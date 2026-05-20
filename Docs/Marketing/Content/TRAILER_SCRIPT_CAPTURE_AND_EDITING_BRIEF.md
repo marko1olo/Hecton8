@@ -37,7 +37,7 @@ The first trailer must make a cold player understand:
 | 35-45s | Threat/failure | environmental danger or hostile ecology |
 | 45-55s | Seed Ship | anomaly signal, impossible silhouette, instrument corruption |
 | 55-65s | Feature proof | fast cuts of real systems |
-| 65-75s | CTA | title plus approved Steam/demo CTA after the CTA activation gate; otherwise no-link feedback end card |
+| 65-75s | CTA | title plus gated Steam/demo CTA only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED` where a demo is linked, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`; otherwise no-link feedback end card |
 
 ## Opening Rules
 
@@ -127,7 +127,7 @@ Trailer fails if:
 
 - first 10 seconds have no player verb;
 - viewers ask if it is pre-rendered;
-- the required approved CTA or no-link end card is missing;
+- the required gated CTA or no-link end card is missing;
 - feature cards exceed footage proof;
 - UI/text unreadable;
 - audio mix hides action;

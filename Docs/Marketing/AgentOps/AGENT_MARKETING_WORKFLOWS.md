@@ -107,14 +107,14 @@ Batch sizes:
 
 Each batch must have:
 
-- one asset link;
+- one real asset ID/link after asset metadata claim checks, QA, creator utility where creator-facing, `creator_send_gate` where creator-facing, and the relevant public/private route gates pass;
 - passing asset metadata claim checks;
 - creator utility 3/4+ if creator-facing;
 - open `creator_send_gate`;
 - `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` if the batch claims gameplay, pressure, route-risk, threat, salvage failure, or first-public agency proof;
 - `send_route_class` for creator/press/curator sends, `access_route_class` for private access, and `reply_consent_provenance` before any creator, press, curator, or access send;
 - one pitch angle;
-- one CTA only after `Analytics/MEASUREMENT_AND_UTM_PLAN.md` Official CTA Link Activation Gate V0 passes; otherwise use a no-link feedback ask or a private route only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields;
+- one public CTA only after the exact destination gate passes (`steam_page_publish_permission_gate`, `press_release_permission_gate`, `demo_public_access_permission_gate`, `discord_open_permission_gate`, `owned_audience_permission_gate`, or `steam_support_permission_gate` as applicable) and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`; otherwise use a no-link feedback ask or a private route only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, disclosure, and exact access-log fields;
 - one tracking tag;
 - no multiplayer-scope promise;
 - no competitor-attack language;

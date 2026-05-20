@@ -147,7 +147,7 @@ Minimum screenshot set:
 
 Asset rule:
 
-- One image, one hook, one CTA route: approved Steam CTA only after Official CTA Link Activation Gate V0; otherwise no-link feedback.
+- One image, one hook, one CTA route: Steam CTA only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`; otherwise no-link feedback.
 - No collage posts unless comparing visual identity.
 - No explanation-heavy screenshots.
 - Any screenshot used as gameplay/pressure/route-risk agency proof needs AB-009/KPI decision-read evidence before creator, Steam, press, spend, or public scaling.
@@ -176,7 +176,7 @@ Clip structure:
 - 0-2s: failure/threat/hook.
 - 3-12s: player action.
 - 13-18s: consequence.
-- 19-20s: title + approved Steam CTA after `Analytics/MEASUREMENT_AND_UTM_PLAN.md` Official CTA Link Activation Gate V0 passes; otherwise use a no-link feedback end card.
+- 19-20s: title plus Steam CTA only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`; otherwise use a no-link feedback end card.
 
 Reusable clip formats:
 

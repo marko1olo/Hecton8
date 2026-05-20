@@ -1,7 +1,10 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Tools;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -102,123 +105,42 @@ namespace Hecton8.Gameplay
         private uint _signalSourceId;
 
         /// <summary>Combined authored plus runtime-installed upgrade bitmask.</summary>
-        public uint ActiveUpgradeBitmask => ComposeAuthoredBitmask() | _runtimeInstalledUpgradeMask;
+        public uint ActiveUpgradeBitmask => (uint)ActiveUpgradeMask64;
+
+        /// <summary>Combined authored plus runtime-installed upgrade bitmask in SHINOBU_231 64-bit form.</summary>
+        public ulong ActiveUpgradeMask64 => ComposeAuthoredBitmask64() | _runtimeInstalledUpgradeMask;
 
         /// <summary>Additional safe-depth margin supplied by installed hull and pressure upgrades.</summary>
-        public float SafeDepthBonusMeters
-        {
-            get
-            {
-                uint mask = ActiveUpgradeBitmask;
-                float bonus = 0f;
-                if ((mask & (uint)VehicleUpgradeBits.ReinforcedHull) != 0u)
-                    bonus += Mathf.Max(0f, reinforcedHullSafeDepthBonus);
-                if ((mask & (uint)VehicleUpgradeBits.PressureCompensator) != 0u)
-                    bonus += Mathf.Max(0f, pressureCompensatorSafeDepthBonus);
-                if ((mask & (uint)VehicleUpgradeBits.AbyssalStabilizer) != 0u)
-                    bonus += Mathf.Max(0f, pressureCompensatorSafeDepthBonus * 0.5f);
-                return bonus - _permanentSafeDepthPenaltyMeters;
-            }
-        }
+        public float SafeDepthBonusMeters => CompileStats().SafeDepthBonusMeters;
 
         /// <summary>Permanent safe-depth rating loss accumulated by micro-fracture fatigue.</summary>
         public float PermanentSafeDepthPenaltyMeters => _permanentSafeDepthPenaltyMeters;
 
         /// <summary>Additional transport integrity supplied by installed armor and damping upgrades.</summary>
-        public float MaxIntegrityBonus
-        {
-            get
-            {
-                uint mask = ActiveUpgradeBitmask;
-                float bonus = 0f;
-                if ((mask & (uint)VehicleUpgradeBits.ReinforcedHull) != 0u)
-                    bonus += Mathf.Max(0f, reinforcedHullIntegrityBonus);
-                if ((mask & (uint)VehicleUpgradeBits.HullArmorLattice) != 0u)
-                    bonus += Mathf.Max(0f, hullArmorIntegrityBonus);
-                if ((mask & (uint)VehicleUpgradeBits.ShockMountArray) != 0u)
-                    bonus += Mathf.Max(0f, shockMountIntegrityBonus);
-                return bonus;
-            }
-        }
+        public float MaxIntegrityBonus => CompileStats().MaxIntegrityBonus;
 
         /// <summary>Multiplier injected into propulsion acceleration by installed thrust upgrades.</summary>
-        public float ThrustAccelerationMultiplier
-        {
-            get
-            {
-                uint mask = ActiveUpgradeBitmask;
-                float multiplier = 1f;
-                if ((mask & (uint)VehicleUpgradeBits.EngineOverdrive) != 0u)
-                    multiplier *= Mathf.Max(1f, engineOverdriveThrustMultiplier);
-                if ((mask & (uint)VehicleUpgradeBits.BallastOptimizer) != 0u)
-                    multiplier *= Mathf.Max(1f, ballastOptimizerThrustMultiplier);
-                if ((mask & (uint)VehicleUpgradeBits.AbyssalStabilizer) != 0u)
-                    multiplier *= 1.04f;
-                return multiplier;
-            }
-        }
+        public float ThrustAccelerationMultiplier => CompileStats().ThrustAccelerationMultiplier;
 
         /// <summary>Multiplier injected into propulsion speed ceilings by installed drive upgrades.</summary>
-        public float MaxSpeedMultiplier
-        {
-            get
-            {
-                uint mask = ActiveUpgradeBitmask;
-                float multiplier = 1f;
-                if ((mask & (uint)VehicleUpgradeBits.EngineOverdrive) != 0u)
-                    multiplier *= Mathf.Max(1f, engineOverdriveSpeedMultiplier);
-                if ((mask & (uint)VehicleUpgradeBits.BallastOptimizer) != 0u)
-                    multiplier *= Mathf.Max(1f, ballastOptimizerSpeedMultiplier);
-                if ((mask & (uint)VehicleUpgradeBits.AbyssalStabilizer) != 0u)
-                    multiplier *= 1.05f;
-                return multiplier;
-            }
-        }
+        public float MaxSpeedMultiplier => CompileStats().MaxSpeedMultiplier;
 
         /// <summary>Suit energy-drain multiplier injected by installed efficiency and stealth upgrades.</summary>
-        public float EnergyDrainScale
-        {
-            get
-            {
-                uint mask = ActiveUpgradeBitmask;
-                float scale = 1f;
-                if ((mask & (uint)VehicleUpgradeBits.EfficientEngine) != 0u)
-                    scale *= Mathf.Max(0.1f, efficientEngineEnergyDrainScale);
-                if ((mask & (uint)VehicleUpgradeBits.SilentRunningBaffle) != 0u)
-                    scale *= Mathf.Max(0.1f, silentRunningEnergyDrainScale);
-                return scale;
-            }
-        }
+        public float EnergyDrainScale => CompileStats().EnergyDrainScale;
 
         /// <summary>Battery or drive-charge drain multiplier injected by installed power-routing upgrades.</summary>
-        public float ChargeDrainScale
-        {
-            get
-            {
-                uint mask = ActiveUpgradeBitmask;
-                float scale = 1f;
-                if ((mask & (uint)VehicleUpgradeBits.EfficientEngine) != 0u)
-                    scale *= Mathf.Max(0.1f, efficientEngineChargeDrainScale);
-                if ((mask & (uint)VehicleUpgradeBits.ReactorBypassCoupler) != 0u)
-                    scale *= Mathf.Max(0.1f, reactorBypassChargeDrainScale);
-                return scale;
-            }
-        }
+        public float ChargeDrainScale => CompileStats().ChargeDrainScale;
 
         /// <summary>Thermal exposure multiplier injected by installed thermal shielding.</summary>
-        public float ThermalExposureScale => HasUpgrade(VehicleUpgradeBits.ThermalShielding)
-            ? Mathf.Max(0.1f, thermalShieldingExposureScale)
-            : 1f;
+        public float ThermalExposureScale => CompileStats().ThermalExposureScale;
 
         /// <summary>Pressure damage-transfer multiplier injected by installed pressure compensation.</summary>
-        public float PressureDamageScale => HasUpgrade(VehicleUpgradeBits.PressureCompensator)
-            ? Mathf.Max(0.1f, pressureCompensatorDamageScale)
-            : 1f;
+        public float PressureDamageScale => CompileStats().PressureDamageScale;
 
         /// <summary>Returns true when the supplied upgrade flag is active on this transport.</summary>
         public bool HasUpgrade(VehicleUpgradeBits flag)
         {
-            return (ActiveUpgradeBitmask & (uint)flag) != 0u;
+            return (ActiveUpgradeMask64 & (ulong)flag) != 0UL;
         }
 
         /// <summary>
@@ -271,40 +193,104 @@ namespace Hecton8.Gameplay
             GlobalSignals.Publish(in signal);
         }
 
-        private uint ComposeAuthoredBitmask()
+        private ulong ComposeAuthoredBitmask64()
         {
-            uint mask = 0u;
-            if (reinforcedHullInstalled)
-                mask |= (uint)VehicleUpgradeBits.ReinforcedHull;
-            if (efficientEngineInstalled)
-                mask |= (uint)VehicleUpgradeBits.EfficientEngine;
+            uint reinforced = (uint)math.select(0, 1, reinforcedHullInstalled);
+            uint efficient = (uint)math.select(0, 1, efficientEngineInstalled);
+            uint mask = ((uint)VehicleUpgradeBits.ReinforcedHull & (0u - reinforced)) |
+                        ((uint)VehicleUpgradeBits.EfficientEngine & (0u - efficient));
             return mask;
         }
 
         private static VehicleUpgradeBits ResolveUpgradeBit(int itemHashId)
         {
-            if (itemHashId == _PressureCompensatorHashId)
-                return VehicleUpgradeBits.PressureCompensator;
-            if (itemHashId == _SonarAmplifierHashId)
-                return VehicleUpgradeBits.SonarAmplifier;
-            if (itemHashId == _ThermalShieldingHashId)
-                return VehicleUpgradeBits.ThermalShielding;
-            if (itemHashId == _EngineOverdriveManifoldHashId)
-                return VehicleUpgradeBits.EngineOverdrive;
-            if (itemHashId == _HullArmorLatticeHashId)
-                return VehicleUpgradeBits.HullArmorLattice;
-            if (itemHashId == _ShockMountArrayHashId)
-                return VehicleUpgradeBits.ShockMountArray;
-            if (itemHashId == _BallastOptimizerHashId)
-                return VehicleUpgradeBits.BallastOptimizer;
-            if (itemHashId == _ReactorBypassCouplerHashId)
-                return VehicleUpgradeBits.ReactorBypassCoupler;
-            if (itemHashId == _SilentRunningBaffleHashId)
-                return VehicleUpgradeBits.SilentRunningBaffle;
-            if (itemHashId == _AbyssalStabilizerHashId)
-                return VehicleUpgradeBits.AbyssalStabilizer;
+            uint mask =
+                SelectBit(itemHashId, _PressureCompensatorHashId, VehicleUpgradeBits.PressureCompensator) |
+                SelectBit(itemHashId, _SonarAmplifierHashId, VehicleUpgradeBits.SonarAmplifier) |
+                SelectBit(itemHashId, _ThermalShieldingHashId, VehicleUpgradeBits.ThermalShielding) |
+                SelectBit(itemHashId, _EngineOverdriveManifoldHashId, VehicleUpgradeBits.EngineOverdrive) |
+                SelectBit(itemHashId, _HullArmorLatticeHashId, VehicleUpgradeBits.HullArmorLattice) |
+                SelectBit(itemHashId, _ShockMountArrayHashId, VehicleUpgradeBits.ShockMountArray) |
+                SelectBit(itemHashId, _BallastOptimizerHashId, VehicleUpgradeBits.BallastOptimizer) |
+                SelectBit(itemHashId, _ReactorBypassCouplerHashId, VehicleUpgradeBits.ReactorBypassCoupler) |
+                SelectBit(itemHashId, _SilentRunningBaffleHashId, VehicleUpgradeBits.SilentRunningBaffle) |
+                SelectBit(itemHashId, _AbyssalStabilizerHashId, VehicleUpgradeBits.AbyssalStabilizer);
+            return (VehicleUpgradeBits)mask;
+        }
 
-            return VehicleUpgradeBits.None;
+        private VehicleUpgradeCompiledStats CompileStats()
+        {
+            ulong mask = ActiveUpgradeMask64;
+            float reinforced = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.ReinforcedHull);
+            float efficient = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.EfficientEngine);
+            float pressure = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.PressureCompensator);
+            float overdrive = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.EngineOverdrive);
+            float armor = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.HullArmorLattice);
+            float thermal = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.ThermalShielding);
+            float shock = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.ShockMountArray);
+            float ballast = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.BallastOptimizer);
+            float reactor = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.ReactorBypassCoupler);
+            float silent = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.SilentRunningBaffle);
+            float stabilizer = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.AbyssalStabilizer);
+
+            VehicleUpgradeCompiledStats stats = default;
+            stats.SafeDepthBonusMeters =
+                (math.max(0f, reinforcedHullSafeDepthBonus) * reinforced) +
+                (math.max(0f, pressureCompensatorSafeDepthBonus) * pressure) +
+                (math.max(0f, pressureCompensatorSafeDepthBonus * 0.5f) * stabilizer) -
+                math.max(0f, _permanentSafeDepthPenaltyMeters);
+            stats.MaxIntegrityBonus =
+                (math.max(0f, reinforcedHullIntegrityBonus) * reinforced) +
+                (math.max(0f, hullArmorIntegrityBonus) * armor) +
+                (math.max(0f, shockMountIntegrityBonus) * shock);
+            stats.ThrustAccelerationMultiplier =
+                SelectMultiplier(math.max(1f, engineOverdriveThrustMultiplier), overdrive) *
+                SelectMultiplier(math.max(1f, ballastOptimizerThrustMultiplier), ballast) *
+                SelectMultiplier(1.04f, stabilizer);
+            stats.MaxSpeedMultiplier =
+                SelectMultiplier(math.max(1f, engineOverdriveSpeedMultiplier), overdrive) *
+                SelectMultiplier(math.max(1f, ballastOptimizerSpeedMultiplier), ballast) *
+                SelectMultiplier(1.05f, stabilizer);
+            stats.EnergyDrainScale =
+                SelectMultiplier(math.max(0.1f, efficientEngineEnergyDrainScale), efficient) *
+                SelectMultiplier(math.max(0.1f, silentRunningEnergyDrainScale), silent);
+            stats.ChargeDrainScale =
+                SelectMultiplier(math.max(0.1f, efficientEngineChargeDrainScale), efficient) *
+                SelectMultiplier(math.max(0.1f, reactorBypassChargeDrainScale), reactor);
+            stats.ThermalExposureScale = SelectMultiplier(math.max(0.1f, thermalShieldingExposureScale), thermal);
+            stats.PressureDamageScale = SelectMultiplier(math.max(0.1f, pressureCompensatorDamageScale), pressure);
+            stats.VisualFlags = (uint)((mask & UpgradeMatrixConstants.VisualFlagMask) >> 48);
+            stats.StateHash = UpgradeMatrixCompiler.HashMask(mask, _signalSourceId, 0x56454855u);
+            return stats;
+        }
+
+        private static uint SelectBit(int itemHashId, int expectedHashId, VehicleUpgradeBits bit)
+        {
+            uint selected = (uint)math.select(0, 1, itemHashId == expectedHashId);
+            return (uint)bit & (0u - selected);
+        }
+
+        private static float SelectMultiplier(float multiplier, float enabled01)
+        {
+            return 1f + ((multiplier - 1f) * enabled01);
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        private struct VehicleUpgradeCompiledStats
+        {
+            [FieldOffset(0)] public float SafeDepthBonusMeters;
+            [FieldOffset(4)] public float MaxIntegrityBonus;
+            [FieldOffset(8)] public float ThrustAccelerationMultiplier;
+            [FieldOffset(12)] public float MaxSpeedMultiplier;
+            [FieldOffset(16)] public float EnergyDrainScale;
+            [FieldOffset(20)] public float ChargeDrainScale;
+            [FieldOffset(24)] public float ThermalExposureScale;
+            [FieldOffset(28)] public float PressureDamageScale;
+            [FieldOffset(32)] public uint VisualFlags;
+            [FieldOffset(36)] private uint _pad0;
+            [FieldOffset(40)] public ulong StateHash;
+            [FieldOffset(48)] private ulong _pad1;
+            [FieldOffset(56)] private ulong _pad2;
         }
     }
 }

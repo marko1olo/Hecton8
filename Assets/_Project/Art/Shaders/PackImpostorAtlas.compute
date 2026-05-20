@@ -9,25 +9,46 @@ int _ViewIndex;
 float4 _TileSize;
 float4 _AtlasGrid;
 
+float HectonFiniteOr(float value, float fallback)
+{
+    return (isnan(value) || isinf(value)) ? fallback : value;
+}
+
+float2 HectonFiniteOr2(float2 value, float2 fallback)
+{
+    return (any(isnan(value)) || any(isinf(value))) ? fallback : value;
+}
+
+float3 HectonFiniteOr3(float3 value, float3 fallback)
+{
+    return (any(isnan(value)) || any(isinf(value))) ? fallback : value;
+}
+
+float4 HectonFiniteOr4(float4 value, float4 fallback)
+{
+    return (any(isnan(value)) || any(isinf(value))) ? fallback : value;
+}
+
 [numthreads(8, 8, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
-    int2 tileSize = max(int2(_TileSize.xy), int2(1, 1));
-    int2 atlasGrid = max(int2(_AtlasGrid.xy), int2(1, 1));
+    int2 tileSize = max(int2(HectonFiniteOr2(_TileSize.xy, float2(1.0, 1.0))), int2(1, 1));
+    int2 atlasGrid = max(int2(HectonFiniteOr2(_AtlasGrid.xy, float2(1.0, 1.0))), int2(1, 1));
     if (id.x >= (uint)tileSize.x || id.y >= (uint)tileSize.y)
         return;
 
-    int tileX = _ViewIndex % atlasGrid.x;
-    int tileY = _ViewIndex / atlasGrid.x;
+    int safeViewIndex = max(0, _ViewIndex);
+    int tileX = safeViewIndex % atlasGrid.x;
+    int tileY = safeViewIndex / atlasGrid.x;
     int2 sourcePixel = int2(id.xy);
     int2 atlasPixel = int2(tileX * tileSize.x, tileY * tileSize.y) + sourcePixel;
 
-    float4 albedo = _SourceAlbedo.Load(int3(sourcePixel, 0));
-    float4 normalDepth = _SourceNormalDepth.Load(int3(sourcePixel, 0));
-    float depth = saturate(normalDepth.a);
+    float4 albedo = HectonFiniteOr4(_SourceAlbedo.Load(int3(sourcePixel, 0)), float4(0.0, 0.0, 0.0, 0.0));
+    float4 normalDepth = HectonFiniteOr4(_SourceNormalDepth.Load(int3(sourcePixel, 0)), float4(0.5, 0.5, 0.5, 0.0));
+    float depth = saturate(HectonFiniteOr(normalDepth.a, 0.0));
     float occupancy = step(0.0005, depth);
-    float2 normalXY = saturate(float2(normalDepth.r, normalDepth.b));
+    float2 normalXY = saturate(HectonFiniteOr2(float2(normalDepth.r, normalDepth.b), float2(0.5, 0.5)));
 
-    _AtlasAlbedoDepth[atlasPixel] = float4(saturate(albedo.rgb), depth);
+    _AtlasAlbedoDepth[atlasPixel] = float4(saturate(HectonFiniteOr3(albedo.rgb, float3(0.0, 0.0, 0.0))), depth);
     _AtlasNormalXY[atlasPixel] = float4(normalXY, 0.5, occupancy);
 }

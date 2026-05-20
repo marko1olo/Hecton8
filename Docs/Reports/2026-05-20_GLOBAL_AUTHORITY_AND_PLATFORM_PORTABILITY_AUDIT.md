@@ -701,3 +701,144 @@ Interpretation: the registry hard-gate regression was real and is now repaired
 at static-source level. The DataVault candidate remains unapproved and is now
 actively failing no-regression. The project is still moving in the right
 architectural direction, but the active worktree is not globally clean.
+
+## R27 DataVault Regression Drilldown / Current Direction
+
+Evidence class: STATIC_SOURCE / PY_TOOL. No dotnet build, Unity import, player
+build, profiler, GC, memory, device, headset, Deck, macOS, Linux, or console
+proof was executed.
+
+Artifacts:
+
+- `Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md`
+- `Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.json`
+- `Docs/AgentLogs/ArchitectureRiskHotlist_HFI_AUDIT.md`
+- `Docs/AgentLogs/PlatformPortabilityProofAudit_HFI_AUDIT.md`
+
+Verification:
+
+| Command | Result |
+|---|---|
+| `python -B Tools/test_datavault_sovereignty_audit.py` | PASS, 4 tests |
+| `python -B Tools/test_buffer_id_sovereignty_audit.py` | PASS, 2 tests |
+| `python -B Tools/test_global_authority_gate.py` | PASS, 3 tests |
+| `python -B Tools/test_assembly_dependency_audit.py` | PASS, 3 tests |
+| `python -B Tools/test_architecture_risk_hotlist_audit.py` | PASS, 3 tests |
+| `python -B Tools/test_platform_portability_proof_audit.py` | PASS, 2 tests |
+| `python Tools/GlobalAuthorityGate.py` | PASS_WITH_WARNINGS |
+| `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates` | PASS |
+| `python Tools/AssemblyDependencyAudit.py` | PASS_WITH_WARNINGS |
+| `python Tools/ArchitectureRiskHotlistAudit.py` | PASS_WITH_WARNINGS |
+| `python Tools/PlatformPortabilityProofAudit.py` | PASS_WITH_WARNINGS |
+| `python Tools/DataVaultSovereigntyAudit.py --baseline Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json --report Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md --audit-json Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.json --fail-on-regression` | FAIL_REGRESSION |
+
+Current R27 hard/static gates:
+
+| Gate | Current |
+|---|---:|
+| generic `GlobalRegistry.Get/TryGet<T>` | 0 |
+| exact runtime `Pack=1` | 0 |
+| central `BufferID` duplicate values | 0 |
+| first-party asmdef cycles | 0 |
+
+Current R27 warning/debt counters:
+
+| Surface | Current |
+|---|---:|
+| C# files scanned by global gate | 1992 |
+| `GlobalRegistry.` hits | 6183 |
+| local numeric `(BufferID)N` casts | 758 / 63 files |
+| direct `new NativeArray<T>` constructors | 1155 |
+| candidate forbidden constructors | 1149 / 177 files |
+| candidate forbidden NativeArray field declarations | 5132 / 347 files |
+| SignalBus suspect types | 9 |
+| Core concrete sibling refs | 1 |
+| runtime concrete cross-domain refs | 77 |
+
+Current R27 DataVault regression against the HFI candidate:
+
+| Domain | Delta | Direct constructor delta | Field declaration delta |
+|---|---:|---:|---:|
+| Physics | 10 | 0 | 10 |
+| Construction | 5 | 0 | 5 |
+| Editor | 5 | 3 | 2 |
+| Power | 4 | 0 | 4 |
+| World | 3 | 1 | 2 |
+| Core | 2 | 0 | 2 |
+| Habitat | 1 | 1 | 0 |
+
+Interpretation: introducing global registry, event/signal buses, and global
+Vault is still the correct direction for this project scale only if the rules
+stay strict: cold discovery through typed registry slots, fan-out through typed
+signals with owner/capacity/telemetry, and persistent cross-domain native state
+through Vault/H8Memory. The current failure is not the existence of those
+instruments. The failure is uncontrolled growth of local native ownership and
+editor/runtime baker allocations while the baseline is unapproved.
+
+Platform verdict is unchanged: Android/Quest scaffold exists, but readiness is
+not proven. Quest, PICO, PCVR, Deck, macOS, and consoles still require player
+builds, device launches, profiler/GC/memory captures, XR provider proof,
+Addressables/content payloads, shader/API validation, and native plugin parity.
+
+## R28 DataVault Runtime-vs-Editor Split
+
+Evidence class: STATIC_SOURCE / PY_TOOL. No dotnet build, Unity import, player
+build, profiler, GC, memory, device, headset, Deck, macOS, Linux, or console
+proof was executed.
+
+Tool/report change:
+
+- `Tools/DataVaultSovereigntyAudit.py` now tags each regression detail with an
+  execution surface: `Runtime`, `Editor`, `Dev`, `Test`, `Plugin`, or
+  `External`.
+- `Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.json` now
+  includes `regressionByExecutionSurface`.
+- `Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md` now prints
+  `Regression Delta By Execution Surface`.
+
+Verification:
+
+| Command | Result |
+|---|---|
+| `python -B Tools/test_datavault_sovereignty_audit.py` | PASS, 5 tests |
+| `python Tools/DataVaultSovereigntyAudit.py --baseline Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json --report Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md --audit-json Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.json --fail-on-regression` | FAIL_REGRESSION |
+
+Current R28 DataVault candidate:
+
+| Metric | Count |
+|---|---:|
+| total direct `new NativeArray<T>` constructors | 1156 |
+| allowed allocator-internal constructors | 6 |
+| forbidden constructors | 1150 |
+| files with forbidden constructors | 177 |
+| total field-like `NativeArray<T>` declarations | 5165 |
+| allowed declarations | 14 |
+| forbidden declarations | 5151 |
+| files with forbidden declarations | 348 |
+
+Current file-level gross regression by execution surface:
+
+| Surface | Delta | Meaning |
+|---|---:|---|
+| Runtime | 38 | Frame/memory/rollback/portability risk; burn down first. |
+| Editor | 12 | Offline-baker/Data Monolith hygiene risk; still red, lower frame risk. |
+
+Runtime regression queue:
+
+| Delta | Path |
+|---:|---|
+| 13 | `Assets/_Project/Scripts/Tools/LaserCutterDodJobs.cs` |
+| 10 | `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs` |
+| 4 | `Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs` |
+| 3 | `Assets/_Project/Scripts/Construction/SumpPumpPipeGridJobs.cs` |
+| 3 | `Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs` |
+| 2 | `Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs` |
+| 2 | `Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs` |
+| 1 | `Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs` |
+
+Interpretation: this is the correct global signal to act on. Runtime growth is
+now separated from editor/baker growth, so platform work should not waste time
+arguing whether offline bakes hurt Quest frame time. Runtime native ownership
+growth is the first burn-down lane; editor/offline baker growth is the second
+lane because it can corrupt Data Monolith discipline and streaming payload
+quality.

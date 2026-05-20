@@ -1,4 +1,4 @@
-﻿# SHINOBU_02 Agent Log
+# SHINOBU_02 Agent Log
 
 ## 2026-05-18 - Static Signal Warden Recheck
 
@@ -184,6 +184,84 @@ Telemetry DTO: `SignalTelemetryFrame`, explicit size 64.
 - Editor generated-project no-dependencies compile: 0 errors, 2 warnings after dependency DLLs existed.
 - Circular dependency proof is limited to these CLI compile gates; Unity assembly reload proof is absent.
 
+</SELF_AUDIT>
+
+## 2026-05-20 - Current48 Signal Corruption Backoff And SignalCritical Audit Classifier
+
+What was wrong:
+- Current47 stopped repeated drop-storm blackbox exports, but `GlobalSignals.ReportSignalLaneTelemetry()` still dumped `Dump_SIGNAL_CORRIDOR.bin` on every increase of `corruptedSignals`. A persistent corruption cascade could still create a fault-path sync-I/O storm.
+- `Tools/SignalBusContractAudit.ps1` had one broad sync-I/O regex. It reported proven fault blackbox, boot config, and editor/development CSV tuning I/O as the same warning class as unknown runtime file I/O.
+
+What was done:
+- Added `_signalTelemetryLastCorruptionDumpFrame`, `ShouldDumpSignalCorruption(frame)`, and shared `ShouldDumpSignalBlackBox(ref int, int)` in `GlobalSignals.cs`.
+- The first corruption increase still writes the blackbox immediately. Repeated corruption exports inside the same 300-frame ring window are suppressed.
+- Added fail-closed method/class/preprocessor tracking to `Tools/SignalBusContractAudit.ps1`.
+- Reclassified exact dispatcher/SignalBus blackbox dump methods, cold bootstrap config ingestion, and guarded editor/development CSV tuning as INFO.
+- Adjusted the audit markdown writer so empty `symbol` values do not leave trailing whitespace in generated finding headers.
+- Kept `SignalPriorityCsvHotSwap.TryLoad(string path)` as the single remaining WARN because it is public, unguarded, and lacks a proven current cold/editor/fatal call site.
+
+Cinematic Cheats used:
+- No physics or serialization realism was added. The cheat remains one fixed 300-frame truth ring plus bounded fault exports, not per-frame disk serialization of every storm/corruption sample.
+
+Exact Microseconds saved:
+- 0 measured us. Static-only pass. Expected fault-path win is reducing repeated corruption dump writes from once per corruption-increment frame to at most once per 300 frames after the first immediate dump.
+
+Verification:
+- Corruption backoff scan: `{"Reset":1,"LastCorruptionFrame":3,"SharedGate":3,"ShouldDumpCorruption":2}`.
+- SignalCritical Current48 audit: files 9 C# / 68 compute, signal-like definitions 180, `GlobalSignals.cs` definitions 164, Pack=1 layouts 0, runtime signal Pack=1 0, managed event surface 0, hot-path heuristic hits 0, compute 1024-thread-group hits 0, errors 0, warnings 1, infos 16, confirmed/probable errors 0.
+- Remaining warning: `Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs:921` `SignalPriorityCsvHotSwap.TryLoad(string path)`.
+- Current48 audit artifacts trailing-whitespace scan: `TRAILING_WS_OK` for `.md` and `.json`.
+- `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs Tools/SignalBusContractAudit.ps1 Docs/Tasks/Status_SHINOBU_02.md Docs/AgentLogs/Rationale_SHINOBU_02.md Docs/AgentLogs/LOG_SHINOBU_02.md` returned exit 0 with line-ending warnings only.
+- Build guard: `PRE_BUILD_GUARD_CURRENT48 CPU=100 SAMPLES=100,100,100 PROCS=0`; dotnet build skipped. Last actual Core build remains Current40: 311 errors / 19 warnings.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current48">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">No legacy binary event path added.</task>
+    <task id="02" status="PASS">No UnityEvent/string event route added; Current48 SignalCritical managed event surface remains 0.</task>
+    <task id="03" status="PASS">No runtime signal Pack=1 hit; blackbox DTO remains explicit 64 bytes.</task>
+    <task id="04" status="PASS">Queue model unchanged; no new private NativeArray/NativeList/NativeHashMap ownership.</task>
+    <task id="05" status="PASS">Blind splicing/fence path unchanged.</task>
+    <task id="06" status="PASS">MPSC writer and `NativeQueue<T>.ParallelWriter` semantics unchanged.</task>
+    <task id="07" status="PASS">Frame flush parity unchanged; only repeated fault export cadence changed after ring write.</task>
+    <task id="08" status="PASS">No binary quality switch added; fault export backoff uses the continuous telemetry ring window, not hardware tier branching.</task>
+    <task id="09" status="PASS">Signal aggregation/coalescing kernels unchanged.</task>
+    <task id="10" status="PASS">ReadOnlySpan snapshot consumers unchanged.</task>
+    <task id="11" status="PASS">Fatal corruption still gets first immediate dump; repeated writes are 300-frame gated.</task>
+    <task id="12" status="PASS">Ghost filtering unchanged.</task>
+    <task id="13" status="PASS">No AUP math changed; no absolute AUP-to-float cast added.</task>
+    <task id="14" status="PASS">No sibling runtime reference added and no generated csproj edited.</task>
+    <task id="15" status="PASS">IL2CPP stripping surface unchanged.</task>
+    <task id="16" status="PASS">Blackbox proof improved: drop-storm and corruption exports are bounded by the 300-frame ring window.</task>
+    <task id="17" status="PASS">No hot-path string formatting/concatenation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged; editor-only telemetry buffers remain INFO-only.</task>
+    <task id="19" status="PASS">Live signal injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV tuning routes classified; unproven public `SignalPriorityCsvHotSwap.TryLoad` remains WARN rather than hidden.</task>
+  </twenty_task_check>
+  <struct_layout primary="SignalTelemetryFrame" size="64">
+    <field offset="0" size="4">Frame</field>
+    <field offset="4" size="4">TotalPushedSignals</field>
+    <field offset="8" size="4">PeakSignalsPerFrame</field>
+    <field offset="12" size="4">CoalescedSignals</field>
+    <field offset="16" size="4">DroppedSignals</field>
+    <field offset="20" size="4">CorruptedSignals</field>
+    <field offset="24" size="4">ActiveLaneCount</field>
+    <field offset="28" size="4">Flags</field>
+    <field offset="32" size="4">GlobalQualityMilli</field>
+    <field offset="36" size="4">SystemStressMilli</field>
+    <padding offset="40" size="8">Reserved0</padding>
+    <padding offset="48" size="8">Reserved1</padding>
+    <padding offset="56" size="8">Reserved2</padding>
+    <proof>Explicit layout, 64 bytes exactly, no Pack=1, one cache-line blackbox row. Total math: 10 uint lanes = 40 bytes + 3 ulong reserve lanes = 24 bytes, total 64 bytes.</proof>
+  </struct_layout>
+  <scalability_curve>Low/weak-storage: first fault dump is preserved, repeated corruption/drop-storm exports collapse to one write per 300-frame ring window. Middle: every frame still records telemetry in Vault memory; disk export is bounded to evidence cadence. High/Ultra: richer telemetry consumers can still read full in-memory signal pressure and corruption history without adding normal-frame disk work.</scalability_curve>
+  <h_phi_vault_status>`SignalTelemetryRingBuffer` uses Vault buffer `73038` for `SignalTelemetryFrame[300]` and Vault buffer `73039` for the cursor, owner `SystemID.CoreDiagnostics`. Current48 added only scalar static backoff latches; no persistent native collection was added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst job, `[NoAlias]` field, or `JobHandle` changed. The pass consumes no dispatcher dependency and returns no new handle; it gates an existing synchronous fault export after telemetry row publication.</pointer_aliasing_dependency_graph>
+  <compile_guard>No direct sibling runtime assembly reference added. `Tools/SignalBusContractAudit.ps1` is a static evidence tool and fails closed: unmatched runtime sync I/O still emits `RUNTIME_SYNC_FILE_IO_REVIEW` WARN.</compile_guard>
+  <dear_lie before="O(corruption_increment_frames * file_write_300_rows)" after="O(1 + ceil(repeated_corruption_frames / 300)) file_write_300_rows">The fake is blackbox cadence control: keep one authoritative 300-frame truth ring and avoid serializing every repeated fault frame.</dear_lie>
+  <blackbox>300-frame ring is active by source: `SignalTelemetryRingBuffer.Capacity = 300`, `SignalTelemetryFrame` is explicit 64 bytes, dump path is `Docs/AgentLogs/Dump_SIGNAL_CORRIDOR.bin`. Current48 bounds both drop-storm and corruption export cadence.</blackbox>
+  <compile_status>Not proven. Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT48 CPU=100 SAMPLES=100,100,100 PROCS=0`.</compile_status>
+  <runtime_status>No Unity import, Console, Play Mode, profiler, GCMonitor, IL2CPP, ARM64 player, or device proof in Current48.</runtime_status>
 </SELF_AUDIT>
 
 ## 2026-05-18 Contract Spine Follow-Up
@@ -1915,4 +1993,78 @@ FORensic DETAILS
   <compile_guard>No generated csproj was edited. No new direct sibling runtime assembly reference was added. Existing `GlobalSignals.cs` references to `Hecton8.Audio.*` and `Hecton8.World.AbsoluteUniversePosition` remain documented compile-wall debt, not silently migrated in this pass.</compile_guard>
   <dear_lie>No physical simulation was introduced. The cheap path remains typed transport plus fixed-size union packets; procedural audio rendering can fake stress/ping presentation downstream without adding CPU physics to SignalBus.</dear_lie>
   <verification>Static only. `AUDIO_EVENT_TAIL_PADDING_SCAN Size128=1 Pad112=1 Pad120=1 EndLargestUnion=112 Total=128`. SignalCritical audit: files 8 C# / 68 compute, errors 0, warnings 15, infos 2, confirmedErrors 0; warnings are sync-I/O review only. `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs` returned exit 0 with line-ending warning only; full Current46 diff check over code/status/rationale/log/audit artifacts also returned exit 0 with line-ending warnings only. Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT46 CPU=100 PROCS=0`; final retry `PRE_BUILD_GUARD_CURRENT46_FINAL2 CPU=78 PROCS=0`. Last actual Core build remains Current40: 311 errors / 19 warnings.</verification>
+</SELF_AUDIT>
+
+## 2026-05-20 - Current47 Signal Drop-Storm Backoff And R45 Boundary Repair
+
+What was wrong:
+- Current46 SignalCritical audit had 15 sync-I/O review warnings. Static classification showed no steady-state gameplay save/WAL I/O, but one SignalBus fault path could rewrite `Docs/AgentLogs/Dump_SIGNAL_CORRIDOR.bin` every pre-simulation frame during a sustained drop storm.
+- Active root/system/docs files still contained R44-as-current wording after the project authority boundary moved to R45.
+
+What was done:
+- Added `SignalTelemetryRingBufferCapacity = 300`, `_signalTelemetryLastDropStormDumpFrame`, and `ShouldDumpSignalDropStorm(frame)` to `GlobalSignals.cs`.
+- `ReportSignalLaneTelemetry()` now permits drop-storm blackbox dump at most once per 300 frames. Corruption dump remains immediate.
+- Updated active R45 boundary wording in root docs and Core/SignalBus architecture note headings listed in the status checklist.
+- Wrote new audit artifacts: `Docs/AgentLogs/SignalBusContractAudit_Current47_SHINOBU_02.md` and `.json`.
+
+Cinematic Cheats used:
+- No physical simulation added. The Dear Lie here is preserving a fixed 300-frame blackbox snapshot and throttling repeated fault exports instead of trying to serialize every storm frame. The game keeps one forensic truth ring and avoids a per-frame file-write spiral.
+
+Exact Microseconds saved:
+- 0 measured us. Static-only pass. Expected fault-path win is reducing repeated drop-storm file writes from once per pre-simulation frame to once per 300 frames; no normal-frame profiler claim.
+
+Verification:
+- `SIGNAL_DROP_STORM_BACKOFF_SCAN=PASS`.
+- `R45_STALE_CURRENT_DOC_SCAN=PASS`.
+- `git diff --check` over touched source/docs/audit artifacts returned exit 0 with CRLF warnings only.
+- SignalCritical Current47 audit: files 9 C# / 68 compute, signal-like definitions 180, `GlobalSignals.cs` definitions 164, Pack=1 layouts 0, runtime signal Pack=1 0, managed event surface 0, hot-path heuristic hits 0, compute 1024-thread-group hits 0, errors 0, warnings 15, infos 2, confirmed/probable errors 0.
+- Build guard: `PRE_BUILD_GUARD_CURRENT47 CPU=100 SAMPLES=100,100,100 PROCS=0`; dotnet build skipped. Last actual Core build remains Current40: 311 errors / 19 warnings.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current47">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">No legacy binary event path added.</task>
+    <task id="02" status="PASS">No UnityEvent/string event route added; Current47 SignalCritical managed event surface remains 0.</task>
+    <task id="03" status="PASS">No runtime signal Pack=1 hit; Current45/46 explicit ABI padding remains in place.</task>
+    <task id="04" status="PASS">Queue model unchanged; no orphaned queue mutation.</task>
+    <task id="05" status="PASS">Blind splicing/fence path unchanged.</task>
+    <task id="06" status="PASS">MPSC writer and `NativeQueue<T>.ParallelWriter` semantics unchanged.</task>
+    <task id="07" status="PASS">Frame flush parity unchanged; only dump cadence changes after telemetry row write.</task>
+    <task id="08" status="PASS">No binary quality switch added; the backoff uses the fixed 300-frame blackbox capacity.</task>
+    <task id="09" status="PASS">Signal aggregation/coalescing kernel unchanged.</task>
+    <task id="10" status="PASS">ReadOnlySpan consumers unchanged.</task>
+    <task id="11" status="PASS">Fatal corruption dump remains immediate; only drop-storm duplicate export is throttled.</task>
+    <task id="12" status="PASS">Ghost filtering unchanged.</task>
+    <task id="13" status="PASS">No AUP math changed; no absolute AUP-to-float cast added.</task>
+    <task id="14" status="PASS">No sibling runtime reference added and no generated csproj edited.</task>
+    <task id="15" status="PASS">IL2CPP stripping surface unchanged.</task>
+    <task id="16" status="PASS">Telemetry monitor improved: drop-storm blackbox dumps are bounded to once per 300 frames, ring remains 300 frames.</task>
+    <task id="17" status="PASS">No hot-path string formatting/concatenation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live signal injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV priority/tuning reloads classified cold/editor/development; no behavior narrowed without owner signoff.</task>
+  </twenty_task_check>
+  <struct_layout primary="SignalTelemetryFrame" size="64">
+    <field offset="0" size="4">Frame</field>
+    <field offset="4" size="4">TotalPushedSignals</field>
+    <field offset="8" size="4">PeakSignalsPerFrame</field>
+    <field offset="12" size="4">CoalescedSignals</field>
+    <field offset="16" size="4">DroppedSignals</field>
+    <field offset="20" size="4">CorruptedSignals</field>
+    <field offset="24" size="4">ActiveLaneCount</field>
+    <field offset="28" size="4">Flags</field>
+    <field offset="32" size="4">GlobalQualityMilli</field>
+    <field offset="36" size="4">SystemStressMilli</field>
+    <padding offset="40" size="8">Reserved0</padding>
+    <padding offset="48" size="8">Reserved1</padding>
+    <padding offset="56" size="8">Reserved2</padding>
+    <proof>Explicit layout, 64 bytes exactly, no Pack=1, one cache-line blackbox row.</proof>
+  </struct_layout>
+  <scalability_curve>Low/weak-storage fault path now exports at most once per 300-frame ring window during a drop storm. Middle keeps the same signal lane telemetry cadence and preserves CSV live tuning. High/Ultra still record every frame into the Vault-backed ring and can dump immediate corruption evidence; visual systems are not forced to simulate or serialize every storm frame.</scalability_curve>
+  <h_phi_vault_status>`SignalTelemetryRingBuffer` uses `VaultGenerationHandle<SignalTelemetryFrame>` buffer `73038` and `VaultGenerationHandle<int>` cursor `73039`, owner `SystemID.CoreDiagnostics`. Current47 added only scalar static latch state, no private NativeArray/NativeList/NativeHashMap ownership.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, `[NoAlias]` fields, or JobHandles changed. Current47 consumes no dispatcher job handle and outputs none; telemetry dump gating is scalar control around an existing synchronous fault export.</pointer_aliasing_dependency_graph>
+  <compile_guard>No direct sibling runtime assembly reference added. `SystemDispatcher` crash/stall dump rows were kept because removing them would destroy blackbox proof. Development CSV live tuning was not narrowed to editor-only without owner signoff.</compile_guard>
+  <dear_lie before="O(frames_with_storm * file_write_300_rows)" after="O(ceil(frames_with_storm / 300) * file_write_300_rows)">The fake is one forensic truth ring plus bounded exports, not per-frame file serialization of every drop-storm sample.</dear_lie>
+  <blackbox>300-frame ring is active by source: `SignalTelemetryRingBuffer.Capacity = 300`, `SignalTelemetryFrame` is explicit 64 bytes, dump path is `Docs/AgentLogs/Dump_SIGNAL_CORRIDOR.bin`. Current47 bounds drop-storm dump cadence to the same 300-frame capacity.</blackbox>
+  <verification>Static only. No Unity import, Console, Play Mode, profiler, GCMonitor, IL2CPP, ARM64 player, or Core compile-green proof in Current47.</verification>
 </SELF_AUDIT>

@@ -755,10 +755,24 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                 max = math.max(max, p);
             }
 
-            if (!math.all(math.isfinite(min)) || !math.all(math.isfinite(max)) || math.any(max <= min))
+            OfflineWreckageBakeCounters64 output = Counters[0];
+            if (!math.all(math.isfinite(min)) || !math.all(math.isfinite(max)))
             {
                 min = new float3(-0.5f);
                 max = new float3(0.5f);
+                output.WarningFlags |= OfflineWreckageBakeConstants.WarningNonFiniteFallback;
+            }
+            else
+            {
+                const float MinHullHalfExtent = 0.01f;
+                float3 center = (min + max) * 0.5f;
+                float3 halfExtent = (max - min) * 0.5f;
+                float3 expandedHalfExtent = math.max(halfExtent, new float3(MinHullHalfExtent));
+                if (math.any(expandedHalfExtent > halfExtent))
+                    output.WarningFlags |= OfflineWreckageBakeConstants.WarningHullBoundsExpanded;
+
+                min = center - expandedHalfExtent;
+                max = center + expandedHalfExtent;
             }
 
             HullPoints[0] = new float3(min.x, min.y, min.z);
@@ -769,7 +783,6 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             HullPoints[5] = new float3(max.x, max.y, min.z);
             HullPoints[6] = new float3(max.x, max.y, max.z);
             HullPoints[7] = new float3(min.x, max.y, max.z);
-            OfflineWreckageBakeCounters64 output = Counters[0];
             output.HullVertexCount = OfflineWreckageBakeConstants.SupportHullPointCount;
             Counters[0] = output;
         }

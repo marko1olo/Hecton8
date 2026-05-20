@@ -63,12 +63,14 @@ namespace Hecton8.Editor.GeologyForge
             Button preview = new Button(BuildPreview) { text = "Preview SDF Points" };
             Button bakeSelected = new Button(BakeSelected) { text = "BAKE SELECTED" };
             Button bakeAll = new Button(BakeAll) { text = "BAKE ALL" };
+            Button cancel = new Button(GeologyForgeGenerator.CancelAsyncBake) { text = "Cancel Bake" };
             Button scan = new Button(RuntimeMeshGenerationScanner.ScanAndWriteReport) { text = "Scan Runtime Mesh Generation" };
             Button audit = new Button(GeologyForgeSelfAudit.RunAndWriteReport) { text = "Run Layout Self Audit" };
             rootVisualElement.Add(reload);
             rootVisualElement.Add(preview);
             rootVisualElement.Add(bakeSelected);
             rootVisualElement.Add(bakeAll);
+            rootVisualElement.Add(cancel);
             rootVisualElement.Add(scan);
             rootVisualElement.Add(audit);
 
@@ -150,22 +152,28 @@ namespace Hecton8.Editor.GeologyForge
 
         private void BakeSelected()
         {
-            _progress.value = 0f;
             GeologyBakeProfile profile = ResolveProfileFromFields();
             var bakeList = new List<GeologyBakeProfile>(1);
             bakeList.Add(profile);
-            GeologyForgeGenerator.BakeProfiles(bakeList, true);
-            _progress.value = 1f;
+            GeologyForgeGenerator.BakeProfilesAsync(bakeList, true, SetBakeProgress);
         }
 
         private void BakeAll()
         {
-            _progress.value = 0f;
             var bakeList = new List<GeologyBakeProfile>(_profiles.Count);
             for (int i = 0; i < _profiles.Count; i++)
                 bakeList.Add(_profiles[i]);
-            GeologyForgeGenerator.BakeProfiles(bakeList, true);
-            _progress.value = 1f;
+            GeologyForgeGenerator.BakeProfilesAsync(bakeList, true, SetBakeProgress);
+        }
+
+        private void SetBakeProgress(float value)
+        {
+            if (_progress == null)
+                return;
+
+            _progress.value = math.saturate(value);
+            _progress.MarkDirtyRepaint();
+            Repaint();
         }
     }
 

@@ -367,10 +367,58 @@ Hardware Impact: One cold fallback branch when publishing preview, validation, a
 
 Problem: The socket solver wrote `GhostPreviewDTO.DearLieDampen`, and `PlayerBuilder` raised `FlagDearLieActive`, but the active `HectonBlueprintPreviewBatch` ignored that scalar and the main `Hecton8/Fabrication/BlueprintWireInstanced` shader had no snap dampen properties. The fake existed in a secondary material path, but the common batched preview could render with no mechanical lock response.
 
-Solution: Reuse padding inside the 128-byte `ConstructionPreviewSignal` for `DearLieDampen`, `GlobalQualityWeight`, and `DearLieWiggleSpeed` at aligned offsets 96, 100, and 104, with `ModularBaseConstructionValidator.ValidateStructLayout()` now gating those offsets. `PlayerBuilder` fills those values from the current socket tuning and solved dampen. `HectonBlueprintPreviewBatch` consumes the signal, tracks the snap envelope by result/module hash, decays dampen continuously over 0.08..0.22 seconds using the quality curve, and writes `_H8SnapDampen`, `_H8SnapWiggleSpeed`, and `_H8GlobalQualityWeight` into the preview material. The instanced blueprint wire shader now applies the same normal-offset sine displacement as the Dear Lie hologram shader. Cold fallback proxy materials initialize `_H8SnapDampen` to `0`, so the effect is event-driven rather than permanently active.
+Solution: Reuse padding inside the 128-byte `ConstructionPreviewSignal` for `DearLieDampen`, `GlobalQualityWeight`, and `DearLieWiggleSpeed` at aligned offsets 96, 100, and 104, with `ModularBaseConstructionValidator.ValidateStructLayout()` now gating those offsets. `PlayerBuilder` fills those values from the current socket tuning and solved dampen. `HectonBlueprintPreviewBatch` consumes the signal, tracks the snap envelope by result/module hash, decays dampen continuously over 0.08..0.22 seconds using the quality curve, and writes `_H8SnapDampen`, `_H8SnapWiggleSpeed`, and `_H8GlobalQualityWeight` into the preview material. The instanced blueprint wire shader now applies the same normal-offset sine displacement as the Dear Lie hologram shader, with guarded normal normalization in both shader paths. Cold fallback proxy materials initialize `_H8SnapDampen` to `0`, so the effect is event-driven rather than permanently active.
 
 Rejected Alternatives: Expanding `BlueprintPreviewInstance` was rejected because the existing draw path only consumes matrices and would bloat the 64-byte preview DTO without a per-instance shader buffer. Instantiating a special snapped preview prefab was rejected because it is exactly the object-hierarchy churn the task forbids. Leaving material values at creation time was rejected because runtime `GlobalQualityWeight` and snap dampen would not be event-correct.
 
 Scalability potential: Low quality shortens the visual envelope and scales amplitude through the same smooth quality polynomial, so weak devices see a small tactile pulse. Middle quality keeps the pulse readable without adding candidate work. High and Ultra allow the full dampen amplitude and wiggle speed from tuning while the mathematical socket snap remains instant.
 
 Hardware Impact: On i3/MX350, the change adds up to three material scalar writes in the presentation path and one sine-based vertex offset only when dampen is non-zero. It avoids CPU-side interpolation, door prefab instantiation, and snap-animation GameObject state.
+
+## Decision 31 - Snap Result Sink Rejects Invalid Directions
+
+Problem: Upstream hydration, CSR, and Burst matching already reject invalid authored directions, but `TryApplyShinobuVaultSnapResult()` still converted an unknown target direction byte to `ModuleSocketDirection.North` through the final enum helper. If stale/corrupt result data ever crossed the reducer boundary, the final pose could be calculated against a legal North rotation instead of failing closed.
+
+Solution: Replace the defaulting helper with `TryToShinobuSocketDirection()`. The final snap application now rejects invalid target direction bytes and invalid ghost socket directions before calculating `ModuleSocketTopology.RotationFromDirection()` or mutating cached snap state.
+
+Rejected Alternatives: Trusting the CSR invariant was rejected because the snap application method is the authority sink that touches scene pose and occupancy markers. Keeping the North fallback was rejected because it makes bad authoring data look like a valid docking face.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same fail-closed sink behavior. Quality only changes how many CSR rows are inspected before a valid row reaches this sink.
+
+Hardware Impact: Two byte-range checks on accepted snap rows only. On low-end hardware this is below measurement noise and prevents wrong-pose correction work after a corrupt result.
+
+## Decision 32 - CSR Missing-Data Does Not Fall Back To Linear Scan
+
+Problem: `EvaluateSocketSnappingJob` still had defensive fallbacks that undermined the CSR contract. Missing ghost CSR ranges returned `0..TargetCount`, and missing/short `SocketCsrTargetIndices` treated the CSR slot as a direct target socket index. Under damaged or undersized CSR buffers, the solver could silently re-enter an O(N) scan shape.
+
+Solution: Make the CSR range and target-index lanes mandatory for this job. Missing ghost ranges or missing target-index lanes write `CapacityExceeded` and return. Short target-index arrays consume the inspected budget slot, set `CapacityExceeded`, and continue without direct target reads.
+
+Rejected Alternatives: Keeping the fallback was rejected because it hides buffer ownership faults and violates the task's CSR graph requirement. Completing on the main thread was rejected because the solver must stay scheduled and fail-closed.
+
+Scalability potential: Low quality now remains bounded even when the CSR lane is malformed; it cannot accidentally scan all target sockets. Middle/High/Ultra still use the same CSR path and only increase inspected CSR rows when the lanes are valid.
+
+Hardware Impact: Adds one target-index bounds check per inspected CSR row. In the failure case it saves up to `TargetCount` socket/AUP reads per ghost by refusing the direct scan.
+
+## Decision 33 - Dear Lie Envelope Clears With Preview Lifetime
+
+Problem: The active preview batch keyed the Dear Lie pulse by result hash and module hash. If the preview disappeared without an inactive signal, then later returned to the same socket/module, the stored hash could keep the old start time and suppress a fresh snap pulse.
+
+Solution: Add `ResetDearLieEnvelope()` and call it when active preview count becomes zero and when previews are explicitly cleared. The reset clears dampen, quality, wiggle speed, result hash, module hash, and active state without changing the 64-byte `BlueprintPreviewInstance` or the 128-byte signal layout.
+
+Rejected Alternatives: Letting time decay alone was rejected because the hash key would still suppress a new envelope for the same result. Adding per-instance Dear Lie fields was rejected because the single active builder preview only needs material scalars.
+
+Scalability potential: Low quality still gets a short pulse after preview re-entry; Middle/High/Ultra can replay the full tuned envelope. No binary switch is introduced.
+
+Hardware Impact: Seven scalar writes on preview clear only. No Burst candidate cost and no additional material updates until the preview draws again.
+
+## Decision 34 - ModuleTemplate Ghost Prefab Spawn Is Bypassed
+
+Problem: `PlayerBuilder.SpawnGhost()` still used `ObjectPoolManager.Spawn(activeBuildable.ghostPrefab)` whenever an authored ghost prefab existed. For buildables with `ModuleTemplate`, that preserved a preview-prefab hierarchy path even though SHINOBU socket truth already comes from template socket definitions and Vault `GhostPreviewDTO`.
+
+Solution: Route every `ModuleTemplate` buildable through `ConstructionRuntimeProxyFactory.TryAcquireGhostProxy()` and keep the `ghostPrefab` pool branch only for non-template buildables. The reusable proxy is a cold singleton presentation shell; active socket matching continues to read `BaseModuleTemplate.SocketDefinitions`, `GhostPreviewDTO`, and CSR lanes, not preview-prefab `ModuleSocket` components.
+
+Rejected Alternatives: Keeping authored ghost prefabs for nicer previews was rejected because Task 02 explicitly asks for data-driven preview authority during active snapping. Falling back to the prefab if proxy acquisition fails was rejected because it would hide a broken `ModuleTemplate` preview route and reintroduce object hierarchy dependence.
+
+Scalability potential: Low uses the same cheap proxy shell while the Vault preview and shader signal carry the snap truth. Middle/High/Ultra can still spend quality budget on Dear Lie shader response and batched preview rendering without instantiating a preview prefab for socket modules.
+
+Hardware Impact: Avoids one preview prefab pool spawn/despawn cycle per armed `ModuleTemplate` buildable and removes ghost-prefab hierarchy traversal from the socket-module preview route. No Burst candidate cost changes.

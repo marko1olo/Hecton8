@@ -118,8 +118,8 @@ namespace Hecton8.EditorTools
             if (!ValidateRequest(ref request))
                 return false;
 
-            int width = ResolvePackDimension(request);
-            int height = ResolvePackDimension(request);
+            int width = ResolvePackWidth(request);
+            int height = ResolvePackHeight(request);
             int pixelCount = width * height;
             metrics.Width = width;
             metrics.Height = height;
@@ -579,20 +579,40 @@ namespace Hecton8.EditorTools
             return hash;
         }
 
-        private static int ResolvePackDimension(TexturePackerRequest request)
+        private static int ResolvePackWidth(TexturePackerRequest request)
         {
             int width = 1;
-            width = math.max(width, MaxDimension(request.AoTexture));
-            width = math.max(width, MaxDimension(request.RoughnessTexture));
-            width = math.max(width, MaxDimension(request.MetallicTexture));
-            width = math.max(width, MaxDimension(request.AlbedoTexture));
-            int maxSize = request.MaxSize > 0 ? request.MaxSize : DefaultMaxTextureSize;
-            return math.min(maxSize, Mathf.NextPowerOfTwo(width));
+            width = math.max(width, TextureWidth(request.AoTexture));
+            width = math.max(width, TextureWidth(request.RoughnessTexture));
+            width = math.max(width, TextureWidth(request.MetallicTexture));
+            width = math.max(width, TextureWidth(request.AlbedoTexture));
+            return ResolveAxisDimension(width, request.MaxSize);
         }
 
-        private static int MaxDimension(Texture2D texture)
+        private static int ResolvePackHeight(TexturePackerRequest request)
         {
-            return texture != null ? math.max(texture.width, texture.height) : 1;
+            int height = 1;
+            height = math.max(height, TextureHeight(request.AoTexture));
+            height = math.max(height, TextureHeight(request.RoughnessTexture));
+            height = math.max(height, TextureHeight(request.MetallicTexture));
+            height = math.max(height, TextureHeight(request.AlbedoTexture));
+            return ResolveAxisDimension(height, request.MaxSize);
+        }
+
+        private static int ResolveAxisDimension(int sourceAxis, int maxSize)
+        {
+            int limit = maxSize > 0 ? maxSize : DefaultMaxTextureSize;
+            return math.min(limit, Mathf.NextPowerOfTwo(math.max(1, sourceAxis)));
+        }
+
+        private static int TextureWidth(Texture2D texture)
+        {
+            return texture != null ? texture.width : 1;
+        }
+
+        private static int TextureHeight(Texture2D texture)
+        {
+            return texture != null ? texture.height : 1;
         }
 
         private static int ResolveMipCount(int width, int height)

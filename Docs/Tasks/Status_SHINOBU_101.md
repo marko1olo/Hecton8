@@ -172,3 +172,41 @@ Status: PENDING VERIFICATION
 - [x] Static scan: `GlobalRegistry.(VRAMMonitor|AssetLifecycle|PlayerInventory|RenderTexturePool|VRAMPressure)` in `VRAMPressureMonitor.cs` reports only registration and cold-cache boundaries.
 - [x] Static scan: `git diff --check -- Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs` reports LF-to-CRLF warning only.
 - [ ] Compile verification R34 | PENDING VERIFICATION: not launched. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` still blocks `Hecton8.Core.csproj` before SHINOBU verification, and the user explicitly forbade needless build/rebuild runs.
+
+## R35 VRAMPressureMonitor Continuous Mip Bias Closure
+
+- [x] Re-read active SHINOBU status/rationale and R45 documentation boundary before code edits.
+- [x] Identified the remaining mip-bias cliff: `ApplyMipBias()` still converted any soft pressure or forced-mip threshold crossing directly to one fixed mip downgrade.
+- [x] Removed `IsSoftVramPressureActive()` and `ResolveForcedMipDropThresholdBytes()` from the mip path.
+- [x] Added `ResolveForcedMipResponse()` so forced half-resolution pressure uses the same `GlobalQualityWeight` quality-adjusted fraction and `math.smoothstep` response as soft/emergency pressure.
+- [x] Added `ResolveMipLimitDelta()` to convert the scalar response into the final Unity integer mip-limit delta only at the API boundary; red-zone pressure forces a two-step collapse.
+- [x] `ApplyMipBias()` now holds the active mip limit through tiny nonzero response values instead of restoring early before the restore band, preventing threshold thrash.
+- [x] Static scan: `softVramPressure`, `forcedMipThresholdBytes`, `ResolveForcedMipDropThresholdBytes`, `IsSoftVramPressureActive`, and `Mathf.Max(_baselineMipLimit, 1)` report no results in `VRAMPressureMonitor.cs`.
+- [x] Static scan: continuous symbols `ResolveForcedMipResponse`, `ResolveMipLimitDelta`, and `mipPressureResponse` resolve to expected code paths only.
+- [x] Static scan: `git diff --check -- Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs` reports LF-to-CRLF warning only.
+- [ ] Compile verification R35 | PENDING VERIFICATION: not launched. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` still blocks `Hecton8.Core.csproj` before SHINOBU verification, and the user explicitly forbade needless build/rebuild runs.
+
+## R36 Dispatcher UI Mip Gate Ownership Collapse
+
+- [x] Re-scanned dispatcher UI mip gate after R35 and identified a second issue: `AssetLoadDispatcher` still wrote `QualitySettings.globalTextureMipmapLimit`, creating a second writer for the same global mip fact.
+- [x] Removed dispatcher-owned `_baselineGlobalTextureMipLimit`, `_activeGlobalTextureMipLimit`, `_mipGateInitialized`, and `CaptureMipBiasBaseline()`.
+- [x] Dispatcher UI gate now computes `gateResponse` from current VRAM pressure and continuous `GlobalQualityWeight`, then calls `VRAMPressureMonitor.SetExternalMipPressureResponse(...)`.
+- [x] `VRAMPressureMonitor` now owns `_externalMipPressureResponse`, combines it with soft/forced/red-zone pressure inside `ApplyMipBias()`, and remains the writer of `QualitySettings.globalTextureMipmapLimit`.
+- [x] Dispatcher `OnDisable()` and `OnDestroy()` clear the external pressure response before unregistering/cold-cache clear, avoiding stale UI gate pressure.
+- [x] External pressure updates also refresh monitor `LastUsedVramBytes`, `VramPressureFactor`, and aggregate `PressureFactor` before mip recompute, preventing stale 90-frame pressure from delaying restore.
+- [x] Static scan: `QualitySettings.globalTextureMipmapLimit`, dispatcher baseline/active mip fields, `_mipGateInitialized`, `CaptureMipBiasBaseline`, old UI byte constants, and `LowVramDeviceThresholdMb` report no results in `AssetLoadDispatcher.cs`.
+- [x] Static scan: `SetExternalMipPressureResponse`, `_externalMipPressureResponse`, and the sole pressure-lane `QualitySettings.globalTextureMipmapLimit` write resolve to expected `VRAMPressureMonitor.cs` paths.
+- [x] Static scan: `git diff --check -- Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs` reports LF-to-CRLF warnings only.
+- [ ] Compile verification R36 | PENDING VERIFICATION: not launched. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` still blocks `Hecton8.Core.csproj` before SHINOBU verification, and the user explicitly forbade needless build/rebuild runs.
+
+## R37 VRAMEnforcer Continuous Bootstrap Budget
+
+- [x] Inspected `VRAMEnforcer` after R36 and found explicit binary hardware gates: `DetectedGraphicsMemoryMb <= 2048`, low/shared boid scale constants, and shared-memory ternary texture clamp selection.
+- [x] Added `Unity.Mathematics` scalar budget math.
+- [x] Replaced the 2048 MB low-VRAM cliff with `ResolveHardwareBudgetWeight()` using `math.smoothstep(1024 MB, 8192 MB, detectedGraphicsMemoryMb)` and branchless shared-memory ceiling selection.
+- [x] `ApplyBoidPopulationBudget()` now blends requested fauna counts through continuous hardware and `GlobalQualityWeight` curves instead of returning full count vs fixed low/shared scale.
+- [x] Bootstrap texture mip clamp now resolves from `math.lerp(2, 0, min(hardwareWeight, qualityCurve))`, preserving a cold minimum clamp without a low/high hardware branch.
+- [x] Static scan: old low/shared constants, `DetectedGraphicsMemoryMb > 0 &&`, shared-memory ternary scale, and `if (!_lowVramBudgetActive)` early return report no results in `VRAMEnforcer.cs`.
+- [x] Static scan: `ResolveHardwareBudgetWeight`, `ResolveQualityCurve`, `math.smoothstep`, `math.lerp`, `math.select`, and `HomeostasisBrain.GlobalQualityWeight` resolve to expected code paths.
+- [x] Static scan: `git diff --check -- Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs` reports LF-to-CRLF warning only.
+- [ ] Compile verification R37 | PENDING VERIFICATION: not launched. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` still blocks `Hecton8.Core.csproj` before SHINOBU verification, and the user explicitly forbade needless build/rebuild runs.

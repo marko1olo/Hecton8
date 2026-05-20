@@ -80,7 +80,7 @@ Shader "Hecton8/Fabrication/BlueprintWireInstanced"
                 float smoothQ = q * q * (3.0 - 2.0 * q);
                 float phase = dot(input.positionOS.xyz, float3(19.0, 31.0, 43.0)) + (_Time.y * _H8SnapWiggleSpeed);
                 float wave = sin(phase);
-                float3 normalOS = normalize(input.normalOS + float3(0.0001, 0.0001, 0.0001));
+                float3 normalOS = HectonCoreLitSafeNormalize(input.normalOS);
                 float amplitude = max(0.0, _H8SnapDampen) * lerp(0.25, 1.0, smoothQ);
                 float3 positionOS = input.positionOS.xyz - normalOS * amplitude + normalOS * wave * amplitude * 0.35;
                 output.positionWS = TransformObjectToWorld(positionOS);

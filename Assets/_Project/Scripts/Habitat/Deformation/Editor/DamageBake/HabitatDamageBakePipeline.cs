@@ -128,13 +128,22 @@ namespace Hecton8.Habitat.Deformation.Editor
         [FieldOffset(76)] public uint _pad1;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    internal struct HabitatDamageIndexRangeDTO
+    {
+        [FieldOffset(0)] public int SourceStart;
+        [FieldOffset(4)] public int DestinationStart;
+        [FieldOffset(8)] public int Count;
+        [FieldOffset(12)] public int BaseVertex;
+    }
+
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct ExtractSourceVertexJob : IJobParallelFor
     {
-        [ReadOnly] [NoAlias] public NativeArray<byte> PositionBytes;
-        [ReadOnly] [NoAlias] public NativeArray<byte> NormalBytes;
-        [ReadOnly] [NoAlias] public NativeArray<byte> TangentBytes;
-        [ReadOnly] [NoAlias] public NativeArray<byte> UvBytes;
+        [ReadOnly] public NativeArray<byte> PositionBytes;
+        [ReadOnly] public NativeArray<byte> NormalBytes;
+        [ReadOnly] public NativeArray<byte> TangentBytes;
+        [ReadOnly] public NativeArray<byte> UvBytes;
         [WriteOnly] [NoAlias] public NativeArray<HabitatDamageSourceVertex> Output;
         public int PositionOffset;
         public int PositionStride;
@@ -202,11 +211,29 @@ namespace Hecton8.Habitat.Deformation.Editor
     internal struct CopyIndex16Job : IJobParallelFor
     {
         [ReadOnly] [NoAlias] public NativeArray<ushort> Source;
+        [ReadOnly] [NoAlias] public NativeArray<HabitatDamageIndexRangeDTO> Ranges;
         [WriteOnly] [NoAlias] public NativeArray<uint> Output;
+        public int RangeCount;
+        public int SourceVertexCount;
 
         public void Execute(int index)
         {
-            Output[index] = Source[index];
+            for (int i = 0; i < RangeCount; i++)
+            {
+                HabitatDamageIndexRangeDTO range = Ranges[i];
+                int local = index - range.DestinationStart;
+                if ((uint)local >= (uint)range.Count)
+                    continue;
+
+                int sourceIndex = range.SourceStart + local;
+                if ((uint)sourceIndex >= (uint)Source.Length)
+                    break;
+                int adjusted = Source[sourceIndex] + range.BaseVertex;
+                Output[index] = (uint)math.clamp(adjusted, 0, math.max(0, SourceVertexCount - 1));
+                return;
+            }
+
+            Output[index] = 0u;
         }
     }
 
@@ -214,11 +241,34 @@ namespace Hecton8.Habitat.Deformation.Editor
     internal struct CopyIndex32Job : IJobParallelFor
     {
         [ReadOnly] [NoAlias] public NativeArray<uint> Source;
+        [ReadOnly] [NoAlias] public NativeArray<HabitatDamageIndexRangeDTO> Ranges;
         [WriteOnly] [NoAlias] public NativeArray<uint> Output;
+        public int RangeCount;
+        public int SourceVertexCount;
 
         public void Execute(int index)
         {
-            Output[index] = Source[index];
+            for (int i = 0; i < RangeCount; i++)
+            {
+                HabitatDamageIndexRangeDTO range = Ranges[i];
+                int local = index - range.DestinationStart;
+                if ((uint)local >= (uint)range.Count)
+                    continue;
+
+                int sourceIndex = range.SourceStart + local;
+                if ((uint)sourceIndex >= (uint)Source.Length)
+                    break;
+                long adjusted = (long)Source[sourceIndex] + range.BaseVertex;
+                long maxIndex = math.max(0, SourceVertexCount - 1);
+                if (adjusted < 0L)
+                    adjusted = 0L;
+                if (adjusted > maxIndex)
+                    adjusted = maxIndex;
+                Output[index] = (uint)adjusted;
+                return;
+            }
+
+            Output[index] = 0u;
         }
     }
 
@@ -576,21 +626,26 @@ namespace Hecton8.Habitat.Deformation.Editor
         public void Execute(int index)
         {
             HabitatDamageWorkingVertex vertex = Source[index];
+            float3 position = math.all(math.isfinite(vertex.Position)) ? vertex.Position : float3.zero;
             float3 normal = math.normalizesafe(vertex.Normal, new float3(0f, 1f, 0f));
             float4 tangent = vertex.Tangent;
-            float stress = math.saturate(vertex.Stress01);
+            if (!math.all(math.isfinite(tangent)))
+                tangent = new float4(1f, 0f, 0f, 1f);
+            float2 uv0 = math.all(math.isfinite(vertex.Uv0)) ? vertex.Uv0 : float2.zero;
+            float stress = math.saturate(math.isfinite(vertex.Stress01) ? vertex.Stress01 : 0f);
+            float tear01 = math.saturate(math.isfinite(vertex.Tear01) ? vertex.Tear01 : 0f);
             byte heat = (byte)math.clamp((int)math.round(stress * 255f), 0, 255);
-            byte tear = (byte)math.clamp((int)math.round(vertex.Tear01 * 255f), 0, 255);
+            byte tear = (byte)math.clamp((int)math.round(tear01 * 255f), 0, 255);
             Output[index] = new HabitatDamageBakedVertex
             {
-                Position = vertex.Position,
+                Position = position,
                 NormalX = (ushort)math.f32tof16(normal.x),
                 NormalY = (ushort)math.f32tof16(normal.y),
                 NormalZ = (ushort)math.f32tof16(normal.z),
                 NormalW = (ushort)math.f32tof16(0f),
                 TangentSnorm = PackSnorm4x8(tangent),
-                UvX = (ushort)math.f32tof16(vertex.Uv0.x),
-                UvY = (ushort)math.f32tof16(vertex.Uv0.y),
+                UvX = (ushort)math.f32tof16(uv0.x),
+                UvY = (ushort)math.f32tof16(uv0.y),
                 ColorRgba = PackColor(tear, heat, heat, 255)
             };
         }
@@ -980,10 +1035,22 @@ namespace Hecton8.Habitat.Deformation.Editor
             if (positionDescriptor.format != VertexAttributeFormat.Float32 || positionDescriptor.dimension < 3)
                 return null;
             int sourceVertexCount = sourceData.vertexCount;
-            int rawIndexCount = ResolveIndexCount(sourceData);
-            int indexCount = rawIndexCount - (rawIndexCount % 3);
-            if (sourceVertexCount <= 0 || indexCount <= 0)
+            NativeArray<HabitatDamageIndexRangeDTO> indexRanges = BuildTriangleIndexRanges(
+                sourceData,
+                Allocator.TempJob,
+                out int indexCount,
+                out int indexRangeCount);
+            if (sourceVertexCount <= 0 || indexCount <= 0 || indexRangeCount <= 0)
+            {
+                if (indexRanges.IsCreated)
+                    indexRanges.Dispose();
                 return null;
+            }
+            if (state != HabitatDamageMeshState.Stressed && sourceVertexCount > int.MaxValue / 2)
+            {
+                indexRanges.Dispose();
+                return null;
+            }
 
             uint sourceMeshHash = ResolveMeshHash(sourceMesh);
             int outputVertexCount = state == HabitatDamageMeshState.Stressed ? sourceVertexCount : sourceVertexCount * 2;
@@ -1002,7 +1069,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             try
             {
                 JobHandle handle = ScheduleExtract(sourceData, sourceVertices);
-                handle = ScheduleIndexCopy(sourceData, sourceIndices, indexCount, handle);
+                handle = ScheduleIndexCopy(sourceData, sourceIndices, indexCount, indexRanges, indexRangeCount, handle);
                 handle = new InitializeDamageWorkingVerticesJob
                 {
                     Source = sourceVertices,
@@ -1114,6 +1181,8 @@ namespace Hecton8.Habitat.Deformation.Editor
                     hulls.Dispose();
                 if (packedVertices.IsCreated)
                     packedVertices.Dispose();
+                if (indexRanges.IsCreated)
+                    indexRanges.Dispose();
             }
         }
 
@@ -1274,12 +1343,13 @@ namespace Hecton8.Habitat.Deformation.Editor
                 hasUv = uv.format == VertexAttributeFormat.Float32 && uv.dimension >= 2;
                 uvStream = uv.stream;
             }
+            NativeArray<byte> positionBytes = sourceData.GetVertexData<byte>(positionStream);
             ExtractSourceVertexJob job = new ExtractSourceVertexJob
             {
-                PositionBytes = sourceData.GetVertexData<byte>(positionStream),
-                NormalBytes = hasNormal ? sourceData.GetVertexData<byte>(normalStream) : default,
-                TangentBytes = hasTangent ? sourceData.GetVertexData<byte>(tangentStream) : default,
-                UvBytes = hasUv ? sourceData.GetVertexData<byte>(uvStream) : default,
+                PositionBytes = positionBytes,
+                NormalBytes = hasNormal ? sourceData.GetVertexData<byte>(normalStream) : positionBytes,
+                TangentBytes = hasTangent ? sourceData.GetVertexData<byte>(tangentStream) : positionBytes,
+                UvBytes = hasUv ? sourceData.GetVertexData<byte>(uvStream) : positionBytes,
                 Output = output,
                 PositionOffset = sourceData.GetVertexAttributeOffset(VertexAttribute.Position),
                 PositionStride = sourceData.GetVertexBufferStride(positionStream),
@@ -1296,39 +1366,98 @@ namespace Hecton8.Habitat.Deformation.Editor
             return job.Schedule(output.Length, 64);
         }
 
-        private static JobHandle ScheduleIndexCopy(Mesh.MeshData sourceData, NativeArray<uint> output, int indexCount, JobHandle dependency)
+        private static JobHandle ScheduleIndexCopy(
+            Mesh.MeshData sourceData,
+            NativeArray<uint> output,
+            int indexCount,
+            NativeArray<HabitatDamageIndexRangeDTO> ranges,
+            int rangeCount,
+            JobHandle dependency)
         {
             if (sourceData.indexFormat == IndexFormat.UInt16)
             {
                 return new CopyIndex16Job
                 {
                     Source = sourceData.GetIndexData<ushort>(),
-                    Output = output
+                    Ranges = ranges,
+                    Output = output,
+                    RangeCount = rangeCount,
+                    SourceVertexCount = sourceData.vertexCount
                 }.Schedule(indexCount, 64, dependency);
             }
 
             return new CopyIndex32Job
             {
                 Source = sourceData.GetIndexData<uint>(),
-                Output = output
+                Ranges = ranges,
+                Output = output,
+                RangeCount = rangeCount,
+                SourceVertexCount = sourceData.vertexCount
             }.Schedule(indexCount, 64, dependency);
         }
 
-        private static int ResolveIndexCount(Mesh.MeshData sourceData)
+        private static NativeArray<HabitatDamageIndexRangeDTO> BuildTriangleIndexRanges(
+            Mesh.MeshData sourceData,
+            Allocator allocator,
+            out int indexCount,
+            out int rangeCount)
         {
-            int count = 0;
+            int capacity = math.max(1, sourceData.subMeshCount);
+            NativeArray<HabitatDamageIndexRangeDTO> ranges = new NativeArray<HabitatDamageIndexRangeDTO>(
+                capacity,
+                allocator,
+                NativeArrayOptions.UninitializedMemory);
+
+            indexCount = 0;
+            rangeCount = 0;
             for (int i = 0; i < sourceData.subMeshCount; i++)
             {
                 SubMeshDescriptor subMesh = sourceData.GetSubMesh(i);
-                if (subMesh.topology == MeshTopology.Triangles)
-                    count += subMesh.indexCount;
+                int count = subMesh.indexCount - (subMesh.indexCount % 3);
+                if (subMesh.topology != MeshTopology.Triangles || count <= 0)
+                    continue;
+                if (count > int.MaxValue - indexCount)
+                {
+                    count = int.MaxValue - indexCount;
+                    count -= count % 3;
+                    if (count <= 0)
+                        break;
+                }
+
+                ranges[rangeCount] = new HabitatDamageIndexRangeDTO
+                {
+                    SourceStart = subMesh.indexStart,
+                    DestinationStart = indexCount,
+                    Count = count,
+                    BaseVertex = subMesh.baseVertex
+                };
+                indexCount += count;
+                rangeCount++;
             }
 
-            if (count <= 0)
-                count = sourceData.indexFormat == IndexFormat.UInt16
+            if (indexCount <= 0)
+            {
+                int fallbackCount = sourceData.indexFormat == IndexFormat.UInt16
                     ? sourceData.GetIndexData<ushort>().Length
                     : sourceData.GetIndexData<uint>().Length;
-            return count;
+                fallbackCount -= fallbackCount % 3;
+                if (fallbackCount > 0)
+                {
+                    ranges[0] = new HabitatDamageIndexRangeDTO
+                    {
+                        SourceStart = 0,
+                        DestinationStart = 0,
+                        Count = fallbackCount,
+                        BaseVertex = 0
+                    };
+                    indexCount = fallbackCount;
+                    rangeCount = 1;
+                }
+            }
+
+            for (int i = rangeCount; i < ranges.Length; i++)
+                ranges[i] = default;
+            return ranges;
         }
 
         private static Bounds CalculateBounds(NativeArray<HabitatDamageWorkingVertex> vertices)
@@ -1710,6 +1839,8 @@ namespace Hecton8.Habitat.Deformation.Editor
             ok &= Offset<HabitatDamageBakeSettings>(nameof(HabitatDamageBakeSettings.ModuleAup), 0);
             ok &= Offset<HabitatDamageBakeSettings>(nameof(HabitatDamageBakeSettings.SeaLevelAup), 24);
             ok &= Offset<HabitatDamageBakeSettings>(nameof(HabitatDamageBakeSettings.GlobalQualityWeight), 64);
+            ok &= Size<HabitatDamageIndexRangeDTO>(16);
+            ok &= Offset<HabitatDamageIndexRangeDTO>(nameof(HabitatDamageIndexRangeDTO.BaseVertex), 12);
             ok &= Size<HabitatDamageSourceVertex>(64);
             ok &= Offset<HabitatDamageSourceVertex>(nameof(HabitatDamageSourceVertex.Uv0), 40);
             ok &= Size<HabitatDamageWorkingVertex>(128);

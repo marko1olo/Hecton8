@@ -111,8 +111,13 @@ namespace Hecton8.Construction
         {
             float snappedGrid = gridSize > 0f ? gridSize : DefaultGridSize;
             int gridMillimeters = ResolveGridMillimeters(snappedGrid);
-            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(
-                new Vector3(worldPosition.x, worldPosition.y, worldPosition.z));
+            if (!TryResolveAupFromRuntimeOrigin(
+                    new Vector3(worldPosition.x, worldPosition.y, worldPosition.z),
+                    out double3 absolutePosition))
+            {
+                return worldPosition;
+            }
+
             double3 snappedAbsolutePosition = new double3(
                 SnapMeterToGridMillimeters(absolutePosition.x, gridMillimeters),
                 SnapMeterToGridMillimeters(absolutePosition.y, gridMillimeters),
@@ -550,13 +555,36 @@ namespace Hecton8.Construction
             if (!math.all(math.isfinite(socket.LocalOffset)) || !math.all(math.isfinite(worldNormal)))
                 return false;
 
-            double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(rootTransform.position);
+            if (!TryResolveAupFromRuntimeOrigin(rootTransform.position, out double3 rootAup))
+                return false;
+
             socketAup = BaseModuleCatalogRuntime.ResolveSocketAup(rootAup, rotation, in socket);
             if (!math.all(math.isfinite(socketAup)))
                 return false;
 
             socketForward = new Vector3(worldNormal.x, worldNormal.y, worldNormal.z);
             return true;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out double3 aup)
+        {
+            aup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!MathGuard.IsFinite(in resolvedAup))
+                return false;
+
+            aup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(aup));
         }
 
         private void BuildAdjacency(int nodeCount)

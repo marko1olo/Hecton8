@@ -1162,3 +1162,106 @@ Compile status:
   <VaultBufferIds>WfcDoorCutProgress01, WfcLaserCutBlackBox.</VaultBufferIds>
   <ResidualRisk>No explicit shutdown hook exists for this static tool runtime; descriptors are released on DataVault replacement, and process teardown remains Vault-owned.</ResidualRisk>
 </SELF_AUDIT>
+
+---
+
+## 2026-05-20 - Procedural Ladder Climb IK Descriptor Migration Pass
+
+What was wrong:
+- `ProceduralLadderClimbRuntime.cs` persisted five `VaultBufferHandle<T>` descriptors for IK input/output, ladder AUP, telemetry ring, and telemetry cursor.
+- IK job staging resolved those legacy handles through `.Resolve(_dataVault)`.
+- Disable/destroy cleared handles without releasing Vault refcounts or invalidating generations.
+
+What was done:
+- Replaced the five descriptors with `VaultGenerationHandle<T>`.
+- Added generation resolve/acquire/release helpers and routed all IK read/write/job staging through local `NativeArray<T>` views.
+- Completed any outstanding IK job before releasing descriptors on disable, destroy, DataVault loss, or DataVault replacement.
+
+Cinematic cheats used:
+- Ladder climbing remains a procedural IK presentation solve over authored ladder axes and AUP anchors. It avoids physical hand collision simulation and only emits the pose targets needed by animation.
+
+Exact microseconds saved:
+- Removed all legacy Vault scanner hits from `ProceduralLadderClimbRuntime.cs`.
+- The hot path pays five generation compares when staging/reading IK lanes. The dominant cost remains the Burst IK solve and transform application.
+
+Compile status:
+- Targeted scan is clean for old pointer-bearing Vault routes in `ProceduralLadderClimbRuntime.cs`.
+- `git diff --check` passed for `ProceduralLadderClimbRuntime.cs`; CRLF warning only.
+- Full compile was not relaunched because the previous generated-project compile wall remains unchanged and the user explicitly forbade unnecessary rebuilds.
+
+<SELF_AUDIT ultra_pass="procedural_ladder_climb_descriptor_migration">
+  <Task id="01" impact="PASS_DELTA">Ladder climb runtime no longer persists pointer-bearing Vault descriptors.</Task>
+  <Task id="02" impact="PASS_DELTA">Owned descriptors release after outstanding IK jobs complete.</Task>
+  <Task id="06" impact="PASS_REUSE">IK input/output, ladder AUP, telemetry ring, and cursor views resolve through generation descriptors.</Task>
+  <Task id="08" impact="PASS_DELTA">IK solve receives only phase-local NativeArray views.</Task>
+  <Task id="16" impact="PASS_REUSE">Ladder climb telemetry ring remains Vault-backed and generation-validated.</Task>
+  <VaultBufferIds>LadderClimbIkInput, LadderClimbIkOutput, LadderAUPs, LadderClimbIkTelemetryRing, LadderClimbIkTelemetryCursor.</VaultBufferIds>
+  <ResidualRisk>Full Unity import/profiler proof remains pending behind compile-wall blockers; this pass removes the Vault UAF route only.</ResidualRisk>
+</SELF_AUDIT>
+
+---
+
+## 2026-05-20 - Tool Haptics Descriptor Migration Pass
+
+What was wrong:
+- `ToolHapticsRuntime.cs` persisted front/back `VaultBufferHandle<HapticCommand>` descriptors.
+- Every haptic resolve path called `ResolveBuffer(ref handle)`, refreshing pointer-bearing metadata inside the manager.
+
+What was done:
+- Replaced front/back descriptors with `VaultGenerationHandle<HapticCommand>`.
+- Added cached `IDataVault` resolution with generation-checked local `NativeArray<HapticCommand>` views.
+- Released old descriptors on DataVault loss/replacement and teardown.
+
+Cinematic cheats used:
+- Haptics remain a bounded command-envelope blend, not a physical actuator simulation. Triangle-wave feedback is generated from compact command rows.
+
+Exact microseconds saved:
+- Removed all legacy Vault scanner hits from `ToolHapticsRuntime.cs`.
+- Hot path pays one generation compare per touched haptic lane. The haptic queue remains capped at 16 commands.
+
+Compile status:
+- Targeted scan is clean for old pointer-bearing Vault routes in `ToolHapticsRuntime.cs`.
+- `git diff --check` passed for `ToolHapticsRuntime.cs`; CRLF warning only.
+- Full compile was not relaunched because the previous generated-project compile wall remains unchanged and the user explicitly forbade unnecessary rebuilds.
+
+<SELF_AUDIT ultra_pass="tool_haptics_descriptor_migration">
+  <Task id="01" impact="PASS_DELTA">Tool haptics no longer persists pointer-bearing Vault descriptors.</Task>
+  <Task id="02" impact="PASS_DELTA">Owned front/back descriptors release on teardown or DataVault replacement.</Task>
+  <Task id="06" impact="PASS_REUSE">Front/back haptic command views resolve through generation descriptors.</Task>
+  <Task id="08" impact="PASS_DELTA">Haptics remain bounded command-envelope fakes instead of actuator physics.</Task>
+  <VaultBufferIds>ToolHapticFrontCommands, ToolHapticBackCommands.</VaultBufferIds>
+  <ResidualRisk>ReadOnlySpan snapshots are phase-local caller views; full runtime proof remains pending behind compile-wall blockers.</ResidualRisk>
+</SELF_AUDIT>
+
+## 2026-05-20 SHINOBU_202 Procedural Bone Blender Descriptor Pass
+
+What was wrong:
+- `ProceduralBoneBlenderRuntime.cs` persisted eleven `VaultBufferHandle<T>` descriptors.
+- Editor, CSV, mock rig, telemetry, GPU upload, and scheduled solver paths used `.Resolve(vault)`.
+- Teardown and DataVault replacement cleared descriptors without releasing the owned Vault lanes.
+
+What was done:
+- Replaced all eleven descriptors with `VaultGenerationHandle<T>`.
+- Added shared generation-checked resolve/acquire helpers and method-local `NativeArray<T>` views.
+- Completed outstanding solver jobs before releasing exact descriptors on disable, destroy, or DataVault replacement.
+
+Cinematic cheats used:
+- Fauna bone motion remains the existing quality-weighted procedural wave/IK fake; no rigid-body chain or per-bone physics ownership was introduced.
+
+Exact microseconds saved:
+- Removed all legacy Vault scanner hits from `ProceduralBoneBlenderRuntime.cs`.
+- Hot staging now pays bounded O(11) generation compares. No heap allocation and no persistent pointer metadata survive across phases.
+
+Compile status:
+- Targeted scan is clean for old pointer-bearing Vault routes in `ProceduralBoneBlenderRuntime.cs`.
+- `git diff --check` passed for `ProceduralBoneBlenderRuntime.cs`; CRLF warning only.
+- Full compile was not relaunched because prior generated-project blockers remain and the user explicitly forbade unnecessary rebuilds.
+
+<SELF_AUDIT ultra_pass="procedural_bone_descriptor_migration">
+  <Task id="01" impact="PASS_DELTA">Fauna procedural bone no longer persists pointer-bearing Vault descriptors.</Task>
+  <Task id="02" impact="PASS_DELTA">Owned animation descriptors release after solver completion on disable, destroy, and DataVault replacement.</Task>
+  <Task id="06" impact="PASS_REUSE">Solver, telemetry, editor, and GPU upload views resolve through generation descriptors.</Task>
+  <Task id="08" impact="PASS_REUSE">Animation remains a procedural visual fake, not a CPU physics chain.</Task>
+  <VaultBufferIds>ProceduralBoneBlenderBufferIds.Rigs, FrameInputs, ParentIndices, BindPoses, BoneStates, BoneMatrices, FrameStats, TelemetryRing, TelemetryCursor, Tuning, MockAiSignals.</VaultBufferIds>
+  <ResidualRisk>Runtime/Unity import proof remains pending behind the existing compile wall and build gate.</ResidualRisk>
+</SELF_AUDIT>

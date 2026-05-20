@@ -12,7 +12,6 @@ using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Tools;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -211,10 +210,10 @@ namespace Hecton8.Core
         private Thread _inputReplayThread;
         private AutoResetEvent _inputReplaySignal;
         private RaycastHit _lastXRLookAtHit;
-        private AbsoluteUniversePosition _lastXRLookAtRayOriginAup;
+        private XRRuntimeAup48 _lastXRLookAtRayOriginAup;
         private Vector3 _lastXRLookAtRayOriginRuntimePosition;
         private Vector3 _lastXRLookAtRayDirection;
-        private AbsoluteUniversePosition _lastXRLookAtHitPointAup;
+        private XRRuntimeAup48 _lastXRLookAtHitPointAup;
         private int _lastXRLookAtPhysicsQueryFrame = -1;
         private bool _registeredUpdatable;
         private bool _registeredInputService;
@@ -2888,16 +2887,26 @@ namespace Hecton8.Core
                 direction3.z = 1f;
             }
 
-            AbsoluteUniversePosition originAup = HectonXRRuntimeState.TryResolveCachedHeadAup(origin, out AbsoluteUniversePosition cachedHeadAup)
-                ? cachedHeadAup
-                : AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!HectonXRRuntimeState.TryResolveCachedHeadAup48(origin, out XRRuntimeAup48 originAup) &&
+                !XRRuntimeAup48.TryFromRuntimePosition(origin, out originAup))
+            {
+                DisableXRLookAtRayCommand(forceWrite: true);
+                return;
+            }
+
             if (TryReuseXRLookAtHit(in originAup, in direction3))
             {
                 DisableXRLookAtRayCommand();
                 return;
             }
 
-            Vector3 rayOrigin = (Vector3)originAup.ToRuntimeFloat3();
+            if (!originAup.TryToRuntimeFloat3(out float3 rayOrigin3))
+            {
+                DisableXRLookAtRayCommand(forceWrite: true);
+                return;
+            }
+
+            Vector3 rayOrigin = new Vector3(rayOrigin3.x, rayOrigin3.y, rayOrigin3.z);
             RaycastCommand command = default;
             command.from = rayOrigin;
             command.direction = direction;
@@ -2952,7 +2961,7 @@ namespace Hecton8.Core
             _xrRuntimeFlags = 0u;
         }
 
-        private bool TryReuseXRLookAtHit(in AbsoluteUniversePosition originAup, in float3 direction)
+        private bool TryReuseXRLookAtHit(in XRRuntimeAup48 originAup, in float3 direction)
         {
             if (_lastXRLookAtPhysicsQueryFrame < 0)
                 return false;
@@ -2960,7 +2969,9 @@ namespace Hecton8.Core
             if (Time.frameCount - _lastXRLookAtPhysicsQueryFrame > XRLookAtReuseMaxFrames)
                 return false;
 
-            float3 originDelta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in originAup, in _lastXRLookAtRayOriginAup);
+            if (!XRRuntimeAup48.TryToRelativeFloat3(in originAup, in _lastXRLookAtRayOriginAup, out float3 originDelta))
+                return false;
+
             if (math.lengthsq(originDelta) > XRLookAtReuseOriginDriftSq)
                 return false;
 
@@ -2977,7 +2988,9 @@ namespace Hecton8.Core
                 return true;
             }
 
-            float3 toHit = AbsoluteUniversePosition.ToCameraRelativeFloat3(in _lastXRLookAtHitPointAup, in originAup);
+            if (!XRRuntimeAup48.TryToRelativeFloat3(in _lastXRLookAtHitPointAup, in originAup, out float3 toHit))
+                return false;
+
             float hitDistanceSq = math.lengthsq(toHit);
             if (hitDistanceSq <= 0.0001f || hitDistanceSq > XRLookAtSelectionDistanceSq)
                 return false;
@@ -3026,41 +3039,6 @@ namespace Hecton8.Core
                    !float.IsNaN(value.w) && !float.IsInfinity(value.w) &&
                    !float.IsNaN(lengthSq) && !float.IsInfinity(lengthSq) &&
                    lengthSq > 0.000001f;
-        }
-
-        private static AbsoluteUniversePosition OffsetAupLocal(in AbsoluteUniversePosition anchorAup, Vector3 runtimeOffset)
-        {
-            AbsoluteUniversePosition result = anchorAup;
-            result.LocalX += runtimeOffset.x;
-            result.LocalY += runtimeOffset.y;
-            result.LocalZ += runtimeOffset.z;
-            NormalizeAupLocalAxis(ref result.GridX, ref result.LocalX);
-            NormalizeAupLocalAxis(ref result.GridY, ref result.LocalY);
-            NormalizeAupLocalAxis(ref result.GridZ, ref result.LocalZ);
-            return result;
-        }
-
-        private static void NormalizeAupLocalAxis(ref long grid, ref float local)
-        {
-            const float cellSize = AbsoluteUniversePosition.CellSizeMeters;
-            if (local >= 0f && local < cellSize)
-                return;
-
-            long gridDelta = (long)math.floor(local / cellSize);
-            grid += gridDelta;
-            local -= gridDelta * cellSize;
-            if (local < 0f)
-            {
-                local += cellSize;
-                grid--;
-                return;
-            }
-
-            if (local >= cellSize)
-            {
-                local -= cellSize;
-                grid++;
-            }
         }
 
         private void BeginLookHotSwapBlend()
@@ -3238,8 +3216,15 @@ namespace Hecton8.Core
             _lastXRLookAtHit = hit;
             _lastXRLookAtHitFrame = Time.frameCount;
             _lastXRLookAtPhysicsQueryFrame = Time.frameCount;
-            if (hit.collider != null)
-                _lastXRLookAtHitPointAup = OffsetAupLocal(in _lastXRLookAtRayOriginAup, hit.point - _lastXRLookAtRayOriginRuntimePosition);
+            if (hit.collider != null &&
+                XRRuntimeAup48.TryOffsetLocal(in _lastXRLookAtRayOriginAup, hit.point - _lastXRLookAtRayOriginRuntimePosition, out XRRuntimeAup48 hitPointAup))
+            {
+                _lastXRLookAtHitPointAup = hitPointAup;
+            }
+            else
+            {
+                _lastXRLookAtHitPointAup = default;
+            }
         }
 
         private void DrainToolHaptics(float deltaTime)

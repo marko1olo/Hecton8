@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -6,6 +8,170 @@ using UnityEngine.XR;
 
 namespace Hecton8.Core
 {
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    internal struct XRRuntimeAup48
+    {
+        [FieldOffset(0)] public long GridX;
+        [FieldOffset(8)] public long GridY;
+        [FieldOffset(16)] public long GridZ;
+        [FieldOffset(24)] public float LocalX;
+        [FieldOffset(28)] public float LocalY;
+        [FieldOffset(32)] public float LocalZ;
+        [FieldOffset(36)] public uint Reserved0;
+        [FieldOffset(40)] public ulong Reserved1;
+
+        internal static bool TryFromRuntimePosition(Vector3 runtimePosition, out XRRuntimeAup48 aup)
+        {
+            if (!IsFinite(runtimePosition))
+            {
+                aup = default;
+                return false;
+            }
+
+            return TryFromAbsoluteDouble3(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition), out aup);
+        }
+
+        internal static bool TryFromFields(
+            long gridX,
+            long gridY,
+            long gridZ,
+            float localX,
+            float localY,
+            float localZ,
+            out XRRuntimeAup48 aup)
+        {
+            float3 local = new float3(localX, localY, localZ);
+            if (!math.all(math.isfinite(local)))
+            {
+                aup = default;
+                return false;
+            }
+
+            aup = new XRRuntimeAup48
+            {
+                GridX = gridX,
+                GridY = gridY,
+                GridZ = gridZ,
+                LocalX = localX,
+                LocalY = localY,
+                LocalZ = localZ,
+                Reserved0 = 0u,
+                Reserved1 = 0ul
+            };
+            return true;
+        }
+
+        internal static bool TryOffsetLocal(in XRRuntimeAup48 anchorAup, Vector3 runtimeOffset, out XRRuntimeAup48 result)
+        {
+            if (!IsFinite(runtimeOffset))
+            {
+                result = default;
+                return false;
+            }
+
+            result = anchorAup;
+            result.LocalX += runtimeOffset.x;
+            result.LocalY += runtimeOffset.y;
+            result.LocalZ += runtimeOffset.z;
+            NormalizeAupLocalAxis(ref result.GridX, ref result.LocalX);
+            NormalizeAupLocalAxis(ref result.GridY, ref result.LocalY);
+            NormalizeAupLocalAxis(ref result.GridZ, ref result.LocalZ);
+            return math.all(math.isfinite(new float3(result.LocalX, result.LocalY, result.LocalZ)));
+        }
+
+        internal static bool TryToRelativeFloat3(in XRRuntimeAup48 position, in XRRuntimeAup48 origin, out float3 relative)
+        {
+            double3 delta = new double3(
+                (((double)position.GridX - origin.GridX) * HectonPhysicsContract.AupSectorSizeMetersDouble) + ((double)position.LocalX - origin.LocalX),
+                (((double)position.GridY - origin.GridY) * HectonPhysicsContract.AupSectorSizeMetersDouble) + ((double)position.LocalY - origin.LocalY),
+                (((double)position.GridZ - origin.GridZ) * HectonPhysicsContract.AupSectorSizeMetersDouble) + ((double)position.LocalZ - origin.LocalZ));
+            if (!math.all(math.isfinite(delta)) ||
+                math.any(math.abs(delta) > HectonPhysicsContract.AupMaxFloatSafeMeters))
+            {
+                relative = float3.zero;
+                return false;
+            }
+
+            relative = new float3((float)delta.x, (float)delta.y, (float)delta.z);
+            return math.all(math.isfinite(relative));
+        }
+
+        internal bool TryToRuntimeFloat3(out float3 runtimePosition)
+        {
+            double3 absolute = ToAbsoluteDouble3(in this);
+            double3 runtime = absolute - HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(runtime)) ||
+                math.any(math.abs(runtime) > HectonPhysicsContract.AupMaxFloatSafeMeters))
+            {
+                runtimePosition = float3.zero;
+                return false;
+            }
+
+            runtimePosition = new float3((float)runtime.x, (float)runtime.y, (float)runtime.z);
+            return math.all(math.isfinite(runtimePosition));
+        }
+
+        private static bool TryFromAbsoluteDouble3(double3 absolutePosition, out XRRuntimeAup48 aup)
+        {
+            if (!math.all(math.isfinite(absolutePosition)))
+            {
+                aup = default;
+                return false;
+            }
+
+            double cellSize = HectonPhysicsContract.AupSectorSizeMetersDouble;
+            long gridX = (long)math.floor(absolutePosition.x / cellSize);
+            long gridY = (long)math.floor(absolutePosition.y / cellSize);
+            long gridZ = (long)math.floor(absolutePosition.z / cellSize);
+            return TryFromFields(
+                gridX,
+                gridY,
+                gridZ,
+                (float)(absolutePosition.x - (gridX * cellSize)),
+                (float)(absolutePosition.y - (gridY * cellSize)),
+                (float)(absolutePosition.z - (gridZ * cellSize)),
+                out aup);
+        }
+
+        private static double3 ToAbsoluteDouble3(in XRRuntimeAup48 position)
+        {
+            return new double3(
+                (position.GridX * HectonPhysicsContract.AupSectorSizeMetersDouble) + position.LocalX,
+                (position.GridY * HectonPhysicsContract.AupSectorSizeMetersDouble) + position.LocalY,
+                (position.GridZ * HectonPhysicsContract.AupSectorSizeMetersDouble) + position.LocalZ);
+        }
+
+        private static void NormalizeAupLocalAxis(ref long grid, ref float local)
+        {
+            const float cellSize = HectonPhysicsContract.AupSectorSizeMetersFloat;
+            if (local >= 0f && local < cellSize)
+                return;
+
+            long gridDelta = (long)math.floor(local / cellSize);
+            grid += gridDelta;
+            local -= gridDelta * cellSize;
+            if (local < 0f)
+            {
+                local += cellSize;
+                grid--;
+                return;
+            }
+
+            if (local >= cellSize)
+            {
+                local -= cellSize;
+                grid++;
+            }
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+                   !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+                   !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+        }
+    }
+
     /// <summary>
     /// XR runtime state bridge for shader globals, cadence selection, and VR-only pressure gates.
     /// </summary>
@@ -159,6 +325,24 @@ namespace Hecton8.Core
             {
                 headAup = OffsetAupLocal(in _cachedHeadAup, runtimePosition - _cachedHeadRuntimePosition);
                 return true;
+            }
+
+            headAup = default;
+            return false;
+        }
+
+        internal static bool TryResolveCachedHeadAup48(Vector3 runtimePosition, out XRRuntimeAup48 headAup)
+        {
+            if (TryResolveCachedHeadAup(runtimePosition, out AbsoluteUniversePosition worldAup))
+            {
+                return XRRuntimeAup48.TryFromFields(
+                    worldAup.GridX,
+                    worldAup.GridY,
+                    worldAup.GridZ,
+                    worldAup.LocalX,
+                    worldAup.LocalY,
+                    worldAup.LocalZ,
+                    out headAup);
             }
 
             headAup = default;

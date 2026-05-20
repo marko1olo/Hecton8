@@ -1251,7 +1251,7 @@ namespace Hecton8.Audio
             [FieldOffset(56)] private long _rearFence;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct SonarEchoSpatialHashCoalesceJob : IJob
         {
             [ReadOnly] public NativeArray<SonarEchoCompositeGroup> Candidates;
@@ -5075,20 +5075,21 @@ namespace Hecton8.Audio
             }
         }
 
-        private void HandleAudioPingTriggered(in AudioPingTriggerInfo info)
+        private void HandleAudioPingTriggered(in AudioPingTriggerPayload info)
         {
-            if (info.Kind == ProceduralAudioPingKind.PredatorKill)
+            ProceduralAudioPingKind kind = (ProceduralAudioPingKind)info.Kind;
+            if (kind == ProceduralAudioPingKind.PredatorKill)
                 HandlePredatorKillAudioPing(in info);
-            else if (info.Kind == ProceduralAudioPingKind.MeteorBoom)
+            else if (kind == ProceduralAudioPingKind.MeteorBoom)
                 HandleMeteorBoomAudioPing(in info);
-            else if (info.Kind == ProceduralAudioPingKind.MechanicalWhirr ||
-                     info.Kind == ProceduralAudioPingKind.AirRelease)
+            else if (kind == ProceduralAudioPingKind.MechanicalWhirr ||
+                     kind == ProceduralAudioPingKind.AirRelease)
                 HandleMechanicalWhirrAudioPing(in info);
-            else if (info.Kind == ProceduralAudioPingKind.LeviathanRoar)
+            else if (kind == ProceduralAudioPingKind.LeviathanRoar)
                 HandleLeviathanRoarAudioPing(in info);
         }
 
-        private void HandlePredatorKillAudioPing(in AudioPingTriggerInfo info)
+        private void HandlePredatorKillAudioPing(in AudioPingTriggerPayload info)
         {
             if (_boundPlayerTransform == null)
                 return;
@@ -5120,7 +5121,7 @@ namespace Hecton8.Audio
                 0.78f);
         }
 
-        private void HandleMeteorBoomAudioPing(in AudioPingTriggerInfo info)
+        private void HandleMeteorBoomAudioPing(in AudioPingTriggerPayload info)
         {
             if (_boundPlayerTransform == null)
                 return;
@@ -5150,7 +5151,7 @@ namespace Hecton8.Audio
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, audible01 * 0.28f);
         }
 
-        private void HandleMechanicalWhirrAudioPing(in AudioPingTriggerInfo info)
+        private void HandleMechanicalWhirrAudioPing(in AudioPingTriggerPayload info)
         {
             if (_boundPlayerTransform == null)
                 return;
@@ -5175,7 +5176,7 @@ namespace Hecton8.Audio
                 pitchScale);
         }
 
-        private void HandleLeviathanRoarAudioPing(in AudioPingTriggerInfo info)
+        private void HandleLeviathanRoarAudioPing(in AudioPingTriggerPayload info)
         {
             if (_boundPlayerTransform == null)
                 return;
@@ -5265,7 +5266,7 @@ namespace Hecton8.Audio
             return clampedRatio;
         }
 
-        private void HandleStructuralStressTriggered(in StructuralStressAudioInfo stressInfo)
+        private void HandleStructuralStressTriggered(in StructuralStressAudioPayload stressInfo)
         {
             if (_boundPlayerTransform == null)
                 return;
@@ -5317,12 +5318,25 @@ namespace Hecton8.Audio
             }
         }
 
-        private static Vector3 ResolveStructuralStressRuntimePosition(in StructuralStressAudioInfo stressInfo)
+        private static Vector3 ResolveStructuralStressRuntimePosition(in StructuralStressAudioPayload stressInfo)
         {
-            float3 runtime = stressInfo.SourceAup.ToRuntimeFloat3();
-            return math.all(math.isfinite(runtime))
-                ? new Vector3(runtime.x, runtime.y, runtime.z)
-                : stressInfo.WorldPosition;
+            if ((stressInfo.Flags & StructuralStressAudioPayload.FlagHasSourceAup) != 0)
+            {
+                AbsoluteUniversePosition sourceAup = new AbsoluteUniversePosition
+                {
+                    GridX = stressInfo.SourceAup.GridX,
+                    GridY = stressInfo.SourceAup.GridY,
+                    GridZ = stressInfo.SourceAup.GridZ,
+                    LocalX = stressInfo.SourceAup.Local.x,
+                    LocalY = stressInfo.SourceAup.Local.y,
+                    LocalZ = stressInfo.SourceAup.Local.z
+                };
+                float3 runtime = sourceAup.ToRuntimeFloat3();
+                if (math.all(math.isfinite(runtime)))
+                    return new Vector3(runtime.x, runtime.y, runtime.z);
+            }
+
+            return stressInfo.WorldPosition;
         }
 
         private static byte ResolveDominantImpactMaterialId(byte primaryMaterialId, byte secondaryMaterialId)

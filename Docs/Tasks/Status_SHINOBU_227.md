@@ -24,35 +24,35 @@ Status: PENDING VERIFICATION
 
 ## State Machine
 
-- Loop 1: Tasks 01-05 archaeology, DTO layout, mock data. Status: PENDING.
-- Loop 2: Tasks 06-10 hydrodynamics, flow, battery, cadence, force packets. Status: PENDING.
-- Loop 3: Tasks 11-14 audio, rollback fence, uninitialized memory, telemetry dump. Status: PENDING.
-- Loop 4: Tasks 15-18 editor/xray/csv/gizmo/static scanner. Status: PENDING.
-- Loop 5: Tasks 19-20 layout trap guard, self-audit, compile/static gates. Status: PENDING.
+- Loop 1: Tasks 01-05 archaeology, DTO layout, mock data. Status: COMPLETE STATIC / COMPILE GATE WAITING CPU.
+- Loop 2: Tasks 06-10 hydrodynamics, flow, battery, cadence, force packets. Status: COMPLETE STATIC / COMPILE GATE WAITING CPU.
+- Loop 3: Tasks 11-14 audio, rollback fence, uninitialized memory, telemetry dump. Status: COMPLETE STATIC / COMPILE GATE WAITING CPU.
+- Loop 4: Tasks 15-18 editor/xray/csv/gizmo/static scanner. Status: COMPLETE STATIC / COMPILE GATE WAITING CPU.
+- Loop 5: Tasks 19-20 layout trap guard, self-audit, compile/static gates. Status: IN PROGRESS; dotnet compile blocked by CPU=100 and no csc/dotnet running.
 
 ## Task Checklist
 
-- [ ] Task 01 MONOBEHAVIOUR_PHYSICS_INQUISITION | DOD: static source scan + direct Rigidbody/FixedUpdate removal or quarantine note | Alternative rejected: component-local force application | Estimate: pending.
-- [ ] Task 02 PARTICLE_INSTANTIATION_PURGE | DOD: scan for hot instantiate/destroy and route through unmanaged signal if local owner exists | Alternative rejected: runtime ParticleSystem prefab churn | Estimate: pending.
-- [ ] Task 03 CS1612_HOT_PATH_PROPERTY_ANNIHILATION | DOD: DTOs use raw fields only | Alternative rejected: C# property wrappers in Burst data | Estimate: pending.
-- [ ] Task 04 ARM64_ALIGNMENT_AND_PADDING_ASSERTION | DOD: explicit layout + editor/static validator | Alternative rejected: implicit sequential layout for cache-line data | Estimate: pending.
-- [ ] Task 05 EMERGENCY_MOCK_PROPULSION_GENERATOR | DOD: Burst deterministic mock request job | Alternative rejected: waiting for input owner | Estimate: pending.
-- [ ] Task 06 BURST_HYDRODYNAMIC_THRUST_KERNEL | DOD: Burst job computes thrust + drag | Alternative rejected: Rigidbody force math in MonoBehaviour | Estimate: pending.
-- [ ] Task 07 ABYSSAL_CURRENT_ADVECTION_INTEGRATION | DOD: current sample path with trilinear/cheap fallback | Alternative rejected: Unity fluid physics | Estimate: pending.
-- [ ] Task 08 THE_DEAR_LIE_BATTERY_CONSUMPTION | DOD: low cadence linear drain job | Alternative rejected: per-frame joule/RPM simulation | Estimate: pending.
-- [ ] Task 09 CONTINUOUS_SCALABILITY_PHYSICS_CADENCE | DOD: continuous GlobalQualityWeight cadence math | Alternative rejected: binary low/high switch | Estimate: pending.
-- [ ] Task 10 ASYNCHRONOUS_FORCE_PACKET_DISPATCH | DOD: queue ForcePacketDTO for PhysicsApplySystem | Alternative rejected: direct player body mutation | Estimate: pending.
-- [ ] Task 11 AUP_PRECISION_AUDIO_DOPPLER_MATH | DOD: double precision AUP delta before float magnitude | Alternative rejected: Rigidbody.velocity audio truth | Estimate: pending.
-- [ ] Task 12 ROLLBACK_NETCODE_EXCLUSION_FENCE | DOD: physical and visual DTO segregation | Alternative rejected: hashing presentation state | Estimate: pending.
-- [ ] Task 13 ZERO_INIT_OVERHEAD_BYPASS | DOD: uninitialized-memory request path where safe | Alternative rejected: redundant MemClear/zero-fill | Estimate: pending.
-- [ ] Task 14 TELEMETRY_PROPULSION_RECORDER | DOD: 300-entry fixed telemetry ring + dump path | Alternative rejected: string logs after crash | Estimate: pending.
-- [ ] Task 15 SEAGLIDE_DYNAMICS_XRAY_WINDOW | DOD: editor-only xray window if existing editor pattern allows | Alternative rejected: runtime debug UI | Estimate: pending.
-- [ ] Task 16 CSV_VEHICLE_PROFILES_INGESTOR | DOD: cold span/byte parser | Alternative rejected: float.Parse/string split | Estimate: pending.
-- [ ] Task 17 LIVE_CURRENT_DEBUG_GIZMO | DOD: editor-only gizmo facade | Alternative rejected: runtime debug objects | Estimate: pending.
-- [ ] Task 18 ARCHITECTURAL_METRIC_VALIDATOR | DOD: static scanner/report JSON | Alternative rejected: manual grep report | Estimate: pending.
-- [ ] Task 19 UNALIGNED_MEMORY_TRAP_GUARD | DOD: editor initialize validator for DTO size/alignment | Alternative rejected: unchecked layout drift | Estimate: pending.
-- [ ] Task 20 SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION | DOD: static self-audit, compile/static verification, log append | Alternative rejected: chat-only report | Estimate: pending.
+- [x] Task 01 MONOBEHAVIOUR_PHYSICS_INQUISITION | DOD: Equipment path absent, actual owner `MantaScooter` scanned and Rigidbody removed; legacy force returns 0 | Alternative rejected: leave HectonPlayerMovement transport force active | Estimate: saves one Rigidbody velocity poll + one legacy force branch per active tool tick; profiler pending.
+- [x] Task 02 PARTICLE_INSTANTIATION_PURGE | DOD: Seaglide emits `SeaglideCavitationVfxSignalDTO`; no runtime particle instantiate added | Alternative rejected: ParticleSystem prefab churn | Estimate: avoids unbounded GC spikes; exact us pending profiler.
+- [x] Task 03 CS1612_HOT_PATH_PROPERTY_ANNIHILATION | DOD: DTOs raw fields only; state mutation uses `UnsafeUtility.AsRef` in Burst jobs | Alternative rejected: DTO properties | Estimate: avoids defensive struct copies on 64/128 byte rows.
+- [x] Task 04 ARM64_ALIGNMENT_AND_PADDING_ASSERTION | DOD: explicit DTO layouts + editor trap guard | Alternative rejected: sequential layout | Estimate: prevents unaligned ARM64 traps; performance gain structural.
+- [x] Task 05 EMERGENCY_MOCK_PROPULSION_GENERATOR | DOD: `GenerateMockSeaglidePropulsionDataJob` produces 1000 deterministic requests | Alternative rejected: waiting for input agent | Estimate: designed for sub-0.1ms benchmark; profiler pending.
+- [x] Task 06 BURST_HYDRODYNAMIC_THRUST_KERNEL | DOD: `CalculateSeaglideThrustJob` computes thrust + linear/quadratic drag | Alternative rejected: Rigidbody force math in MonoBehaviour | Estimate: hot path is contiguous NativeArray, no managed alloc.
+- [x] Task 07 ABYSSAL_CURRENT_ADVECTION_INTEGRATION | DOD: trilinear first-8 flow sample path with triangle-current fallback | Alternative rejected: Unity fluid physics | Estimate: cheap fallback is O(1) math, no scene query.
+- [x] Task 08 THE_DEAR_LIE_BATTERY_CONSUMPTION | DOD: `ProcessSeaglideMetabolismJob` linear drain at quality-scaled cadence | Alternative rejected: RPM/joule simulation | Estimate: one multiply-add chain per active row.
+- [x] Task 09 CONTINUOUS_SCALABILITY_PHYSICS_CADENCE | DOD: `GlobalQualityWeight` blends drag precision, current weight, metabolism cadence | Alternative rejected: binary low/high switch | Estimate: sheds ALU under low quality without changing truth path.
+- [x] Task 10 ASYNCHRONOUS_FORCE_PACKET_DISPATCH | DOD: `SeaglideForcePacketDTO` drained by `PhysicsApplySystem.SeaglideQueue` | Alternative rejected: direct player body mutation | Estimate: central queue contention only; no local physics sync.
+- [x] Task 11 AUP_PRECISION_AUDIO_DOPPLER_MATH | DOD: audio job subtracts previous/current `double3` AUP before float speed | Alternative rejected: Rigidbody velocity audio truth | Estimate: no origin-shift velocity corruption.
+- [x] Task 12 ROLLBACK_NETCODE_EXCLUSION_FENCE | DOD: visual/audio/cavitation DTOs separated and flagged rollback-excluded | Alternative rejected: hash propeller presentation | Estimate: avoids false desync hash churn.
+- [x] Task 13 ZERO_INIT_OVERHEAD_BYPASS | DOD: state/request/force/visual/audio/cavitation buffers request `UninitializedMemory`; active rows overwritten | Alternative rejected: blanket MemClear | Estimate: loading/boot savings proportional to buffer bytes.
+- [x] Task 14 TELEMETRY_PROPULSION_RECORDER | DOD: 300-entry telemetry ring + fault dump path | Alternative rejected: string logs after crash | Estimate: fixed 64-byte frame rows.
+- [x] Task 15 SEAGLIDE_DYNAMICS_XRAY_WINDOW | DOD: UI Toolkit editor x-ray window with tuning sliders and graph | Alternative rejected: runtime debug UI | Estimate: editor-only allocations, zero runtime cost.
+- [x] Task 16 CSV_VEHICLE_PROFILES_INGESTOR | DOD: `ReadOnlySpan<byte>` parser with FNV hash and manual float parse | Alternative rejected: `float.Parse`/string split | Estimate: cold path only, no hot frame cost.
+- [x] Task 17 LIVE_CURRENT_DEBUG_GIZMO | DOD: SceneView force arrows for thrust/drag/current | Alternative rejected: runtime debug objects | Estimate: editor-only.
+- [x] Task 18 ARCHITECTURAL_METRIC_VALIDATOR | DOD: scanner menu + `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` | Alternative rejected: manual grep report | Estimate: cold/editor only.
+- [x] Task 19 UNALIGNED_MEMORY_TRAP_GUARD | DOD: `InitializeOnLoad` size/alignment validator | Alternative rejected: unchecked layout drift | Estimate: prevents runtime fault class.
+- [ ] Task 20 SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION | DOD: static self-audit complete; compile not launched because CPU=100 > 50 protocol limit | Alternative rejected: unsafe dotnet build during system load | Estimate: pending build gate.
 
 ## Latest Readback
 
-Created from extracted CURRENT_BATCH.md prompt. No coding started at creation time.
+CURRENT_BATCH.md re-extracted after implementation pass. CPU gate: `Get-CimInstance Win32_Processor` reported 100 percent load; no `dotnet`/`csc` process was running. Compile deferred by batch rule.

@@ -423,3 +423,49 @@ Verification:
     dotnet build: NOT RUN; CPU/build guard still applies.
   </verification>
 </LOOP_13_AUP_PRECISION_REPORT>
+
+<LOOP_14_AUP_PRECISION_REPORT agent_id="SHINOBU_205" status="PENDING_UNITY_VERIFICATION">
+  <what_was_wrong>
+    The CLI gate still had 18 strict authority blockers: construction preview/save, habitat construction socket pose, drone repair signal fallback, habitat fluid cold boot origin, submarine leak/local repair mapping, scannable lore vault sync, authored geyser vent, abyssal thermal anchor, base integrity HUD module query, chemical grid submarine fallback, emergency relay cache, and persistent world live-instance sync were directly converting Transform.position through AUP constructors.
+  </what_was_wrong>
+  <what_was_done>
+    Removed every strict direct Transform.position AUP conversion. The remaining bridge shape is explicit: read the current runtime-origin AUP, add the finite local runtime delta in double precision through AbsoluteUniversePosition.OffsetMeters, then hand off AUP/blit/double3. Existing owner AUP is preferred where present: drone.TargetAup, player CurrentAup, persisted records, grid origin, and integrity state.
+  </what_was_done>
+  <cinematic_cheats_used>
+    No physical simulation was added. Scene-authored relays, vents, scanner entries, HUD module probes, and construction previews stay cheap authored/presentation handoffs; they now make the runtime-origin bridge explicit instead of pretending the Transform is absolute truth.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    Runtime savings not claimed. The value is precision correctness: strict authority blockers 18 -> 0; direct AUP float3 casts 0; runtime component AUP casts 0. Static gate cost was 24.6 seconds over 1994 C# files.
+  </microseconds_saved>
+  <verification>
+    python Tools/AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE, filesScanned=1994, directAupFloat3CastCount=0, runtimeComponentFloatAupCastCount=0, editorComponentFloatAupCastReviewCount=5, strictTransformAuthorityReadCount=0.
+    rg direct Transform conversion probe: no hits.
+    targeted git diff --check on 13 touched runtime files: PASS with LF/CRLF warnings only.
+    dotnet build: NOT RUN by explicit rebuild discipline; static gate proof did not require a rebuild.
+  </verification>
+  <SELF_AUDIT>
+    <task id="01" status="PASS">Direct premature AUP/double3 float casts remain 0.</task>
+    <task id="02" status="PASS">Strict Transform.position authority conversions are 0 in the SHINOBU_205 CLI gate.</task>
+    <task id="03" status="PASS">No new hot DTO properties were introduced.</task>
+    <task id="04" status="PASS">No Pack=1 or new unaligned DTO layout introduced in this loop.</task>
+    <task id="05" status="PASS">Extreme AUP mock/gate tooling retained.</task>
+    <task id="06" status="PASS">Runtime-origin bridge uses double local delta before any later float use.</task>
+    <task id="07" status="PASS">No sector hash route changed.</task>
+    <task id="08" status="PASS">Dear Lie presentation systems remain presentation handoffs, not physics expansion.</task>
+    <task id="09" status="PASS">Large-coordinate conversion no longer hides absolute Transform casts.</task>
+    <task id="10" status="PASS">No binary quality switch added.</task>
+    <task id="11" status="PASS">New helpers guard finite inputs before conversion.</task>
+    <task id="12" status="PASS">No kinematic AUP accumulator route changed.</task>
+    <task id="13" status="PASS">No rollback DTO/reference state added.</task>
+    <task id="14" status="PASS">No new NativeArray allocations introduced.</task>
+    <task id="15" status="PASS">Telemetry/gate reports updated through existing report writer.</task>
+    <task id="16" status="PASS">Editor X-Ray scanner remains untouched; editor component reviews remain 5 non-runtime findings.</task>
+    <task id="17" status="PASS">No CSV parser route changed.</task>
+    <task id="18" status="PASS">No gizmo GameObjects introduced.</task>
+    <task id="19" status="PASS">AUP CLI metric validator now passes hard gate.</task>
+    <task id="20" status="PENDING_UNITY">Static proof updated; Unity/Burst/Play Mode verification still pending.</task>
+    <struct_layout>No primary DTO added in Loop 14. Existing AbsoluteUniversePosition remains 48 bytes: long GridX/Y/Z at 0/8/16, float LocalX/Y/Z at 24/28/32, float pad at 36, ulong pad at 40.</struct_layout>
+    <h_phi_vault_status>No new persistent private NativeArray/NativeList/NativeHashMap fields and no new VaultBufferHandle IDs introduced.</h_phi_vault_status>
+    <compile_guard>No direct sibling runtime assembly references added. No dotnet build launched.</compile_guard>
+  </SELF_AUDIT>
+</LOOP_14_AUP_PRECISION_REPORT>

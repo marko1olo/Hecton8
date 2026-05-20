@@ -1,4 +1,4 @@
-# SHINOBU_205 AUP Precision Route Card
+﻿# SHINOBU_205 AUP Precision Route Card
 
 Date: 2026-05-20
 Owner: SHINOBU_205 / AUP_PRECISION_INSPECTOR
@@ -6,7 +6,7 @@ Domain: Core determinism, AUP localization, floating-origin precision
 Status: STATIC SOURCE UPDATED / RUNTIME PROOF PENDING
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -16,10 +16,10 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 
@@ -85,12 +85,14 @@ The runtime does not simulate floating-origin physics corrections per object. It
 |---|---|
 | Route ID | `SHINOBU_205_AUP_PRECISION` |
 | Owner | SHINOBU_205 / AUP_PRECISION_INSPECTOR |
+| Instrument | JobHandle-returning AUP localization route, caller-owned coordinate/output buffers, telemetry/fault counters, and source-gate artifact output |
 | Producer phase | job scheduling boundary that receives caller-owned `JobHandle dependency` |
 | Consumer phase | returned job handle consumer plus telemetry fold after `LocalizeAupCoordinatesJob` |
 | Cadence | caller-bounded batch; no runtime `JobHandle.Complete()` in scheduling path |
 | Capacity | Caller-bounded coordinate batch, fixed telemetry ring, and Vault/local scratch lanes sized by the owning precision inspector |
 | Overflow/failure | clamp or skip non-finite/out-of-gate rows, increment fault counters, keep safe sentinel output, and do not promote static scan results to runtime proof |
 | Shutdown/disposal | Runtime path returns ownership through `JobHandle`; cold/editor mock work may complete locally, but runtime scheduling must leave teardown to the route owner/caller |
+| Fault dump target | Any AUP precision dump is generated only by a linked gate/runtime fault trigger; no existing dump artifact is implied by this route card |
 | Proof required before GREEN | Fresh compile/import artifact, Burst compile proof, Play Mode boundary swim, profiler/GCMonitor proof, ARM64 layout proof, and player-build output tuple |
 | Review disposition | YELLOW / STATIC_SOURCE_ONLY until compile, Unity import, Burst compile, Play Mode, profiler, GCMonitor, ARM64 layout, and player-build artifacts exist |
 ## Verification Boundary
@@ -105,3 +107,5 @@ Editorless CI gate: `Tools/AupPrecisionGate_SHINOBU_205.py` scans the same sourc
 CLI gate fixture: `Tools/TestAupPrecisionGate_SHINOBU_205.py` is reported as a `STATIC_SOURCE/PY_TOOL` fixture pass for direct-cast, component-cast, editor-review, transform-authority, approved-helper, and self-diagnostic exclusion semantics; proof requires artifact path, command, timestamp, environment, and output.
 
 Pending: Unity import, Burst compile, Play Mode boundary swim, profiler/GC capture, ARM64 device layout proof. Build launch remains blocked by project CPU guard when CPU is above 50% or dotnet/csc is active.
+
+

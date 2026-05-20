@@ -366,6 +366,15 @@ namespace Hecton8.Construction
 
         public void Execute()
         {
+            if (TelemetryCount <= 0 ||
+                Telemetry == null ||
+                Cursor == null ||
+                CollisionResult == null ||
+                (Count > 0 && States == null))
+            {
+                return;
+            }
+
             uint active = 0u;
             uint sealedCount = 0u;
             uint jammed = 0u;

@@ -1,4 +1,4 @@
-# HECTON-8 - FULL MASTER IMMERSIVE RELEASE PLAN v2
+﻿# HECTON-8 - FULL MASTER IMMERSIVE RELEASE PLAN v2
 
 Status: `PENDING VERIFICATION`
 Approved For Use: `2026-04-05`
@@ -6,7 +6,7 @@ Primary Target: `NVIDIA MX350 2 GB VRAM / 12 GB RAM / i5-1135G7`
 Direction: `NASA-Punk + Deep Sea Noir`
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
 This roadmap is active only where it agrees with:
 
 - `Docs/README.md`
@@ -260,7 +260,7 @@ Confirmed build-truth from `2026-04-05`:
   - Source of truth for `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`
   - **IMPLEMENTED:** GameStartContext struct in `Assets/_Project/Scripts/Core/GameStartContext.cs`
     - Factory methods: CreateNewGame(), CreateLoadGame(), CreateResume()
-    - GameStartContextHolder static singleton for inter-scene transfer
+    - GameStartContextHolder static singleton for historical inter-scene transfer; new work must use explicit bootstrap registration, owner-local route ownership, and cold GlobalRegistry discovery cached outside hot paths
     - Zero-GC enum-based serializable struct
   - **UPDATED:** MainMenuController.StartGame() now writes to GameStartContextHolder.Current
   - **UPDATED:** SceneBootstrap.LoadOrNewGameAsync() reads from GameStartContextHolder.Current with PlayerPrefs fallback
@@ -371,7 +371,7 @@ P0 rules:
   - **IMPLEMENTED ARCHITECTURE:**
     - BootstrapController.cs (assets/_Project/Scripts/Bootstrap/BootstrapController.cs)
       - Explicitly initializes all required managers (GameTickManager, SaveManager, InputManager, ObjectPoolManager)
-      - Ensures DontDestroyOnLoad for all systems
+      - Historical note: ensures cross-scene persistence for legacy systems. Current architecture does not approve new `DontDestroyOnLoad` singletons; new persistent services require explicit bootstrap registration, lifecycle teardown, and owner-local interfaces.
       - Verifies 00_BOOTSTRAP is first scene in Build Settings
       - Prevents duplicate initialization
     - SceneGuard.cs (Assets/_Project/Scripts/Bootstrap/SceneGuard.cs)
@@ -389,8 +389,8 @@ P0 rules:
     3. Add SceneGuard to 01_MAIN_MENU scene (as root GameObject)
     4. Add SceneGuard to 02_HECTON_WORLD scene (as root GameObject)
     5. Verify Build Settings: 00_BOOTSTRAP scene is index 0, 01_MAIN_MENU is 1, 02_HECTON_WORLD is 2
-    6. Test: Run 00_BOOTSTRAP → verify all managers are initialized in log
-    7. Test: Force load 01_MAIN_MENU directly → verify SceneGuard reloads 00_BOOTSTRAP instead
+    6. Test: Run 00_BOOTSTRAP â†’ verify all managers are initialized in log
+    7. Test: Force load 01_MAIN_MENU directly â†’ verify SceneGuard reloads 00_BOOTSTRAP instead
 - [~] Bring `01_MAIN_MENU` to the role of production shell
   - **CODE COMPLETE:**
     - MainMenuController.cs with full UI flow (new game / load / settings / quit)
@@ -417,10 +417,10 @@ P0 rules:
   - **VALIDATION:**
     1. Open 01_MAIN_MENU scene in editor
     2. Run Window > HECTON-8 > Validate Main Menu
-    3. Fix any ✗ missing references shown in report
-    4. Test: New Game button → should show confirmation dialog
-    5. Test: Load Game button → should show save slots
-    6. Test: Try loading scene directly (run 01_MAIN_MENU without 00_BOOTSTRAP) → SceneGuard should reload bootstrap
+    3. Fix any âœ— missing references shown in report
+    4. Test: New Game button â†’ should show confirmation dialog
+    5. Test: Load Game button â†’ should show save slots
+    6. Test: Try loading scene directly (run 01_MAIN_MENU without 00_BOOTSTRAP) â†’ SceneGuard should reload bootstrap
 - [c] Raise `GameStartContext` and remove dependence on a single `TargetSaveSlot`
   - code addendum: `GameStartContextHolder` now owns the cold scene-handoff persistence itself instead of scattering `TargetSaveSlot` writes/reads across menu and bootstrap. `MainMenuController.StartGame()` writes through `GameStartContextHolder.SetCurrent(...)`, `SceneBootstrap.LoadOrNewGameAsync()` restores through `TryGetCurrentOrRestore(...)`, and the persisted handoff is cleared immediately after bootstrap consumes it so stale slot state does not keep poisoning future world loads. Legacy `MainMenuController.TargetSaveSlot` remains only as a compatibility mirror, not as the runtime source of truth.
   - code addendum: gameplay -> menu shell now clears session handoff ownership too. `PauseMenuController.ExitToMainMenu()` calls `GameStartContextHolder.Reset()` before loading `01_MAIN_MENU`, so stale `LoadGame/Resume` context does not leak back into the shell after leaving an active world session.
@@ -436,7 +436,7 @@ P0 rules:
     - SceneManager event handlers for load/unload/change events
     - System presence verification (BootstrapController, MainMenuController, SceneBootstrap, etc.)
     - GameStartContext validation for each transition type
-    - Singleton with DontDestroyOnLoad for cross-scene verification
+    - Historical verification note only: singleton/DDOL was used for the captured harness. New verification routes require explicit bootstrap registration, lifecycle teardown, and GlobalRegistry cold service discovery.
 - [x] Verify pause edge cases:
   - while moving
   - underwater
@@ -451,7 +451,7 @@ P0 rules:
     - Pause entry/exit verification (time scale, cursor, menu visibility)
     - Automatic state change detection and logging
     - Test statistics tracking (run/passed/failed counts)
-    - Singleton with DontDestroyOnLoad for cross-scene verification
+    - Historical verification note only: singleton/DDOL was used for the captured harness. New verification routes require explicit bootstrap registration, lifecycle teardown, and GlobalRegistry cold service discovery.
 - [ ] Verify state recovery:
   - return from pause to gameplay
   - return to menu
@@ -492,7 +492,7 @@ P0 rules:
     - ITickable-based frame time capture with configurable sample count
     - Automatic performance snapshots with mean/worst/best frame times
     - FPS calculations and detailed logging
-    - Singleton pattern with DontDestroyOnLoad
+    - Historical capture harness used singleton/DDOL; current persistent monitoring requires explicit bootstrap registration, owner-local lifecycle teardown, and no hot-path singleton polling
     - StartCapture()/StopCapture() API for programmatic control
     - PerformanceSnapshot struct with serialization support
 - [ ] Do not start a new perf-crusade without a new confirmed build blocker
@@ -506,7 +506,7 @@ P0 rules:
     - Automatic throttling when frame time exceeds limits
     - RegisterSystem()/ReportSystemPerformance() API for integration
     - GetBudgetStatus() for monitoring and debugging
-    - Singleton with DontDestroyOnLoad for cross-scene persistence
+    - Historical capture harness used singleton/DDOL; current cross-scene persistence requires explicit bootstrap registration, owner-local lifecycle teardown, and no hot-path singleton polling
   - ruins
   - caves/geology
   - far silhouettes
@@ -859,7 +859,7 @@ P0 rules:
     `WorldCaveDirector` had drifted onto a dead `MapMagicBridge.SampleHeight` call; restored live contract through `TryGetHeight` fail-safe, reconnected `caveSpawnProbability` as the intended biome-evaluation gate, and removed duplicate `using` noise from `HectonVoxelEngine`
   - scene wiring truth from `02_HECTON_WORLD`: live scene already contains `MapMagicBridge`, `WorldCaveDirector`, `WorldGenerativeGeologyIntegrationDirector`, `WorldGenerativeGeologySeamExecutionDirector`, `WorldGenerativeGeologyVoxelBridgeDirector`, and a separate active `[VOXEL_ENGINE]` with `HectonVoxelEngine`
   - runtime hardening addendum: `WorldGenerativeGeologyTerrainSeamApplier` no longer creates fresh terrain plan buckets and fresh `float[,]` height patches every `SlowTick`; per-terrain plan buckets and patch buffers are now reused, terrain lookup now follows `MapMagicBridge` tile-backed terrain truth before falling back to `Terrain.activeTerrains`, baseline height snapshots are refreshed fail-safe when streamed `TerrainData` owners or heightmap resolutions change, untouched restore paths now drop stale state instead of writing into a swapped terrain-data owner, and terrain diagnostics no longer pull `terrain.name` strings in the live reconcile path
-  - runtime hardening addendum: `WorldCaveDirector` now owns cave spawn lifecycle instead of firing duplicate `async void` launches for the same runtime key; pending cave builds are tracked, cancelled on teardown, stale cave registry entries are purged, and the live cave path no longer relies on “active only after await returns” semantics
+  - runtime hardening addendum: `WorldCaveDirector` now owns cave spawn lifecycle instead of firing duplicate `async void` launches for the same runtime key; pending cave builds are tracked, cancelled on teardown, stale cave registry entries are purged, and the live cave path no longer relies on â€œactive only after await returnsâ€ semantics
   - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` no longer uses dictionary/hashset `foreach` inside live reconcile/cancel/clear paths; active volume, pending runtime, and pending request scans now use explicit enumerators so the bridge no longer violates the project hot-path iteration rule in `SlowTick`
   - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` now caches active `WorldGenerativeGeologyVoxelRuntime` owners by `runtimeKey`, so reconcile/detail-band hysteresis no longer does per-request `TryGetComponent`, and debug top-volume tracking no longer depends on the `"None"` sentinel string in the live owner
   - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` no longer builds runtime-diagnostics trace strings directly inside `ReconcileVoxelRequests()`, `Tick()` launch flush, or request completion/cancel/fault bodies; trace formatting is now isolated behind development/editor-only helper methods so release hot paths do not carry string interpolation debt just because diagnostics support exists
@@ -1442,7 +1442,7 @@ P0 rules:
 - Silence matters as much as saturation
 - This document is the integrated master version and should be used as the live production roadmap
 
-## Flora Wave 5 Addendum — 2026-04-08 Coral Geometry Ownership
+## Flora Wave 5 Addendum â€” 2026-04-08 Coral Geometry Ownership
 
 - Capture-time architecture step:
   - coral starter geometry now has its own editor-only owner `WorldProceduralCoralMeshBuilder`
@@ -1960,7 +1960,7 @@ P0 rules:
     - hidden/local `AGENTS.md` files were synchronized so smooth LOD transitions, organic continuity, seeded runtime variety, and cheap current-coupled motion are enforced everywhere, not only in root docs
   - why it matters:
     - flora form work is no longer blind; contact-sheet previews are good enough to keep iterating on silhouette and continuity without pretending final beauty proof is done
-    - `kelp_tall` remains safely under its family cap while moving away from the old “few blades on a pole” read
+    - `kelp_tall` remains safely under its family cap while moving away from the old â€œfew blades on a poleâ€ read
   - capture-time reported facts:
     - automation request `flora-verify-20260408-tallpass-5` completed with `success=true`
     - latest flora report:
@@ -2268,7 +2268,7 @@ P0 rules:
 - 2026-04-09 - Vertical runtime ownership now reaches a real consumer instead of stopping at depth state publication:
   - `HectonUnderwaterVisuals` now listens to `BiomeMatrixDirector.OnMatrixBiomeChanged`
   - matrix biomes can supply an explicit `runtimeVisualProfile` override for underwater visuals
-  - if no matrix visual override is authored, `HectonUnderwaterVisuals` stays on the existing `MapMagicBridge` → `HectonOceanPalette` path
+  - if no matrix visual override is authored, `HectonUnderwaterVisuals` stays on the existing `MapMagicBridge` â†’ `HectonOceanPalette` path
   - this keeps shallow-water behavior on the old cheap path while giving deep matrix-owned zones a first-class visual handoff
   - measured proof absent; latest Unity console readback is still pending because the MCP Unity session did not return after domain reload
 - 2026-04-09 - Vertical runtime ownership now also reaches surface atmosphere without disturbing underwater contracts:
@@ -2351,3 +2351,6 @@ P0 rules:
     - visor material falls back to black texture
   - on focus return it rebuilds the same projection path and restores the existing shared/runtime RT contract
   - this is editor-only; play mode visor/runtime behavior is intentionally unchanged
+
+
+

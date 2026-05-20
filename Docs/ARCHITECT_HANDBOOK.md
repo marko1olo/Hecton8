@@ -1,4 +1,4 @@
-# ARCHITECT HANDBOOK
+﻿# ARCHITECT HANDBOOK
 Date: 2026-05-17
 Status: PENDING VERIFICATION
 
@@ -16,7 +16,7 @@ This document is active only where it agrees with:
 Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38 remains the prior source-counter drift and boundary correction; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 Generated from Core/Contracts. Edit constants in C# contracts, then regenerate this file.
 
@@ -567,3 +567,5 @@ Generated from Core/Contracts. Edit constants in C# contracts, then regenerate t
 
 RU: Eto karta zakonov dvizhka. Menyat fiziku, vyzhivanie, ekologiyu, LOD i ABI offsety nuzhno zdes, ne v Burst jobah.
 EN: This is the law map for the engine. Change physics, survival, ecology, LOD, and ABI offsets here, not inside Burst jobs.
+
+

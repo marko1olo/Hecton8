@@ -20,9 +20,31 @@ struct HectonImpostorVertexResult
 StructuredBuffer<HectonImpostorGpuInstance> _HectonImpostorInstances;
 StructuredBuffer<float4x4> _HectonVisibleInstances;
 
+float HectonFiniteOr(float value, float fallback)
+{
+    return (isnan(value) || isinf(value)) ? fallback : value;
+}
+
+float2 HectonFiniteOr(float2 value, float2 fallback)
+{
+    return (any(isnan(value)) || any(isinf(value))) ? fallback : value;
+}
+
+float3 HectonFiniteOr(float3 value, float3 fallback)
+{
+    return (any(isnan(value)) || any(isinf(value))) ? fallback : value;
+}
+
+float4 HectonFiniteOr(float4 value, float4 fallback)
+{
+    return (any(isnan(value)) || any(isinf(value))) ? fallback : value;
+}
+
 float3 HectonSafeNormalize(float3 value, float3 fallback)
 {
-    float lenSq = dot(value, value);
+    value = HectonFiniteOr(value, fallback);
+    fallback = HectonFiniteOr(fallback, float3(0.0, 1.0, 0.0));
+    float lenSq = HectonFiniteOr(dot(value, value), 0.0);
     if (lenSq > 0.000001)
         return value * rsqrt(max(lenSq, 0.000001));
     return fallback;
@@ -85,6 +107,8 @@ float HectonInterleavedGradientNoise(float2 pixelPosition)
 
 float2 HectonImpostorAtlasUv(float2 uv, uint viewIndex, float4 atlasGrid)
 {
+    uv = HectonFiniteOr(uv, float2(0.5, 0.5));
+    atlasGrid = HectonFiniteOr(atlasGrid, float4(4.0, 4.0, 0.25, 0.25));
     uint columns = (uint)max(1.0, atlasGrid.x);
     uint x = viewIndex % columns;
     uint y = viewIndex / columns;
@@ -94,6 +118,8 @@ float2 HectonImpostorAtlasUv(float2 uv, uint viewIndex, float4 atlasGrid)
 
 float3 HectonDecodeImpostorNormal(float4 normalDepthSample, float normalStrength)
 {
+    normalDepthSample = HectonFiniteOr(normalDepthSample, float4(0.5, 0.5, 0.5, 0.0));
+    normalStrength = HectonFiniteOr(normalStrength, 1.0);
     float2 normalXY = normalDepthSample.rg * 2.0 - 1.0;
     float normalZ = sqrt(saturate(1.0 - dot(normalXY, normalXY)));
     float3 normalWS = float3(normalXY.x, normalZ, normalXY.y);
@@ -107,34 +133,41 @@ HectonImpostorVertexResult HectonBuildImpostorVertex(float2 quadPosition, float2
     if (_HectonUseVisibleMatrixStream != 0)
     {
         float4x4 matrixValue = _HectonVisibleInstances[instanceID];
-        float3 size = max(abs(float3(matrixValue._m00, matrixValue._m11, matrixValue._m22)), float3(0.5, 0.5, 0.5));
-        float age01 = saturate((_HectonImpostorTimeSeconds - matrixValue._m33) * rcp(max(_HectonImpostorFadeOutSeconds, 0.001)));
-        float fade01 = matrixValue._m30 < 0.0 ? (1.0 - age01) : age01;
-        instance.CenterFade = float4(matrixValue._m03, matrixValue._m13, matrixValue._m23, fade01);
-        instance.SizeFlags = float4(size, matrixValue._m32);
+        float3 size = max(abs(HectonFiniteOr(float3(matrixValue._m00, matrixValue._m11, matrixValue._m22), float3(0.5, 0.5, 0.5))), float3(0.5, 0.5, 0.5));
+        float currentTime = HectonFiniteOr(_HectonImpostorTimeSeconds, 0.0);
+        float fadeOutSeconds = max(HectonFiniteOr(_HectonImpostorFadeOutSeconds, 1.5), 0.001);
+        float startTime = HectonFiniteOr(matrixValue._m33, currentTime);
+        float age01 = saturate((currentTime - startTime) * rcp(fadeOutSeconds));
+        float fade01 = HectonFiniteOr(matrixValue._m30, 1.0) < 0.0 ? (1.0 - age01) : age01;
+        instance.CenterFade = float4(HectonFiniteOr(float3(matrixValue._m03, matrixValue._m13, matrixValue._m23), float3(0.0, 0.0, 0.0)), fade01);
+        instance.SizeFlags = float4(size, HectonFiniteOr(matrixValue._m32, 0.0));
     }
     else
     {
         instance = _HectonImpostorInstances[instanceID];
     }
 
-    float3 centerWS = instance.CenterFade.xyz + globalFloatingOffset.xyz;
+    float3 centerLocal = HectonFiniteOr(instance.CenterFade.xyz, float3(0.0, 0.0, 0.0));
+    float3 originOffset = HectonFiniteOr(globalFloatingOffset.xyz, float3(0.0, 0.0, 0.0));
+    float3 sizeSafe = max(abs(HectonFiniteOr(instance.SizeFlags.xyz, float3(0.5, 0.5, 0.5))), float3(0.5, 0.5, 0.5));
+    float fadeSafe = saturate(HectonFiniteOr(instance.CenterFade.w, 1.0));
+    float3 centerWS = centerLocal + originOffset;
     float3 toCamera = HectonSafeNormalize(_WorldSpaceCameraPos.xyz - centerWS, float3(0.0, 0.0, 1.0));
     float3 rightWS = HectonSafeNormalize(cross(float3(0.0, 1.0, 0.0), toCamera), float3(1.0, 0.0, 0.0));
     float3 upWS = HectonSafeNormalize(cross(toCamera, rightWS), float3(0.0, 1.0, 0.0));
 
-    float width = max(max(instance.SizeFlags.x, instance.SizeFlags.z), 0.5);
-    float height = max(instance.SizeFlags.y, 0.5);
-    float3 positionWS = centerWS + rightWS * (quadPosition.x * width) + upWS * (quadPosition.y * height);
-    float4 positionCS = TransformWorldToHClip(positionWS);
+    float width = max(max(sizeSafe.x, sizeSafe.z), 0.5);
+    float height = max(sizeSafe.y, 0.5);
+    float3 positionWS = HectonFiniteOr(centerWS + rightWS * (quadPosition.x * width) + upWS * (quadPosition.y * height), centerWS);
+    float4 positionCS = HectonFiniteOr(TransformWorldToHClip(positionWS), float4(0.0, 0.0, 0.0, 1.0));
 
     HectonImpostorVertexResult result;
     result.positionWS = positionWS;
     result.positionCS = positionCS;
     result.uv = uv;
     result.viewDirectionWS = toCamera;
-    result.fade01 = saturate(instance.CenterFade.w);
-    result.fogFactor = ComputeFogFactor(positionCS.z);
+    result.fade01 = fadeSafe;
+    result.fogFactor = HectonFiniteOr(ComputeFogFactor(positionCS.z), 0.0);
     return result;
 }
 

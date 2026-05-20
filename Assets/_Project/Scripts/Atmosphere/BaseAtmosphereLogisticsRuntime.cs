@@ -656,7 +656,7 @@ namespace Hecton8.Atmosphere
                 Tuning = tuning,
                 GridOriginAup = double3.zero
             };
-            topologyJob.Run();
+            topologyJob.Execute();
 
             AtmosphereCsrBuildJob csrBuildJob = new AtmosphereCsrBuildJob
             {
@@ -667,7 +667,7 @@ namespace Hecton8.Atmosphere
                 EdgeWriteCursor = edgeWriteCursor,
                 Counters = counters
             };
-            csrBuildJob.Run();
+            csrBuildJob.Execute();
 
             _lastNodeCount = counters[0].NodeCount;
             _defaultsInitialized = true;

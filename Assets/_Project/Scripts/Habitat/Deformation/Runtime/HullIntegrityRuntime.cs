@@ -1503,9 +1503,9 @@ namespace Hecton8.Habitat.Deformation
             Vector3 cameraUp = camera != null ? camera.transform.up : transform.up;
             Vector3 center = root != null ? root.position : transform.position;
             Vector3 extents = new Vector3(
-                Mathf.Max(1f, submarineHullExtents.x + 4f),
-                Mathf.Max(1f, submarineHullExtents.y + 4f),
-                Mathf.Max(1f, submarineHullExtents.z + 4f));
+                math.max(1f, submarineHullExtents.x + 4f),
+                math.max(1f, submarineHullExtents.y + 4f),
+                math.max(1f, submarineHullExtents.z + 4f));
 
             breachJetMaterial.SetBuffer(_BreachJetBufferId, jetReadBuffer);
             breachJetMaterial.SetVector(_BreachJetParamsId, new Vector4(jetCount, HullIntegrityConstants.MaxBreachJets, _cachedGlobalQualityWeight, 0f));

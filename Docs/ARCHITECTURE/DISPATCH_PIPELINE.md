@@ -1,4 +1,4 @@
-# Dispatch Pipeline
+﻿# Dispatch Pipeline
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
@@ -16,7 +16,7 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Source Anchors
@@ -54,14 +54,14 @@ Evidence class: STATIC_SOURCE / CLI_COMPILE_BLOCKED_BY_EXTERNAL_DEPENDENCY.
 - A 300-frame dispatcher pipeline ring records PreSim, SimWait, PostSim, and VisualSync timings and dumps `Docs/AgentLogs/Dump_SYSTEM_DISPATCHER.bin` when SimWait exceeds 8 ms.
 - `Execution Pipeline X-Ray` is an Editor-only facade for phase bars and the 64-cell bucket grid.
 
-WakeRequestSignal source-symbol boundary: R34 static source recheck preserves the prior finding that `WakeRequestSignal`, `GlobalPhysicsStateManager.WakeRequests.cs`, and the `SignalBus<WakeRequestSignal>` lane in `GlobalSignals.cs` exist, so the older missing-symbol blocker is historical. Global DOC_GLOBAL root/architecture boundary is R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) (R44 prior internal-residue/exact-route-field/proof-wording correction); R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38 remains the prior source-counter drift and boundary correction; R37 remains the prior artifact-path/proof-wording/source-counter correction; R36 remains the prior authority-spine/domain-map correction; R35 remains the prior R4/counter-residue correction; R34 remains the prior source-symbol/source-counter refresh; R33 is the prior R32-residue/source-anchor correction, R32 is the prior R4/proof-wording correction, R31 is the prior current-boundary propagation correction, R30 is the prior internal-currentness correction, R29 is the prior stale-gate/global-authority correction, R28 is the prior interior-boundary correction, and R27 is historical source-counter/source-symbol orientation superseded where R34 differs. Current static gates: `Tools\AtlasCheck.py` remains red on `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); `Docs\Modding\Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. No current compile, Play Mode, profiler, GC, or runtime proof is claimed until a fresh artifact links command, timestamp, environment, and output.
+WakeRequestSignal source-symbol boundary: R34 static source recheck preserves the prior finding that `WakeRequestSignal`, `GlobalPhysicsStateManager.WakeRequests.cs`, and the `SignalBus<WakeRequestSignal>` lane in `GlobalSignals.cs` exist, so the older missing-symbol blocker is historical. Global DOC_GLOBAL root/architecture boundary is R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) (R45 prior R43/R44 residue/proof-artifact/source-counter correction); R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38 remains the prior source-counter drift and boundary correction; R37 remains the prior artifact-path/proof-wording/source-counter correction; R36 remains the prior authority-spine/domain-map correction; R35 remains the prior R4/counter-residue correction; R34 remains the prior source-symbol/source-counter refresh; R33 is the prior R32-residue/source-anchor correction, R32 is the prior R4/proof-wording correction, R31 is the prior current-boundary propagation correction, R30 is the prior internal-currentness correction, R29 is the prior stale-gate/global-authority correction, R28 is the prior interior-boundary correction, and R27 is historical source-counter/source-symbol orientation superseded where R34 differs. Current static gates: `Tools\AtlasCheck.py` remains red on `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); `Docs\Modding\Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. No current compile, Play Mode, profiler, GC, or runtime proof is claimed until a fresh artifact links command, timestamp, environment, and output.
 
 ## Core Rule
 `Tick()` and `FixedTick()` may schedule jobs and read already-published front buffers.
 They must not call `JobHandle.Complete()` in the middle of gameplay lanes.
 Barrier recovery happens only inside explicit swap windows:
 
-- `SystemDispatcher.LateUpdate()` for frame jobs and other end-of-frame readers.
+- `SystemDispatcher.LateUpdate()` is the current source method anchor for frame-job and end-of-frame readers; route-card phase authority remains `POST_SIMULATION` / `VISUAL_SYNC`.
 - `SystemDispatcher` post-fixed lane for systems that need a fixed-step swap window.
 
 ## 2026-05-19 Global Authority Dispatch Boundary
@@ -90,7 +90,7 @@ Cross-reference:
 - `SYSTEM_INTERCONNECT_MATRIX.md`
 
 ## Frame Order
-The current runtime order is:
+The current source method order is an implementation anchor only; route-card phase authority is `PRE_SIMULATION`, `SIMULATION`, `POST_SIMULATION`, and `VISUAL_SYNC`:
 
 1. `SystemDispatcher.Update()`
 2. Main update lanes run by priority.
@@ -98,7 +98,7 @@ The current runtime order is:
 4. `SystemDispatcher.FixedUpdate()`
 5. Fixed lanes run by priority.
 6. Post-fixed lanes run by priority for fixed-step swap work.
-7. `SystemDispatcher.LateUpdate()`
+7. `SystemDispatcher.LateUpdate()` as the source method anchor for `POST_SIMULATION` / `VISUAL_SYNC` recovery
 8. Dispatcher-owned raycast handle completes.
 9. Foveated simulation manager completes its scheduled jobs.
 10. All `ILateFrameTickable` owners recover their published job results.
@@ -249,3 +249,5 @@ Core dispatch timing is already on `Awaitable`/dispatcher state-machine ownershi
 - Do not add new mid-frame `Complete()` calls.
 - Do not bypass `ThreadSafeCommandQueue` for job-authored structural changes.
 - If a system needs main-thread mutation after a job, give it a late-frame or post-fixed swap window and document the owner.
+
+

@@ -1,4 +1,4 @@
-# SHINOBU_151 Dynamic Point Light Culling Route Card
+﻿# SHINOBU_151 Dynamic Point Light Culling Route Card
 
 Date: 2026-05-19
 Owner: SHINOBU_151
@@ -18,7 +18,7 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Boundary
@@ -39,7 +39,7 @@ No Unity `Light` object is instantiated or toggled by this route.
 
 ## Legacy Emitter Archaeology
 
-Static project scan found no `LightDistanceCull` script and no `Vector3.Distance` light-distance-cull pattern. It did find gameplay-owned Unity `Light` toggles in `PlayerFlashlight`, `RepairTool`, `DeployableFlare`, `GravTrap`, and a flashlight voxel-shadow provider, plus `13` authored Light YAML components. SHINOBU_151 does not delete those cross-domain emitters. Their migration route is to write `DynamicPointLightSourceDTO` records and commit SourceManifest buffer `71458`; this culler then owns mathematical survivor selection, GPU payload upload, and fake probe-bounce packets.
+Prior static project scan text found no `LightDistanceCull` script and no `Vector3.Distance` light-distance-cull pattern, and reported gameplay-owned Unity `Light` toggles in `PlayerFlashlight`, `RepairTool`, `DeployableFlare`, `GravTrap`, and a flashlight voxel-shadow provider, plus `13` authored Light YAML components. Treat that as STATIC_SOURCE orientation only until the exact scan command, timestamp, environment, output path, scanned root, and unresolved list are attached. SHINOBU_151 does not delete cross-domain emitters. Their migration route is to write `DynamicPointLightSourceDTO` records and commit SourceManifest buffer `71458`; this culler then owns mathematical survivor selection, GPU payload upload, and fake probe-bounce packets.
 
 ## Vault IDs
 
@@ -92,6 +92,7 @@ Hot DTO access in the Burst job file uses `NativeArrayUnsafeUtility.GetUnsafeRea
 | Route ID | `SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING` |
 | Review disposition | YELLOW / STATIC_SOURCE_ONLY |
 | Owner | SHINOBU_151 / Dynamic Point Light Culling |
+| Instrument | GlobalDataVault light source/state/sort/GPU/probe buffers, VISUAL_SYNC GPU payload route, SourceManifest `71458`, and black-box dump route |
 | Producer phase | VISUAL_SYNC source manifest commit and culling/upload preparation |
 | Consumer phase | VISUAL_SYNC GPU upload/readback and probe-grid consumer handoff |
 | Consumers | GPU upload path, probe-grid owner through `CustomDynamicProbeLightDTO[64]`, diagnostics |
@@ -99,16 +100,19 @@ Hot DTO access in the Burst job file uses `NativeArrayUnsafeUtility.GetUnsafeRea
 | Capacity | `DynamicPointLightGpuDTO[64]`, `CustomDynamicProbeLightDTO[64]`, source/state/sort buffers bounded by source capacity, telemetry ring fixed at 300 entries |
 | Overflow/failure | Uncommitted manifests publish zero count; unseeded mock-SDF buffers publish zero; top-N survivor selection bounds GPU payload |
 | Shutdown/disposal | Vault handles and graphics buffers remain owner-local; no Unity `Light` mutation or probe-grid job completion is performed by this route |
+| Fault dump target | `Docs/AgentLogs/Dump_LIGHT_DIRECTOR.bin` is planned/generated on fault; no existing artifact is implied unless a timestamped runtime trigger and output are linked |
 | Proof required before GREEN | Fresh compile/import artifact, Burst Inspector proof, Frame Debugger/profiler proof, GC proof, GPU upload proof, and linked output path with command, timestamp, environment, and result |
 
 ## Forensics
 
-Blackbox path: `Docs/AgentLogs/Dump_LIGHT_DIRECTOR.bin`.
+Blackbox path: `Docs/AgentLogs/Dump_LIGHT_DIRECTOR.bin` planned/generated on fault; no existing artifact is implied unless linked with command, timestamp, environment, trigger, and output.
 
 Telemetry ring is 300 x 64-byte entries and records frame, total lights, culled lights, submitted lights, Burst elapsed estimate, quality, thermal pressure, flags, state hash, max active count, max distance, average intensity, last GPU upload bytes, and Vault generation.
 
 ## Verification
 
-Prior static scan text says the owned source avoided forbidden light toggles, managed filtering, DTO properties, `Pack=`, direct sibling imports, `GeometryUtility`, managed `Plane[]`, direct probe injection, sqrt/length distance, and binary quality tier switches. Treat that as STATIC_SOURCE orientation only until a fresh artifact tuple is attached: artifact path, command/tool, timestamp, environment, and output. Latest source-count polish adds a Vault manifest so external writers can commit valid source windows without relying on a private field or triggering mock overwrite during initialization. Latest raw-access polish points to `UnsafeUtility.AsRef` pointer access in the Burst job source and keeps debug readback count on SourceManifest `71458`; this is not Burst Inspector or runtime proof.
+Prior static scan text says the owned source avoided forbidden light toggles, managed filtering, DTO properties, `Pack=`, direct sibling imports, `GeometryUtility`, managed `Plane[]`, direct probe injection, sqrt/length distance, and binary quality tier switches. Treat that as STATIC_SOURCE orientation only until a fresh artifact tuple is attached: artifact path, command/tool, timestamp, environment, scanned root, and output. The Vault manifest and `UnsafeUtility.AsRef` raw-access notes are source-orientation only; they are not Burst Inspector, Frame Debugger, GPU upload, runtime, or profiler proof.
 
 Unity import, Burst Inspector, Play Mode profiler, Frame Debugger, and player build proof remain pending until the guarded compile/runtime pass completes.
+
+

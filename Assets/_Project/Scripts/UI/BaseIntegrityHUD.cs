@@ -666,8 +666,9 @@ namespace Hecton8.UI
             if (_playerTransform == null && !ResolvePlayerTransform())
                 return;
 
-            Vector3 playerPosition = _playerTransform.position;
-            AbsoluteUniversePosition playerAup = ResolvePlayerAup(playerPosition);
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                return;
+
             float safeScanRadius = math.max(0f, scanRadius);
             double scanRadiusSq = (double)safeScanRadius * safeScanRadius;
             BaseModule nearestModule = FindNearestActiveModule(in playerAup, scanRadiusSq);
@@ -702,7 +703,9 @@ namespace Hecton8.UI
                 if (module == null || !module.isActiveAndEnabled)
                     continue;
 
-                AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(module.transform.position);
+                if (!TryResolveModuleAup(module, out AbsoluteUniversePosition moduleAup))
+                    continue;
+
                 double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in moduleAup);
                 if (distanceSq > nearestDistanceSq)
                     continue;
@@ -712,6 +715,31 @@ namespace Hecton8.UI
             }
 
             return nearestModule;
+        }
+
+        private static bool TryResolveModuleAup(BaseModule module, out AbsoluteUniversePosition moduleAup)
+        {
+            moduleAup = default;
+            if (module == null)
+                return false;
+
+            Transform moduleTransform = module.transform;
+            if (moduleTransform == null)
+                return false;
+
+            Vector3 runtimePosition = moduleTransform.position;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            moduleAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return MathGuard.IsFinite(in moduleAup);
         }
 
         private void CheckIntegrityWarnings(BaseModule module, float integrity)
@@ -852,8 +880,9 @@ namespace Hecton8.UI
             return true;
         }
 
-        private AbsoluteUniversePosition ResolvePlayerAup(Vector3 fallbackPosition)
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
+            playerAup = default;
             HectonPlayerMovement playerMovement = _playerMovement;
             if (playerMovement == null)
             {
@@ -861,9 +890,11 @@ namespace Hecton8.UI
                 _playerMovement = playerMovement;
             }
 
-            return playerMovement != null
-                ? playerMovement.CurrentAup
-                : AbsoluteUniversePosition.FromRuntimePosition(fallbackPosition);
+            if (playerMovement == null)
+                return false;
+
+            playerAup = playerMovement.CurrentAup;
+            return MathGuard.IsFinite(in playerAup);
         }
 
         private HectonPlayerMovement ResolvePlayerMovement(Transform playerTransform)

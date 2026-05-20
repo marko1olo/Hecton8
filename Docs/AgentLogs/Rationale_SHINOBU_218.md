@@ -1,6 +1,6 @@
 # SHINOBU_218 Rationale
 
-Status: ULTRA POLISH STATIC PASS / HABITAT DEFORMATION GENERATION HANDLE ROUTE PATCHED / CONTINUOUS HEALTH-PRESSURE QUALITY PATCHED / HULL JOB DETERMINISM PATCHED / STRUCTURAL CSV PLAYER ROUTE PATCHED / DAMAGE CONTRACT DEAR LIE PATCHED / LAYOUT REFLECTION PLAYER FENCE PATCHED / COMPILE BLOCKED BY CPU POLICY
+Status: ULTRA POLISH STATIC PASS / HABITAT DEFORMATION GENERATION HANDLE ROUTE PATCHED / CONTINUOUS HEALTH-PRESSURE QUALITY PATCHED / HULL JOB DETERMINISM PATCHED / STRUCTURAL CSV PLAYER ROUTE PATCHED / DAMAGE CONTRACT OWNER CONFLICT CORRECTED / STRUCTURAL EDITOR SURFACE FENCED / COMPILE BLOCKED BY CPU POLICY
 
 ## Bootstrap
 Problem: Legacy flat structural strength cannot represent depth-derived load propagation or deterministic collapse cascades.
@@ -53,7 +53,7 @@ Hardware Impact: Editor and CLI tooling cost 0 us in player hot path.
 
 ## Compile Gate
 Problem: Compile verification is mandatory but project law forbids dotnet when CPU is above 50% or another compiler is running.
-Solution: Latest samples showed CPU 100/100/96.1/94/100/99.2/100/100/100% with no active compiler process. Did not launch build. `git diff --check` passed on touched files with CRLF warnings only.
+Solution: Latest samples showed CPU 100/100/96.1/94/100/99.2/100/100/100/100% with no active compiler process. Did not launch build. `git diff --check` passed on touched files with CRLF warnings only.
 Rejected Alternatives: Running dotnet against explicit CPU gate or fabricating compile success.
 Scalability potential: No runtime behavior claim depends on an unrun build.
 Hardware Impact: Avoided adding build load to an already saturated machine.
@@ -185,13 +185,11 @@ Scalability potential: Low/Middle/High/Ultra player builds use deterministic def
 Hardware Impact: Removes player boot file metadata/open route for structural material CSV. Solver ALU unchanged.
 
 ## Damage Contract Dear Lie Pass
-Problem: `HabitatDamageMeshStateResolver.ResolveStateIndex(float)` used hard staged pressure thresholds and could select Stressed/Ruptured mesh hashes before collapse. That contradicts the SHINOBU_218 Dear Lie requirement: pressure should feed shader buckling until real collapse, not swap meshes early.
-Solution: Pressure-to-state now returns only Intact or Collapsed. Added `ResolveVisualBuckling01(float)` using `math.smoothstep(0.33333334,0.95,p)` for continuous visual buckling. Explicit byte-state mesh resolution remains for editor/baked tools, but pressure truth no longer selects staged meshes before collapse.
-Rejected Alternatives: `math.step` staged mesh thresholds, CPU mesh swaps for pre-collapse deformation, or removing the baked mapping DTO.
-Scalability potential: Low tier keeps cheap pristine/collapsed selection; Middle/High/Ultra spend visual fidelity through shader buckling scalar instead of asset-state churn.
-Hardware Impact: Avoids pre-collapse mesh state churn. Runtime consumers can drive one scalar into GPU displacement; no new buffer allocation or DTO layout change.
-
-Follow-up source proof: A direct file read after later scans found the old staged `math.step` code still present on disk. The source is now actually patched and a rerun scoped `math.step` scan over Habitat/Deformation Runtime/Contracts returns no hits.
+Problem: SHINOBU_218 previously reported a collapse-only patch to `HabitatDamageMeshStateResolver`, but direct SHINOBU_210 status/rationale reads prove that file is SHINOBU_210-owned and intentionally keeps Stressed/Ruptured/Collapsed baked mesh states reachable with three `math.step` thresholds.
+Solution: Treat the previous SHINOBU_218 claim as superseded documentation debt. SHINOBU_218 does not mutate `HabitatDamageBakedContracts.cs`; static source search shows `StructuralIntegrityCalculatorRuntime` and `HullIntegrityRuntime` do not call `HabitatDamageMeshStateResolver`. SHINOBU_218 Dear Lie remains `IntegrityStateDTO.BucklingScalar` plus the structural shader buffer.
+Rejected Alternatives: Fighting another owner file, deleting SHINOBU_210 baked states, or claiming a source patch that another agent explicitly reversed.
+Scalability potential: Low tier keeps structural shader buckling cheap and sparse through cadence/quality; Middle/High/Ultra raise buckling intensity through the shader path. SHINOBU_210 can independently choose baked mesh state density without adding SHINOBU_218 runtime coupling.
+Hardware Impact: Runtime cost for SHINOBU_218 stays unchanged: no CPU mesh swap, no GameObject mutation, no resolver call in the structural solver. The correction removes cross-owner churn rather than adding ALU.
 
 ## Layout Reflection Player Fence
 Problem: `HullIntegrityRuntime.ValidateLayouts()` still used reflection-backed field offset checks during normal boot. The pass is cold, but it is managed metadata traversal in player assembly and weaker than the structural runtime's editor-only offset proof.
@@ -206,3 +204,24 @@ Solution: Wrapped cold unregister in the same `UNITY_EDITOR` fence as cold regis
 Rejected Alternatives: relying on player branch elimination, leaving dead cold-lane callsites in the assembly, or allowing player types to satisfy an unused cold dispatcher interface.
 Scalability potential: All device tiers avoid player cold-dispatcher lifecycle code; editor keeps hot CSV/tuning reload lifecycle.
 Hardware Impact: Removes player cold interface surface, methods, and hull teardown branch/callsite. Runtime solver ALU unchanged.
+
+## Structural Editor Surface Fence
+Problem: `StructuralIntegrityCalculatorRuntime.OnDrawGizmos()` and `OnValidate()` still compiled outside `UNITY_EDITOR`, leaving editor heatmap and inspector clamp code in player assemblies.
+Solution: Wrapped both methods in `UNITY_EDITOR`. The runtime solver, Vault routes, signals, telemetry dump path, and shader upload path are untouched.
+Rejected Alternatives: Relying on Unity callback convention, leaving `Gizmos`/`Mathf` editor presentation code compiled for player, or deleting the editor heatmap.
+Scalability potential: Low/Middle/High/Ultra gameplay paths are unchanged; editor still gets the heatmap and inspector clamping required for human tuning.
+Hardware Impact: Removes editor-only method bodies from player builds. Solver ALU and memory bandwidth are unchanged.
+
+## Owner-Correction Static Verification
+Problem: The owner-boundary correction needed proof that SHINOBU_218 runtime does not consume SHINOBU_210's staged baked mesh resolver.
+Solution: Re-extracted the SHINOBU_218 XML prompt by CLI with 20 tasks; `rg` over Habitat/Deformation Runtime returned no `HabitatDamageMeshStateResolver`, `ResolveStateIndex`, `ResolveMeshHash`, or `ResolveVisualBuckling01` hits; editor callback depth scan reports `OnDrawGizmos`, `ColdTick`, and `OnValidate` at `UNITY_EDITOR` depth 1. Structural scanner regenerated `CONSTRUCTION_OPTIMIZATION_REPORT.json` with `blocked_findings=0`, `unity_joint_sites=0`, verdict PASS.
+Rejected Alternatives: Running dotnet under 100% CPU, deleting SHINOBU_210 staged baked states, or leaving a false SHINOBU_218 collapse-only resolver claim in current status/rationale.
+Scalability potential: SHINOBU_218 keeps continuous buckling/scalar shader deformation across Low/Middle/High/Ultra; SHINOBU_210 staged mesh density remains a separate owner-controlled visual route.
+Hardware Impact: Runtime solver ALU change remains 0 us. Player assembly strips editor callbacks; source verification only, no profiler proof.
+
+## Breach Jet Bounds Math Surface
+Problem: A post-fence scan still found three `Mathf.Max` calls at player depth in `HullIntegrityRuntime` breach-jet draw bounds.
+Solution: Replaced them with `math.max`, keeping visual-sync scalar math on the Unity.Mathematics surface. No material, buffer, draw, or bounds semantics changed.
+Rejected Alternatives: Leaving the calls because they allocate 0 B, or wrapping the draw path in editor guards which would delete runtime breach jets.
+Scalability potential: Low/Middle/High/Ultra breach-jet quality still follows the existing continuous quality/capacity route; this is a math-surface hygiene fix only.
+Hardware Impact: Replaces three non-Burst UnityEngine math static calls in visual sync. No measurable claim without profiler proof.

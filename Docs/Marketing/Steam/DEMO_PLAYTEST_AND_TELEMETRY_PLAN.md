@@ -85,7 +85,7 @@ Recommended vertical slice:
 5. One readable threat/failure state with a player choice: avoid, reroute, seal, scan, retreat, or continue.
 6. One Seed Ship/anomaly signal after the pressure-choice beat exists.
 7. Return/repair/upgrade loop.
-8. End screen with approved public CTA after activation, or private feedback route for controlled playtests.
+8. End screen with public CTA only after the exact demo/Steam route gate and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, or private feedback route for controlled playtests.
 
 Target length:
 

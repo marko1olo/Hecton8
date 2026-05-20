@@ -1,4 +1,4 @@
-# SHINOBU_156 Abyssal Cavitation Route Card
+﻿# SHINOBU_156 Abyssal Cavitation Route Card
 
 Status: STATIC_SOURCE ORIENTATION / UNITY IMPORT + PROFILER PROOF PENDING.
 
@@ -15,7 +15,7 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Owner: SHINOBU_156 / Abyssal cavitation and shockwave physics.
@@ -28,16 +28,18 @@ Evidence class: STATIC_SOURCE route-card completion only. This block does not pr
 |---|---|
 | Route ID | `SHINOBU_156_ABYSSAL_CAVITATION` |
 | Owner | SHINOBU_156 / Abyssal cavitation runtime |
+| Instrument | GlobalDataVault shockwave/candidate/SDF/force buffers `71560..71570`, PhysicsApplySystem managed bridge, shader upload payload, and black-box dump route |
 | First-20-minutes route moment | Hazard pressure and survival feedback only when the Copper Wire route needs abyssal shock feedback; otherwise parked |
 | Authority surface | GlobalDataVault buffers `71560`-`71570`; managed bridge drains force packets into `PhysicsApplySystem` |
 | Producer phase | `SIMULATION` for shockwave expansion and candidate force evaluation |
 | Consumer phase | `POST_SIMULATION` for force-packet publication, `VISUAL_SYNC` for shockwave sphere upload |
 | Cadence | Fixed simulation cadence for force truth; visual upload only when frame/upload/quality signature changes |
 | Capacity | `ShockwaveEventDTO[128]`, candidate/entity snapshots from caller-fed buffers, telemetry ring `300` |
-| Overflow/failure | Deterministic bounded buffers drop or coarsen excess non-critical visual/candidate work by `GlobalQualityWeight`; non-finite shockwave math or stale SDF input sets telemetry fault flags and emits `Docs/AgentLogs/Dump_SHINOBU_156.bin` |
+| Overflow/failure | Deterministic bounded buffers drop or coarsen excess non-critical visual/candidate work by `GlobalQualityWeight`; non-finite shockwave math or stale SDF input sets telemetry fault flags and requests `Docs/AgentLogs/Dump_SHINOBU_156.bin` as a generated-on-fault artifact |
 | Overflow policy | Deterministic bounded buffers; excess non-critical visual/candidate work is dropped or coarsened by `GlobalQualityWeight`; critical bodies keep bypass priority |
-| Failure mode | Non-finite shockwave math or stale SDF input sets telemetry fault flags and emits `Docs/AgentLogs/Dump_SHINOBU_156.bin` |
+| Failure mode | Non-finite shockwave math or stale SDF input sets telemetry fault flags and requests `Docs/AgentLogs/Dump_SHINOBU_156.bin` as a generated-on-fault artifact |
 | Shutdown/disposal | Release/clear Vault buffer ownership from the cavitation owner; do not let physics or visual consumers own teardown |
+| Fault dump target | `Docs/AgentLogs/Dump_SHINOBU_156.bin` is planned/generated on fault; no existing artifact is implied unless a timestamped runtime trigger and output are linked |
 | Review disposition | `YELLOW / STATIC_SOURCE_ONLY` until route-card review, guarded compile, Unity import, profiler, and player-build artifacts exist |
 | Proof required before GREEN | Artifact path, command/tool, timestamp, environment, output tuple for compile/import/runtime/profiler claims |
 
@@ -102,3 +104,5 @@ The solver samples SDF at the midpoint between wave epicenter and entity AUP. Ne
 Forbidden route:
 
 `Physics.OverlapSphere`, `Physics.OverlapSphereNonAlloc`, `Rigidbody.AddExplosionForce`, explosion prefab instantiation, and particle-system fireballs are not part of this route.
+
+

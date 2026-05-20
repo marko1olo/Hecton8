@@ -215,3 +215,34 @@ Rule quote: "The shader will procedurally render salt buildup, corrosion, rust, 
 - [x] Authoring tooltip corrected. | DOD: profile tooltip now states visual pressure aging is procedural in UberNoir, not decal-atlas driven. | Rejected: leaving the profile to imply a crack/rust decal atlas path. | Estimate: documentation-in-source only
 - [x] Static guard rerun after profile cleanup. | DOD: source scan found no rupture decal atlas tokens in `Assets/_Project/Scripts/Construction`; `git diff --check` returned exit 0 with CRLF warnings only; trailing whitespace scan returned no matches. | Rejected: touching `DynamicDecalVaultRuntime` or impact/fluid decal owners. | Estimate: static scan ~900 us
 - [!] Compile verification deferred. | Reason: latest gate remained above 50% CPU in prior sample (`CpuPercent=94.052`) with no compiler processes; build launch remains forbidden. | Integrator note: rerun Unity import/build after CPU drops below 50% and no compiler process is active.
+
+## Iteration Loop 16 - CSV Hot-Path Eviction and Shader Quality Variant Sanitation
+
+[ANALYSIS]
+Target: remove remaining SHINOBU-owned frame-path file I/O and binary shader LOD hooks from the procedural aging route.
+Affected systems: `VisualPressureAgingRuntime`, `VisualPressureAgingTunerWindow`, `Hecton8_UberNoir.hlsl`, SHINOBU_219 docs/logs.
+Zero GC proof: runtime CSV disk read no longer executes from `PreSimulationTick`; manual editor reload is cold-only. Shader aging quality is driven by float `quality` thresholds and `smoothstep` ranges, not `_MATH_LOD_LOW` inside the visual-aging blocks.
+State check: Vault buffer IDs, DTO layout, Burst jobs, GPU upload ABI, and Construction rupture gameplay state are unchanged.
+Rule quote: "The parser must run cold" and "NO BINARY SWITCHES."
+
+- [x] CSV poll removed from dispatcher hot path. | DOD: `PreSimulationTick` now only resolves cached Vault state and applies pending editor tuning; `CsvPollCadenceFrames` and `MonitorCsv` were deleted. | Rejected: 96-frame `File.GetLastWriteTimeUtc` polling in PreSimulation, because it is still frame-path disk I/O. | Estimate: removes one hot conditional plus possible filesystem probe every 96 frames
+- [x] Cold editor CSV reload added. | DOD: `TryReloadEditorCsv()` calls `ReloadCsvFromDisk(vault, true)` only from the UI Toolkit tuner button `Reload CSV Profiles`; the allocation-free `ReadOnlySpan<byte>` parser and Vault scratch lane remain intact. | Rejected: deleting the CSV bridge entirely, because Task 17 requires human-tunable profiles. | Estimate: no gameplay-frame cost
+- [x] Aging shader binary LOD hooks removed from SHINOBU blocks. | DOD: visual aging albedo array sampling, macro noise, rust POM UV, rust corrosion, and surface aging path now collapse through `H8UberNoirSmoothRange01`/quality gates instead of `_MATH_LOD_LOW` branches in the inspected ranges. | Rejected: compile-time low shader variant for aging visuals; it creates a binary quality surface. | Estimate: low quality exits before RustDetail samples/POM/triplanar/high surface work; high quality keeps overkill path
+- [x] Static guard rerun after loop 16. | DOD: scoped scans found no `CsvPollCadenceFrames`, `MonitorCsv`, frame-path CSV/File calls, forbidden material mutation/decal atlas tokens, or binary LOD tokens inside SHINOBU aging ranges; trailing whitespace scan returned no matches; `git diff --check` returned exit 0 with CRLF warnings only. | Rejected: broad failure on unrelated global UberNoir `_MATH_LOD_LOW` lighting/caustic sections outside SHINOBU_219 ownership. | Estimate: static scan ~1400 us
+- [!] Compile verification deferred. | Reason: latest gate returned `CpuPercent=98.693` with no compiler processes; build remains forbidden above 50% CPU. | Integrator note: rerun Unity import/build after CPU drops below 50% and no compiler process is active.
+
+## Iteration Loop 17 - Vault Lock Fence and Payload Quality Continuity
+
+[ANALYSIS]
+Target: eliminate remaining SHINOBU-owned lock-order ambiguity and make rust POM/detail use the same Vault-derived quality scalar as the rest of the aging shader.
+Affected systems: `VisualPressureAgingRuntime`, `VisualPressureAgingTunerWindow`, `Hecton8_UberNoir.hlsl`, SHINOBU_219 docs/logs.
+Zero GC proof: gameplay/runtime paths still allocate no managed arrays/strings; changes are lock ordering, shader argument routing, and editor-only report widening.
+State check: BufferIDs `71240..71246`, DTO sizes, Burst jobs, and GPU buffer ABI are unchanged.
+Rule quote: "one fact -> one owner -> one route -> one proof" and "NO BINARY SWITCHES."
+
+- [x] VisualSync Vault reads lock-fenced. | DOD: `VisualSyncTick` now locks `VisualPressureAgingParams`, `VisualPressureAgingRuntime`, `VisualPressureAgingTelemetryRing`, and `VisualPressureAgingTelemetryCursor` before GPU upload/runtime write/dump reads, then unlocks in reverse order. | Rejected: reading params/telemetry/cursor under only the runtime lock. | Estimate: four nonblocking lock probes in VisualSync, prevents undefined owner overlap
+- [x] SHINOBU lock order normalized. | DOD: editor read, default hydration, CSV reload, VisualSync, and job locks now follow ascending owned BufferID order for overlapping lanes. | Rejected: cold/editor mixed order (`tuning -> runtime`, `scratch -> tuning`, `tuning -> mock -> params -> runtime`) because it is bad Vault discipline. | Estimate: no steady-state ALU change
+- [x] Rust POM/detail consumes payload quality. | DOD: `H8UberNoirResolveRustPomUv` now takes the `quality` computed by `H8UberNoirVisualAgingQualityWeight(visualAging)`, instead of rereading global quality internally. | Rejected: letting Vault row quality affect rust/salt/glass but not RustDetail/POM gating. | Estimate: no extra samples; one argument pass
+- [x] Inquisition archaeology widened. | DOD: `VisualPressureAgingInquisition` now reports `BaseCorrosion.cs`, `GlassFracture.cs`, exact `GetComponent<Renderer>().material.SetFloat`, and rust/algae/corrosion/glass aging decal tokens in `Rendering/` and `Construction/`. | Rejected: validator that only counted BaseDegradation/runtime scoped material mutations. | Estimate: editor-only scan cost
+- [x] Static guard rerun after loop 17. | DOD: scoped scans found no live legacy aging material/decal tokens in `Rendering`/`Construction`, no SHINOBU aging binary LOD tokens, and no rollback/Merkle references beyond `H8Memory` BufferIDs; trailing whitespace scan returned no matches; `git diff --check` returned exit 0 with CRLF warnings only. | Rejected: treating validator literal search strings as runtime usage. | Estimate: static scan ~1700 us
+- [!] Compile verification deferred. | Reason: latest gate returned `CpuPercent=98.693` with no compiler processes; build remains forbidden above 50% CPU. | Integrator note: rerun Unity import/build after CPU drops below 50% and no compiler process is active.

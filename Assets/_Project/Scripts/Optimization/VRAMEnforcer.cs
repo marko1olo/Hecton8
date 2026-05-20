@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -12,17 +13,18 @@ namespace Hecton8.Optimization
     /// </summary>
     internal static class VRAMEnforcer
     {
-        private const int LowVramGraphicsMemoryMbThreshold = 2048;
-        private const int HalfResolutionTextureMipLimit = 1;
-        private const int SharedMemoryTextureMipLimit = 2;
-        private const float LowVramBoidPopulationScale = 0.5f;
-        private const float SharedMemoryBoidPopulationScale = 0.4f;
+        private const float HardwareWeightMinGraphicsMemoryMb = 1024f;
+        private const float HardwareWeightFullGraphicsMemoryMb = 8192f;
+        private const float MinimumBoidPopulationScale = 0.4f;
+        private const float SharedMemoryWeightCeiling = 0.35f;
+        private const float BootstrapMipLimitMax = 2f;
 
         private static bool _initialized;
         private static bool _lowVramBudgetActive;
         private static bool _sharedMemoryBudgetActive;
         private static bool _capturedMipLimit;
         private static int _baselineMipLimit;
+        private static float _hardwareBudgetWeight = 1f;
 
 #if UNITY_EDITOR
         private static bool _editorRestoreHookRegistered;
@@ -50,6 +52,7 @@ namespace Hecton8.Optimization
             _lowVramBudgetActive = false;
             _sharedMemoryBudgetActive = false;
             _capturedMipLimit = false;
+            _hardwareBudgetWeight = 1f;
             DetectedGraphicsMemoryMb = 0;
 
 #if UNITY_EDITOR
@@ -73,11 +76,8 @@ namespace Hecton8.Optimization
             HardwareTierDetector.EnsureInitialized();
             DetectedGraphicsMemoryMb = Mathf.Max(0, SystemInfo.graphicsMemorySize);
             _sharedMemoryBudgetActive = HardwareTierDetector.SharedMemoryModeActive;
-            _lowVramBudgetActive =
-                _sharedMemoryBudgetActive ||
-                (DetectedGraphicsMemoryMb > 0 && DetectedGraphicsMemoryMb <= LowVramGraphicsMemoryMbThreshold);
-            if (!_lowVramBudgetActive)
-                return;
+            _hardwareBudgetWeight = ResolveHardwareBudgetWeight(DetectedGraphicsMemoryMb, _sharedMemoryBudgetActive);
+            _lowVramBudgetActive = _hardwareBudgetWeight < 0.999f;
 
             CaptureBaselines();
             ApplyTextureBudget();
@@ -96,10 +96,13 @@ namespace Hecton8.Optimization
                 InitializeRuntimeBudget();
 
             int clampedRequested = Mathf.Clamp(requestedCount, minimumCount, maximumCount);
-            if (!_lowVramBudgetActive)
+            if (!_initialized && !Application.isPlaying)
                 return clampedRequested;
 
-            float scale = _sharedMemoryBudgetActive ? SharedMemoryBoidPopulationScale : LowVramBoidPopulationScale;
+            float qualityCurve = ResolveQualityCurve();
+            float hardwareScale = math.lerp(MinimumBoidPopulationScale, 1f, _hardwareBudgetWeight);
+            float qualityScale = math.lerp(MinimumBoidPopulationScale, 1f, qualityCurve);
+            float scale = math.saturate(math.min(hardwareScale, qualityScale));
             int scaledCount = Mathf.RoundToInt(clampedRequested * scale);
             return Mathf.Clamp(scaledCount, minimumCount, maximumCount);
         }
@@ -123,16 +126,24 @@ namespace Hecton8.Optimization
 
         private static int ResolveMinimumTextureMipLimit()
         {
-            if (!_sharedMemoryBudgetActive)
-                return HalfResolutionTextureMipLimit;
+            float qualityCurve = ResolveQualityCurve();
+            float usableWeight = math.saturate(math.min(_hardwareBudgetWeight, qualityCurve));
+            float mipLimit = math.lerp(BootstrapMipLimitMax, 0f, usableWeight);
+            return math.clamp((int)math.round(mipLimit), 0, 2);
+        }
 
-            int textureBudgetMb = HardwareProfileCatalog.ResolveSharedMemoryTextureBudgetMegabytes(
-                HardwareTierDetector.IsSteamDeckLike,
-                HardwareTierDetector.IsQuest3Like,
-                HardwareProfileCatalog.Quest3TextureBudgetMegabytes);
-            return textureBudgetMb >= HardwareProfileCatalog.SteamDeckLcdTextureBudgetMegabytes
-                ? HalfResolutionTextureMipLimit
-                : SharedMemoryTextureMipLimit;
+        private static float ResolveHardwareBudgetWeight(int graphicsMemoryMb, bool sharedMemoryModeActive)
+        {
+            float detectedMb = math.max(graphicsMemoryMb, HardwareWeightMinGraphicsMemoryMb);
+            float dedicatedWeight = math.smoothstep(HardwareWeightMinGraphicsMemoryMb, HardwareWeightFullGraphicsMemoryMb, detectedMb);
+            float sharedWeight = math.select(1f, SharedMemoryWeightCeiling, sharedMemoryModeActive);
+            return math.saturate(math.min(dedicatedWeight, sharedWeight));
+        }
+
+        private static float ResolveQualityCurve()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.smoothstep(0.15f, 0.85f, math.saturate(math.isfinite(quality) ? quality : 1f));
         }
 
 #if UNITY_EDITOR

@@ -963,3 +963,43 @@ What was done: updated `Press/PRESS_KIT_AND_MEDIA_PLAN.md`, `CreatorOutreach/A_T
 Cinematic cheats used: static permission firewall only; no public CTA, no post, no showcase submission, no press send, no creator send, no private access, no browser/account action, no runtime simulation, no build action.
 
 Exact microseconds saved: 0us runtime impact. Validation clean: targeted CTA/showcase shorthand grep clean; Marketing file count 100; all 9 marketing CSVs parse; touched markdown table audit clean across 9 files; touched mojibake audit clean across 9 files; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`.
+
+## 2026-05-20 Analytics And KPI Permission-Source Quarantine
+
+What was wrong: reporting schemas could still count campaign events, creator attribution, feedback, public CTA, support, private access, or owned-audience rows if route/provenance was partially present but the machine permission gate/source was blank. That creates false weekly wins and hides whether the route was legal to use.
+
+What was done: updated `Analytics/MEASUREMENT_AND_UTM_PLAN.md`, `KPI/MARKETING_DASHBOARD_SPEC.md`, `Operations/DAILY_AGENT_TASK_LOOP.md`, `MARKETING_CONTROL_TOWER.md`, and `README.md`. Reportable rows now require permission gate/source plus non-unknown route/provenance. Creator dashboard rows gained asset IDs sent, creator utility score, creator send gate, send route class, reply consent provenance, and send gate source. Weekly reports now expose rows excluded for route/permission/provenance gaps.
+
+Cinematic cheats used: static reporting firewall only; no KPI row fill, no public CTA, no post, no send, no private access, no browser/account action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; reporting table audit clean across 6 files; touched mojibake audit clean across 10 files; propagation grep confirms permission-source/quarantine language in analytics, KPI, daily loop, control tower, and README; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`; rationale order clean through Decision 238.
+
+## 2026-05-20 Support Route Placeholder Cleanup
+
+What was wrong: review/forum and launch holding templates still contained a generic approved-support-route placeholder inside pasteable public reply text. That could expose a support URL before Steam support route custody and public CTA gates exist.
+
+What was done: updated `Feedback/STEAM_REVIEWS_FORUMS_AND_SUPPORT_RESPONSE_PLAYBOOK.md` and `Launch/LAUNCH_DAY_AND_FIRST_WEEK_WAR_ROOM.md`. Support-route placeholders now require `steam_support_permission_gate = ALLOW_STEAM_SUPPORT_ROUTE_VERIFIED`, owner-controlled inbox/form custody, `route_class = support_route`, `consent_provenance = support_report`, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` if linked publicly.
+
+Cinematic cheats used: static support-route permission firewall only; no support route, no Steam/forum reply, no public CTA, no account/browser action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: approved-support-route grep clean; touched support docs pass markdown table audit and mojibake audit. No support route, Steam/forum reply, public CTA, account/browser action, runtime action, or build action occurred.
+
+## 2026-05-20 Approved CTA Bracket Placeholder Cleanup
+
+What was wrong: long-form press, social, owned-audience, campaign, Steam wishlist, press-angle, post-bank, and localization templates still used generic approved-after-CTA URL placeholders. Those placeholders can be pasted as if one generic approval opens Steam, demo, presskit, Discord, feedback, or asset links.
+
+What was done: updated `Press/PRESS_RELEASE_AND_EMAIL_TEMPLATES.md`, `Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md`, `Audience/OWNED_AUDIENCE_EMAIL_AND_NEWSLETTER_PLAN.md`, `Campaigns/CAMPAIGN_03_FIRST_DEMO_OUTREACH.md`, `Campaigns/CAMPAIGN_04_NEXT_FEST_AND_DEMO_EVENT.md`, `Steam/STEAM_WISHLIST_AND_NEXT_FEST_PLAN.md`, `Press/PRESS_ANGLE_AND_SUBJECT_LINE_BANK.md`, `Content/POST_BANK_AND_HOOK_LIBRARY.md`, and `Localization/LOCALIZATION_AND_REGIONAL_ASSET_PIPELINE.md`. Placeholders now name the relevant machine gates instead of a generic CTA approval.
+
+Cinematic cheats used: static URL-permission firewall only; no public link, no post, no release, no email, no signup, no Discord, no account/browser action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: approved-CTA bracket audit clean; touched files pass markdown table audit across 9 files and mojibake audit across 9 files. No public link, post, release, email, signup, Discord, account/browser action, runtime action, or build action occurred.
+
+## 2026-05-20 Residual Asset Link And Event CTA Shorthand Cleanup
+
+What was wrong: after the approved-CTA bracket pass, nearby copy still had residual weak shorthand: approved asset link, approved screenshots/clips, Steam/presskit link only after CTA activation, approved Steam CTA after activation, wishlist after CTA activation, and one asset link. Those lines are paste-adjacent and can bypass asset metadata, creator utility, public CTA, private access, showcase submission, or paid spend gates.
+
+What was done: updated `Content/TRAILER_SCRIPT_CAPTURE_AND_EDITING_BRIEF.md`, `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, `CreatorOutreach/PITCH_BANK.md`, `CreatorOutreach/A_TIER_PERSONALIZED_PITCHES.md`, `CreatorOutreach/SEGMENT_PITCH_MATRIX.md`, `KEYS_AND_CREATOR_COMPLIANCE.md`, `Press/SHOWCASE_AND_FESTIVAL_SUBMISSION_PLAYBOOK.md`, `Press/SHOWCASE_SUBMISSION_TRACKER.csv`, `Ads/PAID_MICROTESTS_AND_AD_CREATIVE_MATRIX.md`, `AgentOps/AGENT_MARKETING_WORKFLOWS.md`, `Press/PRESS_KIT_AND_MEDIA_PLAN.md`, `MARKETING_PREP_MASTER_PLAN.md`, and `Steam/DEMO_PLAYTEST_AND_TELEMETRY_PLAN.md`. Added backlog row 212, source ledger addendum, Status Addendum 214, and Decision 241.
+
+Cinematic cheats used: static permission firewall only; no public link, no post, no release, no event submission, no email, no spend, no creator send, no key/access route, no account/browser action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Final validation pending in this pass.

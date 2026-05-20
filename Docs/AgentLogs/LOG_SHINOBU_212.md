@@ -90,3 +90,15 @@ Cinematic Cheats used -> No new simulation was added. The same baked-card Dear L
 Exact Microseconds saved -> No new measured runtime delta. This pass prevents a stale/zero indirect draw after GPU buffer recreation and prevents wrong-atlas overdraw. Existing savings remain geometry collapse to two triangles and low-quality one-view atlas sampling; profiler proof is still pending.
 
 Verification -> Re-extracted the full SHINOBU_212 XML prompt from `CURRENT_BATCH.md`. `Docs/Reports/SHINOBU_212_SELF_AUDIT.xml` parses as XML. Runtime `Rendering` and `Environment` capture scan returns no `Camera.Render`, `RenderWithShader`, `ReadPixels`, or `EncodeToPNG`. Renderer/shader forbidden-token scan returns no `QualityFlags`, `Shader.SetGlobal`, `Time.*`, runtime fallback allocation, `Allocator.Persistent`, private `NativeArray`, MPB/material mutation, or MapMagic bridge residue. Hot DTO/job property scan is empty. `git diff --check` reports only LF-to-CRLF working-copy warnings. CPU sample remained 100% and compiler process count was 0, so Unity compile/import was not launched under the >50% CPU rule.
+
+## 2026-05-20 - NaN / Shader Payload Vaccination Pass
+
+What was wrong -> SHINOBU still allowed non-finite values from imported bounds, mock extents, quality inputs, visible-instance matrices, atlas captures, and dilation masks to enter capture matrices, GPU instance payloads, atlas pixels, lighting, fog, or `SV_Depth`.
+
+What was done -> Sanitized `OctahedralImpostorInstance`, `ImpostorConfigDTO`, `HectonChunkImpostorResidency`, `CalculateCaptureAnglesJob`, `GenerateMockCaptureTargetJob`, `Hecton_Impostor.hlsl`, both impostor shaders, `PackImpostorAtlas.compute`, and `DilateImpostorEdges.compute`. All SHINOBU-owned numeric boundaries now collapse NaN/Infinity to finite defaults before use.
+
+Cinematic Cheats used -> No physics or mesh simulation was added. The impostor remains the same Dear Lie: the horizon object is a baked card, and invalid source pixels become empty occupancy or stable fallback normals instead of forcing real geometry or runtime recapture.
+
+Exact Microseconds saved -> No direct savings claimed for this pass. It prevents poisoned depth/color paths and invalid matrices. Existing savings remain geometry collapse to two triangles and low-quality one-view sampling; profiler proof is still pending.
+
+Verification -> Re-extracted the SHINOBU_212 XML prompt and counted 20 `Task NN:` entries. Targeted scans show no raw `saturate(_HectonGlobalQualityWeight)`, `Mathf`, `double.Is*`, raw `BoundsCenter +`, raw `Center + shaped`, or raw `math.max(Extents...)` in the patched SHINOBU files. Texture samples in both impostor shaders are wrapped by finite guards. `git diff --check` reports only LF-to-CRLF working-copy warnings. Unity compile/import was not launched because the CPU gate still applies.

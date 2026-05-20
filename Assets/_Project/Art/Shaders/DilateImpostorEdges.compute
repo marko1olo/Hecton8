@@ -7,16 +7,31 @@ RWTexture2D<float4> _OutputAtlas;
 float4 _AtlasSize;
 int _DilationRadius;
 
+float HectonFiniteOr(float value, float fallback)
+{
+    return (isnan(value) || isinf(value)) ? fallback : value;
+}
+
+float2 HectonFiniteOr2(float2 value, float2 fallback)
+{
+    return (any(isnan(value)) || any(isinf(value))) ? fallback : value;
+}
+
+float4 HectonFiniteOr4(float4 value, float4 fallback)
+{
+    return (any(isnan(value)) || any(isinf(value))) ? fallback : value;
+}
+
 [numthreads(8, 8, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
-    int2 atlasSize = max(int2(_AtlasSize.xy), int2(1, 1));
+    int2 atlasSize = max(int2(HectonFiniteOr2(_AtlasSize.xy, float2(1.0, 1.0))), int2(1, 1));
     if (id.x >= (uint)atlasSize.x || id.y >= (uint)atlasSize.y)
         return;
 
     int2 pixel = int2(id.xy);
-    float4 current = _SourceAtlas.Load(int3(pixel, 0));
-    float currentMask = _SourceMaskAtlas.Load(int3(pixel, 0)).a;
+    float4 current = HectonFiniteOr4(_SourceAtlas.Load(int3(pixel, 0)), float4(0.0, 0.0, 0.0, 0.0));
+    float currentMask = HectonFiniteOr(_SourceMaskAtlas.Load(int3(pixel, 0)).a, 0.0);
     if (currentMask > 0.0005)
     {
         _OutputAtlas[pixel] = current;
@@ -34,7 +49,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         for (int x = -radius; x <= radius; x++)
         {
             int2 samplePixel = clamp(pixel + int2(x, y), int2(0, 0), atlasSize - int2(1, 1));
-            float mask = _SourceMaskAtlas.Load(int3(samplePixel, 0)).a;
+            float mask = HectonFiniteOr(_SourceMaskAtlas.Load(int3(samplePixel, 0)).a, 0.0);
             if (mask <= 0.0005)
                 continue;
 
@@ -42,10 +57,10 @@ void CSMain(uint3 id : SV_DispatchThreadID)
             if (d < bestDistanceSq)
             {
                 bestDistanceSq = d;
-                best = _SourceAtlas.Load(int3(samplePixel, 0));
+                best = HectonFiniteOr4(_SourceAtlas.Load(int3(samplePixel, 0)), current);
             }
         }
     }
 
-    _OutputAtlas[pixel] = best;
+    _OutputAtlas[pixel] = HectonFiniteOr4(best, current);
 }

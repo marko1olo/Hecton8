@@ -11,18 +11,22 @@ namespace Hecton8.Audio.Synthesis
     /// <summary>
     /// Sixteen-byte audio parameter DTO copied across the game-thread to DSP-thread boundary.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct SynthParametersDTO
     {
         /// <summary>Required byte size for ARM64-aligned audio-thread loads.</summary>
         public const int SizeBytes = 16;
         /// <summary>Carrier/base frequency in hertz.</summary>
+        [FieldOffset(0)]
         public float BaseFrequency;
         /// <summary>FM/granular modulation strength.</summary>
+        [FieldOffset(4)]
         public float ModulationIndex;
         /// <summary>Normalized grain size scalar.</summary>
+        [FieldOffset(8)]
         public float GrainSize;
         /// <summary>Pressure/stress scalar in normalized 0..1 range.</summary>
+        [FieldOffset(12)]
         public float PressureScalar;
 
         /// <summary>
@@ -39,18 +43,22 @@ namespace Hecton8.Audio.Synthesis
     /// <summary>
     /// Sixteen-byte grain playback state consumed by allocation-free granular DSP loops.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct GrainPlaybackStateDTO
     {
         /// <summary>Required byte size for one grain voice on ARM64.</summary>
         public const int SizeBytes = 16;
         /// <summary>Current playback phase in samples or normalized LUT space.</summary>
+        [FieldOffset(0)]
         public float CurrentPhase;
         /// <summary>Playback pitch multiplier.</summary>
+        [FieldOffset(4)]
         public float Pitch;
         /// <summary>Linear amplitude scalar.</summary>
+        [FieldOffset(8)]
         public float Amplitude;
         /// <summary>Start index inside the base grain buffer.</summary>
+        [FieldOffset(12)]
         public uint GrainStartIndex;
 
         /// <summary>
@@ -67,48 +75,60 @@ namespace Hecton8.Audio.Synthesis
     /// <summary>
     /// Local blind-dependency mock for pressure/tension/depth/speed synth validation.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockHullStressSignal
     {
         /// <summary>Oscillating structural stress scalar in normalized 0..1 range.</summary>
+        [FieldOffset(0)]
         public float MockStress;
         /// <summary>Oscillating cable or hull tension scalar in normalized 0..1 range.</summary>
+        [FieldOffset(4)]
         public float MockTension;
         /// <summary>Oscillating depth scalar in normalized 0..1 range.</summary>
+        [FieldOffset(8)]
         public float MockDepth;
         /// <summary>Mock submarine velocity scalar used for pitch wobble.</summary>
+        [FieldOffset(12)]
         public float MockSubmarineVelocity;
     }
 
     /// <summary>
     /// Sixteen-byte blind pressure mock for proving the synth without submarine depth systems.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockPressureSignal
     {
         /// <summary>Normalized pressure/stress scalar in 0..1 range.</summary>
+        [FieldOffset(0)]
         public float PressureScalar;
         /// <summary>Normalized depth scalar used by low-pass muffling tests.</summary>
+        [FieldOffset(4)]
         public float DepthScalar;
         /// <summary>Normalized velocity scalar used by pitch-wobble tests.</summary>
+        [FieldOffset(8)]
         public float VelocityScalar;
         /// <summary>Monotonic caller-owned sequence for deterministic validation.</summary>
+        [FieldOffset(12)]
         public uint Sequence;
     }
 
     /// <summary>
     /// Sixteen-byte blind tension mock for proving pressure/tension coupling in isolation.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockTensionSignal
     {
         /// <summary>Normalized cable or hull tension scalar in 0..1 range.</summary>
+        [FieldOffset(0)]
         public float TensionScalar;
         /// <summary>Absolute pressure-minus-tension delta, used as a cheap strain-rate stand-in.</summary>
+        [FieldOffset(4)]
         public float StrainRateScalar;
         /// <summary>Pressure contribution coupled into the tension fake.</summary>
+        [FieldOffset(8)]
         public float PressureCouplingScalar;
         /// <summary>Monotonic caller-owned sequence for deterministic validation.</summary>
+        [FieldOffset(12)]
         public uint Sequence;
     }
 
@@ -271,30 +291,44 @@ namespace Hecton8.Audio.Synthesis
     /// <summary>
     /// Thirty-two-byte isolated granular voice state for Burst test kernels.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DepthStressGranularVoice
     {
         /// <summary>Current grain cursor in samples.</summary>
+        [FieldOffset(0)]
         public float Cursor;
         /// <summary>Playback pitch scalar.</summary>
+        [FieldOffset(4)]
         public float PlaybackRate;
         /// <summary>Linear grain gain.</summary>
+        [FieldOffset(8)]
         public float Gain;
         /// <summary>Start sample in the base grain bank.</summary>
+        [FieldOffset(12)]
         public int StartSample;
         /// <summary>Length of the grain in samples.</summary>
+        [FieldOffset(16)]
         public int LengthSamples;
         /// <summary>Deterministic random seed for this voice.</summary>
+        [FieldOffset(20)]
         public uint Seed;
         /// <summary>One when the voice is active.</summary>
+        [FieldOffset(24)]
         public byte Active;
 #pragma warning disable 0169
+        [FieldOffset(25)]
         private byte _pad0;
+        [FieldOffset(26)]
         private byte _pad1;
+        [FieldOffset(27)]
         private byte _pad2;
+        [FieldOffset(28)]
         private byte _pad3;
+        [FieldOffset(29)]
         private byte _pad4;
+        [FieldOffset(30)]
         private byte _pad5;
+        [FieldOffset(31)]
         private byte _pad6;
 #pragma warning restore 0169
     }
@@ -302,16 +336,20 @@ namespace Hecton8.Audio.Synthesis
     /// <summary>
     /// Sixteen-byte granular spawn state with natural 4-byte fields and no packed layout.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct DepthStressGranularSpawnState
     {
         /// <summary>Fractional spawn accumulator.</summary>
+        [FieldOffset(0)]
         public float SpawnAccumulator;
         /// <summary>Deterministic random state.</summary>
+        [FieldOffset(4)]
         public uint RandomState;
         /// <summary>Round-robin voice cursor.</summary>
+        [FieldOffset(8)]
         public int RingCursor;
 #pragma warning disable 0169
+        [FieldOffset(12)]
         private int _pad0;
 #pragma warning restore 0169
     }
@@ -566,17 +604,22 @@ namespace Hecton8.Audio.Synthesis
     /// <summary>
     /// Twenty-four-byte oscillator state with double phase first and no packed layout.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct KineticImpactSineOscillatorState
     {
         /// <summary>Oscillator phase in normalized cycles.</summary>
+        [FieldOffset(0)]
         public double Phase;
         /// <summary>One-pole low-pass state.</summary>
+        [FieldOffset(8)]
         public float LowPassState;
         /// <summary>Oscillator age in seconds.</summary>
+        [FieldOffset(12)]
         public float AgeSeconds;
 #pragma warning disable 0169
+        [FieldOffset(16)]
         private float _pad0;
+        [FieldOffset(20)]
         private float _pad1;
 #pragma warning restore 0169
     }

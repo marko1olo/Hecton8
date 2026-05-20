@@ -154,8 +154,8 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
         self.assertIn("## Phi-Resonance Connectivity Model", text)
         self.assertIn("Tools/BuildArchitectureAtlas.py", text)
         self.assertIn("Docs/DEPENDENCY_GRAPH.json", text)
-        self.assertIn("Current DOC_GLOBAL R45 blocker", text)
-        self.assertIn("Current DOC_GLOBAL boundary (2026-05-20 R45)", text)
+        self.assertIn("Current DOC_GLOBAL R46 blocker", text)
+        self.assertIn("Current DOC_GLOBAL boundary (2026-05-20 R46)", text)
         self.assertIn("ATLAS_CHECK_FAIL references=6741 missing=59", text)
 
 

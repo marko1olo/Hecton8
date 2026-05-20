@@ -20,7 +20,7 @@ Every pitch must obey:
 - no fake performance claim;
 - no generic "you might like our game" spam;
 - one reason the creator's audience fits;
-- one clear asset link when assets exist;
+- one real asset ID/link only after asset metadata claim checks, QA, creator utility, `creator_send_gate`, and the relevant public/private route gates pass;
 - one clean ask.
 
 ## Creator Pitch Archetypes
@@ -157,7 +157,7 @@ Hi [Name], I am working on HECTON-8, a single-player-first underwater survival g
 
 Your channel fits because [specific reason]. The angle is industrial underwater survival where the base and machines are what keep you alive.
 
-Assets: [approved screenshots/clips; public Steam/trailer/demo links only after Official CTA Link Activation Gate V0; private demo/key/playtest/preview routes only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields]
+Assets: [asset IDs/links only after asset metadata claim checks, QA, creator utility, and `creator_send_gate` pass; public Steam/trailer/demo links only after `steam_page_publish_permission_gate`, `press_release_permission_gate` or trailer asset publication gate where applicable, `demo_public_access_permission_gate` where a demo is linked, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`; private demo/key/playtest/preview routes only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, disclosure, and exact access-log fields]
 
 If this fits your audience, I can send a short build/press kit when the demo is ready.
 
@@ -182,8 +182,8 @@ The short version:
 Assets:
 
 - Steam: [official Steam URL only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`]
-- trailer: [approved asset ID/link only after asset metadata claim checks; public link only after destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`]
-- screenshots: [approved asset IDs/links only]
+- trailer: [asset ID/link only after asset metadata claim checks, QA, creator utility where creator-facing, `creator_send_gate` where creator-facing, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for public links]
+- screenshots: [asset IDs/links only after asset metadata claim checks, QA, creator utility where creator-facing, and `creator_send_gate` where creator-facing]
 - demo/key: [recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields only]
 
 Specific reason this might fit your channel:

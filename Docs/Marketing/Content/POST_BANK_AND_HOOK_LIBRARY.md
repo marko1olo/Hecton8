@@ -373,8 +373,8 @@ HECTON-8 is a single-player deep-sea survival game about pressure, salvage, mach
 
 Best fit for your channel: [one specific angle].
 
-Steam: [approved Steam URL after CTA activation packet]
-Screenshots/presskit: [approved presskit URL after CTA activation packet]
+Steam: [gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
+Screenshots/presskit: [gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
 
 If the angle fits, I can send a short demo/preview build later when the route is stable.
 ```

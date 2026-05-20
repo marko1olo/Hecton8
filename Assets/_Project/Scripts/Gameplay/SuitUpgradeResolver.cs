@@ -1,9 +1,11 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Tools;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 namespace Hecton8.Gameplay
 {
@@ -94,63 +96,26 @@ namespace Hecton8.Gameplay
             upgrades = NormalizeMask(upgrades);
 
             SuitStats stats = baseline;
+            float highCapacity = UpgradeMatrixCompiler.Bit01(upgrades, HighCapacityTank);
+            float depth1 = UpgradeMatrixCompiler.Bit01(upgrades, DepthMk1);
+            float depth2 = UpgradeMatrixCompiler.Bit01(upgrades, DepthMk2);
+            float depth3 = UpgradeMatrixCompiler.Bit01(upgrades, DepthMk3);
+            float depth4 = UpgradeMatrixCompiler.Bit01(upgrades, DepthMk4);
+            float fins = UpgradeMatrixCompiler.Bit01(upgrades, SwimFins);
+            float thermal = UpgradeMatrixCompiler.Bit01(upgrades, ThermalLining);
+            float radiation = UpgradeMatrixCompiler.Bit01(upgrades, RadiationScrubber);
+            float energy = UpgradeMatrixCompiler.Bit01(upgrades, EnergyCellMk1);
+            float generator = UpgradeMatrixCompiler.Bit01(upgrades, ThermalGenerator);
 
-            if ((upgrades & HighCapacityTank) != 0UL)
-                stats.MaxO2 += 4f;
-
-            if ((upgrades & DepthMk1) != 0UL)
-            {
-                stats.MaxO2 += 4f;
-                stats.CrushDepth += 350f;
-                stats.MaxIntegrity += 5f;
-            }
-
-            if ((upgrades & DepthMk2) != 0UL)
-            {
-                stats.MaxO2 += 11f;
-                stats.CrushDepth += 1350f;
-                stats.MaxIntegrity += 15f;
-            }
-
-            if ((upgrades & DepthMk3) != 0UL)
-            {
-                stats.MaxO2 += 21f;
-                stats.CrushDepth += 3350f;
-                stats.MaxIntegrity += 30f;
-            }
-
-            if ((upgrades & DepthMk4) != 0UL)
-            {
-                stats.MaxO2 += 41f;
-                stats.CrushDepth += 4850f;
-                stats.MaxIntegrity += 50f;
-                stats.ThermalResistance += 0.45f;
-                stats.MinSafeTemperature -= 5f;
-                stats.MaxSafeTemperature += 10f;
-                stats.RadiationThreshold += 10f;
-            }
-
-            if ((upgrades & SwimFins) != 0UL)
-                stats.SwimSpeedMultiplier += 0.18f;
-
-            if ((upgrades & ThermalLining) != 0UL)
-            {
-                stats.ThermalResistance += 0.35f;
-                stats.MinSafeTemperature -= 8f;
-                stats.MaxSafeTemperature += 6f;
-            }
-
-            if ((upgrades & RadiationScrubber) != 0UL)
-                stats.RadiationThreshold += 4f;
-
-            if ((upgrades & EnergyCellMk1) != 0UL)
-                stats.MaxEnergy += 50f;
-
-            if ((upgrades & ThermalGenerator) != 0UL)
-            {
-                stats.MaxEnergy += 25f;
-                stats.ThermalResistance += 0.1f;
-            }
+            stats.MaxO2 += (4f * highCapacity) + (4f * depth1) + (11f * depth2) + (21f * depth3) + (41f * depth4);
+            stats.CrushDepth += (350f * depth1) + (1350f * depth2) + (3350f * depth3) + (4850f * depth4);
+            stats.MaxIntegrity += (5f * depth1) + (15f * depth2) + (30f * depth3) + (50f * depth4);
+            stats.ThermalResistance += (0.45f * depth4) + (0.35f * thermal) + (0.1f * generator);
+            stats.MinSafeTemperature -= (5f * depth4) + (8f * thermal);
+            stats.MaxSafeTemperature += (10f * depth4) + (6f * thermal);
+            stats.RadiationThreshold += (10f * depth4) + (4f * radiation);
+            stats.SwimSpeedMultiplier += 0.18f * fins;
+            stats.MaxEnergy += (50f * energy) + (25f * generator);
 
             return stats;
         }
@@ -159,29 +124,40 @@ namespace Hecton8.Gameplay
         public static ulong NormalizeMask(ulong upgrades)
         {
             upgrades &= SupportedMask;
-
-            if ((upgrades & DepthMk4) != 0UL)
-                upgrades &= ~(DepthMk1 | DepthMk2 | DepthMk3);
-            else if ((upgrades & DepthMk3) != 0UL)
-                upgrades &= ~(DepthMk1 | DepthMk2);
-            else if ((upgrades & DepthMk2) != 0UL)
-                upgrades &= ~DepthMk1;
-
-            return upgrades;
+            ulong nonDepth = upgrades & ~DepthModuleMask;
+            ulong b4 = (upgrades >> 4) & 1UL;
+            ulong b3 = ((upgrades >> 3) & 1UL) & (b4 ^ 1UL);
+            ulong b2 = ((upgrades >> 2) & 1UL) & (b4 ^ 1UL) & (b3 ^ 1UL);
+            ulong b1 = ((upgrades >> 1) & 1UL) & (b4 ^ 1UL) & (b3 ^ 1UL) & (b2 ^ 1UL);
+            return nonDepth | (b1 * DepthMk1) | (b2 * DepthMk2) | (b3 * DepthMk3) | (b4 * DepthMk4);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool HasAbility(ulong mask, uint abilityHash)
         {
             ulong normalized = NormalizeMask(mask);
-            return ((normalized & SonarPing) != 0UL && abilityHash == SonarPingAbilityHash) ||
-                   ((normalized & ThermalGenerator) != 0UL && abilityHash == ThermalGeneratorAbilityHash);
+            uint sonar = (uint)math.select(0, 1, (normalized & SonarPing) != 0UL);
+            uint thermal = (uint)math.select(0, 1, (normalized & ThermalGenerator) != 0UL);
+            uint sonarHash = (uint)math.select(0, 1, abilityHash == SonarPingAbilityHash);
+            uint thermalHash = (uint)math.select(0, 1, abilityHash == ThermalGeneratorAbilityHash);
+            return ((sonar & sonarHash) | (thermal & thermalHash)) != 0u;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveSwimSpeedMultiplier(in SuitStats stats)
         {
-            return stats.SwimSpeedMultiplier > 0f ? stats.SwimSpeedMultiplier : 1f;
+            return math.select(1f, stats.SwimSpeedMultiplier, stats.SwimSpeedMultiplier > 0f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveHullTier(ulong mask)
+        {
+            ulong normalized = NormalizeMask(mask);
+            ulong b1 = (normalized >> 1) & 1UL;
+            ulong b2 = (normalized >> 2) & 1UL;
+            ulong b3 = (normalized >> 3) & 1UL;
+            ulong b4 = (normalized >> 4) & 1UL;
+            return (int)(b1 + (2UL * b2) + (3UL * b3) + (4UL * b4));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

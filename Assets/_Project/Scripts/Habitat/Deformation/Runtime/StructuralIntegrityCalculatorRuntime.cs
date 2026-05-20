@@ -125,6 +125,7 @@ namespace Hecton8.Habitat.Deformation
             _initialized = 0;
         }
 
+#if UNITY_EDITOR
         private void OnDrawGizmos()
         {
             if (_initialized == 0 || _jobScheduled != 0)
@@ -177,6 +178,7 @@ namespace Hecton8.Habitat.Deformation
                 UnlockSolverBuffers(readMask);
             }
         }
+#endif
 
         public void Tick(float deltaTime)
         {
@@ -1672,6 +1674,7 @@ namespace Hecton8.Habitat.Deformation
         }
 #endif
 
+#if UNITY_EDITOR
         private void OnValidate()
         {
             mockNodeCount = Mathf.Clamp(mockNodeCount, 1, StructuralIntegrityConstants.MaxNodeCapacity);
@@ -1687,5 +1690,6 @@ namespace Hecton8.Habitat.Deformation
             sdfMetersPerVoxel = Mathf.Max(0.01f, sdfMetersPerVoxel);
             sdfRangeMeters = Mathf.Max(0.01f, sdfRangeMeters);
         }
+#endif
     }
 }

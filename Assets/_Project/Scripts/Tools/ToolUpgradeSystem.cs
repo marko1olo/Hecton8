@@ -102,6 +102,18 @@ namespace Hecton8.Tools
     public static class ToolUpgradeSystem
     {
         public const int MaxModuleSlots = 4;
+        public const ulong SupportedMask64 =
+            (ulong)ToolUpgradeBits.RangeBoost |
+            (ulong)ToolUpgradeBits.EfficiencyPlus |
+            (ulong)ToolUpgradeBits.ThermalOverclock |
+            (ulong)ToolUpgradeBits.WirelessCharging |
+            (ulong)ToolUpgradeBits.HighCapacityCell |
+            (ulong)ToolUpgradeBits.CoolingSink |
+            (ulong)ToolUpgradeBits.KineticAccelerator |
+            (ulong)ToolUpgradeBits.StandardBattery |
+            (ulong)ToolUpgradeBits.ThermalShield |
+            (ulong)ToolUpgradeBits.DepthHardened |
+            (ulong)ToolUpgradeBits.OxygenRebreather;
 
         public static bool HasRangeBoost(uint mask) => (mask & (uint)ToolUpgradeBits.RangeBoost) != 0u;
         public static bool HasEfficiencyPlus(uint mask) => (mask & (uint)ToolUpgradeBits.EfficiencyPlus) != 0u;
@@ -120,6 +132,15 @@ namespace Hecton8.Tools
         public static float ApplyBitBonus(float baseRate, uint upgradeMask, ToolUpgradeBits bit, float bonus)
         {
             float enabled = math.select(0f, 1f, (upgradeMask & (uint)bit) != 0u);
+            return baseRate * (1f + bonus * enabled);
+        }
+
+        /// <summary>
+        /// Applies a branchless 64-bit upgrade bonus to one compiled stat.
+        /// </summary>
+        public static float ApplyBitBonus64(float baseRate, ulong upgradeMask, ToolUpgradeBits bit, float bonus)
+        {
+            float enabled = UpgradeMatrixCompiler.Bit01(upgradeMask, (ulong)bit);
             return baseRate * (1f + bonus * enabled);
         }
 
@@ -169,21 +190,26 @@ namespace Hecton8.Tools
 
         public static uint CompileUpgradeMask(ToolModuleData[] modules, int slotCount)
         {
+            return (uint)CompileUpgradeMask64(modules, slotCount);
+        }
+
+        public static ulong CompileUpgradeMask64(ToolModuleData[] modules, int slotCount)
+        {
             if (modules == null || slotCount <= 0)
-                return 0u;
+                return 0UL;
 
             int safeSlotCount = math.clamp(slotCount, 0, math.min(MaxModuleSlots, modules.Length));
-            uint mask = 0u;
+            ulong mask = 0UL;
             for (int i = 0; i < safeSlotCount; i++)
             {
                 ToolModuleData module = modules[i];
                 if (module == null)
                     continue;
 
-                mask |= (uint)module.UpgradeBits;
+                mask |= (ulong)module.UpgradeBits;
             }
 
-            return mask;
+            return mask & SupportedMask64;
         }
 
         public static ToolRuntimeStats CompileRuntimeStats(in ToolRuntimeProfile profile, ToolModuleData[] modules, int slotCount, out uint upgradeMask)
@@ -209,7 +235,7 @@ namespace Hecton8.Tools
             }
 
             int safeSlotCount = math.clamp(slotCount, 0, math.min(MaxModuleSlots, modules.Length));
-            uint mask = 0u;
+            ulong mask = 0UL;
             float coolingSinkBonus = 0f;
             for (int i = 0; i < safeSlotCount; i++)
             {
@@ -218,7 +244,7 @@ namespace Hecton8.Tools
                     continue;
 
                 ToolUpgradeBits moduleBits = module.UpgradeBits;
-                mask |= (uint)moduleBits;
+                mask |= (ulong)moduleBits;
                 stats.MaxRange *= math.max(0.1f, module.RangeMultiplier);
                 stats.PowerScalar *= math.max(0.1f, module.PowerMultiplier);
                 stats.EfficiencyScalar *= math.max(0.1f, module.EfficiencyMultiplier);
@@ -229,18 +255,14 @@ namespace Hecton8.Tools
                 stats.DurabilityDrainMultiplier *= math.max(0.1f, module.DurabilityDrainMultiplier);
                 stats.RecoilImpulse *= math.max(0.1f, module.RecoilMultiplier);
 
-                if ((moduleBits & ToolUpgradeBits.CoolingSink) != 0)
-                {
-                    coolingSinkBonus = math.max(coolingSinkBonus, math.max(0f, module.CooldownMultiplier - 1f));
-                }
-                else
-                {
-                    stats.CooldownRate *= math.max(0.1f, module.CooldownMultiplier);
-                }
+                float cooldownMultiplier = math.max(0.1f, module.CooldownMultiplier);
+                float coolingSink = UpgradeMatrixCompiler.Bit01((ulong)moduleBits, (ulong)ToolUpgradeBits.CoolingSink);
+                coolingSinkBonus = math.max(coolingSinkBonus, math.max(0f, cooldownMultiplier - 1f) * coolingSink);
+                stats.CooldownRate *= math.select(cooldownMultiplier, 1f, coolingSink > 0f);
             }
 
-            stats.CooldownRate = ApplyBitBonus(stats.CooldownRate, mask, ToolUpgradeBits.CoolingSink, coolingSinkBonus);
-            upgradeMask = mask;
+            stats.CooldownRate = ApplyBitBonus64(stats.CooldownRate, mask, ToolUpgradeBits.CoolingSink, coolingSinkBonus);
+            upgradeMask = (uint)(mask & SupportedMask64);
             return stats;
         }
     }

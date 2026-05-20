@@ -38,8 +38,9 @@ namespace Hecton8.Tools
         internal const byte BlendModeMax = 2;
         private static int s_powerSaveMute;
 
-        private VaultBufferHandle<HapticCommand> _frontBufferHandle;
-        private VaultBufferHandle<HapticCommand> _backBufferHandle;
+        private IDataVault _dataVault;
+        private VaultGenerationHandle<HapticCommand> _frontBufferHandle;
+        private VaultGenerationHandle<HapticCommand> _backBufferHandle;
         private int _frontCount;
         private int _backCount;
         private float _leftHapticCooldownTimer;
@@ -420,43 +421,71 @@ namespace Hecton8.Tools
 
         private bool TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer)
         {
-            return TryResolveBuffer(
-                ref _frontBufferHandle,
-                BufferID.ToolHapticFrontCommands,
-                out frontBuffer);
+            return TryResolveHapticBuffer(BufferID.ToolHapticFrontCommands, ref _frontBufferHandle, out frontBuffer);
         }
 
         private bool TryResolveBackBuffer(out NativeArray<HapticCommand> backBuffer)
         {
-            return TryResolveBuffer(
-                ref _backBufferHandle,
-                BufferID.ToolHapticBackCommands,
-                out backBuffer);
+            return TryResolveHapticBuffer(BufferID.ToolHapticBackCommands, ref _backBufferHandle, out backBuffer);
         }
 
-        private static bool TryResolveBuffer(
-            ref VaultBufferHandle<HapticCommand> handle,
+        private bool TryResolveHapticBuffer(
             BufferID bufferId,
+            ref VaultGenerationHandle<HapticCommand> handle,
             out NativeArray<HapticCommand> buffer)
         {
             buffer = default;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = ResolveDataVault();
             if (vault == null)
                 return false;
 
-            if (!handle.IsCreated ||
-                !vault.ResolveBuffer(ref handle) ||
-                handle.Length < BufferCapacity)
+            if (IsVaultHandleCreated(in handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= BufferCapacity)
             {
-                handle = vault.GetBufferHandle<HapticCommand>(
-                    bufferId,
-                    BufferCapacity,
-                    SystemID.GameplayTools,
-                    NativeArrayOptions.ClearMemory);
+                return true;
             }
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated && buffer.Length >= BufferCapacity;
+            VaultGenerationHandle<HapticCommand> acquired = vault.GetGenerationHandle<HapticCommand>(
+                bufferId,
+                BufferCapacity,
+                SystemID.GameplayTools,
+                NativeArrayOptions.ClearMemory);
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < BufferCapacity)
+            {
+                return false;
+            }
+
+            handle = acquired;
+            return true;
+        }
+
+        private IDataVault ResolveDataVault()
+        {
+            IDataVault current = GlobalRegistry.DataVault;
+            if (current == null)
+            {
+                ReleaseVaultHandles();
+                _dataVault = null;
+                return null;
+            }
+
+            if (!ReferenceEquals(_dataVault, current))
+            {
+                ReleaseVaultHandles();
+                _dataVault = current;
+            }
+
+            return _dataVault;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private void EnsureBuffers()
@@ -466,10 +495,31 @@ namespace Hecton8.Tools
 
         private void DisposeBuffers()
         {
+            ReleaseVaultHandles();
             _frontBufferHandle = default;
             _backBufferHandle = default;
+            _dataVault = null;
             _frontCount = 0;
             _backCount = 0;
+        }
+
+        private void ReleaseVaultHandles()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _frontBufferHandle);
+            ReleaseVaultHandle(vault, ref _backBufferHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (!IsVaultHandleCreated(in handle))
+                return;
+
+            vault.ReleaseBuffer(in handle);
+            handle = default;
         }
 
         private void ClearBuffers()

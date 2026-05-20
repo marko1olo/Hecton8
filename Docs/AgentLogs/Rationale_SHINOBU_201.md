@@ -1062,3 +1062,141 @@ Solution: Replaced conditional stores with duplicate-safe branchless stores. Tai
 Rejected Alternatives: Dropping non-multiple-of-four rows was rejected because future adopters could silently miss targets. Requiring an external scalar tail job was rejected because it creates dependency/scheduling complexity outside SHINOBU ownership. Keeping `if (laneNInRange)` was rejected because the task explicitly prioritizes branchless SIMD math.
 Scalability potential: No quality curve change. The lane remains compatible with continuous caller-side radius/cadence scaling for Low/Middle/High/Ultra tiers without binary switches.
 Hardware Impact: Removes up to three conditional store branches from the tail lane and keeps all active rows covered. Measured microseconds remain PENDING VERIFICATION because the CPU gate blocked compile/profiler/Burst Inspector proof.
+
+## Loop 39 Decisions: Hydrodynamics Tail-Lane / Telemetry Ring Cursor
+
+[ANALYSIS]
+Target: `VectorizedHydrodynamicsLane4Job`, editor/manual SIMD benchmark scheduling, and `RecordSimdTelemetryJob`.
+Affected systems: SHINOBU SIMD benchmark and reusable hydrodynamic lane kernel only. Gameplay buoyancy solver force semantics, Vault IDs, DTO byte layouts, AI ownership, frustum culling, spatial query masks, and assembly references are unchanged.
+Zero GC proof: the patch adds only stack integer indices, existing `math.min`/`math.select`, and value-type schedule arithmetic. It adds no managed allocation, native allocation, LINQ, `foreach`, service lookup, file IO, delegates, strings, private persistent arrays, or binary hardware switch.
+State check: status/rationale and SHINOBU prompt extraction state were read before the patch. Scoped forbidden pattern scan returned no matches. `git diff --check` reported only existing LF/CRLF normalization warnings for touched C# files. CPU sampled 100%, so no build/rebuild was launched.
+Rule quote: packed SIMD kernels must own their tail rows; a rounded-down benchmark is not proof of a safe public kernel.
+
+Problem: `VectorizedHydrodynamicsLane4Job` floored Count to the previous multiple of four. The current benchmark also rounded Count before scheduling, which hid the defect, but any future adopter passing a non-multiple Count would leave 1-3 velocity and force rows stale.
+Solution: The lane kernel now accepts `ceil(Count / 4)` scheduling. Tail lane reads and writes clamp to the last in-range row; because clamped lanes read identical position, velocity, and drag data, duplicate stores write identical final velocity and force values inside the same Execute.
+Rejected Alternatives: Keeping caller-side pre-rounding was rejected because it creates a hidden integration trap. Adding a scalar cleanup job was rejected because it introduces another dependency edge and extra schedule overhead. Reverting to one entity per Execute was rejected because it destroys the lane-4 proof for Task 06.
+Scalability potential: Low/Middle/High/Ultra still consume the same continuous `GlobalQualityWeight` inside the turbulence and approximation curve. The change is quality-neutral coverage, not a binary tier branch.
+Hardware Impact: Expected effect is correctness plus preserved four-wide math for non-multiple counts. No microsecond gain is claimed until Burst Inspector/profiler proof is available.
+
+Problem: The editor/manual X-Ray benchmark generated and measured only a rounded-down `vectorizedCount`, so the benchmark could not expose tail-lane defects and telemetry under-reported entity coverage when capacity was not divisible by four.
+Solution: Benchmark generation, scalar probe scaling, hydrodynamics lane scheduling, telemetry entity count, and state hash now use full `count`. The vector job schedules `laneCount = ceil(count / 4)`.
+Rejected Alternatives: Leaving benchmark count rounded was rejected because a validation surface must test the public kernel's real scheduling contract. Increasing the Vault capacity to a forced multiple was rejected because capacity shape is not a substitute for kernel correctness.
+Scalability potential: The same benchmark tuning DTO and continuous quality weight remain in use across device tiers.
+Hardware Impact: Scheduler count increases by at most one lane for non-multiple capacities. Measured microseconds remain PENDING VERIFICATION.
+
+Problem: `RecordSimdTelemetryJob` wrote `TelemetryCursor[0] = cursor + 1`. The read path clamped negative values, but the cursor itself could still overflow into a negative state and was not a strict circular black-box cursor.
+Solution: The job now computes `slot = cursor % TelemetryRing.Length`, then stores the next cursor as `slot + 1` wrapped to zero at ring length. Cursor state remains in `[0, TelemetryRing.Length - 1]`.
+Rejected Alternatives: Relying on integer overflow plus next-frame `math.max(0, ...)` was rejected because the black-box ring must be deterministic and bounded. Storing an unbounded frame counter separately was rejected because `FrameIndex` already records the simulation frame in each telemetry entry.
+Scalability potential: No quality curve change. The telemetry ring behavior is deterministic for all hardware tiers.
+Hardware Impact: One once-per-benchmark cursor wrap operation; prevents overflow-state forensic ambiguity. Compile/profiler/Burst Inspector proof remains PENDING VERIFICATION because CPU remained above the build gate.
+
+## Loop 40 Decisions: Frustum Cull Lane-8 SIMD Kernel
+
+[ANALYSIS]
+Target: `VectorizedFrustumCullLane8Job` in `BuoyancySimdVectorization.cs`.
+Affected systems: reusable culling kernel library only. Existing lane-1 `VectorizedFrustumCullJob`, renderer ownership, Vault IDs, DTO byte layouts, spatial query masks, hydrodynamics, telemetry ABI, and assembly references are unchanged.
+Zero GC proof: the kernel uses only caller-owned `NativeArray<SimdFloat3Padded>`, `NativeArray<float4>`, `NativeArray<int>`, stack `float4`/`bool4` locals, and `math.select`/`math.step`. No managed allocation, native allocation, LINQ, `foreach`, service lookup, file IO, delegate, string work, or private persistent array was added.
+State check: status/rationale/XML/AGENTS/Unity skill were read before edits. Static scans found balanced braces/preprocessor state, zero non-ASCII in the touched source, no forbidden hot-path allocation/random/sqrt/Pack/property/parser patterns, no lane-tail conditional store remnants, and a source diff check with only repository LF/CRLF normalization warning. CPU sampled 100%, so no build/rebuild was launched.
+Rule quote: Task 08 requires eight AABBs per packed cull lane; one object per `Execute` is scheduler parallelism, not the requested SIMD cull surface.
+
+Problem: `VectorizedFrustumCullJob` evaluates one center/extents row per `Execute`. That preserves the fallback contract, but it does not satisfy the XML requirement to process eight AABBs simultaneously for frustum culling.
+Solution: Added `VectorizedFrustumCullLane8Job`. It loads eight centers/extents as two `float4` groups, evaluates up to six packed frustum planes branchlessly with projected-radius AABB tests, finite-gates centers/extents/planes, and writes visible indices through duplicate-safe tail masks.
+Rejected Alternatives: Replacing the lane-1 fallback was rejected because external owners may already schedule per-object culls. A scalar `for` loop inside one Execute was rejected because it hides the lane shape from Burst. Direct renderer/BRG integration was rejected because SHINOBU_201 owns reusable SIMD kernels, not render scheduling or culling truth.
+Scalability potential: No binary tier fork. Low/Middle/High/Ultra can feed the same lane-8 kernel while owner systems continuously scale candidate count, culling cadence, or render radius by `GlobalQualityWeight`; high tiers can spend the saved CPU on denser visual instance lists.
+Hardware Impact: Expected adopter-side gain is up to eight AABB cull tests per scheduled lane and seven fewer scheduler invocations per eight objects. Measured microseconds remain PENDING VERIFICATION until Unity import, Burst Inspector, and profiler proof are available.
+
+Problem: Lane-8 output writes do not map one-to-one with the `IJobParallelFor` index and tails can duplicate the final row.
+Solution: Marked `VisibleIndexMask` with `[NativeDisableParallelForRestriction]` and documented the exact invariant: scheduled lane `i` owns rows `[i * 8, i * 8 + 7]`; tail rows clamp to the final in-range row and cascading `math.select` masks ensure duplicate stores write the same final value.
+Rejected Alternatives: Keeping only `VisibleIndexMask[index]` writes was rejected because that would force one-object cull execution. Requiring a scalar tail cleanup pass was rejected because it creates hidden integration work for external owners.
+Scalability potential: The write partition is independent of hardware tier and remains compatible with continuous candidate-count scaling.
+Hardware Impact: Preserves packed write shape without extra schedule work. Compile/profiler proof remains PENDING VERIFICATION.
+
+## Loop 41 Decisions: Frustum Plane NaN Vaccination
+
+[ANALYSIS]
+Target: `VectorizedFrustumCullJob` and `VectorizedFrustumCullLane8Job` plane evaluation loops.
+Affected systems: reusable culling kernels only. Renderer ownership, hydrodynamics, spatial query, Vault IDs, DTO layout, telemetry ABI, and editor facade are unchanged.
+Zero GC proof: the patch adds only stack `rawPlane`, `finitePlaneMask`, and sanitized `float4 plane` locals. No managed allocation, native allocation, LINQ, `foreach`, service lookup, file IO, delegate, string work, or private persistent array was added.
+State check: status/rationale and SHINOBU prompt state were read before edits. Touched snippets were inspected. Forbidden hot-path pattern scan returned no matches. `math.select(float4, float4, bool)` is present in the installed Unity.Mathematics package. CPU briefly sampled below the gate, but the immediate pre-build retry sampled 100%, so no build/rebuild was launched.
+Rule quote: NaN vaccination must happen before the ALU lane is poisoned, not after the result is masked.
+
+Problem: The lane-1 and lane-8 frustum cull paths loaded plane coefficients, computed projected radius and signed distance, and only then converted invalid planes to an invisible result. Non-finite planes could still enter dot-product lanes before the final mask.
+Solution: Both paths now read `rawPlane`, compute `finitePlaneMask`, select invalid planes to `float4.zero`, and use the sanitized plane for all projected-radius and signed-distance math. Active invalid planes still invalidate visibility through `finitePlane = 0`.
+Rejected Alternatives: Relying on post-dot `finitePlane` masking was rejected because poisoned intermediate ALU lanes violate the NaN-vaccination mandate. Early-returning on one bad plane was rejected because one corrupt plane slot should not skip the structural write path or leave stale masks.
+Scalability potential: No quality curve change. Low/Middle/High/Ultra all use the same sanitized plane path; owners can still continuously scale candidate count or culling cadence by `GlobalQualityWeight`.
+Hardware Impact: Adds one finite mask and one select per active plane loop. Expected gain is stability and deterministic mask output, not speed. Compile/profiler/Burst Inspector proof remains PENDING VERIFICATION.
+
+## Loop 42 Decisions: ParallelFor Safety Justification Expansion
+
+[ANALYSIS]
+Target: source-adjacent safety comments for `VectorizedHydrodynamicsLane4Job`, `VectorizedSpatialQueryLane4Job`, and `VectorizedFrustumCullLane8Job`.
+Affected systems: comments on SHINOBU-owned reusable SIMD kernels only. Runtime math, Vault IDs, DTO layout, telemetry ABI, editor facade, renderer ownership, AI ownership, and buoyancy force semantics are unchanged.
+Zero GC proof: comment-only source change. No managed allocation, native allocation, service lookup, file IO, delegate, string operation, private persistent array, or new job field was introduced.
+State check: status/rationale, AGENTS, native memory mandate, ARM64 layout mandate, and the SHINOBU_201 prompt were read before edits. Relevant mandates: Native Memory/Job System Protocol, ARM64 Runtime Struct Layout, Zero-GC hot-path law, Global Authority boundary, and branchless SIMD task text. Post-edit scans found all four safety fields covered by paragraph markers, balanced braces/preprocessor/non-ASCII in source, no forbidden hot-path pattern matches, and only repository LF/CRLF normalization warnings from diff check. CPU sampled 100%, so no build/rebuild was launched.
+Rule quote: any disabled native safety check must carry source-local proof of why the safety warning is false positive, which alternatives were rejected, and which invariant preserves correctness.
+
+Problem: The lane-packed jobs use `[NativeDisableParallelForRestriction]` because one scheduled lane writes four or eight contiguous rows. Existing comments stated the partition but did not provide the mandate's three-paragraph review proof. A reviewer would have to reconstruct safety from logs instead of the source file.
+Solution: Expanded source comments above `Velocities`, `OutputForces`, `ValidMask`, and `VisibleIndexMask` into explicit `SAFETY_JUSTIFICATION_PARAGRAPH_1/2/3` blocks. Each block names the suppressed Unity ParallelFor index assumption, explains why the job partition makes it a false positive, lists rejected alternatives, and states the exact `ceil(Count / laneWidth)` ownership invariant.
+Rejected Alternatives: Removing the attribute was rejected because Unity safety expects `array[laneIndex]` writes and would flag legal packed range writes. Reverting to one entity/AABB/prey per Execute was rejected because it destroys Tasks 06, 07, and 08 lane-width proof. Adding scalar tail cleanup jobs was rejected because it creates hidden owner scheduling obligations and extra dependency edges.
+Scalability potential: No quality curve change. Low/Middle/High/Ultra keep the same continuous candidate/count/cadence scaling and same lane kernels; this loop only makes the safety proof auditable.
+Hardware Impact: Runtime microseconds unchanged by comments. The practical impact is review and CI safety: it prevents a source-level mandate rejection around packed writes while preserving the SIMD lane shape required for AVX2/NEON proof. Compile/profiler/Burst Inspector proof remains PENDING VERIFICATION.
+
+## Loop 43 Decisions: Hydrodynamic Approximation Gate Branch Removal
+
+[ANALYSIS]
+Target: approximation-weight validity gates in `VectorizedHydrodynamicsJob`, `VectorizedHydrodynamicsLane4Job`, and `ScalarHydrodynamicsReferenceJob`.
+Affected systems: SHINOBU hydrodynamic SIMD kernels and scalar benchmark reference only. Vault IDs, DTO layout, telemetry ABI, editor facade, culling, spatial query, and gameplay owner routes are unchanged.
+Zero GC proof: the patch changes only `&&` to `&` in value-type boolean predicate construction. No managed allocation, native allocation, service lookup, file IO, delegate, string operation, private persistent array, or new job field was introduced.
+State check: status/rationale were read before the user-facing update and before edits. The SHINOBU_201 XML prompt was re-extracted and still reports 20 tasks. Static scans found no remaining hydrodynamic approximation `&&` match, balanced source braces/preprocessor/non-ASCII, no forbidden hot-path patterns, and only repository LF/CRLF normalization warnings from diff check. CPU sampled above the 50% gate and the final retry reported 100%, so no build/rebuild was launched.
+Rule quote: branchless SIMD setup should evaluate predicate lanes as value math and feed `math.select`; short-circuit scalar gates are not acceptable where both sides are finite-safe.
+
+Problem: `hasApproximationWeight` used C# `&&` in three hydrodynamic math paths. Even though it is a scalar setup predicate, `&&` permits short-circuit lowering and can introduce a branch-shaped control gate immediately before approximation selection.
+Solution: Replaced `&&` with non-short-circuit `&` for the finite and epsilon predicates. Both predicates are safe to evaluate independently because they read the same scalar tuning value and do not index memory or invoke side effects.
+Rejected Alternatives: Removing the finite predicate was rejected because invalid authored tuning must fall back to `GlobalQualityWeight`. Keeping `&&` was rejected because it weakens the branchless-math proof. Moving CSV/tolerance table reads into the hot job was rejected because it would add memory pressure and owner coupling.
+Scalability potential: No binary tier change. Low still collapses toward cheaper polynomial behavior through continuous quality; Middle/High/Ultra still blend toward higher approximation fidelity through the same scalar.
+Hardware Impact: Expected benefit is small but precise: one branch-shaped short-circuit gate is removed from each hydrodynamic setup path. Exact AVX2/NEON instruction proof remains PENDING VERIFICATION until Burst Inspector can run.
+
+## Loop 44 Decisions: Gameplay Telemetry Cursor Ring Fence
+
+[ANALYSIS]
+Target: `ReduceBuoyancyTelemetryJob` black-box telemetry cursor in `BuoyancyDisplacementJobs.cs`.
+Affected systems: gameplay buoyancy telemetry ring only. SIMD telemetry, hydrodynamics integration, force packet compaction, Vault IDs, DTO layout, editor facade, spatial query, and frustum culling are unchanged.
+Zero GC proof: the patch adds only stack integer arithmetic and `math.select` inside an existing Burst job. No managed allocation, native allocation, service lookup, file IO, delegate, string operation, private persistent array, or new job field was introduced.
+State check: status/rationale were read before the user-facing update and before edits. The SHINOBU_201 XML prompt was re-extracted and still reports 20 tasks. Static scans found no remaining unbounded `TelemetryCursor[0] = cursor + 1`, no forbidden hot-path patterns, clean trailing whitespace, and only repository LF/CRLF normalization warnings from diff check. CPU sampled 100%, so no build/rebuild was launched.
+Rule quote: black-box forensic rings must remain bounded after endurance runs; modulo-at-read is not a substitute for bounded persisted cursor state.
+
+Problem: `ReduceBuoyancyTelemetryJob` used `TelemetryCursor[0] = cursor + 1`. The write slot was modulo-bounded, but the persisted cursor could grow until signed integer overflow, then be clamped back to zero by the next read path. That creates a non-forensic transient state in a 100-hour endurance run.
+Solution: Mirrored the SIMD telemetry cursor rule. The job now computes `nextCursor = slot + 1` and stores zero when `nextCursor >= TelemetryRing.Length`; the cursor buffer always remains inside `[0, TelemetryRing.Length - 1]`.
+Rejected Alternatives: Relying on overflow plus `math.max(0, TelemetryCursor[0])` was rejected because a telemetry cursor is itself forensic state. Adding a separate unbounded frame counter was rejected because `FrameIndex` already exists in every telemetry entry. Clearing the cursor from the manager was rejected because the job can enforce the invariant locally.
+Scalability potential: No quality curve change. Low/Middle/High/Ultra all use the same bounded black-box ring; continuous `GlobalQualityWeight` remains recorded per entry without binary tier behavior.
+Hardware Impact: Adds one integer increment and one `math.select` per telemetry write. This is not a speed change; it prevents cursor overflow ambiguity and keeps dump reconstruction deterministic. Compile/profiler/Burst Inspector proof remains PENDING VERIFICATION because CPU stayed above the build gate.
+
+## Loop 45 Decisions: Evaluate Tuning Snapshot De-Aliasing
+
+[ANALYSIS]
+Target: `EvaluateBuoyancyJob` tuning input in `BuoyancyDisplacementJobs.cs` and its scheduler assignment in `BuoyancyDisplacementRuntime.cs`.
+Affected systems: gameplay buoyancy evaluator scheduling only. Tuning still originates from the Vault owner in `FixedTick`; hydrodynamics SIMD benchmark, force packet compaction, telemetry ABI, DTO layout, editor facade, spatial query, and culling kernels are unchanged.
+Zero GC proof: the patch replaces a `NativeArray<BuoyancyTuningDTO>` job field with a blittable DTO value field and removes one helper method. No managed allocation, native allocation, service lookup, file IO, delegate, string operation, private persistent array, or new Vault buffer was introduced.
+State check: status/rationale were read before the user-facing update and before edits. Static scans found no remaining `ResolveTuning()` or evaluator `NativeArray<BuoyancyTuningDTO> Tuning`, no forbidden hot-path patterns, balanced braces in touched source, and only repository LF/CRLF normalization warnings from diff check. CPU sampled 100%, so no build/rebuild was launched.
+Rule quote: a fact has one owner, but a scheduled Burst job should consume the sanitized snapshot directly instead of re-reading a one-element NativeArray per row.
+
+Problem: `EvaluateBuoyancyJob` resolved tuning through a `NativeArray<BuoyancyTuningDTO>` on every `Execute`. `FixedTick` already reads, sanitizes, updates, and writes `tuning[0]` before scheduling, so the per-row `ResolveTuning()` branch and NativeArray alias field were redundant.
+Solution: Changed the job field to `public BuoyancyTuningDTO Tuning` and passed the sanitized `tuningDto` from runtime. The hot Execute path now uses `BuoyancyTuningDTO tuning = Tuning;` with no NativeArray metadata read and no fallback branch.
+Rejected Alternatives: Keeping the NativeArray field was rejected because it leaves a needless alias candidate and branch-shaped helper in the evaluator. Adding a copied tuning Vault buffer was rejected because it creates another owner route. Reading Homeostasis or GlobalRegistry inside the job was rejected because Burst jobs must stay stateless and registry-free.
+Scalability potential: No binary tier fork. The same continuous `GlobalQualityWeight`, stride, and flow quality curves are captured in the DTO snapshot for Low/Middle/High/Ultra, while lower tiers still reduce evaluated rows through continuous stride math.
+Hardware Impact: Expected static benefit is one fewer NativeArray field in the evaluator, no per-row tuning array metadata read, and removal of one branch-shaped fallback helper per evaluated row. Exact AVX2/NEON and microsecond proof remains PENDING VERIFICATION until Burst Inspector/profiler can run.
+
+## Loop 46 Decisions: Buoyancy ParallelFor Safety Proof Tightening
+
+[ANALYSIS]
+Target: `[NativeDisableParallelForRestriction]` fields in `GenerateMockBuoyantObjectsJob` and `EvaluateBuoyancyJob`.
+Affected systems: gameplay buoyancy mock seeding, strided buoyancy evaluation state writes, and debug-force black-box rows only. Hydrodynamic SIMD kernels, spatial query kernels, frustum culling, Vault IDs, DTO layouts, force packet ABI, editor facade, and assembly references are unchanged.
+Zero GC proof: the patch changes one attribute to add `[WriteOnly]` and expands comments. It adds no managed allocation, native allocation, private persistent array, service lookup, file IO, delegate, string operation, LINQ, `foreach`, or new job field.
+State check: status/rationale/root AGENTS, the Unity MCP workflow skill, current SHINOBU prompt count, and the binary payload ledger were read before the edit. Static scans found all three gameplay safety fields covered by paragraph markers, balanced braces/preprocessor/non-ASCII in the source, no forbidden hot-path patterns, and only repository LF/CRLF normalization warnings from diff check. CPU sampled 100%, so no build/rebuild was launched.
+Rule quote: disabled ParallelFor safety requires source-local proof of the false-positive check, rejected alternatives, and a closed write-partition invariant.
+
+Problem: `GenerateMockBuoyantObjectsJob.States`, `EvaluateBuoyancyJob.States`, and `EvaluateBuoyancyJob.DebugForces` disabled Unity's ParallelFor index restriction, but their comments were shorthand. The actual code is valid because mock seeding writes `States[index]` and the evaluator maps each scheduled `workIndex` through a fixed stride/offset row function, but a reviewer had to infer that from implementation detail.
+Solution: Expanded the comments into explicit three-paragraph safety blocks. `GenerateMockBuoyantObjectsJob.States` is now `[WriteOnly, NativeDisableParallelForRestriction, NoAlias]` because the seed job writes a fresh DTO row and never reads prior state. The evaluator fields now document the injective mapping `index = workIndex * max(1, stride) + fixed offset`, the active-count bounds, and the dependency requirement that reduction/telemetry waits for the evaluator handle.
+Rejected Alternatives: Removing the unsafe pointer write was rejected because NativeArray indexer mutation can reintroduce copy debt on the 64-byte DTO. Dense precompaction was rejected because it duplicates the state walk and requires another Vault buffer. Debug post-remap was rejected because it doubles debug writes and weakens black-box row identity. A scalar fallback for skipped cadence rows was rejected because it creates hidden scheduling outside SHINOBU ownership.
+Scalability potential: No binary tier fork. Low can continuously increase `EvaluationStride` or cadence spacing to reduce active rows; Middle/High/Ultra can lower stride and raise active rows while preserving the same fixed mapping and black-box row identity. The safety proof keeps the math-lod path auditable without introducing a low/high branch.
+Hardware Impact: Runtime ALU is unchanged except that the mock seed state lane now truthfully exposes write-only access to Burst. Expected gain is review/compiler alias clarity, not measured frame time. Compile/profiler/Burst Inspector proof remains PENDING VERIFICATION because the CPU gate blocked a build.

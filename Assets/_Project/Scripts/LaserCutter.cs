@@ -408,9 +408,6 @@ namespace Hecton8.Gameplay
         [Tooltip("LineRenderer for beam visualization.")]
         [SerializeField] private LineRenderer laserLine;
 
-        [Tooltip("ParticleSystem for impact sparks.")]
-        [SerializeField] private ParticleSystem sparksVFX;
-
         [Tooltip("Optional low-tier glowing decal proxy for WFC sealed-door cuts.")]
         [SerializeField] private Transform wfcCutDecalProxy;
 
@@ -514,12 +511,7 @@ namespace Hecton8.Gameplay
 
         // ── Sparks cache ──
 
-        /// <summary>Cached emission module (struct, zero GC).</summary>
-        private ParticleSystem.EmissionModule _sparksEmission;
-        private bool _sparksEmissionCached;
-
-        /// <summary>Base emission rate from prefab (for scaling).</summary>
-        private float _baseSparksRate;
+        /// <summary>Latest stress scalar read from typed signal lanes.</summary>
         private float _latestSystemStress01;
 
         // ══════════════════════════════════════════════════════════
@@ -583,7 +575,6 @@ namespace Hecton8.Gameplay
         {
             EnsureLayerCache();
             _cachedTransform = transform;
-            CacheSparksEmission();
             CacheToolId();
             CacheRaycastRequesterId();
             CacheWfcCutDecalRenderer();
@@ -715,6 +706,7 @@ namespace Hecton8.Gameplay
             Activate();
             _isFiring = true;
             PublishBeamState(true);
+            StageDodRaycastRequest();
 
             bool didHit = TryGetCutHit(out _hitInfo);
 
@@ -1553,29 +1545,19 @@ namespace Hecton8.Gameplay
 
         private void UpdateSparks(bool didHit)
         {
-            if (sparksVFX == null) return;
+            if (!didHit)
+                return;
 
-            if (didHit)
-            {
-                Transform sparksTransform = sparksVFX.transform;
-                sparksTransform.position = _hitInfo.point;
-                sparksTransform.rotation = ResolveDominantAxisRotation(_hitInfo.normal);
-
-                if (_sparksEmissionCached)
-                {
-                    float stressScale = ResolveSystemStress01() > 0.7f ? 0.35f : 1f;
-                    float heatScaledRate = _baseSparksRate * (1f + _heatLevel * 3f) * stressScale;
-                    _sparksEmission.rateOverTimeMultiplier = heatScaledRate;
-                }
-
-                if (!sparksVFX.isPlaying)
-                    sparksVFX.Play();
-            }
-            else
-            {
-                if (sparksVFX.isPlaying)
-                    sparksVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
-            }
+            double3 hitAup = ResolveAbsoluteUniversePointDouble3(_hitInfo.point);
+            float3 normal = new float3(_hitInfo.normal.x, _hitInfo.normal.y, _hitInfo.normal.z);
+            LaserCutterDodRuntime.StageGpuSparkSignal(
+                hitAup,
+                normal,
+                _heatLevel,
+                ResolveCurrentNormalizedPower01(),
+                _cachedToolId,
+                unchecked((uint)_raycastRequesterId),
+                unchecked((uint)Time.frameCount));
         }
 
         private static float FastTriangleSigned(float phase)
@@ -1710,15 +1692,6 @@ namespace Hecton8.Gameplay
             if (laserLine != null)
                 laserLine.enabled = active;
 
-            if (sparksVFX != null)
-            {
-                if (!active && sparksVFX.isPlaying)
-                    sparksVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-
-                if (!active && _sparksEmissionCached)
-                    _sparksEmission.rateOverTimeMultiplier = _baseSparksRate;
-            }
-
             if (!active)
                 UpdateAudioState(false);
 
@@ -1729,16 +1702,6 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  PRIVATE HELPERS
         // ══════════════════════════════════════════════════════════
-
-        private void CacheSparksEmission()
-        {
-            if (sparksVFX != null)
-            {
-                _sparksEmission = sparksVFX.emission;
-                _baseSparksRate = _sparksEmission.rateOverTimeMultiplier;
-                _sparksEmissionCached = true;
-            }
-        }
 
         private void CacheWfcCutDecalRenderer()
         {
@@ -1935,6 +1898,36 @@ namespace Hecton8.Gameplay
         private void CacheRaycastRequesterId()
         {
             _raycastRequesterId = EntityId.ToULong(gameObject.GetEntityId());
+        }
+
+        private void StageDodRaycastRequest()
+        {
+            if (_cachedTransform == null)
+                return;
+
+            Vector3 direction = _cachedTransform.forward;
+            float lengthSq = direction.sqrMagnitude;
+            direction = lengthSq > 0.0001f ? direction * math.rsqrt(lengthSq) : Vector3.forward;
+            double3 originAup = ResolveAbsoluteUniversePointDouble3(_cachedTransform.position);
+            LaserCutterDodRuntime.QueueLiveRequest(
+                originAup,
+                new float3(direction.x, direction.y, direction.z),
+                ResolveCurrentNormalizedPower01(),
+                GetRuntimeMaxRange(maxRange),
+                _cachedToolId,
+                unchecked((uint)_raycastRequesterId),
+                unchecked((uint)Time.frameCount));
+        }
+
+        private float ResolveCurrentNormalizedPower01()
+        {
+            float powerScale = GetEfficiency() * GetConditionPerformanceScale();
+            if (ResolveSuitEnergyNormalized() < LowPowerThresholdNormalized)
+                powerScale *= LowPowerOutputScale;
+
+            float heatMultiplier = 1f + _heatLevel * heatDamageBonus;
+            float runtimePower = GetRuntimePowerScalar(damagePerSecond);
+            return ResolveNormalizedPower((runtimePower * math.rcp(math.max(damagePerSecond, 0.0001f))) * powerScale, heatMultiplier);
         }
 
         private float ResolveNormalizedPower(float powerScale, float heatMultiplier)

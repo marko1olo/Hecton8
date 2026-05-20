@@ -108,7 +108,7 @@ namespace Hecton8.Thermodynamics
         {
             float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
             float curve = q * q * (3f - (2f * q));
-            return math.clamp(math.lerp(1f, 1.62f, curve), 1f, 1.85f);
+            return math.clamp(math.lerp(0.68f, 1f, curve), 0.55f, 1f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -196,9 +196,9 @@ namespace Hecton8.Thermodynamics
             {
                 SolverState[0] = new ThermalSolverConvergenceStateDTO
                 {
-                    MaxResidualFloat = float.MaxValue,
-                    PreviousResidualFloat = float.MaxValue,
-                    Omega = math.clamp(AbyssalThermalMath.FiniteOr(BaseOmega, 1f), 1f, 1.85f),
+                    MaxResidualFloat = 0f,
+                    PreviousResidualFloat = 0f,
+                    Omega = math.clamp(AbyssalThermalMath.FiniteOr(BaseOmega, 1f), 0.55f, 1f),
                     IterationCount = 0,
                     FaultFlags = 0
                 };
@@ -359,10 +359,12 @@ namespace Hecton8.Thermodynamics
                         for (int x = -radiusCells; x <= radiusCells; x++)
                         {
                             float3 offsetMeters = new float3(x, y, z) * cellSize;
-                            float distance = math.length(offsetMeters);
-                            if (distance > radiusMeters)
+                            float distanceSq = math.lengthsq(offsetMeters);
+                            float radiusSq = radiusMeters * radiusMeters;
+                            if (distanceSq > radiusSq)
                                 continue;
 
+                            float distance = distanceSq <= 0.000001f ? 0f : distanceSq * math.rsqrt(math.max(distanceSq, 0.000001f));
                             int ix = AbyssalThermalMath.PositiveModulo(centerCell.x + x, resolution.x);
                             int iy = AbyssalThermalMath.PositiveModulo(centerCell.y + y, resolution.y);
                             int iz = AbyssalThermalMath.PositiveModulo(centerCell.z + z, resolution.z);
@@ -450,7 +452,7 @@ namespace Hecton8.Thermodynamics
             float convectionSpeed = math.max(0f, AbyssalThermalMath.FiniteOr(Tuning.ConvectionSpeed, 0f));
             float current = AbyssalThermalMath.FiniteOr(currentCell.TemperatureCelsius, ambient) + AbyssalThermalMath.FiniteOr(injected.TemperatureCelsius, 0f);
             float conductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(currentCell.ThermalConductivity, waterConductivity));
-            float omega = math.clamp(AbyssalThermalMath.FiniteOr(state.Omega, AbyssalThermalMath.ResolveSolverOmega(Tuning.GlobalQualityWeight)), 1f, 1.85f);
+            float omega = math.clamp(AbyssalThermalMath.FiniteOr(state.Omega, AbyssalThermalMath.ResolveSolverOmega(Tuning.GlobalQualityWeight)), 0.55f, 1f);
             bool divergent = false;
             bool nonFinite = false;
             float maxResidual = 0f;
@@ -495,19 +497,16 @@ namespace Hecton8.Thermodynamics
             }
 
             Back[index] = output;
-            int residualMask = math.max(0, ResidualSampleMask);
-            float sampledResidual = ((index & residualMask) == 0)
-                ? math.max(0f, AbyssalThermalMath.FiniteOr(maxResidual, float.MaxValue))
-                : 0f;
+            float sampledResidual = math.max(0f, AbyssalThermalMath.FiniteOr(maxResidual, 1f));
             if (nonFinite)
-                sampledResidual = float.MaxValue;
+                sampledResidual = math.max(sampledResidual, 1f);
             if (sampledResidual > 0f)
             {
                 int slotCount = math.clamp(ResidualSlotCount, 1, AbyssalThermalMath.ResidualThreadSlotCount);
                 int slot = math.clamp(ThreadIndex, 0, slotCount - 1);
                 ref ThermalResidualSlot64 slotRef = ref UnsafeUtility.AsRef<ThermalResidualSlot64>(ResidualSamples + slot);
                 slotRef.MaxResidualFloat = math.max(slotRef.MaxResidualFloat, sampledResidual);
-                if (sampledResidual >= float.MaxValue * 0.5f)
+                if (nonFinite)
                     slotRef.FaultFlags |= AbyssalThermalMath.ResidualSlotFaultNonFinite;
             }
         }
@@ -562,7 +561,7 @@ namespace Hecton8.Thermodynamics
                     residual >= float.MaxValue * 0.5f)
                 {
                     nonFiniteResidual = true;
-                    maxResidual = float.MaxValue;
+                    maxResidual = math.max(maxResidual, 1f);
                     break;
                 }
 
@@ -570,26 +569,26 @@ namespace Hecton8.Thermodynamics
             }
 
             float tolerance = math.max(0.0001f, AbyssalThermalMath.FiniteOr(TargetTolerance, 0.001f));
-            float baseOmega = math.clamp(AbyssalThermalMath.FiniteOr(BaseOmega, 1f), 1f, 1.85f);
+            float baseOmega = math.clamp(AbyssalThermalMath.FiniteOr(BaseOmega, 1f), 0.55f, 1f);
             float previous = AbyssalThermalMath.FiniteOr(state.PreviousResidualFloat, maxResidual);
             bool previousValid = state.IterationCount > 0 && previous < float.MaxValue * 0.5f;
             bool grew = previousValid && maxResidual > math.max(previous + tolerance * 0.25f, previous * 1.08f);
             bool runaway = previousValid && maxResidual > math.max(2f, previous * 2f);
-            float omega = math.clamp(AbyssalThermalMath.FiniteOr(state.Omega, baseOmega), 1f, 1.85f);
+            float omega = math.clamp(AbyssalThermalMath.FiniteOr(state.Omega, baseOmega), 0.55f, 1f);
 
             if (nonFiniteResidual)
             {
                 flags = (ushort)(flags | AbyssalThermalMath.SolverFlagNonFinite | AbyssalThermalMath.SolverFlagDivergent);
-                omega = 1f;
+                omega = 0.55f;
             }
             else if (runaway)
             {
                 flags = (ushort)(flags | AbyssalThermalMath.SolverFlagDivergent);
-                omega = 1f;
+                omega = 0.55f;
             }
             else if (grew)
             {
-                omega = math.max(1f, omega * 0.86f);
+                omega = math.max(0.55f, omega * 0.86f);
             }
             else
             {
@@ -675,9 +674,9 @@ namespace Hecton8.Thermodynamics
         private static float ResolveInterpolationWeight(float globalQualityWeight)
         {
             float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            float t = math.saturate((q - 0.15f) * math.rcp(0.65f));
+            float t = math.saturate(q * math.rcp(0.8f));
             float smooth = t * t * (3f - (2f * t));
-            return smooth * math.step(0.15f, q);
+            return smooth;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -810,7 +809,7 @@ namespace Hecton8.Thermodynamics
             float energyBefore = 0f;
             float energyAfter = 0f;
             uint flags = ExtraFlags;
-            uint nanIndex = uint.MaxValue;
+            uint nanIndex = 0u;
 
             for (int i = 0; i < cellCount; i++)
             {

@@ -218,9 +218,6 @@ namespace Hecton8.Tools
             if (_equipmentIntegrationScheduled)
                 return;
 
-            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
-                return;
-
             float safeDeltaTime = math.max(0f, deltaTime);
             RefreshWirelessBrownoutFromPowerSnapshot();
             if (_wirelessBrownoutActive)
@@ -230,8 +227,32 @@ namespace Hecton8.Tools
             _lastEquipmentTickInterval = ResolveEquipmentTickInterval(_lastGlobalQualityWeight);
             _equipmentCadenceAccumulator += safeDeltaTime;
 
+            if (_equipmentCadenceAccumulator < _lastEquipmentTickInterval)
+                return;
+
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
+                return;
+
+            RefreshInactiveDurabilityMirrors(ref views);
+
+            float integrationDelta = _equipmentCadenceAccumulator;
+            _equipmentCadenceAccumulator = 0f;
+            RefreshThermalGridReadback(out NativeArray<float> thermalGridReadback);
+            RefreshActiveEquipmentInputs(ref views);
+            ScheduleActiveEquipmentIntegration(integrationDelta, ref views, thermalGridReadback);
+        }
+
+        private void RefreshInactiveDurabilityMirrors(ref EquipmentVaultViews views)
+        {
+            if (!views.ToolStates.IsCreated)
+                return;
+
+            int count = math.min(MaxTrackedTools, views.ToolStates.Length);
             for (int i = 0; i < MaxTrackedTools; i++)
             {
+                if (i >= count)
+                    break;
+
                 PlayerTool owner = _toolOwners[i];
                 if (!_slotUsed[i] || owner == null)
                     continue;
@@ -243,15 +264,6 @@ namespace Hecton8.Tools
                     state.Durability = math.saturate(owner.DurabilityNormalized);
                 views.ToolStates[i] = state;
             }
-
-            if (_equipmentCadenceAccumulator < _lastEquipmentTickInterval)
-                return;
-
-            float integrationDelta = _equipmentCadenceAccumulator;
-            _equipmentCadenceAccumulator = 0f;
-            RefreshThermalGridReadback(out NativeArray<float> thermalGridReadback);
-            RefreshActiveEquipmentInputs(ref views);
-            ScheduleActiveEquipmentIntegration(integrationDelta, ref views, thermalGridReadback);
         }
 
         public void LateFrameTick()
@@ -294,7 +306,7 @@ namespace Hecton8.Tools
             nextState.InternalHeat = math.max(0f, tool.ResolveModularHeatNormalized());
             nextState.Durability = math.saturate(tool.DurabilityNormalized);
             nextState.UpgradeBitmask = upgradeMask;
-            nextState.StatusMask = ResolveStatusMask(0u, in nextState, in compiledStats, ResolveDepthMeters(tool), false);
+            nextState.StatusMask = ResolveStatusMask(0u, in nextState, in compiledStats, ResolveDepthMeters(), false);
             nextState.ToolTypeId = ResolveToolTypeId(profile.ToolId);
             nextState.ModuleSlotCount = (byte)math.clamp(moduleSlotCount, 0, ToolUpgradeSystem.MaxModuleSlots);
             nextState.Reserved0 = 0;
@@ -527,7 +539,7 @@ namespace Hecton8.Tools
                 state.StatusMask,
                 in state,
                 in stats,
-                ResolveDepthMeters(_toolOwners[slotIndex]),
+                ResolveDepthMeters(),
                 (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
             views.ToolStates[slotIndex] = state;
             WriteActiveEquipmentSlot(ref views, slotIndex, in state, in stats);
@@ -683,14 +695,21 @@ namespace Hecton8.Tools
 
         public unsafe void GenerateMockEquipmentState()
         {
+            if (_equipmentIntegrationScheduled)
+            {
+                if (!_equipmentIntegrationHandle.IsCompleted)
+                    return;
+
+                CompleteActiveEquipmentJob();
+                if (_equipmentIntegrationScheduled)
+                    return;
+            }
+
             if (!_isInitialized ||
                 !TryResolveEquipmentViews(out EquipmentVaultViews views))
             {
                 return;
             }
-
-            if (_equipmentIntegrationScheduled)
-                CompleteActiveEquipmentJob();
 
             if (!TryResolvePlayerEquipmentAup(out double3 rootAup))
                 rootAup = double3.zero;
@@ -722,7 +741,7 @@ namespace Hecton8.Tools
                 state.StatusMask,
                 in state,
                 in stats,
-                ResolveDepthMeters(_toolOwners[slotIndex]),
+                ResolveDepthMeters(),
                 (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
             views.ToolStates[slotIndex] = state;
             WriteActiveEquipmentSlot(ref views, slotIndex, in state, in stats);
@@ -1015,8 +1034,15 @@ namespace Hecton8.Tools
                     slotIndex = i;
                     return true;
                 }
+            }
 
-                if (TryResolveEquipmentViews(out EquipmentVaultViews views) &&
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views) ||
+                !views.ActiveEquipmentStates.IsCreated)
+                return false;
+
+            for (int i = 0; i < MaxTrackedTools; i++)
+            {
+                if (_slotUsed[i] &&
                     (uint)i < (uint)views.ActiveEquipmentStates.Length &&
                     views.ActiveEquipmentStates[i].ToolHashID == toolId)
                 {
@@ -1077,7 +1103,7 @@ namespace Hecton8.Tools
                 state.StatusMask,
                 in state,
                 in stats,
-                ResolveDepthMeters(_toolOwners[slotIndex]),
+                ResolveDepthMeters(),
                 (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
             views.ToolStates[slotIndex] = state;
             WriteSlotMirrors(ref views, slotIndex, in state);
@@ -1108,7 +1134,7 @@ namespace Hecton8.Tools
                 state.StatusMask,
                 in state,
                 in compiledStats,
-                ResolveDepthMeters(owner),
+                ResolveDepthMeters(),
                 (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
             views.ToolStats[slotIndex] = compiledStats;
             views.ToolStates[slotIndex] = state;
@@ -1309,6 +1335,8 @@ namespace Hecton8.Tools
             _lastTelemetryActiveMask = 0u;
             bool gridAvailable = ResolveGridPowerAvailable();
             bool hasPlayerAup = TryResolvePlayerEquipmentAup(out double3 playerAup);
+            bool playerInWater = ResolveToolInWater();
+            float depthMeters = ResolveDepthMeters();
 
             for (int i = 0; i < MaxTrackedTools; i++)
             {
@@ -1333,7 +1361,6 @@ namespace Hecton8.Tools
                 bool gridPowered = requestedActive &&
                     gridAvailable &&
                     (state.UpgradeBitmask & (uint)ToolUpgradeBits.WirelessCharging) != 0u;
-                float depthMeters = ResolveDepthMeters(owner);
                 state.Durability = !requestedActive && owner != null
                     ? math.saturate(owner.DurabilityNormalized)
                     : math.saturate(math.isfinite(state.Durability) ? state.Durability : 0f);
@@ -1360,7 +1387,7 @@ namespace Hecton8.Tools
                     flags |= ActiveEquipmentStateFlags.Overheated;
                 if ((state.StatusMask & ToolRuntimeStatusMasks.LowPower) != 0u)
                     flags |= ActiveEquipmentStateFlags.Depleted;
-                if (ResolveToolInWater(owner))
+                if (playerInWater)
                     flags |= ActiveEquipmentStateFlags.InWater;
                 if (gridPowered)
                     flags |= ActiveEquipmentStateFlags.GridPowered;
@@ -1455,16 +1482,11 @@ namespace Hecton8.Tools
                    _powerGridService != null;
         }
 
-        private bool ResolveToolInWater(PlayerTool owner)
+        private bool ResolveToolInWater()
         {
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (movement != null)
-                return movement.IsPlayerSubmerged;
-
-            return owner != null &&
-                   owner.TryResolveCachedRuntimePosition(out float3 runtimePosition) &&
-                   runtimePosition.y < -0.15f;
+            return movement != null && movement.IsPlayerSubmerged;
         }
 
         private bool TryResolvePlayerEquipmentAup(out double3 aup)
@@ -1489,16 +1511,7 @@ namespace Hecton8.Tools
                     return true;
             }
 
-            Transform playerTransform = playerContext.PlayerTransform;
-            if (playerTransform == null)
-                return false;
-
-            Vector3 position = playerTransform.position;
-            if (!math.isfinite(position.x) || !math.isfinite(position.y) || !math.isfinite(position.z))
-                return false;
-
-            aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);
-            return math.all(math.isfinite(aup));
+            return false;
         }
 
         private static bool TryResolveToolAup(
@@ -1517,7 +1530,7 @@ namespace Hecton8.Tools
                 return math.all(math.isfinite(toolAup));
             }
 
-            return owner.TryResolveCachedAup(out toolAup);
+            return false;
         }
 
         private static float ResolveGlobalQualityWeight()
@@ -1529,10 +1542,21 @@ namespace Hecton8.Tools
         private float ResolveEquipmentTickInterval(float globalQualityWeight)
         {
             float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            EquipmentTuningDTO tuning = TryResolveEquipmentViews(out EquipmentVaultViews views) && views.EquipmentTuning.Length > 0
-                ? SanitizeEquipmentTuning(views.EquipmentTuning[0])
+            EquipmentTuningDTO tuning = TryResolveEquipmentTuningNoAcquire(out EquipmentTuningDTO resolvedTuning)
+                ? SanitizeEquipmentTuning(resolvedTuning)
                 : EquipmentTuningDTO.CreateDefault(q);
             return math.lerp(tuning.MinimumTickInterval, tuning.MaximumTickInterval, 1f - q);
+        }
+
+        private bool TryResolveEquipmentTuningNoAcquire(out EquipmentTuningDTO tuning)
+        {
+            tuning = default;
+            IDataVault vault = _dataVault;
+            if (!TryResolveEquipmentBuffer(vault, in _equipmentTuningHandle, 1, out NativeArray<EquipmentTuningDTO> tuningBuffer))
+                return false;
+
+            tuning = tuningBuffer[0];
+            return true;
         }
 
         private unsafe void ScheduleActiveEquipmentIntegration(
@@ -1669,6 +1693,7 @@ namespace Hecton8.Tools
                 views.ActiveEquipmentStates.GetUnsafeReadOnlyPtr(),
                 (long)count * UnsafeUtility.SizeOf<ActiveEquipmentDTO>());
 
+            float depthMeters = ResolveDepthMeters();
             for (int i = 0; i < MaxTrackedTools; i++)
             {
                 if (!_slotUsed[i] || _toolOwners[i] == null)
@@ -1687,7 +1712,7 @@ namespace Hecton8.Tools
                     state.StatusMask,
                     in state,
                     in stats,
-                    ResolveDepthMeters(_toolOwners[i]),
+                    depthMeters,
                     active,
                     gridPowered);
                 state.StatusMask = ResolveHeatWarningHaptic(state.StatusMask, state.InternalHeat);
@@ -1912,7 +1937,7 @@ namespace Hecton8.Tools
             return status;
         }
 
-        private float ResolveDepthMeters(PlayerTool owner)
+        private float ResolveDepthMeters()
         {
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null)
@@ -1926,9 +1951,7 @@ namespace Hecton8.Tools
                     return math.max(0f, movement.CurrentDepth);
             }
 
-            return owner != null && owner.TryResolveCachedRuntimePosition(out float3 runtimePosition)
-                ? math.max(0f, -runtimePosition.y)
-                : 0f;
+            return 0f;
         }
 
         private static byte ResolveToolTypeId(uint toolId)
@@ -2822,6 +2845,7 @@ namespace Hecton8.Tools
                     return;
 
                 AssertSize<ActiveEquipmentDTO>(32);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 AssertOffset<ActiveEquipmentDTO>(nameof(ActiveEquipmentDTO.ToolHashID), 0);
                 AssertOffset<ActiveEquipmentDTO>(nameof(ActiveEquipmentDTO.CurrentBattery), 4);
                 AssertOffset<ActiveEquipmentDTO>(nameof(ActiveEquipmentDTO.ThermalLoad), 8);
@@ -2829,6 +2853,7 @@ namespace Hecton8.Tools
                 AssertOffset<ActiveEquipmentDTO>(nameof(ActiveEquipmentDTO.PowerDrawRate), 16);
                 AssertOffset<ActiveEquipmentDTO>(nameof(ActiveEquipmentDTO.HeatGenerationRate), 20);
                 AssertOffset<ActiveEquipmentDTO>(nameof(ActiveEquipmentDTO._pad0), 24);
+#endif
                 AssertSize<EquipmentGridLoadRequest>(16);
                 AssertSize<EquipmentIntegrationCounters>(64);
                 AssertSize<EquipmentTelemetryEntry>(64);
@@ -2849,6 +2874,7 @@ namespace Hecton8.Tools
                     throw new InvalidOperationException($"[SHINOBU_224] Layout size mismatch for {typeof(T).Name}: {observed} != {expected}");
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             private static void AssertOffset<T>(string fieldName, int expected)
                 where T : unmanaged
             {
@@ -2859,6 +2885,7 @@ namespace Hecton8.Tools
                 if (observed != expected)
                     throw new InvalidOperationException($"[SHINOBU_224] Layout offset mismatch for {typeof(T).Name}.{fieldName}: {observed} != {expected}");
             }
+#endif
         }
 
         private static float EstimateOverchargeHeatGrowth(float internalHeat)

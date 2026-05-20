@@ -126,6 +126,114 @@ Status: IMPLEMENTED / COMPILE BLOCKED BY LOAD
   </determinism>
 </SELF_AUDIT>
 
+---
+
+## 2026-05-20 Loop 43 Hydrodynamic Approximation Gate Branch Removal
+
+What was wrong:
+- `VectorizedHydrodynamicsJob`, `VectorizedHydrodynamicsLane4Job`, and `ScalarHydrodynamicsReferenceJob` built `hasApproximationWeight` with C# `&&`.
+- That short-circuit operator can lower to a branch-shaped scalar gate directly before `math.select`, weakening the Task 03 branchless proof.
+
+What was done:
+- Replaced the three hot hydrodynamic `&&` predicates with non-short-circuit `&`.
+- Both predicate sides are side-effect-free scalar reads from the same tuning DTO, so evaluating both is safe and keeps the gate value-shaped.
+- No DTO layout, Vault route, telemetry ABI, public API, culling kernel, or spatial query kernel changed.
+
+Cinematic Cheats used:
+- The Dear Lie remains the polynomial hydrodynamic turbulence approximation. Low quality collapses toward cheaper math through continuous weights; high quality keeps richer approximation fidelity.
+
+Exact microseconds saved:
+- Measured: absent.
+- Static expectation: removes one branch-shaped predicate gate from each hydrodynamic setup path. Exact AVX2/NEON proof remains PENDING VERIFICATION because CPU sampled 100% on the final retry and no build/rebuild was launched.
+
+<SELF_AUDIT phase="LOOP_43_HYDRODYNAMIC_APPROXIMATION_GATE_BRANCH_REMOVAL">
+  <agent id="SHINOBU_201" role="SIMD_VECTORIZATION_ENFORCER" />
+  <task_reconciliation count="20" status="STATIC_IMPLEMENTED_COMPILE_PENDING">
+    <task id="01" status="[PASS_STATIC]" note="NoAlias and native field layout unchanged." />
+    <task id="02" status="[PASS_STATIC]" note="SoA hydrodynamic lanes unchanged." />
+    <task id="03" status="[PASS_STATIC]" note="Hydrodynamic approximation validity gate no longer uses short-circuit `&&`." />
+    <task id="04" status="[PASS_STATIC]" note="No DTO layout changed." />
+    <task id="05" status="[PASS_STATIC]" note="Benchmark path uses the same non-short-circuit gate through scalar reference." />
+    <task id="06" status="[PASS_STATIC]" note="Both hydrodynamic vector kernels updated." />
+    <task id="07" status="[PASS_STATIC]" note="Spatial query unchanged." />
+    <task id="08" status="[PASS_STATIC]" note="Frustum cull unchanged." />
+    <task id="09" status="[PASS_STATIC]" note="Continuous approximation weight behavior preserved." />
+    <task id="10" status="[PASS_STATIC]" note="Polynomial approximation selection remains tolerance-driven." />
+    <task id="11" status="[PASS_STATIC]" note="No atomics introduced." />
+    <task id="12" status="[PASS_STATIC]" note="AUP localization unchanged." />
+    <task id="13" status="[PASS_STATIC]" note="Authority-facing deterministic Burst modes unchanged." />
+    <task id="14" status="[PASS_STATIC]" note="No allocation or zero-init path added." />
+    <task id="15" status="[PASS_STATIC]" note="Telemetry ABI unchanged." />
+    <task id="16" status="[PASS_STATIC]" note="Burst directives unchanged." />
+    <task id="17" status="[PASS_STATIC]" note="Editor facade unchanged." />
+    <task id="18" status="[PASS_STATIC]" note="CSV parser unchanged." />
+    <task id="19" status="[PASS_STATIC]" note="Alignment gizmo unchanged." />
+    <task id="20" status="[PASS_STATIC]" note="Status/rationale/log updated; compile/player proof pending." />
+  </task_reconciliation>
+  <struct_layout_verification changed="false" note="No struct changed in Loop 43." />
+  <scalability_curve q_below_0_3="No binary tier fork. Continuous `GlobalQualityWeight` and authored approximation weight still drive low-to-ultra polynomial fidelity." />
+  <h_phi_vault_status private_arrays_added="0" buffers="unchanged SHINOBU buoyancy/SIMD Vault generation descriptors" />
+  <pointer_aliasing dependency_graph="unchanged hydrodynamics owner -> SoA lanes -> vector/scalar jobs; `[NoAlias]` unchanged" />
+  <compile_guard build_launched="false" cpu_percent="100" status="PENDING_VERIFICATION" />
+  <dear_lie before="short-circuit gate before polynomial turbulence selection" after="value-shaped predicate feeding polynomial Dear Lie selection" complexity="unchanged O(n) lane-1 and O(ceil(n/4)) lane-4" />
+</SELF_AUDIT>
+
+---
+
+## 2026-05-20 Loop 42 ParallelFor Safety Justification Expansion
+
+What was wrong:
+- SHINOBU lane-packed kernels suppressed Unity's one-index-per-Execute write restriction, but source comments were too short for the native memory mandate's three-paragraph proof standard.
+- The runtime math was correct by partition, but the evidence was split across rationale/logs instead of being adjacent to the fields that disable the safety restriction.
+
+What was done:
+- Expanded safety comments above `VectorizedHydrodynamicsLane4Job.Velocities`.
+- Expanded safety comments above `VectorizedHydrodynamicsLane4Job.OutputForces`.
+- Expanded safety comments above `VectorizedSpatialQueryLane4Job.ValidMask`.
+- Expanded safety comments above `VectorizedFrustumCullLane8Job.VisibleIndexMask`.
+- No executable statement, DTO layout, Vault handle, telemetry ABI, assembly reference, or public API was changed.
+
+Cinematic Cheats used:
+- No new physical or render system. The existing Dear Lie surfaces remain packed mathematical proxies: lane-4 hydrodynamic drag, lane-4 spatial distance masks, and lane-8 AABB frustum masks.
+
+Exact microseconds saved:
+- Measured: absent.
+- Static expectation: no runtime delta because this is source proof only. The protected value is preserving packed SIMD execution instead of being forced back to one-row Execute scheduling by review or safety restrictions. Static scans passed for safety-marker coverage, brace/preprocessor/non-ASCII balance, and forbidden hot-path patterns; diff check reports only repository LF/CRLF normalization warnings. Compile/profiler/Burst Inspector proof remains PENDING VERIFICATION because CPU sampled 100%.
+
+<SELF_AUDIT phase="LOOP_42_PARALLELFOR_SAFETY_JUSTIFICATION">
+  <agent id="SHINOBU_201" role="SIMD_VECTORIZATION_ENFORCER" />
+  <task_reconciliation count="20" status="STATIC_IMPLEMENTED_COMPILE_PENDING">
+    <task id="01" status="[PASS_STATIC]" note="NoAlias proof remains on packed job fields; comments now explain output partitions." />
+    <task id="02" status="[PASS_STATIC]" note="SoA lane buffers unchanged." />
+    <task id="03" status="[PASS_STATIC]" note="No branch or executable statement added." />
+    <task id="04" status="[PASS_STATIC]" note="No DTO layout changed." />
+    <task id="05" status="[PASS_STATIC]" note="Benchmark unchanged." />
+    <task id="06" status="[PASS_STATIC]" note="Hydrodynamics lane-4 writable outputs now have full safety proof comments." />
+    <task id="07" status="[PASS_STATIC]" note="Spatial query lane-4 mask output now has full safety proof comments." />
+    <task id="08" status="[PASS_STATIC]" note="Frustum cull lane-8 mask output now has full safety proof comments." />
+    <task id="09" status="[PASS_STATIC]" note="No binary hardware switch introduced." />
+    <task id="10" status="[PASS_STATIC]" note="No transcendental path changed." />
+    <task id="11" status="[PASS_STATIC]" note="No atomics introduced." />
+    <task id="12" status="[PASS_STATIC]" note="AUP localization unchanged." />
+    <task id="13" status="[PASS_STATIC]" note="No authority state path changed." />
+    <task id="14" status="[PASS_STATIC]" note="No allocation or zero-init path added." />
+    <task id="15" status="[PASS_STATIC]" note="Telemetry ABI unchanged." />
+    <task id="16" status="[PASS_STATIC]" note="Burst directives unchanged." />
+    <task id="17" status="[PASS_STATIC]" note="Editor facade unchanged." />
+    <task id="18" status="[PASS_STATIC]" note="CSV parser unchanged." />
+    <task id="19" status="[PASS_STATIC]" note="Alignment gizmo unchanged." />
+    <task id="20" status="[PASS_STATIC]" note="Source-local safety evidence expanded; static scans rerun; compile/player proof pending." />
+  </task_reconciliation>
+  <struct_layout_verification changed="false" note="No struct changed in Loop 42. Existing primary SIMD DTOs remain 16B or 64B." />
+  <scalability_curve q_below_0_3="No quality curve changed. Continuous owner-side count/cadence/radius scaling remains compatible with the same packed kernels." />
+  <h_phi_vault_status private_arrays_added="0" buffers="unchanged SHINOBU buoyancy/SIMD Vault generation descriptors" />
+  <pointer_aliasing dependency_graph="external owner -> packed kernel -> partitioned output; `[NoAlias]` remains on non-overlapping NativeArrays and source comments now prove row ownership" />
+  <compile_guard build_launched="false" cpu_percent="100" status="PENDING_VERIFICATION" />
+  <dear_lie before="packed write safety proof spread across logs" after="field-local formal proof preserves lane-4/lane-8 mathematical proxies" complexity="unchanged: O(ceil(n/4)) for lane-4 kernels and O(ceil(n/8) * planes) for lane-8 cull" />
+</SELF_AUDIT>
+
+---
+
 ## 2026-05-20 Loop 36 Spatial Query Finite-Mask Parity
 
 What was wrong:
@@ -2243,4 +2351,332 @@ Exact microseconds saved:
   <pointer_aliasing dependency_graph="external owner -> VectorizedSpatialQueryLane4Job -> ValidMask; `[NoAlias]` on PreyPositions/ValidMask and `[NativeDisableParallelForRestriction]` with duplicate-safe four-row lane ownership" />
   <compile_guard build_launched="false" cpu_percent="100" status="PENDING_VERIFICATION" />
   <dear_lie before="tail-safe packed query still had conditional stores" after="tail-safe packed query stores through duplicate-safe branchless masks" complexity="O(n/4) scheduled lanes; O(1) duplicate-safe tail stores" />
+</SELF_AUDIT>
+
+---
+
+## 2026-05-20 Loop 39 Hydrodynamics Tail-Lane / Telemetry Ring Cursor
+
+What was wrong:
+- `VectorizedHydrodynamicsLane4Job` rounded `Count` down to a multiple of four, leaving a hidden stale-tail risk for future non-multiple callers.
+- The X-Ray benchmark also rounded entity count down, so it would not expose the public-kernel tail defect.
+- `RecordSimdTelemetryJob` advanced `TelemetryCursor[0]` unbounded instead of keeping the black-box cursor circular.
+
+What was done:
+- Hydrodynamics lane-4 now supports `ceil(Count / 4)` scheduling with clamped tail reads/writes.
+- Benchmark generation, scalar probe scaling, lane scheduling, telemetry entity count, and state hash use the full count.
+- SIMD telemetry cursor now wraps inside `[0, TelemetryRing.Length - 1]`.
+
+Cinematic Cheats used:
+- No new physical simulation. The polynomial-current fake and SIMD benchmark remain the presentation-biased Dear Lie; this loop made the packed lane and black-box proof surface cover all rows.
+
+Exact microseconds saved:
+- Measured: absent.
+- Static expectation: correctness and coverage; scheduler adds at most one lane for non-multiple counts. Compile/profiler/Burst Inspector proof remains PENDING VERIFICATION.
+
+<SELF_AUDIT phase="LOOP_39_HYDRO_TAIL_TELEMETRY_CURSOR">
+  <agent id="SHINOBU_201" role="SIMD_VECTORIZATION_ENFORCER" />
+  <task_reconciliation count="20" status="STATIC_IMPLEMENTED_COMPILE_PENDING">
+    <task id="01" status="[PASS_STATIC]" note="NoAlias fields unchanged." />
+    <task id="02" status="[PASS_STATIC]" note="Hydrodynamic SoA lanes now cover non-multiple counts." />
+    <task id="03" status="[PASS_STATIC]" note="Packed tail path uses clamped duplicate stores instead of a scalar cleanup pass." />
+    <task id="04" status="[PASS_STATIC]" note="DTO layout unchanged." />
+    <task id="05" status="[PASS_STATIC]" note="Benchmark count no longer hides tail rows." />
+    <task id="06" status="[PASS_STATIC]" note="Lane-4 hydrodynamics public scheduling contract hardened." />
+    <task id="07" status="[PASS_STATIC]" note="Spatial query unchanged in Loop 39." />
+    <task id="08" status="[PASS_STATIC]" note="Frustum culling unchanged in Loop 39." />
+    <task id="09" status="[PASS_STATIC]" note="Continuous quality weighting unchanged." />
+    <task id="10" status="[PASS_STATIC]" note="Polynomial approximation unchanged." />
+    <task id="11" status="[PASS_STATIC]" note="No atomics introduced." />
+    <task id="12" status="[PASS_STATIC]" note="AUP localization unchanged." />
+    <task id="13" status="[PASS_STATIC]" note="Hydrodynamics remains deterministic Burst mode." />
+    <task id="14" status="[PASS_STATIC]" note="No allocation or zero-init path added." />
+    <task id="15" status="[PASS_STATIC]" note="Telemetry cursor now remains circular." />
+    <task id="16" status="[PASS_STATIC]" note="Synchronous Burst directives preserved." />
+    <task id="17" status="[PASS_STATIC]" note="X-Ray benchmark now measures full-count lane coverage." />
+    <task id="18" status="[PASS_STATIC]" note="CSV parser unchanged." />
+    <task id="19" status="[PASS_STATIC]" note="Alignment gizmo unchanged." />
+    <task id="20" status="[PASS_STATIC]" note="Status/rationale/log updated; compile/player proof pending." />
+  </task_reconciliation>
+  <struct_layout_verification changed="false" note="No DTO layout changed in Loop 39." />
+  <scalability_curve q_below_0_3="No quality curve changed; `GlobalQualityWeight` still continuously scales turbulence/approximation while lane coverage stays complete." />
+  <h_phi_vault_status private_arrays_added="0" buffers="unchanged SHINOBU buoyancy/SIMD Vault generation descriptors" />
+  <pointer_aliasing dependency_graph="runtime/editor benchmark -> VectorizedHydrodynamicsLane4Job -> RecordSimdTelemetryJob; NoAlias fields unchanged; lane-4 tail duplicate writes are intra-lane only" />
+  <compile_guard build_launched="false" cpu_percent="100" status="PENDING_VERIFICATION" />
+  <dear_lie before="benchmark rounded away tail rows" after="benchmark exercises full-count packed fake-current lanes" complexity="O(ceil(n/4)) scheduled lanes" />
+</SELF_AUDIT>
+
+---
+
+## 2026-05-20 Loop 40 Frustum Cull Lane-8 SIMD Kernel
+
+What was wrong:
+- `VectorizedFrustumCullJob` evaluated one AABB per `Execute`.
+- Task 08 explicitly requires culling eight objects per packed lane; job parallelism alone is not lane packing.
+
+What was done:
+- Added `FrustumCullLaneWidth = 8`.
+- Added `VectorizedFrustumCullLane8Job`, processing eight AABB centers/extents as two `float4` groups across up to six packed planes.
+- Added `[NoAlias]` on non-overlapping inputs/outputs and `[NativeDisableParallelForRestriction]` on the visible-index mask with a source-adjacent eight-row ownership proof.
+- Tail rows use duplicate-safe cascading `math.select` stores; existing lane-1 cull fallback and renderer ownership remain unchanged.
+
+Cinematic Cheats used:
+- No hierarchy/LOD/renderer simulation was added. The job is the Dear Lie: fast AABB-plane math produces a dense visible-index proxy for future BRG/indirect adopters instead of object-driven visibility logic.
+
+Exact microseconds saved:
+- Measured: absent.
+- Static expectation: future adopters get eight AABB cull tests per scheduled lane and seven fewer scheduled `Execute` calls per eight objects. Compile/profiler/Burst Inspector proof remains PENDING VERIFICATION.
+
+<SELF_AUDIT phase="LOOP_40_FRUSTUM_CULL_LANE8">
+  <agent id="SHINOBU_201" role="SIMD_VECTORIZATION_ENFORCER" />
+  <task_reconciliation count="20" status="STATIC_IMPLEMENTED_COMPILE_PENDING">
+    <task id="01" status="[PASS_STATIC]" note="Centers, Extents, Planes, and VisibleIndexMask carry `[NoAlias]`." />
+    <task id="02" status="[PASS_STATIC]" note="Uses existing padded SoA center/extents lanes." />
+    <task id="03" status="[PASS_STATIC]" note="Cull math uses `math.select`/`math.step`; structural NativeArray guards remain." />
+    <task id="04" status="[PASS_STATIC]" note="DTO layout unchanged; new constant only." />
+    <task id="05" status="[PASS_STATIC]" note="Benchmark unchanged in Loop 40." />
+    <task id="06" status="[PASS_STATIC]" note="Hydrodynamics unchanged in Loop 40." />
+    <task id="07" status="[PASS_STATIC]" note="Spatial query unchanged in Loop 40." />
+    <task id="08" status="[PASS_STATIC]" note="Lane-8 frustum cull kernel added." />
+    <task id="09" status="[PASS_STATIC]" note="No binary hardware switch introduced; owners can continuously scale candidate count/cadence." />
+    <task id="10" status="[PASS_STATIC]" note="No transcendental path added." />
+    <task id="11" status="[PASS_STATIC]" note="No atomics introduced." />
+    <task id="12" status="[PASS_STATIC]" note="AUP localization unchanged." />
+    <task id="13" status="[PASS_STATIC]" note="Cull job remains presentation-only Fast mode; authority state unchanged." />
+    <task id="14" status="[PASS_STATIC]" note="No allocation or zero-init path added." />
+    <task id="15" status="[PASS_STATIC]" note="Telemetry ABI unchanged." />
+    <task id="16" status="[PASS_STATIC]" note="Synchronous Burst directive present on new job." />
+    <task id="17" status="[PASS_STATIC]" note="Editor facade unchanged." />
+    <task id="18" status="[PASS_STATIC]" note="CSV parser unchanged." />
+    <task id="19" status="[PASS_STATIC]" note="Alignment gizmo unchanged." />
+    <task id="20" status="[PASS_STATIC]" note="Status/rationale/log/ledger updated; compile/player proof pending." />
+  </task_reconciliation>
+  <struct_layout_verification changed="false" note="No DTO layout changed. `SimdFloat3Padded` = 16B; `SimdTelemetryEntry` = 64B; `SimdHydrodynamicTuningDTO` = 64B." />
+  <scalability_curve q_below_0_3="No binary tier fork. Low quality owners can feed fewer candidates or lower cull cadence continuously; Ultra owners can keep denser BRG/indirect candidate lists while using the same lane-8 math." />
+  <h_phi_vault_status private_arrays_added="0" buffers="unchanged SHINOBU buoyancy/SIMD Vault generation descriptors; no private NativeArray fields added" />
+  <pointer_aliasing dependency_graph="external owner -> VectorizedFrustumCullLane8Job -> VisibleIndexMask -> optional CompactVisibleIndicesJob; `[NoAlias]` on all NativeArray fields and explicit eight-row ParallelFor ownership" />
+  <compile_guard build_launched="false" cpu_percent="100" status="PENDING_VERIFICATION" />
+  <dear_lie before="one AABB cull per Execute or owner-side object visibility logic" after="eight AABBs culled by two packed float4 groups and cheap plane masks" complexity="O(ceil(n/8) * min(PlaneCount, 6)) scheduled lane work" />
+</SELF_AUDIT>
+
+---
+
+## 2026-05-20 Loop 41 Frustum Plane NaN Vaccination
+
+What was wrong:
+- Both frustum cull kernels finite-gated plane coefficients after projected-radius and signed-distance math.
+- A non-finite plane could poison intermediate ALU lanes even if the final visibility result was later masked out.
+
+What was done:
+- `VectorizedFrustumCullJob` and `VectorizedFrustumCullLane8Job` now read `rawPlane`, compute a finite mask, select invalid planes to zero, and only then run the plane/AABB math.
+- Active invalid planes still invalidate visibility through `finitePlane = 0`.
+- No renderer ownership, Vault schema, DTO layout, or editor facade change was made.
+
+Cinematic Cheats used:
+- No new rendering system. The cull path remains a mathematical AABB-plane proxy for future BRG/indirect users; this loop only vaccinates the proxy against poisoned plane data.
+
+Exact microseconds saved:
+- Measured: absent.
+- Static expectation: stability gain, not speed. Adds one finite mask and one plane select per loop iteration; prevents NaN/Infinity propagation through cull registers. Compile/profiler/Burst Inspector proof remains PENDING VERIFICATION.
+
+<SELF_AUDIT phase="LOOP_41_FRUSTUM_PLANE_NAN_VACCINATION">
+  <agent id="SHINOBU_201" role="SIMD_VECTORIZATION_ENFORCER" />
+  <task_reconciliation count="20" status="STATIC_IMPLEMENTED_COMPILE_PENDING">
+    <task id="01" status="[PASS_STATIC]" note="NoAlias field layout unchanged." />
+    <task id="02" status="[PASS_STATIC]" note="SoA cull inputs unchanged." />
+    <task id="03" status="[PASS_STATIC]" note="Plane finite gate moved before ALU without adding scalar cleanup." />
+    <task id="04" status="[PASS_STATIC]" note="No DTO layout changed." />
+    <task id="05" status="[PASS_STATIC]" note="Benchmark unchanged." />
+    <task id="06" status="[PASS_STATIC]" note="Hydrodynamics unchanged." />
+    <task id="07" status="[PASS_STATIC]" note="Spatial query unchanged." />
+    <task id="08" status="[PASS_STATIC]" note="Both cull kernels now sanitize planes before AABB-plane evaluation." />
+    <task id="09" status="[PASS_STATIC]" note="No binary hardware switch introduced." />
+    <task id="10" status="[PASS_STATIC]" note="No transcendental path changed." />
+    <task id="11" status="[PASS_STATIC]" note="No atomics introduced." />
+    <task id="12" status="[PASS_STATIC]" note="AUP localization unchanged." />
+    <task id="13" status="[PASS_STATIC]" note="Cull output remains deterministic presentation value math." />
+    <task id="14" status="[PASS_STATIC]" note="No allocation or zero-init path added." />
+    <task id="15" status="[PASS_STATIC]" note="Telemetry ABI unchanged." />
+    <task id="16" status="[PASS_STATIC]" note="Burst directives unchanged." />
+    <task id="17" status="[PASS_STATIC]" note="Editor facade unchanged." />
+    <task id="18" status="[PASS_STATIC]" note="CSV parser unchanged." />
+    <task id="19" status="[PASS_STATIC]" note="Alignment gizmo unchanged." />
+    <task id="20" status="[PASS_STATIC]" note="Status/rationale/log updated; compile/player proof pending." />
+  </task_reconciliation>
+  <struct_layout_verification changed="false" note="No struct changed in Loop 41." />
+  <scalability_curve q_below_0_3="No quality curve changed. Candidate count/cadence can still scale continuously while all tiers use the same sanitized cull math." />
+  <h_phi_vault_status private_arrays_added="0" buffers="unchanged SHINOBU buoyancy/SIMD Vault generation descriptors" />
+  <pointer_aliasing dependency_graph="external owner -> cull kernel -> VisibleIndexMask; pointer alias attributes unchanged" />
+  <compile_guard build_launched="false" cpu_percent="100" status="PENDING_VERIFICATION" />
+  <dear_lie before="AABB-plane proxy could consume non-finite planes before masking" after="AABB-plane proxy sanitizes plane coefficients before ALU" complexity="O(n) lane-1 or O(ceil(n/8) * min(PlaneCount, 6)) lane-8" />
+</SELF_AUDIT>
+
+---
+
+## 2026-05-20 Loop 44 Gameplay Telemetry Cursor Ring Fence
+
+What was wrong:
+- `ReduceBuoyancyTelemetryJob` wrote telemetry entries into a modulo-bounded slot, but persisted `TelemetryCursor[0]` as `cursor + 1`.
+- Long endurance runs could overflow the signed cursor and create non-forensic cursor state before the next read clamped it.
+
+What was done:
+- Replaced unbounded cursor advancement with `nextCursor = slot + 1` and wrapped to zero at `TelemetryRing.Length`.
+- This matches `RecordSimdTelemetryJob` and keeps the 300-frame gameplay black-box cursor bounded.
+- No DTO layout, Vault ID, dependency route, culling kernel, spatial query kernel, or editor facade changed.
+
+Cinematic Cheats used:
+- No new simulation. This preserves the black-box forensic cheat: a tiny fixed ring provides enough history for crash autopsy without runtime allocation or a large logging system.
+
+Exact microseconds saved:
+- Measured: absent.
+- Static expectation: no speed gain claimed. Cost is one integer increment and one select per telemetry frame; benefit is deterministic cursor state for endurance dumps. Compile/profiler/Burst Inspector proof remains PENDING VERIFICATION because CPU sampled 100% and no build/rebuild was launched.
+
+<SELF_AUDIT phase="LOOP_44_GAMEPLAY_TELEMETRY_CURSOR_RING_FENCE">
+  <agent id="SHINOBU_201" role="SIMD_VECTORIZATION_ENFORCER" />
+  <task_reconciliation count="20" status="STATIC_IMPLEMENTED_COMPILE_PENDING">
+    <task id="01" status="[PASS_STATIC]" note="NoAlias fields unchanged." />
+    <task id="02" status="[PASS_STATIC]" note="SoA hydrodynamic lanes unchanged." />
+    <task id="03" status="[PASS_STATIC]" note="Telemetry cursor wrap uses `math.select`; no branch added." />
+    <task id="04" status="[PASS_STATIC]" note="No DTO layout changed." />
+    <task id="05" status="[PASS_STATIC]" note="Benchmark unchanged." />
+    <task id="06" status="[PASS_STATIC]" note="Hydrodynamics unchanged." />
+    <task id="07" status="[PASS_STATIC]" note="Spatial query unchanged." />
+    <task id="08" status="[PASS_STATIC]" note="Frustum cull unchanged." />
+    <task id="09" status="[PASS_STATIC]" note="No binary hardware switch introduced." />
+    <task id="10" status="[PASS_STATIC]" note="Transcendental approximator unchanged." />
+    <task id="11" status="[PASS_STATIC]" note="No atomics introduced." />
+    <task id="12" status="[PASS_STATIC]" note="AUP localization unchanged." />
+    <task id="13" status="[PASS_STATIC]" note="Authority telemetry remains deterministic Burst." />
+    <task id="14" status="[PASS_STATIC]" note="No allocation or zero-init path added." />
+    <task id="15" status="[PASS_STATIC]" note="Gameplay telemetry cursor now stays bounded like SIMD telemetry." />
+    <task id="16" status="[PASS_STATIC]" note="Burst directive unchanged." />
+    <task id="17" status="[PASS_STATIC]" note="Editor facade unchanged." />
+    <task id="18" status="[PASS_STATIC]" note="CSV parser unchanged." />
+    <task id="19" status="[PASS_STATIC]" note="Alignment gizmo unchanged." />
+    <task id="20" status="[PASS_STATIC]" note="Status/rationale/log updated; compile/player proof pending." />
+  </task_reconciliation>
+  <struct_layout_verification changed="false" note="No struct changed in Loop 44." />
+  <scalability_curve q_below_0_3="No quality curve changed. Telemetry continues recording continuous GlobalQualityWeight per entry." />
+  <h_phi_vault_status private_arrays_added="0" buffers="unchanged gameplay telemetry Vault generation descriptor and SHINOBU SIMD descriptors" />
+  <pointer_aliasing dependency_graph="dispatcher -> ReduceBuoyancyTelemetryJob -> TelemetryRing/TelemetryCursor; `[NoAlias]` fields unchanged" />
+  <compile_guard build_launched="false" cpu_percent="100" status="PENDING_VERIFICATION" />
+  <dear_lie before="unbounded cursor state behind fixed telemetry ring" after="fixed telemetry ring plus bounded cursor state" complexity="O(1) telemetry write" />
+</SELF_AUDIT>
+
+---
+
+## 2026-05-20 Loop 45 Evaluate Tuning Snapshot De-Aliasing
+
+What was wrong:
+- `EvaluateBuoyancyJob` carried `NativeArray<BuoyancyTuningDTO> Tuning` and called `ResolveTuning()` for every scheduled work row.
+- `FixedTick` had already read, sanitized, updated, and written `tuning[0]`, so the hot evaluator was re-reading one-element Vault metadata and carrying an unnecessary alias candidate.
+
+What was done:
+- Replaced the evaluator tuning field with a blittable `BuoyancyTuningDTO Tuning` value.
+- Runtime now passes the already sanitized `tuningDto` into the scheduled job.
+- Removed `ResolveTuning()` from the evaluator.
+- No Vault ownership, DTO layout, force packet ABI, telemetry ABI, culling kernel, spatial query kernel, or editor facade changed.
+
+Cinematic Cheats used:
+- No new simulation. This preserves the existing Dear Lie: continuous stride/quality math makes low-pressure devices skip unseen buoyancy work while higher tiers spend cycles on richer flow response.
+
+Exact microseconds saved:
+- Measured: absent.
+- Static expectation: removes one NativeArray alias field and one branch-shaped tuning fallback per evaluated row. Compile/profiler/Burst Inspector proof remains PENDING VERIFICATION because CPU sampled 100% and no build/rebuild was launched.
+
+<SELF_AUDIT phase="LOOP_45_EVALUATE_TUNING_SNAPSHOT_DEALIASING">
+  <agent id="SHINOBU_201" role="SIMD_VECTORIZATION_ENFORCER" />
+  <task_reconciliation count="20" status="STATIC_IMPLEMENTED_COMPILE_PENDING">
+    <task id="01" status="[PASS_STATIC]" note="Evaluator removed one NativeArray alias candidate." />
+    <task id="02" status="[PASS_STATIC]" note="SoA hydrodynamic lanes unchanged." />
+    <task id="03" status="[PASS_STATIC]" note="Per-row `ResolveTuning()` branch removed." />
+    <task id="04" status="[PASS_STATIC]" note="No DTO layout changed." />
+    <task id="05" status="[PASS_STATIC]" note="Benchmark unchanged." />
+    <task id="06" status="[PASS_STATIC]" note="Hydrodynamics unchanged." />
+    <task id="07" status="[PASS_STATIC]" note="Spatial query unchanged." />
+    <task id="08" status="[PASS_STATIC]" note="Frustum cull unchanged." />
+    <task id="09" status="[PASS_STATIC]" note="Continuous quality and stride math preserved through the DTO snapshot." />
+    <task id="10" status="[PASS_STATIC]" note="Transcendental approximator unchanged." />
+    <task id="11" status="[PASS_STATIC]" note="No atomics introduced." />
+    <task id="12" status="[PASS_STATIC]" note="AUP localization unchanged." />
+    <task id="13" status="[PASS_STATIC]" note="Authority evaluator remains deterministic Burst." />
+    <task id="14" status="[PASS_STATIC]" note="No allocation or zero-init path added." />
+    <task id="15" status="[PASS_STATIC]" note="Telemetry unchanged after Loop 44 cursor fence." />
+    <task id="16" status="[PASS_STATIC]" note="Burst directive unchanged." />
+    <task id="17" status="[PASS_STATIC]" note="Editor facade unchanged." />
+    <task id="18" status="[PASS_STATIC]" note="CSV parser unchanged." />
+    <task id="19" status="[PASS_STATIC]" note="Alignment gizmo unchanged." />
+    <task id="20" status="[PASS_STATIC]" note="Status/rationale/log updated; compile/player proof pending." />
+  </task_reconciliation>
+  <struct_layout_verification changed="false" note="No struct changed in Loop 45; `BuoyancyTuningDTO` remains an existing explicit-layout blittable DTO." />
+  <scalability_curve q_below_0_3="No quality curve changed. Runtime still computes continuous quality and stride, then passes the exact DTO snapshot into the evaluator." />
+  <h_phi_vault_status private_arrays_added="0" buffers="unchanged gameplay and SHINOBU SIMD Vault descriptors" />
+  <pointer_aliasing dependency_graph="dispatcher reads Vault tuning once -> value DTO in EvaluateBuoyancyJob; evaluator NativeArray alias set reduced to States/FlowSamples/DebugForces/ForcePackets" />
+  <compile_guard build_launched="false" cpu_percent="100" status="PENDING_VERIFICATION" />
+  <dear_lie before="per-row one-element tuning NativeArray resolve" after="pre-scheduled tuning snapshot consumed by value" complexity="O(n) evaluator with one less per-row metadata branch" />
+</SELF_AUDIT>
+
+---
+
+## 2026-05-20 Loop 46 Buoyancy ParallelFor Safety Proof Tightening
+
+What was wrong:
+- Three gameplay buoyancy jobs used `[NativeDisableParallelForRestriction]` with shorthand comments instead of source-local proof.
+- `GenerateMockBuoyantObjectsJob.States` was a pure seed writer but did not declare `[WriteOnly]`, weakening the alias/read-write contract.
+
+What was done:
+- Expanded `GenerateMockBuoyantObjectsJob.States`, `EvaluateBuoyancyJob.States`, and `EvaluateBuoyancyJob.DebugForces` into three-paragraph safety proofs.
+- Marked mock seed `States` as `[WriteOnly, NativeDisableParallelForRestriction, NoAlias]`.
+- Preserved fixed strided evaluation and debug row identity without dense precompaction, post-remap, scalar cleanup, or new Vault buffers.
+
+Cinematic Cheats used:
+- No new physical simulation. The existing deterministic flow proxy and debug black-box ring remain the proof path; this loop only prevents review-time rejection of the packed/strided write route.
+
+Exact microseconds saved:
+- Measured: absent.
+- Static expectation: no runtime math gain claimed. Seed writer alias metadata is tighter; source review risk is reduced. Compile/profiler/Burst Inspector proof remains PENDING VERIFICATION because CPU sampled 100% and no build/rebuild was launched.
+
+<SELF_AUDIT phase="LOOP_46_BUOYANCY_PARALLELFOR_SAFETY_PROOF_TIGHTENING">
+  <agent id="SHINOBU_201" role="SIMD_VECTORIZATION_ENFORCER" />
+  <task_reconciliation count="20" status="STATIC_IMPLEMENTED_COMPILE_PENDING">
+    <task id="01" status="[PASS_STATIC]" note="NoAlias retained on non-overlapping gameplay arrays; mock state writer now also declares WriteOnly." />
+    <task id="02" status="[PASS_STATIC]" note="No AoS-to-SoA contract changed; no new private native collection added." />
+    <task id="03" status="[PASS_STATIC]" note="No branch added to hot math; proof-only comments and one attribute metadata change." />
+    <task id="04" status="[PASS_STATIC]" note="No DTO layout changed; explicit state/debug/telemetry layouts remain aligned." />
+    <task id="05" status="[PASS_STATIC]" note="Emergency mock generator kept deterministic and parallel; seed state write contract tightened." />
+    <task id="06" status="[PASS_STATIC]" note="Hydrodynamic SIMD kernels unchanged." />
+    <task id="07" status="[PASS_STATIC]" note="Spatial query SIMD kernels unchanged." />
+    <task id="08" status="[PASS_STATIC]" note="Frustum cull SIMD kernels unchanged." />
+    <task id="09" status="[PASS_STATIC]" note="Continuous quality cadence remains via evaluation stride/GlobalQualityWeight; no binary switch introduced." />
+    <task id="10" status="[PASS_STATIC]" note="Transcendental approximator unchanged." />
+    <task id="11" status="[PASS_STATIC]" note="No atomic operation introduced." />
+    <task id="12" status="[PASS_STATIC]" note="AUP subtraction/local float lane flow unchanged." />
+    <task id="13" status="[PASS_STATIC]" note="Deterministic Burst directives unchanged on authority-facing buoyancy jobs." />
+    <task id="14" status="[PASS_STATIC]" note="No new zero-init or allocation path added." />
+    <task id="15" status="[PASS_STATIC]" note="Debug force rows continue to preserve black-box state-row identity." />
+    <task id="16" status="[PASS_STATIC]" note="Burst directive set unchanged." />
+    <task id="17" status="[PASS_STATIC]" note="Editor X-Ray facade unchanged." />
+    <task id="18" status="[PASS_STATIC]" note="CSV parser/tuning bridge unchanged." />
+    <task id="19" status="[PASS_STATIC]" note="Alignment gizmo unchanged." />
+    <task id="20" status="[PASS_STATIC]" note="Status/rationale/log/ledger updated; compile/player proof pending." />
+  </task_reconciliation>
+  <struct_layout_verification changed="false">
+    <primary_dto name="BuoyancyStateDTO" size_bytes="64" math="24 double3 + 12 float3 + 4 volume + 4 mass + 4 hash + 4 flags + 4 pad0 + 8 pad1 = 64">
+      <field name="CurrentAUP" offset="0" size="24" />
+      <field name="Velocity" offset="24" size="12" />
+      <field name="VolumeCubicMeters" offset="36" size="4" />
+      <field name="MassKg" offset="40" size="4" />
+      <field name="EntityHashID" offset="44" size="4" />
+      <field name="Flags" offset="48" size="4" />
+      <field name="_pad0" offset="52" size="4" />
+      <field name="_pad1" offset="56" size="8" />
+    </primary_dto>
+    <debug_dto name="BuoyancyDebugForceDTO" size_bytes="128" pad="uint _pad0 at offset 124" />
+    <telemetry_dto name="BuoyancyTelemetryEntry" size_bytes="64" pad="uint _pad0 at offset 60" />
+  </struct_layout_verification>
+  <scalability_curve q_below_0_3="No curve changed in this loop. The evaluator still supports continuous quality/cadence scaling through GlobalQualityWeight and strided row evaluation: low devices raise stride/cadence spacing, middle tiers evaluate denser rows, high/ultra tiers keep more rows active and spend saved CPU on visual proxy richness." />
+  <h_phi_vault_status private_arrays_added="0" buffers="ShinobuBuoyancyStates, ShinobuBuoyancyDebugForces, ShinobuBuoyancyForcePackets, ShinobuBuoyancyTelemetryRing, ShinobuBuoyancyTelemetryCursor; lifecycle unchanged through existing Vault descriptors." />
+  <pointer_aliasing dependency_graph="GenerateMock handle -> EvaluateBuoyancy handle -> ReduceBuoyancyTelemetry handle; States/DebugForces/ForcePackets/FlowSamples/Tuning remain NoAlias; States seed writer is WriteOnly." />
+  <compile_guard build_launched="false" cpu_percent="100" status="PENDING_VERIFICATION" />
+  <dear_lie before="dense precompaction or per-row scalar cleanup would add bandwidth and scheduling cost" after="fixed stride/offset proxy lets cadence scale without remapping buffers" complexity="O(active_rows) evaluation with zero extra prepass; rejected alternative O(n) precompact + O(active_rows) evaluate + O(n) remap" />
 </SELF_AUDIT>

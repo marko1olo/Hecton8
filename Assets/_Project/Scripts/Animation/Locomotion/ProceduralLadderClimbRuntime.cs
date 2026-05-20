@@ -51,11 +51,11 @@ namespace Hecton8.Animation.Locomotion
         [SerializeField] private uint universalGripActionMask = DefaultGripActionMask;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<LadderClimbIkInput> _inputHandle;
-        private VaultBufferHandle<LadderClimbIkOutput> _outputHandle;
-        private VaultBufferHandle<AbsoluteUniversePosition> _ladderAupHandle;
-        private VaultBufferHandle<LadderClimbTelemetryEntry> _telemetryRingHandle;
-        private VaultBufferHandle<int> _telemetryCursorHandle;
+        private VaultGenerationHandle<LadderClimbIkInput> _inputHandle;
+        private VaultGenerationHandle<LadderClimbIkOutput> _outputHandle;
+        private VaultGenerationHandle<AbsoluteUniversePosition> _ladderAupHandle;
+        private VaultGenerationHandle<LadderClimbTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<int> _telemetryCursorHandle;
 
         private JobHandle _solveHandle;
         private bool _solveScheduled;
@@ -216,6 +216,7 @@ namespace Hecton8.Animation.Locomotion
             StopClimb(false, false);
             CompleteOutstandingJob();
             UnregisterTickables();
+            ReleaseVaultHandles();
             ClearVaultHandles();
             GlobalRegistry.ClearProceduralLadderClimbRuntime(this);
         }
@@ -225,6 +226,7 @@ namespace Hecton8.Animation.Locomotion
             StopClimb(false, false);
             CompleteOutstandingJob();
             UnregisterTickables();
+            ReleaseVaultHandles();
             ClearVaultHandles();
             GlobalRegistry.ClearProceduralLadderClimbRuntime(this);
         }
@@ -374,10 +376,23 @@ namespace Hecton8.Animation.Locomotion
 
         private bool CacheVaultDependency()
         {
-            if (_dataVault != null)
-                return true;
+            IDataVault current = GlobalRegistry.DataVault;
+            if (current == null)
+            {
+                CompleteOutstandingJob();
+                ReleaseVaultHandles();
+                ClearVaultHandles();
+                return false;
+            }
 
-            _dataVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, current))
+            {
+                CompleteOutstandingJob();
+                ReleaseVaultHandles();
+                ClearVaultHandles();
+                _dataVault = current;
+            }
+
             return _dataVault != null;
         }
 
@@ -387,41 +402,91 @@ namespace Hecton8.Animation.Locomotion
             if (vault == null)
                 return false;
 
-            if (!_inputHandle.IsCreated)
-                _inputHandle = vault.GetBufferHandle<LadderClimbIkInput>(BufferID.LadderClimbIkInput, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
+            return TryResolveOrAcquireVaultBuffer(
+                       vault,
+                       BufferID.LadderClimbIkInput,
+                       1,
+                       ref _inputHandle,
+                       out _) &&
+                   TryResolveOrAcquireVaultBuffer(
+                       vault,
+                       BufferID.LadderClimbIkOutput,
+                       1,
+                       ref _outputHandle,
+                       out _) &&
+                   TryResolveOrAcquireVaultBuffer(
+                       vault,
+                       BufferID.LadderAUPs,
+                       LadderClimbIkConstants.MaxActiveLadders,
+                       ref _ladderAupHandle,
+                       out _) &&
+                   TryResolveOrAcquireVaultBuffer(
+                       vault,
+                       BufferID.LadderClimbIkTelemetryRing,
+                       LadderClimbIkConstants.BlackBoxFrameCapacity,
+                       ref _telemetryRingHandle,
+                       out _) &&
+                   TryResolveOrAcquireVaultBuffer(
+                       vault,
+                       BufferID.LadderClimbIkTelemetryCursor,
+                       LadderClimbIkConstants.TelemetryCursorElementCount,
+                       ref _telemetryCursorHandle,
+                       out _);
+        }
 
-            if (!_outputHandle.IsCreated)
-                _outputHandle = vault.GetBufferHandle<LadderClimbIkOutput>(BufferID.LadderClimbIkOutput, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
 
-            if (!_ladderAupHandle.IsCreated)
-                _ladderAupHandle = vault.GetBufferHandle<AbsoluteUniversePosition>(
-                    BufferID.LadderAUPs,
-                    LadderClimbIkConstants.MaxActiveLadders,
-                    OwnerSystemId,
-                    NativeArrayOptions.ClearMemory);
+        private bool TryResolveVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsVaultHandleCreated(in handle) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
 
-            if (!_telemetryRingHandle.IsCreated)
-                _telemetryRingHandle = vault.GetBufferHandle<LadderClimbTelemetryEntry>(
-                    BufferID.LadderClimbIkTelemetryRing,
-                    LadderClimbIkConstants.BlackBoxFrameCapacity,
-                    OwnerSystemId,
-                    NativeArrayOptions.ClearMemory);
+        private static bool TryResolveOrAcquireVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            ref VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null)
+                return false;
 
-            if (!_telemetryCursorHandle.IsCreated ||
-                _telemetryCursorHandle.Length < LadderClimbIkConstants.TelemetryCursorElementCount)
+            if (IsVaultHandleCreated(in handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
             {
-                _telemetryCursorHandle = vault.GetBufferHandle<int>(
-                    BufferID.LadderClimbIkTelemetryCursor,
-                    LadderClimbIkConstants.TelemetryCursorElementCount,
-                    OwnerSystemId,
-                    NativeArrayOptions.ClearMemory);
+                return true;
             }
 
-            return _inputHandle.IsCreated &&
-                   _outputHandle.IsCreated &&
-                   _ladderAupHandle.IsCreated &&
-                   _telemetryRingHandle.IsCreated &&
-                   _telemetryCursorHandle.IsCreated;
+            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                OwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                return false;
+            }
+
+            handle = acquired;
+            return true;
         }
 
         private bool TryResolveVaultViews(out LadderClimbIkVaultViews views)
@@ -431,13 +496,19 @@ namespace Hecton8.Animation.Locomotion
             if (!EnsureVaultBuffers())
                 return false;
 
+            bool hasInputs = TryResolveVaultBuffer(in _inputHandle, 1, out NativeArray<LadderClimbIkInput> inputs);
+            bool hasOutputs = TryResolveVaultBuffer(in _outputHandle, 1, out NativeArray<LadderClimbIkOutput> outputs);
+            bool hasLadderAups = TryResolveVaultBuffer(in _ladderAupHandle, LadderClimbIkConstants.MaxActiveLadders, out NativeArray<AbsoluteUniversePosition> ladderAups);
+            bool hasTelemetryRing = TryResolveVaultBuffer(in _telemetryRingHandle, LadderClimbIkConstants.BlackBoxFrameCapacity, out NativeArray<LadderClimbTelemetryEntry> telemetryRing);
+            bool hasTelemetryCursor = TryResolveVaultBuffer(in _telemetryCursorHandle, LadderClimbIkConstants.TelemetryCursorElementCount, out NativeArray<int> telemetryCursor);
+
             views = new LadderClimbIkVaultViews
             {
-                Inputs = _inputHandle.Resolve(_dataVault),
-                Outputs = _outputHandle.Resolve(_dataVault),
-                LadderAups = _ladderAupHandle.Resolve(_dataVault),
-                TelemetryRing = _telemetryRingHandle.Resolve(_dataVault),
-                TelemetryCursor = _telemetryCursorHandle.Resolve(_dataVault)
+                Inputs = hasInputs ? inputs : default,
+                Outputs = hasOutputs ? outputs : default,
+                LadderAups = hasLadderAups ? ladderAups : default,
+                TelemetryRing = hasTelemetryRing ? telemetryRing : default,
+                TelemetryCursor = hasTelemetryCursor ? telemetryCursor : default
             };
 
             return views.HasSolveCapacity;
@@ -540,6 +611,28 @@ namespace Hecton8.Animation.Locomotion
             _telemetryRingHandle = default;
             _telemetryCursorHandle = default;
             _dataVault = null;
+        }
+
+        private void ReleaseVaultHandles()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _inputHandle);
+            ReleaseVaultHandle(vault, ref _outputHandle);
+            ReleaseVaultHandle(vault, ref _ladderAupHandle);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (!IsVaultHandleCreated(in handle))
+                return;
+
+            vault.ReleaseBuffer(in handle);
+            handle = default;
         }
 
         private bool TryRegisterTickables()

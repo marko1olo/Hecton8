@@ -64,6 +64,50 @@ Verification:
   <Compile status="BLOCKED_BY_CPU_POLICY" cpuSamples="100,100,100" dotnetOrCscProcess="false" />
 </SELF_AUDIT>
 
+## Ultra Polish Correction - SHINOBU_210 Damage Resolver Ownership
+
+What was wrong:
+- SHINOBU_218 status/rationale/logs claimed `HabitatDamageBakedContracts.cs` had been changed to a collapse-only pressure resolver.
+- Direct SHINOBU_210 status/rationale reads prove that file is owned by SHINOBU_210 and intentionally keeps Stressed/Ruptured/Collapsed baked mesh states reachable through three `math.step` thresholds.
+
+What was done:
+- Corrected SHINOBU_218 status, rationale, route card, solver doc, and binary payload ledger.
+- Stopped treating `HabitatDamageMeshStateResolver` as SHINOBU_218-owned.
+- Preserved SHINOBU_218 Dear Lie as `IntegrityStateDTO.BucklingScalar` plus structural shader-buffer upload.
+- Wrapped `StructuralIntegrityCalculatorRuntime.OnDrawGizmos()` and `OnValidate()` in `UNITY_EDITOR`.
+
+Cinematic Cheats used:
+- SHINOBU_218 pre-collapse deformation remains shader scalar buckling, not CPU mesh mutation or GameObject swaps.
+- SHINOBU_210 staged baked mesh selection remains a separate offline-baked visual route owned by its baker contract.
+
+Exact Microseconds saved:
+- Runtime solver ALU change: 0 us.
+- Cross-owner churn avoided: no repeated patches to SHINOBU_210-owned contract.
+- Player assembly surface reduced: editor heatmap/validation methods stripped from player compilation.
+
+Verification:
+- Re-extracted SHINOBU_218 block from `Docs/Tasks/CURRENT_BATCH.md`: 14,613 chars, 20 tasks.
+- Runtime resolver usage scan over `Assets/_Project/Scripts/Habitat/Deformation/Runtime`: no `HabitatDamageMeshStateResolver`, `ResolveStateIndex`, `ResolveMeshHash`, or `ResolveVisualBuckling01` hits.
+- Editor-depth scan: `StructuralIntegrityCalculatorRuntime.OnDrawGizmos()`, `ColdTick()`, and `OnValidate()` all report `UNITY_EDITOR` depth 1.
+- `Tools/Structural_Integrity_Scanner.ps1` regenerated `Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT.json` with summary `Physics-Based Integrity Purged`, `blocked_findings=0`, `unity_joint_sites=0`, verdict PASS.
+- `git diff --check` over touched SHINOBU_218 files returned exit 0 with CRLF working-copy warnings only.
+- Build not launched: CPU sampled at 100%; no `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` process was returned by the process gate.
+
+## Ultra Polish Micro Hygiene - Breach Jet Bounds Math
+
+What was wrong:
+- Depth-0 scan found three `Mathf.Max` calls in `HullIntegrityRuntime` breach-jet draw bounds.
+
+What was done:
+- Replaced the three calls with `math.max`.
+- No Vault, signal, material, shader, draw, or bounds route changed.
+
+Cinematic Cheats used:
+- Breach jets remain indirect/procedural visual output, not particle GameObject spawning.
+
+Exact Microseconds saved:
+- No measured claim. Static call surface reduced by three visual-sync scalar max operations.
+
 ## 2026-05-20 Layout Reflection Player Fence Pass
 
 What was wrong:
@@ -860,6 +904,27 @@ Verification:
   </CompileGuard>
   <DearLieConfirmation>
     <BigO>Authority remains deterministic O(N+E) CSR plus O(N) shader-visible state upload; visual deformation stays GPU-side.</BigO>
-    <Rejected>Unity joints, mesh swaps, collision mesh edits, per-renderer MaterialPropertyBlock traversal, and registry polling in refresh loops.</Rejected>
+    <Rejected>Unity joints, CPU mesh mutation, collision mesh edits, per-renderer MaterialPropertyBlock traversal, and registry polling in refresh loops. SHINOBU_210 baked mesh selection is not SHINOBU_218-owned or consumed by this solver.</Rejected>
   </DearLieConfirmation>
 </SELF_AUDIT>
+
+## Ultra Polish Correction - SHINOBU_210 Damage Resolver Ownership
+
+What was wrong:
+- Earlier SHINOBU_218 log entries claimed `HabitatDamageBakedContracts.cs` had been changed to a collapse-only pressure resolver.
+- Direct SHINOBU_210 status/rationale reads prove that file is SHINOBU_210-owned and intentionally keeps Stressed/Ruptured/Collapsed baked mesh states reachable through three `math.step` thresholds.
+
+What was done:
+- Corrected SHINOBU_218 status, rationale, route card, solver doc, binary payload ledger, and final self-audit wording.
+- Stopped treating `HabitatDamageMeshStateResolver` as SHINOBU_218-owned.
+- Preserved SHINOBU_218 Dear Lie as `IntegrityStateDTO.BucklingScalar` plus structural shader-buffer upload.
+- Wrapped `StructuralIntegrityCalculatorRuntime.OnDrawGizmos()` and `OnValidate()` in `UNITY_EDITOR`.
+
+Cinematic Cheats used:
+- SHINOBU_218 pre-collapse deformation remains shader scalar buckling, not CPU mesh mutation or GameObject swaps.
+- SHINOBU_210 staged baked mesh selection remains a separate offline-baked visual route owned by its baker contract.
+
+Exact Microseconds saved:
+- Runtime solver ALU change: 0 us.
+- Cross-owner churn avoided: no repeated patches to SHINOBU_210-owned contract.
+- Player assembly surface reduced: editor heatmap/validation methods stripped from player compilation.

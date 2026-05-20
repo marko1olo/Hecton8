@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_222
 
-Status: POLISH_POWER_AUTHORITY_STATIC_PASS_COMPILE_BLOCKED_BY_CPU_GATE
+Status: POLISH_EDITOR_READOUT_STATIC_PASS_COMPILE_BLOCKED_BY_CPU_GATE
 Agent: SHINOBU_222
 
 ## Decision 000 - Domain Boundary
@@ -178,3 +178,43 @@ Solution: Change `PipePressureSolverJob` to sanitize missing/non-finite power as
 Rejected Alternatives: Relying on boot-time buffer validation would not protect against later short shared power rows. Letting the negative path fall through to `quantizedUnits <= 0` after conversion is too late because the conversion itself is the unstable point.
 Scalability potential: Low/Middle/High/Ultra now share the same power truth: no Vault row means no pump energy. Quality can still scale Jacobi iterations and shader flow intensity, but not invent pump throughput.
 Hardware Impact: One saturating fallback and one `math.clamp` per active pump/solver node. Low-end benefit is deterministic fail-closed behavior with no wasted drain work under missing power data.
+
+## Decision 022 - Worktree Job Route Reconciliation
+
+Problem: A targeted `git diff` after static scans showed the worktree copy of `GenerateMockDrainageNetwork()` still differed from the indexed/HEAD version: it invoked `DrainageMockNetworkJob.Execute()` directly.
+Solution: Patch away direct entry and treat `Execute()` as a hard forbidden-pattern scan target before any compile gate attempt.
+Rejected Alternatives: Ignoring the diff because the committed/HEAD view already had `Run()` would leave the active worktree in violation and make Unity import compile the wrong file.
+Scalability potential: No quality-tier behavior changes. This keeps the cold mock generator aligned with the same job route used by all tiers.
+Hardware Impact: Runtime microsecond gain is not claimed. The impact is route correctness and preventing direct job entry from becoming accepted project practice.
+
+## Decision 023 - Utilization-Scaled Pump Energy Telemetry
+
+Problem: `DrainageTelemetryRecorderJob` reported full `PumpNodeDTO.PowerDraw` for any active pump with positive evacuation rate. A pump throttled by low Vault power or water availability could still report full draw, making energy telemetry less tightly coupled to actual Vault-derived drainage speed.
+Solution: Compute utilization as `actualEvacuationRate / MaxPumpRate`, saturated to `[0,1]`, and multiply Vault `PowerDraw` by that utilization. Zero water or zero power means zero actual rate and therefore zero reported draw.
+Rejected Alternatives: Keeping full draw as an idle-load approximation was rejected because the prompt requires drainage speed and energy reporting to depend strictly on Vault data, not a hidden state-machine assumption.
+Scalability potential: No binary tier change. Low/Middle/High/Ultra all derive watts from the same Vault pump row and actual quantized drain result.
+Hardware Impact: Adds one reciprocal and saturate per active pump in the telemetry reduction only. Low-end impact is negligible compared with correctness of power accounting.
+
+## Decision 024 - Editor Readout Formatting Purge
+
+Problem: The UI Toolkit tuner displayed telemetry through formatted label text, which used managed string formatting in the editor refresh loop and also routed `uint` telemetry counters through `Mathf.Min`, a compile-risk overload path.
+Solution: Replace the text readout with pre-created `IntegerField` and `FloatField` controls updated by `SetValueWithoutNotify`, plus a direct `ClampUIntToInt(uint)` helper for frame, active-pump, and solver-microsecond counters.
+Rejected Alternatives: Keeping a formatted `Label.text` readout was rejected because Task 17 explicitly demands a zero-GC real-time readout. Adding cached strings or `StringBuilder` still leaves managed text churn in the refresh path.
+Scalability potential: Low/Middle/High/Ultra runtime tiers are unchanged; the editor facade observes the same Vault telemetry without injecting runtime allocations or new simulation authority.
+Hardware Impact: Runtime frame impact is zero because the change is editor-only. Editor polling avoids per-refresh formatted string churn and removes an avoidable compile ambiguity.
+
+## Decision 025 - Assembly Boundary Static Proof
+
+Problem: The compile-wall mandate requires proof that SHINOBU_222 did not introduce a new direct sibling runtime assembly dependency while touching Fluid/Power-owned Vault rows.
+Solution: Walked upward from `SumpPumpPipeGridRuntime.cs` to the owning asmdef and found the existing parent `Assets/_Project/Scripts/Hecton8.Core.asmdef`. No asmdef file was edited and no new assembly reference was added. Fluid/Power interaction remains by `BufferID`/Vault rows and method-local `VaultGenerationHandle<T>` descriptors.
+Rejected Alternatives: Moving SHINOBU_222 into a new domain asmdef during this pass would widen the compile wall and risk cross-agent merge churn. Duplicating Fluid DTOs locally was already rejected because Vault type hashes depend on the exact DTO type.
+Scalability potential: Runtime quality tiers are unaffected; the proof preserves compile isolation while low/high tiers continue to vary solver iterations and shader scalar richness only.
+Hardware Impact: No runtime microsecond claim. The impact is iteration safety: no new assembly reference was added to increase recompile breadth.
+
+## Decision 026 - Final Direct Job Entry Recheck
+
+Problem: A post-documentation forbidden scan caught the active worktree again invoking `DrainageMockNetworkJob.Execute()` directly.
+Solution: Preserve the current scheduled route: `job.Schedule()`, `H8Memory.RegisterActiveJob(OwnerSystem, _mockSeedHandle)`, and `DispatcherJobFence` finalization before topology dirty reset; rerun a direct route scan plus the full forbidden-pattern scan across SHINOBU_222 files.
+Rejected Alternatives: Treating this as cold-path harmlessness was rejected. The mock generator is cold, but accepting direct job entry normalizes bypassing Unity job extension routes and weakens the static proof set.
+Scalability potential: Runtime tier behavior is unchanged. The deterministic mock graph remains available for all tiers without introducing a direct hot-loop precedent.
+Hardware Impact: No measured runtime microsecond claim. The impact is route correctness and preserving job-system discipline before Unity import or build verification.

@@ -1,4 +1,4 @@
-# Global Authority Route Card: B-Tree MMF Telemetry
+﻿# Global Authority Route Card: B-Tree MMF Telemetry
 
 Date: 2026-05-20  
 Owner: SHINOBU_207  
@@ -6,7 +6,7 @@ Owner domain: Echelon 1 Core & Memory Infrastructure / MMF cache optimizer
 Evidence class: STATIC_SOURCE + STATIC_DOC + PY_TOOL. Unity runtime proof absent; latest targeted C# proof is blocked by a foreign dependency wall plus CPU guard.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -16,10 +16,10 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 ## Route Card
 
@@ -95,7 +95,7 @@ Why this does not increase global monolith risk: the route exposes only fixed-si
 
 H-Phi impact expected: neutral to slightly positive by removing private ring pressure and documenting BufferID ownership. H-Phi is not acceptance proof.
 
-Proof required before GREEN: Unity import, C# compile, Play Mode lookup smoke, GC 0 B/frame proof, profiler sample for POST_SIMULATION flush, and a readback of `Dump_SHINOBU_207.bin`.
+Proof required before GREEN: Unity import, C# compile, Play Mode lookup smoke, GC 0 B/frame proof, profiler sample for POST_SIMULATION flush, and a readback of a generated `Dump_SHINOBU_207.bin` after a timestamped fault/slow-sample trigger.
 
 Reviewer: pending Integrator.
 
@@ -113,3 +113,5 @@ Required fixes: clear the foreign missing-type dependency wall, then run Unity c
 Proof still missing: clean C# compile, Unity Console, Play Mode, GCMonitor, profiler, dump readback.  
 Reviewer: pending Integrator  
 Date: 2026-05-20
+
+

@@ -20,21 +20,26 @@ namespace Hecton8.World
 
         public void Execute()
         {
-            if (!OutputRecords.IsCreated)
+            if (!OutputRecords.IsCreated || OutputRecords.Length <= 0)
                 return;
 
             int safeCount = math.clamp(ViewCount, 1, OutputRecords.Length);
-            float radius = math.max(0.5f, math.length(math.max(BoundsExtents, new float3(0.01f))));
-            float orthoSize = math.max(0.5f, radius + math.max(0f, ExtraPaddingMeters));
-            float cameraDistance = math.max(2f, radius * 2.65f + math.max(0f, ExtraPaddingMeters));
-            float farClip = math.max(cameraDistance + radius * 3.5f, NearClipMeters + 8f);
+            float3 safeCenter = math.select(float3.zero, BoundsCenter, math.isfinite(BoundsCenter));
+            float3 finiteExtents = math.select(new float3(0.01f), BoundsExtents, math.isfinite(BoundsExtents));
+            float3 safeExtents = math.max(math.abs(finiteExtents), new float3(0.01f));
+            float safePadding = math.max(0f, math.select(0f, ExtraPaddingMeters, math.isfinite(ExtraPaddingMeters)));
+            float safeNearClip = math.max(0.001f, math.select(0.01f, NearClipMeters, math.isfinite(NearClipMeters)));
+            float radius = math.max(0.5f, math.length(safeExtents));
+            float orthoSize = math.max(0.5f, radius + safePadding);
+            float cameraDistance = math.max(2f, radius * 2.65f + safePadding);
+            float farClip = math.max(cameraDistance + radius * 3.5f, safeNearClip + 8f);
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(OutputRecords);
             int stride = UnsafeUtility.SizeOf<HlodImpostorCaptureAngleRecord>();
 
             for (int i = 0; i < safeCount; i++)
             {
                 float3 direction = ResolveFibonacciDirection(i, safeCount, HemisphereOnly);
-                float3 cameraPosition = BoundsCenter + direction * cameraDistance;
+                float3 cameraPosition = safeCenter + direction * cameraDistance;
                 float3 up = math.abs(math.dot(direction, new float3(0f, 1f, 0f))) > 0.96f
                     ? new float3(0f, 0f, 1f)
                     : new float3(0f, 1f, 0f);
@@ -45,13 +50,13 @@ namespace Hecton8.World
                 record.OrthoSize = orthoSize;
                 record.CameraPosition = cameraPosition;
                 record.CameraDistance = cameraDistance;
-                record.ViewMatrix = float4x4.LookAt(cameraPosition, BoundsCenter, up);
+                record.ViewMatrix = float4x4.LookAt(cameraPosition, safeCenter, up);
                 record.ProjectionMatrix = float4x4.Ortho(
                     -orthoSize,
                     orthoSize,
                     -orthoSize,
                     orthoSize,
-                    math.max(0.001f, NearClipMeters),
+                    safeNearClip,
                     farClip);
             }
         }
@@ -91,7 +96,10 @@ namespace Hecton8.World
             if (!Points.IsCreated || index < 0 || index >= Points.Length)
                 return;
 
-            float q = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
+            float q = math.saturate(math.select(0f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
+            float3 safeCenter = math.select(float3.zero, Center, math.isfinite(Center));
+            float3 finiteExtents = math.select(new float3(0.5f), Extents, math.isfinite(Extents));
+            float3 safeExtents = math.max(math.abs(finiteExtents), new float3(0.5f));
             uint hash = Mix(StableSeed ^ (uint)(index + 1) * 747796405u);
             float u = ((hash & 1023u) + 0.5f) * (1f / 1024f);
             float v = (((hash >> 10) & 1023u) + 0.5f) * (1f / 1024f);
@@ -100,8 +108,9 @@ namespace Hecton8.World
             float twist = math.sin((p.x + p.z + index * 0.0137f) * math.lerp(4f, 19f, q));
             float bulge = 0.62f + 0.28f * twist;
             float3 shaped = new float3(p.x * bulge, p.y * (0.45f + 0.2f * q), p.z * (1.0f - 0.2f * twist));
-            float3 position = Center + shaped * math.max(Extents, new float3(0.5f));
-            float3 normal = math.normalizesafe(shaped, new float3(0f, 1f, 0f));
+            float3 safeShaped = math.select(new float3(0f, 1f, 0f), shaped, math.isfinite(shaped));
+            float3 position = safeCenter + safeShaped * safeExtents;
+            float3 normal = math.normalizesafe(safeShaped, new float3(0f, 1f, 0f));
 
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(Points);
             int stride = UnsafeUtility.SizeOf<HlodImpostorMockPoint>();

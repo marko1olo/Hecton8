@@ -1,10 +1,10 @@
-# SHINOBU_210 Offline Module Damage Baker
+﻿# SHINOBU_210 Offline Module Damage Baker
 
 Date: 2026-05-20
 Status: STATIC SOURCE UPDATED - PENDING UNITY IMPORT / PROFILER PROOF
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -14,10 +14,10 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 ## Boundary
 
@@ -99,10 +99,23 @@ The mesh pack job is chained onto the deformation/normal/color/hull dependency g
 serialization boundary. Baked vertices are written into a `NativeArray<HabitatDamageBakedVertex>` and uploaded with
 `Mesh.SetVertexBufferData`; indices are uploaded with `Mesh.SetIndexBufferData`. The only remaining `Complete()` calls
 are cold Editor synchronization points where Unity APIs require CPU-visible mesh data or benchmark timing.
+The final pack stage also clamps non-finite position, tangent, UV, stress, and tear values before writing half/snorm/color
+fields, preventing NaN payloads from becoming serialized mesh assets.
+
+Source mesh indices are compacted through explicit 16-byte `HabitatDamageIndexRangeDTO` rows. Each row records a
+triangle submesh's raw `indexStart`, compact destination start, count, and `baseVertex`. The Burst copy job applies
+those rows and clamps the final index to `0..vertexCount-1` before tear and normal passes, so multi-submesh habitat
+modules do not accidentally bake non-triangle submeshes, wrong base-vertex topology, or out-of-range bad-import
+indices.
 
 The runtime-destruction scanner reads source files into a temporary `NativeArray<byte>` and scans code-context bytes
 outside comments and string/char literals. It does not use `File.ReadAllLines`, `File.ReadAllBytes`, `string.Split`, or
 managed per-file `byte[]` buffers.
+
+Pointer aliasing annotations are restricted to buffers with clear physical separation. Source mesh attribute byte views
+are read-only but can overlap when Unity stores attributes in one interleaved stream, so they are not marked `[NoAlias]`.
+Output vertices, compact index buffers, range rows, hull rows, and packed vertex outputs remain annotated where they do
+not overlap by construction.
 
 ## Dear Lie
 
@@ -122,3 +135,5 @@ not a gameplay Vault allocation and must not be treated as rollback state.
 
 Static source verification exists only for this pass. Unity import, Burst compile, Mesh Inspector layout proof,
 Profiler, GCMonitor, and player-build proof remain pending.
+
+

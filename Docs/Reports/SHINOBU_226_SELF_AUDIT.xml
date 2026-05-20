@@ -1,0 +1,58 @@
+<SELF_AUDIT agent_id="SHINOBU_226" domain="SCANNER_LORE_DATABASE_SYNC" task_count="19">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">STRING_LOOKUP_INQUISITION: scanner/PDA hot-pattern scan rejects target.name/GetComponent identity paths; runtime route uses uint FNV hashes.</TASK>
+    <TASK id="02" status="PASS">MONOBEHAVIOUR_UPDATE_PURGE: scan work remains registered FastTick/SlowTick/LateFrameTick; no Unity Update loop added.</TASK>
+    <TASK id="03" status="PASS">CS1612_METADATA_STATE_ANNIHILATION: hot DTOs use public fields and explicit layout; no hot-path properties added.</TASK>
+    <TASK id="04" status="PASS">ARM64_SCAN_LAYOUT_VALIDATION: DTOs use explicit offsets; ScanProgressDTO is 64 bytes with 8-byte AUP alignment.</TASK>
+    <TASK id="05" status="PASS">EMERGENCY_MOCK_LORE_DATABASE: GenerateMockScannableTargetsJob populates hash-only entities, metadata, buckets, and lore index.</TASK>
+    <TASK id="06" status="PASS">BURST_SCAN_EVALUATION_KERNEL: scanner jobs use CompileSynchronously, Deterministic float mode, and NoAlias fields.</TASK>
+    <TASK id="07" status="PASS">DETERMINISTIC_FNV_HASH_MATCHING: TryApplyLoreIndexCsvLine hashes ASCII tokens to FNV-1a 32-bit ids and inserts a native lore index.</TASK>
+    <TASK id="08" status="PASS">THE_DEAR_LIE_UNMANAGED_UNLOCK: EvaluateScanCompletionJob sets an unmanaged 128-byte encyclopedia bitmask by atomic OR.</TASK>
+    <TASK id="09" status="FAIL_ABSENT">No Task 09 exists inside the SHINOBU_226 XML block. No invented work item was created.</TASK>
+    <TASK id="10" status="PASS">PROXIMITY_TARGET_ACQUISITION: ScannerSpatialQueryJob/AcquireScanTargetJob query spatial buckets and AUP ray-sphere candidates.</TASK>
+    <TASK id="11" status="PASS">THE_DEAR_LIE_SCANNER_HUD: HUD output is shader scalar globals; no per-target mesh/UI object simulation added.</TASK>
+    <TASK id="12" status="PASS">CONTINUOUS_SCALABILITY_SCREEN_DEGRADATION: cadence and shader dither/refresh are continuous functions of GlobalQualityWeight.</TASK>
+    <TASK id="13" status="PASS">AUP_PRECISION_DISTANCE_GATING: ray-sphere and SDF checks subtract AUP in double before local float math.</TASK>
+    <TASK id="14" status="PASS">ROLLBACK_NETCODE_STATE_FENCE: ScanProgressDTO and encyclopedia masks are blittable fixed-size DTOs suitable for memcpy snapshots.</TASK>
+    <TASK id="15" status="PASS">TELEMETRY_SCANNER_RECORDER: 300-frame scanner telemetry ring remains Vault-backed and dumps to SHINOBU_226 filenames.</TASK>
+    <TASK id="16" status="PASS">SCANNER_TUNER_EDITOR_WINDOW: ScannerLoreDatabaseSyncTunerWindow validates layout and simulates hash unlocks.</TASK>
+    <TASK id="17" status="PASS">CSV_LORE_INDEX_INGESTOR: byte-span CSV ingestion avoids split/string allocation in the runtime parser.</TASK>
+    <TASK id="18" status="PASS">LIVE_SCAN_DEBUG_GIZMO: tuner reports masks/hash state; runtime shader globals expose live scan scalar state.</TASK>
+    <TASK id="19" status="PASS">ARCHITECTURAL_METRIC_VALIDATOR: ScannerStringInquisitionValidator scans scanner/PDA source for forbidden string/GetComponent patterns.</TASK>
+    <TASK id="20" status="PASS">SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION: this XML records reconciliation, layout, Vault, dependency, compile guard, and Dear Lie proof.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <ScanProgressDTO size="64">
+      <field name="TargetHashID" offset="0" size="4"/>
+      <field name="CurrentProgress01" offset="4" size="4"/>
+      <field name="ScanRate" offset="8" size="4"/>
+      <field name="Flags" offset="12" size="4"/>
+      <field name="ScannerAUP" offset="16" size="24"/>
+      <field name="LastFrame" offset="40" size="4"/>
+      <field name="CompletedHash" offset="44" size="4"/>
+      <padding offset="48" size="16"/>
+      <math>4+4+4+4+24+4+4+16 = 64 bytes; double3 starts at offset 16, divisible by 8.</math>
+    </ScanProgressDTO>
+    <ScannerLoreIndexDTO size="32">TargetHashID@0 LoreEntryIndex@4 Flags@8 SourceHash@12 ProbeStride@16 padding@20..31.</ScannerLoreIndexDTO>
+    <ScannerEncyclopediaStateDTO size="128">16 contiguous ulong mask words, offsets 0..120 step 8.</ScannerEncyclopediaStateDTO>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    Query cadence uses q=saturate(GlobalQualityWeight), smooth=q*q*(3-2*q), and lerps low cadence to ultra cadence; pressure multiplies cadence continuously from 1x to 3x. HUD projection publishes progress, q, refreshHz lerped 5..60, and dither complexity lerped 1..8 with pressure damping. Below q=0.3 the shader receives low refresh and one-dimensional dither-like scalar behavior; at q=1.0 it receives visual-overkill refresh and richer dither taps. No IsLowEnd branch controls scan truth.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No private NativeArray, NativeList, NativeHashMap, raw pointer, or VaultBufferHandle fields are retained. Runtime stores pointer-free VaultGenerationHandle descriptors only. Requested buffers: 70640 entities, 70641 metadata, 70642 occlusion zones, 70643 bucket heads, 70644 next, 70645 results, 70646 result count, 70647 active state, 70648 VFX target, 70649 query stats, 70650 telemetry ring, 70651 settings, 70657 scan progress, 70658 lore index, 70659 encyclopedia state.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Consumed handles: query and completion jobs are scheduled through JobHandle and registered with H8Memory. Query output handle: _queryHandle. Completion output handle: _completionHandle, chained from UpdateScanProgressJob into EvaluateScanCompletionJob. NoAlias is applied to non-overlapping NativeArray fields in mock generation, scan progress, completion evaluation, target acquisition, and spatial query jobs.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No direct sibling runtime assembly dependency was added. Scanner route depends on Core/Core.Contracts/Core.Memory existing contracts, Vault descriptors, SignalBus payloads, and shader global scalar surface. Generated csproj currently only exposes H8Memory.cs from this patch set; Unity project regeneration is required to include newly added editor file in IDE csproj.
+  </COMPILE_GUARD>
+  <THE_DEAR_LIE_CONFIRMATION>
+    Occlusion remains a midpoint SDF fake instead of Unity Physics.Raycast/MeshCollider. HUD scan visualization is scalar shader globals instead of per-target UI/GameObject simulation. Before: managed string/UI/object identity lookup plus possible physics query, O(objects * managed comparison/engine query). After: spatial bucket hash query with bounded candidates and native lore bit lookup, O(visited_cells * max_candidates + occlusion_zones) with no string equality in the hot scan route.
+  </THE_DEAR_LIE_CONFIRMATION>
+  <VERIFICATION>
+    <static_scan forbidden_string_identity_findings="0">PowerShell Select-String found no target.name/GetComponent(ItemData/Scannable*) patterns in ScannerTool, ScannableTarget, ScannerDataMiningRouter, PDAEncyclopediaStreamer, or PdaH8lrLoreStore.</static_scan>
+    <compile status="BLOCKED_BY_CPU_GATE">Win32_Processor LoadPercentage averaged 100; dotnet build was not launched under project rule.</compile>
+  </VERIFICATION>
+</SELF_AUDIT>

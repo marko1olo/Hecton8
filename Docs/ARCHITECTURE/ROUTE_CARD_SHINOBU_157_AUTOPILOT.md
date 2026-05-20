@@ -1,4 +1,4 @@
-# Route Card: SHINOBU_157 Submarine Autopilot
+﻿# Route Card: SHINOBU_157 Submarine Autopilot
 
 Owner: Echelon 6 Habitat & Vehicles / Autonomous Submarine Navigation
 Runtime file: Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs
@@ -10,12 +10,14 @@ Review disposition: YELLOW - static source route only; guarded dotnet compile is
 |---|---|
 | Route ID | `SHINOBU_157_SUBMARINE_AUTOPILOT` |
 | Owner | SHINOBU_157 / SUBMARINE_AUTOPILOT |
+| Instrument | GlobalDataVault autopilot buffers `71592..71603`, GlobalRegistry tick lanes, owner-local cold editor facade, and black-box dump route |
 | Producer phase | `SIMULATION` autopilot command solve and budgeted attitude/depth correction |
 | Consumer phase | `POST_SIMULATION` force-command publication plus `VISUAL_SYNC` debug/gizmo readback when enabled |
 | Cadence | Fixed simulation cadence for command truth; visual/debug consumers are quality-gated and must not force runtime completion |
 | Capacity | Vault-backed command/state/telemetry lanes; telemetry ring fixed at 300 entries; debug readback bounded by authoring tool cadence |
 | Overflow/failure | Invalid or saturated inputs publish bounded safe command output and telemetry; route stays YELLOW until compile/runtime/profiler proof exists |
 | Shutdown/disposal | Owner completes/drains owned scheduled handles before clearing command state; Vault/SignalBus owners retain buffer and queue disposal authority |
+| Fault dump target | `Docs/AgentLogs/Dump_SHINOBU_157.bin` and `Docs/AgentLogs/Dump_NAVIGATION_SURGEON.bin` are planned/generated on fault; no existing artifact is implied unless a timestamped runtime trigger and output are linked |
 | Proof required before GREEN | Fresh compile/import artifact, Burst/job proof, Play Mode route proof, profiler/GC proof, and linked output path with command, timestamp, environment, and result |
 | Review disposition | YELLOW / STATIC_SOURCE_ONLY |
 
@@ -27,8 +29,8 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. These anchors prove only that the ci
 - `Assets/_Project/Scripts/Physics/Vehicles/Automation/Editor/SubmarineAutopilotTunerWindow.cs`
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R45 Root/Architecture Actuality Boundary
-This route card is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) (R44 prior internal-residue/exact-route-field/proof-wording correction); R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R37 remains the prior artifact-path/proof-wording/source-counter correction; R36 remains the prior authority-spine/domain-map correction; R35 remains the prior R4/counter-residue correction, and R34 remains the prior source-counter and physical-line refresh, R33 remains the prior R32-residue/source-anchor correction, R32 remains the prior R4/proof-wording correction, R31 remains the prior current-boundary propagation correction, R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, and R28 remains the prior interior-boundary correction. Current static gates: AtlasCheck fails `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); Mod API static validation passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only.
+## 2026-05-20 R46 Root/Architecture Actuality Boundary
+This route card is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) (R45 prior R43/R44 residue/proof-artifact/source-counter correction); R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R37 remains the prior artifact-path/proof-wording/source-counter correction; R36 remains the prior authority-spine/domain-map correction; R35 remains the prior R4/counter-residue correction, and R34 remains the prior source-counter and physical-line refresh, R33 remains the prior R32-residue/source-anchor correction, R32 remains the prior R4/proof-wording correction, R31 remains the prior current-boundary propagation correction, R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, and R28 remains the prior interior-boundary correction. Current static gates: AtlasCheck fails `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); Mod API static validation passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only.
 
 No Unity import, Unity Console, Play Mode, Burst Inspector, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, route soak, save/load route, vehicle scene wiring, or visual proof is implied unless this route card links a fresh evidence artifact. `YELLOW` remains the only valid runtime disposition until evidence is attached.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
@@ -82,3 +84,5 @@ No NavMesh, no A*, no `Physics.Raycast`, no `Physics.SphereCast`, no managed way
 - `Assets/_Project/_Archive/HectonWaterPhysicsEditor.cs`
 
 The generated csproj files also have not been regenerated to include the new SHINOBU_157 source paths. Unity import remains the required next proof step.
+
+

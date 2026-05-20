@@ -45,9 +45,9 @@ Hardware Impact: Avoids adding an estimated 40-120 us duplicate physics query on
 
 Problem: `LaserCutter.UpdateSparks` still moves a serialized `ParticleSystem`, changes emission rate, and calls `Play/Stop` during active cutting. Even without `Instantiate`, this is component-state churn in the tool hot path and does not guarantee GPU-only visual staging.
 
-Solution: Replace the hot spark operation with a `DebrisSpawnSignal`/tool spark signal path using absolute hit AUP and continuous `GlobalQualityWeight` intensity/count scaling. Leave legacy serialized fields inert for prefab compatibility until assets are migrated.
+Solution: Replace the hot spark operation with a `DebrisSpawnSignal`/tool spark signal path using absolute hit AUP and continuous `GlobalQualityWeight` intensity/count scaling. Remove cutter-adjacent `ParticleSystem` references in `LaserCutter`, `SealedDoor`, and `SargassumCutResponder` so focused cutter scans show zero particle-system code.
 
-Rejected Alternatives: Pooling or rate-tuning the existing `ParticleSystem` keeps CPU component writes in the cutter loop. Spawning prefab spark bursts is explicitly forbidden. Removing serialized fields immediately risks unrelated prefab churn without changing runtime truth.
+Rejected Alternatives: Pooling or rate-tuning the existing `ParticleSystem` keeps CPU component writes in the cutter loop. Spawning prefab spark bursts is explicitly forbidden. Keeping inert serialized fields was rejected after static scan proved they still leave cutter-focused ParticleSystem evidence.
 
 Scalability potential: Low clamps spark quantity to a small GPU request count. Middle/high raises density smoothly. Ultra spends saved CPU on GPU debris quantity and shader glow, not extra physical particles.
 
@@ -64,3 +64,27 @@ Rejected Alternatives: Editing `H8Memory.cs` would enlarge global authority for 
 Scalability potential: Low/middle/high/ultra share fixed capacities with bounded request/result buffers; only quality scalar and staged visual counts vary.
 
 Hardware Impact: Fixed vault buffers avoid allocator churn. Expected i3/MX350 benefit is stability rather than a single measurable microsecond win.
+
+## Decision 005: Shader Deformation Truth Boundary
+
+Problem: Cutter impact wants visible molten scars and hull dents, but CPU mesh mutation or runtime mesh rebuilds are over budget for an equipment hot path.
+
+Solution: `EvaluateCutterRaycastHitsJob` writes `LaserCutDeformationStateDTO`, `LaserCutGlowDecalRequestDTO`, and `LaserCutImpactVfxDTO` only. The deformation is a shader/decal contract: center AUP, normal, radius, depth, heat, and progress. Geometry truth remains outside the cutter.
+
+Rejected Alternatives: Runtime vertex edits and `RecalculateNormals` are main-thread hazards. Mesh scar prefabs would add object lifetime churn. A binary low/high visual switch was rejected; spark count, glow, and dent radius consume continuous `GlobalQualityWeight`.
+
+Scalability potential: Low uses tiny dent radius and low GPU spark quantity. Middle uses standard glow/decal density. High and Ultra increase radius/lifetime/spark density through continuous weights without changing gameplay damage truth.
+
+Hardware Impact: Avoids estimated 300-3000 us mesh mutation spikes on i3/MX350-class devices. Actual gain remains PENDING PROFILER.
+
+## Decision 006: Editor And Report Scope
+
+Problem: Designers need tuning and static evidence, but runtime UI or manual grep would either cost gameplay frames or fail repeatability.
+
+Solution: Add editor-only UI Toolkit tuner, editor gizmo, and `Cutter_Raycast_Inquisition` static report writer. Runtime remains DataVault/signal based; editor code is isolated in `Editor` folders or `UNITY_EDITOR` guards.
+
+Rejected Alternatives: In-game debug UI was rejected because it adds player-route cost. IMGUI was rejected because the mandate and existing tuner pattern use UI Toolkit. Overwriting another agent's shared construction report was rejected; SHINOBU writes a sidecar report and final log notes the shared file state.
+
+Scalability potential: No runtime cost on any tier. Top-tier devices only gain optional editor visualization density during development.
+
+Hardware Impact: Runtime impact is zero in builds. Editor-only overhead is irrelevant to i3/MX350 gameplay budgets.

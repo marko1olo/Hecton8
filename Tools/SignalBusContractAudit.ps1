@@ -161,6 +161,87 @@ function Test-IsHotMethodName {
     return $MethodName -match "^(Tick|Update|LateUpdate|FixedUpdate|Execute|OnUpdate|Run|Schedule|Simulate|Step|Process|Dispatch|Flush|Render|Sync)"
 }
 
+function Resolve-SyncFileIoFinding {
+    param(
+        [string]$RelativePath,
+        [string]$ClassName,
+        [string]$MethodName,
+        [bool]$InsideEditorOrDevelopmentGuard
+    )
+
+    $tags = @{
+        isEditor = $false
+        className = $ClassName
+        methodName = $MethodName
+        insideEditorOrDevelopmentGuard = $InsideEditorOrDevelopmentGuard
+    }
+
+    $default = [pscustomobject]@{
+        severity = "WARN"
+        rule = "RUNTIME_SYNC_FILE_IO_REVIEW"
+        confidence = 76
+        classification = "IO_PRESSURE_HEURISTIC"
+        requiredAction = "Confirm this synchronous file I/O is cold/fatal only. Runtime WAL/save paths should stage work off the main thread."
+        tags = $tags
+    }
+
+    if ($RelativePath -eq "Assets/_Project/Scripts/Core/SystemDispatcher.cs") {
+        if ($MethodName -match "^(DumpMasterFenceTelemetry|DumpMasterPipelineTelemetry|DumpDispatcherBlackBox|WriteDispatcherBlackBoxDump)$") {
+            $tags.syncIoContext = "dispatcher_fault_blackbox"
+            return [pscustomobject]@{
+                severity = "INFO"
+                rule = "FAULT_BLACKBOX_SYNC_DUMP_REVIEW"
+                confidence = 82
+                classification = "FAULT_BLACKBOX_SYNC_IO"
+                requiredAction = "Static context classifies this as dispatcher fault/stall blackbox I/O. Keep call sites one-shot or backoff-gated; do not reuse this path for WAL/save or normal runtime persistence."
+                tags = $tags
+            }
+        }
+
+        if ($MethodName -eq "ParseMasterExecutionPriorityCsv" -and $InsideEditorOrDevelopmentGuard) {
+            $tags.syncIoContext = "editor_development_csv_hotswap"
+            return [pscustomobject]@{
+                severity = "INFO"
+                rule = "EDITOR_DEV_CSV_HOTSWAP_SYNC_IO_REVIEW"
+                confidence = 84
+                classification = "EDITOR_DEV_CSV_HOTSWAP_SYNC_IO"
+                requiredAction = "Static context classifies this as UNITY_EDITOR/DEVELOPMENT_BUILD tuning I/O. Keep it out of release-player paths or stage it off-thread before production use."
+                tags = $tags
+            }
+        }
+    }
+
+    if ($RelativePath -eq "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs") {
+        if (($ClassName -eq "SignalTelemetryRingBuffer" -or $ClassName -eq "SignalThreadLocalScratchpad") -and $MethodName -eq "DumpToDisk") {
+            $tags.syncIoContext = "signal_fault_blackbox"
+            return [pscustomobject]@{
+                severity = "INFO"
+                rule = "FAULT_BLACKBOX_SYNC_DUMP_REVIEW"
+                confidence = 82
+                classification = "FAULT_BLACKBOX_SYNC_IO"
+                requiredAction = "Static context classifies this as SignalBus fault blackbox I/O. Keep runtime callers one-shot or 300-frame backoff-gated; do not reuse this path for normal persistence."
+                tags = $tags
+            }
+        }
+
+        if (($ClassName -eq "SignalPriorityTable" -and $MethodName -eq "TryLoadFile") -or
+            ($ClassName -eq "SignalTuningCsvHotSwap" -and $MethodName -eq "TryLoad") -or
+            ($ClassName -eq "SignalThreadContentionCsvHotSwap" -and $MethodName -eq "TryLoad")) {
+            $tags.syncIoContext = "cold_bootstrap_config"
+            return [pscustomobject]@{
+                severity = "INFO"
+                rule = "COLD_BOOTSTRAP_CONFIG_SYNC_IO_REVIEW"
+                confidence = 80
+                classification = "COLD_BOOTSTRAP_CONFIG_SYNC_IO"
+                requiredAction = "Static context classifies this as boot/editor configuration ingestion. Keep it out of Tick/dispatcher hot paths and keep file size bounded by the existing scratch buffers."
+                tags = $tags
+            }
+        }
+    }
+
+    return $default
+}
+
 function New-StructMetadata {
     param(
         [string]$Name,
@@ -490,6 +571,11 @@ foreach ($file in $files) {
     $currentHotMethod = ""
     $hotMethodBraceDepth = 0
     $hotMethodStarted = $false
+    $currentClass = ""
+    $currentMethod = ""
+    $methodBraceDepth = 0
+    $methodStarted = $false
+    $editorOrDevelopmentGuardDepth = 0
 
     for ($lineIndex = 0; $lineIndex -lt $codeLines.Length; $lineIndex++) {
         $line = $rawLines[$lineIndex]
@@ -497,8 +583,43 @@ foreach ($file in $files) {
         $trimmed = $code.TrimStart()
         $lineNumber = $lineIndex + 1
 
+        if ($trimmed -match "^#if\b") {
+            if ($editorOrDevelopmentGuardDepth -gt 0 -or $trimmed -match "UNITY_EDITOR|DEVELOPMENT_BUILD") {
+                $editorOrDevelopmentGuardDepth++
+            }
+        } elseif ($trimmed -match "^#endif\b" -and $editorOrDevelopmentGuardDepth -gt 0) {
+            $editorOrDevelopmentGuardDepth--
+        }
+
         if ($trimmed.Length -eq 0) {
             continue
+        }
+
+        if ($code.IndexOf("class", [System.StringComparison]::Ordinal) -ge 0 -and
+            $code -match "^\s*(?:(?:public|internal|private|protected)\s+)*(?:(?:static|sealed|partial|abstract)\s+)*class\s+([A-Za-z_][A-Za-z0-9_]*)\b") {
+            $currentClass = $Matches[1]
+        }
+
+        $methodDeclMatch = $null
+        if ($code.IndexOf("(", [System.StringComparison]::Ordinal) -ge 0) {
+            $methodDeclMatch = [regex]::Match($code, "^\s*(?:(?:public|internal|private|protected)\s+)*(?:(?:static|unsafe|virtual|override|sealed|async|partial)\s+)*(?:void|bool|int|float|double|JobHandle|ValueTask|Task|NativeArray<[^>]+>|NativeList<[^>]+>|[A-Za-z_][A-Za-z0-9_<>,\s\.\[\]]*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:<[^>]+>)?\s*\(")
+        }
+        if ($null -ne $methodDeclMatch -and $methodDeclMatch.Success) {
+            $currentMethod = $methodDeclMatch.Groups[1].Value
+            $methodBraceDepth = Count-BraceDelta $code
+            $methodStarted = $code.Contains("{")
+        } elseif ($currentMethod.Length -gt 0) {
+            if ($code.Contains("{")) {
+                $methodStarted = $true
+            }
+            if ($methodStarted) {
+                $methodBraceDepth += Count-BraceDelta $code
+                if ($methodBraceDepth -le 0 -and $code.Contains("}")) {
+                    $currentMethod = ""
+                    $methodBraceDepth = 0
+                    $methodStarted = $false
+                }
+            }
         }
 
         if ($IncludeHotPathHeuristics) {
@@ -835,9 +956,8 @@ foreach ($file in $files) {
                 $code.IndexOf("Directory", [System.StringComparison]::Ordinal) -ge 0) -and
             -not $isEditor -and $relativePath -notmatch "Save|Persistence|Crash|Dump|Telemetry|Tools|Editor" -and
             $code -match "\b(File|Directory)\.(Read|Write|Append|Open|Create|Delete)|new\s+FileStream\s*\(") {
-            Add-Finding "WARN" "RUNTIME_SYNC_FILE_IO_REVIEW" 76 "IO_PRESSURE_HEURISTIC" "SANITIZED_LINE_REGEX" $relativePath $lineNumber "" $line "Confirm this synchronous file I/O is cold/fatal only. Runtime WAL/save paths should stage work off the main thread." @{
-                isEditor = $false
-            }
+            $ioFinding = Resolve-SyncFileIoFinding $relativePath $currentClass $currentMethod ($editorOrDevelopmentGuardDepth -gt 0)
+            Add-Finding $ioFinding.severity $ioFinding.rule $ioFinding.confidence $ioFinding.classification "SANITIZED_LINE_REGEX" $relativePath $lineNumber "" $line $ioFinding.requiredAction $ioFinding.tags
         }
     }
 }
@@ -1002,7 +1122,11 @@ if ($findings.Count -eq 0) {
     [void]$md.AppendLine("No findings. This is static-source only, not runtime proof.")
 } else {
     foreach ($finding in $findings) {
-        [void]$md.AppendLine("- [$($finding.severity)][$($finding.confidence)%][$($finding.classification)] $($finding.rule) | $($finding.path):$($finding.line) | $($finding.symbol)")
+        $findingHeader = "- [$($finding.severity)][$($finding.confidence)%][$($finding.classification)] $($finding.rule) | $($finding.path):$($finding.line)"
+        if (-not [string]::IsNullOrWhiteSpace($finding.symbol)) {
+            $findingHeader += " | $($finding.symbol)"
+        }
+        [void]$md.AppendLine($findingHeader)
         [void]$md.AppendLine("  Evidence kind: $($finding.evidenceKind)")
         [void]$md.AppendLine("  Evidence: ``$($finding.evidence)``")
         [void]$md.AppendLine("  Required action: $($finding.requiredAction)")

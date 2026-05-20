@@ -380,6 +380,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             string suffix = StateSuffix(state);
             string meshPath = OutputFolder + "/GEN_" + safeName + "_" + suffix + ".asset";
             OfflineWreckageBakeCounters64 stateCounters = counters[0];
+            warningFlags |= stateCounters.WarningFlags;
             int hullCount = stateCounters.HullVertexCount;
             double burstMicroseconds = stopwatch.Elapsed.TotalMilliseconds * 1000.0;
             if (hullCount > 256)

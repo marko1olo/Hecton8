@@ -72,9 +72,36 @@ namespace Hecton8.Editor.OfflineGeometry
             builder.Append("    <Struct name=\"LodConfigurationDTO\" size=\"");
             builder.Append(UnsafeUtility.SizeOf<LodConfigurationDTO>());
             builder.Append("\" alignmentMath=\"4+4+4+4=16; exact 16-byte SIMD-friendly DTO; no packed layout attribute\" />\n");
+            AppendField(builder, "OfflineGeometryRawVertex", "Position", Offset<OfflineGeometryRawVertex>(nameof(OfflineGeometryRawVertex.Position)), 12);
+            AppendField(builder, "OfflineGeometryRawVertex", "Normal", Offset<OfflineGeometryRawVertex>(nameof(OfflineGeometryRawVertex.Normal)), 12);
+            AppendField(builder, "OfflineGeometryRawVertex", "Uv0", Offset<OfflineGeometryRawVertex>(nameof(OfflineGeometryRawVertex.Uv0)), 8);
+            builder.Append("    <Struct name=\"OfflineGeometryRawVertex\" size=\"");
+            builder.Append(UnsafeUtility.SizeOf<OfflineGeometryRawVertex>());
+            builder.Append("\" alignmentMath=\"float3(12)+float3(12)+float2(8)=32; exact 32-byte raw job vertex; explicit offsets 0,12,24\" />\n");
+            AppendField(builder, "OfflineGeometryVertex32", "Position", Offset<OfflineGeometryVertex32>(nameof(OfflineGeometryVertex32.Position)), 12);
+            AppendField(builder, "OfflineGeometryVertex32", "Normal", Offset<OfflineGeometryVertex32>(nameof(OfflineGeometryVertex32.Normal)), 12);
+            AppendField(builder, "OfflineGeometryVertex32", "Uv0", Offset<OfflineGeometryVertex32>(nameof(OfflineGeometryVertex32.Uv0)), 8);
             builder.Append("    <Struct name=\"OfflineGeometryVertex32\" size=\"");
             builder.Append(UnsafeUtility.SizeOf<OfflineGeometryVertex32>());
-            builder.Append("\" alignmentMath=\"float3(12)+float3(12)+float2(8)=32; single interleaved vertex stride\" />\n");
+            builder.Append("\" alignmentMath=\"float3(12)+float3(12)+float2(8)=32; exact 32-byte interleaved mesh vertex; explicit offsets 0,12,24\" />\n");
+            AppendField(builder, "OfflineSubMeshRange", "SourceIndexStart", Offset<OfflineSubMeshRange>(nameof(OfflineSubMeshRange.SourceIndexStart)), 4);
+            AppendField(builder, "OfflineSubMeshRange", "SourceTriangleCount", Offset<OfflineSubMeshRange>(nameof(OfflineSubMeshRange.SourceTriangleCount)), 4);
+            AppendField(builder, "OfflineSubMeshRange", "TargetTriangleStart", Offset<OfflineSubMeshRange>(nameof(OfflineSubMeshRange.TargetTriangleStart)), 4);
+            AppendField(builder, "OfflineSubMeshRange", "TargetTriangleCount", Offset<OfflineSubMeshRange>(nameof(OfflineSubMeshRange.TargetTriangleCount)), 4);
+            builder.Append("    <Struct name=\"OfflineSubMeshRange\" size=\"");
+            builder.Append(UnsafeUtility.SizeOf<OfflineSubMeshRange>());
+            builder.Append("\" alignmentMath=\"4+4+4+4=16; exact 16-byte range row; explicit int offsets 0,4,8,12\" />\n");
+            AppendField(builder, "OfflinePrimitiveFitResult", "Center", Offset<OfflinePrimitiveFitResult>(nameof(OfflinePrimitiveFitResult.Center)), 12);
+            AppendField(builder, "OfflinePrimitiveFitResult", "Size", Offset<OfflinePrimitiveFitResult>(nameof(OfflinePrimitiveFitResult.Size)), 12);
+            AppendField(builder, "OfflinePrimitiveFitResult", "Radius", Offset<OfflinePrimitiveFitResult>(nameof(OfflinePrimitiveFitResult.Radius)), 4);
+            AppendField(builder, "OfflinePrimitiveFitResult", "Error", Offset<OfflinePrimitiveFitResult>(nameof(OfflinePrimitiveFitResult.Error)), 4);
+            AppendField(builder, "OfflinePrimitiveFitResult", "VertexCount", Offset<OfflinePrimitiveFitResult>(nameof(OfflinePrimitiveFitResult.VertexCount)), 4);
+            AppendField(builder, "OfflinePrimitiveFitResult", "ColliderType", Offset<OfflinePrimitiveFitResult>(nameof(OfflinePrimitiveFitResult.ColliderType)), 1);
+            AppendField(builder, "OfflinePrimitiveFitResult", "_pad0", Offset<OfflinePrimitiveFitResult>(nameof(OfflinePrimitiveFitResult._pad0)), 1);
+            AppendField(builder, "OfflinePrimitiveFitResult", "_pad1", Offset<OfflinePrimitiveFitResult>(nameof(OfflinePrimitiveFitResult._pad1)), 2);
+            builder.Append("    <Struct name=\"OfflinePrimitiveFitResult\" size=\"");
+            builder.Append(UnsafeUtility.SizeOf<OfflinePrimitiveFitResult>());
+            builder.Append("\" alignmentMath=\"float3(12)+float3(12)+float(4)+float(4)+int(4)+byte(1)+pad(3)=40; exact 8-byte multiple; explicit offsets 0,12,24,28,32,36,37,38\" />\n");
             AppendField(builder, "OfflineGeometryBakeTelemetryEntry", "SourceHash", Offset<OfflineGeometryBakeTelemetryEntry>(nameof(OfflineGeometryBakeTelemetryEntry.SourceHash)), 4);
             AppendField(builder, "OfflineGeometryBakeTelemetryEntry", "OutputHash", Offset<OfflineGeometryBakeTelemetryEntry>(nameof(OfflineGeometryBakeTelemetryEntry.OutputHash)), 4);
             AppendField(builder, "OfflineGeometryBakeTelemetryEntry", "OriginalTriangles", Offset<OfflineGeometryBakeTelemetryEntry>(nameof(OfflineGeometryBakeTelemetryEntry.OriginalTriangles)), 4);
@@ -139,7 +166,7 @@ namespace Hecton8.Editor.OfflineGeometry
             builder.Append("    <RuntimeAssembly name=\"Hecton8.World.OfflineGeometry\" references=\"none\" />\n");
             builder.Append("    <EditorAssembly name=\"Hecton8.World.OfflineGeometry.Editor\" references=\"Hecton8.World.OfflineGeometry,Unity.Burst,Unity.Collections,Unity.Jobs,Unity.Mathematics\" />\n");
             builder.Append("    <SiblingDomainReferences count=\"0\" />\n");
-            builder.Append("    <RoslynProbe status=\"PRE_ENDIAN_BOUNDED_HULL_ASSET_BIND_SAFETY_INDEX_RECHECK_PENDING\" path=\"Temp/SHINOBU_213_CompileProbe\" note=\"Last pass predates explicit-endian fallback, bounded-hull support-index edits, fail-closed hull asset-binding guard, hull read-write annotation fix, finite rsqrt normalization guards, and decimator index-stream fail-closed guards; post-endian bounded-hull safety-index probe gated by CPU; Unity import/profiler proof still pending\" />\n");
+            builder.Append("    <RoslynProbe status=\"PRE_ENDIAN_BOUNDED_HULL_ASSET_BIND_SAFETY_INDEX_HOT_STRUCT_RECHECK_PENDING\" path=\"Temp/SHINOBU_213_CompileProbe\" note=\"Last pass predates explicit-endian fallback, bounded-hull support-index edits, fail-closed hull asset-binding guard, hull read-write annotation fix, finite rsqrt normalization guards, decimator index-stream fail-closed guards, mock asset reload guard, binary-ledger edit, and hot geometry DTO explicit-layout proof; post-endian bounded-hull safety-index hot-struct probe gated by CPU; Unity import/profiler proof still pending\" />\n");
             builder.Append("  </COMPILE_GUARD>\n");
         }
 

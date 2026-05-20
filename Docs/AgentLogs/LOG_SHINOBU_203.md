@@ -52,6 +52,43 @@ Verification:
   <Compile status="blocked" reason="NETSDK1004 missing restore asset, then CPU rule blocked dotnet retry"/>
 </SELF_AUDIT>
 
+## 2026-05-20 Ultra-Polish Pass - Jacobi-Safe Relaxation And Reader Fence
+
+What was wrong:
+- `LogisticsNetworkGraph` had a duplicate `sourcePotential` local in one solver loop; that is a direct compile blocker.
+- Abyssal/power double-buffer Jacobi paths were using `omega > 1`, which is weighted Jacobi over-relaxation, not true Gauss-Seidel SOR. That can amplify residuals.
+- Abyssal convergence used sampled residuals as proof; low quality could miss a divergent unsampled voxel.
+- `TryScheduleSample` returned external sample handles without chaining them into the next thermodynamics writer dependency.
+- `SlowTick` still had runtime heat-profile filesystem polling.
+
+What was done:
+- Fixed the duplicate logistics local.
+- Clamped double-buffer power/thermal relaxation to continuous Jacobi-safe damping (`0.55..1.0`) and kept omega dampening on residual growth.
+- Made every processed power/thermal cell contribute its already-computed residual to padded worker slots; sampled-only convergence is no longer authoritative.
+- Chained thermal sample reader handles into the next thermodynamics writer dependency without main-thread completion.
+- Removed runtime profile polling from `SlowTick`, cached power black-box Vault lookup at graph construction, and replaced scoped `math.step`/`math.distance`/`math.length` calls with continuous or squared-distance forms.
+
+Cinematic cheats used:
+- Presentation sampling remains the Dear Lie: low quality moves toward nearest-cell reads and continuous cheap radial approximations; high quality blends toward trilinear detail. Solver convergence no longer fakes residual proof.
+
+Exact microseconds saved:
+- No profiler number claimed. Expected gain is from avoiding oscillation/retry churn and race-induced corruption; the full residual path reuses an already-computed scalar and writes only one 64-byte worker slot per job worker.
+
+Verification:
+- `Jacobi_Overhead_Scanner.ps1` reports `blind_iteration_candidates = 0`, `guarded_iteration_sites = 5`.
+- Forbidden-token `rg` is clean for `math.step`, `math.distance`, `math.length(`, NaN/Infinity sentinels, `Interlocked`, `Pack=`, binary quality tier switches, and `MemClear` in touched solver files.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- `dotnet build/rebuild` was not launched: CPU counter reported 100%, no `dotnet`/`csc` process rows.
+
+<SELF_AUDIT>
+  <Agent id="SHINOBU_203" pass="JacobiSafeRelaxationReaderFence"/>
+  <TaskReconciliation tasks="06,07,08,10,15,20" status="PASS_WITH_CORRECTION" detail="False SOR over-relaxation in double-buffer Jacobi was replaced by stable dynamic damping; residual convergence is full-authority through padded worker slots."/>
+  <DependencyGraph consumes="external SampleTemperatureJob handles, prior thermodynamics writer handle" outputs="writer chain waits on _sampleReadHandle; no main-thread Complete"/>
+  <NaNVaccination writesNaN="false" residualSentinel="faultFlags plus bounded residual, no MaxValue telemetry write"/>
+  <ScalabilityCurve binarySwitchesAdded="false" low="damped omega, looser tolerance, lower cadence, nearest-biased sample read" high="omega approaches 1.0, tighter tolerance, higher cadence, trilinear sample read"/>
+  <CompileGuard status="NOT_RUN_CPU_GUARD" cpu="100" dotnetOrCsc="none"/>
+</SELF_AUDIT>
+
 ## 2026-05-20 Ultra-Polish Pass - Pass-Wide Residual Closure
 
 What was wrong:
@@ -401,4 +438,35 @@ Verification:
   <NaNVaccination writesNaN="false" sourcePayloadFallbacks="radius,intensity,falloff,conductivity,cellSize,ambient,maxStable,dissipation,convection"/>
   <ScalabilityCurve binarySwitchesAdded="false" low="sparse residual mask and nearest thermal read" high="dense residual sampling and trilinear blend"/>
   <CompileGuard status="NOT_RUN" reason="CPU read denied; rebuild explicitly withheld; dotnet/csc absent"/>
+</SELF_AUDIT>
+
+## 2026-05-20 Ultra-Polish Pass - Quality-Amortized Pipe Flow Publish
+
+What was wrong:
+- `ShinobuLogisticsRouter.PublishFlowVisuals` still performed a full edge fanout into the pipe renderer after each solved frame.
+- That fanout is visual-only; logistics solver truth already lives in Vault arrays and telemetry.
+
+What was done:
+- Added `_flowVisualPublishCursor` as scalar cursor state.
+- Replaced all-edge publication with a continuous `GlobalQualityWeight` budget: low quality publishes about 32 edges per call, middle quality blends upward, quality 1.0 publishes every edge.
+- Verified `WfcOutpostGridRegistry` is owner-local under `Hecton8.Power`; no new World dependency was introduced. Existing `AbsoluteUniversePosition` usage remains only because `FluidIncursionSignal` already carries that payload type.
+
+Cinematic cheats used:
+- Cosmetic pipe-flow visual sync is amortized instead of simulated/published exhaustively every frame. Gameplay pressure, oxygen, and residual truth remain exact in Vault.
+
+Exact microseconds saved:
+- No profiler number claimed without Unity proof. Static reduction is O(edgeCount) to O(32..edgeCount) per publish; at 1000-2000 edges this avoids hundreds to thousands of renderer interface calls on low quality.
+
+Verification:
+- SHINOBU_203 XML block re-read from `Docs/Tasks/CURRENT_BATCH.md` lines 199-263.
+- `Jacobi_Overhead_Scanner.ps1` reports 0 blind candidates / 5 guarded residual sites.
+- Forbidden-token `rg` is clean for `math.step`, `math.distance`, `math.length(`, NaN/Infinity sentinels, `Interlocked`, `Pack=`, binary quality tier switches, and `MemClear` in touched solver files.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- No dotnet build or rebuild launched in this pass: CPU guard read 100%, no `dotnet`/`csc` process rows.
+
+<SELF_AUDIT>
+  <Agent id="SHINOBU_203" pass="QualityAmortizedPipeFlowPublish"/>
+  <ScalabilityCurve binarySwitchesAdded="false" low="~32 visual edge publishes per call" high="full edge publish"/>
+  <DearLie visualOnly="true" gameplayTruthChanged="false" before="O(edgeCount) every publish" after="O(lerp(32,edgeCount,qualityCurve))"/>
+  <CompileGuard status="NOT_RUN_CPU_GUARD" cpu="100" dotnetOrCsc="none"/>
 </SELF_AUDIT>

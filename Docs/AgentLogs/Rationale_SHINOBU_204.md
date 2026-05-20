@@ -361,3 +361,63 @@ Rejected Alternatives: Converting `BurstCallbackQueue` to explicit layout was re
 Scalability potential: Low tier keeps Burst callback handles compact and stable. Middle/high/ultra tiers can queue more callback events through the existing Unity queue path without changing callback-handle ABI.
 
 Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 0-2 us per 10k callback wrapper reads. Primary gain is static ABI proof for the only source-owned record in `BurstCallback.cs`. Evidence class: STATIC_SOURCE; `BurstCallback.cs` unaligned 8-byte FieldOffset scan returned 0 hits and `git diff --check` passed with CRLF warnings only.
+
+## Decision 031 - Crash Telemetry And Toxic Chemistry Explicit Closure
+
+Problem: `CrashTelemetryBuffer.cs` still used Sequential layout for binary crash export and live telemetry headers. `ToxicOutgassingChemistryTypes.cs` still used Sequential layout for toxicity state, grid headers, source rows, constants, mock samplers, combat-damage transfer rows, and grid telemetry. These rows feed dump files, forensic telemetry, or Burst chemistry grids where source-owned offsets matter more than CLR convenience.
+
+Solution: Converted crash export/live telemetry headers and all non-signal Sequential rows in `ToxicOutgassingChemistryTypes.cs` to explicit layouts while preserving existing sizes. Toxic grid/source/telemetry records keep `double3` AUP lanes at offset 0 and all 8-byte pads at offsets divisible by 8. Existing `ToxicityExposureSignal` and `ToxicBioluminescenceSignal` were already explicit and were left unchanged.
+
+Rejected Alternatives: Expanding 48-byte `ToxicitySourceDTO` to 64 bytes was rejected because the existing chemistry buffer stride may already be consumed by jobs and tooling; source-owning the current size avoids silent format migration. Replacing mock flow/sampler rows with managed test objects was rejected because CI fallback data must remain blittable. Changing the overlapping union fields in `TelemetryEntry` was rejected because that is existing explicit crash telemetry ABI and outside this Sequential purge.
+
+Scalability potential: Low tier keeps toxic plume and crash telemetry DTOs compact and deterministic. Middle tier preserves current chemistry buffer widths. High and Ultra tiers can run richer toxic-grid diagnostics over the same explicit rows while visual density remains controlled by continuous `GlobalQualityWeight` in the existing constants.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-8 us per 10k toxic chemistry rows and 0-4 us per crash export batch. Primary gain is ARM64-safe 8-byte AUP/pad proof and dump ABI determinism. Evidence class: STATIC_SOURCE; touched-file Sequential and unaligned 8-byte FieldOffset scans returned 0 hits; `git diff --check` passed with CRLF warnings only.
+
+## Decision 032 - Material Response And TBDR Culling DTO Explicit Closure
+
+Problem: `ShinobuMaterialResponseRuntime.cs` and `TBDRPipelineSurgeonTypes.cs` still had Sequential layouts on shader/material/culling DTO rows. These records are copied into Vault, GPU buffers, telemetry rings, or indirect draw arguments. Hidden CLR offsets weaken shader ABI proof and can hide unaligned lanes in culling payloads.
+
+Solution: Converted all fixed-size material response DTOs to explicit offsets: `InstanceMaterialDTO=16`, `MaterialPowerDTO=16`, `MaterialVisibleDTO=32`, `GlobalShaderConstantsDTO=48`, `MockBiomassDensitySignal=16`, `MaterialRuntimeScalarsDTO=16`, `TextureSetMappingDTO=16`, `WearRateDTO=16`, and `MaterialResponseTelemetryEntry=64`. Converted fixed TBDR rows to explicit offsets: budget/warning/mock quality rows, `PoiTransformDTO=112`, `MockCameraMatrix=128`, `AupGpuLocalizationInput=48`, streaming/telemetry/tuner/shader globals, and indirect draw args. `MockScatterBuffer` remains Sequential because it is a `NativeArray` wrapper aggregator, not a DTO.
+
+Rejected Alternatives: Converting `MockScatterBuffer` to explicit layout was rejected because `NativeArray<T>` size and safety fields are Unity-owned. Widening `PoiTransformDTO=112` or `GlobalShaderConstantsDTO=48` to cache-line multiples was rejected because these are shader/GraphicsBuffer strides; widening requires shader ABI migration, not a layout safety patch. Replacing culling with CPU GameObject instantiation was rejected by DOD and render-pipeline bypass rules.
+
+Scalability potential: Low tier keeps material and culling payload rows compact for Quest/mobile bandwidth. Middle tier preserves shader buffer ABI. High and Ultra tiers can spend saved CPU bandwidth on richer material response and HZB/indirect culling while staying on the same explicit DTO rows driven by continuous quality scalars.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 2-14 us per 10k material/culling row reads or uploads. Primary gain is shader/Vault stride proof and aligned long lanes in AUP GPU localization. Evidence class: STATIC_SOURCE; touched-file unaligned 8-byte scan returned 0 hits and `git diff --check` passed with CRLF warnings only.
+
+## Decision 033 - Audio Virtualization Contract Explicit Closure
+
+Problem: `AudioVirtualizationContracts.cs` still used Sequential layout for virtual voice ingress/state/selection/statistics/telemetry/tuning/mock rows. These are contract and Vault/DSP payloads, not Unity container wrappers. The editor smoke test also hard-coded old Sequential source needles, which would turn the new layout policy into a false failure.
+
+Solution: Converted every Sequential record in `AudioVirtualizationContracts.cs` to explicit offsets while preserving existing sizes: `VirtualVoiceDTO=48`, `VirtualVoiceRequest=128`, `VirtualVoice=160`, `VirtualVoiceSortKey=16`, `VirtualVoiceSelection=144`, `VirtualVoiceStatistics=64`, `AcousticTelemetryEntry=64`, `VirtualVoiceTelemetryEntry=64`, `VirtualVoiceTuningSnapshot=32`, `AudioProfileCsvRow=32`, `AcousticEchoTap=144`, `MockAcousticEmitterSignal=96`, `MockPlayerInsideSubSignal=32`, `MockSDFSampler=64`, and `MockTerrainSampler=96`. Embedded `AcousticAup` lanes remain at 8-byte aligned offsets 0, 40, and 80. Updated `ShinobuAcousticDspSmokeTester` to assert Explicit source markers for the 48-byte voice DTO and 16-byte sort key.
+
+Rejected Alternatives: Expanding `VirtualVoice=160` or `VirtualVoiceSelection=144` to larger cache-line multiples was rejected because the sorting path intentionally swaps 16-byte keys instead of full voice rows, and widening contract payloads would require a coordinated audio ABI migration. Leaving smoke tests on Sequential strings was rejected because it would preserve an obsolete policy assertion. Converting runtime audio jobs in the same pass was rejected because this patch is the contract surface, not job wrapper layout.
+
+Scalability potential: Low tier keeps compact virtual voice rows and 16-byte sort keys for Quest-class audio virtualization. Middle tier preserves current physical/virtual voice buffer widths. High and Ultra tiers can scale richer DSP and acoustic telemetry over the same explicit rows while continuous `GlobalQualityWeight` drives budget decisions in existing resolver math.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 2-16 us per 10k virtual voice/sort/telemetry rows. Primary gain is contract ABI proof, aligned `AcousticAup` lanes, and removal of all source-owned Sequential layouts from the virtualization contract file. Evidence class: STATIC_SOURCE; Sequential and unaligned 8-byte scans returned 0 hits; `git diff --check` passed with CRLF warnings only.
+
+## Decision 034 - Audio DSP Propagation Kernel DTO Explicit Closure
+
+Problem: Several fixed audio DSP and propagation DTO/state rows still used Sequential layout: adaptive stem state/commands, echolocation ray hits, acoustic portal graph/query/result/telemetry rows, and depth-stress granular synthesis state. These records are kernel-facing or telemetry-facing payloads and do not embed Unity native containers.
+
+Solution: Converted fixed rows in `AdaptiveStemAudioMixer.cs`, `AcousticEcholocationRaymarch.cs`, `AcousticPortalPropagation.cs`, and `DepthStressGranularSynthesisKernel.cs` to explicit offsets while preserving sizes. `AcousticAup` lanes in portal rows remain aligned at offsets 0/40/80. The sine oscillator keeps `double Phase` at offset 0 and 4-byte fields after it. Existing Burst jobs and NativeArray fields were not converted in this patch.
+
+Rejected Alternatives: Converting `PlayerCriticalBufferJobs` job structs in the same pass was rejected because those are job wrappers with Unity collections and require a separate owner-aware review. Widening 56-byte echolocation hits or 104-byte portal results was rejected because these are existing buffer strides and widening would require consumer migration. Replacing the portal/SDF approximations with physical wave simulation was rejected by the Dear Lie rule.
+
+Scalability potential: Low tier keeps compact DSP and portal rows for cheap acoustic feedback. Middle tier preserves current ray-hit and portal-result buffer widths. High and Ultra tiers can increase ray counts or portal expansion budgets using the same explicit DTO rows without changing binary layout.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-10 us per 10k audio DSP/propagation rows. Primary gain is static ABI proof, aligned `AcousticAup` and `double` lanes, and removal of Sequential layout from these fixed kernel DTO files. Evidence class: STATIC_SOURCE; touched-file Sequential and unaligned 8-byte scans returned 0 hits; `git diff --check` passed with CRLF warnings only.
+
+## Decision 035 - Scanner Data Mining Route Explicit Closure
+
+Problem: `ScannerDataMiningRouter.cs` still used Sequential layout for scan result, spatial entity, active scan state, mock input/tool, SDF occlusion, query stats, telemetry, and settings DTOs. These rows carry AUP, sector hash, depletion masks, progress, and telemetry fields; hidden offsets weaken scanner rollback/hash and ARM64 proof.
+
+Solution: Converted every Sequential row in `ScannerDataMiningRouter.cs` to explicit offsets while preserving existing sizes from 16 to 128 bytes. `double3` AUP lanes stay at offsets 0 or 24, `long`/`ulong` sector and depletion lanes stay 8-byte aligned, and settings/query rows remain compact 4-byte scalar lanes.
+
+Rejected Alternatives: Expanding `ScanResultDTO=48` or `ScannerSpatialEntityDTO=64` was rejected because scanner buffers likely use existing strides. Replacing scanner occlusion with Unity physics queries was rejected; the route remains on the cheap SDF/mock DTO path. Converting unrelated gameplay job wrappers in this pass was rejected because this slice is fixed scanner payload rows.
+
+Scalability potential: Low tier keeps scanner route rows compact and deterministic. Middle tier preserves current candidate/query widths. High and Ultra tiers can spend additional budget on more candidate cells or VFX bias through existing settings rows without changing ABI.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-8 us per 10k scanner DTO rows. Primary gain is aligned AUP/depletion lanes and removal of all source-owned Sequential layout from the scanner route file. Evidence class: STATIC_SOURCE; scanner Sequential and unaligned 8-byte scans returned 0 hits; `git diff --check` passed with CRLF warnings only.

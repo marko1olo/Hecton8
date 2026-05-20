@@ -4,7 +4,7 @@ Date: 2026-05-20
 Agent: SHINOBU_213
 Domain: OFFLINE_LOD_AND_COLLIDER_BAKER
 Task count: 20
-Status: PENDING VERIFICATION / PRE-ENDIAN ROSLYN PROBE PASS / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX PROBE GATED BY CPU / UNITY IMPORT AND PROFILER PENDING
+Status: PENDING VERIFICATION / PRE-ENDIAN ROSLYN PROBE PASS / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX-HOT-STRUCT PROBE GATED BY CPU=93.3 / UNITY IMPORT AND PROFILER PENDING
 
 First 20 Minutes moment: route performance and collision safety for world/resource/structural assets.
 Route impact: removes high-poly render/PhysX blockers before assets enter the Copper Wire route.
@@ -126,7 +126,10 @@ Relevant mandates read:
 - [x] Corrected hull job safety annotations and math guards: `HullVertices` is read-write `[NoAlias]` instead of `[WriteOnly]`, face plane tests use normalized normals, and every `math.rsqrt` path now has finite positive `math.max` guarding.
 - [x] Added fail-closed decimator index-stream guards: corrupt index buffers, empty range tables, zero source vertices, or null position streams now emit deterministic zero triangles instead of touching unsafe source memory.
 - [x] Closed mock benchmark asset-reference leak: replaced mock mesh assets now return only the reloaded asset reference and fail to null if AssetDatabase binding fails.
-- [x] Re-ran post index-stream static scans: forbidden generated-domain source patterns clean, stale self-audit proof text clean, sibling `Hecton8.*` using scan clean, owned whitespace/conflict scan clean, scoped `git diff --check` clean.
+- [x] Added SHINOBU_213 `.h8lod` payload boundary to `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`; manifest is explicitly immutable editor output, not Vault state or rollback truth.
+- [x] Converted hot/job geometry DTOs to explicit layouts and patched the self-audit generator/static XML/architecture proof for `OfflineGeometryRawVertex` 32B, `OfflineGeometryVertex32` 32B, `OfflineSubMeshRange` 16B, and `OfflinePrimitiveFitResult` 40B.
+- [x] Re-ran post index-stream/mock-asset static scans: forbidden generated-domain source patterns clean, stale self-audit proof text clean, sibling `Hecton8.*` using scan clean, owned whitespace/conflict scan clean, scoped `git diff --check` clean.
 - [x] Re-ran post safety static scans: no stale 8-point/probe proof strings, no forbidden generated-domain source patterns, no stale `[WriteOnly] HullVertices`, owned whitespace/conflict scan clean, scoped `git diff --check` clean.
 - [x] Re-checked compile-wall isolation: runtime asmdef still has zero references; SHINOBU_213 editor asmdef references only owned runtime DTO plus Unity Burst/Collections/Jobs/Mathematics; parent interior-clutter asmdef does not capture the `Shinobu213` child assembly.
-- [ ] Re-run Roslyn compile probe after `ReverseBytes` fallback, bounded-hull, fail-closed asset-binding, hull safety, decimator index-stream, and mock asset-reference edits when CPU drops below 50 and no `dotnet/csc` workers exist; latest gate sample was CPU=100.0, `dotnet/csc` count=0.
+- [x] Re-ran post hot-struct static scans after explicit layout proof patch: forbidden source patterns clean, stale proof phrase scan clean, owned whitespace/conflict scan clean, scoped `git diff --check` clean, asmdefs still isolated.
+- [ ] Re-run Roslyn compile probe after `ReverseBytes` fallback, bounded-hull, fail-closed asset-binding, hull safety, decimator index-stream, mock asset-reference, binary-ledger, and hot-struct explicit-layout edits when CPU drops below 50 and no `dotnet/csc` workers exist; latest gate sample was CPU=93.3, `dotnet/csc` count=0.

@@ -201,3 +201,24 @@ Status: STATIC VERIFIED - COMPILE WALL IN CORE MEMORY ASMDEF SURFACE
 - [x] Added the same vertex wiggle properties to the instanced blueprint wire shader. | Justification: the active preview batch uses `Hecton8/Fabrication/BlueprintWireInstanced`, not only `Hecton8/Construction/DearLieHologram`; both shader paths now carry the same normal-offset sine fake with guarded normal normalization. Rejected door prefab animation and physical interpolation. | Estimate: vertex shader adds one sine and a few scalar ops only while dampen is non-zero; CPU save remains the avoided interpolation/instantiation path.
 - [x] Cleared cold factory material dampen. | Justification: `ConstructionRuntimeProxyFactory` now initializes `_H8SnapDampen` to `0`, so fallback proxy materials do not vibrate without a snap signal. Rejected a static 0.08 material value because it makes the fake constantly active. | Estimate: same material setup cost, no extra runtime work.
 - [x] Verified signal/shader route statically. | Justification: scans show the new signal fields, PlayerBuilder writes, preview batch material property IDs, shader properties, and validator offset gates for 96/100/104. `ConstructionPreviewSignal` remains 128 bytes, `BlueprintPreviewInstance` remains 64 bytes, SHINOBU job forbidden-pattern scan has no hits, and `git diff --check` exits with only CRLF normalization warnings. | Estimate: static only.
+
+### Loop 25 - Result Sink Direction Guard
+
+- [x] Closed the final snap-application direction fallback. | Justification: `TryApplyShinobuVaultSnapResult()` now rejects invalid target and ghost directions before calculating target/ghost socket rotations; rejected the previous byte-to-enum helper that returned North for unknown input because the sink boundary must fail closed even if upstream CSR invariants are violated. | Estimate: two direction checks on accepted snap rows only.
+- [x] Verified the sink guard statically. | Justification: scan shows no remaining `ToShinobuSocketDirection`, `direction & 7`, or default-North direction conversion in the SHINOBU active route; `git diff --check` on `PlayerBuilder.cs` exits with only the existing CRLF normalization warning. | Estimate: static only.
+
+### Loop 26 - CSR Fallback Eradication
+
+- [x] Removed hidden linear fallback from `EvaluateSocketSnappingJob`. | Justification: missing ghost CSR range or missing target-index lane now writes `CapacityExceeded` and returns instead of scanning `0..TargetCount`; rejected the old direct target scan because the assignment requires CSR graph coupling, not a best-effort O(N) escape path. | Estimate: corrupt/missing CSR path now reads 0 target rows instead of up to `TargetCount`.
+- [x] Removed direct-index fallback for short CSR target-index arrays. | Justification: out-of-range CSR index slots consume budget, set `CapacityExceeded`, and continue without treating `csrIndex` as a socket index. Rejected `targetIndex = csrIndex` because it masks buffer-size faults and can dock through an unintended row. | Estimate: one bounds check per inspected CSR row; avoids unbounded fallback reads under damaged CSR.
+- [x] Verified CSR fallback removal statically. | Justification: scan shows no `new int2(0, TargetCount)`, no `targetIndex = csrIndex`, no direct job execute calls, and no SHINOBU job forbidden hot-path patterns. | Estimate: static only.
+
+### Loop 27 - Dear Lie Preview Envelope Reset
+
+- [x] Reset Dear Lie material envelope when preview count reaches zero. | Justification: `HectonBlueprintPreviewBatch` now clears the last result/module hash, dampen, quality, and wiggle state from `SetActivePreviewCount(0)` and `ClearPreviews()`. Rejected leaving hash state alive because returning to the same socket after preview disappearance could suppress a fresh snap pulse. | Estimate: seven scalar writes only on preview clear.
+- [x] Verified envelope reset statically. | Justification: scan shows `ResetDearLieEnvelope()` is called by both preview-count zero paths and does not alter `BlueprintPreviewInstance` layout or signal offsets. | Estimate: static only.
+
+### Loop 28 - ModuleTemplate Ghost Prefab Bypass
+
+- [x] Removed preview-prefab pool spawn from the SHINOBU ModuleTemplate path. | Justification: `SpawnGhost()` now routes any buildable with a `ModuleTemplate` through the reusable runtime proxy and Vault `GhostPreviewDTO` path instead of `ObjectPoolManager.Spawn(activeBuildable.ghostPrefab)`. Rejected keeping authored ghost prefab visuals for socket modules because Task 02 requires data-driven preview authority during active snapping. | Estimate: avoids one preview prefab pool spawn/despawn per armed ModuleTemplate buildable.
+- [x] Verified the bypass statically. | Justification: scan shows the remaining ghost-prefab pool spawn is behind the non-ModuleTemplate branch; SHINOBU socket alignment reads `BaseModuleTemplate.SocketDefinitions`, not ghost-prefab `ModuleSocket` hierarchy. | Estimate: static only.

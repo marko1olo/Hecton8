@@ -57,39 +57,6 @@ Verification:
   <Compile status="BLOCKED_BY_CPU_GATE" cpuPercent="100" compilerProcesses="0" />
 </SELF_AUDIT>
 
-## 2026-05-20 - Static Power Authority Correction
-
-What was wrong:
-- The runtime power hydration already failed missing Logistics rows to `0.0`, but `PipePressureSolverJob` still had a local `PowerPotential` read fallback of `1.0`.
-- The quantized drain clamp prevented huge positive overflow but did not lower-bound a negative corrupted remainder before float-to-int conversion.
-- Short Logistics pressure rows wrote zero for missing indices but did not mark the frame with `MissingPowerVault`.
-
-What was done:
-- Changed Jacobi pump power fallback to `0.0`, so missing, out-of-range, or non-finite local power cannot synthesize pump pressure.
-- Changed Logistics pressure hydration to return `MissingPowerVault` when the source row count is shorter than the copied node range.
-- Changed quantized unit clamping to `[0, MaxQuantizedDrainUnitsPerPump]` before integer conversion.
-
-Cinematic Cheats used:
-- No physical water was reintroduced. Drainage authority remains scalar CSR/Jacobi math over Vault rows; pipe visuals remain shader-side flow scalars.
-
-Exact microseconds saved:
-- Measured exact savings: NOT AVAILABLE. This pass is correctness hardening, not a measured speed claim.
-- Expected hot-path cost is one scalar fallback and one `math.clamp`; expected low-end benefit is avoiding wasted pump solve/drain work when power data is absent or poisoned.
-
-Verification:
-- Static source read: `VaultGenerationHandle<T>.BufferID` is a `uint`; existing `handle.BufferID == 0u` checks are compile-consistent with the Vault ABI.
-- Static source read: `ConnectionSplineBatchRenderer.SetPipeNodeFlow(uint, float)` exists and matches the SHINOBU visual-sync call.
-- Forbidden-pattern scan stayed clean for stale Vault handles, direct job execute/complete, synthetic full-power fallback, parallel aggregate atomics, LINQ, `foreach`, `Time.deltaTime`, and `Pack=1` in SHINOBU_222 files.
-- `git diff --check`: no whitespace errors in targeted files; CRLF warning only in the shared binary ledger.
-- Build: BLOCKED BY CPU GATE. Latest `Win32_Processor.LoadPercentage` sample was 100%; compiler process count was 0; no `dotnet build` launched.
-
-<SELF_AUDIT>
-  <Agent id="SHINOBU_222" role="SUMP_PUMP_PIPE_GRID_SOLVER" pass="PowerAuthorityFallbackClamp" />
-  <PowerAuthority source="BufferID.ShinobuLogisticsPressureFront" missingRows="0.0 power + MissingPowerVault" jacobiFallback="0.0" syntheticFullPowerFallback="0" />
-  <Quantization unitsClamp="[0, MaxQuantizedDrainUnitsPerPump]" intCastBeforeClamp="0" />
-  <CompileGuard directBuildLaunched="0" cpuPercent="100" compilerProcesses="0" />
-</SELF_AUDIT>
-
 ## 2026-05-20 - Power Authority And Quantization Fatalism Pass
 
 What was wrong:
@@ -426,4 +393,176 @@ Verification:
   <PointerAliasing noAlias="true" parallelCounterAtomics="removed" />
   <CompileGuard newAsmdefRefs="0" note="No asmdef was edited; existing Core sibling references are pre-existing project debt." />
   <DearLie before="object/particle/recursive flow O(objects + edges + scene traversal)" after="CSR solve O(edges + nodes * iterations), visual water O(edge scalars) on CPU" />
+</SELF_AUDIT>
+
+## 2026-05-20 - Static Power Authority Correction
+
+What was wrong:
+- The runtime power hydration already failed missing Logistics rows to `0.0`, but `PipePressureSolverJob` still had a local `PowerPotential` read fallback of `1.0`.
+- The quantized drain clamp prevented huge positive overflow but did not lower-bound a negative corrupted remainder before float-to-int conversion.
+- Short Logistics pressure rows wrote zero for missing indices but did not mark the frame with `MissingPowerVault`.
+
+What was done:
+- Changed Jacobi pump power fallback to `0.0`, so missing, out-of-range, or non-finite local power cannot synthesize pump pressure.
+- Changed Logistics pressure hydration to return `MissingPowerVault` when the source row count is shorter than the copied node range.
+- Changed quantized unit clamping to `[0, MaxQuantizedDrainUnitsPerPump]` before integer conversion.
+
+Cinematic Cheats used:
+- No physical water was reintroduced. Drainage authority remains scalar CSR/Jacobi math over Vault rows; pipe visuals remain shader-side flow scalars.
+
+Exact microseconds saved:
+- Measured exact savings: NOT AVAILABLE. This pass is correctness hardening, not a measured speed claim.
+- Expected hot-path cost is one scalar fallback and one `math.clamp`; expected low-end benefit is avoiding wasted pump solve/drain work when power data is absent or poisoned.
+
+Verification:
+- Static source read: `VaultGenerationHandle<T>.BufferID` is a `uint`; existing `handle.BufferID == 0u` checks are compile-consistent with the Vault ABI.
+- Static source read: `ConnectionSplineBatchRenderer.SetPipeNodeFlow(uint, float)` exists and matches the SHINOBU visual-sync call.
+- Forbidden-pattern scan stayed clean for stale Vault handles, direct job execute/complete, synthetic full-power fallback, parallel aggregate atomics, LINQ, `foreach`, `Time.deltaTime`, and `Pack=1` in SHINOBU_222 files.
+- `git diff --check`: no whitespace errors in targeted files; CRLF warning only in the shared binary ledger.
+- Build: BLOCKED BY CPU GATE. Latest `Win32_Processor.LoadPercentage` sample was 100%; compiler process count was 0; no `dotnet build` launched.
+
+<SELF_AUDIT>
+  <Agent id="SHINOBU_222" role="SUMP_PUMP_PIPE_GRID_SOLVER" pass="PowerAuthorityFallbackClamp" />
+  <PowerAuthority source="BufferID.ShinobuLogisticsPressureFront" missingRows="0.0 power + MissingPowerVault" jacobiFallback="0.0" syntheticFullPowerFallback="0" />
+  <Quantization unitsClamp="[0, MaxQuantizedDrainUnitsPerPump]" intCastBeforeClamp="0" />
+  <CompileGuard directBuildLaunched="0" cpuPercent="100" compilerProcesses="0" />
+</SELF_AUDIT>
+
+## 2026-05-20 - Worktree Job Route Reconciliation
+
+What was wrong:
+- Targeted `git diff` showed the active worktree had `GenerateMockDrainageNetwork()` calling `DrainageMockNetworkJob.Execute()` directly, even though the recorded rationale and HEAD view already required `job.Run()`.
+
+What was done:
+- Patched the active worktree call site back to `job.Run()`.
+- Re-added this condition to the immediate forbidden-pattern verification set before any build gate attempt.
+
+Cinematic Cheats used:
+- No visual or physics change. This is a job-route correction for the deterministic mock topology generator.
+
+Exact microseconds saved:
+- Measured exact savings: NOT AVAILABLE. This change is compile/job discipline, not a runtime speed claim.
+
+Verification:
+- Forbidden-pattern scan rerun: zero direct `.Execute()` calls in SHINOBU_222 runtime/jobs/contracts/editor files.
+- Positive source scan: `SumpPumpPipeGridRuntime.cs:283` invokes `job.Run()`.
+- Build: BLOCKED BY CPU GATE. Latest `Win32_Processor.LoadPercentage` sample was 100%; compiler process count was 0; no `dotnet build` launched.
+
+<SELF_AUDIT>
+  <Agent id="SHINOBU_222" role="SUMP_PUMP_PIPE_GRID_SOLVER" pass="WorktreeJobRouteReconciliation" />
+  <JobRoute mockTopology="IJob.Run" directExecuteAllowed="0" />
+  <CompileGuard directBuildLaunched="0" cpuPercent="100" compilerProcesses="0" />
+</SELF_AUDIT>
+
+## 2026-05-20 - Utilization-Scaled Pump Energy Telemetry
+
+What was wrong:
+- Pump watt telemetry reported full Vault `PowerDraw` whenever a pump moved any water, even if low power potential or low available room water reduced actual evacuation rate.
+
+What was done:
+- `DrainageTelemetryRecorderJob` now computes `utilization = saturate(CurrentEvacuationRate / MaxPumpRate)` and multiplies Vault `PowerDraw` by that scalar.
+- Zero actual drain now records zero pump watts; partial drain records proportional watts.
+
+Cinematic Cheats used:
+- No new simulation. This keeps the Dear Lie: energy reporting is a scalar derived from Vault rows and actual drain output, not RPM, fluid turbulence, particles, or motor physics.
+
+Exact microseconds saved:
+- Measured exact savings: NOT AVAILABLE. This pass intentionally adds one reciprocal/saturate in the telemetry reducer for correctness.
+
+Verification:
+- Positive source scan: `DrainageTelemetryRecorderJob` computes a saturated utilization scalar before adding pump watts.
+- Forbidden-pattern scan: zero direct `.Execute()` calls, zero stale Vault handle APIs, zero synthetic full-power fallback, zero `Interlocked.Add`, zero LINQ/`foreach`, zero `Time.deltaTime`, and zero `Pack=1` in SHINOBU_222 files.
+- Build: BLOCKED BY CPU GATE. Latest `Win32_Processor.LoadPercentage` sample was 100%; compiler process count was 0; no `dotnet build` launched.
+
+<SELF_AUDIT>
+  <Agent id="SHINOBU_222" role="SUMP_PUMP_PIPE_GRID_SOLVER" pass="UtilizationScaledEnergyTelemetry" />
+  <EnergyTelemetry powerDrawSource="PumpNodeDTO.PowerDraw" utilizationSource="CurrentEvacuationRate / MaxPumpRate" hiddenFullDrawFallback="0" />
+  <DearLie physicalMotorSimulation="0" />
+  <CompileGuard directBuildLaunched="0" cpuPercent="100" compilerProcesses="0" />
+</SELF_AUDIT>
+
+## 2026-05-20 - Editor Readout String Formatting Purge
+
+What was wrong:
+- The Base Drainage Tuner telemetry readout used formatted label strings in the editor refresh loop, conflicting with Task 17's zero-GC readout requirement.
+- The counter clamp used `Mathf.Min(int.MaxValue, uintValue)`, which is a compile-risk overload route.
+- The active worktree had again drifted to direct `DrainageMockNetworkJob.Execute()` in the cold mock generator.
+
+What was done:
+- Replaced telemetry label formatting with pre-created `IntegerField` and `FloatField` readout controls updated through `SetValueWithoutNotify`.
+- Added explicit `ClampUIntToInt(uint)` for frame index, active pump count, and solver microseconds.
+- Patched the mock topology generator back to `job.Run()`.
+
+Cinematic Cheats used:
+- No physical water, pipe mesh animation, or particle route was added. The editor reads Vault telemetry; runtime visuals remain shader-side scalar flow.
+
+Exact microseconds saved:
+- Measured exact savings: NOT AVAILABLE. Unity import/profiler proof remains blocked by CPU gate.
+- Expected editor benefit is removal of per-refresh formatted-string churn. Runtime frame cost is unchanged because this path is editor-only.
+
+Verification:
+- Forbidden-pattern scan: zero direct `.Execute()` calls, zero stale Vault handle APIs, zero synthetic full-power fallback, zero `Interlocked.Add`, zero LINQ/`foreach`, zero `Time.deltaTime`, zero `Pack=1`, zero `StringBuilder`, zero `ToString(`, zero `CultureInfo`, and zero `Mathf.Min` in SHINOBU_222 files.
+- Positive source scan: `SumpPumpPipeGridRuntime.cs:283` invokes `job.Run()`; tuner readouts use `SetValueWithoutNotify` and `ClampUIntToInt`.
+- `git diff --check`: no whitespace errors in targeted files; repository LF/CRLF warnings only.
+- Build: BLOCKED BY CPU GATE. Latest `Win32_Processor.LoadPercentage` sample was 88%; compiler process count was 0; no `dotnet build` launched.
+
+<SELF_AUDIT>
+  <Agent id="SHINOBU_222" role="SUMP_PUMP_PIPE_GRID_SOLVER" pass="EditorReadoutFormattingPurge" />
+  <EditorReadout formattedStrings="0" stringBuilder="0" cultureInfo="0" valueRoute="SetValueWithoutNotify" />
+  <JobRoute mockTopology="IJob.Run" directExecuteAllowed="0" />
+  <CompileGuard directBuildLaunched="0" cpuPercent="88" compilerProcesses="0" />
+</SELF_AUDIT>
+
+## 2026-05-20 - Assembly Boundary And Compile Gate Proof
+
+What was wrong:
+- The prior report had not recorded the exact asmdef owner for the SHINOBU_222 files after the editor/readout correction.
+- The most recent compile gate sample changed from 88% CPU to 100% CPU.
+
+What was done:
+- Walked upward from `Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs`; the owning assembly is the existing parent `Assets/_Project/Scripts/Hecton8.Core.asmdef`.
+- Confirmed no asmdef was edited and no new sibling runtime assembly reference was introduced by SHINOBU_222.
+- Resampled CPU/compiler state before any build attempt.
+
+Cinematic Cheats used:
+- None added in this proof pass. Runtime still uses CSR scalar math plus shader flow scalars, not particles or physical pipe fluid actors.
+
+Exact microseconds saved:
+- Measured exact savings: NOT AVAILABLE. This pass is compile-wall evidence and build-gate discipline, not a runtime optimization.
+
+Verification:
+- Assembly boundary scan: SHINOBU_222 files resolve to existing parent `Hecton8.Core.asmdef`; no `Construction` asmdef exists under the edited folder.
+- Forbidden-pattern scan: no direct `.Execute()`, no `.Complete()`, no stale Vault pointer handles, no LINQ/`foreach`, no `Time.deltaTime`, no `Pack=1`, and no editor string-formatting readout patterns in SHINOBU_222 files.
+- Build: BLOCKED BY CPU GATE. Latest `Win32_Processor.LoadPercentage` sample was 100%; compiler process count was 0; no `dotnet build` launched.
+
+<SELF_AUDIT>
+  <Agent id="SHINOBU_222" role="SUMP_PUMP_PIPE_GRID_SOLVER" pass="AssemblyBoundaryCompileGateProof" />
+  <CompileGuard ownerAsmdef="Assets/_Project/Scripts/Hecton8.Core.asmdef" asmdefEdited="0" newSiblingRuntimeReference="0" />
+  <BuildGate directBuildLaunched="0" cpuPercent="100" compilerProcesses="0" />
+</SELF_AUDIT>
+
+## 2026-05-20 - Final Direct Job Entry Recheck
+
+What was wrong:
+- A post-documentation forbidden scan found the active worktree again calling `DrainageMockNetworkJob.Execute()` at `SumpPumpPipeGridRuntime.cs:283`.
+
+What was done:
+- Preserved the scheduled route: `job.Schedule()`, `H8Memory.RegisterActiveJob(OwnerSystem, _mockSeedHandle)`, and later `DispatcherJobFence` finalization.
+- Reran direct route and full forbidden-pattern scans.
+
+Cinematic Cheats used:
+- None added. This is job-route hygiene; drainage remains Vault CSR math plus shader-side scalar flow visuals.
+
+Exact microseconds saved:
+- Measured exact savings: NOT AVAILABLE. The correction is architectural discipline, not a measured hot-path optimization.
+
+Verification:
+- Direct route scan: `GenerateMockDrainageNetwork()` invokes `job.Schedule()` and registers `_mockSeedHandle`.
+- Forbidden-pattern scan: zero `.Execute()` matches across SHINOBU_222 files.
+- Build: BLOCKED BY CPU GATE. Latest gate samples stayed above threshold at 68-100%; compiler process count was 0; no `dotnet build` launched.
+
+<SELF_AUDIT>
+  <Agent id="SHINOBU_222" role="SUMP_PUMP_PIPE_GRID_SOLVER" pass="FinalDirectJobEntryRecheck" />
+  <JobRoute mockTopology="IJob.Schedule+RegisteredHandle" directExecuteMatches="0" />
+  <BuildGate directBuildLaunched="0" cpuPercentRange="68-100" compilerProcesses="0" />
 </SELF_AUDIT>

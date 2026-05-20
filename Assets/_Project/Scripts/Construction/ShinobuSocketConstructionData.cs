@@ -26,6 +26,78 @@ namespace Hecton8.Construction
         public const uint CapacityExceeded = 1u << 10;
     }
 
+    public static class BuilderGhostValidationFlags
+    {
+        public const uint None = 0u;
+        public const uint Active = 1u << 0;
+        public const uint Valid = 1u << 1;
+        public const uint GridSnapped = 1u << 2;
+        public const uint SdfBlocked = 1u << 3;
+        public const uint BoundsBlocked = 1u << 4;
+        public const uint NonFinite = 1u << 5;
+        public const uint SocketSnap = 1u << 6;
+        public const uint PresentationOnly = 1u << 7;
+        public const uint DearLieActive = 1u << 8;
+        public const uint RollbackExcluded = 1u << 9;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    public struct BuilderGhostStateDTO
+    {
+        [FieldOffset(0)] public float4x4 LocalToWorld;
+        [FieldOffset(64)] public double3 AUP_TargetPosition;
+        [FieldOffset(88)] public uint PrefabHashID;
+        [FieldOffset(92)] public uint ValidationFlags;
+        [FieldOffset(96)] public float AnimationPhase;
+        [FieldOffset(100)] public uint ValidationStateHash;
+        [FieldOffset(104)] public uint _pad0;
+        [FieldOffset(108)] public uint _pad1;
+        [FieldOffset(112)] public uint _pad2;
+        [FieldOffset(116)] public uint _pad3;
+        [FieldOffset(120)] public uint _pad4;
+        [FieldOffset(124)] public uint _pad5;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct BuilderGhostVisualDTO
+    {
+        [FieldOffset(0)] public float GlobalQualityWeight;
+        [FieldOffset(4)] public float DearLieDampen;
+        [FieldOffset(8)] public float DearLieWiggleSpeed;
+        [FieldOffset(12)] public float Alpha;
+        [FieldOffset(16)] public float4 ValidColor;
+        [FieldOffset(32)] public float4 InvalidColor;
+        [FieldOffset(48)] public uint Flags;
+        [FieldOffset(52)] public uint Frame;
+        [FieldOffset(56)] public uint _pad0;
+        [FieldOffset(60)] public uint _pad1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct HolographyTelemetryEntry
+    {
+        [FieldOffset(0)] public double3 AUP_TargetPosition;
+        [FieldOffset(24)] public uint Frame;
+        [FieldOffset(28)] public uint PrefabHashID;
+        [FieldOffset(32)] public uint SdfCornerChecks;
+        [FieldOffset(36)] public uint ValidationFlags;
+        [FieldOffset(40)] public float SolverMicroseconds;
+        [FieldOffset(44)] public float MinSdfDistance;
+        [FieldOffset(48)] public uint ValidationStateHash;
+        [FieldOffset(52)] public float GlobalQualityWeight;
+        [FieldOffset(56)] public uint _pad0;
+        [FieldOffset(60)] public uint _pad1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct BuilderGhostIndirectArgsDTO
+    {
+        [FieldOffset(0)] public uint VertexCountPerInstance;
+        [FieldOffset(4)] public uint InstanceCount;
+        [FieldOffset(8)] public uint StartVertex;
+        [FieldOffset(12)] public uint StartInstance;
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SocketStateDTO
     {
@@ -184,6 +256,9 @@ namespace Hecton8.Construction
         public NativeArray<int> Counters;
         public NativeArray<SocketModuleBoundsDTO> Bounds;
         public NativeArray<SocketConnectionPairDTO> Connections;
+        public NativeArray<BuilderGhostStateDTO> BuilderGhostStates;
+        public NativeArray<BuilderGhostVisualDTO> BuilderGhostVisuals;
+        public NativeArray<HolographyTelemetryEntry> HolographyTelemetry;
     }
 
     public static unsafe class ShinobuSocketConstructionRuntime
@@ -197,10 +272,19 @@ namespace Hecton8.Construction
         public const int SocketDirectionCount = 6;
         public const int SocketCsrRangeCapacity = GhostSocketCapacity + SocketDirectionCount;
         public const int SocketCsrTargetIndexCapacity = MockSocketCount;
+        public const int BuilderGhostStateCapacity = 128;
+        public const int BuilderGhostVisualCapacity = 128;
+        public const int BuilderGhostMockValidationCount = 10000;
+        public const int BuilderGhostProceduralVertexCount = 36;
         public const BufferID GhostPreviewBufferId = (BufferID)70370;
         public const BufferID SocketCsrRangesBufferId = (BufferID)70371;
         public const BufferID SocketCsrTargetIndicesBufferId = (BufferID)70372;
+        public const BufferID BuilderGhostStateBufferId = (BufferID)70940;
+        public const BufferID BuilderGhostVisualBufferId = (BufferID)70941;
+        public const BufferID BuilderGhostTelemetryBufferId = (BufferID)70942;
+        public const BufferID BuilderGhostMockStateBufferId = (BufferID)70943;
         public const string DefaultDumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_SHINOBU_217.bin";
+        public const string HolographyDumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_SHINOBU_228.bin";
 
         public const int SocketStateSizeBytes = 64;
         public const int GhostPreviewSizeBytes = 96;
@@ -211,6 +295,10 @@ namespace Hecton8.Construction
         public const int SocketBoundsResultSizeBytes = 32;
         public const int SocketTuningSizeBytes = 64;
         public const int SocketTelemetrySizeBytes = 64;
+        public const int BuilderGhostStateSizeBytes = 128;
+        public const int BuilderGhostVisualSizeBytes = 64;
+        public const int HolographyTelemetrySizeBytes = 64;
+        public const int BuilderGhostIndirectArgsSizeBytes = 16;
 
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
@@ -231,6 +319,10 @@ namespace Hecton8.Construction
         private static VaultGenerationHandle<int> s_CountersHandle;
         private static VaultGenerationHandle<SocketModuleBoundsDTO> s_BoundsHandle;
         private static VaultGenerationHandle<SocketConnectionPairDTO> s_ConnectionsHandle;
+        private static VaultGenerationHandle<BuilderGhostStateDTO> s_BuilderGhostStateHandle;
+        private static VaultGenerationHandle<BuilderGhostVisualDTO> s_BuilderGhostVisualHandle;
+        private static VaultGenerationHandle<HolographyTelemetryEntry> s_HolographyTelemetryHandle;
+        private static VaultGenerationHandle<BuilderGhostStateDTO> s_BuilderGhostMockStateHandle;
 
         public static bool ValidateStructLayout()
         {
@@ -243,11 +335,21 @@ namespace Hecton8.Construction
                    UnsafeUtility.SizeOf<SocketBoundsResultDTO>() == SocketBoundsResultSizeBytes &&
                    UnsafeUtility.SizeOf<ConstructionSocketTuningDTO>() == SocketTuningSizeBytes &&
                    UnsafeUtility.SizeOf<ConstructionSocketTelemetryEntry>() == SocketTelemetrySizeBytes &&
+                   UnsafeUtility.SizeOf<BuilderGhostStateDTO>() == BuilderGhostStateSizeBytes &&
+                   UnsafeUtility.SizeOf<BuilderGhostVisualDTO>() == BuilderGhostVisualSizeBytes &&
+                   UnsafeUtility.SizeOf<HolographyTelemetryEntry>() == HolographyTelemetrySizeBytes &&
+                   UnsafeUtility.SizeOf<BuilderGhostIndirectArgsDTO>() == BuilderGhostIndirectArgsSizeBytes &&
                    ResolveOffset<SocketStateDTO>(nameof(SocketStateDTO.LocalOffset)) == 0 &&
                    ResolveOffset<SocketStateDTO>(nameof(SocketStateDTO.NormalDirection)) == 24 &&
                    ResolveOffset<SocketStateDTO>(nameof(SocketStateDTO.AllowedConnectionBitmask)) == 36 &&
                    ResolveOffset<SocketStateDTO>(nameof(SocketStateDTO.ParentModuleHash)) == 40 &&
-                   ResolveOffset<SocketStateDTO>(nameof(SocketStateDTO.ConnectionStatus)) == 44;
+                   ResolveOffset<SocketStateDTO>(nameof(SocketStateDTO.ConnectionStatus)) == 44 &&
+                   ResolveOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.LocalToWorld)) == 0 &&
+                   ResolveOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.AUP_TargetPosition)) == 64 &&
+                   ResolveOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.PrefabHashID)) == 88 &&
+                   ResolveOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.ValidationFlags)) == 92 &&
+                   ResolveOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.AnimationPhase)) == 96 &&
+                   ResolveOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.ValidationStateHash)) == 100;
         }
 
         public static int ResolveOffset<T>(string fieldName) where T : struct
@@ -321,6 +423,10 @@ namespace Hecton8.Construction
             s_CountersHandle = ResolveHandle(vault, BufferID.ConstructionSocketCounters, 8, ref s_CountersHandle);
             s_BoundsHandle = ResolveHandle(vault, BufferID.ConstructionSocketBounds, MockModuleCount, ref s_BoundsHandle);
             s_ConnectionsHandle = ResolveHandle(vault, BufferID.ConstructionSocketConnections, MockSocketCount, ref s_ConnectionsHandle);
+            s_BuilderGhostStateHandle = ResolveHandle(vault, BuilderGhostStateBufferId, BuilderGhostStateCapacity, ref s_BuilderGhostStateHandle);
+            s_BuilderGhostVisualHandle = ResolveHandle(vault, BuilderGhostVisualBufferId, BuilderGhostVisualCapacity, ref s_BuilderGhostVisualHandle);
+            s_HolographyTelemetryHandle = ResolveHandle(vault, BuilderGhostTelemetryBufferId, TelemetryCapacity, ref s_HolographyTelemetryHandle);
+            s_BuilderGhostMockStateHandle = ResolveHandle(vault, BuilderGhostMockStateBufferId, BuilderGhostMockValidationCount, ref s_BuilderGhostMockStateHandle);
 
             if (vault.TryResolveHandle(in s_TuningHandle, out NativeArray<ConstructionSocketTuningDTO> tuningBuffer) &&
                 tuningBuffer.IsCreated &&
@@ -351,7 +457,10 @@ namespace Hecton8.Construction
                    vault.TryResolveHandle(in s_ModuleHandle, out views.Modules) &&
                    vault.TryResolveHandle(in s_CountersHandle, out views.Counters) &&
                    vault.TryResolveHandle(in s_BoundsHandle, out views.Bounds) &&
-                   vault.TryResolveHandle(in s_ConnectionsHandle, out views.Connections);
+                   vault.TryResolveHandle(in s_ConnectionsHandle, out views.Connections) &&
+                   vault.TryResolveHandle(in s_BuilderGhostStateHandle, out views.BuilderGhostStates) &&
+                   vault.TryResolveHandle(in s_BuilderGhostVisualHandle, out views.BuilderGhostVisuals) &&
+                   vault.TryResolveHandle(in s_HolographyTelemetryHandle, out views.HolographyTelemetry);
         }
 
         public static bool GenerateMockBaseConstructionGrid(IDataVault vault)
@@ -564,6 +673,62 @@ namespace Hecton8.Construction
 
             void* ptr = telemetryRing.GetUnsafeReadOnlyPtr();
             int byteLength = telemetryRing.Length * UnsafeUtility.SizeOf<ConstructionSocketTelemetryEntry>();
+            byte[] bytes = new byte[byteLength];
+            fixed (byte* dst = bytes)
+                UnsafeUtility.MemCpy(dst, ptr, byteLength);
+
+            string directory = Path.GetDirectoryName(absolutePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            File.WriteAllBytes(absolutePath, bytes);
+        }
+
+        public static void WriteHolographyTelemetry(
+            NativeArray<HolographyTelemetryEntry> telemetryRing,
+            uint frame,
+            double3 targetAup,
+            uint prefabHash,
+            uint sdfCornerChecks,
+            uint validationFlags,
+            float solverMicroseconds,
+            float minSdfDistance,
+            uint validationStateHash,
+            float globalQualityWeight)
+        {
+            if (!telemetryRing.IsCreated || telemetryRing.Length <= 0)
+                return;
+
+            int index = (int)(frame % (uint)math.min(telemetryRing.Length, TelemetryCapacity));
+            HolographyTelemetryEntry entry;
+            entry.AUP_TargetPosition = targetAup;
+            entry.Frame = frame;
+            entry.PrefabHashID = prefabHash;
+            entry.SdfCornerChecks = sdfCornerChecks;
+            entry.ValidationFlags = validationFlags;
+            entry.SolverMicroseconds = math.isfinite(solverMicroseconds) ? solverMicroseconds : -1f;
+            entry.MinSdfDistance = math.isfinite(minSdfDistance) ? minSdfDistance : -9999f;
+            entry.ValidationStateHash = validationStateHash;
+            entry.GlobalQualityWeight = SanitizeQuality(globalQualityWeight);
+            entry._pad0 = 0u;
+            entry._pad1 = 0u;
+            telemetryRing[index] = entry;
+
+            bool fault = !math.all(math.isfinite(targetAup)) ||
+                         !math.isfinite(entry.SolverMicroseconds) ||
+                         entry.SolverMicroseconds > 500f ||
+                         (validationFlags & BuilderGhostValidationFlags.NonFinite) != 0u;
+            if (fault)
+                DumpHolographyTelemetry(telemetryRing);
+        }
+
+        public static void DumpHolographyTelemetry(NativeArray<HolographyTelemetryEntry> telemetryRing, string absolutePath = HolographyDumpPath)
+        {
+            if (!telemetryRing.IsCreated || telemetryRing.Length <= 0 || string.IsNullOrWhiteSpace(absolutePath))
+                return;
+
+            void* ptr = telemetryRing.GetUnsafeReadOnlyPtr();
+            int byteLength = telemetryRing.Length * UnsafeUtility.SizeOf<HolographyTelemetryEntry>();
             byte[] bytes = new byte[byteLength];
             fixed (byte* dst = bytes)
                 UnsafeUtility.MemCpy(dst, ptr, byteLength);

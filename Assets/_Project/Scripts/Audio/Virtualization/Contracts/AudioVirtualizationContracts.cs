@@ -53,15 +53,22 @@ namespace Hecton8.Audio.Virtualization
     /// Exact compact DTO used by external virtual emitters before AUP/grid expansion.
     /// Size: 48 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct VirtualVoiceDTO
     {
+        [FieldOffset(0)]
         public double3 AupMeters;
+        [FieldOffset(24)]
         public float Volume;
+        [FieldOffset(28)]
         public float Pitch;
+        [FieldOffset(32)]
         public uint ClipHash;
+        [FieldOffset(36)]
         public uint SourceEntityID;
+        [FieldOffset(40)]
         public float Importance;
+        [FieldOffset(44)]
         public uint Padding;
     }
 
@@ -128,28 +135,48 @@ namespace Hecton8.Audio.Virtualization
     /// Blittable request queued by gameplay audio emitters before physical channel selection.
     /// Explicit size preserves ARM64-friendly stride while embedding the aligned AcousticAup contract.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct VirtualVoiceRequest
     {
+        [FieldOffset(0)]
         public AcousticAup SourceAup;
+        [FieldOffset(40)]
         public float3 SourceVelocityMetersPerSecond;
+        [FieldOffset(52)]
         public float Volume;
+        [FieldOffset(56)]
         public float Priority;
+        [FieldOffset(60)]
         public float Pitch;
+        [FieldOffset(64)]
         public float DopplerRatio;
+        [FieldOffset(68)]
         public float SabineRt60Seconds;
+        [FieldOffset(72)]
         public float SabineRoomVolumeCubicMeters;
+        [FieldOffset(76)]
         public float LowPassCutoffHz;
+        [FieldOffset(80)]
         public float DelaySeconds;
+        [FieldOffset(84)]
         public uint EventID;
+        [FieldOffset(88)]
         public uint ClipHash;
+        [FieldOffset(92)]
         public uint SourceEntityID;
+        [FieldOffset(96)]
         public int StationaryCacheKey;
+        [FieldOffset(100)]
         public VirtualVoicePortalFlags PortalFlags;
+        [FieldOffset(101)]
         public byte FoveatedTier;
+        [FieldOffset(102)]
         public byte AcousticEnvironment;
+        [FieldOffset(103)]
         public VirtualVoiceDspFlags DspFlags;
+        [FieldOffset(104)]
         private byte _reserved0;
+        [FieldOffset(108)]
         private uint _reserved1;
 
         public VirtualVoiceRequest(
@@ -231,32 +258,56 @@ namespace Hecton8.Audio.Virtualization
     /// <summary>
     /// Mutable virtual voice state consumed by the Burst ranking job.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 160)]
+    [StructLayout(LayoutKind.Explicit, Size = 160)]
     public struct VirtualVoice
     {
+        [FieldOffset(0)]
         public AcousticAup SourceAup;
+        [FieldOffset(40)]
         public float3 SourceVelocityMetersPerSecond;
+        [FieldOffset(52)]
         public float Volume;
+        [FieldOffset(56)]
         public float Priority;
+        [FieldOffset(60)]
         public float Pitch;
+        [FieldOffset(64)]
         public float DopplerRatio;
+        [FieldOffset(68)]
         public float Attenuation;
+        [FieldOffset(72)]
         public float Weight;
+        [FieldOffset(76)]
         public float DistanceSq;
+        [FieldOffset(80)]
         public float EffectiveVolume;
+        [FieldOffset(84)]
         public float SabineRt60Seconds;
+        [FieldOffset(88)]
         public float SabineRoomVolumeCubicMeters;
+        [FieldOffset(92)]
         public float LowPassCutoffHz;
+        [FieldOffset(96)]
         public float DelaySeconds;
+        [FieldOffset(100)]
         public uint EventID;
+        [FieldOffset(104)]
         public uint ClipHash;
+        [FieldOffset(108)]
         public uint StableKey;
+        [FieldOffset(112)]
         public uint SourceEntityID;
+        [FieldOffset(116)]
         public int StationaryCacheKey;
+        [FieldOffset(120)]
         public VirtualVoicePortalFlags PortalFlags;
+        [FieldOffset(121)]
         public byte FoveatedTier;
+        [FieldOffset(122)]
         public byte AcousticEnvironment;
+        [FieldOffset(123)]
         public VirtualVoiceDspFlags DspFlags;
+        [FieldOffset(124)]
         private byte _reserved0;
     }
 
@@ -264,141 +315,234 @@ namespace Hecton8.Audio.Virtualization
     /// Compact ranking key for cache-line-friendly virtual voice selection.
     /// Sorting this 16-byte stream avoids swapping 160-byte voice payloads.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct VirtualVoiceSortKey
     {
+        [FieldOffset(0)]
         public float Weight;
+        [FieldOffset(4)]
         public int VoiceIndex;
+        [FieldOffset(8)]
         public uint StableKey;
+        [FieldOffset(12)]
         public uint Padding;
     }
 
     /// <summary>
     /// Selected physical channel candidate after virtual voice ranking.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 144)]
+    [StructLayout(LayoutKind.Explicit, Size = 144)]
     public struct VirtualVoiceSelection
     {
+        [FieldOffset(0)]
         public AcousticAup SourceAup;
+        [FieldOffset(40)]
         public float3 SourceVelocityMetersPerSecond;
+        [FieldOffset(52)]
         public float Volume;
+        [FieldOffset(56)]
         public float Pitch;
+        [FieldOffset(60)]
         public float DopplerRatio;
+        [FieldOffset(64)]
         public float Attenuation;
+        [FieldOffset(68)]
         public float Weight;
+        [FieldOffset(72)]
         public float DistanceSq;
+        [FieldOffset(76)]
         public float EffectiveVolume;
+        [FieldOffset(80)]
         public float SabineRt60Seconds;
+        [FieldOffset(84)]
         public float LowPassCutoffHz;
+        [FieldOffset(88)]
         public float DelaySeconds;
+        [FieldOffset(92)]
         public uint EventID;
+        [FieldOffset(96)]
         public uint ClipHash;
+        [FieldOffset(100)]
         public uint StableKey;
+        [FieldOffset(104)]
         public uint SourceEntityID;
+        [FieldOffset(108)]
         public int StationaryCacheKey;
+        [FieldOffset(112)]
         public VirtualVoicePortalFlags PortalFlags;
+        [FieldOffset(113)]
         public byte FoveatedTier;
+        [FieldOffset(114)]
         public byte AcousticEnvironment;
+        [FieldOffset(115)]
         public VirtualVoiceDspFlags DspFlags;
+        [FieldOffset(116)]
         private byte _reserved0;
     }
 
     /// <summary>
     /// Last virtual voice sort pass counters.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VirtualVoiceStatistics
     {
+        [FieldOffset(0)]
         public int Frame;
+        [FieldOffset(4)]
         public int TotalVoices;
+        [FieldOffset(8)]
         public int AudibleVoices;
+        [FieldOffset(12)]
         public int CulledVoices;
+        [FieldOffset(16)]
         public int ActivePhysicalVoices;
+        [FieldOffset(20)]
         public int PhysicalVoiceLimit;
+        [FieldOffset(24)]
         public int StolenVoices;
+        [FieldOffset(28)]
         public int DroppedVoices;
+        [FieldOffset(32)]
         public int OccludedVoices;
+        [FieldOffset(36)]
         public int DelayedVoices;
+        [FieldOffset(40)]
         public float SortTimeMs;
+        [FieldOffset(44)]
         public float LoudestWeight;
+        [FieldOffset(48)]
         public float AverageRt60Seconds;
+        [FieldOffset(52)]
         public float AverageLowPassHertz;
+        [FieldOffset(56)]
         public float MaximumDelaySeconds;
+        [FieldOffset(60)]
         public float AcousticOcclusionTimeMs;
     }
 
     /// <summary>
     /// Fixed-size black-box entry for the last 300 SDF acoustic occlusion frames.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct AcousticTelemetryEntry
     {
+        [FieldOffset(0)]
         public int Frame;
+        [FieldOffset(4)]
         public uint StateHash;
+        [FieldOffset(8)]
         public float LoudestWeight;
+        [FieldOffset(12)]
         public float SortTimeMs;
+        [FieldOffset(16)]
         public float AverageRt60Seconds;
+        [FieldOffset(20)]
         public float AverageLowPassHertz;
+        [FieldOffset(24)]
         public float MaximumDelaySeconds;
+        [FieldOffset(28)]
         public float AcousticOcclusionTimeMs;
+        [FieldOffset(32)]
         public ushort TotalVoices;
+        [FieldOffset(34)]
         public ushort AudibleVoices;
+        [FieldOffset(36)]
         public ushort CulledVoices;
+        [FieldOffset(38)]
         public ushort ActiveVoices;
+        [FieldOffset(40)]
         public ushort PhysicalVoiceLimit;
+        [FieldOffset(42)]
         public ushort StolenVoices;
+        [FieldOffset(44)]
         public ushort DroppedVoices;
+        [FieldOffset(46)]
         public ushort Flags;
+        [FieldOffset(48)]
         public ushort OccludedVoices;
+        [FieldOffset(50)]
         public ushort DelayedVoices;
+        [FieldOffset(52)]
         private uint _reserved1;
+        [FieldOffset(56)]
         private uint _reserved2;
+        [FieldOffset(60)]
         private uint _reserved3;
     }
 
     /// <summary>
     /// Fixed-size compatibility black-box entry for virtual voice consumers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VirtualVoiceTelemetryEntry
     {
+        [FieldOffset(0)]
         public int Frame;
+        [FieldOffset(4)]
         public uint StateHash;
+        [FieldOffset(8)]
         public float LoudestWeight;
+        [FieldOffset(12)]
         public float SortTimeMs;
+        [FieldOffset(16)]
         public float AverageRt60Seconds;
+        [FieldOffset(20)]
         public float AverageLowPassHertz;
+        [FieldOffset(24)]
         public float MaximumDelaySeconds;
+        [FieldOffset(28)]
         public float AcousticOcclusionTimeMs;
+        [FieldOffset(32)]
         public ushort TotalVoices;
+        [FieldOffset(34)]
         public ushort AudibleVoices;
+        [FieldOffset(36)]
         public ushort CulledVoices;
+        [FieldOffset(38)]
         public ushort ActiveVoices;
+        [FieldOffset(40)]
         public ushort PhysicalVoiceLimit;
+        [FieldOffset(42)]
         public ushort StolenVoices;
+        [FieldOffset(44)]
         public ushort DroppedVoices;
+        [FieldOffset(46)]
         public ushort Flags;
+        [FieldOffset(48)]
         public ushort OccludedVoices;
+        [FieldOffset(50)]
         public ushort DelayedVoices;
+        [FieldOffset(52)]
         private uint _reserved1;
+        [FieldOffset(56)]
         private uint _reserved2;
+        [FieldOffset(60)]
         private uint _reserved3;
     }
 
     /// <summary>
     /// Vault-resident runtime knobs for the Sabine/Doppler virtual voice job.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct VirtualVoiceTuningSnapshot
     {
+        [FieldOffset(0)]
         public float SoundSpeedMetersPerSecond;
+        [FieldOffset(4)]
         public float GlobalOcclusionPenalty;
+        [FieldOffset(8)]
         public float OccludedLowPassHertz;
+        [FieldOffset(12)]
         public float SabineDecayScale;
+        [FieldOffset(16)]
         public int MaxHydratedVoices;
+        [FieldOffset(20)]
         public byte DisableSdfOcclusion;
+        [FieldOffset(21)]
         private byte _reserved0;
+        [FieldOffset(22)]
         private ushort _reserved1;
+        [FieldOffset(24)]
         private uint _reserved2;
 
         public static VirtualVoiceTuningSnapshot CreateDefault()
@@ -443,88 +587,142 @@ namespace Hecton8.Audio.Virtualization
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct AudioProfileCsvRow
     {
+        [FieldOffset(0)]
         public uint SoundHash;
+        [FieldOffset(4)]
         public uint KeyHash;
+        [FieldOffset(8)]
         public float Value;
+        [FieldOffset(12)]
         public byte Kind;
+        [FieldOffset(13)]
         private byte _reserved0;
+        [FieldOffset(14)]
         private ushort _reserved1;
+        [FieldOffset(16)]
         private uint _reserved2;
+        [FieldOffset(20)]
         private uint _reserved3;
     }
 
     /// <summary>
     /// DSP echo tap payload produced from virtual acoustic selections and bridged to sensory systems.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 144)]
+    [StructLayout(LayoutKind.Explicit, Size = 144)]
     public partial struct AcousticEchoTap
     {
+        [FieldOffset(0)]
         public AcousticAup SourceAup;
+        [FieldOffset(40)]
         public AcousticAup ListenerAup;
+        [FieldOffset(80)]
         public float3 Position;
+        [FieldOffset(92)]
         public float Magnitude;
+        [FieldOffset(96)]
         public float Volume01;
+        [FieldOffset(100)]
         public float DelaySeconds;
+        [FieldOffset(104)]
         public float LowPassCutoffHz;
+        [FieldOffset(108)]
         public float Rt60Seconds;
+        [FieldOffset(112)]
         public uint SoundHash;
+        [FieldOffset(116)]
         public uint SourceId;
+        [FieldOffset(120)]
         public uint ClipHash;
+        [FieldOffset(124)]
         public VirtualVoiceDspFlags Flags;
+        [FieldOffset(125)]
         public byte QualityTier;
+        [FieldOffset(126)]
         private ushort _reserved0;
+        [FieldOffset(128)]
         private uint _reserved1;
+        [FieldOffset(132)]
         private uint _reserved2;
+        [FieldOffset(136)]
         private uint _reserved3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     public struct MockAcousticEmitterSignal
     {
+        [FieldOffset(0)]
         public AcousticAup SourceAup;
+        [FieldOffset(40)]
         public float3 SourceVelocityMetersPerSecond;
+        [FieldOffset(52)]
         public uint EventID;
+        [FieldOffset(56)]
         public uint ClipHash;
+        [FieldOffset(60)]
         public uint SourceEntityID;
+        [FieldOffset(64)]
         public float Volume;
+        [FieldOffset(68)]
         public float Pitch;
+        [FieldOffset(72)]
         public float Importance;
+        [FieldOffset(76)]
         public VirtualVoiceDspFlags Flags;
+        [FieldOffset(77)]
         public byte AcousticEnvironment;
+        [FieldOffset(78)]
         private ushort _reserved0;
+        [FieldOffset(80)]
         private uint _reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct MockPlayerInsideSubSignal
     {
+        [FieldOffset(0)]
         public uint SourceEntityID;
+        [FieldOffset(4)]
         public float Interior01;
+        [FieldOffset(8)]
         public float HullLowPassHertz;
+        [FieldOffset(12)]
         public uint Frame;
+        [FieldOffset(16)]
         public byte Active;
+        [FieldOffset(17)]
         private byte _reserved0;
+        [FieldOffset(18)]
         private ushort _reserved1;
+        [FieldOffset(20)]
         private uint _reserved2;
+        [FieldOffset(24)]
         private uint _reserved3;
     }
 
     /// <summary>
     /// Cheap deterministic SDF stand-in. Negative sample means "solid between listener and source".
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct MockSDFSampler
     {
+        [FieldOffset(0)]
         public float3 Center;
+        [FieldOffset(12)]
         public float3 HalfExtents;
+        [FieldOffset(24)]
         public float WallPlaneY;
+        [FieldOffset(28)]
         public float WallThickness;
+        [FieldOffset(32)]
         public byte Enabled;
+        [FieldOffset(33)]
         public byte UseBox;
+        [FieldOffset(34)]
         private ushort _reserved0;
+        [FieldOffset(36)]
         private uint _reserved1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -546,13 +744,18 @@ namespace Hecton8.Audio.Virtualization
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     public partial struct MockTerrainSampler
     {
+        [FieldOffset(0)]
         public MockSDFSampler SdfSampler;
+        [FieldOffset(64)]
         public float ReverbVolumeCubicMeters;
+        [FieldOffset(68)]
         public byte AcousticEnvironment;
+        [FieldOffset(69)]
         private byte _reserved0;
+        [FieldOffset(70)]
         private ushort _reserved1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
